@@ -7,50 +7,11 @@
 #include <cstdint>
 #include <limits>
 #include "omega_intro_rules.h"
+#include "omega_presentation_definition.h"
+#include "coo/omega_reveal.h"
 #include "omega_first_lair_encounter.h"
 
 namespace sunrise::state::activity::omega_presentation {
-
-inline constexpr std::uint32_t kDialogueBank = 0x80F1FD07U;
-inline constexpr std::size_t kDialogueRows = 34;
-inline constexpr std::uint8_t kNoDialogue = 0xFFU;
-inline constexpr std::array<std::uint32_t, 7> kObjectives{
-    0xC252E306U, 0x1EBF4621U, 0x3517D4D5U, 0x31A51CEBU,
-    0xA41DE99BU, 0x85A8F583U, 0xDF97334DU};
-
-struct Dialogue final {
-    std::uint32_t selector;
-    std::uint32_t durationMs;
-    std::uint32_t delayMs;
-    bool sceneOwned;
-};
-// Bank order, not playback order. Compound rows retain their native child sequencing/selection.
-// Rows 1/3/4 belong to Ikora actors; row 23 also occurs in Osiris actor graphs.
-inline constexpr std::array<Dialogue, kDialogueRows> kDialogue{{
-    {0xAD60F465U, 5445, 1000, false}, {0x57477432U, 6083, 0, true},
-    {0x730F03C7U, 1985, 0, false}, {0x47AF17F4U, 5051, 0, true},
-    {0xB4C3F0B9U, 3218, 0, true}, {0x0ED8C762U, 0, 0, false},
-    {0xAE2495ACU, 8093, 0, false}, {0x0E9C80BEU, 10990, 0, false},
-    {0x08AE5FB8U, 0, 0, false}, {0xE878194AU, 6461, 0, false},
-    {0x7BA4F101U, 0, 0, false}, {0xB2CF9D6EU, 0, 0, false},
-    {0xAB0676A8U, 2019, 0, false}, {0xA558F78FU, 6222, 0, false},
-    {0x94E09524U, 5761, 0, false}, {0x0294D229U, 4432, 0, false},
-    {0xB8CE809FU, 6354, 0, false}, {0x9DA4C20AU, 0, 0, false},
-    {0xCB7F171DU, 2301, 0, false}, {0xC0570578U, 0, 0, false},
-    {0xD16ECB03U, 0, 0, false}, {0xC645267EU, 3538, 0, false},
-    {0x202F7829U, 3320, 0, false}, {0xD4CADE1DU, 2486, 0, true},
-    {0x1C653216U, 0, 0, false}, {0x6352D26CU, 4173, 0, false},
-    {0xD453DB47U, 1712, 0, false}, {0xEB43430DU, 0, 0, false},
-    {0xDC1E272EU, 0, 0, false}, {0xB88C4BB2U, 3201, 0, false},
-    {0x349D2672U, 5489, 0, false}, {0x5F8E6160U, 2781, 0, false},
-    {0x03622EEBU, 3529, 0, false}, {0x921B35F9U, 3852, 5000, false}
-}};
-
-enum class Landmark : std::uint8_t { lighthouse, tunnel, forestVista, forestExit, lair, arena };
-enum class Encounter : std::uint8_t {
-    defenses, deletion, osirisArrives, osirisHolds, arcReady, arcReminder,
-    eyeVulnerable, pursuit, defeated, cinematic
-};
 
 struct Point final { float x{}, y{}, z{}; };
 enum class NavigationGoal : std::uint8_t {
@@ -111,20 +72,25 @@ struct Presentation final {
 class Run final {
 public:
     void start(std::uint64_t generation, std::uint64_t now, Landmark arrival) noexcept {
+        initialize(generation);
+        enter(arrival, now);
+    }
+    // Start without choosing authored cues; the selected executor publishes them.
+    void initialize(std::uint64_t generation,bool executorOwned=false) noexcept {
         *this = {};
         generation_ = generation;
-        intro_.reset(generation);
-        enter(arrival, now);
+        scriptSelected_ = executorOwned;
+        intro_.reset(generation,executorOwned);
     }
     [[nodiscard]] std::uint64_t generation() const noexcept { return generation_; }
     [[nodiscard]] const Presentation& presentation() const noexcept { return presentation_; }
     [[nodiscard]] std::uint32_t revision() const noexcept { return revision_; }
-    [[nodiscard]] std::uint32_t timed_out() const noexcept { return timedOut_; }
+    [[nodiscard]] std::uint32_t timed_out() const noexcept { return dialogue_.timed_out(); }
     [[nodiscard]] std::uint8_t cycle() const noexcept { return cycle_; }
     /** A kill alone must not cut off Osiris's final gameplay line. Submission
      * owns its native delay and clip duration; a missing receipt never passes. */
     [[nodiscard]] bool ending_dialogue_finished(std::uint64_t now) const noexcept {
-        return defeated_ && finalDialogueSubmitted_ && now >= voiceUntil_
+        return defeated_ && finalDialogueSubmitted_ && now >= dialogue_.voice_until()
             && presentation_.activeRow == kNoDialogue;
     }
     [[nodiscard]] Landmark landmark() const noexcept { return static_cast<Landmark>(landmark_); }
@@ -158,15 +124,21 @@ public:
         bossFlightReady_ = true;
         return true;
     }
+    [[nodiscard]] bool boss_flight_ready() const noexcept { return bossFlightReady_; }
     void observe_intro(std::uint32_t revision, bool active, bool ready, std::uint64_t now) noexcept {
+        observe_intro(revision, active, ready, now, bossFlightReady_);
+    }
+    // Deferred receipts retain whether the synchronous native flight claim had
+    // happened at intake. A later claim cannot release an earlier camera receipt.
+    void observe_intro(std::uint32_t revision, bool active, bool ready, std::uint64_t now,
+                       bool flightReadyAtReceipt) noexcept {
         if (!started_) { return; }
         const auto before = intro_.command();
         const auto phaseBefore = intro_.phase();
-        const bool dialogueDue = std::any_of(queue_.begin(), queue_.end(),
-            [now](const auto& cue) noexcept { return cue.used && now >= cue.due; });
+        const bool dialogueDue = dialogue_.due(now);
         intro_.observe(revision, active, ready,
-            presentation_.activeRow == kNoDialogue && now >= voiceUntil_
-                && (phaseBefore == IntroPhase::priming || !dialogueDue), bossFlightReady_, now);
+            presentation_.activeRow == kNoDialogue && now >= dialogue_.voice_until()
+                && (phaseBefore == IntroPhase::priming || !dialogueDue), flightReadyAtReceipt && bossFlightReady_, now);
         sync_intro(before);
         if (phaseBefore == IntroPhase::waiting && intro_.phase() == IntroPhase::priming) {
             // The authored approach, camera registration and dialogue gates are ready.
@@ -176,7 +148,7 @@ public:
         if (phaseBefore == IntroPhase::playing && intro_.phase() == IntroPhase::complete) {
             // Ghost reacts after the native camera has finished (including a native skip).
             // Arrival, a rejected start, and an abort timeout are not completion receipts.
-            enqueue(12,now,250);
+            coo::apply_presentation(coo::script::actions("reveal_complete", cues::kRevealComplete, scriptSelected_), *this, now);
         }
     }
     /** Reaching a fixed point consumes it for this run. Later landmarks also skip already
@@ -195,10 +167,11 @@ public:
         return started_ && landmark_ >= static_cast<std::uint8_t>(Landmark::forestExit);
     }
 
-    void enter(Landmark landmark, std::uint64_t now) noexcept {
-        const auto rank = static_cast<std::uint8_t>(landmark);
-        if (rank>static_cast<std::uint8_t>(Landmark::arena)) { return; }
-        if (started_ && rank <= landmark_) { return; }
+    // Shared traversal service: update route and discard only unpublished older cues.
+    bool traverse(std::uint8_t rank) noexcept {
+        if (rank>static_cast<std::uint8_t>(Landmark::arena)) { return false; }
+        if (started_ && rank <= landmark_) { return false; }
+        const auto landmark = static_cast<Landmark>(rank);
         started_ = true;
         landmark_ = rank;
         // Direct arena arrivals bypass the entry reveal; preserve their boss request.
@@ -209,21 +182,16 @@ public:
         navigationGoal_ = (std::max)(navigationGoal_, goals[rank]);
         // Do not narrate scenery the player has already passed. An already submitted clip ends
         // under native audio ownership; only unpublished work is discarded here.
-        for (auto& cue : queue_) {
-            if (cue.used && cue.landmark < rank) { cue.used = false; }
-        }
+        dialogue_.discard_before(rank);
         // An offered row may already be in a packet in flight. Keep it until the native receipt
         // so the next row cannot overtake it and lose its audio arbitration deadline.
-        switch (landmark) {
-        case Landmark::lighthouse: enqueue(0, now); break;
-        case Landmark::tunnel: set_objective(kObjectives[1]); enqueue(6, now, 1500); break;
-        case Landmark::forestVista: set_objective(kObjectives[1]); enqueue(7, now); break;
-        case Landmark::forestExit: set_objective(kObjectives[1]); enqueue(9, now); break;
-        case Landmark::lair: set_objective(kObjectives[2]); break;
-        case Landmark::arena:
-            intro_.passed(); presentation_.intro = intro_.command();
-            set_objective(kObjectives[3]); enqueue(13, now); break;
-        }
+        return true;
+    }
+
+    void enter(Landmark landmark, std::uint64_t now) noexcept {
+        if (!traverse(static_cast<std::uint8_t>(landmark))) { return; }
+        if (landmark == Landmark::arena) { intro_.passed(); presentation_.intro = intro_.command(); }
+        coo::present_event(coo::script::cues("landmarks", cues::kLandmark, scriptSelected_), static_cast<std::uint32_t>(landmark), 0, *this, now);
     }
 
     /** Inputs must describe observed mechanics. Cycle is 1..3, never inferred from elapsed time. */
@@ -233,44 +201,18 @@ public:
             || static_cast<unsigned>(event) > static_cast<unsigned>(Encounter::cinematic)) { return; }
         if (defeated_ && event != Encounter::cinematic) { return; }
         if (event == Encounter::arcReminder && presentation_.objective != kObjectives[5]) { return; }
-        constexpr std::array<std::uint8_t,10> stage{1,2,2,3,4,4,5,6,7,8};
-        if (stage[static_cast<unsigned>(event)] < mechanicStage_[cycle-1U]) { return; }
+        if (kEncounterStages[static_cast<unsigned>(event)] < mechanicStage_[cycle-1U]) { return; }
         const std::uint64_t bit = 1ULL << (static_cast<unsigned>(event) + (cycle-1U)*10U);
         if ((encounters_ & bit) != 0) { return; }
         encounters_ |= bit;
         cycle_ = cycle;
-        mechanicStage_[cycle-1U] = stage[static_cast<unsigned>(event)];
-        switch (event) {
-        case Encounter::defenses: set_objective(kObjectives[3]); break;
-        case Encounter::deletion: if (cycle == 1) { enqueue(14, now); } break;
-        case Encounter::osirisArrives: enqueue(15, now); break;
-        case Encounter::osirisHolds:
-            if (cycle == 1) { enqueue(16, now); }
-            else if (cycle == 2) { enqueue(25, now); enqueue(26, now, 5840); }
-            else { enqueue(30, now); }
-            break;
-        case Encounter::arcReady:
-            set_objective(kObjectives[5]);
-            if (cycle == 1) { enqueue(18, now); }
-            break;
-        case Encounter::arcReminder:
-            // The encounter owner decides that the charge is still available. No timed replay.
-            enqueue(cycle == 3 ? 31 : 21, now);
-            break;
-        case Encounter::eyeVulnerable:
-            set_objective(kObjectives[4]);
-            if (cycle == 1) { enqueue(22, now); }
-            else if (cycle == 3) { enqueue(32, now); }
-            break;
-        case Encounter::pursuit: set_objective(kObjectives[6]); enqueue(29, now); break;
-        case Encounter::defeated: defeated_ = true; enqueue(33, now); break;
-        case Encounter::cinematic:
+        mechanicStage_[cycle-1U] = kEncounterStages[static_cast<unsigned>(event)];
+        if (event == Encounter::defeated) { defeated_ = true; }
+        if (event == Encounter::cinematic) {
             cinematic_ = true;
-            queue_ = {};
-            presentation_.activeRow = kNoDialogue;
-            ++revision_;
-            break;
+            dialogue_.silence(presentation_, revision_);
         }
+        coo::present_event(coo::script::cues("encounters", cues::kEncounter, scriptSelected_), static_cast<std::uint32_t>(event), cycle, *this, now);
     }
 
     /**
@@ -312,20 +254,18 @@ public:
     /** Native Scene authority identities; a seeded inactive component is not a scene start. */
     void scene(std::uint32_t definition, bool active, std::uint64_t now) noexcept {
         if (!active || landmark_ < static_cast<std::uint8_t>(Landmark::arena)) { return; }
-        switch (definition) {
-        case 0x80F479BFU:
-            if (cycle_ > 1 || defeated_) { break; }
-            encounter(Encounter::osirisArrives, 1, now);
-            // The two introductory Osiris calls are 6.4 seconds apart in the retail capture.
-            // This is spacing within one observed scene, never a timer that advances mechanics.
-            if ((encounters_ & (1ULL << static_cast<unsigned>(Encounter::osirisHolds))) == 0) {
-                encounters_ |= 1ULL << static_cast<unsigned>(Encounter::osirisHolds);
-                enqueue(16, now, 6400);
-            }
-            break;
-        case 0x80F479F5U: encounter(Encounter::osirisHolds, 2, now); break;
-        case 0x80F47A08U: encounter(Encounter::osirisHolds, 3, now); break;
-        default: break;
+        for (const auto& binding : kRescuePresentation) {
+            if (binding.definition != definition) { continue; }
+            if (binding.cycle == 1) {
+                if (cycle_ > 1 || defeated_) { return; }
+                encounter(Encounter::osirisArrives, 1, now);
+                // Spacing within one observed native Scene, not a mechanic timer.
+                if ((encounters_ & (1ULL << static_cast<unsigned>(Encounter::osirisHolds))) == 0) {
+                    encounters_ |= 1ULL << static_cast<unsigned>(Encounter::osirisHolds);
+                    coo::apply_presentation(coo::script::actions("first_rescue_followup", cues::kFirstRescueFollowup, scriptSelected_), *this, now);
+                }
+            } else { encounter(Encounter::osirisHolds, binding.cycle, now); }
+            return;
         }
     }
 
@@ -333,39 +273,14 @@ public:
         const auto introBefore = intro_.command();
         intro_.advance(now);
         sync_intro(introBefore);
-        if (presentation_.activeRow != kNoDialogue) {
-            // No dispatch acknowledgement means the component/bank is not ready. Keep the same
-            // generation for a bounded retry window; never flood the native ten-second queue.
-            if (now - offeredAt_ < 15000) { return; }
-            presentation_.activeRow = kNoDialogue;
-            ++timedOut_;
-            ++revision_;
-        }
-        if (now < voiceUntil_ || cinematic_ || intro_.busy()) { return; }
-        Cue* next = nullptr;
-        for (auto& cue : queue_) {
-            if (cue.used && now >= cue.due && (next == nullptr || cue.order < next->order)) {
-                next = &cue;
-            }
-        }
-        if (next == nullptr) { return; }
-        presentation_.activeRow = next->row;
-        // Positive and different after an orbit/relaunch even if the native sensor survives.
-        presentation_.generations[next->row] = static_cast<std::uint32_t>(generation_ % 0x7FFFFFFEULL)+1;
-        offeredAt_ = now;
-        next->used = false;
-        ++revision_;
+        dialogue_.advance(coo::script::dialogue(kDialogueDefinition, scriptSelected_), generation_, now, cinematic_ || intro_.busy(), presentation_, revision_);
     }
 
     /** Submission acknowledgement, not proof that the audio was audible. */
     void submitted(std::uint32_t bank, std::uint8_t row, std::uint32_t generation,
                    std::uint64_t now) noexcept {
-        if (bank != kDialogueBank || row >= kDialogueRows || presentation_.activeRow != row
-            || presentation_.generations[row] != generation) { return; }
-        voiceUntil_ = now + kDialogue[row].durationMs + kDialogue[row].delayMs + 250;
-        if (row == 33 && defeated_) { finalDialogueSubmitted_ = true; }
-        presentation_.activeRow = kNoDialogue;
-        ++revision_;
+        if (dialogue_.submitted(coo::script::dialogue(kDialogueDefinition, scriptSelected_), bank, row, generation, now, presentation_, revision_)
+            && row == kFinalDialogueRow && defeated_) { finalDialogueSubmitted_ = true; }
     }
 
 private:
@@ -381,44 +296,26 @@ private:
             ++revision_;
         }
     }
-    struct Cue final {
-        std::uint64_t due{};
-        std::uint32_t order{};
-        std::uint8_t row{}, landmark{};
-        bool used{};
-    };
+public:
+    // Shared dialogue/objective service entry points. Their accepted scheduling
+    // and stale-cue rules are also used by the remaining encounter controller.
     void enqueue(std::uint8_t row, std::uint64_t now, std::uint64_t delay = 0) noexcept {
-        if (row >= kDialogueRows || kDialogue[row].durationMs == 0 || kDialogue[row].sceneOwned
-            || (requested_ & (1ULL << row)) != 0) { return; }
-        for (auto& cue : queue_) {
-            if (!cue.used) {
-                cue = {now+delay, ++order_, row, landmark_, true};
-                requested_ |= 1ULL << row;
-                ++revision_;
-                return;
-            }
-        }
+        dialogue_.enqueue(coo::script::dialogue(kDialogueDefinition, scriptSelected_), row, now, delay, landmark_, revision_);
     }
     void set_objective(std::uint32_t event) noexcept {
-        if (presentation_.objective != event) {
-            presentation_.objective = event;
-            const auto stale = [event](std::uint8_t row) noexcept {
-                return ((row == 18 || row == 21 || row == 31) && event != kObjectives[5])
-                    || ((row == 22 || row == 32) && event != kObjectives[4]);
-            };
-            for (auto& cue : queue_) { if (cue.used && stale(cue.row)) { cue.used = false; } }
-            ++revision_;
-        }
+        dialogue_.objective(coo::script::dialogue(kDialogueDefinition, scriptSelected_), event, presentation_, revision_);
     }
+private:
+    bool scriptSelected_{};
     Presentation presentation_{};
-    Intro intro_{};
+    coo::reveal::Intro intro_{};
     bool bossReady_{};
     bool bossIntroAction_{};
     bool bossFlightReady_{};
-    std::array<Cue, kDialogueRows> queue_{};
+    coo::DialogueService<kDialogueRows> dialogue_{};
     std::array<std::uint8_t,3> mechanicStage_{};
-    std::uint64_t generation_{}, requested_{}, encounters_{}, offeredAt_{}, voiceUntil_{};
-    std::uint32_t revision_{}, order_{}, timedOut_{};
+    std::uint64_t generation_{}, encounters_{};
+    std::uint32_t revision_{};
     std::uint8_t landmark_{}, cycle_{1};
     NavigationGoal navigationGoal_{};
     bool started_{}, defeated_{}, cinematic_{}, finalDialogueSubmitted_{};

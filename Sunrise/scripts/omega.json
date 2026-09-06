@@ -1,0 +1,3918 @@
+{
+  "format_version": 2,
+  "mission": "omega",
+  "profile": "omega.archive.v1",
+  "authority_schema": "omegaArchive",
+  "assets": {
+    "native_000": {
+      "registry": "0x00000000",
+      "definition": "0x00000001",
+      "type": 0,
+      "slot": 0
+    },
+    "native_001": {
+      "registry": "0x00000000",
+      "definition": "0x00000002",
+      "type": 0,
+      "slot": 0
+    },
+    "native_002": {
+      "registry": "0x00000000",
+      "definition": "0x00000003",
+      "type": 0,
+      "slot": 0
+    },
+    "native_003": {
+      "registry": "0x00000000",
+      "definition": "0x00000000",
+      "type": 0,
+      "slot": 0
+    },
+    "native_004": {
+      "registry": "0xD00142CF",
+      "definition": "0x80F47BA0",
+      "type": 23,
+      "slot": 16
+    },
+    "native_005": {
+      "registry": "0xD00142CF",
+      "definition": "0x00000000",
+      "type": 30,
+      "slot": 20
+    },
+    "native_006": {
+      "registry": "0xD00142CF",
+      "definition": "0x80EC0F95",
+      "type": 43,
+      "slot": 1
+    },
+    "native_007": {
+      "registry": "0xD00142CF",
+      "definition": "0x00000000",
+      "type": 30,
+      "slot": 24
+    },
+    "native_008": {
+      "registry": "0xBA5F26EF",
+      "definition": "0x00000000",
+      "type": 60,
+      "slot": 5
+    },
+    "native_009": {
+      "registry": "0x82FB58B7",
+      "definition": "0x1EBF4621",
+      "type": 68,
+      "slot": 0
+    },
+    "native_010": {
+      "registry": "0x82FB58B7",
+      "definition": "0xAE2495AC",
+      "type": 53,
+      "slot": 2
+    },
+    "native_011": {
+      "registry": "0x2763EC97",
+      "definition": "0x00000000",
+      "type": 60,
+      "slot": 4
+    },
+    "native_012": {
+      "registry": "0x82FB58B7",
+      "definition": "0x0E9C80BE",
+      "type": 53,
+      "slot": 2
+    },
+    "native_013": {
+      "registry": "0x2763EC97",
+      "definition": "0x00000000",
+      "type": 60,
+      "slot": 5
+    },
+    "native_014": {
+      "registry": "0x82FB58B7",
+      "definition": "0xE878194A",
+      "type": 53,
+      "slot": 2
+    },
+    "native_015": {
+      "registry": "0xA3928C71",
+      "definition": "0x00000000",
+      "type": 60,
+      "slot": 2
+    },
+    "native_016": {
+      "registry": "0x82FB58B7",
+      "definition": "0x3517D4D5",
+      "type": 68,
+      "slot": 0
+    },
+    "native_017": {
+      "registry": "0xF4D0E0B2",
+      "definition": "0x80F478D3",
+      "type": 6,
+      "slot": 22
+    },
+    "native_018": {
+      "registry": "0x95FB2E01",
+      "definition": "0x80F45253",
+      "type": 0,
+      "slot": 0
+    },
+    "native_019": {
+      "registry": "0x80F50039",
+      "definition": "0xAB06CC27",
+      "type": 0,
+      "slot": 121
+    },
+    "native_020": {
+      "registry": "0x3A6CE17A",
+      "definition": "0x80F47BCB",
+      "type": 6,
+      "slot": 0
+    },
+    "native_021": {
+      "registry": "0x76D13282",
+      "definition": "0x3FF918C6",
+      "type": 0,
+      "slot": 29
+    }
+  },
+  "bindings": {
+    "mission/mission services/0": {
+      "capability": "mission/mission services/0",
+      "operation": "mechanic",
+      "asset": "native_000",
+      "argument": 0,
+      "wait": "requested"
+    },
+    "mission/mission services/1": {
+      "capability": "mission/mission services/1",
+      "operation": "mechanic",
+      "asset": "native_001",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "mission/mission services/2": {
+      "capability": "mission/mission services/2",
+      "operation": "mechanic",
+      "asset": "native_002",
+      "argument": 2,
+      "wait": "requested"
+    },
+    "mission/opening and Ikora/0": {
+      "capability": "mission/opening and Ikora/0",
+      "operation": "observation",
+      "asset": "native_003",
+      "argument": 0,
+      "wait": "observed"
+    },
+    "mission/Forest traversal/0": {
+      "capability": "mission/Forest traversal/0",
+      "operation": "observation",
+      "asset": "native_003",
+      "argument": 1,
+      "wait": "observed"
+    },
+    "mission/Lair arrival and encounters/0": {
+      "capability": "mission/Lair arrival and encounters/0",
+      "operation": "observation",
+      "asset": "native_003",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "mission/Crown cycle 1/0": {
+      "capability": "mission/Crown cycle 1/0",
+      "operation": "observation",
+      "asset": "native_003",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "mission/Crown cycle 2/0": {
+      "capability": "mission/Crown cycle 2/0",
+      "operation": "observation",
+      "asset": "native_003",
+      "argument": 4,
+      "wait": "observed"
+    },
+    "mission/Crown cycle 3/0": {
+      "capability": "mission/Crown cycle 3/0",
+      "operation": "observation",
+      "asset": "native_003",
+      "argument": 5,
+      "wait": "observed"
+    },
+    "mission/ending cinematic/0": {
+      "capability": "mission/ending cinematic/0",
+      "operation": "observation",
+      "asset": "native_003",
+      "argument": 6,
+      "wait": "observed"
+    },
+    "mission/handoff queued/0": {
+      "capability": "mission/handoff queued/0",
+      "operation": "observation",
+      "asset": "native_003",
+      "argument": 7,
+      "wait": "observed"
+    },
+    "opening/roster admitted/0": {
+      "capability": "opening/roster admitted/0",
+      "operation": "observation",
+      "asset": "native_003",
+      "argument": 0,
+      "wait": "observed"
+    },
+    "opening/roster admitted/1": {
+      "capability": "opening/roster admitted/1",
+      "operation": "device",
+      "asset": "native_004",
+      "argument": 0,
+      "wait": "requested"
+    },
+    "opening/Ikora approach/0": {
+      "capability": "opening/Ikora approach/0",
+      "operation": "observation",
+      "asset": "native_005",
+      "argument": 0,
+      "wait": "observed"
+    },
+    "opening/Ikora scene ready/0": {
+      "capability": "opening/Ikora scene ready/0",
+      "operation": "scene",
+      "asset": "native_006",
+      "argument": 3354176119,
+      "wait": "nativeReady"
+    },
+    "opening/Ikora portal output/0": {
+      "capability": "opening/Ikora portal output/0",
+      "operation": "observation",
+      "asset": "native_006",
+      "argument": 2032839248,
+      "wait": "observed"
+    },
+    "opening/lattice release requested/0": {
+      "capability": "opening/lattice release requested/0",
+      "operation": "device",
+      "asset": "native_004",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "opening/Forest entrance observed/0": {
+      "capability": "opening/Forest entrance observed/0",
+      "operation": "observation",
+      "asset": "native_007",
+      "argument": 0,
+      "wait": "observed"
+    },
+    "forest/tunnel reached or passed/0": {
+      "capability": "forest/tunnel reached or passed/0",
+      "operation": "observation",
+      "asset": "native_008",
+      "argument": 1,
+      "wait": "observed"
+    },
+    "forest/tunnel presentation/0": {
+      "capability": "forest/tunnel presentation/0",
+      "operation": "traversal",
+      "asset": "native_008",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "forest/tunnel presentation/1": {
+      "capability": "forest/tunnel presentation/1",
+      "operation": "objective",
+      "asset": "native_009",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "forest/tunnel presentation/2": {
+      "capability": "forest/tunnel presentation/2",
+      "operation": "dialogue",
+      "asset": "native_010",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "forest/vista reached or passed/0": {
+      "capability": "forest/vista reached or passed/0",
+      "operation": "observation",
+      "asset": "native_011",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "forest/vista presentation/0": {
+      "capability": "forest/vista presentation/0",
+      "operation": "traversal",
+      "asset": "native_011",
+      "argument": 2,
+      "wait": "requested"
+    },
+    "forest/vista presentation/1": {
+      "capability": "forest/vista presentation/1",
+      "operation": "objective",
+      "asset": "native_009",
+      "argument": 2,
+      "wait": "requested"
+    },
+    "forest/vista presentation/2": {
+      "capability": "forest/vista presentation/2",
+      "operation": "dialogue",
+      "asset": "native_012",
+      "argument": 2,
+      "wait": "requested"
+    },
+    "forest/Forest exit reached or passed/0": {
+      "capability": "forest/Forest exit reached or passed/0",
+      "operation": "observation",
+      "asset": "native_013",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "forest/Forest exit presentation/0": {
+      "capability": "forest/Forest exit presentation/0",
+      "operation": "traversal",
+      "asset": "native_013",
+      "argument": 3,
+      "wait": "requested"
+    },
+    "forest/Forest exit presentation/1": {
+      "capability": "forest/Forest exit presentation/1",
+      "operation": "objective",
+      "asset": "native_009",
+      "argument": 3,
+      "wait": "requested"
+    },
+    "forest/Forest exit presentation/2": {
+      "capability": "forest/Forest exit presentation/2",
+      "operation": "dialogue",
+      "asset": "native_014",
+      "argument": 3,
+      "wait": "requested"
+    },
+    "forest/Lair reached or passed/0": {
+      "capability": "forest/Lair reached or passed/0",
+      "operation": "observation",
+      "asset": "native_015",
+      "argument": 4,
+      "wait": "observed"
+    },
+    "forest/Lair handoff/0": {
+      "capability": "forest/Lair handoff/0",
+      "operation": "traversal",
+      "asset": "native_015",
+      "argument": 4,
+      "wait": "requested"
+    },
+    "forest/Lair handoff/1": {
+      "capability": "forest/Lair handoff/1",
+      "operation": "objective",
+      "asset": "native_016",
+      "argument": 4,
+      "wait": "requested"
+    },
+    "reveal/camera and dialogue eligibility/0": {
+      "capability": "reveal/camera and dialogue eligibility/0",
+      "operation": "observation",
+      "asset": "native_017",
+      "argument": 0,
+      "wait": "observed"
+    },
+    "reveal/owned boss flight/0": {
+      "capability": "reveal/owned boss flight/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "reveal/owned boss flight/1": {
+      "capability": "reveal/owned boss flight/1",
+      "operation": "observation",
+      "asset": "native_017",
+      "argument": 1,
+      "wait": "observed"
+    },
+    "reveal/native camera activation/0": {
+      "capability": "reveal/native camera activation/0",
+      "operation": "cinematic",
+      "asset": "native_017",
+      "argument": 2,
+      "wait": "requested"
+    },
+    "reveal/native camera activation/1": {
+      "capability": "reveal/native camera activation/1",
+      "operation": "observation",
+      "asset": "native_017",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "reveal/native camera completion/0": {
+      "capability": "reveal/native camera completion/0",
+      "operation": "cinematic",
+      "asset": "native_017",
+      "argument": 3,
+      "wait": "requested"
+    },
+    "reveal/native camera completion/1": {
+      "capability": "reveal/native camera completion/1",
+      "operation": "observation",
+      "asset": "native_017",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "reveal/retire reveal/0": {
+      "capability": "reveal/retire reveal/0",
+      "operation": "cinematic",
+      "asset": "native_017",
+      "argument": 4,
+      "wait": "requested"
+    },
+    "reveal_retry/owned boss flight/0": {
+      "capability": "reveal_retry/owned boss flight/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "reveal_retry/owned boss flight/1": {
+      "capability": "reveal_retry/owned boss flight/1",
+      "operation": "observation",
+      "asset": "native_017",
+      "argument": 1,
+      "wait": "observed"
+    },
+    "reveal_retry/native camera activation/0": {
+      "capability": "reveal_retry/native camera activation/0",
+      "operation": "cinematic",
+      "asset": "native_017",
+      "argument": 2,
+      "wait": "requested"
+    },
+    "reveal_retry/native camera activation/1": {
+      "capability": "reveal_retry/native camera activation/1",
+      "operation": "observation",
+      "asset": "native_017",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "reveal_retry/native camera completion/0": {
+      "capability": "reveal_retry/native camera completion/0",
+      "operation": "cinematic",
+      "asset": "native_017",
+      "argument": 3,
+      "wait": "requested"
+    },
+    "reveal_retry/native camera completion/1": {
+      "capability": "reveal_retry/native camera completion/1",
+      "operation": "observation",
+      "asset": "native_017",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "reveal_retry/retire reveal/0": {
+      "capability": "reveal_retry/retire reveal/0",
+      "operation": "cinematic",
+      "asset": "native_017",
+      "argument": 4,
+      "wait": "requested"
+    },
+    "lair/native intro summon/0": {
+      "capability": "lair/native intro summon/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 1,
+      "wait": "observed"
+    },
+    "lair/left summon/0": {
+      "capability": "lair/left summon/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "lair/left summon/1": {
+      "capability": "lair/left summon/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "lair/right summon/0": {
+      "capability": "lair/right summon/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "requested"
+    },
+    "lair/right summon/1": {
+      "capability": "lair/right summon/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "lair/required cohort deaths/0": {
+      "capability": "lair/required cohort deaths/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "lair/fold and path completion/0": {
+      "capability": "lair/fold and path completion/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 4,
+      "wait": "requested"
+    },
+    "lair/fold and path completion/1": {
+      "capability": "lair/fold and path completion/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 4,
+      "wait": "observed"
+    },
+    "lair/player arrival/0": {
+      "capability": "lair/player arrival/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 5,
+      "wait": "observed"
+    },
+    "lair/enter island A/0": {
+      "capability": "lair/enter island A/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 5,
+      "wait": "requested"
+    },
+    "island_a/left summon/0": {
+      "capability": "island_a/left summon/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "island_a/left summon/1": {
+      "capability": "island_a/left summon/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "island_a/required cohort deaths/0": {
+      "capability": "island_a/required cohort deaths/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "island_a/fold and path completion/0": {
+      "capability": "island_a/fold and path completion/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 4,
+      "wait": "requested"
+    },
+    "island_a/fold and path completion/1": {
+      "capability": "island_a/fold and path completion/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 4,
+      "wait": "observed"
+    },
+    "island_a/player arrival/0": {
+      "capability": "island_a/player arrival/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 5,
+      "wait": "observed"
+    },
+    "island_a/enter island B/0": {
+      "capability": "island_a/enter island B/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 6,
+      "wait": "requested"
+    },
+    "island_b/right summon/0": {
+      "capability": "island_b/right summon/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "requested"
+    },
+    "island_b/right summon/1": {
+      "capability": "island_b/right summon/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "island_b/required cohort deaths/0": {
+      "capability": "island_b/required cohort deaths/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "island_b/fold and path completion/0": {
+      "capability": "island_b/fold and path completion/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 4,
+      "wait": "requested"
+    },
+    "island_b/fold and path completion/1": {
+      "capability": "island_b/fold and path completion/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 4,
+      "wait": "observed"
+    },
+    "island_b/player arrival/0": {
+      "capability": "island_b/player arrival/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 5,
+      "wait": "observed"
+    },
+    "island_b/enter island C/0": {
+      "capability": "island_b/enter island C/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 7,
+      "wait": "requested"
+    },
+    "island_c/left summon/0": {
+      "capability": "island_c/left summon/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "island_c/left summon/1": {
+      "capability": "island_c/left summon/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "island_c/required cohort deaths/0": {
+      "capability": "island_c/required cohort deaths/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "island_c/fold and path completion/0": {
+      "capability": "island_c/fold and path completion/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 4,
+      "wait": "requested"
+    },
+    "island_c/fold and path completion/1": {
+      "capability": "island_c/fold and path completion/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 4,
+      "wait": "observed"
+    },
+    "island_c/Crown arrival and cannon preparation/0": {
+      "capability": "island_c/Crown arrival and cannon preparation/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 6,
+      "wait": "observed"
+    },
+    "island_c/enter Crown/0": {
+      "capability": "island_c/enter Crown/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 8,
+      "wait": "requested"
+    },
+    "crown_1/both summon/0": {
+      "capability": "crown_1/both summon/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 3,
+      "wait": "requested"
+    },
+    "crown_1/both summon/1": {
+      "capability": "crown_1/both summon/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "crown_1/first wave deaths/0": {
+      "capability": "crown_1/first wave deaths/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "crown_1/select second wave/0": {
+      "capability": "crown_1/select second wave/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 9,
+      "wait": "requested"
+    },
+    "crown_1/left summon/0": {
+      "capability": "crown_1/left summon/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "crown_1/left summon/1": {
+      "capability": "crown_1/left summon/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "crown_1/second wave deaths/0": {
+      "capability": "crown_1/second wave deaths/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "crown_1/select third wave/0": {
+      "capability": "crown_1/select third wave/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 10,
+      "wait": "requested"
+    },
+    "crown_1/right summon/0": {
+      "capability": "crown_1/right summon/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "requested"
+    },
+    "crown_1/right summon/1": {
+      "capability": "crown_1/right summon/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "crown_1/third wave deaths/0": {
+      "capability": "crown_1/third wave deaths/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "crown_1/deletion animation/0": {
+      "capability": "crown_1/deletion animation/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 11,
+      "wait": "requested"
+    },
+    "crown_1/deletion animation/1": {
+      "capability": "crown_1/deletion animation/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 7,
+      "wait": "observed"
+    },
+    "crown_1/Osiris rescue Scene/0": {
+      "capability": "crown_1/Osiris rescue Scene/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 12,
+      "wait": "requested"
+    },
+    "crown_1/Osiris rescue Scene/1": {
+      "capability": "crown_1/Osiris rescue Scene/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 8,
+      "wait": "observed"
+    },
+    "crown_1/charge route and dunk/0": {
+      "capability": "crown_1/charge route and dunk/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 13,
+      "wait": "requested"
+    },
+    "crown_1/charge route and dunk/1": {
+      "capability": "crown_1/charge route and dunk/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 9,
+      "wait": "observed"
+    },
+    "crown_1/native eye exposure/0": {
+      "capability": "crown_1/native eye exposure/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 14,
+      "wait": "requested"
+    },
+    "crown_1/native eye exposure/1": {
+      "capability": "crown_1/native eye exposure/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 10,
+      "wait": "observed"
+    },
+    "crown_1/native eye threshold/0": {
+      "capability": "crown_1/native eye threshold/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 11,
+      "wait": "observed"
+    },
+    "crown_1/recovery join/0": {
+      "capability": "crown_1/recovery join/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 15,
+      "wait": "requested"
+    },
+    "crown_1/recovery join/1": {
+      "capability": "crown_1/recovery join/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 12,
+      "wait": "observed"
+    },
+    "crown_1/recovery join/2": {
+      "capability": "crown_1/recovery join/2",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 13,
+      "wait": "observed"
+    },
+    "crown_1/recovery join/3": {
+      "capability": "crown_1/recovery join/3",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 14,
+      "wait": "observed"
+    },
+    "crown_1/enter second cycle/0": {
+      "capability": "crown_1/enter second cycle/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 17,
+      "wait": "requested"
+    },
+    "crown_2/both summon/0": {
+      "capability": "crown_2/both summon/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 3,
+      "wait": "requested"
+    },
+    "crown_2/both summon/1": {
+      "capability": "crown_2/both summon/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "crown_2/first wave deaths/0": {
+      "capability": "crown_2/first wave deaths/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "crown_2/select second wave/0": {
+      "capability": "crown_2/select second wave/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 9,
+      "wait": "requested"
+    },
+    "crown_2/left summon/0": {
+      "capability": "crown_2/left summon/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "crown_2/left summon/1": {
+      "capability": "crown_2/left summon/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "crown_2/second wave deaths/0": {
+      "capability": "crown_2/second wave deaths/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "crown_2/select third wave/0": {
+      "capability": "crown_2/select third wave/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 10,
+      "wait": "requested"
+    },
+    "crown_2/right summon/0": {
+      "capability": "crown_2/right summon/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "requested"
+    },
+    "crown_2/right summon/1": {
+      "capability": "crown_2/right summon/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "crown_2/third wave deaths/0": {
+      "capability": "crown_2/third wave deaths/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "crown_2/deletion animation/0": {
+      "capability": "crown_2/deletion animation/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 11,
+      "wait": "requested"
+    },
+    "crown_2/deletion animation/1": {
+      "capability": "crown_2/deletion animation/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 7,
+      "wait": "observed"
+    },
+    "crown_2/Osiris rescue Scene/0": {
+      "capability": "crown_2/Osiris rescue Scene/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 12,
+      "wait": "requested"
+    },
+    "crown_2/Osiris rescue Scene/1": {
+      "capability": "crown_2/Osiris rescue Scene/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 8,
+      "wait": "observed"
+    },
+    "crown_2/charge route and dunk/0": {
+      "capability": "crown_2/charge route and dunk/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 13,
+      "wait": "requested"
+    },
+    "crown_2/charge route and dunk/1": {
+      "capability": "crown_2/charge route and dunk/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 9,
+      "wait": "observed"
+    },
+    "crown_2/native eye exposure/0": {
+      "capability": "crown_2/native eye exposure/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 14,
+      "wait": "requested"
+    },
+    "crown_2/native eye exposure/1": {
+      "capability": "crown_2/native eye exposure/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 10,
+      "wait": "observed"
+    },
+    "crown_2/native eye threshold/0": {
+      "capability": "crown_2/native eye threshold/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 11,
+      "wait": "observed"
+    },
+    "crown_2/recovery join/0": {
+      "capability": "crown_2/recovery join/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 15,
+      "wait": "requested"
+    },
+    "crown_2/recovery join/1": {
+      "capability": "crown_2/recovery join/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 12,
+      "wait": "observed"
+    },
+    "crown_2/recovery join/2": {
+      "capability": "crown_2/recovery join/2",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 13,
+      "wait": "observed"
+    },
+    "crown_2/recovery join/3": {
+      "capability": "crown_2/recovery join/3",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 14,
+      "wait": "observed"
+    },
+    "crown_2/escape cohort/0": {
+      "capability": "crown_2/escape cohort/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 18,
+      "wait": "requested"
+    },
+    "crown_2/escape summon completion/0": {
+      "capability": "crown_2/escape summon completion/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "requested"
+    },
+    "crown_2/escape summon completion/1": {
+      "capability": "crown_2/escape summon completion/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "crown_2/final relocation fold and path/0": {
+      "capability": "crown_2/final relocation fold and path/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 19,
+      "wait": "requested"
+    },
+    "crown_2/final relocation fold and path/1": {
+      "capability": "crown_2/final relocation fold and path/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 15,
+      "wait": "observed"
+    },
+    "crown_2/final cannon Scene and player arrival/0": {
+      "capability": "crown_2/final cannon Scene and player arrival/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 20,
+      "wait": "requested"
+    },
+    "crown_2/final cannon Scene and player arrival/1": {
+      "capability": "crown_2/final cannon Scene and player arrival/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 16,
+      "wait": "observed"
+    },
+    "crown_2/enter third cycle/0": {
+      "capability": "crown_2/enter third cycle/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 21,
+      "wait": "requested"
+    },
+    "crown_3/both summon/0": {
+      "capability": "crown_3/both summon/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 3,
+      "wait": "requested"
+    },
+    "crown_3/both summon/1": {
+      "capability": "crown_3/both summon/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "crown_3/first wave deaths/0": {
+      "capability": "crown_3/first wave deaths/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "crown_3/select second wave/0": {
+      "capability": "crown_3/select second wave/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 9,
+      "wait": "requested"
+    },
+    "crown_3/left summon/0": {
+      "capability": "crown_3/left summon/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "crown_3/left summon/1": {
+      "capability": "crown_3/left summon/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "crown_3/second wave deaths/0": {
+      "capability": "crown_3/second wave deaths/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "crown_3/select third wave/0": {
+      "capability": "crown_3/select third wave/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 10,
+      "wait": "requested"
+    },
+    "crown_3/right summon/0": {
+      "capability": "crown_3/right summon/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "requested"
+    },
+    "crown_3/right summon/1": {
+      "capability": "crown_3/right summon/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "crown_3/third wave deaths/0": {
+      "capability": "crown_3/third wave deaths/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "crown_3/deletion animation/0": {
+      "capability": "crown_3/deletion animation/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 11,
+      "wait": "requested"
+    },
+    "crown_3/deletion animation/1": {
+      "capability": "crown_3/deletion animation/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 7,
+      "wait": "observed"
+    },
+    "crown_3/Osiris rescue Scene/0": {
+      "capability": "crown_3/Osiris rescue Scene/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 12,
+      "wait": "requested"
+    },
+    "crown_3/Osiris rescue Scene/1": {
+      "capability": "crown_3/Osiris rescue Scene/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 8,
+      "wait": "observed"
+    },
+    "crown_3/charge route and dunk/0": {
+      "capability": "crown_3/charge route and dunk/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 13,
+      "wait": "requested"
+    },
+    "crown_3/charge route and dunk/1": {
+      "capability": "crown_3/charge route and dunk/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 9,
+      "wait": "observed"
+    },
+    "crown_3/native eye exposure/0": {
+      "capability": "crown_3/native eye exposure/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 14,
+      "wait": "requested"
+    },
+    "crown_3/native eye exposure/1": {
+      "capability": "crown_3/native eye exposure/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 10,
+      "wait": "observed"
+    },
+    "crown_3/native eye threshold/0": {
+      "capability": "crown_3/native eye threshold/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 11,
+      "wait": "observed"
+    },
+    "crown_3/native death and animation join/0": {
+      "capability": "crown_3/native death and animation join/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 16,
+      "wait": "requested"
+    },
+    "crown_3/native death and animation join/1": {
+      "capability": "crown_3/native death and animation join/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 17,
+      "wait": "observed"
+    },
+    "crown_3/native death and animation join/2": {
+      "capability": "crown_3/native death and animation join/2",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 18,
+      "wait": "observed"
+    },
+    "crown_3/ending handoff/0": {
+      "capability": "crown_3/ending handoff/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 22,
+      "wait": "requested"
+    },
+    "ending/final dialogue/0": {
+      "capability": "ending/final dialogue/0",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 0,
+      "wait": "observed"
+    },
+    "ending/native Lair retirement/0": {
+      "capability": "ending/native Lair retirement/0",
+      "operation": "mechanic",
+      "asset": "native_018",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "ending/native Lair retirement/1": {
+      "capability": "ending/native Lair retirement/1",
+      "operation": "observation",
+      "asset": "native_018",
+      "argument": 1,
+      "wait": "observed"
+    },
+    "ending/bookend arrival and native camera eligibility/0": {
+      "capability": "ending/bookend arrival and native camera eligibility/0",
+      "operation": "traversal",
+      "asset": "native_019",
+      "argument": 2,
+      "wait": "requested"
+    },
+    "ending/bookend arrival and native camera eligibility/1": {
+      "capability": "ending/bookend arrival and native camera eligibility/1",
+      "operation": "observation",
+      "asset": "native_020",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "ending/native cinematic activation/0": {
+      "capability": "ending/native cinematic activation/0",
+      "operation": "cinematic",
+      "asset": "native_020",
+      "argument": 3,
+      "wait": "requested"
+    },
+    "ending/native cinematic activation/1": {
+      "capability": "ending/native cinematic activation/1",
+      "operation": "observation",
+      "asset": "native_020",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "ending/native cinematic completion/0": {
+      "capability": "ending/native cinematic completion/0",
+      "operation": "cinematic",
+      "asset": "native_020",
+      "argument": 4,
+      "wait": "requested"
+    },
+    "ending/native cinematic completion/1": {
+      "capability": "ending/native cinematic completion/1",
+      "operation": "observation",
+      "asset": "native_020",
+      "argument": 4,
+      "wait": "observed"
+    },
+    "ending/retire cinematic command/0": {
+      "capability": "ending/retire cinematic command/0",
+      "operation": "cinematic",
+      "asset": "native_020",
+      "argument": 5,
+      "wait": "requested"
+    },
+    "ending/native Mercury launch queued/0": {
+      "capability": "ending/native Mercury launch queued/0",
+      "operation": "traversal",
+      "asset": "native_021",
+      "argument": 6,
+      "wait": "requested"
+    },
+    "ending/native Mercury launch queued/1": {
+      "capability": "ending/native Mercury launch queued/1",
+      "operation": "observation",
+      "asset": "native_021",
+      "argument": 6,
+      "wait": "observed"
+    },
+    "ending_retry/native camera eligibility/0": {
+      "capability": "ending_retry/native camera eligibility/0",
+      "operation": "observation",
+      "asset": "native_020",
+      "argument": 2,
+      "wait": "observed"
+    },
+    "ending_retry/native cinematic activation/0": {
+      "capability": "ending_retry/native cinematic activation/0",
+      "operation": "cinematic",
+      "asset": "native_020",
+      "argument": 3,
+      "wait": "requested"
+    },
+    "ending_retry/native cinematic activation/1": {
+      "capability": "ending_retry/native cinematic activation/1",
+      "operation": "observation",
+      "asset": "native_020",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "ending_retry/native cinematic completion/0": {
+      "capability": "ending_retry/native cinematic completion/0",
+      "operation": "cinematic",
+      "asset": "native_020",
+      "argument": 4,
+      "wait": "requested"
+    },
+    "ending_retry/native cinematic completion/1": {
+      "capability": "ending_retry/native cinematic completion/1",
+      "operation": "observation",
+      "asset": "native_020",
+      "argument": 4,
+      "wait": "observed"
+    },
+    "ending_retry/retire cinematic command/0": {
+      "capability": "ending_retry/retire cinematic command/0",
+      "operation": "cinematic",
+      "asset": "native_020",
+      "argument": 5,
+      "wait": "requested"
+    },
+    "ending_retry/native Mercury launch queued/0": {
+      "capability": "ending_retry/native Mercury launch queued/0",
+      "operation": "traversal",
+      "asset": "native_021",
+      "argument": 6,
+      "wait": "requested"
+    },
+    "ending_retry/native Mercury launch queued/1": {
+      "capability": "ending_retry/native Mercury launch queued/1",
+      "operation": "observation",
+      "asset": "native_021",
+      "argument": 6,
+      "wait": "observed"
+    }
+  },
+  "graphs": {
+    "mission": {
+      "name": "Omega",
+      "domain": "mission",
+      "steps": [
+        {
+          "id": "mission services",
+          "after": [],
+          "commands": [
+            {
+              "id": "mission_services.mechanic.0",
+              "binding": "mission/mission services/0"
+            },
+            {
+              "id": "mission_services.mechanic.1",
+              "binding": "mission/mission services/1"
+            },
+            {
+              "id": "mission_services.mechanic.2",
+              "binding": "mission/mission services/2"
+            }
+          ]
+        },
+        {
+          "id": "opening and Ikora",
+          "after": [
+            "mission services"
+          ],
+          "commands": [
+            {
+              "id": "opening_and_ikora.observation.0",
+              "binding": "mission/opening and Ikora/0"
+            }
+          ]
+        },
+        {
+          "id": "Forest traversal",
+          "after": [
+            "opening and Ikora"
+          ],
+          "commands": [
+            {
+              "id": "forest_traversal.observation.0",
+              "binding": "mission/Forest traversal/0"
+            }
+          ]
+        },
+        {
+          "id": "Lair arrival and encounters",
+          "after": [
+            "Forest traversal"
+          ],
+          "commands": [
+            {
+              "id": "lair_arrival_and_encounters.observation.0",
+              "binding": "mission/Lair arrival and encounters/0"
+            }
+          ]
+        },
+        {
+          "id": "Crown cycle 1",
+          "after": [
+            "Lair arrival and encounters"
+          ],
+          "commands": [
+            {
+              "id": "crown_cycle_1.observation.0",
+              "binding": "mission/Crown cycle 1/0"
+            }
+          ]
+        },
+        {
+          "id": "Crown cycle 2",
+          "after": [
+            "Crown cycle 1"
+          ],
+          "commands": [
+            {
+              "id": "crown_cycle_2.observation.0",
+              "binding": "mission/Crown cycle 2/0"
+            }
+          ]
+        },
+        {
+          "id": "Crown cycle 3",
+          "after": [
+            "Crown cycle 2"
+          ],
+          "commands": [
+            {
+              "id": "crown_cycle_3.observation.0",
+              "binding": "mission/Crown cycle 3/0"
+            }
+          ]
+        },
+        {
+          "id": "ending cinematic",
+          "after": [
+            "Crown cycle 3"
+          ],
+          "commands": [
+            {
+              "id": "ending_cinematic.observation.0",
+              "binding": "mission/ending cinematic/0"
+            }
+          ]
+        },
+        {
+          "id": "handoff queued",
+          "after": [
+            "ending cinematic"
+          ],
+          "commands": [
+            {
+              "id": "handoff_queued.observation.0",
+              "binding": "mission/handoff queued/0"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "opening.complete": "opening_and_ikora.observation.0",
+        "forest.complete": "forest_traversal.observation.0",
+        "lair.complete": "lair_arrival_and_encounters.observation.0",
+        "crown.1.complete": "crown_cycle_1.observation.0",
+        "crown.2.complete": "crown_cycle_2.observation.0",
+        "crown.3.complete": "crown_cycle_3.observation.0",
+        "ending.complete": "ending_cinematic.observation.0",
+        "handoff.queued": "handoff_queued.observation.0"
+      }
+    },
+    "opening": {
+      "name": "Omega opening",
+      "domain": "opening",
+      "steps": [
+        {
+          "id": "roster admitted",
+          "after": [],
+          "commands": [
+            {
+              "id": "roster_admitted.observation.0",
+              "binding": "opening/roster admitted/0"
+            },
+            {
+              "id": "roster_admitted.device.1",
+              "binding": "opening/roster admitted/1"
+            }
+          ]
+        },
+        {
+          "id": "Ikora approach",
+          "after": [
+            "roster admitted"
+          ],
+          "commands": [
+            {
+              "id": "ikora_approach.observation.0",
+              "binding": "opening/Ikora approach/0"
+            }
+          ]
+        },
+        {
+          "id": "Ikora scene ready",
+          "after": [
+            "Ikora approach"
+          ],
+          "commands": [
+            {
+              "id": "ikora_scene_ready.scene.0",
+              "binding": "opening/Ikora scene ready/0"
+            }
+          ]
+        },
+        {
+          "id": "Ikora portal output",
+          "after": [
+            "Ikora scene ready"
+          ],
+          "commands": [
+            {
+              "id": "ikora_portal_output.observation.0",
+              "binding": "opening/Ikora portal output/0"
+            }
+          ]
+        },
+        {
+          "id": "lattice release requested",
+          "after": [
+            "Ikora portal output"
+          ],
+          "commands": [
+            {
+              "id": "lattice_release_requested.device.0",
+              "binding": "opening/lattice release requested/0"
+            }
+          ]
+        },
+        {
+          "id": "Forest entrance observed",
+          "after": [
+            "roster admitted"
+          ],
+          "commands": [
+            {
+              "id": "forest_entrance_observed.observation.0",
+              "binding": "opening/Forest entrance observed/0"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "roster.admitted": "roster_admitted.observation.0",
+        "ikora.approached": "ikora_approach.observation.0",
+        "ikora.scene.ready": "ikora_scene_ready.scene.0",
+        "ikora.portal.released": "ikora_portal_output.observation.0",
+        "forest.entered": "forest_entrance_observed.observation.0"
+      }
+    },
+    "forest": {
+      "name": "Omega Forest to Lair",
+      "domain": "forest",
+      "steps": [
+        {
+          "id": "tunnel reached or passed",
+          "after": [],
+          "commands": [
+            {
+              "id": "tunnel_reached_or_passed.observation.0",
+              "binding": "forest/tunnel reached or passed/0"
+            }
+          ]
+        },
+        {
+          "id": "tunnel presentation",
+          "after": [
+            "tunnel reached or passed"
+          ],
+          "commands": [
+            {
+              "id": "tunnel_presentation.traversal.0",
+              "binding": "forest/tunnel presentation/0"
+            },
+            {
+              "id": "tunnel_presentation.objective.1",
+              "binding": "forest/tunnel presentation/1"
+            },
+            {
+              "id": "tunnel_presentation.dialogue.2",
+              "binding": "forest/tunnel presentation/2"
+            }
+          ]
+        },
+        {
+          "id": "vista reached or passed",
+          "after": [],
+          "commands": [
+            {
+              "id": "vista_reached_or_passed.observation.0",
+              "binding": "forest/vista reached or passed/0"
+            }
+          ]
+        },
+        {
+          "id": "vista presentation",
+          "after": [
+            "vista reached or passed"
+          ],
+          "commands": [
+            {
+              "id": "vista_presentation.traversal.0",
+              "binding": "forest/vista presentation/0"
+            },
+            {
+              "id": "vista_presentation.objective.1",
+              "binding": "forest/vista presentation/1"
+            },
+            {
+              "id": "vista_presentation.dialogue.2",
+              "binding": "forest/vista presentation/2"
+            }
+          ]
+        },
+        {
+          "id": "Forest exit reached or passed",
+          "after": [],
+          "commands": [
+            {
+              "id": "forest_exit_reached_or_passed.observation.0",
+              "binding": "forest/Forest exit reached or passed/0"
+            }
+          ]
+        },
+        {
+          "id": "Forest exit presentation",
+          "after": [
+            "Forest exit reached or passed"
+          ],
+          "commands": [
+            {
+              "id": "forest_exit_presentation.traversal.0",
+              "binding": "forest/Forest exit presentation/0"
+            },
+            {
+              "id": "forest_exit_presentation.objective.1",
+              "binding": "forest/Forest exit presentation/1"
+            },
+            {
+              "id": "forest_exit_presentation.dialogue.2",
+              "binding": "forest/Forest exit presentation/2"
+            }
+          ]
+        },
+        {
+          "id": "Lair reached or passed",
+          "after": [],
+          "commands": [
+            {
+              "id": "lair_reached_or_passed.observation.0",
+              "binding": "forest/Lair reached or passed/0"
+            }
+          ]
+        },
+        {
+          "id": "Lair handoff",
+          "after": [
+            "Lair reached or passed"
+          ],
+          "commands": [
+            {
+              "id": "lair_handoff.traversal.0",
+              "binding": "forest/Lair handoff/0"
+            },
+            {
+              "id": "lair_handoff.objective.1",
+              "binding": "forest/Lair handoff/1"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "tunnel.reached": "tunnel_reached_or_passed.observation.0",
+        "vista.reached": "vista_reached_or_passed.observation.0",
+        "forest.exit.reached": "forest_exit_reached_or_passed.observation.0",
+        "lair.reached": "lair_reached_or_passed.observation.0"
+      }
+    },
+    "reveal": {
+      "name": "Panoptes reveal",
+      "domain": "reveal",
+      "steps": [
+        {
+          "id": "camera and dialogue eligibility",
+          "after": [],
+          "commands": [
+            {
+              "id": "camera_and_dialogue_eligibility.observation.0",
+              "binding": "reveal/camera and dialogue eligibility/0"
+            }
+          ]
+        },
+        {
+          "id": "owned boss flight",
+          "after": [
+            "camera and dialogue eligibility"
+          ],
+          "commands": [
+            {
+              "id": "owned_boss_flight.mechanic.0",
+              "binding": "reveal/owned boss flight/0"
+            },
+            {
+              "id": "owned_boss_flight.observation.1",
+              "binding": "reveal/owned boss flight/1"
+            }
+          ]
+        },
+        {
+          "id": "native camera activation",
+          "after": [
+            "owned boss flight"
+          ],
+          "commands": [
+            {
+              "id": "native_camera_activation.cinematic.0",
+              "binding": "reveal/native camera activation/0"
+            },
+            {
+              "id": "native_camera_activation.observation.1",
+              "binding": "reveal/native camera activation/1"
+            }
+          ]
+        },
+        {
+          "id": "native camera completion",
+          "after": [
+            "native camera activation"
+          ],
+          "commands": [
+            {
+              "id": "native_camera_completion.cinematic.0",
+              "binding": "reveal/native camera completion/0"
+            },
+            {
+              "id": "native_camera_completion.observation.1",
+              "binding": "reveal/native camera completion/1"
+            }
+          ]
+        },
+        {
+          "id": "retire reveal",
+          "after": [
+            "native camera completion"
+          ],
+          "commands": [
+            {
+              "id": "retire_reveal.cinematic.0",
+              "binding": "reveal/retire reveal/0"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "camera.eligible": "camera_and_dialogue_eligibility.observation.0",
+        "boss.flight.ready": "owned_boss_flight.observation.1",
+        "camera.active": "native_camera_activation.observation.1",
+        "camera.complete": "native_camera_completion.observation.1"
+      }
+    },
+    "reveal_retry": {
+      "name": "Panoptes reveal retry",
+      "domain": "reveal_retry",
+      "steps": [
+        {
+          "id": "owned boss flight",
+          "after": [],
+          "commands": [
+            {
+              "id": "owned_boss_flight.mechanic.0",
+              "binding": "reveal_retry/owned boss flight/0"
+            },
+            {
+              "id": "owned_boss_flight.observation.1",
+              "binding": "reveal_retry/owned boss flight/1"
+            }
+          ]
+        },
+        {
+          "id": "native camera activation",
+          "after": [
+            "owned boss flight"
+          ],
+          "commands": [
+            {
+              "id": "native_camera_activation.cinematic.0",
+              "binding": "reveal_retry/native camera activation/0"
+            },
+            {
+              "id": "native_camera_activation.observation.1",
+              "binding": "reveal_retry/native camera activation/1"
+            }
+          ]
+        },
+        {
+          "id": "native camera completion",
+          "after": [
+            "native camera activation"
+          ],
+          "commands": [
+            {
+              "id": "native_camera_completion.cinematic.0",
+              "binding": "reveal_retry/native camera completion/0"
+            },
+            {
+              "id": "native_camera_completion.observation.1",
+              "binding": "reveal_retry/native camera completion/1"
+            }
+          ]
+        },
+        {
+          "id": "retire reveal",
+          "after": [
+            "native camera completion"
+          ],
+          "commands": [
+            {
+              "id": "retire_reveal.cinematic.0",
+              "binding": "reveal_retry/retire reveal/0"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "boss.flight.ready": "owned_boss_flight.observation.1",
+        "camera.active": "native_camera_activation.observation.1",
+        "camera.complete": "native_camera_completion.observation.1"
+      }
+    },
+    "lair": {
+      "name": "kLair",
+      "domain": "lair",
+      "steps": [
+        {
+          "id": "native intro summon",
+          "after": [],
+          "commands": [
+            {
+              "id": "native_intro_summon.observation.0",
+              "binding": "lair/native intro summon/0"
+            }
+          ]
+        },
+        {
+          "id": "left summon",
+          "after": [
+            "native intro summon"
+          ],
+          "commands": [
+            {
+              "id": "left_summon.mechanic.0",
+              "binding": "lair/left summon/0"
+            },
+            {
+              "id": "left_summon.observation.1",
+              "binding": "lair/left summon/1"
+            }
+          ]
+        },
+        {
+          "id": "right summon",
+          "after": [
+            "left summon"
+          ],
+          "commands": [
+            {
+              "id": "right_summon.mechanic.0",
+              "binding": "lair/right summon/0"
+            },
+            {
+              "id": "right_summon.observation.1",
+              "binding": "lair/right summon/1"
+            }
+          ]
+        },
+        {
+          "id": "required cohort deaths",
+          "after": [
+            "right summon"
+          ],
+          "commands": [
+            {
+              "id": "required_cohort_deaths.observation.0",
+              "binding": "lair/required cohort deaths/0"
+            }
+          ]
+        },
+        {
+          "id": "fold and path completion",
+          "after": [
+            "required cohort deaths"
+          ],
+          "commands": [
+            {
+              "id": "fold_and_path_completion.mechanic.0",
+              "binding": "lair/fold and path completion/0"
+            },
+            {
+              "id": "fold_and_path_completion.observation.1",
+              "binding": "lair/fold and path completion/1"
+            }
+          ]
+        },
+        {
+          "id": "player arrival",
+          "after": [
+            "fold and path completion"
+          ],
+          "commands": [
+            {
+              "id": "player_arrival.observation.0",
+              "binding": "lair/player arrival/0"
+            }
+          ]
+        },
+        {
+          "id": "enter island A",
+          "after": [
+            "player arrival"
+          ],
+          "commands": [
+            {
+              "id": "enter_island_a.mechanic.0",
+              "binding": "lair/enter island A/0"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "native_intro_summon.observation.0": "native_intro_summon.observation.0",
+        "left_summon.observation.1": "left_summon.observation.1",
+        "right_summon.observation.1": "right_summon.observation.1",
+        "required_cohort_deaths.observation.0": "required_cohort_deaths.observation.0",
+        "fold_and_path_completion.observation.1": "fold_and_path_completion.observation.1",
+        "player_arrival.observation.0": "player_arrival.observation.0"
+      }
+    },
+    "island_a": {
+      "name": "kIslandA",
+      "domain": "island_a",
+      "steps": [
+        {
+          "id": "left summon",
+          "after": [],
+          "commands": [
+            {
+              "id": "left_summon.mechanic.0",
+              "binding": "island_a/left summon/0"
+            },
+            {
+              "id": "left_summon.observation.1",
+              "binding": "island_a/left summon/1"
+            }
+          ]
+        },
+        {
+          "id": "required cohort deaths",
+          "after": [
+            "left summon"
+          ],
+          "commands": [
+            {
+              "id": "required_cohort_deaths.observation.0",
+              "binding": "island_a/required cohort deaths/0"
+            }
+          ]
+        },
+        {
+          "id": "fold and path completion",
+          "after": [
+            "required cohort deaths"
+          ],
+          "commands": [
+            {
+              "id": "fold_and_path_completion.mechanic.0",
+              "binding": "island_a/fold and path completion/0"
+            },
+            {
+              "id": "fold_and_path_completion.observation.1",
+              "binding": "island_a/fold and path completion/1"
+            }
+          ]
+        },
+        {
+          "id": "player arrival",
+          "after": [
+            "fold and path completion"
+          ],
+          "commands": [
+            {
+              "id": "player_arrival.observation.0",
+              "binding": "island_a/player arrival/0"
+            }
+          ]
+        },
+        {
+          "id": "enter island B",
+          "after": [
+            "player arrival"
+          ],
+          "commands": [
+            {
+              "id": "enter_island_b.mechanic.0",
+              "binding": "island_a/enter island B/0"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "left_summon.observation.1": "left_summon.observation.1",
+        "required_cohort_deaths.observation.0": "required_cohort_deaths.observation.0",
+        "fold_and_path_completion.observation.1": "fold_and_path_completion.observation.1",
+        "player_arrival.observation.0": "player_arrival.observation.0"
+      }
+    },
+    "island_b": {
+      "name": "kIslandB",
+      "domain": "island_b",
+      "steps": [
+        {
+          "id": "right summon",
+          "after": [],
+          "commands": [
+            {
+              "id": "right_summon.mechanic.0",
+              "binding": "island_b/right summon/0"
+            },
+            {
+              "id": "right_summon.observation.1",
+              "binding": "island_b/right summon/1"
+            }
+          ]
+        },
+        {
+          "id": "required cohort deaths",
+          "after": [
+            "right summon"
+          ],
+          "commands": [
+            {
+              "id": "required_cohort_deaths.observation.0",
+              "binding": "island_b/required cohort deaths/0"
+            }
+          ]
+        },
+        {
+          "id": "fold and path completion",
+          "after": [
+            "required cohort deaths"
+          ],
+          "commands": [
+            {
+              "id": "fold_and_path_completion.mechanic.0",
+              "binding": "island_b/fold and path completion/0"
+            },
+            {
+              "id": "fold_and_path_completion.observation.1",
+              "binding": "island_b/fold and path completion/1"
+            }
+          ]
+        },
+        {
+          "id": "player arrival",
+          "after": [
+            "fold and path completion"
+          ],
+          "commands": [
+            {
+              "id": "player_arrival.observation.0",
+              "binding": "island_b/player arrival/0"
+            }
+          ]
+        },
+        {
+          "id": "enter island C",
+          "after": [
+            "player arrival"
+          ],
+          "commands": [
+            {
+              "id": "enter_island_c.mechanic.0",
+              "binding": "island_b/enter island C/0"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "right_summon.observation.1": "right_summon.observation.1",
+        "required_cohort_deaths.observation.0": "required_cohort_deaths.observation.0",
+        "fold_and_path_completion.observation.1": "fold_and_path_completion.observation.1",
+        "player_arrival.observation.0": "player_arrival.observation.0"
+      }
+    },
+    "island_c": {
+      "name": "kIslandC",
+      "domain": "island_c",
+      "steps": [
+        {
+          "id": "left summon",
+          "after": [],
+          "commands": [
+            {
+              "id": "left_summon.mechanic.0",
+              "binding": "island_c/left summon/0"
+            },
+            {
+              "id": "left_summon.observation.1",
+              "binding": "island_c/left summon/1"
+            }
+          ]
+        },
+        {
+          "id": "required cohort deaths",
+          "after": [
+            "left summon"
+          ],
+          "commands": [
+            {
+              "id": "required_cohort_deaths.observation.0",
+              "binding": "island_c/required cohort deaths/0"
+            }
+          ]
+        },
+        {
+          "id": "fold and path completion",
+          "after": [
+            "required cohort deaths"
+          ],
+          "commands": [
+            {
+              "id": "fold_and_path_completion.mechanic.0",
+              "binding": "island_c/fold and path completion/0"
+            },
+            {
+              "id": "fold_and_path_completion.observation.1",
+              "binding": "island_c/fold and path completion/1"
+            }
+          ]
+        },
+        {
+          "id": "Crown arrival and cannon preparation",
+          "after": [
+            "fold and path completion"
+          ],
+          "commands": [
+            {
+              "id": "crown_arrival_and_cannon_preparation.observation.0",
+              "binding": "island_c/Crown arrival and cannon preparation/0"
+            }
+          ]
+        },
+        {
+          "id": "enter Crown",
+          "after": [
+            "Crown arrival and cannon preparation"
+          ],
+          "commands": [
+            {
+              "id": "enter_crown.mechanic.0",
+              "binding": "island_c/enter Crown/0"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "left_summon.observation.1": "left_summon.observation.1",
+        "required_cohort_deaths.observation.0": "required_cohort_deaths.observation.0",
+        "fold_and_path_completion.observation.1": "fold_and_path_completion.observation.1",
+        "crown_arrival_and_cannon_preparation.observation.0": "crown_arrival_and_cannon_preparation.observation.0"
+      }
+    },
+    "crown_1": {
+      "name": "kCrown1",
+      "domain": "crown_1",
+      "steps": [
+        {
+          "id": "both summon",
+          "after": [],
+          "commands": [
+            {
+              "id": "both_summon.mechanic.0",
+              "binding": "crown_1/both summon/0"
+            },
+            {
+              "id": "both_summon.observation.1",
+              "binding": "crown_1/both summon/1"
+            }
+          ]
+        },
+        {
+          "id": "first wave deaths",
+          "after": [
+            "both summon"
+          ],
+          "commands": [
+            {
+              "id": "first_wave_deaths.observation.0",
+              "binding": "crown_1/first wave deaths/0"
+            }
+          ]
+        },
+        {
+          "id": "select second wave",
+          "after": [
+            "first wave deaths"
+          ],
+          "commands": [
+            {
+              "id": "select_second_wave.mechanic.0",
+              "binding": "crown_1/select second wave/0"
+            }
+          ]
+        },
+        {
+          "id": "left summon",
+          "after": [
+            "select second wave"
+          ],
+          "commands": [
+            {
+              "id": "left_summon.mechanic.0",
+              "binding": "crown_1/left summon/0"
+            },
+            {
+              "id": "left_summon.observation.1",
+              "binding": "crown_1/left summon/1"
+            }
+          ]
+        },
+        {
+          "id": "second wave deaths",
+          "after": [
+            "left summon"
+          ],
+          "commands": [
+            {
+              "id": "second_wave_deaths.observation.0",
+              "binding": "crown_1/second wave deaths/0"
+            }
+          ]
+        },
+        {
+          "id": "select third wave",
+          "after": [
+            "second wave deaths"
+          ],
+          "commands": [
+            {
+              "id": "select_third_wave.mechanic.0",
+              "binding": "crown_1/select third wave/0"
+            }
+          ]
+        },
+        {
+          "id": "right summon",
+          "after": [
+            "select third wave"
+          ],
+          "commands": [
+            {
+              "id": "right_summon.mechanic.0",
+              "binding": "crown_1/right summon/0"
+            },
+            {
+              "id": "right_summon.observation.1",
+              "binding": "crown_1/right summon/1"
+            }
+          ]
+        },
+        {
+          "id": "third wave deaths",
+          "after": [
+            "right summon"
+          ],
+          "commands": [
+            {
+              "id": "third_wave_deaths.observation.0",
+              "binding": "crown_1/third wave deaths/0"
+            }
+          ]
+        },
+        {
+          "id": "deletion animation",
+          "after": [
+            "third wave deaths"
+          ],
+          "commands": [
+            {
+              "id": "deletion_animation.mechanic.0",
+              "binding": "crown_1/deletion animation/0"
+            },
+            {
+              "id": "deletion_animation.observation.1",
+              "binding": "crown_1/deletion animation/1"
+            }
+          ]
+        },
+        {
+          "id": "Osiris rescue Scene",
+          "after": [
+            "deletion animation"
+          ],
+          "commands": [
+            {
+              "id": "osiris_rescue_scene.mechanic.0",
+              "binding": "crown_1/Osiris rescue Scene/0"
+            },
+            {
+              "id": "osiris_rescue_scene.observation.1",
+              "binding": "crown_1/Osiris rescue Scene/1"
+            }
+          ]
+        },
+        {
+          "id": "charge route and dunk",
+          "after": [
+            "Osiris rescue Scene"
+          ],
+          "commands": [
+            {
+              "id": "charge_route_and_dunk.mechanic.0",
+              "binding": "crown_1/charge route and dunk/0"
+            },
+            {
+              "id": "charge_route_and_dunk.observation.1",
+              "binding": "crown_1/charge route and dunk/1"
+            }
+          ]
+        },
+        {
+          "id": "native eye exposure",
+          "after": [
+            "charge route and dunk"
+          ],
+          "commands": [
+            {
+              "id": "native_eye_exposure.mechanic.0",
+              "binding": "crown_1/native eye exposure/0"
+            },
+            {
+              "id": "native_eye_exposure.observation.1",
+              "binding": "crown_1/native eye exposure/1"
+            }
+          ]
+        },
+        {
+          "id": "native eye threshold",
+          "after": [
+            "native eye exposure"
+          ],
+          "commands": [
+            {
+              "id": "native_eye_threshold.observation.0",
+              "binding": "crown_1/native eye threshold/0"
+            }
+          ]
+        },
+        {
+          "id": "recovery join",
+          "after": [
+            "native eye threshold"
+          ],
+          "commands": [
+            {
+              "id": "recovery_join.mechanic.0",
+              "binding": "crown_1/recovery join/0"
+            },
+            {
+              "id": "recovery_join.observation.1",
+              "binding": "crown_1/recovery join/1"
+            },
+            {
+              "id": "recovery_join.observation.2",
+              "binding": "crown_1/recovery join/2"
+            },
+            {
+              "id": "recovery_join.observation.3",
+              "binding": "crown_1/recovery join/3"
+            }
+          ]
+        },
+        {
+          "id": "enter second cycle",
+          "after": [
+            "recovery join"
+          ],
+          "commands": [
+            {
+              "id": "enter_second_cycle.mechanic.0",
+              "binding": "crown_1/enter second cycle/0"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "both_summon.observation.1": "both_summon.observation.1",
+        "first_wave_deaths.observation.0": "first_wave_deaths.observation.0",
+        "left_summon.observation.1": "left_summon.observation.1",
+        "second_wave_deaths.observation.0": "second_wave_deaths.observation.0",
+        "right_summon.observation.1": "right_summon.observation.1",
+        "third_wave_deaths.observation.0": "third_wave_deaths.observation.0",
+        "deletion_animation.observation.1": "deletion_animation.observation.1",
+        "osiris_rescue_scene.observation.1": "osiris_rescue_scene.observation.1",
+        "charge_route_and_dunk.observation.1": "charge_route_and_dunk.observation.1",
+        "native_eye_exposure.observation.1": "native_eye_exposure.observation.1",
+        "native_eye_threshold.observation.0": "native_eye_threshold.observation.0",
+        "recovery_join.observation.1": "recovery_join.observation.1",
+        "recovery_join.observation.2": "recovery_join.observation.2",
+        "recovery_join.observation.3": "recovery_join.observation.3"
+      }
+    },
+    "crown_2": {
+      "name": "kCrown2",
+      "domain": "crown_2",
+      "steps": [
+        {
+          "id": "both summon",
+          "after": [],
+          "commands": [
+            {
+              "id": "both_summon.mechanic.0",
+              "binding": "crown_2/both summon/0"
+            },
+            {
+              "id": "both_summon.observation.1",
+              "binding": "crown_2/both summon/1"
+            }
+          ]
+        },
+        {
+          "id": "first wave deaths",
+          "after": [
+            "both summon"
+          ],
+          "commands": [
+            {
+              "id": "first_wave_deaths.observation.0",
+              "binding": "crown_2/first wave deaths/0"
+            }
+          ]
+        },
+        {
+          "id": "select second wave",
+          "after": [
+            "first wave deaths"
+          ],
+          "commands": [
+            {
+              "id": "select_second_wave.mechanic.0",
+              "binding": "crown_2/select second wave/0"
+            }
+          ]
+        },
+        {
+          "id": "left summon",
+          "after": [
+            "select second wave"
+          ],
+          "commands": [
+            {
+              "id": "left_summon.mechanic.0",
+              "binding": "crown_2/left summon/0"
+            },
+            {
+              "id": "left_summon.observation.1",
+              "binding": "crown_2/left summon/1"
+            }
+          ]
+        },
+        {
+          "id": "second wave deaths",
+          "after": [
+            "left summon"
+          ],
+          "commands": [
+            {
+              "id": "second_wave_deaths.observation.0",
+              "binding": "crown_2/second wave deaths/0"
+            }
+          ]
+        },
+        {
+          "id": "select third wave",
+          "after": [
+            "second wave deaths"
+          ],
+          "commands": [
+            {
+              "id": "select_third_wave.mechanic.0",
+              "binding": "crown_2/select third wave/0"
+            }
+          ]
+        },
+        {
+          "id": "right summon",
+          "after": [
+            "select third wave"
+          ],
+          "commands": [
+            {
+              "id": "right_summon.mechanic.0",
+              "binding": "crown_2/right summon/0"
+            },
+            {
+              "id": "right_summon.observation.1",
+              "binding": "crown_2/right summon/1"
+            }
+          ]
+        },
+        {
+          "id": "third wave deaths",
+          "after": [
+            "right summon"
+          ],
+          "commands": [
+            {
+              "id": "third_wave_deaths.observation.0",
+              "binding": "crown_2/third wave deaths/0"
+            }
+          ]
+        },
+        {
+          "id": "deletion animation",
+          "after": [
+            "third wave deaths"
+          ],
+          "commands": [
+            {
+              "id": "deletion_animation.mechanic.0",
+              "binding": "crown_2/deletion animation/0"
+            },
+            {
+              "id": "deletion_animation.observation.1",
+              "binding": "crown_2/deletion animation/1"
+            }
+          ]
+        },
+        {
+          "id": "Osiris rescue Scene",
+          "after": [
+            "deletion animation"
+          ],
+          "commands": [
+            {
+              "id": "osiris_rescue_scene.mechanic.0",
+              "binding": "crown_2/Osiris rescue Scene/0"
+            },
+            {
+              "id": "osiris_rescue_scene.observation.1",
+              "binding": "crown_2/Osiris rescue Scene/1"
+            }
+          ]
+        },
+        {
+          "id": "charge route and dunk",
+          "after": [
+            "Osiris rescue Scene"
+          ],
+          "commands": [
+            {
+              "id": "charge_route_and_dunk.mechanic.0",
+              "binding": "crown_2/charge route and dunk/0"
+            },
+            {
+              "id": "charge_route_and_dunk.observation.1",
+              "binding": "crown_2/charge route and dunk/1"
+            }
+          ]
+        },
+        {
+          "id": "native eye exposure",
+          "after": [
+            "charge route and dunk"
+          ],
+          "commands": [
+            {
+              "id": "native_eye_exposure.mechanic.0",
+              "binding": "crown_2/native eye exposure/0"
+            },
+            {
+              "id": "native_eye_exposure.observation.1",
+              "binding": "crown_2/native eye exposure/1"
+            }
+          ]
+        },
+        {
+          "id": "native eye threshold",
+          "after": [
+            "native eye exposure"
+          ],
+          "commands": [
+            {
+              "id": "native_eye_threshold.observation.0",
+              "binding": "crown_2/native eye threshold/0"
+            }
+          ]
+        },
+        {
+          "id": "recovery join",
+          "after": [
+            "native eye threshold"
+          ],
+          "commands": [
+            {
+              "id": "recovery_join.mechanic.0",
+              "binding": "crown_2/recovery join/0"
+            },
+            {
+              "id": "recovery_join.observation.1",
+              "binding": "crown_2/recovery join/1"
+            },
+            {
+              "id": "recovery_join.observation.2",
+              "binding": "crown_2/recovery join/2"
+            },
+            {
+              "id": "recovery_join.observation.3",
+              "binding": "crown_2/recovery join/3"
+            }
+          ]
+        },
+        {
+          "id": "escape cohort",
+          "after": [
+            "recovery join"
+          ],
+          "commands": [
+            {
+              "id": "escape_cohort.mechanic.0",
+              "binding": "crown_2/escape cohort/0"
+            }
+          ]
+        },
+        {
+          "id": "escape summon completion",
+          "after": [
+            "escape cohort"
+          ],
+          "commands": [
+            {
+              "id": "escape_summon_completion.mechanic.0",
+              "binding": "crown_2/escape summon completion/0"
+            },
+            {
+              "id": "escape_summon_completion.observation.1",
+              "binding": "crown_2/escape summon completion/1"
+            }
+          ]
+        },
+        {
+          "id": "final relocation fold and path",
+          "after": [
+            "escape summon completion"
+          ],
+          "commands": [
+            {
+              "id": "final_relocation_fold_and_path.mechanic.0",
+              "binding": "crown_2/final relocation fold and path/0"
+            },
+            {
+              "id": "final_relocation_fold_and_path.observation.1",
+              "binding": "crown_2/final relocation fold and path/1"
+            }
+          ]
+        },
+        {
+          "id": "final cannon Scene and player arrival",
+          "after": [
+            "final relocation fold and path"
+          ],
+          "commands": [
+            {
+              "id": "final_cannon_scene_and_player_arrival.mechanic.0",
+              "binding": "crown_2/final cannon Scene and player arrival/0"
+            },
+            {
+              "id": "final_cannon_scene_and_player_arrival.observation.1",
+              "binding": "crown_2/final cannon Scene and player arrival/1"
+            }
+          ]
+        },
+        {
+          "id": "enter third cycle",
+          "after": [
+            "final cannon Scene and player arrival"
+          ],
+          "commands": [
+            {
+              "id": "enter_third_cycle.mechanic.0",
+              "binding": "crown_2/enter third cycle/0"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "both_summon.observation.1": "both_summon.observation.1",
+        "first_wave_deaths.observation.0": "first_wave_deaths.observation.0",
+        "left_summon.observation.1": "left_summon.observation.1",
+        "second_wave_deaths.observation.0": "second_wave_deaths.observation.0",
+        "right_summon.observation.1": "right_summon.observation.1",
+        "third_wave_deaths.observation.0": "third_wave_deaths.observation.0",
+        "deletion_animation.observation.1": "deletion_animation.observation.1",
+        "osiris_rescue_scene.observation.1": "osiris_rescue_scene.observation.1",
+        "charge_route_and_dunk.observation.1": "charge_route_and_dunk.observation.1",
+        "native_eye_exposure.observation.1": "native_eye_exposure.observation.1",
+        "native_eye_threshold.observation.0": "native_eye_threshold.observation.0",
+        "recovery_join.observation.1": "recovery_join.observation.1",
+        "recovery_join.observation.2": "recovery_join.observation.2",
+        "recovery_join.observation.3": "recovery_join.observation.3",
+        "escape_summon_completion.observation.1": "escape_summon_completion.observation.1",
+        "final_relocation_fold_and_path.observation.1": "final_relocation_fold_and_path.observation.1",
+        "final_cannon_scene_and_player_arrival.observation.1": "final_cannon_scene_and_player_arrival.observation.1"
+      }
+    },
+    "crown_3": {
+      "name": "kCrown3",
+      "domain": "crown_3",
+      "steps": [
+        {
+          "id": "both summon",
+          "after": [],
+          "commands": [
+            {
+              "id": "both_summon.mechanic.0",
+              "binding": "crown_3/both summon/0"
+            },
+            {
+              "id": "both_summon.observation.1",
+              "binding": "crown_3/both summon/1"
+            }
+          ]
+        },
+        {
+          "id": "first wave deaths",
+          "after": [
+            "both summon"
+          ],
+          "commands": [
+            {
+              "id": "first_wave_deaths.observation.0",
+              "binding": "crown_3/first wave deaths/0"
+            }
+          ]
+        },
+        {
+          "id": "select second wave",
+          "after": [
+            "first wave deaths"
+          ],
+          "commands": [
+            {
+              "id": "select_second_wave.mechanic.0",
+              "binding": "crown_3/select second wave/0"
+            }
+          ]
+        },
+        {
+          "id": "left summon",
+          "after": [
+            "select second wave"
+          ],
+          "commands": [
+            {
+              "id": "left_summon.mechanic.0",
+              "binding": "crown_3/left summon/0"
+            },
+            {
+              "id": "left_summon.observation.1",
+              "binding": "crown_3/left summon/1"
+            }
+          ]
+        },
+        {
+          "id": "second wave deaths",
+          "after": [
+            "left summon"
+          ],
+          "commands": [
+            {
+              "id": "second_wave_deaths.observation.0",
+              "binding": "crown_3/second wave deaths/0"
+            }
+          ]
+        },
+        {
+          "id": "select third wave",
+          "after": [
+            "second wave deaths"
+          ],
+          "commands": [
+            {
+              "id": "select_third_wave.mechanic.0",
+              "binding": "crown_3/select third wave/0"
+            }
+          ]
+        },
+        {
+          "id": "right summon",
+          "after": [
+            "select third wave"
+          ],
+          "commands": [
+            {
+              "id": "right_summon.mechanic.0",
+              "binding": "crown_3/right summon/0"
+            },
+            {
+              "id": "right_summon.observation.1",
+              "binding": "crown_3/right summon/1"
+            }
+          ]
+        },
+        {
+          "id": "third wave deaths",
+          "after": [
+            "right summon"
+          ],
+          "commands": [
+            {
+              "id": "third_wave_deaths.observation.0",
+              "binding": "crown_3/third wave deaths/0"
+            }
+          ]
+        },
+        {
+          "id": "deletion animation",
+          "after": [
+            "third wave deaths"
+          ],
+          "commands": [
+            {
+              "id": "deletion_animation.mechanic.0",
+              "binding": "crown_3/deletion animation/0"
+            },
+            {
+              "id": "deletion_animation.observation.1",
+              "binding": "crown_3/deletion animation/1"
+            }
+          ]
+        },
+        {
+          "id": "Osiris rescue Scene",
+          "after": [
+            "deletion animation"
+          ],
+          "commands": [
+            {
+              "id": "osiris_rescue_scene.mechanic.0",
+              "binding": "crown_3/Osiris rescue Scene/0"
+            },
+            {
+              "id": "osiris_rescue_scene.observation.1",
+              "binding": "crown_3/Osiris rescue Scene/1"
+            }
+          ]
+        },
+        {
+          "id": "charge route and dunk",
+          "after": [
+            "Osiris rescue Scene"
+          ],
+          "commands": [
+            {
+              "id": "charge_route_and_dunk.mechanic.0",
+              "binding": "crown_3/charge route and dunk/0"
+            },
+            {
+              "id": "charge_route_and_dunk.observation.1",
+              "binding": "crown_3/charge route and dunk/1"
+            }
+          ]
+        },
+        {
+          "id": "native eye exposure",
+          "after": [
+            "charge route and dunk"
+          ],
+          "commands": [
+            {
+              "id": "native_eye_exposure.mechanic.0",
+              "binding": "crown_3/native eye exposure/0"
+            },
+            {
+              "id": "native_eye_exposure.observation.1",
+              "binding": "crown_3/native eye exposure/1"
+            }
+          ]
+        },
+        {
+          "id": "native eye threshold",
+          "after": [
+            "native eye exposure"
+          ],
+          "commands": [
+            {
+              "id": "native_eye_threshold.observation.0",
+              "binding": "crown_3/native eye threshold/0"
+            }
+          ]
+        },
+        {
+          "id": "native death and animation join",
+          "after": [
+            "native eye threshold"
+          ],
+          "commands": [
+            {
+              "id": "native_death_and_animation_join.mechanic.0",
+              "binding": "crown_3/native death and animation join/0"
+            },
+            {
+              "id": "native_death_and_animation_join.observation.1",
+              "binding": "crown_3/native death and animation join/1"
+            },
+            {
+              "id": "native_death_and_animation_join.observation.2",
+              "binding": "crown_3/native death and animation join/2"
+            }
+          ]
+        },
+        {
+          "id": "ending handoff",
+          "after": [
+            "native death and animation join"
+          ],
+          "commands": [
+            {
+              "id": "ending_handoff.mechanic.0",
+              "binding": "crown_3/ending handoff/0"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "both_summon.observation.1": "both_summon.observation.1",
+        "first_wave_deaths.observation.0": "first_wave_deaths.observation.0",
+        "left_summon.observation.1": "left_summon.observation.1",
+        "second_wave_deaths.observation.0": "second_wave_deaths.observation.0",
+        "right_summon.observation.1": "right_summon.observation.1",
+        "third_wave_deaths.observation.0": "third_wave_deaths.observation.0",
+        "deletion_animation.observation.1": "deletion_animation.observation.1",
+        "osiris_rescue_scene.observation.1": "osiris_rescue_scene.observation.1",
+        "charge_route_and_dunk.observation.1": "charge_route_and_dunk.observation.1",
+        "native_eye_exposure.observation.1": "native_eye_exposure.observation.1",
+        "native_eye_threshold.observation.0": "native_eye_threshold.observation.0",
+        "native_death_and_animation_join.observation.1": "native_death_and_animation_join.observation.1",
+        "native_death_and_animation_join.observation.2": "native_death_and_animation_join.observation.2"
+      }
+    },
+    "ending": {
+      "name": "Omega ending and handoff",
+      "domain": "ending",
+      "steps": [
+        {
+          "id": "final dialogue",
+          "after": [],
+          "commands": [
+            {
+              "id": "final_dialogue.observation.0",
+              "binding": "ending/final dialogue/0"
+            }
+          ]
+        },
+        {
+          "id": "native Lair retirement",
+          "after": [
+            "final dialogue"
+          ],
+          "commands": [
+            {
+              "id": "native_lair_retirement.mechanic.0",
+              "binding": "ending/native Lair retirement/0"
+            },
+            {
+              "id": "native_lair_retirement.observation.1",
+              "binding": "ending/native Lair retirement/1"
+            }
+          ]
+        },
+        {
+          "id": "bookend arrival and native camera eligibility",
+          "after": [
+            "native Lair retirement"
+          ],
+          "commands": [
+            {
+              "id": "bookend_arrival_and_native_camera_eligibility.traversal.0",
+              "binding": "ending/bookend arrival and native camera eligibility/0"
+            },
+            {
+              "id": "bookend_arrival_and_native_camera_eligibility.observation.1",
+              "binding": "ending/bookend arrival and native camera eligibility/1"
+            }
+          ]
+        },
+        {
+          "id": "native cinematic activation",
+          "after": [
+            "bookend arrival and native camera eligibility"
+          ],
+          "commands": [
+            {
+              "id": "native_cinematic_activation.cinematic.0",
+              "binding": "ending/native cinematic activation/0"
+            },
+            {
+              "id": "native_cinematic_activation.observation.1",
+              "binding": "ending/native cinematic activation/1"
+            }
+          ]
+        },
+        {
+          "id": "native cinematic completion",
+          "after": [
+            "native cinematic activation"
+          ],
+          "commands": [
+            {
+              "id": "native_cinematic_completion.cinematic.0",
+              "binding": "ending/native cinematic completion/0"
+            },
+            {
+              "id": "native_cinematic_completion.observation.1",
+              "binding": "ending/native cinematic completion/1"
+            }
+          ]
+        },
+        {
+          "id": "retire cinematic command",
+          "after": [
+            "native cinematic completion"
+          ],
+          "commands": [
+            {
+              "id": "retire_cinematic_command.cinematic.0",
+              "binding": "ending/retire cinematic command/0"
+            }
+          ]
+        },
+        {
+          "id": "native Mercury launch queued",
+          "after": [
+            "retire cinematic command"
+          ],
+          "commands": [
+            {
+              "id": "native_mercury_launch_queued.traversal.0",
+              "binding": "ending/native Mercury launch queued/0"
+            },
+            {
+              "id": "native_mercury_launch_queued.observation.1",
+              "binding": "ending/native Mercury launch queued/1"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "dialogue.complete": "final_dialogue.observation.0",
+        "lair.retired": "native_lair_retirement.observation.1",
+        "camera.eligible": "bookend_arrival_and_native_camera_eligibility.observation.1",
+        "camera.active": "native_cinematic_activation.observation.1",
+        "camera.complete": "native_cinematic_completion.observation.1",
+        "handoff.queued": "native_mercury_launch_queued.observation.1"
+      }
+    },
+    "ending_retry": {
+      "name": "Omega ending camera retry",
+      "domain": "ending_retry",
+      "steps": [
+        {
+          "id": "native camera eligibility",
+          "after": [],
+          "commands": [
+            {
+              "id": "native_camera_eligibility.observation.0",
+              "binding": "ending_retry/native camera eligibility/0"
+            }
+          ]
+        },
+        {
+          "id": "native cinematic activation",
+          "after": [
+            "native camera eligibility"
+          ],
+          "commands": [
+            {
+              "id": "native_cinematic_activation.cinematic.0",
+              "binding": "ending_retry/native cinematic activation/0"
+            },
+            {
+              "id": "native_cinematic_activation.observation.1",
+              "binding": "ending_retry/native cinematic activation/1"
+            }
+          ]
+        },
+        {
+          "id": "native cinematic completion",
+          "after": [
+            "native cinematic activation"
+          ],
+          "commands": [
+            {
+              "id": "native_cinematic_completion.cinematic.0",
+              "binding": "ending_retry/native cinematic completion/0"
+            },
+            {
+              "id": "native_cinematic_completion.observation.1",
+              "binding": "ending_retry/native cinematic completion/1"
+            }
+          ]
+        },
+        {
+          "id": "retire cinematic command",
+          "after": [
+            "native cinematic completion"
+          ],
+          "commands": [
+            {
+              "id": "retire_cinematic_command.cinematic.0",
+              "binding": "ending_retry/retire cinematic command/0"
+            }
+          ]
+        },
+        {
+          "id": "native Mercury launch queued",
+          "after": [
+            "retire cinematic command"
+          ],
+          "commands": [
+            {
+              "id": "native_mercury_launch_queued.traversal.0",
+              "binding": "ending_retry/native Mercury launch queued/0"
+            },
+            {
+              "id": "native_mercury_launch_queued.observation.1",
+              "binding": "ending_retry/native Mercury launch queued/1"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "camera.eligible": "native_camera_eligibility.observation.0",
+        "camera.active": "native_cinematic_activation.observation.1",
+        "camera.complete": "native_cinematic_completion.observation.1",
+        "handoff.queued": "native_mercury_launch_queued.observation.1"
+      }
+    }
+  },
+  "roles": {
+    "mission": "mission",
+    "opening": "opening",
+    "forest": "forest",
+    "reveal": "reveal",
+    "reveal_retry": "reveal_retry",
+    "lair": "lair",
+    "island_a": "island_a",
+    "island_b": "island_b",
+    "island_c": "island_c",
+    "crown_1": "crown_1",
+    "crown_2": "crown_2",
+    "crown_3": "crown_3",
+    "ending": "ending",
+    "ending_retry": "ending_retry"
+  },
+  "entry": "mission",
+  "modules": [
+    "presentation",
+    "panoptes",
+    "ending"
+  ],
+  "observations": [
+    {
+      "fact": "opening.complete",
+      "receipt": "opening.complete"
+    },
+    {
+      "fact": "forest.complete",
+      "receipt": "forest.complete"
+    },
+    {
+      "fact": "lair.complete",
+      "receipt": "lair.complete"
+    },
+    {
+      "fact": "crown.1.complete",
+      "receipt": "crown.1.complete"
+    },
+    {
+      "fact": "crown.2.complete",
+      "receipt": "crown.2.complete"
+    },
+    {
+      "fact": "crown.3.complete",
+      "receipt": "crown.3.complete"
+    },
+    {
+      "fact": "ending.complete",
+      "receipt": "ending.complete"
+    },
+    {
+      "fact": "handoff.queued",
+      "receipt": "handoff.queued"
+    }
+  ],
+  "presentation": {
+    "dialogue": {
+      "bank": "0x80F1FD07",
+      "rows": [
+        {
+          "row": 0,
+          "selector": "0xAD60F465",
+          "duration_ms": 5445,
+          "native_delay_ms": 1000,
+          "scene_owned": false
+        },
+        {
+          "row": 1,
+          "selector": "0x57477432",
+          "duration_ms": 6083,
+          "native_delay_ms": 0,
+          "scene_owned": true
+        },
+        {
+          "row": 2,
+          "selector": "0x730F03C7",
+          "duration_ms": 1985,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 3,
+          "selector": "0x47AF17F4",
+          "duration_ms": 5051,
+          "native_delay_ms": 0,
+          "scene_owned": true
+        },
+        {
+          "row": 4,
+          "selector": "0xB4C3F0B9",
+          "duration_ms": 3218,
+          "native_delay_ms": 0,
+          "scene_owned": true
+        },
+        {
+          "row": 5,
+          "selector": "0x0ED8C762",
+          "duration_ms": 0,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 6,
+          "selector": "0xAE2495AC",
+          "duration_ms": 8093,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 7,
+          "selector": "0x0E9C80BE",
+          "duration_ms": 10990,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 8,
+          "selector": "0x08AE5FB8",
+          "duration_ms": 0,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 9,
+          "selector": "0xE878194A",
+          "duration_ms": 6461,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 10,
+          "selector": "0x7BA4F101",
+          "duration_ms": 0,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 11,
+          "selector": "0xB2CF9D6E",
+          "duration_ms": 0,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 12,
+          "selector": "0xAB0676A8",
+          "duration_ms": 2019,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 13,
+          "selector": "0xA558F78F",
+          "duration_ms": 6222,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 14,
+          "selector": "0x94E09524",
+          "duration_ms": 5761,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 15,
+          "selector": "0x0294D229",
+          "duration_ms": 4432,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 16,
+          "selector": "0xB8CE809F",
+          "duration_ms": 6354,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 17,
+          "selector": "0x9DA4C20A",
+          "duration_ms": 0,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 18,
+          "selector": "0xCB7F171D",
+          "duration_ms": 2301,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 19,
+          "selector": "0xC0570578",
+          "duration_ms": 0,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 20,
+          "selector": "0xD16ECB03",
+          "duration_ms": 0,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 21,
+          "selector": "0xC645267E",
+          "duration_ms": 3538,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 22,
+          "selector": "0x202F7829",
+          "duration_ms": 3320,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 23,
+          "selector": "0xD4CADE1D",
+          "duration_ms": 2486,
+          "native_delay_ms": 0,
+          "scene_owned": true
+        },
+        {
+          "row": 24,
+          "selector": "0x1C653216",
+          "duration_ms": 0,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 25,
+          "selector": "0x6352D26C",
+          "duration_ms": 4173,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 26,
+          "selector": "0xD453DB47",
+          "duration_ms": 1712,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 27,
+          "selector": "0xEB43430D",
+          "duration_ms": 0,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 28,
+          "selector": "0xDC1E272E",
+          "duration_ms": 0,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 29,
+          "selector": "0xB88C4BB2",
+          "duration_ms": 3201,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 30,
+          "selector": "0x349D2672",
+          "duration_ms": 5489,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 31,
+          "selector": "0x5F8E6160",
+          "duration_ms": 2781,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 32,
+          "selector": "0x03622EEB",
+          "duration_ms": 3529,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 33,
+          "selector": "0x921B35F9",
+          "duration_ms": 3852,
+          "native_delay_ms": 5000,
+          "scene_owned": false
+        }
+      ],
+      "objective_cues": [
+        {
+          "row": 18,
+          "objective": "0x85A8F583"
+        },
+        {
+          "row": 21,
+          "objective": "0x85A8F583"
+        },
+        {
+          "row": 31,
+          "objective": "0x85A8F583"
+        },
+        {
+          "row": 22,
+          "objective": "0xA41DE99B"
+        },
+        {
+          "row": 32,
+          "objective": "0xA41DE99B"
+        }
+      ],
+      "dispatch_timeout_ms": 15000,
+      "spacing_ms": 250
+    },
+    "cue_sets": {
+      "landmarks": [
+        {
+          "event": "lighthouse",
+          "cycles": [],
+          "actions": [
+            {
+              "operation": "dialogue",
+              "value": 0,
+              "delay_ms": 0
+            }
+          ]
+        },
+        {
+          "event": "tunnel",
+          "cycles": [],
+          "actions": [
+            {
+              "operation": "objective",
+              "value": 515851809,
+              "delay_ms": 0
+            },
+            {
+              "operation": "dialogue",
+              "value": 6,
+              "delay_ms": 1500
+            }
+          ]
+        },
+        {
+          "event": "forestVista",
+          "cycles": [],
+          "actions": [
+            {
+              "operation": "objective",
+              "value": 515851809,
+              "delay_ms": 0
+            },
+            {
+              "operation": "dialogue",
+              "value": 7,
+              "delay_ms": 0
+            }
+          ]
+        },
+        {
+          "event": "forestExit",
+          "cycles": [],
+          "actions": [
+            {
+              "operation": "objective",
+              "value": 515851809,
+              "delay_ms": 0
+            },
+            {
+              "operation": "dialogue",
+              "value": 9,
+              "delay_ms": 0
+            }
+          ]
+        },
+        {
+          "event": "lair",
+          "cycles": [],
+          "actions": [
+            {
+              "operation": "objective",
+              "value": 890754261,
+              "delay_ms": 0
+            }
+          ]
+        },
+        {
+          "event": "arena",
+          "cycles": [],
+          "actions": [
+            {
+              "operation": "objective",
+              "value": 832904427,
+              "delay_ms": 0
+            },
+            {
+              "operation": "dialogue",
+              "value": 13,
+              "delay_ms": 0
+            }
+          ]
+        }
+      ],
+      "encounters": [
+        {
+          "event": "defenses",
+          "cycles": [
+            1,
+            2,
+            3
+          ],
+          "actions": [
+            {
+              "operation": "objective",
+              "value": 832904427,
+              "delay_ms": 0
+            }
+          ]
+        },
+        {
+          "event": "deletion",
+          "cycles": [
+            1
+          ],
+          "actions": [
+            {
+              "operation": "dialogue",
+              "value": 14,
+              "delay_ms": 0
+            }
+          ]
+        },
+        {
+          "event": "osirisArrives",
+          "cycles": [
+            1,
+            2,
+            3
+          ],
+          "actions": [
+            {
+              "operation": "dialogue",
+              "value": 15,
+              "delay_ms": 0
+            }
+          ]
+        },
+        {
+          "event": "osirisHolds",
+          "cycles": [
+            1
+          ],
+          "actions": [
+            {
+              "operation": "dialogue",
+              "value": 16,
+              "delay_ms": 0
+            }
+          ]
+        },
+        {
+          "event": "osirisHolds",
+          "cycles": [
+            2
+          ],
+          "actions": [
+            {
+              "operation": "dialogue",
+              "value": 25,
+              "delay_ms": 0
+            },
+            {
+              "operation": "dialogue",
+              "value": 26,
+              "delay_ms": 5840
+            }
+          ]
+        },
+        {
+          "event": "osirisHolds",
+          "cycles": [
+            3
+          ],
+          "actions": [
+            {
+              "operation": "dialogue",
+              "value": 30,
+              "delay_ms": 0
+            }
+          ]
+        },
+        {
+          "event": "arcReady",
+          "cycles": [
+            1,
+            2,
+            3
+          ],
+          "actions": [
+            {
+              "operation": "objective",
+              "value": 2242442627,
+              "delay_ms": 0
+            }
+          ]
+        },
+        {
+          "event": "arcReady",
+          "cycles": [
+            1
+          ],
+          "actions": [
+            {
+              "operation": "dialogue",
+              "value": 18,
+              "delay_ms": 0
+            }
+          ]
+        },
+        {
+          "event": "arcReminder",
+          "cycles": [
+            1,
+            2
+          ],
+          "actions": [
+            {
+              "operation": "dialogue",
+              "value": 21,
+              "delay_ms": 0
+            }
+          ]
+        },
+        {
+          "event": "arcReminder",
+          "cycles": [
+            3
+          ],
+          "actions": [
+            {
+              "operation": "dialogue",
+              "value": 31,
+              "delay_ms": 0
+            }
+          ]
+        },
+        {
+          "event": "eyeVulnerable",
+          "cycles": [
+            1,
+            2,
+            3
+          ],
+          "actions": [
+            {
+              "operation": "objective",
+              "value": 2753423771,
+              "delay_ms": 0
+            }
+          ]
+        },
+        {
+          "event": "eyeVulnerable",
+          "cycles": [
+            1
+          ],
+          "actions": [
+            {
+              "operation": "dialogue",
+              "value": 22,
+              "delay_ms": 0
+            }
+          ]
+        },
+        {
+          "event": "eyeVulnerable",
+          "cycles": [
+            3
+          ],
+          "actions": [
+            {
+              "operation": "dialogue",
+              "value": 32,
+              "delay_ms": 0
+            }
+          ]
+        },
+        {
+          "event": "pursuit",
+          "cycles": [
+            1,
+            2,
+            3
+          ],
+          "actions": [
+            {
+              "operation": "objective",
+              "value": 3751228237,
+              "delay_ms": 0
+            },
+            {
+              "operation": "dialogue",
+              "value": 29,
+              "delay_ms": 0
+            }
+          ]
+        },
+        {
+          "event": "defeated",
+          "cycles": [
+            1,
+            2,
+            3
+          ],
+          "actions": [
+            {
+              "operation": "dialogue",
+              "value": 33,
+              "delay_ms": 0
+            }
+          ]
+        }
+      ]
+    },
+    "action_sets": {
+      "reveal_complete": [
+        {
+          "operation": "dialogue",
+          "value": 12,
+          "delay_ms": 250
+        }
+      ],
+      "first_rescue_followup": [
+        {
+          "operation": "dialogue",
+          "value": 16,
+          "delay_ms": 6400
+        }
+      ]
+    },
+    "binding_tables": {
+      "forest": {
+        "traversal": [
+          {
+            "asset": "native_008",
+            "stage": 1
+          },
+          {
+            "asset": "native_011",
+            "stage": 2
+          },
+          {
+            "asset": "native_013",
+            "stage": 3
+          },
+          {
+            "asset": "native_015",
+            "stage": 4
+          }
+        ],
+        "objectives": [
+          {
+            "asset": "native_009",
+            "event": "0x1EBF4621"
+          },
+          {
+            "asset": "native_016",
+            "event": "0x3517D4D5"
+          }
+        ],
+        "dialogue": [
+          {
+            "asset": "native_010",
+            "row": 6,
+            "delay_ms": 1500
+          },
+          {
+            "asset": "native_012",
+            "row": 7,
+            "delay_ms": 0
+          },
+          {
+            "asset": "native_014",
+            "row": 9,
+            "delay_ms": 0
+          }
+        ]
+      }
+    }
+  }
+}

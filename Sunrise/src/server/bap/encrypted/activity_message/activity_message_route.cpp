@@ -1,6 +1,8 @@
 #include "activity_message_route.h"
 #include "omega_roster_readiness.h"
 #include "omega_monitor_edges.h"
+#include "omega_opening_intake.h"
+#include "../../../../state/activity/coo/omega_adapter.h"
 
 #include <algorithm>
 #include <array>
@@ -644,100 +646,117 @@ void report_sense_update(Session& session, const service::Request& request) noex
     const char* resetReason = !observerReset       ? "none"
                               : !destinationBound ? "destination"
                                                   : "roster";
-    if (observerReset) {
-        // A bound teardown/replacement report invalidates both ordering and dedupe state. Preserve
-        // only the packet ordinal so the diagnostic stream remains monotonic on this connection.
-        session.activity.sensorObservation = {};
-        session.activity.omegaOpeningStage =
-            middleware::bap::activity_message::sensor_auth_update::kOmegaOpeningStageNone;
-    }
-    const bool becameReady = rosterReady && !session.activity.sensorObservation.omegaRosterReady;
-    if (rosterReady) {
-        session.activity.sensorObservation.omegaRosterReady = true;
-    }
-    if (becameReady) {
-        // This is a new authored graph. Retirements from the prior graph cannot satisfy it.
-        session.activity.sensorObservation.omegaIkoraLattice.reset();
-        session.activity.sensorObservation.omegaIkoraLattice.begin(
-            session.activity.key.generation.value);
-        session.activity.sensorObservation.omegaSceneHandoffArmed = false;
-        session.activity.sensorObservation.omegaSceneCompleted = false;
-        session.activity.sensorObservation.omegaForestEntranceTriggered = false;
-        session.activity.sensorObservation.omegaPortalTransportConfirmed = false;
-        session.activity.sensorObservation.omegaForestEntranceAuthorityPublished = false;
-        session.activity.keepaliveDueTick = 0;
-    }
-    const char* transition = observerReset ? "reset" : "none";
-    if (opening) {
-        if (!destinationBound) {
-            transition = "rejected";
-        } else if (!session.activity.sensorObservation.omegaRosterReady) {
-            transition = "not_ready";
-        } else if (session.activity.sensorObservation.omegaOpeningTriggered) {
-            transition = "duplicate";
-        } else {
-            session.activity.sensorObservation.omegaOpeningTriggered = true;
-            // Wake the normal authority publisher. Delivery, retry and nonce ownership remain in
-            // the keepalive path rather than turning type 6 into a request/reply command.
-            session.activity.keepaliveDueTick = 0;
-            transition = "latched";
+    const bool cooOpening = omega_destination(session.activity.instance)
+        && !session.activity.joinedForeignSession
+        && state::activity::coo::omega::select(state::activity::mission_run_generation(),
+            core::settings::get().omegaExperiments.cooExecutor);
+    bool becameReady = false;
+    const char* transition = "none";
+    const char* forestResult = "none";
+    if (cooOpening) {
+        const auto intake = omega_opening_intake::capture(
+            session.activity.sensorObservation.omegaOpeningExecutor,
+            {session.activity.key.generation.value, sequence, parsed, handleBound,
+                epochBound, destinationBound, portalMutation}, update);
+        if (intake.queued) { session.activity.keepaliveDueTick = 0; }
+        transition = intake.overflow ? "queue_overflow" : intake.queued ? "queued" : "none";
+        forestResult = forestEntrance ? transition : "none";
+    } else {
+        if (observerReset) {
+            // A bound teardown/replacement report invalidates both ordering and dedupe state. Preserve
+            // only the packet ordinal so the diagnostic stream remains monotonic on this connection.
+            session.activity.sensorObservation = {};
+            session.activity.omegaOpeningStage =
+                middleware::bap::activity_message::sensor_auth_update::kOmegaOpeningStageNone;
         }
-    }
-    // Reconstructed host join: the actual native Ikora selector output releases only the
-    // GUID-bound near portal gate. Never infer this edge from time, position, or C7 submission.
-    if (destinationBound && session.activity.sensorObservation.omegaRosterReady
-        && session.activity.sensorObservation.omegaOpeningTriggered) {
-        namespace lattice = state::activity::omega_ikora_lattice;
-        for (std::size_t index = 0; index < update.objectCount; ++index) {
-            lattice::Scene scene{};
-            if (!lattice::extract_scene(update.objects[index], scene)) { continue; }
-            const auto result = session.activity.sensorObservation.omegaIkoraLattice.observe(
-                session.activity.key.generation.value, true, scene);
-            if (result == lattice::Observation::released) {
+        becameReady = rosterReady && !session.activity.sensorObservation.omegaRosterReady;
+        if (rosterReady) {
+            session.activity.sensorObservation.omegaRosterReady = true;
+        }
+        if (becameReady) {
+            // This is a new authored graph. Retirements from the prior graph cannot satisfy it.
+            session.activity.sensorObservation.omegaIkoraLattice.reset();
+            session.activity.sensorObservation.omegaIkoraLattice.begin(
+                session.activity.key.generation.value);
+            session.activity.sensorObservation.omegaSceneHandoffArmed = false;
+            session.activity.sensorObservation.omegaSceneCompleted = false;
+            session.activity.sensorObservation.omegaForestEntranceTriggered = false;
+            session.activity.sensorObservation.omegaPortalTransportConfirmed = false;
+            session.activity.sensorObservation.omegaForestEntranceAuthorityPublished = false;
+            session.activity.keepaliveDueTick = 0;
+        }
+        transition = observerReset ? "reset" : "none";
+        if (opening) {
+            if (!destinationBound) {
+                transition = "rejected";
+            } else if (!session.activity.sensorObservation.omegaRosterReady) {
+                transition = "not_ready";
+            } else if (session.activity.sensorObservation.omegaOpeningTriggered) {
+                transition = "duplicate";
+            } else {
+                session.activity.sensorObservation.omegaOpeningTriggered = true;
+                // Wake the normal authority publisher. Delivery, retry and nonce ownership remain in
+                // the keepalive path rather than turning type 6 into a request/reply command.
                 session.activity.keepaliveDueTick = 0;
-                std::array<char, 240> line{};
-                const int length = std::snprintf(line.data(), line.size(),
-                    "ev=omega_lattice stage=host_release key=0xD00142CF slot=23/16 "
-                    "scene_generation=0x%08X scene_revision=%u event=0x792AAA50 "
-                    "position=0 position_revision=2 snap=0 policy=reconstructed",
-                    scene.generationWire, scene.revision);
-                if (length > 0 && static_cast<std::size_t>(length) < line.size()) {
-                    core::log::write(core::log::Channel::server, core::log::Level::info,
-                        {line.data(), static_cast<std::size_t>(length)});
+                transition = "latched";
+            }
+        }
+        // Reconstructed host join: the actual native Ikora selector output releases only the
+        // GUID-bound near portal gate. Never infer this edge from time, position, or C7 submission.
+        if (destinationBound && session.activity.sensorObservation.omegaRosterReady
+            && session.activity.sensorObservation.omegaOpeningTriggered) {
+            namespace lattice = state::activity::omega_ikora_lattice;
+            for (std::size_t index = 0; index < update.objectCount; ++index) {
+                lattice::Scene scene{};
+                if (!lattice::extract_scene(update.objects[index], scene)) { continue; }
+                const auto result = session.activity.sensorObservation.omegaIkoraLattice.observe(
+                    session.activity.key.generation.value, true, scene);
+                if (result == lattice::Observation::released) {
+                    session.activity.keepaliveDueTick = 0;
+                    std::array<char, 240> line{};
+                    const int length = std::snprintf(line.data(), line.size(),
+                        "ev=omega_lattice stage=host_release key=0xD00142CF slot=23/16 "
+                        "scene_generation=0x%08X scene_revision=%u event=0x792AAA50 "
+                        "position=0 position_revision=2 snap=0 policy=reconstructed",
+                        scene.generationWire, scene.revision);
+                    if (length > 0 && static_cast<std::size_t>(length) < line.size()) {
+                        core::log::write(core::log::Channel::server, core::log::Level::info,
+                            {line.data(), static_cast<std::size_t>(length)});
+                    }
                 }
             }
         }
-    }
-    const char* forestResult = "none";
-    if (forestEntrance) {
-        if (!destinationBound) {
-            forestResult = "rejected";
-        } else if (!session.activity.sensorObservation.omegaRosterReady) {
-            // v1: roster readiness alone arms the latch. The opening-authority-published
-            // ordering clause returns once the stage machine is the ordering authority
-            // (it only sets at the synthetic Triggered stage, which the baseline never
-            // reaches).
-            forestResult = "not_ready";
-        } else if (session.activity.sensorObservation.omegaForestEntranceTriggered) {
-            forestResult = "duplicate";
-        } else {
-            session.activity.sensorObservation.omegaForestEntranceTriggered = true;
-            session.activity.keepaliveDueTick = 0;
-            forestResult = "latched";
-            // The initial player hash and exact native carrier now own portal contact.
-            // Keep progression observation, but never replace native arrival/facing with
-            // a body-position write. No timeout or inactive-carrier fallback is scheduled.
-            const auto portalPlan = session.activity.sensorObservation.omegaIkoraLattice.plan(
-                session.activity.key.generation.value, !state::activity::omega_authority_quiesced());
-            const bool carrierArmed = portalPlan.active && portalPlan.position.revision == 2;
-            std::array<char, 224> portalLine{};
-            const int portalLength = std::snprintf(portalLine.data(),portalLine.size(),
-                "ev=omega_portal stage=entry path=native_only result=%s "
-                "carrier=BA5F26EF/4/0 carrier_armed=%u fallback=none arrival_verified=0",
-                carrierArmed ? "await_native_arrival" : "carrier_not_armed",carrierArmed?1U:0U);
-            if (portalLength > 0 && static_cast<std::size_t>(portalLength) < portalLine.size()) {
-                core::log::write(core::log::Channel::server,core::log::Level::info,
-                    {portalLine.data(),static_cast<std::size_t>(portalLength)});
+        forestResult = "none";
+        if (forestEntrance) {
+            if (!destinationBound) {
+                forestResult = "rejected";
+            } else if (!session.activity.sensorObservation.omegaRosterReady) {
+                // v1: roster readiness alone arms the latch. The opening-authority-published
+                // ordering clause returns once the stage machine is the ordering authority
+                // (it only sets at the synthetic Triggered stage, which the baseline never
+                // reaches).
+                forestResult = "not_ready";
+            } else if (session.activity.sensorObservation.omegaForestEntranceTriggered) {
+                forestResult = "duplicate";
+            } else {
+                session.activity.sensorObservation.omegaForestEntranceTriggered = true;
+                session.activity.keepaliveDueTick = 0;
+                forestResult = "latched";
+                // The initial player hash and exact native carrier now own portal contact.
+                // Keep progression observation, but never replace native arrival/facing with
+                // a body-position write. No timeout or inactive-carrier fallback is scheduled.
+                const auto portalPlan = session.activity.sensorObservation.omegaIkoraLattice.plan(
+                    session.activity.key.generation.value, !state::activity::omega_authority_quiesced());
+                const bool carrierArmed = portalPlan.active && portalPlan.position.revision == 2;
+                std::array<char, 224> portalLine{};
+                const int portalLength = std::snprintf(portalLine.data(),portalLine.size(),
+                    "ev=omega_portal stage=entry path=native_only result=%s "
+                    "carrier=BA5F26EF/4/0 carrier_armed=%u fallback=none arrival_verified=0",
+                    carrierArmed ? "await_native_arrival" : "carrier_not_armed",carrierArmed?1U:0U);
+                if (portalLength > 0 && static_cast<std::size_t>(portalLength) < portalLine.size()) {
+                    core::log::write(core::log::Channel::server,core::log::Level::info,
+                        {portalLine.data(),static_cast<std::size_t>(portalLength)});
+                }
             }
         }
     }

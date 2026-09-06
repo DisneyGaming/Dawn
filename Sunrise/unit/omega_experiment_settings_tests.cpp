@@ -360,7 +360,18 @@ void version_six_documents_keep_optional_experiments_compatible() {
 
 } // namespace
 
+void coo_selection_is_optional_and_strict() {
+    Settings output{};
+    CHECK(parse_document(R"({"version":6})", output));
+    CHECK(!output.omegaExperiments.cooExecutor);
+    CHECK(parse_document(R"({"version":6,"experiments":{"omega":{"coo_executor":true}}})", output));
+    CHECK(output.omegaExperiments.cooExecutor);
+    CHECK(!parse_document(R"({"version":6,"experiments":{"omega":{"coo_executor":1}}})", output));
+    CHECK(!parse_document(R"({"version":6,"experiments":{"omega":{"coo_executor":true,"coo_executor":false}}})", output));
+}
+
 int main() {
+    coo_selection_is_optional_and_strict();
     all_off_defaults_are_stable();
     every_requested_leaf_is_parsed_independently();
     stage_master_gates_only_its_three_dependants();

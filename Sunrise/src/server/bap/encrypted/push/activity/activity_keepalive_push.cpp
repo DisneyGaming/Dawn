@@ -1,4 +1,5 @@
 #include "activity_keepalive_push.h"
+#include "../../../../../state/activity/coo/omega_opening_projection.h"
 #include "../../../../../state/activity/runtime.h"
 
 #include <Windows.h>
@@ -179,6 +180,33 @@ bool consume_activity_keepalive(Session& session,
     if (!lifecycle::activity_binding_is_current(session)
         || !state::activity::contains(session.activity.instance)) {
         return false;
+    }
+    // Drain into the persistent binding before any detached retry snapshot is
+    // copied. Delivery failure must not replay or forget native observations.
+    if (!session.activity.joinedForeignSession
+        && session.activity.sensorObservation.omegaOpeningExecutor.queued() != 0) {
+        namespace opening = state::activity::coo::omega::opening;
+        auto& observer = session.activity.sensorObservation;
+        const auto before = observer.omegaOpeningExecutor.diagnostics();
+        const auto changes = opening::update_observer(observer, session.activity.key.generation.value);
+        const auto after = observer.omegaOpeningExecutor.diagnostics();
+        if (changes.reset) { session.activity.omegaOpeningStage = message::kOmegaOpeningStageNone; }
+        if (changes.reset || changes.failed || before.active != after.active || before.complete != after.complete) {
+            const auto authority = observer.omegaOpeningExecutor.authority();
+            std::array<char, 448> line{};
+            const int size = std::snprintf(line.data(), line.size(),
+                "ev=coo_opening binding=%llu incarnation=%llu packet=%llu phase=%u active=%08X complete=%08X "
+                "ready=%u requested=%u released=%u entrance=%u scene_revision=%u reset=%u failed=%u",
+                static_cast<unsigned long long>(session.activity.key.generation.value),
+                static_cast<unsigned long long>(after.incarnation), static_cast<unsigned long long>(changes.packet),
+                static_cast<unsigned>(after.phase), after.active, after.complete,
+                authority.roster ? 1U : 0U, authority.requested ? 1U : 0U, authority.released ? 1U : 0U,
+                authority.entrance ? 1U : 0U, changes.sceneRevision, changes.reset ? 1U : 0U, authority.failed ? 1U : 0U);
+            if (size > 0 && static_cast<std::size_t>(size) < line.size()) {
+                core::log::write(core::log::Channel::server, core::log::Level::info,
+                    {line.data(), static_cast<std::size_t>(size)});
+            }
+        }
     }
     if (session.activity.regionDebt.present) {
         touchesScratch = true;

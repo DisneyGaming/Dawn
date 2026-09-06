@@ -40,7 +40,7 @@ struct Status final {
 };
 /** Called for the admitted local Omega roster. Preparation preserves all
  * authored source placements and uses zero loose requests until a lift starts. */
-[[nodiscard]] Authority authority(std::uint64_t run,std::uint32_t generation) noexcept;
+[[nodiscard]] Authority authority(std::uint64_t run,std::uint32_t generation,bool executorOwned=false) noexcept;
 [[nodiscard]] Status status(std::uint64_t run) noexcept;
 /** Native intro graph node 4 (two-arm summon clip) loaded for the bound boss. */
 void observe_initial_summon(const Boss& boss) noexcept;

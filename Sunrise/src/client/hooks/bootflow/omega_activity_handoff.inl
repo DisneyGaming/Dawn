@@ -256,6 +256,7 @@ inline bool fireteam_transition_nonce(std::uintptr_t session,std::uint64_t& nonc
  * Native public wrappers own immediate/deferred execution and descriptor copying.
  * No session goal, player, fade, native activity record or actor is patched. */
 inline void poll() noexcept {
+    ending::update();
     const auto now=GetTickCount64();
     const auto base=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
     poll_exit(base,now);
@@ -316,13 +317,14 @@ inline void poll() noexcept {
     if(carriesNonce) { std::memcpy(selection.data()+0x10,&nonce,sizeof(nonce)); }
     if(!valid(selection.data()) || !ending::claim_handoff(token)) { return; }
     if(!state::activity::forced::suspend_omega_for_completed_run(token.run)) {
-        ending::note_handoff_result(token,false);report("override_changed",token);return;
+        ending::note_handoff_result(token,false);ending::update();report("override_changed",token);return;
     }
     if(!carriesNonce) { report("nonce_missing",token); } // Falls back to the orbit round trip.
     clear();
     select(0,selection.data());
     commit(1);
     ending::note_handoff_result(token,true);
+    ending::update();
     exit_state()={token.run,carriesNonce?nonce:0,now,now,session,false};
     report("queued",token,nonce); // Native svc6 and in-world arrival remain separate receipts.
 }

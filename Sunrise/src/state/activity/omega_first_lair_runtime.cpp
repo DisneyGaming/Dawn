@@ -42,21 +42,45 @@ void changed(const char* event) noexcept {
             {line.data(),static_cast<std::size_t>(size)});
     }
 }
+void advance_locked() noexcept {
+    if(!g_run.executor_owned() || g_run.failed()) { return; }
+    const auto before=g_run.executor_diagnostics();
+    g_run.update_executor();
+    const auto after=g_run.executor_diagnostics();
+    if(before.incarnation==after.incarnation && before.active==after.active
+        && before.complete==after.complete && before.phase==after.phase && !g_run.failed()) { return; }
+    changed("executor");
+    const auto& definition=*coo::combat::kSections[g_run.executor_section()];
+    std::string_view waiting="complete";
+    for(std::size_t i=0;i<definition.steps.size();++i) {
+        if((after.active&(std::uint32_t{1}<<i))!=0) { waiting=definition.steps[i].name;break; }
+    }
+    std::array<char,384> line{};
+    const auto size=std::snprintf(line.data(),line.size(),
+        "ev=coo_combat run=%llu section=%u incarnation=%llu phase=%u active=%08X complete=%08X failure=%u failed=%u waiting=\"%.*s\"",
+        static_cast<unsigned long long>(after.run),static_cast<unsigned>(g_run.executor_section()),
+        static_cast<unsigned long long>(after.incarnation),static_cast<unsigned>(after.phase),after.active,after.complete,
+        static_cast<unsigned>(after.failure),g_run.failed()?1U:0U,static_cast<int>(waiting.size()),waiting.data());
+    if(size>0 && static_cast<std::size_t>(size)<line.size()) {
+        core::log::write(core::log::Channel::server,core::log::Level::info,{line.data(),static_cast<std::size_t>(size)});
+    }
+}
 }
 
-Authority authority(std::uint64_t run,std::uint32_t generation) noexcept {
+Authority authority(std::uint64_t run,std::uint32_t generation,bool executorOwned) noexcept {
     AcquireSRWLockExclusive(&g_lock);
     Authority output{};
     // The FX source needs the succeeding generation, so retain signed headroom.
     if(run!=0 && run==mission_run_generation() && generation!=0 && generation<0x7FFFFFFFU
         && mission_seed_armed() && !omega_authority_quiesced() && world_phase()!=WorldPhase::idle) {
         if(run!=g_run.run()) {
-            g_run.begin(run);g_generation=generation;g_revision=1;g_published=0;g_transitRejectLogged=0;g_transitCreated=0;
+            g_run.begin(run,executorOwned);g_generation=generation;g_revision=1;g_published=0;g_transitRejectLogged=0;g_transitCreated=0;
             g_dpsBackEntity=UINT32_MAX;g_dpsBackCycle=0;
             g_rescueMarkerReadyMask=0;
             changed("prepare");
         }
         if(generation==g_generation) {
+            advance_locked();
             output.generation=generation;
             if(g_run.island()==4) { output.crownGeneration=generation; }
             for(std::size_t index=0;index<kAllGroups.size();++index) {
@@ -288,13 +312,14 @@ void invalidate(std::uint64_t run) noexcept {
     ReleaseSRWLockExclusive(&g_lock);
 }
 bool publication_due(std::uint64_t now) noexcept {
-    AcquireSRWLockShared(&g_lock);
+    AcquireSRWLockExclusive(&g_lock);
+    if(admitted(g_run.run())) { advance_locked(); }
     const bool due=admitted(g_run.run()) && g_revision!=g_published && now>=g_lastPublish+250;
-    ReleaseSRWLockShared(&g_lock);return due;
+    ReleaseSRWLockExclusive(&g_lock);return due;
 }
 void reset() noexcept {
     AcquireSRWLockExclusive(&g_lock);
-    g_run={};g_generation=0;g_revision=0;g_published=0;g_lastPublish=0;
+    g_run.begin(0);g_generation=0;g_revision=0;g_published=0;g_lastPublish=0;
     g_dpsBackEntity=UINT32_MAX;g_dpsBackCycle=0;
     g_rescueMarkerReadyMask=0;
     ReleaseSRWLockExclusive(&g_lock);

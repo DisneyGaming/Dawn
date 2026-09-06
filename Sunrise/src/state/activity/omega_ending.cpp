@@ -2,6 +2,7 @@
 #include <array>
 #include <cstdio>
 #include "omega_ending.h"
+#include "coo/omega_ending_controller.h"
 #include "omega_presentation.h"
 #include "omega_first_lair_runtime.h"
 #include "runtime.h"
@@ -10,7 +11,7 @@
 namespace sunrise::state::activity::omega_ending {
 namespace {
 SRWLOCK g_lock=SRWLOCK_INIT;
-Ending g_ending{};
+coo::ending::Controller g_ending{};
 omega_ending_transit::Transaction g_transit{};
 ActivityInstanceKey g_transitActivity{};
 std::uint64_t g_transitMember{};
@@ -19,7 +20,26 @@ bool current(std::uint64_t run) noexcept {
     return run!=0 && run==mission_run_generation() && mission_seed_armed()
         && !omega_authority_quiesced() && world_phase()!=WorldPhase::idle;
 }
+void log_executor() noexcept {
+    if(!g_ending.selected()) { return; }
+    static coo::Diagnostics previous{};
+    const auto d=g_ending.diagnostics();
+    if(d.run==previous.run && d.incarnation==previous.incarnation && d.active==previous.active
+        && d.complete==previous.complete && d.phase==previous.phase && d.failure==previous.failure) { return; }
+    previous=d;
+    const auto waiting=g_ending.waiting();
+    std::array<char,384> line{};
+    const auto size=std::snprintf(line.data(),line.size(),
+        "ev=coo_ending run=%llu incarnation=%llu phase=%u active=%08X complete=%08X failure=%u waiting=\"%.*s\"",
+        static_cast<unsigned long long>(d.run),static_cast<unsigned long long>(d.incarnation),
+        static_cast<unsigned>(d.phase),d.active,d.complete,static_cast<unsigned>(d.failure),
+        static_cast<int>(waiting.size()),waiting.data());
+    if(size>0 && static_cast<std::size_t>(size)<line.size()) {
+        core::log::write(core::log::Channel::server,core::log::Level::info,{line.data(),static_cast<std::size_t>(size)});
+    }
+}
 void changed(const char* event) noexcept {
+    log_executor();
     const auto state=g_ending.authority();
     std::array<char,384> text{};
     const int size=std::snprintf(text.data(),text.size(),
@@ -136,12 +156,18 @@ bool request_preview() noexcept {
     const auto run=mission_run_generation();
     AcquireSRWLockExclusive(&g_lock);
     if(current(run) && g_ending.token().run!=run) {
-        g_ending={};g_transit={};g_transitActivity={};g_transitMember=0;g_transitPublished=0;
+        g_ending.reset();g_transit={};g_transitActivity={};g_transitMember=0;g_transitPublished=0;
     }
     const bool accepted=current(run) && g_ending.request_preview(run,GetTickCount64());
     if(accepted) { changed("preview_requested"); }
     ReleaseSRWLockExclusive(&g_lock);
     return accepted;
+}
+Handoff handoff_status(std::uint64_t run) noexcept {
+    AcquireSRWLockShared(&g_lock);
+    const auto result = run != 0 && g_ending.token().run == run ? g_ending.handoff() : Handoff::dormant;
+    ReleaseSRWLockShared(&g_lock);
+    return result;
 }
 Token handoff_request() noexcept {
     AcquireSRWLockShared(&g_lock);
@@ -160,10 +186,10 @@ bool claim_handoff(Token token) noexcept {
 }
 void note_handoff_result(Token token,bool queued) noexcept {
     AcquireSRWLockExclusive(&g_lock);
-    if(g_ending.note_handoff_result(token,queued)) { changed(queued?"handoff_queued":"handoff_failed"); }
+    if(g_ending.note_handoff_result(token,queued,GetTickCount64())) { changed(queued?"handoff_queued":"handoff_failed"); }
     ReleaseSRWLockExclusive(&g_lock);
 }
-bool request(Token token) noexcept {
+bool request(Token token,bool executorOwned) noexcept {
     const auto status=omega_first_lair::status(token.run);
     if(!matches(token,status)) {
         std::array<char,320> detail{};
@@ -182,11 +208,11 @@ bool request(Token token) noexcept {
     }
     AcquireSRWLockExclusive(&g_lock);
     if(current(token.run) && g_ending.token().run!=token.run) {
-        g_ending={};g_transit={};g_transitActivity={};g_transitMember=0;g_transitPublished=0;
+        g_ending.reset();g_transit={};g_transitActivity={};g_transitMember=0;g_transitPublished=0;
     }
     const auto before=g_ending.phase();
     const bool live=current(token.run);
-    const bool accepted=live && g_ending.request(token,GetTickCount64());
+    const bool accepted=live && g_ending.request(token,GetTickCount64(),executorOwned);
     if(accepted && before!=g_ending.phase()) { changed("requested"); }
     const auto held=g_ending.token();
     ReleaseSRWLockExclusive(&g_lock);
@@ -211,16 +237,27 @@ Authority authority(std::uint64_t run,std::uint64_t now) noexcept {
     AcquireSRWLockExclusive(&g_lock);
     Authority result{};
     Phase before{},after{};
-    bool advanced=false;
+    bool advanced=false,started=false,finished=false;
     if(current(run) && run==g_ending.token().run) {
         before=g_ending.phase();
+        const auto previous=g_ending.authority();
+        const auto previousHandoff=g_ending.handoff();
         g_ending.advance(now,dialogue);
         after=g_ending.phase();
-        advanced=before!=after;
+        const auto state=g_ending.authority();
+        started=!previous.started && state.started;
+        finished=!previous.complete && state.complete;
+        advanced=before!=after || previous.revision!=state.revision || previous.arrived!=state.arrived
+            || previousHandoff!=g_ending.handoff();
         if(advanced) { changed("advance"); }
         result=g_ending.authority();
     }
     ReleaseSRWLockExclusive(&g_lock);
+    if(started && result.token.origin==Origin::encounter) {
+        omega_presentation::note_encounter(result.token.run,omega_presentation::Encounter::cinematic,3);
+        forward(result.token,false);
+    }
+    if(finished) { forward(result.token,true); }
     if(advanced && after==Phase::failed) {
         // The phase that timed out is the diagnostic; `changed` only shows the failure.
         std::array<char,96> detail{};
@@ -228,6 +265,23 @@ Authority authority(std::uint64_t run,std::uint64_t now) noexcept {
             static_cast<unsigned>(before),dialogue?1U:0U));
     }
     return result;
+}
+void update() noexcept {
+    AcquireSRWLockShared(&g_lock);
+    const auto token=g_ending.token();const bool selected=g_ending.selected();
+    ReleaseSRWLockShared(&g_lock);
+    if(!selected || !token.valid()) { return; }
+    const auto now=GetTickCount64();
+    if(current(token.run)) { static_cast<void>(authority(token.run,now)); }
+    else {
+        // Native commit can end Omega before the next publisher samples its
+        // receipt. Finish only the already claimed handoff; publish no new work.
+        AcquireSRWLockExclusive(&g_lock);
+        const auto before=g_ending.handoff();
+        if(g_ending.token()==token) { g_ending.finish_handoff(now); }
+        if(before!=g_ending.handoff()) { changed("handoff_result"); }
+        ReleaseSRWLockExclusive(&g_lock);
+    }
 }
 Token retirement_request(std::uint64_t run) noexcept {
     AcquireSRWLockShared(&g_lock);
@@ -256,7 +310,7 @@ bool observe_retirement(Token token) noexcept {
 }
 bool request_skip(std::uint64_t run) noexcept {
     AcquireSRWLockExclusive(&g_lock);
-    const bool accepted=current(run) && g_ending.token().run==run && g_ending.skip();
+    const bool accepted=current(run) && g_ending.token().run==run && g_ending.skip(GetTickCount64());
     if(accepted) { changed("skip"); }
     ReleaseSRWLockExclusive(&g_lock);
     return accepted;
@@ -295,7 +349,7 @@ bool observe_arrival(Token token,std::int32_t region) noexcept {
     AcquireSRWLockExclusive(&g_lock);
     const auto state=g_ending.authority();
     const bool live=current(token.run);
-    const bool accepted=live && g_ending.observe_arrival(token,region);
+    const bool accepted=live && g_ending.observe_arrival(token,region,GetTickCount64());
     if(accepted && !state.arrived) { changed("native_arrival"); }
     ReleaseSRWLockExclusive(&g_lock);
     if(!accepted) {
@@ -354,7 +408,7 @@ omega_ending_transit::Authority project_transit(const TransitInput& input) noexc
                     local.sliceSetIndex,local.sliceSetHash,static_cast<unsigned>(g_transit.phase()));
             } else {
                 if(g_transit.observe(scope,input.native)
-                    && g_ending.observe_arrival(command.token,input.native.currentRegion)) {
+                    && g_ending.observe_arrival(command.token,input.native.currentRegion,GetTickCount64())) {
                     changed("native_arrival");
                 }
                 result=g_transit.authority(scope);
@@ -397,7 +451,7 @@ void note_membership_published(ActivityInstanceKey activity,std::uint64_t run,st
 }
 void reset() noexcept {
     AcquireSRWLockExclusive(&g_lock);
-    g_ending={};g_transit={};g_transitActivity={};g_transitMember=0;g_transitPublished=0;
+    g_ending.reset();g_transit={};g_transitActivity={};g_transitMember=0;g_transitPublished=0;
     ReleaseSRWLockExclusive(&g_lock);
     AcquireSRWLockExclusive(&g_rejectLock);
     g_rejectRun=0;g_rejectMask=0;

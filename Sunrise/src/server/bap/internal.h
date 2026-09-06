@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <type_traits>
 
 #include "../../client/network/consumer.h"
 #include "../../middleware/bap/activity_message/activity_patch_epoch_parser.h"
@@ -12,6 +13,7 @@
 #include "../../state/activity/bubble_authority/definition.h"
 #include "../../state/activity/lifecycle_generation.h"
 #include "../../state/activity/omega_ikora_lattice.h"
+#include "../../state/activity/coo/omega_opening.h"
 #include "../../state/build_data/scenarios/definition.h"
 #include "../../state/runtime/state.h"
 #include "encrypted/queuez/definition.h"
@@ -88,6 +90,7 @@ struct RosterPublication {
 
 /** Connection-local validation, dedupe and delivery state for Omega's bounded opening edge. */
 struct ActivitySensorObservation {
+    state::activity::coo::omega::opening::Run omegaOpeningExecutor{};
     state::activity::omega_ikora_lattice::State omegaIkoraLattice{};
     /** Latest top-level roster mirror, used to identify a mission's root cue group dynamically. */
     std::array<std::uint32_t, 8> authoredTopLevelKeys{};
@@ -239,6 +242,11 @@ struct Session {
     /** True while another peer's account mutation still needs a full local refresh. */
     bool accountResyncArmed{};
 };
+
+// clear_session and authentication retirement securely wipe the whole object.
+// Assignment restores data/sentinels, not hidden vtable or ownership machinery.
+static_assert(std::is_trivially_copyable_v<Session>,
+    "Session must remain trivially copyable for secure wipe and detached snapshots.");
 
 namespace lifecycle {
 

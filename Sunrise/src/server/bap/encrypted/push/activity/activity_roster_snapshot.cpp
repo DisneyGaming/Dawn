@@ -20,6 +20,8 @@
 #include "../../../../../state/activity/membership/activity_membership_query.h"
 #include "../../../../../state/activity/runtime.h"
 #include "../../../../../state/activity/omega_presentation.h"
+#include "../../../../../state/activity/coo/omega_projection.h"
+#include "../../../../../state/activity/coo/omega_opening_projection.h"
 #include "../../../../../state/activity/omega_first_lair_runtime.h"
 #include "../../../../../state/activity/omega_ending.h"
 #include "../../../../../state/build_data/runtime.h"
@@ -482,6 +484,9 @@ RosterOutcome build_roster_snapshot(Session& session,
     const bool omegaQuiesced = state::activity::omega_authority_quiesced();
     snapshot.archiveOmega = name == "mission_scot";
     snapshot.omegaSceneAuthority = syntheticOmega && !omegaQuiesced;
+    const bool cooOpening = syntheticOmega && !session.activity.joinedForeignSession
+        && state::activity::coo::omega::select(state::activity::mission_run_generation(),
+            omegaExperiments.cooExecutor);
     // Reconstructed Omega policy: the authenticated pm_weapondown monitor (30/20,
     // backed by authored tv_weapondown 60/29) advances Ikora's waiting orb animation.
     // This is distinct from pt_start_ikora_vignette 31/18 -> 60/28; the original
@@ -500,6 +505,9 @@ RosterOutcome build_roster_snapshot(Session& session,
     // record when the lattice opens merely to supply the previously missing predicate input.
     snapshot.omegaPortalPlayerHash = syntheticOmega && !omegaQuiesced;
     snapshot.omegaPortalEntry = snapshot.omegaSceneAuthority && snapshot.omegaIkoraLatticeReleased;
+    if (cooOpening) {
+        state::activity::coo::omega::opening::project(session.activity.sensorObservation.omegaOpeningExecutor, snapshot);
+    }
     // Arm the one-shot Ghost line only once the client is IN WORLD (the same latch that gates
     // the authored seed). Run 6 proved the hazard: the record dispatched at t=60.7 during the
     // load screen, its 10 s eligibility deadline expired exactly at the t=70.7 fade-in, and
@@ -521,62 +529,10 @@ RosterOutcome build_roster_snapshot(Session& session,
         && (session.activity.sensorObservation.omegaForestEntranceTriggered
             || (inputs.regionIndex >= 64 && inputs.regionIndex <= 112));
     if (snapshot.omegaDialogueArm && !session.activity.joinedForeignSession) {
-        const auto presentation = state::activity::omega_presentation::snapshot(
+        const auto mission = state::activity::coo::omega::update({
             state::activity::mission_run_generation(), GetTickCount64(), inputs.regionIndex,
-            session.activity.sensorObservation.omegaForestEntranceTriggered);
-        snapshot.omegaDialogueGenerations = presentation.generations;
-        snapshot.omegaActiveDialogueRow = presentation.activeRow;
-        snapshot.omegaObjectiveEvent = presentation.objective;
-        snapshot.omegaIntroRevision = presentation.intro.revision;
-        snapshot.omegaIntroPlay = presentation.intro.play;
-        snapshot.omegaBossGeneration = presentation.bossGeneration;
-        const auto encounter=state::activity::omega_first_lair::authority(
-            state::activity::mission_run_generation(),presentation.bossGeneration);
-        snapshot.omegaFirstLairGeneration=encounter.generation;
-        snapshot.omegaFirstLairLoose=encounter.loose;
-        snapshot.omegaFirstLairAnchor=encounter.anchor;
-        snapshot.omegaFirstCannonActive=encounter.cannon;
-        snapshot.omegaFinalCannonActive=encounter.finalCannon;
-        snapshot.omegaCrownRestricted=encounter.crownRestricted;
-        snapshot.omegaCrownGeneration=encounter.crownGeneration;
-        snapshot.omegaCrownLoose=encounter.crownLoose;
-        snapshot.omegaCrownAnchor=encounter.crownAnchor;
-        snapshot.omegaHiveLoose=encounter.hiveLoose;
-        snapshot.omegaHiveAnchor=encounter.hiveAnchor;
-        snapshot.omegaVexLoose=encounter.vexLoose;
-        snapshot.omegaVexAnchor=encounter.vexAnchor;
-        snapshot.omegaCabalLoose=encounter.cabalLoose;
-        snapshot.omegaCabalAnchor=encounter.cabalAnchor;
-        snapshot.omegaCrownCycle=encounter.cycle;
-        snapshot.omegaCrownChargeEnabled=encounter.chargeEnabled;
-        snapshot.omegaCrownChargeDunked=encounter.chargeDunked;
-        snapshot.omegaCrownEyeStatusActive=encounter.eyeStatusActive;
-        snapshot.omegaCrownReturnLaunch=encounter.returnLaunch;
-        snapshot.omegaCrownTransitLaunches=encounter.transitLaunches;
-        snapshot.omegaCrownTransitBridge=encounter.transitBridge;
-        snapshot.omegaCrownTransitTarget=encounter.transitTarget;
-        snapshot.omegaCrownTransitCreated=encounter.transitCreated;
-        snapshot.omegaCrownFinalTraversal=encounter.finalTraversal;
-        snapshot.omegaCrownRestriction=encounter.restriction;
-        snapshot.omegaRescueSourcesGeneration=encounter.crownGeneration;
-        snapshot.omegaRescueScenes=encounter.rescueScenes;
-        snapshot.omegaRescueMarkerReadyMask=encounter.rescueMarkerReadyMask;
-        if(encounter.endingRequested) {
-            const auto status=state::activity::omega_first_lair::status(
-                state::activity::mission_run_generation());
-            if(status.enabled && status.token.valid()) {
-                (void)state::activity::omega_ending::request({status.boss.run,status.boss.actionEpoch,
-                    status.boss.actor,status.boss.generation});
-            }
-        }
-        const auto ending=state::activity::omega_ending::authority(
-            state::activity::mission_run_generation(),GetTickCount64());
-        snapshot.omegaEndingRevision=ending.revision;
-        snapshot.omegaEndingPlay=ending.play;
-        snapshot.omegaEndingState=ending.bookendState?1U:0U;
-        snapshot.omegaEndingRetire=ending.retireRoster;
-        snapshot.omegaEndingSeedRuntime=message::ending_runtime_seed_required(
-            ending.bookendState,ending.arrived,ending.play,ending.started,ending.failed);
+            session.activity.sensorObservation.omegaForestEntranceTriggered, omegaExperiments.cooExecutor});
+        state::activity::coo::omega::project(mission, snapshot);
     }
     // Activate the map generator once the player has ever entered the gate (persistent sense
     // latch), or by region for a direct forest launch. Region alone flaps during walked z-legs

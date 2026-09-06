@@ -1,9 +1,15 @@
 #pragma once
+#include "coo/omega_script_views.h"
+#include "coo/native_services.h"
+#include "coo/population_service.h"
+#include "coo/scene_service.h"
 
 #include <array>
 #include <cstddef>
 #include <cstdint>
 
+#include "coo/omega_combat_definition.h"
+#include <type_traits>
 #include "omega_enemy_chase_catalog.h"
 #include "omega_enemy_crown_catalog.h"
 #include "omega_enemy_crown_waves.h"
@@ -154,7 +160,47 @@ static_assert([] {
  * world-coordinate writes or client toy-spawner calls belong to this state. */
 class Encounter final {
 public:
-    void begin(std::uint64_t run) noexcept { *this={};run_=run; }
+    void begin(std::uint64_t run,bool executorOwned=false) noexcept {
+        CombatServices services(*this);executor_.cancel(services);
+        const auto retained=executor_;
+        *this={};executor_=retained;run_=run;executorOwned_=executorOwned;
+        if(executorOwned_ && !executor_.start(coo::script::graph(coo::combat::kSectionRoles[0], *coo::combat::kSections[0]),run)) { failed_=true; }
+    }
+    // Only the serialized publication owner calls this. Native callbacks keep
+    // their immediate admission/claim contracts and record qualified facts.
+    void update_executor() noexcept {
+        if(!executorOwned_ || failed_) { return; }
+        CombatServices services(*this);
+        for(unsigned pass=0;pass<128;++pass) {
+            const auto before=executor_.diagnostics();
+            executor_.update(services);
+            if(executor_.diagnostics().phase==coo::Phase::failed) { failed_=true;return; }
+            const auto& definition=coo::script::graph(coo::combat::kSectionRoles[section_], *coo::combat::kSections[section_]);
+            for(std::size_t i=0;i<definition.steps.size();++i) {
+                if(executor_.step_state(i).phase!=coo::StepPhase::active) { continue; }
+                for(std::size_t n=0;n<definition.steps[i].commands.size();++n) {
+                    const auto& spec=definition.steps[i].commands[n];
+                    if(spec.operation==coo::Operation::observation && !executor_.step_state(i).commands[n].completed
+                        && fact(static_cast<coo::combat::Fact>(spec.argument))) {
+                        static_cast<void>(executor_.enqueue({executor_.token(i,n),coo::Milestone::observed}));
+                    }
+                }
+            }
+            executor_.update(services);
+            const auto after=executor_.diagnostics();
+            if(after.phase==coo::Phase::failed) { failed_=true;return; }
+            if(after.phase==coo::Phase::complete && section_+1U<coo::combat::kSections.size()) {
+                executor_.cancel(services);++section_;
+                if(!executor_.start(coo::script::graph(coo::combat::kSectionRoles[section_], *coo::combat::kSections[section_]),run_)) { failed_=true;return; }
+                continue;
+            }
+            if(after.phase==coo::Phase::complete || (before.active==after.active && before.complete==after.complete)) { return; }
+        }
+        failed_=true; // A malformed definition cannot spin the publication owner.
+    }
+    [[nodiscard]] bool executor_owned() const noexcept { return executorOwned_; }
+    [[nodiscard]] std::uint8_t executor_section() const noexcept { return section_; }
+    [[nodiscard]] coo::Diagnostics executor_diagnostics() const noexcept { return executor_.diagnostics(); }
     /** The authored intro graph plays the two-arm summon (record 0 node 4,
      * clip 80F45188) itself after the fly-in; no host command or claim exists.
      * Its native loaded receipt starts the island-zero summonBoth cohort. */
@@ -170,7 +216,9 @@ public:
         if(!initial_receipt(boss)) { return false; }
         if(phase_==Phase::initial) { boss_=boss;enable_groups(Action::summonBoth); }
         else if(phase_!=Phase::bothPlaying || boss!=boss_) { return false; }
-        finish_initial_summon();return true;
+        if(executorOwned_) { initialFinished_=true;phase_=Phase::clearing; }
+        else { finish_initial_summon(); }
+        return true;
     }
     [[nodiscard]] Action pending() const noexcept {
         if(failed_) { return Action::none; }
@@ -207,6 +255,15 @@ public:
     }
     [[nodiscard]] bool summon_finished(const Boss& boss,Action action) noexcept {
         if(failed_ || boss!=boss_) { return false; }
+        if(executorOwned_) {
+            const bool playing=(action==Action::summonLeft && phase_==Phase::leftPlaying)
+                || (action==Action::summonRight && phase_==Phase::rightPlaying)
+                || (action==Action::summonBoth && phase_==Phase::bothPlaying);
+            if(!playing) { return false; }
+            if(island_==0 && action==Action::summonBoth) { initialFinished_=true; }
+            else { summonFinished_=true; }
+            phase_=Phase::clearing;return true;
+        }
         if(action==Action::summonLeft && phase_==Phase::leftPlaying) {
             if(has_action(Action::summonRight)) { phase_=Phase::rightReady; }
             else { phase_=Phase::clearing;advance_clear(); }
@@ -222,47 +279,19 @@ public:
         return false;
     }
     [[nodiscard]] bool source_enabled(std::uint16_t slot,std::uint32_t registry=0xF4D0E0B2U) const noexcept {
-        for(std::size_t i=0;i<kAllGroups.size();++i) {
-            if(kAllGroups[i].source==slot && kAllGroups[i].registry==registry && enabled_[i]) { return true; }
-        }
-        return false;
+        return populations_.source_enabled(kAllGroups,slot,registry);
     }
     [[nodiscard]] bool admitted(const ActorReceipt& receipt) noexcept {
-        const auto index=find_admission_group(receipt.source,receipt.registry);
-        if(failed_ || !receipt.valid() || receipt.run!=run_ || receipt.generation!=boss_.generation
-            || !source_enabled(receipt.source,receipt.registry)) { return false; }
-        // A full native actor identity belongs to only one source in this run.
-        for(std::size_t i=0;i<actors_.size();++i) {
-            for(std::uint8_t n=0;n<counts_[i];++n) {
-                if(actors_[i][n].receipt.actor==receipt.actor) { return false; }
-            }
-        }
-        if(index>=kAllGroups.size()) {
-            // Unexpected population of a required cohort fails closed. The nonblocking
-            // escape cohort (required=false) is never a barrier, so an extra native
-            // actor there is ignored rather than aborting the fight.
-            for(std::size_t i=0;i<kAllGroups.size();++i) {
-                const auto& group=kAllGroups[i];
-                if(group.source==receipt.source && group.registry==receipt.registry && enabled_[i] && !group.required) { return false; }
-            }
-            failed_=true;return false;
-        }
-        actors_[index][counts_[index]++].receipt=receipt;
-        return true;
+        if(failed_) { return false; }
+        const auto result=populations_.admit(kAllGroups,receipt,run_,boss_.generation);
+        if(result==coo::Admission::overflow) { failed_=true; }
+        return result==coo::Admission::accepted;
     }
     /** Only a verified native death transition may call this. Spawner consumed,
      * missing/streamed-out actors and removal callbacks are not death receipts. */
     [[nodiscard]] bool died(const ActorReceipt& receipt) noexcept {
-        if(failed_ || !receipt.valid() || receipt.run!=run_ || receipt.generation!=boss_.generation) { return false; }
-        for(std::size_t i=0;i<actors_.size();++i) {
-            for(std::uint8_t n=0;n<counts_[i];++n) {
-                if(actors_[i][n].receipt==receipt) {
-                    if(actors_[i][n].dead) { return false; }
-                    actors_[i][n].dead=true;advance_clear();return true;
-                }
-            }
-        }
-        return false;
+        if(failed_ || !populations_.died(receipt,run_,boss_.generation)) { return false; }
+        advance_clear();return true;
     }
     /** Departure requires both native fold completion and the authored next
      * path milestone receipt, supplied by the actor command owner. */
@@ -323,13 +352,13 @@ public:
     [[nodiscard]] CrownStage crown_stage() const noexcept { return crownStage_; }
     [[nodiscard]] CrownToken token() const noexcept { return {boss_,cycle_}; }
     [[nodiscard]] bool group_enabled(std::size_t index) const noexcept {
-        return index<enabled_.size() && enabled_[index];
+        return populations_.enabled(index);
     }
-    [[nodiscard]] const omega_rescue_npc::Commands& rescue_scenes() const noexcept { return scenes_; }
+    [[nodiscard]] const omega_rescue_npc::Commands& rescue_scenes() const noexcept { return sceneService_.commands(); }
     [[nodiscard]] SceneRequest scene_request(std::uint16_t slot) const noexcept {
         const auto index=scene_index(slot);
-        if(index>=scenes_.size()) { return {}; }
-        return {sceneTokens_[index],scenes_[index],!failed_ && scenes_[index].generation!=0};
+        if(index>=sceneService_.commands().size()) { return {}; }
+        return {sceneService_.owner(index),sceneService_.commands()[index],!failed_ && sceneService_.commands()[index].generation!=0};
     }
     [[nodiscard]] bool route_enabled() const noexcept {
         if(failed_ || !rescueReady_ || cycle_==0) { return false; }
@@ -379,7 +408,7 @@ public:
             // remove its collision before the player revisits the eye platform.
             returnLaunch_=false;
             phase_=Phase::mechanicPlaying;crownStage_=CrownStage::rescue;
-            return start_scene(rescue_slot());
+            return executorOwned_ || start_scene(rescue_slot());
         }
         if(event==AnimationMilestone::deletionHold && crownStage_==CrownStage::rescue && !deletionHold_) {
             deletionHold_=true;return true;
@@ -413,20 +442,20 @@ public:
     }
     [[nodiscard]] bool scene(const CrownToken& owner,std::uint16_t slot,SceneMilestone event) noexcept {
         const auto index=scene_index(slot);
-        if(failed_ || index>=scenes_.size() || !owner.valid() || sceneTokens_[index]!=owner
-            || scenes_[index].generation==0 || static_cast<unsigned>(event)>static_cast<unsigned>(SceneMilestone::completed)) { return false; }
+        if(failed_ || index>=sceneService_.commands().size() || !owner.valid() || sceneService_.owner(index)!=owner
+            || sceneService_.commands()[index].generation==0 || static_cast<unsigned>(event)>static_cast<unsigned>(SceneMilestone::completed)) { return false; }
         const auto bit=static_cast<std::uint8_t>(1U<<static_cast<unsigned>(event));
-        if((sceneMilestones_[index]&bit)!=0) { return false; }
+        if(sceneService_.seen(index,bit)) { return false; }
         if(event==SceneMilestone::rescueReady) {
             if(!current(owner) || crownStage_!=CrownStage::rescue || slot!=rescue_slot()) { return false; }
             rescueReady_=true;crownStage_=CrownStage::route;phase_=Phase::waiting;
-            if(cycle_==1) {
+            if(!executorOwned_ && cycle_==1) {
                 if(!start_scene(81) || !start_scene(82)) { return false; }
-            } else if(cycle_==2) {
+            } else if(!executorOwned_ && cycle_==2) {
                 if(!start_scene(68) || !start_scene(67)) { return false; }
             }
         } else if(event!=SceneMilestone::started && event!=SceneMilestone::completed) { return false; }
-        sceneMilestones_[index]=static_cast<std::uint8_t>(sceneMilestones_[index]|bit);
+        sceneService_.mark(index,bit);
         return true;
     }
     [[nodiscard]] bool charge(const ChargeReceipt& receipt,ChargeMilestone event) noexcept {
@@ -443,14 +472,16 @@ public:
         }
         if(event==ChargeMilestone::dunked && receipt.sinkHandle!=UINT32_MAX && receipt.sinkSlot==sink_slot()) {
             if(!scene_event(rescue_slot(),cycle_==3?0x14A9A975U:omega_rescue_npc::kReleaseBlocking)) { return false; }
-            if(cycle_<3) { scenes_[scene_index(cycle_==1?83:66)].stop=true; }
-            carried_={};chargeDunked_=true;schedule(Action::breakShield,CrownStage::eyeOpening);return true;
+            if(cycle_<3) { sceneService_.stop(scene_index(cycle_==1?83:66)); }
+            carried_={};chargeDunked_=true;
+            if(!executorOwned_) { schedule(Action::breakShield,CrownStage::eyeOpening); }
+            return true;
         }
         return false;
     }
     [[nodiscard]] bool health(const CrownToken& owner,HealthMilestone event) noexcept {
         if(!current(owner)) { return false; }
-        if(event==HealthMilestone::eyeDepleted && crownStage_==CrownStage::eyeDps) {
+        if(event==HealthMilestone::eyeDepleted && crownStage_==CrownStage::eyeDps && (!executorOwned_ || !eyeThreshold_)) {
             // Scene9 retains its eye hold and reminder until this authored
             // release. Its exit child and terminal remain native-owned.
             if(cycle_==1 && !scene_event(9,omega_rescue_npc::kReleaseFirstEye)) { return false; }
@@ -458,7 +489,8 @@ public:
             // retrieval; its one-second graph delay remains native-owned.
             if(cycle_==3 && !scene_event(46,0x505750FEU)) { return false; }
             recovered_=checkpointReached_=false;
-            schedule(Action::endEyePhase,cycle_==3?CrownStage::death:CrownStage::recovery);
+            if(executorOwned_) { eyeThreshold_=true; }
+            else { schedule(Action::endEyePhase,cycle_==3?CrownStage::death:CrownStage::recovery); }
             return true;
         }
         if(event==HealthMilestone::checkpointReached && crownStage_==CrownStage::recovery
@@ -478,7 +510,7 @@ public:
         if(!current(owner) || crownStage_!=CrownStage::ending || mechanicAction_!=Action::finishEncounter) { return false; }
         if(!finished && phase_==Phase::mechanicRequested) {
             const auto scene=scene_index(46);
-            if(scene<scenes_.size() && scenes_[scene].generation!=0) { scenes_[scene].stop=true; }
+            if(scene<sceneService_.commands().size() && sceneService_.commands()[scene].generation!=0) { sceneService_.stop(scene); }
             phase_=Phase::mechanicPlaying;return true;
         }
         if(finished && phase_==Phase::mechanicPlaying) {
@@ -528,11 +560,112 @@ public:
             || mechanicAction_!=Action::relocateFinal || !folded || !atMilestone) { return false; }
         // Authored Scene84 requests its three cannon Echoes. Keep that Scene's
         // generation through proximity, arrival and the following boss epoch.
-        if(!start_scene(84)) { return false; }
+        if(!executorOwned_ && !start_scene(84)) { return false; }
         finalDeparted_=true;crownStage_=CrownStage::finalArrival;phase_=Phase::waiting;start_final_if_ready();return true;
     }
 private:
-    struct Actor final { ActorReceipt receipt{};bool dead{}; };
+    class CombatServices final : public coo::NativeServices<CombatServices> {
+    public:
+        explicit CombatServices(Encounter& owner) noexcept : owner_(owner) {}
+        [[nodiscard]] coo::ServiceContext context() const noexcept { return {coo::script::graph(coo::combat::kSectionRoles[owner_.section_], *coo::combat::kSections[owner_.section_]), owner_.run_, owner_.executor_.diagnostics().incarnation}; }
+        bool request(const coo::Command& command) noexcept {
+            if(command.schema!=coo::Schema::omegaArchive || command.token.run!=owner_.run_
+                || command.spec.asset!=coo::combat::kBinding || owner_.failed_) { return false; }
+            if(command.spec.operation==coo::Operation::observation) {
+                return command.spec.wait==coo::Wait::observed
+                    && command.spec.argument>0 && command.spec.argument<=static_cast<unsigned>(coo::combat::Fact::deathFinished);
+            }
+            return command.spec.operation==coo::Operation::mechanic && command.spec.wait==coo::Wait::requested
+                && owner_.control(static_cast<coo::combat::Control>(command.spec.argument));
+        }
+        void retire(const coo::Command&) noexcept {} // Native ownership stays with the run, never raw executor tokens.
+    private:
+        Encounter& owner_;
+    };
+    [[nodiscard]] bool cohorts_cleared() const noexcept {
+        bool required{};
+        for(std::size_t i=0;i<kAllGroups.size();++i) {
+            if(!group_current(kAllGroups[i]) || !kAllGroups[i].required) { continue; }
+            required=true;
+            if(!populations_.cleared(i,kAllGroups[i].count)) { return false; }
+        }
+        return required;
+    }
+    [[nodiscard]] bool fact(coo::combat::Fact value) const noexcept {
+        using F=coo::combat::Fact;
+        if(failed_) { return false; }
+        switch(value) {
+        case F::initialFinished:return initialFinished_;
+        case F::summonFinished:return summonFinished_;
+        case F::cleared:return phase_==Phase::clearing && cohorts_cleared();
+        case F::departed:return phase_==Phase::complete;
+        case F::arrived:return pendingArrival_==island_+1U;
+        case F::crownReady:return island_==3 && phase_==Phase::complete && crown_restricted();
+        case F::deletionStarted:return crownStage_==CrownStage::rescue;
+        case F::rescueReady:return rescueReady_;
+        case F::dunked:return chargeDunked_;
+        case F::vulnerable:return crownStage_==CrownStage::eyeDps;
+        case F::eyeThreshold:return eyeThreshold_;
+        case F::recovered:return recovered_;
+        case F::checkpoint:return checkpointReached_;
+        case F::returnReady:return returnReady_;
+        case F::finalDeparted:return finalDeparted_;
+        case F::finalArrival:return pendingFinalArrival_ && crownStage_==CrownStage::finalArrival && final_traversal();
+        case F::dead:return bossDead_;
+        case F::deathFinished:return deathFinished_;
+        default:return false;
+        }
+    }
+    [[nodiscard]] bool control(coo::combat::Control value) noexcept {
+        using C=coo::combat::Control;
+        if(failed_ || !boss_.valid()) { return false; }
+        switch(value) {
+        case C::left:case C::right:case C::both: {
+            const auto action=value==C::left?Action::summonLeft:value==C::right?Action::summonRight:Action::summonBoth;
+            if(!has_action(action)) { return false; }
+            summonFinished_=false;
+            phase_=value==C::left?Phase::leftReady:value==C::right?Phase::rightReady:Phase::bothReady;
+            break;
+        }
+        case C::depart:phase_=Phase::departureReady;break;
+        case C::island1:case C::island2:case C::island3: {
+            const auto next=static_cast<std::uint8_t>(static_cast<unsigned>(value)-static_cast<unsigned>(C::island1)+1U);
+            if(pendingArrival_!=next || phase_!=Phase::complete) { return false; }
+            island_=next;boss_.island=next;pendingArrival_=0;phase_=Phase::waiting;break;
+        }
+        case C::crown1:
+            if(!fact(coo::combat::Fact::crownReady)) { return false; }
+            island_=4;boss_.island=4;cycle_=1;wave_=0;crownStage_=CrownStage::waves;phase_=Phase::waiting;break;
+        case C::wave1:case C::wave2:
+            if(boss_.actionEpoch==UINT32_MAX) { return false; }
+            wave_=value==C::wave1?1:2;++boss_.actionEpoch;break;
+        case C::deletion:schedule(Action::beginDeletion,CrownStage::deletion);break;
+        case C::rescue:if(!start_scene(rescue_slot())) { return false; }break;
+        case C::route:
+            if(cycle_==1 && (!start_scene(81) || !start_scene(82))) { return false; }
+            if(cycle_==2 && (!start_scene(68) || !start_scene(67))) { return false; }
+            break;
+        case C::expose:schedule(Action::breakShield,CrownStage::eyeOpening);break;
+        case C::recover:schedule(Action::endEyePhase,CrownStage::recovery);break;
+        case C::die:schedule(Action::endEyePhase,CrownStage::death);break;
+        case C::crown2:start_cycle(2);eyeThreshold_=false;break;
+        case C::escapeAdds:
+            if(boss_.actionEpoch==UINT32_MAX) { return false; }
+            restrictionReleased_=true;wave_=3;++boss_.actionEpoch;crownStage_=CrownStage::relocationAdds;break;
+        case C::relocate:schedule(Action::relocateFinal,CrownStage::relocation);break;
+        case C::finalScene:if(!start_scene(84)) { return false; }break;
+        case C::crown3:
+            if(!scene_event(84,omega_rescue_npc::kFinalCannonApproach)
+                || !scene_event(84,omega_rescue_npc::kFinalCannonArrived)) { return false; }
+            restrictionReleased_=false;start_cycle(3);eyeThreshold_=false;break;
+        case C::ending:schedule(Action::finishEncounter,CrownStage::ending);break;
+        default:return false;
+        }
+        return !failed_;
+    }
+    coo::Executor executor_{};
+    std::uint8_t section_{};
+    bool executorOwned_{},initialFinished_{},summonFinished_{},eyeThreshold_{};
     [[nodiscard]] bool initial_receipt(const Boss& boss) const noexcept {
         return !failed_ && run_!=0 && boss.run==run_ && boss.valid() && boss.island==0
             && boss.actionEpoch==0 && island_==0;
@@ -541,13 +674,6 @@ private:
         if(has_action(Action::summonLeft)) { phase_=Phase::leftReady; }
         else if(has_action(Action::summonRight)) { phase_=Phase::rightReady; }
         else { phase_=Phase::clearing;advance_clear(); }
-    }
-    [[nodiscard]] std::size_t find_admission_group(std::uint16_t source,std::uint32_t registry) const noexcept {
-        for(std::size_t i=0;i<kAllGroups.size();++i) {
-            if(kAllGroups[i].source==source && kAllGroups[i].registry==registry && enabled_[i]
-                && counts_[i]<kAllGroups[i].count) { return i; }
-        }
-        return kAllGroups.size();
     }
     [[nodiscard]] bool current(const CrownToken& owner) const noexcept {
         return !failed_ && owner.valid() && owner.boss==boss_ && owner.cycle==cycle_;
@@ -565,22 +691,16 @@ private:
         return omega_rescue_npc::kScenes.size();
     }
     [[nodiscard]] bool start_scene(std::uint16_t slot) noexcept {
-        const auto index=scene_index(slot);
-        if(index>=scenes_.size() || boss_.actionEpoch==UINT32_MAX) { failed_=true;return false; }
-        // The scene generation is scoped to its authored slot and current run.
-        // Preserve positive signed range and fail rather than wrap an identity.
         const auto generation=static_cast<std::uint64_t>(boss_.generation)+boss_.actionEpoch;
-        if(generation==0 || generation>0x7FFFFFFFULL) { failed_=true;return false; }
-        scenes_[index]={static_cast<std::uint32_t>(generation),false,0,{}};
-        sceneTokens_[index]=token();sceneMilestones_[index]=0;return true;
+        if(boss_.actionEpoch==UINT32_MAX || !sceneService_.begin(scene_index(slot),generation,token())) {
+            failed_=true;return false;
+        }
+        return true;
     }
     [[nodiscard]] bool scene_event(std::uint16_t slot,std::uint32_t event) noexcept {
-        const auto index=scene_index(slot);
-        if(index>=scenes_.size() || scenes_[index].generation==0) { return false; }
-        auto& command=scenes_[index];
-        for(std::uint8_t i=0;i<command.eventCount;++i) { if(command.events[i]==event) { return true; } }
-        if(command.eventCount>=command.events.size()) { failed_=true;return false; }
-        command.events[command.eventCount++]=event;return true;
+        const auto result=sceneService_.event(scene_index(slot),event);
+        if(result==coo::SceneEvent::overflow) { failed_=true; }
+        return result==coo::SceneEvent::accepted;
     }
     [[nodiscard]] static bool same_charge(const ChargeReceipt& a,const ChargeReceipt& b) noexcept {
         return a.token==b.token && a.sourceHandle==b.sourceHandle && a.generation==b.generation
@@ -599,6 +719,7 @@ private:
         gateArrivals_=0;routePlayer_=UINT32_MAX;carried_={};carriedOnce_=chargeDunked_=false;
     }
     void finish_recovery() noexcept {
+        if(executorOwned_) { return; }
         if(!recovered_ || !checkpointReached_ || !returnReady_) { return; }
         if(cycle_==1) { start_cycle(2); }
         else if(cycle_==2) {
@@ -614,6 +735,7 @@ private:
         }
     }
     void start_final_if_ready() noexcept {
+        if(executorOwned_) { return; }
         if(pendingFinalArrival_ && crownStage_==CrownStage::finalArrival && final_traversal()) {
             // Gate3's disappear path is armed by gate7's approach release. A
             // player already in the final area still needs the ordered cleanup
@@ -624,6 +746,7 @@ private:
         }
     }
     void finish_death() noexcept {
+        if(executorOwned_) { return; }
         if(bossDead_ && deathFinished_) { schedule(Action::finishEncounter,CrownStage::ending); }
     }
     [[nodiscard]] bool group_current(const Group& group) const noexcept {
@@ -635,10 +758,11 @@ private:
     }
     void enable_groups(Action action) noexcept {
         for(std::size_t i=0;i<kAllGroups.size();++i) {
-            if(group_current(kAllGroups[i]) && kAllGroups[i].summon==action) { enabled_[i]=true; }
+            if(group_current(kAllGroups[i]) && kAllGroups[i].summon==action) { populations_.enable(i); }
         }
     }
     void start_arrived_island() noexcept {
+        if(executorOwned_) { return; }
         island_=pendingArrival_;pendingArrival_=0;
         boss_.island=island_;
         if(has_action(Action::summonLeft)) { phase_=Phase::leftReady; }
@@ -646,21 +770,22 @@ private:
         else { failed_=true; }
     }
     void start_crown_if_ready() noexcept {
+        if(executorOwned_) { return; }
         if(!failed_ && island_==3 && phase_==Phase::complete && crown_restricted()) {
             island_=4;boss_.island=4;cycle_=1;wave_=0;crownStage_=CrownStage::waves;phase_=Phase::bothReady;
         }
     }
     void advance_clear() noexcept {
+        if(executorOwned_) { return; }
         if(phase_!=Phase::clearing || failed_) { return; }
         // Retail relocation overlaps the Cabal escape cohort. Native summon
         // completion is its barrier; living/late actors stay in the ledger.
         if(crownStage_==CrownStage::relocationAdds) { schedule(Action::relocateFinal,CrownStage::relocation);return; }
         bool required{};
-        for(std::size_t i=0;i<actors_.size();++i) {
+        for(std::size_t i=0;i<kAllGroups.size();++i) {
             if(!group_current(kAllGroups[i]) || !kAllGroups[i].required) { continue; }
             required=true;
-            if(!enabled_[i] || counts_[i]!=kAllGroups[i].count) { return; }
-            for(std::uint8_t n=0;n<counts_[i];++n) { if(!actors_[i][n].dead) { return; } }
+            if(!populations_.cleared(i,kAllGroups[i].count)) { return; }
         }
         if(!required) { failed_=true;return; }
         if(island_!=4) { phase_=Phase::departureReady;return; }
@@ -674,9 +799,7 @@ private:
             phase_=has_action(Action::summonLeft)?Phase::leftReady:Phase::rightReady;
         } else { schedule(Action::beginDeletion,CrownStage::deletion); }
     }
-    std::array<std::array<Actor,kMaximumGroupPopulation>,kAllGroups.size()> actors_{};
-    std::array<std::uint8_t,kAllGroups.size()> counts_{};
-    std::array<bool,kAllGroups.size()> enabled_{};
+    coo::PopulationService<ActorReceipt,kAllGroups.size(),kMaximumGroupPopulation> populations_{};
     std::uint64_t run_{};
     Boss boss_{};
     Phase phase_{Phase::initial};
@@ -686,9 +809,7 @@ private:
     std::uint8_t cycle_{},wave_{},gateArrivals_{};
     CrownStage crownStage_{};
     Action mechanicAction_{};
-    omega_rescue_npc::Commands scenes_{};
-    std::array<CrownToken,omega_rescue_npc::kScenes.size()> sceneTokens_{};
-    std::array<std::uint8_t,omega_rescue_npc::kScenes.size()> sceneMilestones_{};
+    coo::SceneService<omega_rescue_npc::SceneCommand,CrownToken,omega_rescue_npc::kScenes.size()> sceneService_{};
     std::array<std::uint32_t,7> transitGenerations_{};
     ChargeReceipt carried_{};
     std::uint32_t routePlayer_{UINT32_MAX};
@@ -699,5 +820,7 @@ private:
     bool rescueReady_{},deletionHold_{},recovered_{},checkpointReached_{},finalDeparted_{},bossDead_{},deathFinished_{};
     bool restrictionReleased_{},pendingFinalArrival_{},carriedOnce_{},chargeDunked_{};
 };
+
+static_assert(std::is_trivially_copyable_v<Encounter>);
 
 } // namespace sunrise::state::activity::omega_first_lair

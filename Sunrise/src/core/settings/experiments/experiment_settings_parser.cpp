@@ -49,6 +49,7 @@ bool Parser::omega_experiment_settings(experiments::Omega& output) noexcept {
     bool hasPortalMutation = false;
     bool hasSyntheticStageMachine = false;
     bool hasUnsafeDiagnostics = false;
+    bool hasCooExecutor = false;
     if (consume('}')) {
         return true;
     }
@@ -92,6 +93,9 @@ bool Parser::omega_experiment_settings(experiments::Omega& output) noexcept {
                 return false;
             }
             hasSyntheticStageMachine = true;
+        } else if (key == "coo_executor") {
+            if (hasCooExecutor || !boolean(candidate.cooExecutor)) { return false; }
+            hasCooExecutor = true;
         } else if (key == "unsafe_diagnostics") {
             if (hasUnsafeDiagnostics || !boolean(candidate.unsafeDiagnostics)) {
                 return false;

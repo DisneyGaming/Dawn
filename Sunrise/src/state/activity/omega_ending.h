@@ -5,7 +5,7 @@
 
 namespace sunrise::state::activity::omega_ending {
 /** Encounter-owner final-death boundary, never inferred from position/time. */
-[[nodiscard]] bool request(Token token) noexcept;
+[[nodiscard]] bool request(Token token,bool executorOwned=false) noexcept;
 /** Explicit Insert-menu preview, allowed only in the opening Lighthouse before
  * leaving for the Forest. Does not publish encounter kills or progression. */
 [[nodiscard]] bool preview_available() noexcept;
@@ -13,8 +13,12 @@ namespace sunrise::state::activity::omega_ending {
 /** The exact movie must have been observed active and then finished. These APIs
  * track one native activity-selection attempt, never claim destination arrival. */
 [[nodiscard]] Token handoff_request() noexcept;
+/** Read-only diagnostic; queued is not destination arrival. */
+[[nodiscard]] Handoff handoff_status(std::uint64_t run) noexcept;
 [[nodiscard]] bool claim_handoff(Token token) noexcept;
 void note_handoff_result(Token token, bool queued) noexcept;
+/** Game-frame owner drains selected ending receipts outside native component callbacks. */
+void update() noexcept;
 /** Supplies native type-6 commands and the terminal authored slice-state request. */
 [[nodiscard]] Authority authority(std::uint64_t run, std::uint64_t now) noexcept;
 /** The client's `cinematic_skip` incident (msg 19, row kCinematicSkipIncident) while the

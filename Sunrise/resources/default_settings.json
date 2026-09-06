@@ -28,7 +28,8 @@
       "gate_authority": false,
       "portal_mutation": false,
       "synthetic_stage_machine": false,
-      "unsafe_diagnostics": false
+      "unsafe_diagnostics": false,
+      "coo_executor": false
     }
   },
   "client": {

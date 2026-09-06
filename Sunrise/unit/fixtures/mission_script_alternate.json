@@ -1,0 +1,247 @@
+{
+  "format_version": 2,
+  "mission": "pump_station",
+  "profile": "lab.native.v1",
+  "authority_schema": "labSchema",
+  "assets": {
+    "pump": {
+      "registry": "0x0000005B",
+      "definition": "0x00000065",
+      "type": 0,
+      "slot": 0
+    },
+    "display": {
+      "registry": "0x0000005C",
+      "definition": "0x00000066",
+      "type": 0,
+      "slot": 0
+    },
+    "facts": {
+      "registry": "0x00000000",
+      "definition": "0x00000000",
+      "type": 0,
+      "slot": 0
+    },
+    "camera": {
+      "registry": "0x00000100",
+      "definition": "0x00000200",
+      "type": 6,
+      "slot": 2
+    },
+    "actors": {
+      "registry": "0x00000101",
+      "definition": "0x00000201",
+      "type": 2,
+      "slot": 3
+    }
+  },
+  "bindings": {
+    "pump": {
+      "capability": "pump",
+      "operation": "mechanic",
+      "asset": "pump",
+      "argument": 17,
+      "wait": "requested"
+    },
+    "display": {
+      "capability": "display",
+      "operation": "mechanic",
+      "asset": "display",
+      "argument": 44,
+      "wait": "requested"
+    },
+    "pump_ready": {
+      "capability": "pump_ready",
+      "operation": "observation",
+      "asset": "facts",
+      "argument": 6,
+      "wait": "observed"
+    },
+    "display_ready": {
+      "capability": "display_ready",
+      "operation": "observation",
+      "asset": "facts",
+      "argument": 12,
+      "wait": "observed"
+    },
+    "confirmed": {
+      "capability": "confirmed",
+      "operation": "observation",
+      "asset": "facts",
+      "argument": 9,
+      "wait": "observed"
+    },
+    "scene": {
+      "capability": "scene",
+      "operation": "scene",
+      "asset": "camera",
+      "argument": 7,
+      "wait": "nativeReady"
+    },
+    "population": {
+      "capability": "population",
+      "operation": "population",
+      "asset": "actors",
+      "argument": 2,
+      "wait": "completed"
+    }
+  },
+  "graphs": {
+    "launch": {
+      "name": "Pump station setup",
+      "domain": "composition",
+      "steps": [
+        {
+          "id": "finish",
+          "after": [
+            "wait_pump",
+            "wait_display"
+          ],
+          "commands": [
+            {
+              "id": "confirmed",
+              "binding": "confirmed"
+            }
+          ]
+        },
+        {
+          "id": "wait_display",
+          "after": [
+            "publish"
+          ],
+          "commands": [
+            {
+              "id": "display_ready",
+              "binding": "display_ready"
+            }
+          ]
+        },
+        {
+          "id": "wait_pump",
+          "after": [
+            "publish"
+          ],
+          "commands": [
+            {
+              "id": "pump_ready",
+              "binding": "pump_ready"
+            }
+          ]
+        },
+        {
+          "id": "publish",
+          "after": [],
+          "commands": [
+            {
+              "id": "display",
+              "binding": "display"
+            },
+            {
+              "id": "pump",
+              "binding": "pump"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "pump.running": "pump_ready",
+        "display.running": "display_ready",
+        "operator.confirmed": "confirmed"
+      }
+    },
+    "room": {
+      "name": "Independent scene and population",
+      "domain": "room",
+      "steps": [
+        {
+          "id": "camera",
+          "after": [],
+          "commands": [
+            {
+              "id": "scene",
+              "binding": "scene"
+            }
+          ]
+        },
+        {
+          "id": "actors",
+          "after": [],
+          "commands": [
+            {
+              "id": "population",
+              "binding": "population"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "scene.ready": "scene",
+        "population.finished": "population"
+      }
+    }
+  },
+  "roles": {
+    "encounter": "room"
+  },
+  "entry": "launch",
+  "modules": [
+    "display",
+    "pump"
+  ],
+  "observations": [
+    {
+      "fact": "operator_confirmed",
+      "receipt": "operator.confirmed"
+    },
+    {
+      "fact": "pump_running",
+      "receipt": "pump.running"
+    },
+    {
+      "fact": "display_running",
+      "receipt": "display.running"
+    }
+  ],
+  "presentation": {
+    "dialogue": {
+      "bank": "0x00000300",
+      "rows": [
+        {
+          "row": 0,
+          "selector": "0x00000400",
+          "duration_ms": 20,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        }
+      ],
+      "objective_cues": [],
+      "dispatch_timeout_ms": 100,
+      "spacing_ms": 5
+    },
+    "cue_sets": {
+      "signals": [
+        {
+          "event": "power_on",
+          "cycles": [],
+          "actions": [
+            {
+              "operation": "dialogue",
+              "value": 0,
+              "delay_ms": 3
+            }
+          ]
+        }
+      ]
+    },
+    "action_sets": {
+      "mission_success": [
+        {
+          "operation": "objective",
+          "value": 1280,
+          "delay_ms": 0
+        }
+      ]
+    },
+    "binding_tables": {}
+  }
+}

@@ -21,6 +21,7 @@
   },
   "experiments": {
     "omega": {
+      "coo_executor": true,
       "directive_ui": false,
       "ikora_carrier_model_suppression": true,
       "ikora_vfx_rebind": true,

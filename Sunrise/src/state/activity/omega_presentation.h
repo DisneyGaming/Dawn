@@ -6,7 +6,7 @@ namespace sunrise::state::activity::omega_presentation {
 
 /** Called only for the committed local Omega roster after its in-world seed latch. */
 [[nodiscard]] Presentation snapshot(std::uint64_t run, std::uint64_t now,
-                                    int arrivalRegion, bool entrance) noexcept;
+                                    int arrivalRegion, bool entrance, bool executor = false) noexcept;
 /** Game-thread position samples; no native pointers are retained. Other activities are ignored. */
 void observe_position(Point position) noexcept;
 /** Native type-53 dispatch receipt. Audio itself remains owned by Destiny. */

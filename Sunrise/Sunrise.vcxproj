@@ -88,12 +88,17 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\default_settings.json" />
+    <None Include="scripts\omega.json" />
+    <None Include="scripts\README.md" />
+    <None Include="scripts\FORMAT.md" />
     <None Include="resources\logo_sheet.png" />
     <None Include="vendor\detours\LICENSE.md" />
     <None Include="vendor\imgui\LICENSE.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\dllmain.cpp" />
+    <ClCompile Include="src\state\activity\coo\omega_script.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="src\state\activity\coo\mission_script.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\core\logging\log.cpp" />
     <ClCompile Include="src\core\provenance\build_provenance.cpp" />
     <ClCompile Include="src\core\logging\snapshot\log_snapshot_ring.cpp" />
@@ -260,6 +265,7 @@
     <ClCompile Include="src\state\activity\omega_ending.cpp" />
     <ClCompile Include="src\state\activity\omega_first_lair_runtime.cpp" />
     <ClCompile Include="src\state\activity\omega_presentation.cpp" />
+    <ClCompile Include="src\state\activity\coo\omega_adapter.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\state\build_data\scenarios\omega_schema_catalog.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\omega_arc_charge_receipts.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\omega_boss_health.cpp" />
@@ -1330,6 +1336,33 @@
     <ClInclude Include="src\state\activity\omega_crown_transit_authority.h" />
     <ClInclude Include="src\state\activity\omega_crown_transit_geometry.h" />
     <ClInclude Include="src\state\activity\omega_ending.h" />
+    <ClInclude Include="src\state\activity\coo\executor.h" />
+    <ClInclude Include="src\state\activity\coo\scene_service.h" />
+    <ClInclude Include="src\state\activity\coo\population_service.h" />
+    <ClInclude Include="src\state\activity\omega_presentation_definition.h" />
+    <ClInclude Include="src\state\activity\coo\omega_ending_controller.h" />
+    <ClInclude Include="src\state\activity\coo\omega_ending_definition.h" />
+    <ClInclude Include="src\state\activity\coo\omega_combat_definition.h" />
+    <ClInclude Include="src\state\activity\coo\omega_reveal.h" />
+    <ClInclude Include="src\state\activity\coo\presentation_cues.h" />
+    <ClInclude Include="src\state\activity\coo\dialogue_service.h" />
+    <ClInclude Include="src\state\activity\coo\mission_runtime.h" />
+    <ClInclude Include="src\state\activity\coo\receipt_queue.h" />
+    <ClInclude Include="src\state\activity\coo\native_services.h" />
+    <ClInclude Include="src\state\activity\coo\presentation_services.h" />
+    <ClInclude Include="src\state\activity\coo\omega_forest.h" />
+    <ClInclude Include="src\state\activity\coo\omega_forest_controller.h" />
+    <ClInclude Include="src\state\activity\coo\omega_opening.h" />
+    <ClInclude Include="src\state\activity\coo\omega_opening_projection.h" />
+    <ClInclude Include="src\server\bap\encrypted\activity_message\omega_opening_intake.h" />
+    <ClInclude Include="src\state\activity\coo\omega_definition.h" />
+    <ClInclude Include="src\state\activity\coo\omega_adapter.h" />
+    <ClInclude Include="src\state\activity\coo\omega_script.h" />
+    <ClInclude Include="src\state\activity\coo\script_views.h" />
+    <ClInclude Include="src\state\activity\coo\mission_script.h" />
+    <ClInclude Include="src\state\activity\coo\omega_script_views.h" />
+    <ClInclude Include="src\state\activity\coo\script_json.h" />
+    <ClInclude Include="src\state\activity\coo\omega_projection.h" />
     <ClInclude Include="src\state\activity\omega_ending_rules.h" />
     <ClInclude Include="src\state\activity\omega_ending_transit_rules.h" />
     <ClInclude Include="src\state\activity\omega_enemy_chase_catalog.h" />
