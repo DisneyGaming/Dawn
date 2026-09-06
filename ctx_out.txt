@@ -1,0 +1,164 @@
+######## FUN_7ff618c96490 @7ff618c96490 ########
+  L1 FUN_7ff6190cb790 @7ff6190cb790 size=331
+     L2 FUN_7ff619741de0 @7ff619741de0 size=1315
+  L1 FUN_7ff61973d880 @7ff61973d880 size=14080
+     L2 FUN_7ff619741de0 @7ff619741de0 size=1315
+  L1 FUN_7ff61974ad80 @7ff61974ad80 size=500
+     L2 FUN_7ff61974a830 @7ff61974a830 size=223
+  L1 FUN_7ff61974b180 @7ff61974b180 size=413
+     L2 FUN_7ff61974a830 @7ff61974a830 size=223
+  L1 FUN_7ff6193bbc00 @7ff6193bbc00 size=848
+     L2 FUN_7ff6193bf820 @7ff6193bf820 size=446
+  L1 FUN_7ff618e84450 @7ff618e84450 size=747
+  L1 FUN_7ff6197ce520 @7ff6197ce520 size=6460
+     L2 FUN_7ff619742320 @7ff619742320 size=263
+  L1 FUN_7ff6197c1370 @7ff6197c1370 size=239
+     L2 FUN_7ff6197ce520 @7ff6197ce520 size=6460
+     L2 FUN_7ff6197c4210 @7ff6197c4210 size=1009
+     L2 FUN_7ff6197c51a0 @7ff6197c51a0 size=141
+     L2 FUN_7ff6197c64e0 @7ff6197c64e0 size=133
+     L2 FUN_7ff6197c9370 @7ff6197c9370 size=36
+     L2 FUN_7ff6197c4e10 @7ff6197c4e10 size=133
+     L2 FUN_7ff6197c8800 @7ff6197c8800 size=1091
+  L1 FUN_7ff6197c8650 @7ff6197c8650 size=420
+     L2 FUN_7ff6197ce520 @7ff6197ce520 size=6460
+  L1 FUN_7ff6197418a0 @7ff6197418a0 size=1330
+     L2 FUN_7ff6197d0800 @7ff6197d0800 size=1638
+     L2 FUN_7ff6197faac0 @7ff6197faac0 size=1424
+     L2 FUN_7ff6198230a0 @7ff6198230a0 size=1374
+  L1 FUN_7ff619768170 @7ff619768170 size=338
+     L2 FUN_7ff6197d0800 @7ff6197d0800 size=1638
+     L2 FUN_7ff618f60840 @7ff618f60840 size=1660
+  L1 FUN_7ff6197d5490 @7ff6197d5490 size=2656
+     L2 FUN_7ff6197d4ec0 @7ff6197d4ec0 size=836
+  L1 FUN_7ff6197c9830 @7ff6197c9830 size=157
+     L2 FUN_7ff6197d63e0 @7ff6197d63e0 size=215
+     L2 FUN_7ff6197c98d0 @7ff6197c98d0 size=54
+     L2 FUN_7ff618f5e750 @7ff618f5e750 size=782
+     L2 FUN_7ff618dc2110 @7ff618dc2110 size=1228
+  L1 FUN_7ff6197e4f70 @7ff6197e4f70 size=924
+     L2 FUN_7ff6197e5310 @7ff6197e5310 size=1243
+     L2 FUN_7ff619816440 @7ff619816440 size=803
+     L2 FUN_7ff618c96c60 @7ff618c96c60 size=1086
+     L2 FUN_7ff619804550 @7ff619804550 size=905
+     L2 FUN_7ff6197f1800 @7ff6197f1800 size=7369
+     L2 FUN_7ff6197ce520 @7ff6197ce520 size=6460
+  L1 FUN_7ff6197c8560 @7ff6197c8560 size=233
+     L2 FUN_7ff6197e4f70 @7ff6197e4f70 size=924
+  L1 FUN_7ff61984bb90 @7ff61984bb90 size=213
+     L2 FUN_7ff619741670 @7ff619741670 size=420
+     L2 FUN_7ff61904b590 @7ff61904b590 size=1114
+  L1 FUN_7ff618e90380 @7ff618e90380 size=3093
+     L2 FUN_7ff618e83900 @7ff618e83900 size=551
+  L1 FUN_7ff6197c4210 @7ff6197c4210 size=1009
+     L2 FUN_7ff618e8e040 @7ff618e8e040 size=8914
+     L2 FUN_7ff6197b7250 @7ff6197b7250 size=189
+     L2 FUN_7ff618e9b660 @7ff618e9b660 size=2756
+     L2 FUN_7ff618c8a2d0 @7ff618c8a2d0 size=751
+     L2 FUN_7ff6197b78f2 @7ff6197b78f2 size=1714
+     L2 FUN_7ff618f61330 @7ff618f61330 size=2644
+  L1 FUN_7ff6197c1f50 @7ff6197c1f50 size=243
+     L2 FUN_7ff6197c51a0 @7ff6197c51a0 size=141
+     L2 FUN_7ff6197ce520 @7ff6197ce520 size=6460
+  L1 FUN_7ff6197c8f50 @7ff6197c8f50 size=179
+  L1 FUN_7ff6197ca070 @7ff6197ca070 size=229
+     L2 FUN_7ff618c87030 @7ff618c87030 size=437
+     L2 FUN_7ff618c97b10 @7ff618c97b10 size=18
+  L1 FUN_7ff618dafd80 @7ff618dafd80 size=1004
+  L1 FUN_7ff6197cb040 @7ff6197cb040 size=229
+     L2 FUN_7ff618e9dbe0 @7ff618e9dbe0 size=692
+     L2 FUN_7ff6197b78f2 @7ff6197b78f2 size=1714
+  L1 FUN_7ff618e88140 @7ff618e88140 size=184
+     L2 FUN_7ff618e984d0 @7ff618e984d0 size=260
+  L1 FUN_7ff618f5e750 @7ff618f5e750 size=782
+  L1 FUN_7ff6197c8090 @7ff6197c8090 size=437
+     L2 FUN_7ff618f93a50 @7ff618f93a50 size=275
+  L1 FUN_7ff6197ca460 @7ff6197ca460 size=260
+     L2 FUN_7ff618f5e750 @7ff618f5e750 size=782
+     L2 FUN_7ff618c8c3d0 @7ff618c8c3d0 size=2238
+  L1 FUN_7ff619733a40 @7ff619733a40 size=125
+     L2 FUN_7ff61904af80 @7ff61904af80 size=1540
+  L1 FUN_7ff6197c1160 @7ff6197c1160 size=184
+     L2 FUN_7ff6197ce520 @7ff6197ce520 size=6460
+  L1 FUN_7ff6197c1220 @7ff6197c1220 size=149
+     L2 FUN_7ff6197ce520 @7ff6197ce520 size=6460
+  L1 FUN_7ff6197c12c0 @7ff6197c12c0 size=166
+     L2 FUN_7ff6197ce520 @7ff6197ce520 size=6460
+  L1 FUN_7ff6197c1920 @7ff6197c1920 size=278
+     L2 FUN_7ff6197ce520 @7ff6197ce520 size=6460
+  L1 FUN_7ff6197c1e50 @7ff6197c1e50 size=250
+     L2 FUN_7ff6197ce520 @7ff6197ce520 size=6460
+  L1 FUN_7ff6197c1770 @7ff6197c1770 size=424
+     L2 FUN_7ff6197ce520 @7ff6197ce520 size=6460
+  L1 FUN_7ff6193c30f0 @7ff6193c30f0 size=71
+     L2 FUN_7ff619722a20 @7ff619722a20 size=74
+     L2 FUN_7ff619722490 @7ff619722490 size=225
+     L2 FUN_7ff619722590 @7ff619722590 size=89
+     L2 FUN_7ff619723f20 @7ff619723f20 size=53
+     L2 FUN_7ff619724040 @7ff619724040 size=53
+  L1 FUN_7ff618db07e0 @7ff618db07e0 size=522
+  L1 FUN_7ff6197d1470 @7ff6197d1470 size=1949
+     L2 FUN_7ff6193c2bc0 @7ff6193c2bc0 size=105
+  L1 FUN_7ff618dbdc20 @7ff618dbdc20 size=14481
+  L1 FUN_7ff618db44e0 @7ff618db44e0 size=1624
+     L2 FUN_7ff618dbdc20 @7ff618dbdc20 size=14481
+  L1 FUN_7ff618e9c3b0 @7ff618e9c3b0 size=3455
+     L2 FUN_7ff618e93440 @7ff618e93440 size=231
+  L1 FUN_7ff618e981c0 @7ff618e981c0 size=769
+     L2 FUN_7ff618e93440 @7ff618e93440 size=231
+  L1 FUN_7ff618e99cf0 @7ff618e99cf0 size=146
+     L2 FUN_7ff618e93440 @7ff618e93440 size=231
+  L1 FUN_7ff618e99d90 @7ff618e99d90 size=536
+     L2 FUN_7ff618e99cf0 @7ff618e99cf0 size=146
+  L1 FUN_7ff618e9a770 @7ff618e9a770 size=1153
+     L2 FUN_7ff618e93440 @7ff618e93440 size=231
+  L1 FUN_7ff6197c9c70 @7ff6197c9c70 size=243
+     L2 FUN_7ff618c8c3d0 @7ff618c8c3d0 size=2238
+     L2 FUN_7ff6197b78f2 @7ff6197b78f2 size=1714
+     L2 FUN_7ff618dc2110 @7ff618dc2110 size=1228
+     L2 FUN_7ff618f591c0 @7ff618f591c0 size=964
+  L1 FUN_7ff6197cc2a0 @7ff6197cc2a0 size=522
+     L2 FUN_7ff6197b78f2 @7ff6197b78f2 size=1714
+  L1 FUN_7ff618f91810 @7ff618f91810 size=1404
+     L2 FUN_7ff618f94cf0 @7ff618f94cf0 size=536
+  L1 FUN_7ff6198539a0 @7ff6198539a0 size=823
+  L1 FUN_7ff618daebe0 @7ff618daebe0 size=353
+     L2 FUN_7ff618dad300 @7ff618dad300 size=324
+  L1 FUN_7ff618dc2110 @7ff618dc2110 size=1228
+  L1 FUN_7ff6197cb440 @7ff6197cb440 size=412
+     L2 FUN_7ff618c98060 @7ff618c98060 size=19
+  L1 FUN_7ff61972ccf0 @7ff61972ccf0 size=712
+  L1 FUN_7ff618f60840 @7ff618f60840 size=1660
+     L2 FUN_7ff618f61330 @7ff618f61330 size=2644
+  L1 FUN_7ff618f61330 @7ff618f61330 size=2644
+  L1 FUN_7ff618f59590 @7ff618f59590 size=1244
+     L2 FUN_7ff618f61330 @7ff618f61330 size=2644
+  L1 FUN_7ff618f96b20 @7ff618f96b20 size=551
+     L2 FUN_7ff618f62760 @7ff618f62760 size=6982
+  L1 FUN_7ff618dbd200 @7ff618dbd200 size=340
+
+======= FUN_7ff618c96490 @7ff618c96490 =======
+
+longlong FUN_7ff618c96490(int param_1)
+
+{
+  longlong lVar1;
+  
+  lVar1 = FUN_7ff618c73430();
+  if ((lVar1 != 0) && (param_1 != -1)) {
+    lVar1 = (longlong)param_1 * 0x39148 + lVar1;
+    return lVar1 + 0x18 + (longlong)*(int *)(lVar1 + 0x10) * 0x1c8a0;
+  }
+  return 0;
+}
+
+
+======= FUN_7ff6197fdab0 @7ff6197fdab0 =======
+
+byte FUN_7ff6197fdab0(longlong param_1)
+
+{
+  return *(byte *)(param_1 + 0x140) & 1;
+}
+
+

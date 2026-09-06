@@ -1,0 +1,53 @@
+dispatcher func = FUN_7ff619b09b70@7ff619b09b70
+
+
+undefined8
+FUN_7ff619b09b70(undefined8 param_1,ulonglong param_2,undefined8 param_3,undefined8 param_4)
+
+{
+  undefined8 uVar1;
+  
+  uVar1 = 0xfffffffffffffffe;
+  FUN_7ff619b09730();
+  if ((param_2 & 1) != 0) {
+    if ((param_2 & 4) == 0) {
+      FUN_7ff619af1ef0(param_1);
+    }
+    else {
+      switchD_7ff618f760e8::caseD_3(param_1,0x140,param_3,param_4,uVar1);
+    }
+  }
+  return param_1;
+}
+
+
+
+==== raw around handleReply call 0x7ff619b09d26 ====
+7ff619b09cfd  MOV R8D,EDI
+7ff619b09d00  MOV RDX,R14
+7ff619b09d03  LEA RCX,[RSP + 0x60]
+7ff619b09d08  CALL 0x7ff619b19a80
+7ff619b09d0d  TEST AL,AL
+7ff619b09d0f  JZ 0x7ff619b09d2e
+7ff619b09d11  CMP dword ptr [RSP + 0x50],EDI
+7ff619b09d15  JNZ 0x7ff619b09d2e
+7ff619b09d17  LEA RCX,[RBP + -0x8]
+7ff619b09d1b  MOV R9D,EDI
+7ff619b09d1e  MOV R8,RBX
+7ff619b09d21  LEA RDX,[RSP + 0x60]
+7ff619b09d26  CALL 0x7ff619b0b150
+7ff619b09d2b  MOVZX ESI,AL
+7ff619b09d2e  LEA RCX,[RSP + 0x60]
+7ff619b09d33  CALL 0x7ff619b19a50
+7ff619b09d38  JMP 0x7ff619b09d89
+7ff619b09d3a  LEA RCX,[RSP + 0x60]
+7ff619b09d3f  CALL 0x7ff619b1a1e0
+7ff619b09d44  LEA RAX,[RSP + 0x50]
+7ff619b09d49  MOV qword ptr [RSP + 0x20],RAX
+7ff619b09d4e  XOR R9D,R9D
+7ff619b09d51  MOV EDI,dword ptr [RSP + 0x120]
+7ff619b09d58  MOV R8D,EDI
+7ff619b09d5b  MOV RDX,R14
+7ff619b09d5e  LEA RCX,[RSP + 0x60]
+7ff619b09d63  CALL 0x7ff619b1a200
+7ff619b09d68  TEST AL,AL

@@ -1,0 +1,205 @@
+/**
+ * The local player's published world position.
+ * The game threads write it and the interface reads it, so a seqlock guards the vector.
+ */
+
+#include "player_position.h"
+#include "../../state/activity/omega_presentation.h"
+#include "../../state/activity/omega_first_lair_runtime.h"
+#include "../../state/activity/omega_crown_transit_geometry.h"
+#include "../../state/activity/runtime.h"
+#include "../../core/logging/log.h"
+
+#include <atomic>
+#include <cstdint>
+#include <cstdio>
+
+namespace {
+std::atomic_uint64_t g_crownRouteRejectRun{};
+std::atomic_uint64_t g_crownRouteRejectMask{};
+std::atomic_uint64_t g_crownRouteNoPlayerRun{};
+}
+
+namespace sunrise::client::player::position {
+namespace {
+
+namespace teleport = hooks::teleport;
+
+/** Odd while a write is in progress, so a reader that sees one retries. */
+std::atomic_uint32_t g_sequence{0};
+/** Written between two sequence bumps, and read between two equal even reads. */
+teleport::Vector g_position{};
+std::atomic_bool g_present{false};
+/**
+ * The player's physics component, found on the sync tick.
+ * It is kept here rather than taken from the teleport hook, because that hook only caches one
+ * while the teleport feature is switched on.
+ */
+std::atomic<void*> g_component{nullptr};
+
+/** Native local-player route observations; geometry never moves the player or
+ * manufactures pickup/dunk. The encounter owner deduplicates salted tokens. */
+void observe_crown_route(void* component,const teleport::Vector& position) noexcept {
+    namespace lair=state::activity::omega_first_lair;
+    namespace transit=state::activity::omega_crown_transit;
+    const auto nav=state::activity::omega_presentation::navigation();
+    if(!nav.enabled || nav.run==0 || nav.run!=state::activity::mission_run_generation()) { return; }
+    const auto status=lair::status(nav.run);
+    if(!status.enabled || status.failed || !status.token.valid()
+        || status.token.boss.run!=nav.run) { return; }
+    const bool route=status.crownStage==lair::CrownStage::route
+        || status.crownStage==lair::CrownStage::carrying;
+    const bool finalApproach=status.crownStage==lair::CrownStage::finalArrival
+        || (status.crownStage==lair::CrownStage::relocation
+            && status.phase==lair::Phase::mechanicRequested);
+    if(!route && !finalApproach) { return; }
+    std::uint32_t player=UINT32_MAX;
+    if(!teleport::read_local_player_entity(component,player)) {
+        if(g_crownRouteNoPlayerRun.exchange(nav.run,std::memory_order_acq_rel)!=nav.run) {
+            std::array<char,200> line{};
+            const int count=std::snprintf(line.data(),line.size(),
+                "ev=omega_crown_transit stage=reject reason=no_local_player_entity run=%llu cycle=%u crown_stage=%u phase=%u mutation=observe_only",
+                static_cast<unsigned long long>(nav.run),static_cast<unsigned>(status.token.cycle),
+                static_cast<unsigned>(status.crownStage),static_cast<unsigned>(status.phase));
+            if(count>0 && static_cast<std::size_t>(count)<line.size()) {
+                core::log::write(core::log::Channel::client,core::log::Level::info,{line.data(),static_cast<std::size_t>(count)});
+            }
+        }
+        return;
+    }
+    const transit::Point point{position[0],position[1],position[2]};
+    const auto offer=[&](std::size_t index,lair::GateMilestone milestone) noexcept {
+        const auto& volume=transit::kRouteVolumes[index];
+        const bool inside=index==6?transit::contains_final_cannon(point):transit::contains(volume,point);
+        if(!inside) { return; }
+        if(!lair::observe_gate_arrival(status.token,milestone,player)) {
+            if(g_crownRouteRejectRun.exchange(nav.run,std::memory_order_acq_rel)!=nav.run) {
+                g_crownRouteRejectMask.store(0,std::memory_order_relaxed);
+            }
+            const std::uint64_t bit=UINT64_C(1)<<(index*8U+static_cast<unsigned>(milestone));
+            if((g_crownRouteRejectMask.fetch_or(bit,std::memory_order_acq_rel)&bit)!=0) { return; }
+            std::array<char,320> rejectLine{};
+            const int rejectCount=std::snprintf(rejectLine.data(),rejectLine.size(),
+                "ev=omega_crown_transit stage=reject reason=gate_rejected run=%llu cycle=%u player=%08X volume=%08X/60/%u milestone=%u crown_stage=%u phase=%u position=%.3f,%.3f,%.3f mutation=observe_only",
+                static_cast<unsigned long long>(nav.run),static_cast<unsigned>(status.token.cycle),player,
+                volume.registry,static_cast<unsigned>(volume.slot),static_cast<unsigned>(milestone),
+                static_cast<unsigned>(status.crownStage),static_cast<unsigned>(status.phase),
+                static_cast<double>(point.x),static_cast<double>(point.y),static_cast<double>(point.z));
+            if(rejectCount>0 && static_cast<std::size_t>(rejectCount)<rejectLine.size()) {
+                core::log::write(core::log::Channel::client,core::log::Level::info,{rejectLine.data(),static_cast<std::size_t>(rejectCount)});
+            }
+            return;
+        }
+        std::array<char,320> line{};
+        const int count=std::snprintf(line.data(),line.size(),
+            "ev=omega_crown_transit stage=route_arrival run=%llu cycle=%u player=%08X volume=%08X/60/%u milestone=%u position=%.3f,%.3f,%.3f mutation=observe_only",
+            static_cast<unsigned long long>(nav.run),static_cast<unsigned>(status.token.cycle),
+            player,volume.registry,static_cast<unsigned>(volume.slot),static_cast<unsigned>(milestone),
+            static_cast<double>(point.x),static_cast<double>(point.y),static_cast<double>(point.z));
+        if(count>0 && static_cast<std::size_t>(count)<line.size()) {
+            core::log::write(core::log::Channel::client,core::log::Level::info,
+                {line.data(),static_cast<std::size_t>(count)});
+        }
+    };
+    if(finalApproach) {
+        offer(6,lair::GateMilestone::finalCannon);
+        offer(5,lair::GateMilestone::finalPlatform);return;
+    }
+    if(status.token.cycle<3) {
+        offer(status.token.cycle-1U,lair::GateMilestone::chargePlatform);
+    }
+    // These exact authored pm_teleport_complete volumes are the receiving eye
+    // platforms. They are not the portal source or proof of holding the charge.
+    if(status.crownStage==lair::CrownStage::carrying) {
+        offer(status.token.cycle+1U,lair::GateMilestone::eyePlatform);
+    }
+}
+
+/**
+ * Reads one component's body position and publishes it.
+ * @param component Component already proved to be the player's.
+ * @return True when the body was read. A failed read leaves the last position published.
+ */
+[[nodiscard]] bool publish_from(void* component) noexcept {
+    teleport::Vector position{};
+    // The body is gone at rest and during a load, so the last position stands until a new one
+    // reads back. A player who cannot be read has not moved.
+    if (!teleport::read_position(component, position)) {
+        return false;
+    }
+    g_sequence.fetch_add(1, std::memory_order_acq_rel);
+    g_position = position;
+    g_sequence.fetch_add(1, std::memory_order_release);
+    g_present.store(true, std::memory_order_release);
+    state::activity::omega_presentation::observe_position({position[0], position[1], position[2]});
+    observe_crown_route(component,position);
+    return true;
+}
+
+} // namespace
+
+/** Publishes the position of the component the physics sync is running for. */
+void observe(void* component) noexcept {
+    if (component == nullptr) {
+        return;
+    }
+    void* const known = g_component.load(std::memory_order_relaxed);
+    if (known == component) {
+        (void)publish_from(component);
+        return;
+    }
+    // The ownership test is paid only until the player's component is known. The frame poll drops
+    // a stale one, which is what lets a new destination's component be found.
+    if (known != nullptr || !teleport::owns_local_player(component)) {
+        return;
+    }
+    g_component.store(component, std::memory_order_relaxed);
+    (void)publish_from(component);
+}
+
+/** Refreshes the position for a player at rest, and drops a component that is no longer theirs. */
+void poll() noexcept {
+    void* component = g_component.load(std::memory_order_relaxed);
+    if (component == nullptr) {
+        // The teleport hook keeps one too whenever its own feature is on.
+        component = teleport::local_player_component();
+    }
+    if (component == nullptr) {
+        return;
+    }
+    if (!teleport::owns_local_player(component)) {
+        g_component.store(nullptr, std::memory_order_relaxed);
+        g_present.store(false, std::memory_order_release);
+        return;
+    }
+    g_component.store(component, std::memory_order_relaxed);
+    (void)publish_from(component);
+}
+
+/** Drops the published position. */
+void reset() noexcept {
+    g_component.store(nullptr, std::memory_order_relaxed);
+    g_present.store(false, std::memory_order_release);
+}
+
+/** @return The last published position. */
+Snapshot snapshot() noexcept {
+    Snapshot value{};
+    if (!g_present.load(std::memory_order_acquire)) {
+        return value;
+    }
+    for (;;) {
+        const std::uint32_t before = g_sequence.load(std::memory_order_acquire);
+        if ((before & 1U) != 0U) {
+            continue;
+        }
+        value.position = g_position;
+        if (g_sequence.load(std::memory_order_acquire) == before) {
+            break;
+        }
+    }
+    value.present = true;
+    return value;
+}
+
+} // namespace sunrise::client::player::position

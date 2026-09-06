@@ -1,0 +1,106 @@
+################ policy 27 codec=0x7ff61a02f2a8 ################
+  vtable=0x7ff619c9e988
+   vt[+0x0] = 0x7ff618e7e2f0
+   vt[+0x8] = 0x7ff618e868d0 caseD_0
+   vt[+0x10] = 0x7ff6190df3c0
+   vt[+0x18] = 0x7ff6190de2a0
+   vt[+0x20] = 0x7ff618ee4c00
+   vt[+0x28] = 0x7ff6190df920
+   vt[+0x30] = 0x7ff6190df940
+   vt[+0x38] = 0x7ff618e7dc10 caseD_0
+
+################ policy 28 codec=0x7ff61a02f2b0 ################
+  vtable=0x7ff619c9da98
+   vt[+0x0] = 0x7ff618e43c70
+   vt[+0x8] = 0x7ff6191e66d0 caseD_8
+   vt[+0x10] = 0x7ff618e7de70
+   vt[+0x18] = 0x7ff618e7d2d0
+   vt[+0x20] = 0x7ff618ee4c00
+   vt[+0x28] = 0x7ff618ef0830 FUN_7ff618ef0830
+   vt[+0x30] = 0x7ff6197bf830 FUN_7ff6197bf830
+   vt[+0x38] = 0x7ff618e7dc10 caseD_0
+
+################ policy 29 codec=0x7ff61a02f2c8 ################
+  vtable=0x7ff619c9dad8
+   vt[+0x0] = 0x7ff6190df8e0
+   vt[+0x8] = 0x7ff6191e66d0 caseD_8
+   vt[+0x10] = 0x7ff618e7de70
+   vt[+0x18] = 0x7ff618e7d2d0
+   vt[+0x20] = 0x7ff618ee4c00
+   vt[+0x28] = 0x7ff618ef0830 FUN_7ff618ef0830
+   vt[+0x30] = 0x7ff6197bf830 FUN_7ff6197bf830
+   vt[+0x38] = 0x7ff618e7dc10 caseD_0
+
+################ policy 30 codec=0x7ff61a02f3b8 ################
+  vtable=0x7ff619c9d998
+   vt[+0x0] = 0x7ff618e5f330
+   vt[+0x8] = 0x7ff619aa1340 caseD_2d
+   vt[+0x10] = 0x7ff618e7dc30
+   vt[+0x18] = 0x7ff618e7b670
+   vt[+0x20] = 0x7ff618ee4c00
+   vt[+0x28] = 0x7ff618ef0830 FUN_7ff618ef0830
+   vt[+0x30] = 0x7ff6197bf830 FUN_7ff6197bf830
+   vt[+0x38] = 0x7ff618e7dc10 caseD_0
+
+################ policy 31 codec=0x7ff61a02f3c0 ################
+  vtable=0x7ff619c9d9d8
+   vt[+0x0] = 0x7ff618e5f350
+   vt[+0x8] = 0x7ff619a87640 FUN_7ff619a87640
+   vt[+0x10] = 0x7ff618e7dc60
+   vt[+0x18] = 0x7ff618e7b680
+   vt[+0x20] = 0x7ff618ee4c00
+   vt[+0x28] = 0x7ff618ef0830 FUN_7ff618ef0830
+   vt[+0x30] = 0x7ff6197bf830 FUN_7ff6197bf830
+   vt[+0x38] = 0x7ff618e7dc10 caseD_0
+
+################ policy 32 codec=0x7ff61a02f3c8 ################
+  vtable=0x7ff619c9eb08
+   vt[+0x0] = 0x7ff61979b470 FUN_7ff61979b470
+   vt[+0x8] = 0x7ff619aa1340 caseD_2d
+   vt[+0x10] = 0x7ff619221db0 caseD_2f
+   vt[+0x18] = 0x7ff618e7dc10 caseD_0
+   vt[+0x20] = 0x7ff618ee4c00
+   vt[+0x28] = 0x7ff618ef0830 FUN_7ff618ef0830
+   vt[+0x30] = 0x7ff6197bf830 FUN_7ff6197bf830
+   vt[+0x38] = 0x7ff618e7dc10 caseD_0
+
+################ policy 33 codec=0x7ff61a02f3d0 ################
+  vtable=0x7ff619c9eb48
+   vt[+0x0] = 0x7ff618a6a2f0
+   vt[+0x8] = 0x7ff619a87640 FUN_7ff619a87640
+   vt[+0x10] = 0x7ff618e7dc10 caseD_0
+   vt[+0x18] = 0x7ff618e6c370
+   vt[+0x20] = 0x7ff618ee4c00
+   vt[+0x28] = 0x7ff618ef0830 FUN_7ff618ef0830
+   vt[+0x30] = 0x7ff6197bf830 FUN_7ff6197bf830
+   vt[+0x38] = 0x7ff618e7dc10 caseD_0
+
+################ policy 34 codec=0x7ff61a02f3d8 ################
+  vtable=0x7ff619c9e7c8
+   vt[+0x0] = 0x7ff618e7e4b0
+   vt[+0x8] = 0x7ff619aa1340 caseD_2d
+   vt[+0x10] = 0x7ff6190df690
+   vt[+0x18] = 0x7ff618e7dc10 caseD_0
+   vt[+0x20] = 0x7ff618ee4c00
+   vt[+0x28] = 0x7ff618ef0830 FUN_7ff618ef0830
+   vt[+0x30] = 0x7ff6197bf830 FUN_7ff6197bf830
+   vt[+0x38] = 0x7ff618e7dc10 caseD_0
+
+
+================= POLICY 31 METHODS =================
+
+---- policy31 vt+0x18 (decode?) @ 0x7ff618e7b680 (no func) ----
+
+---- policy31 vt+0x10 @ 0x7ff618e7dc60 (no func) ----
+
+---- policy31 vt+0x20 @ 0x7ff618ee4c00 (no func) ----
+
+---- policy31 vt+0x08 @ 0x7ff619a87640 FUN_7ff619a87640 ----
+
+undefined8 FUN_7ff619a87640(void)
+
+{
+  return 2;
+}
+
+

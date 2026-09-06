@@ -1,0 +1,41 @@
+RVA +0x589020 @7ff6185f9020
+7ff6185f9020  MOV R8,qword ptr [RCX + 0x10]
+7ff6185f9024  MOVSXD RDX,dword ptr [RCX]
+7ff6185f9027  ADD R8,0x170
+7ff6185f902e  MOV RAX,qword ptr [R8]
+7ff6185f9031  LEA RCX,[RDX + RDX*0x2]
+7ff6185f9035  ADD RAX,R8
+7ff6185f9038  LEA RAX,[RAX + RCX*0x8]
+7ff6185f903c  ADD RAX,0x20
+7ff6185f9040  RET
+DECOMPILE
+
+longlong FUN_7ff6185f9020(int *param_1)
+
+{
+  return *(longlong *)(param_1 + 4) + 0x170 +
+         (longlong)*param_1 * 0x18 + *(longlong *)(*(longlong *)(param_1 + 4) + 0x170) + 0x20;
+}
+
+
+RVA +0x589050 @7ff6185f9050
+7ff6185f9050  MOVSXD RAX,dword ptr [RCX]
+7ff6185f9053  MOV RDX,qword ptr [RCX + 0x8]
+7ff6185f9057  ADD RDX,0xb8
+7ff6185f905e  LEA RAX,[RAX + RAX*0x2]
+7ff6185f9062  ADD RAX,0x3
+7ff6185f9066  MOV RCX,qword ptr [RDX]
+7ff6185f9069  ADD RCX,RDX
+7ff6185f906c  SHL RAX,0x4
+7ff6185f9070  ADD RAX,RCX
+7ff6185f9073  RET
+DECOMPILE
+
+longlong FUN_7ff6185f9050(int *param_1)
+
+{
+  return *(longlong *)(param_1 + 2) + 0xb8 +
+         ((longlong)*param_1 * 3 + 3) * 0x10 + *(longlong *)(*(longlong *)(param_1 + 2) + 0xb8);
+}
+
+

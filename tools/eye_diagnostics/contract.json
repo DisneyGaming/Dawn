@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "revision": 26,
+  "diagnostic_version": "discovery_v1",
+  "native_image_sha256": "63D128F1C759B92D32B0F226BCBEC828BC58CEF193EE0DF6FDD582BD0290ED1E",
+  "reveal_hooks": 21,
+  "replay_ready": false,
+  "probes": [
+    {"rva": "58E260", "stage": "eye_script_tick_enter", "proves": "Execution entry for an exactly owned damage-ping or refill runtime component."},
+    {"rva": "5873F0", "stage": "eye_script_action_enter", "proves": "Native action runner called with the logged action index; exit preserves its Boolean result."},
+    {"rva": "1212AF0", "stage": "eye_script_behavior", "proves": "Behavior creation returned the logged native result inside that action scope; does not prove downstream effects."},
+    {"rva": "B804E0", "stage": "eye_damage_enter", "proves": "Incoming processing used the boss's exact typed health component; raw packet flags are not an immunity enum."},
+    {"rva": "CDCB60", "stage": "eye_damage_exit", "proves": "Number and results of calls to the inverse health+338 bit1 gate inside that incoming call."},
+    {"rva": "B7E3C0", "stage": "eye_damage_summary", "proves": "Native summary arguments for that boss; amount is not a regional health getter or rejection reason."}
+  ],
+  "limits_per_mission_token": {"script_tick": 24, "script_action": 64, "incoming_damage": 64},
+  "missing_native_mappings": [
+    "Downstream compiled damage-ping commands, including operation 3C and target region 720A5B5B, have not been qualified at their execution handler.",
+    "The complete incoming-hit rejection decision and its region/reason representation remain unmapped.",
+    "The native control responsible for visible eye closure remains unmapped; node names and illumination are insufficient."
+  ],
+  "live_validation": "Discovery instrumentation only. Eye vulnerability, rejection reason, visible closure, health crossing and subsequent progression remain unverified. Do not request a conclusive replay until all three native mappings are established."
+}

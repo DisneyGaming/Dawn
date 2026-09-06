@@ -1,0 +1,206 @@
+TABLE 7ff61a03f6e0 entries=26
+[00] slot=7ff61a03f6e0 descriptor=7ff61a03f878 vtable=7ff619cad848 v10=7ff619a8a0d0 (FUN_7ff619a8a0d0@7ff619a8a0d0) v30=7ff618e6ffe0 (FUN_7ff618e6ffe0@7ff618e6ffe0) v58=7ff618e812e0 (<unknown>)
+     descriptor_qwords=00007ff619cad848,00007ff619cacbe8,00007ff619cacc48,00007ff619cacca8
+[01] slot=7ff61a03f6e8 descriptor=7ff61a03f870 vtable=7ff619cad7e8 v10=7ff619a8a0d0 (FUN_7ff619a8a0d0@7ff619a8a0d0) v30=7ff618e6ffe0 (FUN_7ff618e6ffe0@7ff618e6ffe0) v58=7ff618e812e0 (<unknown>)
+     descriptor_qwords=00007ff619cad7e8,00007ff619cad848,00007ff619cacbe8,00007ff619cacc48
+[02] slot=7ff61a03f6f0 descriptor=7ff61a03f880 vtable=7ff619cacbe8 v10=7ff6192a6110 (FUN_7ff6192a6110@7ff6192a6110) v30=7ff618e6ffb0 (FUN_7ff618e6ffb0@7ff618e6ffb0) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cacbe8,00007ff619cacc48,00007ff619cacca8,00007ff619cacd08
+[03] slot=7ff61a03f6f8 descriptor=7ff61a03f888 vtable=7ff619cacc48 v10=7ff618e6ffb0 (FUN_7ff618e6ffb0@7ff618e6ffb0) v30=7ff618e868d0 (caseD_0@7ff618e868d0) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cacc48,00007ff619cacca8,00007ff619cacd08,00007ff619cacd68
+[04] slot=7ff61a03f700 descriptor=7ff61a03f890 vtable=7ff619cacca8 v10=7ff618e7e2e0 (<unknown>) v30=7ff6190df8d0 (<unknown>) v58=7ff618d81250 (FUN_7ff618d81250@7ff618d81250)
+     descriptor_qwords=00007ff619cacca8,00007ff619cacd08,00007ff619cacd68,00007ff619cacdc8
+[05] slot=7ff61a03f708 descriptor=7ff61a03f898 vtable=7ff619cacd08 v10=7ff6190df8d0 (<unknown>) v30=7ff618e868d0 (caseD_0@7ff618e868d0) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cacd08,00007ff619cacd68,00007ff619cacdc8,00007ff619cad8a8
+[06] slot=7ff61a03f710 descriptor=7ff61a03f8a0 vtable=7ff619cacd68 v10=7ff618e706f0 (<unknown>) v30=7ff618e868d0 (caseD_0@7ff618e868d0) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cacd68,00007ff619cacdc8,00007ff619cad8a8,00007ff619cace28
+[07] slot=7ff61a03f718 descriptor=7ff61a03f8a8 vtable=7ff619cacdc8 v10=7ff6190df8b0 (<unknown>) v30=7ff618e868d0 (caseD_0@7ff618e868d0) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cacdc8,00007ff619cad8a8,00007ff619cace28,00007ff619cad668
+[08] slot=7ff61a03f720 descriptor=7ff61a03f8b0 vtable=7ff619cad8a8 v10=7ff618e70000 (<unknown>) v30=7ff618e6ffc0 (<unknown>) v58=7ff618e812e0 (<unknown>)
+     descriptor_qwords=00007ff619cad8a8,00007ff619cace28,00007ff619cad668,00007ff619cad2a8
+[09] slot=7ff61a03f728 descriptor=7ff61a03f8b8 vtable=7ff619cace28 v10=7ff6197e9160 (FUN_7ff6197e9160@7ff6197e9160) v30=7ff618e868d0 (caseD_0@7ff618e868d0) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cace28,00007ff619cad668,00007ff619cad2a8,00007ff619cad0c8
+[10] slot=7ff61a03f730 descriptor=7ff61a03f8c0 vtable=7ff619cad668 v10=7ff618e7e2f0 (<unknown>) v30=7ff618e868d0 (caseD_0@7ff618e868d0) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cad668,00007ff619cad2a8,00007ff619cad0c8,00007ff619cad128
+[11] slot=7ff61a03f738 descriptor=7ff61a03f8c8 vtable=7ff619cad2a8 v10=7ff619bf0ed0 (FUN_7ff619bf0ed0@7ff619bf0ed0) v30=7ff618e868d0 (caseD_0@7ff618e868d0) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cad2a8,00007ff619cad0c8,00007ff619cad128,00007ff619cad188
+[12] slot=7ff61a03f740 descriptor=7ff61a03f8d0 vtable=7ff619cad0c8 v10=7ff618ee4bc0 (<unknown>) v30=7ff618ab11c0 (FUN_7ff618ab11c0@7ff618ab11c0) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cad0c8,00007ff619cad128,00007ff619cad188,00007ff619cad428
+[13] slot=7ff61a03f748 descriptor=7ff61a03f8d8 vtable=7ff619cad128 v10=7ff6197ea590 (FUN_7ff6197ea590@7ff6197ea590) v30=7ff618e5f340 (<unknown>) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cad128,00007ff619cad188,00007ff619cad428,00007ff619cad1e8
+[14] slot=7ff61a03f750 descriptor=7ff61a03f8e0 vtable=7ff619cad188 v10=7ff618e5f210 (<unknown>) v30=7ff619343480 (<unknown>) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cad188,00007ff619cad428,00007ff619cad1e8,00007ff619cace88
+[15] slot=7ff61a03f758 descriptor=7ff61a03f8e8 vtable=7ff619cad428 v10=7ff618e5f230 (<unknown>) v30=7ff6190df7c0 (<unknown>) v58=7ff6190dfb00 (<unknown>)
+     descriptor_qwords=00007ff619cad428,00007ff619cad1e8,00007ff619cace88,00007ff619cacee8
+[16] slot=7ff61a03f760 descriptor=7ff61a03f8f0 vtable=7ff619cad1e8 v10=7ff618e7e200 (<unknown>) v30=7ff618e868d0 (caseD_0@7ff618e868d0) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cad1e8,00007ff619cace88,00007ff619cacee8,00007ff619cad908
+[17] slot=7ff61a03f768 descriptor=7ff61a03f8f8 vtable=7ff619cace88 v10=7ff618c0e810 (<unknown>) v30=7ff618e868d0 (caseD_0@7ff618e868d0) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cace88,00007ff619cacee8,00007ff619cad908,00007ff619cad248
+[18] slot=7ff61a03f770 descriptor=7ff61a03f900 vtable=7ff619cacee8 v10=7ff6190df7a0 (FUN_7ff6190df7a0@7ff6190df7a0) v30=7ff618e868d0 (caseD_0@7ff618e868d0) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cacee8,00007ff619cad908,00007ff619cad248,00007ff619cacf48
+[19] slot=7ff61a03f778 descriptor=7ff61a03f908 vtable=7ff619cad908 v10=7ff618e7e4c0 (<unknown>) v30=7ff618e868d0 (caseD_0@7ff618e868d0) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cad908,00007ff619cad248,00007ff619cacf48,00007ff619cacfa8
+[20] slot=7ff61a03f780 descriptor=7ff61a03f910 vtable=7ff619cad248 v10=7ff618e7e230 (<unknown>) v30=7ff618e7e240 (<unknown>) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cad248,00007ff619cacf48,00007ff619cacfa8,00007ff619cad008
+[21] slot=7ff61a03f788 descriptor=7ff61a03f918 vtable=7ff619cacf48 v10=7ff6190df8c0 (<unknown>) v30=7ff618ee4ba0 (<unknown>) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cacf48,00007ff619cacfa8,00007ff619cad008,00007ff619cad4e8
+[22] slot=7ff61a03f790 descriptor=7ff61a03f920 vtable=7ff619cacfa8 v10=7ff618ee4ba0 (<unknown>) v30=7ff618e868d0 (caseD_0@7ff618e868d0) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cacfa8,00007ff619cad008,00007ff619cad4e8,00007ff619cad068
+[23] slot=7ff61a03f798 descriptor=7ff61a03f928 vtable=7ff619cad008 v10=7ff619a61050 (FUN_7ff619a61050@7ff619a61050) v30=7ff619343470 (<unknown>) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cad008,00007ff619cad4e8,00007ff619cad068,00007ff619cad788
+[24] slot=7ff61a03f7a0 descriptor=7ff61a03f930 vtable=7ff619cad4e8 v10=7ff618a69a90 (<unknown>) v30=7ff618e5f300 (<unknown>) v58=7ff618e812d0 (<unknown>)
+     descriptor_qwords=00007ff619cad4e8,00007ff619cad068,00007ff619cad788,00007ff619cad728
+[25] slot=7ff61a03f7a8 descriptor=7ff61a03f938 vtable=7ff619cad068 v10=7ff6190df8e0 (<unknown>) v30=7ff618e868d0 (caseD_0@7ff618e868d0) v58=7ff618c04700 (caseD_3@7ff618c04700)
+     descriptor_qwords=00007ff619cad068,00007ff619cad788,00007ff619cad728,00007ff619cad548
+============================================================
+TARGET service=2 descriptor=7ff61a03f880 vtable=7ff619cacbe8 callback=7ff618c04700
+TARGET CALLBACK INSTRUCTIONS
+  7ff618c04700  RET 0x0
+  7ff618c04710  PUSH RBX
+  7ff618c04712  SUB RSP,0x20
+  7ff618c04716  MOV RAX,qword ptr [RCX + 0x8]
+  7ff618c0471a  LEA RDX,[RSP + 0x30]
+  7ff618c0471f  MOV RBX,RCX
+  7ff618c04722  MOVZX ECX,word ptr [RAX + 0x2c]
+  7ff618c04726  AND ECX,0x1fff
+  7ff618c0472c  IMUL ECX,dword ptr [0x7ff61a003430]
+  7ff618c04733  ADD RCX,qword ptr [0x7ff61a003428]
+  7ff618c0473a  CALL 0x7ff6185c89f0
+  7ff618c0473f  MOV ECX,dword ptr [RSP + 0x30]
+  7ff618c04743  MOV RDX,RBX
+  7ff618c04746  CALL 0x7ff618efb0d0
+  7ff618c0474b  ADD RSP,0x20
+  7ff618c0474f  POP RBX
+  7ff618c04750  RET
+  7ff618c04760  JMP 0x7ff618eff7c0
+  7ff618c04770  PUSH RBX
+  7ff618c04772  SUB RSP,0x20
+  7ff618c04776  MOV RAX,qword ptr [RCX + 0x8]
+  7ff618c0477a  LEA RDX,[RSP + 0x30]
+  7ff618c0477f  MOV RBX,RCX
+  7ff618c04782  MOVZX ECX,word ptr [RAX + 0x2c]
+  7ff618c04786  AND ECX,0x1fff
+  7ff618c0478c  IMUL ECX,dword ptr [0x7ff61a003430]
+  7ff618c04793  ADD RCX,qword ptr [0x7ff61a003428]
+  7ff618c0479a  CALL 0x7ff6185c89f0
+  7ff618c0479f  MOV ECX,dword ptr [RSP + 0x30]
+  7ff618c047a3  MOV RDX,RBX
+  7ff618c047a6  CALL 0x7ff618f08380
+  7ff618c047ab  ADD RSP,0x20
+  7ff618c047af  POP RBX
+  7ff618c047b0  RET
+  7ff618c047c0  JMP 0x7ff618f0ba00
+  7ff618c047d0  SUB RSP,0x78
+  7ff618c047d4  MOV R8D,dword ptr [RCX + 0x10]
+  7ff618c047d8  MOV R10,RCX
+  7ff618c047db  MOV R9,qword ptr [0x7ff61a4a9c70]
+  7ff618c047e2  MOV EAX,R8D
+  7ff618c047e5  SAR EAX,0xd
+  7ff618c047e8  AND R8D,0x1fff
+  7ff618c047ef  MOV EDX,EAX
+  7ff618c047f1  MOVUPS XMM0,xmmword ptr [R10 + 0x18]
+  7ff618c047f6  OR RDX,0xffc0000
+  7ff618c047fd  MOV byte ptr [RSP + 0x40],0x0
+  7ff618c04802  SHR RDX,0x12
+  7ff618c04806  MOVZX EAX,AX
+  7ff618c04809  AND RDX,RAX
+  7ff618c0480c  SHL RDX,0x6
+  7ff618c04810  ADD RDX,qword ptr [R9]
+  7ff618c04813  IMUL R8D,dword ptr [RDX + 0x30]
+  7ff618c04818  MOVSXD RCX,dword ptr [RDX + 0x34]
+  7ff618c0481c  MOV EAX,R8D
+  7ff618c0481f  ADD RAX,qword ptr [RDX + 0x8]
+  7ff618c04823  MOV R8D,dword ptr [R10 + 0x18]
+  7ff618c04827  AND RCX,qword ptr [RAX + 0x8]
+  7ff618c0482b  SUB RAX,RCX
+  7ff618c0482e  MOV qword ptr [RSP + 0x20],RAX
+  7ff618c04833  MOV EAX,R8D
+  7ff618c04836  SAR EAX,0xd
+  7ff618c04839  AND R8D,0x1fff
+  7ff618c04840  MOV EDX,EAX
+  7ff618c04842  MOVZX EAX,AX
+  7ff618c04845  SHR EDX,0x12
+  7ff618c04848  OR EDX,0x3ff
+  7ff618c0484e  AND EDX,EAX
+  7ff618c04850  SHL EDX,0x6
+  7ff618c04853  ADD RDX,qword ptr [R9]
+  7ff618c04856  IMUL R8D,dword ptr [RDX + 0x30]
+  7ff618c0485b  MOVSXD RCX,dword ptr [RDX + 0x34]
+  7ff618c0485f  MOV EAX,R8D
+  7ff618c04862  MOV R8D,0x1
+  7ff618c04868  ADD RAX,qword ptr [RDX + 0x8]
+  7ff618c0486c  MOV RDX,qword ptr [R10 + 0x20]
+  7ff618c04870  AND RCX,qword ptr [RAX + 0x8]
+  7ff618c04874  SUB RDX,RCX
+  7ff618c04877  LEA RCX,[RSP + 0x20]
+  7ff618c0487c  ADD RDX,RAX
+  7ff618c0487f  MOV qword ptr [RSP + 0x28],RDX
+  7ff618c04884  LEA RDX,[RSP + 0x48]
+  7ff618c04889  MOVUPS xmmword ptr [RSP + 0x30],XMM0
+  7ff618c0488e  CALL 0x7ff6198dac10
+  7ff618c04893  MOV R9D,dword ptr [RSP + 0x60]
+  7ff618c04898  CMP R9D,-0x1
+  7ff618c0489c  JZ 0x7ff618c0495f
+  7ff618c048a2  MOV EDX,dword ptr [RSP + 0x58]
+  7ff618c048a6  MOV EAX,EDX
+  7ff618c048a8  MOV R8,qword ptr [0x7ff61a4a9c70]
+  7ff618c048af  AND EDX,0x1fff
+  7ff618c048b5  MOVUPS XMM0,xmmword ptr [RSP + 0x60]
+  7ff618c048ba  SAR EAX,0xd
+  7ff618c048bd  MOVSS XMM3,dword ptr [0x7ff619c12b80]
+  7ff618c048c5  MOVSS XMM1,dword ptr [0x7ff619c874b0]
+  7ff618c048cd  MOV ECX,EAX
+  7ff618c048cf  MOV byte ptr [RSP + 0x40],0x0
+  7ff618c048d4  OR RCX,0xffc0000
+  7ff618c048db  MOVZX EAX,AX
+  7ff618c048de  SHR RCX,0x12
+  7ff618c048e2  AND RCX,RAX
+  7ff618c048e5  SHL RCX,0x6
+  7ff618c048e9  ADD RCX,qword ptr [R8]
+  7ff618c048ec  IMUL EDX,dword ptr [RCX + 0x30]
+  7ff618c048f0  MOV EAX,EDX
+  7ff618c048f2  ADD RAX,qword ptr [RCX + 0x8]
+  7ff618c048f6  MOVSXD RCX,dword ptr [RCX + 0x34]
+  7ff618c048fa  AND RCX,qword ptr [RAX + 0x8]
+  7ff618c048fe  SUB RAX,RCX
+  7ff618c04901  MOV qword ptr [RSP + 0x20],RAX
+  7ff618c04906  MOV EAX,R9D
+  7ff618c04909  SAR EAX,0xd
+  7ff618c0490c  AND R9D,0x1fff
+  7ff618c04913  MOV EDX,EAX
+  7ff618c04915  MOVZX EAX,AX
+  7ff618c04918  SHR EDX,0x12
+  7ff618c0491b  OR EDX,0x3ff
+  7ff618c04921  AND EDX,EAX
+  7ff618c04923  SHL EDX,0x6
+  7ff618c04926  ADD RDX,qword ptr [R8]
+  7ff618c04929  MOV R8B,0x1
+TARGET CALLBACK DECOMPILE
+FUNCTION caseD_3@7ff618c04700
+
+void switchD_7ff618f760e8::caseD_3(void)
+
+{
+  return;
+}
+
+
+TARGET VFUNC +0x10 DECOMPILE
+FUNCTION FUN_7ff6192a6110@7ff6192a6110
+
+undefined8 FUN_7ff6192a6110(void)
+
+{
+  return 6;
+}
+
+
+TARGET VFUNC +0x30 DECOMPILE
+FUNCTION FUN_7ff618e6ffb0@7ff618e6ffb0
+
+undefined8 FUN_7ff618e6ffb0(void)
+
+{
+  return 7;
+}
+
+

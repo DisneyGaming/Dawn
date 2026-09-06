@@ -1,0 +1,5 @@
+################ REFS to DAT_7ff61a6ed5c6 ################
+   from 7ff6184267d0  READ  in FUN_7ff6184267d0@7ff6184267d0
+
+################ DECOMPILE writers ################
+(no direct writers found — flag may be set via computed/aliased address)

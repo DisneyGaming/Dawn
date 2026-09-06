@@ -1,0 +1,64 @@
+============================================================
+TARGET 7ff6184994c0 function=FUN_7ff6184994c0@7ff6184994c0
+
+undefined ** FUN_7ff6184994c0(void)
+
+{
+  return &PTR_PTR_7ff619ffdd00;
+}
+
+INSTRUCTIONS
+  7ff6184994c0 LEA RAX,[0x7ff619ffdd00]
+  7ff6184994c7 RET
+============================================================
+TARGET 7ff618499ba0 function=FUN_7ff618499ba0@7ff618499ba0
+
+undefined8 FUN_7ff618499ba0(longlong param_1,undefined8 param_2)
+
+{
+  longlong lVar1;
+  uint uVar2;
+  uint uVar3;
+  undefined8 local_res8;
+  
+  lVar1 = *(longlong *)(param_1 + 8);
+  if (lVar1 != 0) {
+    uVar2 = FUN_7ff61f324425();
+    local_res8._4_4_ = (uint)((ulonglong)lVar1 >> 0x20);
+    uVar3 = FUN_7ff61e2d0781();
+    local_res8 = CONCAT44(local_res8._4_4_ ^ uVar3,uVar2 ^ (uint)lVar1);
+    if (local_res8 != 0) {
+                    /* WARNING: Subroutine does not return */
+      FUN_7ff61d00d1fb();
+    }
+  }
+  FUN_7ff618538fb0(0x3f0c,param_2);
+  return param_2;
+}
+
+INSTRUCTIONS
+  7ff618499ba0 MOV qword ptr [RSP + 0x10],RBX
+  7ff618499ba5 PUSH RDI
+  7ff618499ba6 SUB RSP,0x20
+  7ff618499baa MOV RBX,qword ptr [RCX + 0x8]
+  7ff618499bae MOV RDI,RDX
+  7ff618499bb1 TEST RBX,RBX
+  7ff618499bb4 JZ 0x7ff618499ef1
+  7ff618499bba MOV qword ptr [RSP + 0x30],RBX
+  7ff618499bbf CALL 0x7ff61f324425
+  7ff618499bc4 XOR EAX,EBX
+  7ff618499bc6 MOV dword ptr [RSP + 0x30],EAX
+  7ff618499bca CALL 0x7ff61e2d0781
+  7ff618499bcf XOR dword ptr [RSP + 0x34],EAX
+  7ff618499bd3 MOV RBX,qword ptr [RSP + 0x30]
+  7ff618499bd8 TEST RBX,RBX
+  7ff618499bdb JZ 0x7ff618499ef1
+  7ff618499be1 CALL 0x7ff61d00d1fb
+  7ff618499ef1 LEA RCX,[RBX + 0x3f0c]
+  7ff618499ef8 MOV RDX,RDI
+  7ff618499efb CALL 0x7ff618538fb0
+  7ff618499f00 MOV RBX,qword ptr [RSP + 0x38]
+  7ff618499f05 MOV RAX,RDI
+  7ff618499f08 ADD RSP,0x20
+  7ff618499f0c POP RDI
+  7ff618499f0d RET

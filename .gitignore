@@ -1,0 +1,58 @@
+# Game installation and downloaded content
+/packages/
+/bin/
+/fonts/
+/.DepotDownloader/
+/destiny2*.bin
+/cache_*.dat
+/Burning_Tower.razerchroma
+/BURNING_TOWER_README.pdf
+/NVAPI_SDK_License_Agreement.pdf
+/*_license.txt
+/sku_config.txt
+
+# Build output; tools/build contains project scripts and stays tracked.
+/build/
+/Sunrise/build/
+*.exe
+*.dll
+*.obj
+*.pdb
+*.ilk
+*.exp
+*.pch
+*.tlog
+*.lastbuildstate
+*.nativecodeanalysis.xml
+
+# Runtime caches, logs, local tools, and editor state
+/.sunrise/
+/.codex-tools/
+/.codex/
+/Sunrise/cache/
+/Sunrise/logs/
+__pycache__/
+*.py[cod]
+*.log
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Backup copies and archives
+backup/
+backups/
+*.bak
+*.bak.*
+*.zip
+*.7z
+*.rar
+
+# Local secrets and unrelated personal documents
+.env
+.env.*
+!.env.example
+*.pem
+*.pfx
+*.key
+/GautamR_Resume_Quant_Revised.docx

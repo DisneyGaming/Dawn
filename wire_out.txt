@@ -1,0 +1,215 @@
+======================================================================
+### cand A (activity region) probe 7ff619773d0c
+### FUN_7ff619773cd0 @ 7ff619773cd0  size=155
+### callers: 1
+###   from 7ff61977943f UNCONDITIONAL_CALL in FUN_7ff6197792d0
+======================================================================
+
+undefined8 FUN_7ff619773cd0(undefined8 param_1,uint *param_2)
+
+{
+  undefined1 uVar1;
+  char cVar2;
+  uint uVar3;
+  int iVar4;
+  
+  uVar3 = FUN_7ff6183c13b0(param_1,2);
+  *param_2 = uVar3;
+  if (uVar3 != 0) {
+    iVar4 = FUN_7ff6183c13b0(param_1,6);
+    param_2[1] = iVar4 - 1;
+    if (*param_2 == 2) {
+      FUN_7ff6183c1070(param_1,param_2 + 2,0x60);
+      FUN_7ff6183c1070(param_1,param_2 + 5,0x60);
+      uVar1 = FUN_7ff6183c0ef0(param_1);
+      *(undefined1 *)(param_2 + 8) = uVar1;
+    }
+    if (0x20 < param_2[1] + 1) {
+      return 0;
+    }
+  }
+  cVar2 = FUN_7ff6183be9b0(param_1);
+  if ((cVar2 == '\0') && (*param_2 < 3)) {
+    return 1;
+  }
+  return 0;
+}
+
+
+======================================================================
+### cand B (activity region) probe 7ff619773d1e
+### FUN_7ff619773cd0 @ 7ff619773cd0  size=155
+### callers: 1
+###   from 7ff61977943f UNCONDITIONAL_CALL in FUN_7ff6197792d0
+======================================================================
+
+undefined8 FUN_7ff619773cd0(undefined8 param_1,uint *param_2)
+
+{
+  undefined1 uVar1;
+  char cVar2;
+  uint uVar3;
+  int iVar4;
+  
+  uVar3 = FUN_7ff6183c13b0(param_1,2);
+  *param_2 = uVar3;
+  if (uVar3 != 0) {
+    iVar4 = FUN_7ff6183c13b0(param_1,6);
+    param_2[1] = iVar4 - 1;
+    if (*param_2 == 2) {
+      FUN_7ff6183c1070(param_1,param_2 + 2,0x60);
+      FUN_7ff6183c1070(param_1,param_2 + 5,0x60);
+      uVar1 = FUN_7ff6183c0ef0(param_1);
+      *(undefined1 *)(param_2 + 8) = uVar1;
+    }
+    if (0x20 < param_2[1] + 1) {
+      return 0;
+    }
+  }
+  cVar2 = FUN_7ff6183be9b0(param_1);
+  if ((cVar2 == '\0') && (*param_2 < 3)) {
+    return 1;
+  }
+  return 0;
+}
+
+
+======================================================================
+### cand C probe 7ff61918590f
+### FUN_7ff6191858c0 @ 7ff6191858c0  size=709
+### callers: 1
+###   from 7ff61923bc3a UNCONDITIONAL_CALL in FUN_7ff61923bba0
+======================================================================
+
+/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */
+
+void FUN_7ff6191858c0(void)
+
+{
+  undefined4 uVar1;
+  undefined4 *puVar2;
+  int iVar3;
+  undefined1 auStack_d8 [32];
+  char *local_b8;
+  undefined4 local_a8;
+  undefined4 local_a4;
+  undefined2 local_a0;
+  undefined8 local_9e;
+  undefined4 local_90;
+  undefined4 uStack_8c;
+  undefined4 uStack_88;
+  undefined4 uStack_84;
+  undefined4 local_80;
+  undefined4 local_7c;
+  undefined4 local_78;
+  undefined4 uStack_74;
+  undefined4 uStack_70;
+  undefined4 local_68;
+  undefined4 local_64;
+  undefined2 local_60;
+  undefined8 local_5e;
+  undefined4 local_40;
+  undefined4 local_3c;
+  undefined1 local_38 [4];
+  undefined8 local_34;
+  undefined4 local_28;
+  undefined4 uStack_24;
+  undefined4 uStack_20;
+  undefined4 uStack_1c;
+  ulonglong local_18;
+  
+  local_18 = DAT_7ff61a119a88 ^ (ulonglong)auStack_d8;
+  iVar3 = 0;
+  local_68 = 3;
+  local_34 = 0;
+  local_5e = 0;
+  puVar2 = &DAT_7ff61a041058;
+  local_64 = 9;
+  local_60 = 0x60;
+  local_40 = 0x22;
+  local_3c = 0x22;
+  do {
+    FUN_7ff618367e10(local_38,0x20,s_half_res_min_max_depth__d_7ff619cb21a8,iVar3);
+    local_b8 = local_38;
+    uVar1 = FUN_7ff6191f78a0(iVar3 + 0x1f,0,&local_68,&DAT_7ff61aec29e8);
+    iVar3 = iVar3 + 1;
+    *puVar2 = uVar1;
+    puVar2 = puVar2 + 1;
+  } while (iVar3 < 2);
+  local_78 = 0x21c03c0;
+  uStack_74 = 0x10001;
+  local_9e = 0x10001021c03c0;
+  local_b8 = s_low_res_ssao_min_max_depth_7ff619cb21c8;
+  local_a8 = 0;
+  local_90 = local_28;
+  uStack_8c = uStack_24;
+  uStack_88 = uStack_20;
+  uStack_84 = uStack_1c;
+  local_a4 = 9;
+  local_a0 = 0x20;
+  local_80 = 0x22;
+  local_7c = 0x22;
+  DAT_7ff61a041140 = FUN_7ff6191f78a0(7,0,&local_a8,&DAT_7ff61aec29e8);
+  local_34 = 0;
+  local_a8 = 4;
+  local_9e = 0;
+  local_a4 = 0xd;
+  local_b8 = s_third_res_max_min_depth_7ff619cb21e8;
+  local_90 = local_28;
+  uStack_8c = uStack_24;
+  uStack_88 = uStack_20;
+  uStack_84 = uStack_1c;
+  local_a0 = 0x20;
+  local_80 = 10;
+  local_7c = 10;
+  DAT_7ff61a0410cc = FUN_7ff6191f78a0(0x27,0,&local_a8,&DAT_7ff61aec29e8);
+  local_34 = 0;
+  local_a8 = 3;
+  local_9e = 0;
+  local_a4 = 0xc;
+  local_b8 = s_half_res_depth_7ff619cb2200;
+  local_90 = local_28;
+  uStack_8c = uStack_24;
+  uStack_88 = uStack_20;
+  uStack_84 = uStack_1c;
+  local_a0 = 0;
+  local_80 = 0x14;
+  local_7c = 0x15;
+  DAT_7ff61a041008 = FUN_7ff6191f78a0(10,0,&local_a8,&DAT_7ff61aec29e8);
+  local_34 = 0;
+  local_a8 = 5;
+  local_9e = 0;
+  local_a4 = 0xc;
+  local_b8 = s_downsampled_quarter_res_depth_7ff619cb2210;
+  local_90 = local_28;
+  uStack_8c = uStack_24;
+  uStack_88 = uStack_20;
+  uStack_84 = uStack_1c;
+  local_a0 = 0;
+  local_80 = 0x14;
+  local_7c = 0x15;
+  local_78 = 0x72;
+  uStack_74 = 4;
+  uStack_70 = 0;
+  DAT_7ff61a04100c = FUN_7ff6191f78a0(9,0,&local_a8,&local_78);
+  local_34 = 0;
+  local_90 = local_28;
+  uStack_8c = uStack_24;
+  uStack_88 = uStack_20;
+  uStack_84 = uStack_1c;
+  local_a8 = 5;
+  local_9e = 0;
+  local_a4 = 0xd;
+  local_a0 = 0x20;
+  local_80 = 10;
+  local_7c = 10;
+  local_b8 = s_quarter_res_depth_min_max_7ff619cb2230;
+  DAT_7ff61a04113c = FUN_7ff6191f78a0(6,5,&local_a8,&DAT_7ff61aec29e8);
+  return;
+}
+
+
+======================================================================
+### cand D probe 7ff6183c43fe
+NO FUNCTION
+

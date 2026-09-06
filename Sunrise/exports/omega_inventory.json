@@ -1,0 +1,156 @@
+{
+  "format_version": 3,
+  "activity": "mission_scot",
+  "authority_behavior": "read_only",
+  "complete": true,
+  "expected_group_count": 6,
+  "found_group_count": 6,
+  "expected_slot_count": 57,
+  "found_slot_count": 57,
+  "raw_schema_complete": true,
+  "raw_schema_count": 57,
+  "schema_metadata": "raw descriptor hashes come from the validated Omega schema sidecar; null means the sidecar was unavailable",
+  "bubble_count": 20,
+  "bubbles": [
+    {"ordinal": 0, "region_index": 0, "name_hash": "0x66FE5C6D", "map_index": 0, "enabled": true, "state_byte": "0x80", "slice_set_count": 1, "slice_set_first": 0, "slice_set_last": 0},
+    {"ordinal": 1, "region_index": 8, "name_hash": "0xF63F92C7", "map_index": 2, "enabled": true, "state_byte": "0x80", "slice_set_count": 1, "slice_set_first": 8, "slice_set_last": 8},
+    {"ordinal": 2, "region_index": 16, "name_hash": "0x18E267F1", "map_index": 4, "enabled": true, "state_byte": "0x80", "slice_set_count": 1, "slice_set_first": 16, "slice_set_last": 16},
+    {"ordinal": 3, "region_index": 24, "name_hash": "0xCADB0A65", "map_index": 5, "enabled": true, "state_byte": "0x80", "slice_set_count": 1, "slice_set_first": 24, "slice_set_last": 24},
+    {"ordinal": 4, "region_index": 32, "name_hash": "0xE38DE978", "map_index": 6, "enabled": true, "state_byte": "0x80", "slice_set_count": 1, "slice_set_first": 32, "slice_set_last": 32},
+    {"ordinal": 5, "region_index": 40, "name_hash": "0x5A68B512", "map_index": 8, "enabled": true, "state_byte": "0x80", "slice_set_count": 1, "slice_set_first": 40, "slice_set_last": 40},
+    {"ordinal": 6, "region_index": 48, "name_hash": "0x5A68B511", "map_index": 9, "enabled": true, "state_byte": "0x80", "slice_set_count": 1, "slice_set_first": 48, "slice_set_last": 48},
+    {"ordinal": 7, "region_index": 56, "name_hash": "0x5A68B517", "map_index": 10, "enabled": true, "state_byte": "0x80", "slice_set_count": 1, "slice_set_first": 56, "slice_set_last": 56},
+    {"ordinal": 8, "region_index": 64, "name_hash": "0x47EA4CEF", "map_index": 18, "enabled": true, "state_byte": "0x80", "slice_set_count": 1, "slice_set_first": 64, "slice_set_last": 64},
+    {"ordinal": 9, "region_index": 72, "name_hash": "0x47EA4CEC", "map_index": 20, "enabled": true, "state_byte": "0x80", "slice_set_count": 1, "slice_set_first": 72, "slice_set_last": 72},
+    {"ordinal": 10, "region_index": 80, "name_hash": "0x47EA4CED", "map_index": 22, "enabled": true, "state_byte": "0x80", "slice_set_count": 1, "slice_set_first": 80, "slice_set_last": 80},
+    {"ordinal": 11, "region_index": 88, "name_hash": "0x47EA4CEA", "map_index": 24, "enabled": true, "state_byte": "0x80", "slice_set_count": 1, "slice_set_first": 88, "slice_set_last": 88},
+    {"ordinal": 12, "region_index": 96, "name_hash": "0x47EA4CE8", "map_index": 26, "enabled": true, "state_byte": "0x80", "slice_set_count": 1, "slice_set_first": 96, "slice_set_last": 96},
+    {"ordinal": 13, "region_index": 104, "name_hash": "0x47EA4CE9", "map_index": 30, "enabled": true, "state_byte": "0x80", "slice_set_count": 1, "slice_set_first": 104, "slice_set_last": 104},
+    {"ordinal": 14, "region_index": 112, "name_hash": "0x23345E71", "map_index": 31, "enabled": true, "state_byte": "0x80", "slice_set_count": 1, "slice_set_first": 112, "slice_set_last": 112},
+    {"ordinal": 15, "region_index": 120, "name_hash": "0xA83A9175", "map_index": 32, "enabled": true, "state_byte": "0x80", "slice_set_count": 2, "slice_set_first": 120, "slice_set_last": 121},
+    {"ordinal": 16, "region_index": 128, "name_hash": "0x3CB36B81", "map_index": 33, "enabled": true, "state_byte": "0x80", "slice_set_count": 1, "slice_set_first": 128, "slice_set_last": 128},
+    {"ordinal": 17, "region_index": 136, "name_hash": "0xF09A26E4", "map_index": 42, "enabled": true, "state_byte": "0x80", "slice_set_count": 1, "slice_set_first": 136, "slice_set_last": 136},
+    {"ordinal": 18, "region_index": 144, "name_hash": "0x60FA8811", "map_index": 43, "enabled": true, "state_byte": "0x80", "slice_set_count": 1, "slice_set_first": 144, "slice_set_last": 144},
+    {"ordinal": 19, "region_index": 152, "name_hash": "0x5DBA35BD", "map_index": 58, "enabled": true, "state_byte": "0x80", "slice_set_count": 1, "slice_set_first": 152, "slice_set_last": 152}
+  ],
+  "groups": [
+    {
+      "registry_key": "0x4786C0E0",
+      "table_index": 0,
+      "object_tag": "0x80FEB3DC",
+      "package_id": "0x03F5",
+      "slot_count": 21,
+        "publication": {"top_level": true, "top_ordinal": 0, "bubble_masks": [], "bubble_ordinals": [], "authored_slices": []},
+      "slots": [
+        {"symbol": "omega.component.4786C0E0.type_16.slot_0", "alias_confidence": "generated", "type": 16, "type_label": "unclassified", "real_index": 0, "flags": "0x02", "auth_schema_present": true, "sense_schema_present": false, "schema_source": "package_descriptor", "component_class": "0x808099F1", "auth_schema": "0x808099F9", "sense_schema": "0xFFFFFFFF"},
+        {"symbol": "omega.mission_director", "alias_confidence": "recovered", "type": 35, "type_label": "mission_director", "real_index": 1, "flags": "0x02", "auth_schema_present": true, "sense_schema_present": false, "schema_source": "package_descriptor", "component_class": "0x808099BD", "auth_schema": "0x808099BF", "sense_schema": "0xFFFFFFFF"},
+        {"symbol": "omega.activity_script_manager", "alias_confidence": "recovered", "type": 18, "type_label": "activity_script", "real_index": 2, "flags": "0x02", "auth_schema_present": true, "sense_schema_present": false, "schema_source": "package_descriptor", "component_class": "0x80809917", "auth_schema": "0x80809919", "sense_schema": "0xFFFFFFFF"},
+        {"symbol": "omega.component.4786C0E0.type_17.slot_3", "alias_confidence": "generated", "type": 17, "type_label": "unclassified", "real_index": 3, "flags": "0x02", "auth_schema_present": true, "sense_schema_present": false, "schema_source": "package_descriptor", "component_class": "0x80809915", "auth_schema": "0x8080991A", "sense_schema": "0xFFFFFFFF"},
+        {"symbol": "omega.component.4786C0E0.type_41.slot_4", "alias_confidence": "generated", "type": 41, "type_label": "unclassified", "real_index": 4, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80804EE6", "auth_schema": "0x80804EE9", "sense_schema": "0x80804EE8"},
+        {"symbol": "omega.component.4786C0E0.type_13.slot_5", "alias_confidence": "generated", "type": 13, "type_label": "unclassified", "real_index": 5, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80804F2D", "auth_schema": "0x80804F30", "sense_schema": "0x80804F2F"},
+        {"symbol": "omega.component.4786C0E0.type_13.slot_6", "alias_confidence": "generated", "type": 13, "type_label": "unclassified", "real_index": 6, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80804F2D", "auth_schema": "0x80804F30", "sense_schema": "0x80804F2F"},
+        {"symbol": "omega.component.4786C0E0.type_13.slot_7", "alias_confidence": "generated", "type": 13, "type_label": "unclassified", "real_index": 7, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80804F2D", "auth_schema": "0x80804F30", "sense_schema": "0x80804F2F"},
+        {"symbol": "omega.component.4786C0E0.type_13.slot_8", "alias_confidence": "generated", "type": 13, "type_label": "unclassified", "real_index": 8, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80804F2D", "auth_schema": "0x80804F30", "sense_schema": "0x80804F2F"},
+        {"symbol": "omega.component.4786C0E0.type_13.slot_9", "alias_confidence": "generated", "type": 13, "type_label": "unclassified", "real_index": 9, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80804F2D", "auth_schema": "0x80804F30", "sense_schema": "0x80804F2F"},
+        {"symbol": "omega.component.4786C0E0.type_13.slot_10", "alias_confidence": "generated", "type": 13, "type_label": "unclassified", "real_index": 10, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80804F2D", "auth_schema": "0x80804F30", "sense_schema": "0x80804F2F"},
+        {"symbol": "omega.component.4786C0E0.type_13.slot_11", "alias_confidence": "generated", "type": 13, "type_label": "unclassified", "real_index": 11, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80804F2D", "auth_schema": "0x80804F30", "sense_schema": "0x80804F2F"},
+        {"symbol": "omega.component.4786C0E0.type_13.slot_12", "alias_confidence": "generated", "type": 13, "type_label": "unclassified", "real_index": 12, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80804F2D", "auth_schema": "0x80804F30", "sense_schema": "0x80804F2F"},
+        {"symbol": "omega.component.4786C0E0.type_13.slot_13", "alias_confidence": "generated", "type": 13, "type_label": "unclassified", "real_index": 13, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80804F2D", "auth_schema": "0x80804F30", "sense_schema": "0x80804F2F"},
+        {"symbol": "omega.component.4786C0E0.type_13.slot_14", "alias_confidence": "generated", "type": 13, "type_label": "unclassified", "real_index": 14, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80804F2D", "auth_schema": "0x80804F30", "sense_schema": "0x80804F2F"},
+        {"symbol": "omega.component.4786C0E0.type_13.slot_15", "alias_confidence": "generated", "type": 13, "type_label": "unclassified", "real_index": 15, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80804F2D", "auth_schema": "0x80804F30", "sense_schema": "0x80804F2F"},
+        {"symbol": "omega.component.4786C0E0.type_13.slot_16", "alias_confidence": "generated", "type": 13, "type_label": "unclassified", "real_index": 16, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80804F2D", "auth_schema": "0x80804F30", "sense_schema": "0x80804F2F"},
+        {"symbol": "omega.component.4786C0E0.type_13.slot_17", "alias_confidence": "generated", "type": 13, "type_label": "unclassified", "real_index": 17, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80804F2D", "auth_schema": "0x80804F30", "sense_schema": "0x80804F2F"},
+        {"symbol": "omega.component.4786C0E0.type_13.slot_18", "alias_confidence": "generated", "type": 13, "type_label": "unclassified", "real_index": 18, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80804F2D", "auth_schema": "0x80804F30", "sense_schema": "0x80804F2F"},
+        {"symbol": "omega.component.4786C0E0.type_13.slot_19", "alias_confidence": "generated", "type": 13, "type_label": "unclassified", "real_index": 19, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80804F2D", "auth_schema": "0x80804F30", "sense_schema": "0x80804F2F"},
+        {"symbol": "omega.component.4786C0E0.type_13.slot_20", "alias_confidence": "generated", "type": 13, "type_label": "unclassified", "real_index": 20, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80804F2D", "auth_schema": "0x80804F30", "sense_schema": "0x80804F2F"}
+      ]
+    },
+    {
+      "registry_key": "0x29D7B029",
+      "table_index": 226,
+      "object_tag": "0x8153C4D9",
+      "package_id": "0x069E",
+      "slot_count": 1,
+        "publication": {"top_level": true, "top_ordinal": 1, "bubble_masks": [], "bubble_ordinals": [], "authored_slices": []},
+      "slots": [
+        {"symbol": "omega.component.29D7B029.type_19.slot_0", "alias_confidence": "generated", "type": 19, "type_label": "navigation", "real_index": 0, "flags": "0x02", "auth_schema_present": true, "sense_schema_present": false, "schema_source": "package_descriptor", "component_class": "0x80809525", "auth_schema": "0x80809527", "sense_schema": "0xFFFFFFFF"}
+      ]
+    },
+    {
+      "registry_key": "0x82FB58B7",
+      "table_index": 1196,
+      "object_tag": "0x80F47BDD",
+      "package_id": "0x03A3",
+      "slot_count": 3,
+        "publication": {"top_level": true, "top_ordinal": 2, "bubble_masks": [], "bubble_ordinals": [], "authored_slices": []},
+      "slots": [
+        {"symbol": "omega.directive_objective_sensor", "alias_confidence": "recovered", "type": 68, "type_label": "directive_objective", "real_index": 0, "flags": "0x02", "auth_schema_present": true, "sense_schema_present": false, "schema_source": "package_descriptor", "component_class": "0x80804F53", "auth_schema": "0x80804F67", "sense_schema": "0xFFFFFFFF"},
+        {"symbol": "omega.dialogue_sensor", "alias_confidence": "recovered", "type": 11, "type_label": "dialogue", "real_index": 1, "flags": "0x02", "auth_schema_present": true, "sense_schema_present": false, "schema_source": "package_descriptor", "component_class": "0x80804E8E", "auth_schema": "0x80804F58", "sense_schema": "0xFFFFFFFF"},
+        {"symbol": "omega.music_sensor", "alias_confidence": "recovered", "type": 53, "type_label": "music", "real_index": 2, "flags": "0x02", "auth_schema_present": true, "sense_schema_present": false, "schema_source": "package_descriptor", "component_class": "0x80804F4B", "auth_schema": "0x80804F77", "sense_schema": "0xFFFFFFFF"}
+      ]
+    },
+    {
+      "registry_key": "0xBA5F26EF",
+      "table_index": 1206,
+      "object_tag": "0x80F47B5B",
+      "package_id": "0x03A3",
+      "slot_count": 3,
+        "publication": {"top_level": false, "top_ordinal": null, "bubble_masks": ["0x0000000000008000"], "bubble_ordinals": [15], "authored_slices": []},
+      "slots": [
+        {"symbol": "omega.lighthouse_teleport", "alias_confidence": "recovered", "type": 4, "type_label": "device", "real_index": 0, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80809927", "auth_schema": "0x8080992F", "sense_schema": "0x8080992E"},
+        {"symbol": "omega.infinite_forest_gate", "alias_confidence": "recovered", "type": 23, "type_label": "gate", "real_index": 1, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80804F45", "auth_schema": "0x80804F48", "sense_schema": "0x80804F47"},
+        {"symbol": "omega.engagement_sensor", "alias_confidence": "recovered", "type": 70, "type_label": "engagement_sensor", "real_index": 2, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x808094EE", "auth_schema": "0x808094F1", "sense_schema": "0x808094F0"}
+      ]
+    },
+    {
+      "registry_key": "0xD00142CF",
+      "table_index": 1207,
+      "object_tag": "0x80F47BB2",
+      "package_id": "0x03A3",
+      "slot_count": 25,
+        "publication": {"top_level": false, "top_ordinal": null, "bubble_masks": ["0x0000000000008000"], "bubble_ordinals": [15], "authored_slices": []},
+      "slots": [
+        {"symbol": "omega.ikora_spawner", "alias_confidence": "recovered", "type": 1, "type_label": "squad_spawner", "real_index": 0, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80809A3B", "auth_schema": "0x80807EC9", "sense_schema": "0x80807ECC"},
+        {"symbol": "omega.opening_scene", "alias_confidence": "recovered", "type": 43, "type_label": "scene", "real_index": 1, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80806382", "auth_schema": "0x8080626B", "sense_schema": "0x8080626A"},
+        {"symbol": "omega.component.D00142CF.type_4.slot_2", "alias_confidence": "generated", "type": 4, "type_label": "device", "real_index": 2, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80809927", "auth_schema": "0x8080992F", "sense_schema": "0x8080992E"},
+        {"symbol": "omega.component.D00142CF.type_4.slot_3", "alias_confidence": "generated", "type": 4, "type_label": "device", "real_index": 3, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80809927", "auth_schema": "0x8080992F", "sense_schema": "0x8080992E"},
+        {"symbol": "omega.component.D00142CF.type_4.slot_4", "alias_confidence": "generated", "type": 4, "type_label": "device", "real_index": 4, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80809927", "auth_schema": "0x8080992F", "sense_schema": "0x8080992E"},
+        {"symbol": "omega.component.D00142CF.type_26.slot_5", "alias_confidence": "generated", "type": 26, "type_label": "unclassified", "real_index": 5, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x8080953F", "auth_schema": "0x8080954B", "sense_schema": "0x8080954A"},
+        {"symbol": "omega.component.D00142CF.type_26.slot_6", "alias_confidence": "generated", "type": 26, "type_label": "unclassified", "real_index": 6, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x8080953F", "auth_schema": "0x8080954B", "sense_schema": "0x8080954A"},
+        {"symbol": "omega.component.D00142CF.type_4.slot_7", "alias_confidence": "generated", "type": 4, "type_label": "device", "real_index": 7, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80809927", "auth_schema": "0x8080992F", "sense_schema": "0x8080992E"},
+        {"symbol": "omega.component.D00142CF.type_4.slot_8", "alias_confidence": "generated", "type": 4, "type_label": "device", "real_index": 8, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80809927", "auth_schema": "0x8080992F", "sense_schema": "0x8080992E"},
+        {"symbol": "omega.component.D00142CF.type_4.slot_9", "alias_confidence": "generated", "type": 4, "type_label": "device", "real_index": 9, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80809927", "auth_schema": "0x8080992F", "sense_schema": "0x8080992E"},
+        {"symbol": "omega.component.D00142CF.type_4.slot_10", "alias_confidence": "generated", "type": 4, "type_label": "device", "real_index": 10, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80809927", "auth_schema": "0x8080992F", "sense_schema": "0x8080992E"},
+        {"symbol": "omega.component.D00142CF.type_4.slot_11", "alias_confidence": "generated", "type": 4, "type_label": "device", "real_index": 11, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80809927", "auth_schema": "0x8080992F", "sense_schema": "0x8080992E"},
+        {"symbol": "omega.component.D00142CF.type_4.slot_12", "alias_confidence": "generated", "type": 4, "type_label": "device", "real_index": 12, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80809927", "auth_schema": "0x8080992F", "sense_schema": "0x8080992E"},
+        {"symbol": "omega.component.D00142CF.type_4.slot_13", "alias_confidence": "generated", "type": 4, "type_label": "device", "real_index": 13, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80809927", "auth_schema": "0x8080992F", "sense_schema": "0x8080992E"},
+        {"symbol": "omega.component.D00142CF.type_4.slot_14", "alias_confidence": "generated", "type": 4, "type_label": "device", "real_index": 14, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80809927", "auth_schema": "0x8080992F", "sense_schema": "0x8080992E"},
+        {"symbol": "omega.component.D00142CF.type_4.slot_15", "alias_confidence": "generated", "type": 4, "type_label": "device", "real_index": 15, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80809927", "auth_schema": "0x8080992F", "sense_schema": "0x8080992E"},
+        {"symbol": "omega.component.D00142CF.type_23.slot_16", "alias_confidence": "generated", "type": 23, "type_label": "gate", "real_index": 16, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x80804F45", "auth_schema": "0x80804F48", "sense_schema": "0x80804F47"},
+        {"symbol": "omega.component.D00142CF.type_70.slot_17", "alias_confidence": "generated", "type": 70, "type_label": "engagement_sensor", "real_index": 17, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x808094EE", "auth_schema": "0x808094F1", "sense_schema": "0x808094F0"},
+        {"symbol": "omega.component.D00142CF.type_31.slot_18", "alias_confidence": "generated", "type": 31, "type_label": "unclassified", "real_index": 18, "flags": "0x02", "auth_schema_present": true, "sense_schema_present": false, "schema_source": "package_descriptor", "component_class": "0x80809522", "auth_schema": "0x80809524", "sense_schema": "0xFFFFFFFF"},
+        {"symbol": "omega.component.D00142CF.type_31.slot_19", "alias_confidence": "generated", "type": 31, "type_label": "unclassified", "real_index": 19, "flags": "0x02", "auth_schema_present": true, "sense_schema_present": false, "schema_source": "package_descriptor", "component_class": "0x80809522", "auth_schema": "0x80809524", "sense_schema": "0xFFFFFFFF"},
+        {"symbol": "omega.opening_trigger_volume", "alias_confidence": "recovered", "type": 30, "type_label": "trigger_volume", "real_index": 20, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x8080952F", "auth_schema": "0x80809532", "sense_schema": "0x80809531"},
+        {"symbol": "omega.component.D00142CF.type_34.slot_21", "alias_confidence": "generated", "type": 34, "type_label": "unclassified", "real_index": 21, "flags": "0x02", "auth_schema_present": true, "sense_schema_present": false, "schema_source": "package_descriptor", "component_class": "0x80809568", "auth_schema": "0x8080956A", "sense_schema": "0xFFFFFFFF"},
+        {"symbol": "omega.component.D00142CF.type_34.slot_22", "alias_confidence": "generated", "type": 34, "type_label": "unclassified", "real_index": 22, "flags": "0x02", "auth_schema_present": true, "sense_schema_present": false, "schema_source": "package_descriptor", "component_class": "0x80809568", "auth_schema": "0x8080956A", "sense_schema": "0xFFFFFFFF"},
+        {"symbol": "omega.component.D00142CF.type_34.slot_23", "alias_confidence": "generated", "type": 34, "type_label": "unclassified", "real_index": 23, "flags": "0x02", "auth_schema_present": true, "sense_schema_present": false, "schema_source": "package_descriptor", "component_class": "0x80809568", "auth_schema": "0x8080956A", "sense_schema": "0xFFFFFFFF"},
+        {"symbol": "omega.forest_entrance_monitor", "alias_confidence": "recovered", "type": 30, "type_label": "trigger_volume", "real_index": 24, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x8080952F", "auth_schema": "0x80809532", "sense_schema": "0x80809531"}
+      ]
+    },
+    {
+      "registry_key": "0xF7A6CE7F",
+      "table_index": 1208,
+      "object_tag": "0x80F47BC6",
+      "package_id": "0x03A3",
+      "slot_count": 4,
+        "publication": {"top_level": false, "top_ordinal": null, "bubble_masks": ["0x0000000000008000"], "bubble_ordinals": [15], "authored_slices": []},
+      "slots": [
+        {"symbol": "omega.component.F7A6CE7F.type_30.slot_0", "alias_confidence": "generated", "type": 30, "type_label": "trigger_volume", "real_index": 0, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x8080952F", "auth_schema": "0x80809532", "sense_schema": "0x80809531"},
+        {"symbol": "omega.component.F7A6CE7F.type_30.slot_1", "alias_confidence": "generated", "type": 30, "type_label": "trigger_volume", "real_index": 1, "flags": "0x03", "auth_schema_present": true, "sense_schema_present": true, "schema_source": "package_descriptor", "component_class": "0x8080952F", "auth_schema": "0x80809532", "sense_schema": "0x80809531"},
+        {"symbol": "omega.component.F7A6CE7F.type_57.slot_3", "alias_confidence": "generated", "type": 57, "type_label": "unclassified", "real_index": 3, "flags": "0x00", "auth_schema_present": false, "sense_schema_present": false, "schema_source": "package_descriptor", "component_class": "0x808094D7", "auth_schema": "0xFFFFFFFF", "sense_schema": "0xFFFFFFFF"},
+        {"symbol": "omega.component.F7A6CE7F.type_57.slot_4", "alias_confidence": "generated", "type": 57, "type_label": "unclassified", "real_index": 4, "flags": "0x00", "auth_schema_present": false, "sense_schema_present": false, "schema_source": "package_descriptor", "component_class": "0x808094D7", "auth_schema": "0xFFFFFFFF", "sense_schema": "0xFFFFFFFF"}
+      ]
+    }
+  ],
+  "missing_group_keys": []
+}

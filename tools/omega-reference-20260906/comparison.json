@@ -1,0 +1,1207 @@
+[
+  {
+    "Status": "changed",
+    "Path": "client\\content\\handles\\handle_resolver.cpp",
+    "Size": 6215
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\content\\scenarios\\internal.h",
+    "Size": 13464
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\content\\scenarios\\scenario_build.cpp",
+    "Size": 6072
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\content\\scenarios\\scenario_roster_build.cpp",
+    "Size": 14836
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\content\\scenarios\\scenario_roster_groups.cpp",
+    "Size": 13663
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\content\\scenarios\\scenario_roster_publish.cpp",
+    "Size": 9774
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\content\\scenarios\\scenario_slot_classification.cpp",
+    "Size": 5617
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooking\\detour.cpp",
+    "Size": 7181
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooking\\detour.h",
+    "Size": 2767
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\bootflow\\activity_schema_decode_probe.cpp",
+    "Size": 259150
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\bootflow\\activity_script_event_probe.cpp",
+    "Size": 44721
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\bootflow\\activity_script_upstream_probe.cpp",
+    "Size": 770014
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\bootflow\\activity_spawner_chain_probe.cpp",
+    "Size": 616139
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\bootflow\\bootflow_hook_lifecycle.cpp",
+    "Size": 18630
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\forest_tuner_record.h",
+    "Size": 1404
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\bootflow\\forest_tuner_state.h",
+    "Size": 2027
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\bootflow\\internal.h",
+    "Size": 17525
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_activity_handoff.inl",
+    "Size": 20693
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_arc_charge_native.h",
+    "Size": 8724
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_arc_charge_receipts.cpp",
+    "Size": 49436
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_arc_charge_receipts.h",
+    "Size": 556
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_boss_health_identity.h",
+    "Size": 8039
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_boss_health.cpp",
+    "Size": 15910
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_boss_health.h",
+    "Size": 3320
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\bootflow\\omega_boss_vfx_start.h",
+    "Size": 23396
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\bootflow\\omega_boss_vfx_start.inl",
+    "Size": 19501
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_dialogue_bank.h",
+    "Size": 1622
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\bootflow\\omega_dialogue_dispatch_probe.cpp",
+    "Size": 128260
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\bootflow\\omega_directive_presentation.cpp",
+    "Size": 27596
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\bootflow\\omega_enemy_forest_receipts_runtime.h",
+    "Size": 22488
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\bootflow\\omega_enemy_forest_receipts.h",
+    "Size": 3258
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_enemy_lair_receipts.cpp",
+    "Size": 33609
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_enemy_lair_receipts.h",
+    "Size": 686
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_enemy_native_admission.h",
+    "Size": 1265
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_enemy_native_health.h",
+    "Size": 2610
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_enemy_native_reference.h",
+    "Size": 644
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\bootflow\\omega_forest_recipe.h",
+    "Size": 3472
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\bootflow\\omega_ikora_origin_probe.cpp",
+    "Size": 47839
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_lair_cinematic.cpp",
+    "Size": 131710
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_navigation_rules.h",
+    "Size": 7187
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_navigation.cpp",
+    "Size": 16924
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_rescue_scene_receipts.cpp",
+    "Size": 22532
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_rescue_scene_receipts.h",
+    "Size": 250
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_teardown_native.h",
+    "Size": 12040
+  },
+  {
+    "Status": "new",
+    "Path": "client\\hooks\\bootflow\\omega_vex_lattice_probe.h",
+    "Size": 11888
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\bootflow\\prologue_filler_ready.cpp",
+    "Size": 20164
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\bootflow\\spawn_hold_policy.h",
+    "Size": 1495
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\bootflow\\spawn_hold.cpp",
+    "Size": 25155
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\bootflow\\world_step.cpp",
+    "Size": 8077
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\graphics\\graphics_hook_replacements.cpp",
+    "Size": 6069
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\graphics\\renderer\\graphics_renderer_lifecycle.cpp",
+    "Size": 12490
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\graphics\\renderer\\renderer.h",
+    "Size": 1545
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\retail_log\\retail_log_enqueue_observer.cpp",
+    "Size": 59180
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\retail_log\\retail_log_enqueue_observer.h",
+    "Size": 1448
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\teleport\\runtime.h",
+    "Size": 6521
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\hooks\\teleport\\teleport_move.cpp",
+    "Size": 26439
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\player\\player_position.cpp",
+    "Size": 9470
+  },
+  {
+    "Status": "changed",
+    "Path": "client\\ui\\forest\\forest_panel.cpp",
+    "Size": 7335
+  },
+  {
+    "Status": "changed",
+    "Path": "middleware\\bap\\activity_message\\activity_authoritative_opaque_skip.cpp",
+    "Size": 6671
+  },
+  {
+    "Status": "changed",
+    "Path": "middleware\\bap\\activity_message\\activity_membership_member_writer.cpp",
+    "Size": 10498
+  },
+  {
+    "Status": "changed",
+    "Path": "middleware\\bap\\activity_message\\activity_membership_region_writer.cpp",
+    "Size": 6231
+  },
+  {
+    "Status": "changed",
+    "Path": "middleware\\bap\\activity_message\\activity_replicate_membership_encoder.cpp",
+    "Size": 1981
+  },
+  {
+    "Status": "changed",
+    "Path": "middleware\\bap\\activity_message\\activity_sense_update_parser.cpp",
+    "Size": 18837
+  },
+  {
+    "Status": "changed",
+    "Path": "middleware\\bap\\activity_message\\activity_sensor_auth_blocks.cpp",
+    "Size": 8450
+  },
+  {
+    "Status": "changed",
+    "Path": "middleware\\bap\\activity_message\\activity_sensor_auth_bodies.cpp",
+    "Size": 63932
+  },
+  {
+    "Status": "changed",
+    "Path": "middleware\\bap\\activity_message\\activity_sensor_auth_encoder.cpp",
+    "Size": 42566
+  },
+  {
+    "Status": "changed",
+    "Path": "middleware\\bap\\activity_message\\client_authoritative_data.h",
+    "Size": 4305
+  },
+  {
+    "Status": "changed",
+    "Path": "middleware\\bap\\activity_message\\replicate_membership.h",
+    "Size": 8673
+  },
+  {
+    "Status": "changed",
+    "Path": "middleware\\bap\\activity_message\\sense_update.h",
+    "Size": 3781
+  },
+  {
+    "Status": "changed",
+    "Path": "middleware\\bap\\activity_message\\sensor_auth_update.h",
+    "Size": 21511
+  },
+  {
+    "Status": "changed",
+    "Path": "middleware\\content\\packages\\tables\\scenario_reader.cpp",
+    "Size": 9287
+  },
+  {
+    "Status": "changed",
+    "Path": "middleware\\content\\packages\\tables\\scenario_reader.h",
+    "Size": 10546
+  },
+  {
+    "Status": "changed",
+    "Path": "middleware\\content\\packages\\tables\\slot_descriptor_reader.cpp",
+    "Size": 4303
+  },
+  {
+    "Status": "changed",
+    "Path": "middleware\\content\\packages\\tables\\slot_descriptor_reader.h",
+    "Size": 4364
+  },
+  {
+    "Status": "changed",
+    "Path": "server\\bap\\internal.h",
+    "Size": 28433
+  },
+  {
+    "Status": "changed",
+    "Path": "server\\bap\\encrypted\\activity_message\\activity_message_route.cpp",
+    "Size": 52741
+  },
+  {
+    "Status": "new",
+    "Path": "server\\bap\\encrypted\\activity_message\\omega_monitor_edges.h",
+    "Size": 1696
+  },
+  {
+    "Status": "new",
+    "Path": "server\\bap\\encrypted\\activity_message\\omega_roster_readiness.h",
+    "Size": 9286
+  },
+  {
+    "Status": "changed",
+    "Path": "server\\bap\\encrypted\\activity_message\\membership\\activity_membership_route.cpp",
+    "Size": 12374
+  },
+  {
+    "Status": "changed",
+    "Path": "server\\bap\\encrypted\\diagnostics\\omega_trace.cpp",
+    "Size": 22061
+  },
+  {
+    "Status": "changed",
+    "Path": "server\\bap\\encrypted\\push\\activity\\activity_global_state_push.cpp",
+    "Size": 7590
+  },
+  {
+    "Status": "changed",
+    "Path": "server\\bap\\encrypted\\push\\activity\\activity_keepalive_push.cpp",
+    "Size": 15199
+  },
+  {
+    "Status": "changed",
+    "Path": "server\\bap\\encrypted\\push\\activity\\activity_membership_push.cpp",
+    "Size": 10377
+  },
+  {
+    "Status": "changed",
+    "Path": "server\\bap\\encrypted\\push\\activity\\activity_roster_push.cpp",
+    "Size": 17028
+  },
+  {
+    "Status": "changed",
+    "Path": "server\\bap\\encrypted\\push\\activity\\activity_roster_snapshot.cpp",
+    "Size": 72285
+  },
+  {
+    "Status": "new",
+    "Path": "server\\bap\\encrypted\\push\\activity\\omega_lair_roster.h",
+    "Size": 18264
+  },
+  {
+    "Status": "changed",
+    "Path": "server\\ui\\activity_override\\activity_override_panel.cpp",
+    "Size": 13789
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\activity\\activity_world_arrival.cpp",
+    "Size": 5813
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_arc_charge_authority.h",
+    "Size": 4485
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_arc_charge_catalog.h",
+    "Size": 2248
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_boss_combat_action.h",
+    "Size": 11999
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_boss_crown_action.h",
+    "Size": 4308
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_boss_intro_action.h",
+    "Size": 4990
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_boss_lift_action.h",
+    "Size": 12359
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_boss_teleport_action.h",
+    "Size": 20168
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_combatant_authority.h",
+    "Size": 3797
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_crown_eye_status.h",
+    "Size": 2327
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_crown_respawn_authority.h",
+    "Size": 3596
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_crown_transit_authority.h",
+    "Size": 16627
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_crown_transit_geometry.h",
+    "Size": 7717
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_ending_rules.h",
+    "Size": 9309
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_ending_transit_rules.h",
+    "Size": 5755
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_ending.cpp",
+    "Size": 21161
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_ending.h",
+    "Size": 3115
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_enemy_chase_catalog.h",
+    "Size": 1219
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_enemy_crown_catalog.h",
+    "Size": 5460
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_enemy_crown_tactics.h",
+    "Size": 2599
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_enemy_crown_waves.h",
+    "Size": 3943
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_enemy_lair_catalog.h",
+    "Size": 3699
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_enemy_lair_tactics.h",
+    "Size": 1752
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_enemy_lair_wave.h",
+    "Size": 9442
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_first_lair_encounter.h",
+    "Size": 39398
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_first_lair_runtime.cpp",
+    "Size": 15798
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_first_lair_runtime.h",
+    "Size": 4098
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_first_mancannon_authority.h",
+    "Size": 4980
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_ikora_lattice.h",
+    "Size": 8171
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_intro_rules.h",
+    "Size": 4343
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_lair_chase_geometry.h",
+    "Size": 4486
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_lair_full_roster_catalog.h",
+    "Size": 5797
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_music_authority.h",
+    "Size": 4862
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_portal_entry.h",
+    "Size": 803
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_presentation_rules.h",
+    "Size": 22232
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_presentation_volumes.h",
+    "Size": 4184
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_presentation.cpp",
+    "Size": 14033
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_presentation.h",
+    "Size": 2945
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_rescue_marker_authority.h",
+    "Size": 3469
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_rescue_npc_catalog.h",
+    "Size": 5644
+  },
+  {
+    "Status": "new",
+    "Path": "state\\activity\\omega_rescue_scene_authority.h",
+    "Size": 6252
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\activity\\runtime.h",
+    "Size": 8524
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\activity\\forced\\activity_forced_destination.cpp",
+    "Size": 18219
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\activity\\forced\\activity_forced_destination.h",
+    "Size": 3842
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\activity\\forced\\definition.h",
+    "Size": 3029
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\activity\\membership\\activity_membership_query.h",
+    "Size": 11341
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\activity\\membership\\definition.h",
+    "Size": 5289
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\activity\\membership\\transactions\\activity_membership_prepare.cpp",
+    "Size": 9088
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\activity\\membership\\transactions\\internal.h",
+    "Size": 11361
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\build_data\\build_data_runtime.cpp",
+    "Size": 7857
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\build_data\\runtime.h",
+    "Size": 23797
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\build_data\\cache\\records\\cache_scenario_records.cpp",
+    "Size": 8635
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\build_data\\cache\\records\\format.h",
+    "Size": 24163
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\build_data\\cache\\records\\version.h",
+    "Size": 378
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\build_data\\runtime\\build_data_catalog_runtime.cpp",
+    "Size": 17109
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\build_data\\runtime\\build_data_roster_runtime.cpp",
+    "Size": 413
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\build_data\\scenarios\\definition.h",
+    "Size": 7945
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\build_data\\scenarios\\omega_inventory_exporter.cpp",
+    "Size": 25709
+  },
+  {
+    "Status": "new",
+    "Path": "state\\build_data\\scenarios\\omega_schema_catalog.cpp",
+    "Size": 15462
+  },
+  {
+    "Status": "new",
+    "Path": "state\\build_data\\scenarios\\omega_schema_catalog.h",
+    "Size": 1610
+  },
+  {
+    "Status": "new",
+    "Path": "state\\build_data\\scenarios\\roster_fallback.h",
+    "Size": 3769
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\build_data\\scenarios\\scenario_catalog.cpp",
+    "Size": 11083
+  },
+  {
+    "Status": "changed",
+    "Path": "state\\build_data\\scenarios\\scenario_catalog.h",
+    "Size": 2807
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\content\\scenarios\\towerfall_cue_source_probe.cpp",
+    "Size": 33436
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\content\\scenarios\\towerfall_cue_source_probe.h",
+    "Size": 767
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_animation_request.h",
+    "Size": 1663
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_boss_animation_glow.inl",
+    "Size": 1346
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_boss_combat_runtime.inl",
+    "Size": 20930
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_boss_combat_start.h",
+    "Size": 3535
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_boss_eye_diagnostics.h",
+    "Size": 4230
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_boss_eye_diagnostics.inl",
+    "Size": 5312
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_boss_graph_observation.h",
+    "Size": 7113
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_boss_graph_runtime.inl",
+    "Size": 30566
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_boss_graph.h",
+    "Size": 11221
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_boss_spawn.h",
+    "Size": 1875
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_cannon_delivery.h",
+    "Size": 6552
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_cannon_delivery.inl",
+    "Size": 11746
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_cinematic_runtime.inl",
+    "Size": 3598
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_directive_native.h",
+    "Size": 409
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_eye_clip_trace.inl",
+    "Size": 6764
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_eye_execution_trace.inl",
+    "Size": 11555
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_eye_resource_trace.inl",
+    "Size": 3669
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_lair_delivery.h",
+    "Size": 2986
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_lair_delivery.inl",
+    "Size": 4198
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_mission_arc.inl",
+    "Size": 16728
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_mission_characters.h",
+    "Size": 1079
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_mission_crown.h",
+    "Size": 3432
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_mission_crown.inl",
+    "Size": 16323
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_mission_delivery.h",
+    "Size": 2463
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_mission_delivery.inl",
+    "Size": 3045
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_mission_devices.inl",
+    "Size": 4478
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_mission_ending.inl",
+    "Size": 2316
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_mission_eye_control.inl",
+    "Size": 4071
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_mission_health.inl",
+    "Size": 5429
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_mission_motion.h",
+    "Size": 6313
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_mission_motion.inl",
+    "Size": 15200
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_mission_receipts.inl",
+    "Size": 8207
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_mission_rescue.inl",
+    "Size": 8491
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_native_readable.h",
+    "Size": 2585
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_navigation_runtime.h",
+    "Size": 12271
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_navigation.h",
+    "Size": 5099
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_portal_probe.h",
+    "Size": 1801
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_portal_visual_apply.inl",
+    "Size": 562
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_presentation.h",
+    "Size": 4709
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_rescue_delivery.h",
+    "Size": 2947
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_rescue_delivery.inl",
+    "Size": 3708
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_reveal_bindings.h",
+    "Size": 7742
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_reveal_native.cpp",
+    "Size": 33562
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_reveal_native.h",
+    "Size": 1257
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\omega_reveal_source.h",
+    "Size": 1296
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\bootflow\\towerfall_executor_bootstrap.cpp",
+    "Size": 111577
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\graphics\\omega_frame_samples.h",
+    "Size": 3680
+  },
+  {
+    "Status": "local-only",
+    "Path": "client\\hooks\\graphics\\omega_frame_timing.h",
+    "Size": 11090
+  },
+  {
+    "Status": "local-only",
+    "Path": "middleware\\bap\\activity_message\\native_sense.h",
+    "Size": 4034
+  },
+  {
+    "Status": "local-only",
+    "Path": "middleware\\bap\\activity_message\\scene_sense.h",
+    "Size": 2290
+  },
+  {
+    "Status": "local-only",
+    "Path": "middleware\\bap\\activity_message\\tower_watch_cue_manifest.h",
+    "Size": 3765
+  },
+  {
+    "Status": "local-only",
+    "Path": "server\\bap\\encrypted\\activity_message\\omega_opening_ack.h",
+    "Size": 8781
+  },
+  {
+    "Status": "local-only",
+    "Path": "server\\bap\\encrypted\\push\\activity\\omega_route_roster.h",
+    "Size": 2855
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_boss_authority.h",
+    "Size": 4775
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_ending_authority.h",
+    "Size": 898
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_ending_runtime.h",
+    "Size": 4445
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_ending_transit.h",
+    "Size": 2064
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_forest_encounters.h",
+    "Size": 713
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_ikora_authority.h",
+    "Size": 4086
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_ikora_lattice.h",
+    "Size": 1847
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_lair_authority.h",
+    "Size": 3198
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_lair_dialogue.h",
+    "Size": 5178
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_lair_start.cpp",
+    "Size": 1338
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_lair_start.h",
+    "Size": 1976
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_mission_authority.h",
+    "Size": 3164
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_mission_catalog.h",
+    "Size": 7167
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_mission_devices.h",
+    "Size": 3263
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_mission_presentation.h",
+    "Size": 4747
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_mission_publication.h",
+    "Size": 759
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_mission_runtime.h",
+    "Size": 784
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_mission_state.h",
+    "Size": 20071
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_portal_entry.h",
+    "Size": 768
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_progression.cpp",
+    "Size": 3985
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_progression.h",
+    "Size": 7602
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_rescue_authority.h",
+    "Size": 2322
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_rescue_catalog.h",
+    "Size": 1847
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_reveal_door.h",
+    "Size": 1476
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_transit_authority.h",
+    "Size": 6041
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\activity\\omega\\omega_transit_catalog.h",
+    "Size": 3021
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\build_data\\scenarios\\cue_graph_manifest_exporter.cpp",
+    "Size": 14147
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\build_data\\scenarios\\cue_graph_manifest_exporter.h",
+    "Size": 752
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\build_data\\scenarios\\cue_graph_manifest.cpp",
+    "Size": 5762
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\build_data\\scenarios\\cue_graph_manifest.h",
+    "Size": 2233
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\build_data\\scenarios\\cue_table_decoder.cpp",
+    "Size": 4317
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\build_data\\scenarios\\cue_table_decoder.h",
+    "Size": 1915
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\build_data\\scenarios\\descriptor_catalog.cpp",
+    "Size": 2916
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\build_data\\scenarios\\descriptor_catalog.h",
+    "Size": 1518
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\build_data\\scenarios\\omega_crown_roster.h",
+    "Size": 1721
+  },
+  {
+    "Status": "local-only",
+    "Path": "state\\build_data\\scenarios\\omega_route_groups.h",
+    "Size": 1574
+  }
+]

@@ -1,0 +1,209 @@
+============================================================
+KIND 1 slot=7ff61a004c50 target=7ff618c04700 function=FUN_7ff618c04700
+
+void FUN_7ff618c04700(void)
+
+{
+  return;
+}
+
+  7ff618c04700 RET 0x0
+============================================================
+KIND 2 slot=7ff61a004c58 target=7ff618a6b9e0 function=FUN_7ff618a6b9e0
+
+void FUN_7ff618a6b9e0(undefined1 *param_1,undefined8 param_2,undefined8 param_3,undefined8 param_4)
+
+{
+  undefined1 uVar1;
+  
+  uVar1 = func_0x7ff6183c0ef0(param_4);
+  *param_1 = uVar1;
+  return;
+}
+
+  7ff618a6b9e0 PUSH RBX
+  7ff618a6b9e2 SUB RSP,0x20
+  7ff618a6b9e6 MOV RBX,RCX
+  7ff618a6b9e9 MOV RCX,R9
+  7ff618a6b9ec CALL 0x7ff6183c0ef0
+  7ff618a6b9f1 MOV byte ptr [RBX],AL
+  7ff618a6b9f3 ADD RSP,0x20
+  7ff618a6b9f7 POP RBX
+  7ff618a6b9f8 RET
+============================================================
+KIND 3 slot=7ff61a004c60 target=7ff618a69b00 function=FUN_7ff618a69b00
+
+void FUN_7ff618a69b00(char *param_1,undefined8 param_2,char *param_3,undefined8 param_4)
+
+{
+  char cVar1;
+  
+  cVar1 = func_0x7ff6183c13b0(param_4,*(undefined4 *)(param_3 + 4));
+  *param_1 = cVar1 - *param_3;
+  return;
+}
+
+  7ff618a69b00 MOV qword ptr [RSP + 0x8],RBX
+  7ff618a69b05 PUSH RDI
+  7ff618a69b06 SUB RSP,0x20
+  7ff618a69b0a MOV EDX,dword ptr [R8 + 0x4]
+  7ff618a69b0e MOV RBX,RCX
+  7ff618a69b11 MOV RCX,R9
+  7ff618a69b14 MOV RDI,R8
+  7ff618a69b17 CALL 0x7ff6183c13b0
+  7ff618a69b1c SUB AL,byte ptr [RDI]
+  7ff618a69b1e MOV byte ptr [RBX],AL
+  7ff618a69b20 MOV RBX,qword ptr [RSP + 0x30]
+  7ff618a69b25 ADD RSP,0x20
+  7ff618a69b29 POP RDI
+  7ff618a69b2a RET
+============================================================
+KIND 5 slot=7ff61a004c70 target=7ff618a6a080 function=FUN_7ff618a6a080
+
+void FUN_7ff618a6a080(int *param_1,undefined8 param_2,int *param_3,undefined8 param_4)
+
+{
+  int iVar1;
+  
+  iVar1 = func_0x7ff6183c13b0(param_4,param_3[1]);
+  *param_1 = iVar1 - *param_3;
+  return;
+}
+
+  7ff618a6a080 MOV qword ptr [RSP + 0x8],RBX
+  7ff618a6a085 PUSH RDI
+  7ff618a6a086 SUB RSP,0x20
+  7ff618a6a08a MOV EDX,dword ptr [R8 + 0x4]
+  7ff618a6a08e MOV RBX,RCX
+  7ff618a6a091 MOV RCX,R9
+  7ff618a6a094 MOV RDI,R8
+  7ff618a6a097 CALL 0x7ff6183c13b0
+  7ff618a6a09c SUB EAX,dword ptr [RDI]
+  7ff618a6a09e MOV dword ptr [RBX],EAX
+  7ff618a6a0a0 MOV RBX,qword ptr [RSP + 0x30]
+  7ff618a6a0a5 ADD RSP,0x20
+  7ff618a6a0a9 POP RDI
+  7ff618a6a0aa RET
+============================================================
+KIND 9 slot=7ff61a004c90 target=7ff618a6a080 function=FUN_7ff618a6a080
+
+void FUN_7ff618a6a080(int *param_1,undefined8 param_2,int *param_3,undefined8 param_4)
+
+{
+  int iVar1;
+  
+  iVar1 = func_0x7ff6183c13b0(param_4,param_3[1]);
+  *param_1 = iVar1 - *param_3;
+  return;
+}
+
+  7ff618a6a080 MOV qword ptr [RSP + 0x8],RBX
+  7ff618a6a085 PUSH RDI
+  7ff618a6a086 SUB RSP,0x20
+  7ff618a6a08a MOV EDX,dword ptr [R8 + 0x4]
+  7ff618a6a08e MOV RBX,RCX
+  7ff618a6a091 MOV RCX,R9
+  7ff618a6a094 MOV RDI,R8
+  7ff618a6a097 CALL 0x7ff6183c13b0
+  7ff618a6a09c SUB EAX,dword ptr [RDI]
+  7ff618a6a09e MOV dword ptr [RBX],EAX
+  7ff618a6a0a0 MOV RBX,qword ptr [RSP + 0x30]
+  7ff618a6a0a5 ADD RSP,0x20
+  7ff618a6a0a9 POP RDI
+  7ff618a6a0aa RET
+============================================================
+KIND 11 slot=7ff61a004ca0 target=7ff618a68d50 function=FUN_7ff618a68d50
+
+void FUN_7ff618a68d50(undefined4 *param_1,undefined8 param_2,undefined4 *param_3,undefined8 param_4)
+
+{
+  uint uVar1;
+  undefined4 uVar2;
+  
+  uVar1 = param_3[2];
+  if ((uVar1 < 0x20) && (0 < (int)uVar1)) {
+    uVar2 = func_0x7ff6183c1340(param_4,0x7ff619c659bc,*param_3,param_3[1],uVar1,0,1);
+    *param_1 = uVar2;
+    return;
+  }
+  uVar2 = func_0x7ff6183c13b0(param_4,0x20);
+  *param_1 = uVar2;
+  return;
+}
+
+  7ff618a68d50 PUSH RBX
+  7ff618a68d52 SUB RSP,0x40
+  7ff618a68d56 MOV EAX,dword ptr [R8 + 0x8]
+  7ff618a68d5a MOV RBX,RCX
+  7ff618a68d5d CMP EAX,0x20
+  7ff618a68d60 JNC 0x7ff618a68d98
+  7ff618a68d62 TEST EAX,EAX
+  7ff618a68d64 JLE 0x7ff618a68d98
+  7ff618a68d66 MOVSS XMM3,dword ptr [R8 + 0x4]
+  7ff618a68d6c LEA RDX,[0x7ff619c659bc]
+  7ff618a68d73 MOVSS XMM2,dword ptr [R8]
+  7ff618a68d78 MOV RCX,R9
+  7ff618a68d7b MOV byte ptr [RSP + 0x30],0x1
+  7ff618a68d80 MOV byte ptr [RSP + 0x28],0x0
+  7ff618a68d85 MOV dword ptr [RSP + 0x20],EAX
+  7ff618a68d89 CALL 0x7ff6183c1340
+  7ff618a68d8e MOVSS dword ptr [RBX],XMM0
+  7ff618a68d92 ADD RSP,0x40
+  7ff618a68d96 POP RBX
+  7ff618a68d97 RET
+  7ff618a68d98 MOV EDX,0x20
+  7ff618a68d9d MOV RCX,R9
+  7ff618a68da0 CALL 0x7ff6183c13b0
+  7ff618a68da5 MOV dword ptr [RBX],EAX
+  7ff618a68da7 ADD RSP,0x40
+  7ff618a68dab POP RBX
+  7ff618a68dac RET
+============================================================
+KIND 13 slot=7ff61a004cb0 target=7ff618a68f50 function=FUN_7ff618a68f50
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+void FUN_7ff618a68f50(undefined4 *param_1,undefined8 param_2,undefined8 param_3,undefined8 param_4)
+
+{
+  undefined4 uVar1;
+  undefined1 auStack_48 [32];
+  undefined4 uStack_28;
+  undefined4 uStack_24;
+  undefined4 uStack_20;
+  ulonglong uStack_18;
+  
+  uStack_18 = _DAT_7ff61a119a88 ^ (ulonglong)auStack_48;
+  func_0x7ff618531b70(param_4,&uStack_28);
+  uVar1 = _DAT_7ff619c12b80;
+  *param_1 = uStack_28;
+  param_1[1] = uStack_24;
+  param_1[2] = uStack_20;
+  param_1[3] = uVar1;
+  func_0x7ff6198ec480(uStack_18 ^ (ulonglong)auStack_48);
+  return;
+}
+
+  7ff618a68f50 PUSH RBX
+  7ff618a68f52 SUB RSP,0x40
+  7ff618a68f56 MOV RAX,qword ptr [0x7ff61a119a88]
+  7ff618a68f5d XOR RAX,RSP
+  7ff618a68f60 MOV qword ptr [RSP + 0x30],RAX
+  7ff618a68f65 MOV RBX,RCX
+  7ff618a68f68 LEA RDX,[RSP + 0x20]
+  7ff618a68f6d MOV RCX,R9
+  7ff618a68f70 CALL 0x7ff618531b70
+  7ff618a68f75 MOVSS XMM1,dword ptr [0x7ff619c12b80]
+  7ff618a68f7d MOVSS XMM0,dword ptr [RSP + 0x28]
+  7ff618a68f83 MOVSS XMM2,dword ptr [RSP + 0x24]
+  7ff618a68f89 MOVSS XMM3,dword ptr [RSP + 0x20]
+  7ff618a68f8f UNPCKLPS XMM3,XMM0
+  7ff618a68f92 UNPCKLPS XMM2,XMM1
+  7ff618a68f95 UNPCKLPS XMM3,XMM2
+  7ff618a68f98 MOVUPS xmmword ptr [RBX],XMM3
+  7ff618a68f9b MOV RCX,qword ptr [RSP + 0x30]
+  7ff618a68fa0 XOR RCX,RSP
+  7ff618a68fa3 CALL 0x7ff6198ec480
+  7ff618a68fa8 ADD RSP,0x40
+  7ff618a68fac POP RBX
+  7ff618a68fad RET

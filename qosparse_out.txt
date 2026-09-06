@@ -1,0 +1,133 @@
+################ packet-parse (dispatch pre-route) @ 0x7ff619b19a80 FUN_7ff619b19a80 ################
+
+char FUN_7ff619b19a80(undefined1 *param_1,undefined8 param_2,int param_3,int param_4,int *param_5)
+
+{
+  int *piVar1;
+  char cVar2;
+  longlong lVar3;
+  undefined4 local_res18 [2];
+  undefined4 uVar4;
+  char *pcVar5;
+  
+  piVar1 = param_5;
+  *param_5 = param_4;
+  cVar2 = FUN_7ff619af3a10(param_2,param_3,param_4,param_5,local_res18,1);
+  if (cVar2 == '\0') {
+LAB_7ff619b19c3e:
+    cVar2 = '\0';
+  }
+  else {
+    *param_1 = (undefined1)local_res18[0];
+    cVar2 = FUN_7ff619af3a10(param_2,param_3,*piVar1,piVar1,local_res18,4);
+    if (cVar2 == '\0') goto LAB_7ff619b19c3e;
+    *(undefined4 *)(param_1 + 4) = local_res18[0];
+    cVar2 = FUN_7ff619af3a10(param_2,param_3,*piVar1,piVar1,&param_5,8);
+    if (cVar2 == '\0') goto LAB_7ff619b19c3e;
+    *(int **)(param_1 + 0x10) = param_5;
+    cVar2 = FUN_7ff619af3a10(param_2,param_3,*piVar1,piVar1,local_res18,1);
+    if (cVar2 == '\0') goto LAB_7ff619b19c3e;
+    param_1[0x18] = (undefined1)local_res18[0];
+    cVar2 = FUN_7ff619af3a10(param_2,param_3,*piVar1,piVar1,local_res18,4);
+    if (cVar2 == '\0') goto LAB_7ff619b19c3e;
+    *(undefined4 *)(param_1 + 0x30) = local_res18[0];
+    cVar2 = FUN_7ff619af3a10(param_2,param_3,*piVar1,piVar1,local_res18,4);
+    if (cVar2 == '\0') goto LAB_7ff619b19c3e;
+    *(undefined4 *)(param_1 + 0x1c) = local_res18[0];
+    cVar2 = FUN_7ff619af3a10(param_2,param_3,*piVar1,piVar1,local_res18,4);
+    if (cVar2 == '\0') goto LAB_7ff619b19c3e;
+    *(undefined4 *)(param_1 + 0x20) = local_res18[0];
+    cVar2 = FUN_7ff619af3a10(param_2,param_3,*piVar1,piVar1,local_res18,1);
+    if (cVar2 == '\0') goto LAB_7ff619b19c3e;
+    cVar2 = '\x01';
+    param_1[0x38] = (undefined1)local_res18[0];
+  }
+  if (param_3 - *piVar1 == *(int *)(param_1 + 0x30)) {
+    if (cVar2 == '\0') goto LAB_7ff619b19cd7;
+    if (*(longlong *)(param_1 + 0x28) != 0) {
+      FUN_7ff619af1ef0();
+      *(undefined8 *)(param_1 + 0x28) = 0;
+    }
+    if (*(int *)(param_1 + 0x30) == 0) {
+      return cVar2;
+    }
+    lVar3 = FUN_7ff619af1ec0(*(int *)(param_1 + 0x30));
+    *(longlong *)(param_1 + 0x28) = lVar3;
+    if (lVar3 != 0) {
+      cVar2 = FUN_7ff619af3a10(param_2,param_3,*piVar1,piVar1,lVar3,*(undefined4 *)(param_1 + 0x30))
+      ;
+      if (cVar2 != '\0') {
+        return '\x01';
+      }
+      goto LAB_7ff619b19cd7;
+    }
+    pcVar5 = s_Failed_to_allocate_data_buffer__7ff619dc9648;
+    uVar4 = 0x109;
+  }
+  else {
+    pcVar5 = s_Received_a_packet_with_invalid_d_7ff619dc96e0;
+    uVar4 = 0xfa;
+  }
+  FUN_7ff619b00cf0(2,s_warn__7ff619dbe7d8,s_bdSocket_qos_7ff619dc59a0,
+                   s_bdQoS_bdPacket_bdQoSReplyPacket__7ff619dc9688,
+                   s_bdQoSReplyPacket__deserialize_7ff619dc9710,uVar4,pcVar5);
+LAB_7ff619b19cd7:
+  *piVar1 = param_4;
+  return '\0';
+}
+
+
+
+################ request-path parse 0x7ff619b1a200 @ 0x7ff619b1a200 FUN_7ff619b1a200 ################
+
+ulonglong FUN_7ff619b1a200(undefined1 *param_1,undefined8 param_2,undefined4 param_3,
+                          undefined4 param_4,undefined4 *param_5)
+
+{
+  undefined4 *puVar1;
+  ulonglong uVar2;
+  undefined4 local_res20 [2];
+  
+  puVar1 = param_5;
+  *param_5 = param_4;
+  uVar2 = FUN_7ff619af3a10(param_2,param_3,param_4,param_5,local_res20,1);
+  if ((char)uVar2 != '\0') {
+    *param_1 = (undefined1)local_res20[0];
+    uVar2 = FUN_7ff619af3a10(param_2,param_3,*puVar1,puVar1,&param_5,8);
+    if ((char)uVar2 != '\0') {
+      *(undefined4 **)(param_1 + 8) = param_5;
+      uVar2 = FUN_7ff619af3a10(param_2,param_3,*puVar1,puVar1,local_res20,4);
+      if ((char)uVar2 != '\0') {
+        *(undefined4 *)(param_1 + 0x10) = local_res20[0];
+        uVar2 = FUN_7ff619af3a10(param_2,param_3,*puVar1,puVar1,local_res20,4);
+        if ((char)uVar2 != '\0') {
+          *(undefined4 *)(param_1 + 0x14) = local_res20[0];
+          uVar2 = FUN_7ff619af3a10(param_2,param_3,*puVar1,puVar1,local_res20,1);
+          if ((char)uVar2 != '\0') {
+            param_1[0x18] = (undefined1)local_res20[0];
+            return 1;
+          }
+        }
+      }
+    }
+  }
+  *puVar1 = param_4;
+  return uVar2 & 0xffffffffffffff00;
+}
+
+
+
+################ reply-path helper 0x7ff619b1a1e0 @ 0x7ff619b1a1e0 FUN_7ff619b1a1e0 ################
+
+undefined1 * FUN_7ff619b1a1e0(undefined1 *param_1)
+
+{
+  *param_1 = 0;
+  *(undefined8 *)(param_1 + 8) = 0;
+  *(undefined8 *)(param_1 + 0x10) = 0;
+  param_1[0x18] = 0;
+  return param_1;
+}
+
+
+

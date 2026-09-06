@@ -1,0 +1,748 @@
+[
+  {
+    "path": "src/state/activity/omega_arc_charge_authority.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "8fb74c1425020b73f9c84a05fa606d282e52f4f4b6fc785ad44290001d549573"
+  },
+  {
+    "path": "src/state/activity/omega_arc_charge_catalog.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "da1b287943705e7ad56c1ea3bc4cf59c120259088f5a904c6dc667173e63cadd"
+  },
+  {
+    "path": "src/state/activity/omega_boss_combat_action.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "43993fe15f9b6dd50f186376d4e46ab5d41ea83c78b487a2cf0760d4311fc635"
+  },
+  {
+    "path": "src/state/activity/omega_boss_crown_action.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "7bade0690a5c72f9b3e430479fe8daccd3002f2675d68e077113810820c86c2f"
+  },
+  {
+    "path": "src/state/activity/omega_boss_intro_action.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "9d9e9307aa371a281fb983265455a1569eed4ebd71f5006684744b1ac3533349"
+  },
+  {
+    "path": "src/state/activity/omega_boss_lift_action.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "c471c7835889d598894026be394c362c3e4303746b02a012fd21592e4d28cd40"
+  },
+  {
+    "path": "src/state/activity/omega_boss_teleport_action.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "8fc0a74c27dfe376565f9b218981bee356b2e39792efc617f149a85c7eb6abce"
+  },
+  {
+    "path": "src/state/activity/omega_combatant_authority.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "dff9db2dcb8f0c0de8add1fd61589a6c5093c574063524c7919d62ab2312c916"
+  },
+  {
+    "path": "src/state/activity/omega_crown_eye_status.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "88ebb670ad1cc32472f156cc425b598bf0a0111414ed65142a340bf11ea73648"
+  },
+  {
+    "path": "src/state/activity/omega_crown_respawn_authority.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "eb67961e416fde30548364d9846a2524a8cfc50b09b587084caf48c6746e04b1"
+  },
+  {
+    "path": "src/state/activity/omega_crown_transit_authority.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "47cbff7dfc87c3ae1bd832cbabe46dc8cf5459a32fcca0597f75bd98e3a1505e"
+  },
+  {
+    "path": "src/state/activity/omega_crown_transit_geometry.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "da7e67162057ec11565a0aa35030587bdfd02c584a2a31793f4895541db74527"
+  },
+  {
+    "path": "src/state/activity/omega_ending.cpp",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "d7bdfc81f9155be3e2b4e41476a44f7aa6a34e1866bf181c3b5900957b7324cd"
+  },
+  {
+    "path": "src/state/activity/omega_ending.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "5f445e80bc0e7ec93e06e6b83ef0313c7c136578c992be603137ccd0dc4d8b11"
+  },
+  {
+    "path": "src/state/activity/omega_ending_rules.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "e9ea06739f502237b14ebd64d953188bcc2e437458333ee6484a660af423a7dd"
+  },
+  {
+    "path": "src/state/activity/omega_ending_transit_rules.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "a61f37125a89acd5714359417255690b0fdc64f85386ac16762d52def1bcdc60"
+  },
+  {
+    "path": "src/state/activity/omega_enemy_chase_catalog.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "27a5b23e8d872040519136beb2897b8267459a69fb7e2ff7060bbf2ef5c2d967"
+  },
+  {
+    "path": "src/state/activity/omega_enemy_crown_catalog.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "8c61bccc70b0622d5f26c55d211adbef1ec5b248ed50d84cc3709542ebae3809"
+  },
+  {
+    "path": "src/state/activity/omega_enemy_crown_tactics.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "2d4b3cead0df9a20ff2395c9b9ca70131a122f4774df9013931252ed9b9b0611"
+  },
+  {
+    "path": "src/state/activity/omega_enemy_crown_waves.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "75f4bf1bdb9a6344fc308aed32871e44bf97f739cde7e553544a629eb84bac7e"
+  },
+  {
+    "path": "src/state/activity/omega_enemy_lair_catalog.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "f2e2394188d70e41304647cec7d76d7ffb25f6da58423a9dda4dce890802ab76"
+  },
+  {
+    "path": "src/state/activity/omega_enemy_lair_tactics.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "2f68f544a27c800be80b60ec1a020fadf12453659e19e2a09093ff838af4b59f"
+  },
+  {
+    "path": "src/state/activity/omega_enemy_lair_wave.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "0a1dd39cd6cb8261bfc58f5dc28ec0fb7d6ea8754735486ad92d76e3100f96b1"
+  },
+  {
+    "path": "src/state/activity/omega_first_lair_encounter.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "30fc5675d615cf396a6a5cc118068c7d75bfdadad59d41c0bababb1dc8c33d49"
+  },
+  {
+    "path": "src/state/activity/omega_first_lair_runtime.cpp",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "73da51bcc71d4cacc87127d6e1a6b7e7572bb99d53435965b3582694fa8b5d3b"
+  },
+  {
+    "path": "src/state/activity/omega_first_lair_runtime.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "01dbc3e1955c5d20901433a3057fa9c1ffe47b51a615ab909710f6c69ed68a90"
+  },
+  {
+    "path": "src/state/activity/omega_first_mancannon_authority.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "0c9290e483dca5562a007476eacb3de2425f8884dca5440f3e5fa7c03a42674d"
+  },
+  {
+    "path": "src/state/activity/omega_ikora_lattice.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "99bad0fc26b9ad2eccb2f94d5d198bc790a9898dab9cd9d46b470d3036c4f6be"
+  },
+  {
+    "path": "src/state/activity/omega_intro_rules.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "38f05baa5dbbdae1761fa603dbfb36ec6d67e70bc3b9a3e54ac3975e7fa786eb"
+  },
+  {
+    "path": "src/state/activity/omega_lair_chase_geometry.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "3e999a24d6464bec6481514abe6a047fc5ecb3d09b22326c01773d19fe4cd9f9"
+  },
+  {
+    "path": "src/state/activity/omega_lair_full_roster_catalog.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "34e455e2ccf3d9ed464e34c9fae2d4e9f48eff1bbc3b56783f3386c46cc0a670"
+  },
+  {
+    "path": "src/state/activity/omega_music_authority.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "76f26f822cd4433246caa5d0ce9cb5876bef3f99d03b6056e76e9426df7c1a82"
+  },
+  {
+    "path": "src/state/activity/omega_portal_entry.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "d1c0077e8cc32d10acfb4b867391e8411601a8d1fe061b6ced3d2b55ed75ceb9"
+  },
+  {
+    "path": "src/state/activity/omega_presentation.cpp",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "cbc35e2abc9e6173ab2cc83475142b9fa76aba2b9f89a57189913d94d3b58f93"
+  },
+  {
+    "path": "src/state/activity/omega_presentation.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "7ba7fd62d8ebabcef7ff51a0e41546df4e36a528083c5158e7e90a090da995bb"
+  },
+  {
+    "path": "src/state/activity/omega_presentation_rules.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "891233aeaeb2b88206e493a4f0752c59c626fe78c99565963081a33f48d2c5a4"
+  },
+  {
+    "path": "src/state/activity/omega_presentation_volumes.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "1769504f0c171be9420d7d864d64fe934b2a5e6885a22c8f471060e61ec74ae0"
+  },
+  {
+    "path": "src/state/activity/omega_rescue_marker_authority.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "8502dcb19ec93eb812fbf4b1fbf7f50b8a9c768359e0d9d88600d1b829166314"
+  },
+  {
+    "path": "src/state/activity/omega_rescue_npc_catalog.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "a80561ae43ffd005897bdad8880b0a19b651ffbdb75ad302eaa3bdede6111930"
+  },
+  {
+    "path": "src/state/activity/omega_rescue_scene_authority.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "570a2d8b54ba77cfa440c026a9e1a1611c363f6ee90a1aaf8bb1070bdc967607"
+  },
+  {
+    "path": "src/state/build_data/runtime.h",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "ece1a55e8f18adecfc8a01bbeed886e7fa09585c8f1f42acc8ecd04b339db912"
+  },
+  {
+    "path": "src/state/build_data/runtime/build_data_catalog_runtime.cpp",
+    "referenceIdentical": false,
+    "new": false,
+    "sha256": "4d8d46346e6ba2bb75cb40253142564fa425d5889fd106cf4ac4d803e978d3e5"
+  },
+  {
+    "path": "src/state/build_data/runtime/build_data_roster_runtime.cpp",
+    "referenceIdentical": false,
+    "new": false,
+    "sha256": "fe1b8e74f50f7b168185465bbec080731782b88a5da2c8390645aace2fad4af2"
+  },
+  {
+    "path": "src/state/build_data/scenarios/omega_inventory_exporter.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "fc1b3a0837a13953765cdc3d01e87451b2e3a00a26cdb3d9070d04b0c4013e1e"
+  },
+  {
+    "path": "src/state/build_data/scenarios/omega_schema_catalog.cpp",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "a7b15865c1bbb973c68b40054f11081e48413773139f17e42206ff88bacd871b"
+  },
+  {
+    "path": "src/state/build_data/scenarios/omega_schema_catalog.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "ec866e42309c0c862e404ec01b2c31624c40be3a948ae5ef7f40279fc9f0592e"
+  },
+  {
+    "path": "src/state/build_data/scenarios/roster_fallback.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "f20a73dfd8c3a7f3a4eb149067c78b3a77bd312f7995f6d76fc69b551f456997"
+  },
+  {
+    "path": "src/state/build_data/cache/records/version.h",
+    "referenceIdentical": false,
+    "new": false,
+    "sha256": "e67a2f12e1706adc147248104c3be4a7df95b5f93f3937e10f4529b782246b54"
+  },
+  {
+    "path": "src/state/activity/forced/activity_forced_destination.cpp",
+    "referenceIdentical": false,
+    "new": false,
+    "sha256": "5468fb674b4122d830d3c5fc0f01753027f1a91199d038b6512bb86eda41ea32"
+  },
+  {
+    "path": "src/state/activity/forced/activity_forced_destination.h",
+    "referenceIdentical": false,
+    "new": false,
+    "sha256": "55fe8a64bfe0c684036811643b983e60e2f575d98e078d6677deadbe66ada1d8"
+  },
+  {
+    "path": "src/state/activity/membership/activity_membership_query.h",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "6db5e619bee2aaff0a2f59259d521dd52dc698860c5adce8a998779d93845a76"
+  },
+  {
+    "path": "src/state/activity/membership/definition.h",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "97e70d48d0c01424da36c66595a0c1ac3a1cf33b54a9ea4c3f590137d8b39194"
+  },
+  {
+    "path": "src/state/activity/membership/transactions/activity_membership_prepare.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "4f019a56f0ce405874d5203d7316b394eb1652a81dd6ca1433c0473350dd1a57"
+  },
+  {
+    "path": "src/state/activity/membership/transactions/internal.h",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "ed4cdb58a4087e63794e9e301bc1407b91d100999ce07501949c803199c0fe3d"
+  },
+  {
+    "path": "src/server/bap/internal.h",
+    "referenceIdentical": false,
+    "new": false,
+    "sha256": "2fe98130a7df312fdc3aed323984e26c295aa6ba393ffe9e150ba3a07cb17014"
+  },
+  {
+    "path": "src/server/ui/activity_override/activity_override_panel.cpp",
+    "referenceIdentical": false,
+    "new": false,
+    "sha256": "bf3d1d20e4cd0a781e68b38526a681d26fae14183108d159664395e8b3337624"
+  },
+  {
+    "path": "src/server/bap/encrypted/activity_message/activity_message_route.cpp",
+    "referenceIdentical": false,
+    "new": false,
+    "sha256": "16af433860b8bd51bbc9de0936a477dae87e9168c3299ce8325ae3e0cfbcd58d"
+  },
+  {
+    "path": "src/server/bap/encrypted/activity_message/omega_monitor_edges.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "7eff39d488e5cea38a0fc2e67216ecb1e946fe0c814fd7f32c98ece52942ac22"
+  },
+  {
+    "path": "src/server/bap/encrypted/activity_message/omega_roster_readiness.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "f740dcf9d5226ddb96868b5336e6228a59c79b5cdca056c1f5f3517c5bbf2d4e"
+  },
+  {
+    "path": "src/server/bap/encrypted/diagnostics/omega_trace.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "ba78d3545e6d43754a522280de851351fac596b4b4898bf7d28e5bd8305cb2b4"
+  },
+  {
+    "path": "src/server/bap/encrypted/push/activity/activity_global_state_push.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "6b58aa9f9634a5987f4636b5b2c3baa518ba4cb319077713719fc2482091a2ad"
+  },
+  {
+    "path": "src/server/bap/encrypted/push/activity/activity_keepalive_push.cpp",
+    "referenceIdentical": false,
+    "new": false,
+    "sha256": "56778ff88c33d669f88e507f4468d0675f2777c0c98e04bc416fe937cbdeca4c"
+  },
+  {
+    "path": "src/server/bap/encrypted/push/activity/activity_membership_push.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "2b48511ad1d7794916491107d372fc8a12656a898ad8537b64162643e33f4c9c"
+  },
+  {
+    "path": "src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp",
+    "referenceIdentical": false,
+    "new": false,
+    "sha256": "85370c8716c10c098679e2c7375af13b87cc5a70f0664c6a5ddf7dc278b9d643"
+  },
+  {
+    "path": "src/server/bap/encrypted/push/activity/omega_lair_roster.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "4cd1ac65a645a33749d1fcdb38ffdb5e99c22dfa1b2877c1aea0127953dc97c4"
+  },
+  {
+    "path": "src/server/bap/encrypted/activity_message/membership/activity_membership_route.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "be425633030ed00d2ea6c91f128f60e75a7f407324dd99ccfdeff79332a80ec7"
+  },
+  {
+    "path": "src/middleware/bap/activity_message/activity_authoritative_opaque_skip.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "6a2370300a18b9b391f067b912234f4e6c2536ac09509082548b4eda166ef42a"
+  },
+  {
+    "path": "src/middleware/bap/activity_message/activity_membership_member_writer.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "e4556a5befd9f87a6db867d844e37058eb399cb57d45a1cc61acd77a46e68851"
+  },
+  {
+    "path": "src/middleware/bap/activity_message/activity_membership_region_writer.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "3ecea0727669b98c1231c0c43e9ca930c3c16de30aa06ef9c8efd7364c3372ae"
+  },
+  {
+    "path": "src/middleware/bap/activity_message/activity_replicate_membership_encoder.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "9984e2b52c9afa81e1d562a74e3d874bfd6f4c19a836b021ffac930904fddd94"
+  },
+  {
+    "path": "src/middleware/bap/activity_message/activity_sense_update_parser.cpp",
+    "referenceIdentical": false,
+    "new": false,
+    "sha256": "909fb4966962ed5b48ad1110096b8c10fa538a347b2c8d9da90590b1e63646c6"
+  },
+  {
+    "path": "src/middleware/bap/activity_message/activity_sensor_auth_blocks.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "f39f6db478055f3d5635dc4f603a3e8d51f6c4dc529b3522a3471ffa9faf3080"
+  },
+  {
+    "path": "src/middleware/bap/activity_message/activity_sensor_auth_bodies.cpp",
+    "referenceIdentical": false,
+    "new": false,
+    "sha256": "d66814a1b1eaa826b4f8efa00e0c6d8afe4948d1109ad44053fc8e508c189010"
+  },
+  {
+    "path": "src/middleware/bap/activity_message/activity_sensor_auth_encoder.cpp",
+    "referenceIdentical": false,
+    "new": false,
+    "sha256": "b6a33847cedcd9b30c3c75b394ce2fd4d8f3e40f7ba655aaad33c96f7e880afe"
+  },
+  {
+    "path": "src/middleware/bap/activity_message/client_authoritative_data.h",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "826c650bd53ea57931e29ae9bd7d610fe74ec740db34c088d5db95804e1503d5"
+  },
+  {
+    "path": "src/middleware/bap/activity_message/replicate_membership.h",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "b6a3b95b915375ae0445bef1471ffeb4e4ebfba2786cffc75e47259c6cc3ec7f"
+  },
+  {
+    "path": "src/middleware/bap/activity_message/sense_update.h",
+    "referenceIdentical": false,
+    "new": false,
+    "sha256": "c965b5cf025b6f9bc14cea92da996d40395d093971b3ed092d403287bc3f5d4c"
+  },
+  {
+    "path": "src/middleware/bap/activity_message/sensor_auth_update.h",
+    "referenceIdentical": false,
+    "new": false,
+    "sha256": "7b38b361b8ceae516780852b3b1cfa1178aaa14871abbf8428b420dbf38e7ec3"
+  },
+  {
+    "path": "src/client/player/player_position.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "a90a6db50181c431afa63c633b3e60431bae1768f8e1b8faa5bb1b5667ec431b"
+  },
+  {
+    "path": "src/client/ui/forest/forest_panel.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "7cf1502b4a68ed372a8ba3244f18b1a9b8e2359f65d43e58d2dbd5bc08ad9fb4"
+  },
+  {
+    "path": "src/client/hooks/bootflow/activity_schema_decode_probe.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "832e0802138c3cccbb2282b02cedcd4ea36dbc6641966e9a02675cd23345141c"
+  },
+  {
+    "path": "src/client/hooks/bootflow/activity_script_event_probe.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "ae2192b749db2c3ea3ee80f3c26ba978eede6de67601728931c5c5b04ad03995"
+  },
+  {
+    "path": "src/client/hooks/bootflow/bootflow_hook_lifecycle.cpp",
+    "referenceIdentical": false,
+    "new": false,
+    "sha256": "054cfcbf86e0235465046085c6ce3977992fbc0b2f75e63f1b290745460af2e1"
+  },
+  {
+    "path": "src/client/hooks/bootflow/forest_tuner_record.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "091c33df83b7a8ea92df0d2140dbc071d98a2031b609472cb5a715445df82cd2"
+  },
+  {
+    "path": "src/client/hooks/bootflow/forest_tuner_state.h",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "9f4cf4b9fbe6409d937ec6e4ada4a8c578aa4c69120d2aa4537dd5f01e26aa1e"
+  },
+  {
+    "path": "src/client/hooks/bootflow/internal.h",
+    "referenceIdentical": false,
+    "new": false,
+    "sha256": "2508ca86fe93e1e918ac8b435c8e4ced0b0d432b92ca9766c12eca523573f78c"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_activity_handoff.inl",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "0611b598aa3d155036a2ffdd4e39487ccea491449e84e662c38ecb26c52a1f0e"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_arc_charge_native.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "132dfc0675216cd6346c1d1cd1892588e66e4ac229df636d2ff34f0b91c9cb02"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_arc_charge_receipts.cpp",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "e18f961b1c5d710dc147aa5b3aa06881d7b13a0f4c5671d0851268b30ebe0704"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_arc_charge_receipts.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "98bc89f6181a5fce1f46a378f8d53edbcf22a65af96b5003b2c3091c2d67aa01"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_boss_health.cpp",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "64aecb2695f0e36b73a61b37f6aeb14e0d3252da7b6b4a2bdf08a3feeb123a5b"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_boss_health.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "b37c4ebe2a73b20226127f01dd18490c26eb810f16cb4b75e9ce8764c97c5237"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_boss_health_identity.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "b75b780ebbcb1e2143b59a2857a30193048e378cfd17d678b2a525bb94d03d88"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_boss_vfx_start.h",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "e096a39be58f61034bb8aa45e00e530190cbb52cc3fad72d745621756ec25df1"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_boss_vfx_start.inl",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "9a17fa00c72b1420c4e96b6dd151b6e26ae46e857056fa6f255d05fef1b41ba5"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_dialogue_bank.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "0412857058e6a657ee543ea0f5ecbad62d73dcb30d9759402e7c726807b03e96"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_dialogue_dispatch_probe.cpp",
+    "referenceIdentical": false,
+    "new": false,
+    "sha256": "05eee444087a5d421f0a6fb40824be09de5a9dd1af1f41c586c6a3b2219289ed"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_enemy_forest_receipts.h",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "d1b4363ca7743e9eec81f360301af6561b70016637e71f1c1dddef419795fd95"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_enemy_forest_receipts_runtime.h",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "2af7ec5677600240e683bf4fdf0bd440330c3d47013ac70fe4009395a35a3fb2"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_enemy_lair_receipts.cpp",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "27f6577376128741a484f6e77019eb250ac3bc3422a2ac1756a321f9b4193e6a"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_enemy_lair_receipts.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "ecc1b37735b3e090a9cf74be218af4fae55a401e02ec900f1a42e41a89e336fa"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_enemy_native_admission.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "ff48b4f9abb5fa19696a2737306cba72b019685f0e1467653087b06c54ff3f9e"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_enemy_native_health.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "30c7571b7b08a551079ea3071b76814b952bf0a8e7e465c6be48f86fad11e31d"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_enemy_native_reference.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "2aa1ef119fd3c9a080565b9e202253b4997f6386544ddfc484349b2a51e07c1c"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_forest_recipe.h",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "c48ce0ad14de5a261b709e5c6cc555c2a00e792b981ff316d1db919ceb71b05c"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_ikora_origin_probe.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "cfcabf3ca8b31e9fed2a3f09df2c39808246086a48a339dd9185cff80351d25a"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_lair_cinematic.cpp",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "4e7937cc72255cdbc14e85cc69f9905a4320d31a901b4a0c6a2b200546da5988"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_navigation.cpp",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "f2a91bae295b918093852840570937fb4cbdf8dd97c59b9ec9f44636b0e00eb7"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_navigation_rules.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "10d61339a2e763b80a184b6d303ec7a7fa31dc91a6dcd706d22c48e3983ab938"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_rescue_scene_receipts.cpp",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "96764c6f6a5c75ea51e60fff3ec1777740469c6aad7e759b02dbc517bb712b51"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_rescue_scene_receipts.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "dc407de5bde5e874587020660feab54aa66ee4132a29558aa4db477c277d0574"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_teardown_native.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "07bff06a656fb79579e41c23c0207b57f47b66e3dabebd05a9a35bbc691491b6"
+  },
+  {
+    "path": "src/client/hooks/bootflow/omega_vex_lattice_probe.h",
+    "referenceIdentical": true,
+    "new": true,
+    "sha256": "20e555dae2002a4d16a625153bb4a375dbf5a624846172b02de47838c1e9821d"
+  },
+  {
+    "path": "src/client/hooks/bootflow/world_step.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "b03ddfedc465edb89fc9f8ab23f2be474f2e6d45042634f3b4fea2f69569c126"
+  },
+  {
+    "path": "src/client/hooks/graphics/graphics_hook_replacements.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "614d1633cbee34dca37d493bfe683d7a248e2d40c496768b1b477db042eb2ef0"
+  },
+  {
+    "path": "src/client/hooks/teleport/runtime.h",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "5dc5fea0170b8819493c33475df1e6aceb74884ceaaabb93c2af4097cf462154"
+  },
+  {
+    "path": "src/client/hooks/teleport/teleport_move.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "68d487abb5d8248a2e9db065609ae71aba05173da054252c16194dcdf2767193"
+  },
+  {
+    "path": "src/client/hooks/graphics/renderer/graphics_renderer_lifecycle.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "e270b94b6dddf327311115a540a0d69a1994341524286cd91181b4f60cbe629a"
+  },
+  {
+    "path": "src/client/hooks/graphics/renderer/renderer.h",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "ee810938580be36ceac7e4a09566cf675e889b4825fe286c26ac8b758833fda0"
+  },
+  {
+    "path": "src/client/content/handles/handle_resolver.cpp",
+    "referenceIdentical": true,
+    "new": false,
+    "sha256": "a8f09f6c1a9446be6bd050edf09123fb039fd44301ec1a975364056d31b5777a"
+  },
+  {
+    "path": "src/client/content/scenarios/scenario_roster_groups.cpp",
+    "referenceIdentical": false,
+    "new": false,
+    "sha256": "956a1c774b3fc111a4b60a28675828c4ec3b23d542da0ff800e19e79b5912b11"
+  },
+  {
+    "path": "src/middleware/bap/activity_message/activity_sensor_auth_bodies_other_missions.cpp",
+    "compatibilityFile": true,
+    "sha256": "0f2c5c8c6ca9a6655636230ab037e180208fae855e01db62ae0a6ce5e0a4a13d"
+  },
+  {
+    "path": "src/middleware/bap/activity_message/activity_sensor_auth_blocks_other_missions.cpp",
+    "compatibilityFile": true,
+    "sha256": "7515502cad94c234c0bd5e9697359bed0b40cbe2293761bb210bef9c5782b42c"
+  },
+  {
+    "path": "src/middleware/bap/activity_message/activity_sensor_auth_encoder_other_missions.cpp",
+    "compatibilityFile": true,
+    "sha256": "28e8cf9b7199c9bc989895ab6fb8303df5387d09ad41284a18bc155394c11b54"
+  },
+  {
+    "path": "src/middleware/bap/activity_message/activity_sense_update_parser_other_missions.cpp",
+    "compatibilityFile": true,
+    "sha256": "bbedbe3b4f0e8e9c19892414ecb3bccb0a97e60e8451b8e0ea35c8b9f8886f49"
+  }
+]

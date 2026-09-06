@@ -1,0 +1,69 @@
+MATCH schema=mission_director_bf global=7ff61a0110d8 call=7ff618571c38 function=FUN_7ff618571c10@7ff618571c10
+  7ff618571bfd CMP dword ptr [RCX + 0xc],-0x1
+  7ff618571c01 JZ 0x7ff618571c0e
+  7ff618571c03 MOVZX EAX,byte ptr [R8 + RDX*0x4 + 0x8]
+  7ff618571c09 CMP byte ptr [RCX + 0xc],AL
+  7ff618571c0c JNZ 0x7ff618571be3
+  7ff618571c0e RET
+  7ff618571c10 PUSH RBX
+  7ff618571c12 SUB RSP,0x30
+  7ff618571c16 MOV R8D,dword ptr [RDX]
+  7ff618571c19 MOV RBX,RCX
+  7ff618571c1c MOV R9,qword ptr [RDX + 0x8]
+  7ff618571c20 LEA RCX,[RSP + 0x20]
+  7ff618571c25 MOV RAX,qword ptr [0x7ff61a0110d8]
+  7ff618571c2c MOV EDX,dword ptr [RAX]
+  7ff618571c2e MOV dword ptr [RSP + 0x20],R8D
+  7ff618571c33 MOV qword ptr [RSP + 0x28],R9
+  7ff618571c38 CALL 0x7ff618516340
+  7ff618571c3d MOVUPS XMM0,xmmword ptr [RAX]
+  7ff618571c40 MOVUPS xmmword ptr [RBX + 0x180],XMM0
+  7ff618571c47 MOVUPS XMM1,xmmword ptr [RAX + 0x10]
+  7ff618571c4b MOVUPS xmmword ptr [RBX + 0x190],XMM1
+  7ff618571c52 MOVUPS XMM0,xmmword ptr [RAX + 0x20]
+  7ff618571c56 MOVUPS xmmword ptr [RBX + 0x1a0],XMM0
+  7ff618571c5d MOVUPS XMM1,xmmword ptr [RAX + 0x30]
+  7ff618571c61 MOVUPS xmmword ptr [RBX + 0x1b0],XMM1
+  7ff618571c68 ADD RSP,0x30
+  7ff618571c6c POP RBX
+  7ff618571c6d RET
+  7ff618571c70 MOVSXD R9,dword ptr [RCX]
+  7ff618571c73 CMP R9D,0x400
+  7ff618571c7a JZ 0x7ff618571ca8
+  7ff618571c7c LEA EAX,[R9 + 0x1]
+  7ff618571c80 MOV dword ptr [RCX],EAX
+  7ff618571c82 LEA R9,[R9 + R9*0x2]
+  7ff618571c86 MOV EAX,dword ptr [R8]
+  7ff618571c89 MOV dword ptr [RCX + R9*0x4 + 0xc],EAX
+MATCH_COUNT 1 FUNCTION_COUNT 1
+
+============================================================
+FUNCTION FUN_7ff618571c10@7ff618571c10 size=94
+
+void FUN_7ff618571c10(longlong param_1,undefined4 *param_2)
+
+{
+  undefined8 uVar1;
+  undefined8 *puVar2;
+  undefined4 local_18 [2];
+  undefined8 local_10;
+  
+  local_18[0] = *param_2;
+  local_10 = *(undefined8 *)(param_2 + 2);
+  puVar2 = (undefined8 *)FUN_7ff618516340(local_18,*(undefined4 *)PTR_DAT_7ff61a0110d8);
+  uVar1 = puVar2[1];
+  *(undefined8 *)(param_1 + 0x180) = *puVar2;
+  *(undefined8 *)(param_1 + 0x188) = uVar1;
+  uVar1 = puVar2[3];
+  *(undefined8 *)(param_1 + 400) = puVar2[2];
+  *(undefined8 *)(param_1 + 0x198) = uVar1;
+  uVar1 = puVar2[5];
+  *(undefined8 *)(param_1 + 0x1a0) = puVar2[4];
+  *(undefined8 *)(param_1 + 0x1a8) = uVar1;
+  uVar1 = puVar2[7];
+  *(undefined8 *)(param_1 + 0x1b0) = puVar2[6];
+  *(undefined8 *)(param_1 + 0x1b8) = uVar1;
+  return;
+}
+
+

@@ -1,0 +1,136 @@
+codec=0x7ff61a02f430 schema=*(codec+8)=0x7ff619caa360
+
+---- generic parser FUN_7ff618401a70 @ 0x7ff618401a70 FUN_7ff618401a70 ----
+
+void FUN_7ff618401a70(undefined8 param_1,undefined8 param_2,undefined8 param_3)
+
+{
+  FUN_7ff618400370(param_2,param_3);
+  FUN_7ff618401b10(param_1,param_2,param_3);
+  return;
+}
+
+
+---- reader init FUN_7ff618401f00 @ 0x7ff618401f00 FUN_7ff618401f00 ----
+
+undefined1 * FUN_7ff618401f00(undefined1 *param_1,undefined8 param_2,undefined8 param_3)
+
+{
+  longlong lVar1;
+  undefined1 **ppuVar2;
+  undefined1 *puVar3;
+  undefined1 *local_38;
+  undefined8 local_30;
+  undefined8 local_28;
+  
+  local_38 = &LAB_7ff6183fd020;
+  local_30 = param_2;
+  local_28 = param_3;
+  ppuVar2 = &local_38;
+  puVar3 = param_1;
+  for (lVar1 = 0x20; lVar1 != 0; lVar1 = lVar1 + -1) {
+    *puVar3 = *(undefined1 *)ppuVar2;
+    ppuVar2 = (undefined1 **)((longlong)ppuVar2 + 1);
+    puVar3 = puVar3 + 1;
+  }
+  return param_1;
+}
+
+
+================ SCHEMA TABLE DUMP (from 0x7ff619caa360) ================
+[0] 0x7ff619caa360 = 0x1000000001
+[1] 0x7ff619caa368 = 0x40000fc04
+[2] 0x7ff619caa370 = 0x0
+[3] 0x7ff619caa378 = 0x0
+[4] 0x7ff619caa380 = 0x1000000002
+[5] 0x7ff619caa388 = 0x80000f808
+[6] 0x7ff619caa390 = 0x0
+[7] 0x7ff619caa398 = 0x0
+[8] 0x7ff619caa3a0 = 0x1600000003
+[9] 0x7ff619caa3a8 = 0x101f80000f808
+[10] 0x7ff619caa3b0 = 0x0
+[11] 0x7ff619caa3b8 = 0x7ff619ca9a20 -> data
+[12] 0x7ff619caa3c0 = 0x1600000004
+[13] 0x7ff619caa3c8 = 0x8200000f808
+[14] 0x7ff619caa3d0 = 0x0
+[15] 0x7ff619caa3d8 = 0x7ff619ca9f20 -> data
+[16] 0x7ff619caa3e0 = 0x1600000005
+[17] 0x7ff619caa3e8 = 0x100000f808
+[18] 0x7ff619caa3f0 = 0x0
+[19] 0x7ff619caa3f8 = 0x7ff619ca9fa0 -> data
+[20] 0x7ff619caa400 = 0x1600000006
+[21] 0x7ff619caa408 = 0x800000f808
+[22] 0x7ff619caa410 = 0x0
+[23] 0x7ff619caa418 = 0x7ff619caa160 -> data
+[24] 0x7ff619caa420 = 0x1600000007
+[25] 0x7ff619caa428 = 0xb00000f808
+[26] 0x7ff619caa430 = 0x0
+[27] 0x7ff619caa438 = 0x7ff619caa1c0 -> data
+[28] 0x7ff619caa440 = 0x1600000008
+[29] 0x7ff619caa448 = 0x3080000f808
+[30] 0x7ff619caa450 = 0x0
+[31] 0x7ff619caa458 = 0x7ff619caa320 -> data
+[32] 0x7ff619caa460 = 0x0
+[33] 0x7ff619caa468 = 0x0
+[34] 0x7ff619caa470 = 0x0
+[35] 0x7ff619caa478 = 0x0
+[36] 0x7ff619caa480 = 0x0
+[37] 0x7ff619caa488 = 0x0
+[38] 0x7ff619caa490 = 0x1000000001
+[39] 0x7ff619caa498 = 0x40000fc04
+[40] 0x7ff619caa4a0 = 0x0
+[41] 0x7ff619caa4a8 = 0x0
+[42] 0x7ff619caa4b0 = 0x0
+[43] 0x7ff619caa4b8 = 0x0
+[44] 0x7ff619caa4c0 = 0x0
+[45] 0x7ff619caa4c8 = 0x0
+[46] 0x7ff619caa4d0 = 0x7ff6190c86c0 -> code FUN_7ff6190c86c0
+[47] 0x7ff619caa4d8 = 0x7ff6197bf830 -> code FUN_7ff6197bf830
+[48] 0x7ff619caa4e0 = 0x616c635f6e696f6a
+[49] 0x7ff619caa4e8 = 0x6e
+[50] 0x7ff619caa4f0 = 0x6c635f657661656c
+[51] 0x7ff619caa4f8 = 0x6e61
+[52] 0x7ff619caa500 = 0x766e695f646e6573
+[53] 0x7ff619caa508 = 0x6e6f6974617469
+[54] 0x7ff619caa510 = 0x695f747065636361
+[55] 0x7ff619caa518 = 0x6f6974617469766e
+[56] 0x7ff619caa520 = 0x6e
+[57] 0x7ff619caa528 = 0x5f656e696c636564
+[58] 0x7ff619caa530 = 0x6974617469766e69
+[59] 0x7ff619caa538 = 0x6e6f
+[60] 0x7ff619caa540 = 0x6c635f6863746566
+[61] 0x7ff619caa548 = 0x746e6564695f6e61
+[62] 0x7ff619caa550 = 0x7365697469
+[63] 0x7ff619caa558 = 0x6c635f6863746566
+[64] 0x7ff619caa560 = 0x7469766e695f6e61
+[65] 0x7ff619caa568 = 0x736e6f697461
+[66] 0x7ff619caa570 = 0x656e5f7261656c63
+[67] 0x7ff619caa578 = 0x695f6e616c635f77
+[68] 0x7ff619caa580 = 0x6f6974617469766e
+[69] 0x7ff619caa588 = 0x736e
+[70] 0x7ff619caa590 = 0x73736563637553
+[71] 0x7ff619caa598 = 0x46746f4e6e616c43
+[72] 0x7ff619caa5a0 = 0x646e756f
+[73] 0x7ff619caa5a8 = 0x6c6c75466e616c43
+[74] 0x7ff619caa5b0 = 0x0
+[75] 0x7ff619caa5b8 = 0x626d654d6e616c43
+[76] 0x7ff619caa5c0 = 0x756f46746f4e7265
+[77] 0x7ff619caa5c8 = 0x646e
+[78] 0x7ff619caa5d0 = 0x4d796e614d6f6f54
+[79] 0x7ff619caa5d8 = 0x6968737265626d65
+[80] 0x7ff619caa5e0 = 0x7370
+[81] 0x7ff619caa5e8 = 0x4364696c61766e49
+[82] 0x7ff619caa5f0 = 0x696d7265506e616c
+[83] 0x7ff619caa5f8 = 0x736e6f697373
+[84] 0x7ff619caa600 = 0x656d614e6e616c43
+[85] 0x7ff619caa608 = 0x6573556e49
+[86] 0x7ff619caa610 = 0x6f6d65526e616c43
+[87] 0x7ff619caa618 = 0x646576
+[88] 0x7ff619caa620 = 0x65727275636e6f43
+[89] 0x7ff619caa628 = 0x756c69614679636e
+[90] 0x7ff619caa630 = 0x4e79727465526572
+[91] 0x7ff619caa638 = 0x6465646565
+[92] 0x7ff619caa640 = 0x4364696c61766e49
+[93] 0x7ff619caa648 = 0x747865546e616c
+[94] 0x7ff619caa650 = 0x6c616e7265746e49
+[95] 0x7ff619caa658 = 0x7245726576726553

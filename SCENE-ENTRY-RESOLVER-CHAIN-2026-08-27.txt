@@ -1,0 +1,48 @@
+Homecoming / Towerfall native Scene-entry resolver chain
+Date: 2026-08-27
+
+Crash fault:
+  destiny2.exe+0xA9309B
+  instruction: cmp eax, dword ptr [rcx]
+  RCX: 0x314
+
+Recovered stack returns:
+  +0xA92B07
+  +0x4E3444
+  +0x4E83D2
+  +0xB3F6D7
+
+Resolved control flow:
+  +0xB3F620 Scene component update
+  +0xB3F673 calls +0x501AD0 for each eight-byte entry reference
+  +0xB3F678 tests the resolver result
+  +0xB3F6CB sets RCX to null on resolver failure
+  +0xB3F6D2 calls +0x4E83B0 with RCX=null and EDX=2
+  +0x4E83CD calls +0x4E3410 with the same null source
+  +0x4E343F calls +0xA92AE0
+  +0xA92AE0 adds 0x2F0 to source and calls +0xA93070
+  +0xA93070 stores source+0x2F0+0x24 as the iterator pointer
+  null+0x2F0+0x24 = 0x314
+  +0xA9309B faults reading the iterator count at 0x314
+
+Resolver ABI:
+  bool __fastcall resolver(const byte* reference, byte* output)
+  target RVA: +0x501AD0
+  input: 8-byte Scene entry reference
+  output: 16-byte runtime datum
+  exact Scene-update return RVA: +0xB3F678
+
+Current mitigation:
+  Towerfall active type-43 publication is disabled.
+  Directive, dialogue, mission-director, and script-state publication remain enabled.
+
+Current observation hooks:
+  Scene update: +0xB3F620
+  Resolver: +0x501AD0
+  Log install: ev=scene_entry_runtime_probe
+  Log result: ev=scene_entry_runtime_resolve
+  Mutation: none
+
+Next evidence run:
+  Launch Omega and capture all successful scene_entry_runtime_resolve rows.
+  Compare their references and output datums with Towerfall 0x57318E3B/type2/index1.

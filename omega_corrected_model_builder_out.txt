@@ -1,0 +1,416 @@
+PROGRAM destiny2_unpacked.bin program_image_base=00000000 min=7ff618070000 max=7ff620ace9ff live_image_base=7FF618000000
+MAPPING runtime_rva_N -> program_min_plus_N correction=+0x70000
+MAPPING_CHECKS
+  role=pose socket dispatch runtime_rva=+0xB314A0 program=7ff618ba14a0 live=0x7FF618B314A0 bytes=0000000000000000000000000000000000000000000000000000000000000000
+  role=pose candidate resolver runtime_rva=+0xA1E8A0 program=7ff618a8e8a0 live=0x7FF618A1E8A0 bytes=0000000000000000000000000000000000000000000000000000000000000000
+  role=scene transform writer runtime_rva=+0x58EB40 program=7ff6185feb40 live=0x7FF61858EB40 bytes=0000000000000000000000000000000000000000000000000000000000000000
+  role=live-confirmed primary builder runtime_rva=+0x1225BB0 program=7ff619295bb0 live=0x7FF619225BB0 bytes=0000000000000000000000000000000000000000000000000000000000000000
+  role=live-confirmed mesh-cloth builder runtime_rva=+0x11761F0 program=7ff6191e61f0 live=0x7FF6191761F0 bytes=0000000000000000000000000000000000000000000000000000000000000000
+==============================================================================
+ROOT role=80EC0F17/80F2EC2F primary model builder runtime_rva=+0x1225BB0 program=7ff619295bb0 live=0x7FF619225BB0
+FUNCTION FUN_7ff619295bb0@7ff619295bb0 runtime_rva=+0x1225BB0
+ENTRY_BYTES 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ENTRY_INSTRUCTIONS
+  7ff619295bb0 live=0x7FF619225BB0  MOV qword ptr [RSP + 0x10],RBX
+  7ff619295bb5 live=0x7FF619225BB5  PUSH RDI
+  7ff619295bb6 live=0x7FF619225BB6  SUB RSP,0x30
+  7ff619295bba live=0x7FF619225BBA  MOV R8D,dword ptr [RCX]
+  7ff619295bbd live=0x7FF619225BBD  MOV RBX,RCX
+  7ff619295bc0 live=0x7FF619225BC0  MOV EAX,R8D
+  7ff619295bc3 live=0x7FF619225BC3  AND R8D,0x1fff
+  7ff619295bca live=0x7FF619225BCA  SAR EAX,0xd
+  7ff619295bcd live=0x7FF619225BCD  MOV EDX,EAX
+  7ff619295bcf live=0x7FF619225BCF  MOV RDI,qword ptr [RBX + 0x8]
+  7ff619295bd3 live=0x7FF619225BD3  OR RDX,0xffc0000
+  7ff619295bda live=0x7FF619225BDA  SHR RDX,0x12
+  7ff619295bde live=0x7FF619225BDE  MOVZX EAX,AX
+  7ff619295be1 live=0x7FF619225BE1  AND RDX,RAX
+  7ff619295be4 live=0x7FF619225BE4  MOV RAX,qword ptr [0x7ff61a4a9c70]
+  7ff619295beb live=0x7FF619225BEB  SHL RDX,0x6
+  7ff619295bef live=0x7FF619225BEF  ADD RDX,qword ptr [RAX]
+  7ff619295bf2 live=0x7FF619225BF2  IMUL R8D,dword ptr [RDX + 0x30]
+  7ff619295bf7 live=0x7FF619225BF7  MOVSXD RCX,dword ptr [RDX + 0x34]
+  7ff619295bfb live=0x7FF619225BFB  MOV EAX,R8D
+  7ff619295bfe live=0x7FF619225BFE  ADD RAX,qword ptr [RDX + 0x8]
+  7ff619295c02 live=0x7FF619225C02  AND RCX,qword ptr [RAX + 0x8]
+  7ff619295c06 live=0x7FF619225C06  SUB RDI,RCX
+  7ff619295c09 live=0x7FF619225C09  ADD RDI,RAX
+  7ff619295c0c live=0x7FF619225C0C  CMP dword ptr [RDI + 0x248],-0x1
+  7ff619295c13 live=0x7FF619225C13  JZ 0x7ff619295d15
+  7ff619295c19 live=0x7FF619225C19  MOV qword ptr [RBX + 0x1e4],-0x1
+  7ff619295c24 live=0x7FF619225C24  LEA RCX,[RSP + 0x40]
+  7ff619295c29 live=0x7FF619225C29  MOV dword ptr [RBX + 0x1ec],0xffffffff
+  7ff619295c33 live=0x7FF619225C33  MOV EDX,dword ptr [RBX + 0x2c]
+  7ff619295c36 live=0x7FF619225C36  CALL 0x7ff6192639e0
+  7ff619295c3b live=0x7FF619225C3B  MOV ECX,dword ptr [RAX]
+  7ff619295c3d live=0x7FF619225C3D  MOV dword ptr [RBX + 0x1f0],ECX
+  7ff619295c43 live=0x7FF619225C43  CMP ECX,-0x1
+  7ff619295c46 live=0x7FF619225C46  JZ 0x7ff619295d15
+  7ff619295c4c live=0x7FF619225C4C  MOV RDX,RDI
+  7ff619295c4f live=0x7FF619225C4F  MOV RCX,RBX
+  7ff619295c52 live=0x7FF619225C52  CALL 0x7ff619295250
+  7ff619295c57 live=0x7FF619225C57  MOV EDX,dword ptr [RBX + 0x1f0]
+  7ff619295c5d live=0x7FF619225C5D  MOV ECX,EDX
+  7ff619295c5f live=0x7FF619225C5F  MOV RAX,qword ptr [0x7ff61a4a9c70]
+  7ff619295c66 live=0x7FF619225C66  AND EDX,0x1fff
+  7ff619295c6c live=0x7FF619225C6C  SAR ECX,0xd
+  7ff619295c6f live=0x7FF619225C6F  MOV R11D,ECX
+  7ff619295c72 live=0x7FF619225C72  OR R11,0xffc0000
+  7ff619295c79 live=0x7FF619225C79  MOV R9,qword ptr [RAX]
+  7ff619295c7c live=0x7FF619225C7C  MOVZX EAX,CX
+  7ff619295c7f live=0x7FF619225C7F  MOV ECX,dword ptr [RBX + 0x24]
+  7ff619295c82 live=0x7FF619225C82  MOV dword ptr [RSP + 0x20],ECX
+  7ff619295c86 live=0x7FF619225C86  SHR R11,0x12
+  7ff619295c8a live=0x7FF619225C8A  AND R11,RAX
+  7ff619295c8d live=0x7FF619225C8D  MOV EAX,ECX
+  7ff619295c8f live=0x7FF619225C8F  SAR EAX,0xd
+  7ff619295c92 live=0x7FF619225C92  MOV R10D,EAX
+  7ff619295c95 live=0x7FF619225C95  SHL R11,0x6
+  7ff619295c99 live=0x7FF619225C99  MOVZX EAX,AX
+  7ff619295c9c live=0x7FF619225C9C  ADD R11,R9
+  7ff619295c9f live=0x7FF619225C9F  SHR R10D,0x12
+  7ff619295ca3 live=0x7FF619225CA3  OR R10D,0x3ff
+  7ff619295caa live=0x7FF619225CAA  AND R10D,EAX
+  7ff619295cad live=0x7FF619225CAD  MOV EAX,ECX
+  7ff619295caf live=0x7FF619225CAF  IMUL EDX,dword ptr [R11 + 0x30]
+  7ff619295cb4 live=0x7FF619225CB4  AND EAX,0x1fff
+  7ff619295cb9 live=0x7FF619225CB9  SHL R10D,0x6
+  7ff619295cbd live=0x7FF619225CBD  ADD R10,R9
+  7ff619295cc0 live=0x7FF619225CC0  MOV R8D,EDX
+  7ff619295cc3 live=0x7FF619225CC3  IMUL EAX,dword ptr [R10 + 0x30]
+  7ff619295cc8 live=0x7FF619225CC8  ADD R8,qword ptr [R11 + 0x8]
+  7ff619295ccc live=0x7FF619225CCC  MOV RDX,qword ptr [0x7ff61a0d55a8]
+  7ff619295cd3 live=0x7FF619225CD3  MOVSXD RCX,dword ptr [R10 + 0x34]
+  7ff619295cd7 live=0x7FF619225CD7  ADD RAX,qword ptr [R10 + 0x8]
+  7ff619295cdb live=0x7FF619225CDB  MOV R9D,dword ptr [RDX]
+  7ff619295cde live=0x7FF619225CDE  LEA RDX,[RSP + 0x20]
+  7ff619295ce3 live=0x7FF619225CE3  MOV dword ptr [RSP + 0x24],R9D
+  7ff619295ce8 live=0x7FF619225CE8  AND RCX,qword ptr [RAX + 0x8]
+  7ff619295cec live=0x7FF619225CEC  SUB RCX,RAX
+  7ff619295cef live=0x7FF619225CEF  MOVSXD RAX,dword ptr [R11 + 0x34]
+  7ff619295cf3 live=0x7FF619225CF3  AND RAX,qword ptr [R8 + 0x8]
+  7ff619295cf7 live=0x7FF619225CF7  ADD RCX,RBX
+  7ff619295cfa live=0x7FF619225CFA  MOV qword ptr [RSP + 0x28],RCX
+  7ff619295cff live=0x7FF619225CFF  SUB R8,RAX
+  7ff619295d02 live=0x7FF619225D02  MOVAPS XMM0,xmmword ptr [RSP + 0x20]
+  7ff619295d07 live=0x7FF619225D07  MOV RCX,R8
+  7ff619295d0a live=0x7FF619225D0A  MOVDQA xmmword ptr [RSP + 0x20],XMM0
+  7ff619295d10 live=0x7FF619225D10  CALL 0x7ff619263000
+  7ff619295d15 live=0x7FF619225D15  MOV ECX,dword ptr [RDI + 0x1dc]
+  7ff619295d1b live=0x7FF619225D1B  CMP ECX,-0x1
+  7ff619295d1e live=0x7FF619225D1E  JZ 0x7ff619295daa
+  7ff619295d24 live=0x7FF619225D24  MOV EAX,ECX
+  7ff619295d26 live=0x7FF619225D26  AND ECX,0x1fff
+  7ff619295d2c live=0x7FF619225D2C  SAR EAX,0xd
+  7ff619295d2f live=0x7FF619225D2F  MOV EDX,EAX
+  7ff619295d31 live=0x7FF619225D31  OR RDX,0xffc0000
+  7ff619295d38 live=0x7FF619225D38  MOVZX EAX,AX
+  7ff619295d3b live=0x7FF619225D3B  SHR RDX,0x12
+  7ff619295d3f live=0x7FF619225D3F  AND RDX,RAX
+DIRECT_CALLS count=8
+  callsite_program=7ff619295c36 callsite_runtime=+0x1225C36 target_program=7ff6192639e0 target_runtime=+0x11F39E0 type=UNCONDITIONAL_CALL function=<none>
+  callsite_program=7ff619295c52 callsite_runtime=+0x1225C52 target_program=7ff619295250 target_runtime=+0x1225250 type=UNCONDITIONAL_CALL function=<none>
+  callsite_program=7ff619295d10 callsite_runtime=+0x1225D10 target_program=7ff619263000 target_runtime=+0x11F3000 type=UNCONDITIONAL_CALL function=<none>
+  callsite_program=7ff619295d68 callsite_runtime=+0x1225D68 target_program=7ff6191f5a70 target_runtime=+0x1185A70 type=UNCONDITIONAL_CALL function=<none>
+  callsite_program=7ff619295dad callsite_runtime=+0x1225DAD target_program=7ff619299b90 target_runtime=+0x1229B90 type=UNCONDITIONAL_CALL function=<none>
+  callsite_program=7ff619295db5 callsite_runtime=+0x1225DB5 target_program=7ff619298a90 target_runtime=+0x1228A90 type=UNCONDITIONAL_CALL function=<none>
+  callsite_program=7ff619295dbd callsite_runtime=+0x1225DBD target_program=7ff619296e80 target_runtime=+0x1226E80 type=UNCONDITIONAL_CALL function=FUN_7ff619296e80@7ff619296e80 runtime_rva=+0x1226E80
+  callsite_program=7ff619295deb callsite_runtime=+0x1225DEB target_program=7ff6191f76d0 target_runtime=+0x11876D0 type=UNCONDITIONAL_CALL function=<none>
+PROTOTYPE undefined FUN_7ff619295bb0()
+DECOMPILE
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+void FUN_7ff619295bb0(uint *param_1)
+
+{
+  int iVar1;
+  byte bVar2;
+  byte bVar3;
+  uint uVar4;
+  longlong lVar5;
+  uint *puVar6;
+  longlong lVar7;
+  longlong lVar8;
+  longlong lVar9;
+  longlong lVar10;
+  uint auStackX_8 [2];
+  uint uStack_18;
+  undefined4 uStack_14;
+  longlong lStack_10;
+  
+  uVar4 = (int)*param_1 >> 0xd;
+  lVar7 = (((ulonglong)uVar4 | 0xffc0000) >> 0x12 & (ulonglong)(uVar4 & 0xffff)) * 0x40 +
+          *_DAT_7ff61a4a9c70;
+  lVar5 = (ulonglong)((*param_1 & 0x1fff) * *(int *)(lVar7 + 0x30)) + *(longlong *)(lVar7 + 8);
+  lVar5 = (*(longlong *)(param_1 + 2) -
+          ((longlong)*(int *)(lVar7 + 0x34) & *(ulonglong *)(lVar5 + 8))) + lVar5;
+  if (*(int *)(lVar5 + 0x248) != -1) {
+    param_1[0x79] = 0xffffffff;
+    param_1[0x7a] = 0xffffffff;
+    param_1[0x7b] = 0xffffffff;
+    puVar6 = (uint *)func_0x7ff6192639e0(auStackX_8,param_1[0xb]);
+    uVar4 = *puVar6;
+    param_1[0x7c] = uVar4;
+    if (uVar4 != 0xffffffff) {
+      func_0x7ff619295250(param_1,lVar5);
+      uVar4 = (int)param_1[0x7c] >> 0xd;
+      uStack_18 = param_1[9];
+      lVar10 = (((ulonglong)uVar4 | 0xffc0000) >> 0x12 & (ulonglong)(uVar4 & 0xffff)) * 0x40 +
+               *_DAT_7ff61a4a9c70;
+      lVar9 = (ulonglong)
+              ((((uint)((int)uStack_18 >> 0xd) >> 0x12 | 0x3ff) & (int)uStack_18 >> 0xd & 0xffffU)
+              << 6) + *_DAT_7ff61a4a9c70;
+      lVar8 = (ulonglong)((param_1[0x7c] & 0x1fff) * *(int *)(lVar10 + 0x30)) +
+              *(longlong *)(lVar10 + 8);
+      lVar7 = (ulonglong)((uStack_18 & 0x1fff) * *(int *)(lVar9 + 0x30)) + *(longlong *)(lVar9 + 8);
+      uStack_14 = *_DAT_7ff61a0d55a8;
+      lStack_10 = (((longlong)*(int *)(lVar9 + 0x34) & *(ulonglong *)(lVar7 + 8)) - lVar7) +
+                  (longlong)param_1;
+      func_0x7ff619263000(lVar8 - ((longlong)*(int *)(lVar10 + 0x34) & *(ulonglong *)(lVar8 + 8)),
+                          &uStack_18);
+    }
+  }
+  uVar4 = *(uint *)(lVar5 + 0x1dc);
+  if (uVar4 != 0xffffffff) {
+    lVar7 = (((ulonglong)(uint)((int)uVar4 >> 0xd) | 0xffc0000) >> 0x12 &
+            (ulonglong)((int)uVar4 >> 0xd & 0xffff)) * 0x40 + *_DAT_7ff61a4a9c70;
+    lVar5 = (ulonglong)((uVar4 & 0x1fff) * *(int *)(lVar7 + 0x30)) + *(longlong *)(lVar7 + 8);
+    func_0x7ff6191f5a70(lVar5 - ((longlong)*(int *)(lVar7 + 0x34) & *(ulonglong *)(lVar5 + 8)),
+                        auStackX_8);
+    bVar3 = 0;
+    puVar6 = param_1 + 0x31;
+    do {
+      uVar4 = (uint)bVar3;
+      bVar2 = bVar3 >> 5;
+      bVar3 = bVar3 + 1;
+      *(ushort *)puVar6 = (ushort)((auStackX_8[bVar2] >> (uVar4 & 0x1f) & 1) != 0);
+      puVar6 = (uint *)((longlong)puVar6 + 2);
+    } while (bVar3 < 0x17);
+  }
+  func_0x7ff619299b90(param_1);
+  func_0x7ff619298a90(param_1);
+  FUN_7ff619296e80(param_1);
+  uVar4 = param_1[0xb];
+  if (uVar4 != 0xffffffff) {
+    iVar1 = *(int *)((ulonglong)((uVar4 & 0x1fff) * _DAT_7ff61a003430) + 0x3c + _DAT_7ff61a003428);
+    func_0x7ff6191f76d0(iVar1,uVar4,iVar1 != -1);
+  }
+  param_1[100] = 0xffffffff;
+  return;
+}
+
+
+==============================================================================
+ROOT role=80EC0F1D mesh-cloth model builder runtime_rva=+0x11761F0 program=7ff6191e61f0 live=0x7FF6191761F0
+FUNCTION FUN_7ff6191e61f0@7ff6191e61f0 runtime_rva=+0x11761F0
+ENTRY_BYTES 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ENTRY_INSTRUCTIONS
+  7ff6191e61f0 live=0x7FF6191761F0  PUSH RBX
+  7ff6191e61f2 live=0x7FF6191761F2  PUSH R14
+  7ff6191e61f4 live=0x7FF6191761F4  SUB RSP,0x48
+  7ff6191e61f8 live=0x7FF6191761F8  MOV R8D,dword ptr [RCX]
+  7ff6191e61fb live=0x7FF6191761FB  MOV R14,RCX
+  7ff6191e61fe live=0x7FF6191761FE  MOV EAX,R8D
+  7ff6191e6201 live=0x7FF619176201  AND R8D,0x1fff
+  7ff6191e6208 live=0x7FF619176208  SAR EAX,0xd
+  7ff6191e620b live=0x7FF61917620B  MOV EDX,EAX
+  7ff6191e620d live=0x7FF61917620D  MOV RBX,qword ptr [R14 + 0x8]
+  7ff6191e6211 live=0x7FF619176211  OR RDX,0xffc0000
+  7ff6191e6218 live=0x7FF619176218  MOVZX EAX,AX
+  7ff6191e621b live=0x7FF61917621B  SHR RDX,0x12
+  7ff6191e621f live=0x7FF61917621F  AND RDX,RAX
+  7ff6191e6222 live=0x7FF619176222  MOV RAX,qword ptr [0x7ff61a4a9c70]
+  7ff6191e6229 live=0x7FF619176229  SHL RDX,0x6
+  7ff6191e622d live=0x7FF61917622D  ADD RDX,qword ptr [RAX]
+  7ff6191e6230 live=0x7FF619176230  IMUL R8D,dword ptr [RDX + 0x30]
+  7ff6191e6235 live=0x7FF619176235  MOVSXD RCX,dword ptr [RDX + 0x34]
+  7ff6191e6239 live=0x7FF619176239  MOV EAX,R8D
+  7ff6191e623c live=0x7FF61917623C  ADD RAX,qword ptr [RDX + 0x8]
+  7ff6191e6240 live=0x7FF619176240  AND RCX,qword ptr [RAX + 0x8]
+  7ff6191e6244 live=0x7FF619176244  SUB RAX,RCX
+  7ff6191e6247 live=0x7FF619176247  ADD RBX,RAX
+  7ff6191e624a live=0x7FF61917624A  MOV RCX,RBX
+  7ff6191e624d live=0x7FF61917624D  MOV qword ptr [RSP + 0x68],RBX
+  7ff6191e6252 live=0x7FF619176252  CALL 0x7ff6191ed300
+  7ff6191e6257 live=0x7FF619176257  TEST RAX,RAX
+  7ff6191e625a live=0x7FF61917625A  JZ 0x7ff6191e6488
+  7ff6191e6260 live=0x7FF619176260  CMP dword ptr [RAX + 0x690],-0x1
+  7ff6191e6267 live=0x7FF619176267  JZ 0x7ff6191e6488
+  7ff6191e626d live=0x7FF61917626D  LEA RCX,[RSP + 0x70]
+  7ff6191e6272 live=0x7FF619176272  MOV qword ptr [RSP + 0x40],RSI
+  7ff6191e6277 live=0x7FF619176277  CALL 0x7ff6191e9320
+  7ff6191e627c live=0x7FF61917627C  MOV RCX,R14
+  7ff6191e627f live=0x7FF61917627F  CALL 0x7ff619295bb0
+  7ff6191e6284 live=0x7FF619176284  MOV DL,0x1
+  7ff6191e6286 live=0x7FF619176286  MOV RCX,R14
+  7ff6191e6289 live=0x7FF619176289  CALL 0x7ff619299900
+  7ff6191e628e live=0x7FF61917628E  MOV R8D,dword ptr [RBX + 0x1dc]
+  7ff6191e6295 live=0x7FF619176295  XOR ESI,ESI
+  7ff6191e6297 live=0x7FF619176297  MOV RAX,qword ptr [0x7ff61a4a9c70]
+  7ff6191e629e live=0x7FF61917629E  MOV ECX,R8D
+  7ff6191e62a1 live=0x7FF6191762A1  SAR ECX,0xd
+  7ff6191e62a4 live=0x7FF6191762A4  MOV EDX,ECX
+  7ff6191e62a6 live=0x7FF6191762A6  OR RDX,0xffc0000
+  7ff6191e62ad live=0x7FF6191762AD  MOV dword ptr [RSP + 0x60],ESI
+  7ff6191e62b1 live=0x7FF6191762B1  MOV R9,qword ptr [RAX]
+  7ff6191e62b4 live=0x7FF6191762B4  MOVZX EAX,CX
+  7ff6191e62b7 live=0x7FF6191762B7  SHR RDX,0x12
+  7ff6191e62bb live=0x7FF6191762BB  AND RDX,RAX
+  7ff6191e62be live=0x7FF6191762BE  MOV EAX,R8D
+  7ff6191e62c1 live=0x7FF6191762C1  SHL RDX,0x6
+  7ff6191e62c5 live=0x7FF6191762C5  AND EAX,0x1fff
+  7ff6191e62ca live=0x7FF6191762CA  IMUL EAX,dword ptr [RDX + R9*0x1 + 0x30]
+  7ff6191e62d0 live=0x7FF6191762D0  MOVSXD RCX,dword ptr [RDX + R9*0x1 + 0x34]
+  7ff6191e62d5 live=0x7FF6191762D5  ADD RAX,qword ptr [RDX + R9*0x1 + 0x8]
+  7ff6191e62da live=0x7FF6191762DA  AND RCX,qword ptr [RAX + 0x8]
+  7ff6191e62de live=0x7FF6191762DE  SUB RAX,RCX
+  7ff6191e62e1 live=0x7FF6191762E1  CMP qword ptr [RAX + 0x10],RSI
+  7ff6191e62e5 live=0x7FF6191762E5  JLE 0x7ff6191e6479
+  7ff6191e62eb live=0x7FF6191762EB  MOV qword ptr [RSP + 0x78],RBP
+  7ff6191e62f0 live=0x7FF6191762F0  XOR EDX,EDX
+  7ff6191e62f2 live=0x7FF6191762F2  MOV qword ptr [RSP + 0x38],RDI
+  7ff6191e62f7 live=0x7FF6191762F7  MOV qword ptr [RSP + 0x30],R12
+  7ff6191e62fc live=0x7FF6191762FC  MOV qword ptr [RSP + 0x28],R13
+  7ff6191e6301 live=0x7FF619176301  MOV qword ptr [RSP + 0x20],R15
+  7ff6191e6306 live=0x7FF619176306  NOP dword ptr [RAX + RAX*0x1]
+  7ff6191e6310 live=0x7FF619176310  MOV EAX,R8D
+  7ff6191e6313 live=0x7FF619176313  AND R8D,0x1fff
+  7ff6191e631a live=0x7FF61917631A  SAR EAX,0xd
+  7ff6191e631d live=0x7FF61917631D  MOV ECX,EAX
+  7ff6191e631f live=0x7FF61917631F  OR RCX,0xffc0000
+  7ff6191e6326 live=0x7FF619176326  MOVZX EAX,AX
+  7ff6191e6329 live=0x7FF619176329  SHR RCX,0x12
+  7ff6191e632d live=0x7FF61917632D  AND RCX,RAX
+  7ff6191e6330 live=0x7FF619176330  SHL RCX,0x6
+  7ff6191e6334 live=0x7FF619176334  IMUL R8D,dword ptr [RCX + R9*0x1 + 0x30]
+  7ff6191e633a live=0x7FF61917633A  MOV EAX,R8D
+  7ff6191e633d live=0x7FF61917633D  ADD RAX,qword ptr [RCX + R9*0x1 + 0x8]
+  7ff6191e6342 live=0x7FF619176342  MOVSXD RCX,dword ptr [RCX + R9*0x1 + 0x34]
+  7ff6191e6347 live=0x7FF619176347  AND RCX,qword ptr [RAX + 0x8]
+  7ff6191e634b live=0x7FF61917634B  SUB RAX,RCX
+  7ff6191e634e live=0x7FF61917634E  MOV R13,qword ptr [RAX + 0x18]
+  7ff6191e6352 live=0x7FF619176352  LEA RCX,[RAX + 0x18]
+  7ff6191e6356 live=0x7FF619176356  ADD R13,RCX
+  7ff6191e6359 live=0x7FF619176359  IMUL RCX,RDX,0x88
+  7ff6191e6360 live=0x7FF619176360  ADD R13,0x10
+  7ff6191e6364 live=0x7FF619176364  ADD R13,RCX
+  7ff6191e6367 live=0x7FF619176367  XOR R12B,R12B
+  7ff6191e636a live=0x7FF61917636A  LEA R15,[R13 + 0x28]
+  7ff6191e636e live=0x7FF61917636E  NOP
+  7ff6191e6370 live=0x7FF619176370  MOVZX EDX,R12B
+  7ff6191e6374 live=0x7FF619176374  XOR EBX,EBX
+  7ff6191e6376 live=0x7FF619176376  MOVZX EAX,word ptr [R13 + RDX*0x2 + 0x28]
+  7ff6191e637c live=0x7FF61917637C  LEA ECX,[RDX + 0x1]
+DIRECT_CALLS count=9
+  callsite_program=7ff6191e6252 callsite_runtime=+0x1176252 target_program=7ff6191ed300 target_runtime=+0x117D300 type=UNCONDITIONAL_CALL function=FUN_7ff6191ed300@7ff6191ed300 runtime_rva=+0x117D300
+  callsite_program=7ff6191e6277 callsite_runtime=+0x1176277 target_program=7ff6191e9320 target_runtime=+0x1179320 type=UNCONDITIONAL_CALL function=FUN_7ff6191e9320@7ff6191e9320 runtime_rva=+0x1179320
+  callsite_program=7ff6191e627f callsite_runtime=+0x117627F target_program=7ff619295bb0 target_runtime=+0x1225BB0 type=UNCONDITIONAL_CALL function=FUN_7ff619295bb0@7ff619295bb0 runtime_rva=+0x1225BB0
+  callsite_program=7ff6191e6289 callsite_runtime=+0x1176289 target_program=7ff619299900 target_runtime=+0x1229900 type=UNCONDITIONAL_CALL function=FUN_7ff619299900@7ff619299900 runtime_rva=+0x1229900
+  callsite_program=7ff6191e63b4 callsite_runtime=+0x11763B4 target_program=7ff618607b70 target_runtime=+0x597B70 type=UNCONDITIONAL_CALL function=FUN_7ff618607b70@7ff618607b70 runtime_rva=+0x597B70
+  callsite_program=7ff6191e63c2 callsite_runtime=+0x11763C2 target_program=7ff618609000 target_runtime=+0x599000 type=UNCONDITIONAL_CALL function=FUN_7ff618609000@7ff618609000 runtime_rva=+0x599000
+  callsite_program=7ff6191e646c callsite_runtime=+0x117646C target_program=7ff6191e79f0 target_runtime=+0x11779F0 type=UNCONDITIONAL_CALL function=FUN_7ff6191e79f0@7ff6191e79f0 runtime_rva=+0x11779F0
+  callsite_program=7ff6191e6474 callsite_runtime=+0x1176474 target_program=7ff619296e80 target_runtime=+0x1226E80 type=UNCONDITIONAL_CALL function=FUN_7ff619296e80@7ff619296e80 runtime_rva=+0x1226E80
+  callsite_program=7ff6191e647e callsite_runtime=+0x117647E target_program=7ff6191e94d0 target_runtime=+0x11794D0 type=UNCONDITIONAL_CALL function=FUN_7ff6191e94d0@7ff6191e94d0 runtime_rva=+0x11794D0
+PROTOTYPE undefined FUN_7ff6191e61f0()
+DECOMPILE
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+void FUN_7ff6191e61f0(uint *param_1)
+
+{
+  char cVar1;
+  uint uVar2;
+  int iVar3;
+  longlong lVar4;
+  longlong lVar5;
+  longlong lVar6;
+  longlong lVar7;
+  longlong lVar8;
+  int iVar9;
+  int iVar10;
+  int iVar11;
+  int iVar12;
+  byte bVar13;
+  ulonglong uVar14;
+  ushort *puVar15;
+  int iStackX_8;
+  undefined1 auStackX_18 [8];
+  
+  uVar2 = (int)*param_1 >> 0xd;
+  lVar7 = (((ulonglong)uVar2 | 0xffc0000) >> 0x12 & (ulonglong)(uVar2 & 0xffff)) * 0x40 +
+          *_DAT_7ff61a4a9c70;
+  lVar4 = (ulonglong)((*param_1 & 0x1fff) * *(int *)(lVar7 + 0x30)) + *(longlong *)(lVar7 + 8);
+  lVar7 = *(longlong *)(param_1 + 2) +
+          (lVar4 - ((longlong)*(int *)(lVar7 + 0x34) & *(ulonglong *)(lVar4 + 8)));
+  lVar4 = FUN_7ff6191ed300(lVar7);
+  if ((lVar4 != 0) && (*(int *)(lVar4 + 0x690) != -1)) {
+    FUN_7ff6191e9320(auStackX_18);
+    FUN_7ff619295bb0(param_1);
+    FUN_7ff619299900(param_1,1);
+    uVar2 = *(uint *)(lVar7 + 0x1dc);
+    iVar11 = 0;
+    iStackX_8 = 0;
+    lVar4 = *_DAT_7ff61a4a9c70;
+    lVar8 = (((ulonglong)(uint)((int)uVar2 >> 0xd) | 0xffc0000) >> 0x12 &
+            (ulonglong)((int)uVar2 >> 0xd & 0xffff)) * 0x40;
+    lVar5 = (ulonglong)((uVar2 & 0x1fff) * *(int *)(lVar8 + 0x30 + lVar4)) +
+            *(longlong *)(lVar8 + 8 + lVar4);
+    if (0 < *(longlong *)
+             ((lVar5 - ((longlong)*(int *)(lVar8 + 0x34 + lVar4) & *(ulonglong *)(lVar5 + 8))) +
+             0x10)) {
+      lVar5 = 0;
+      do {
+        lVar6 = (((ulonglong)(uint)((int)uVar2 >> 0xd) | 0xffc0000) >> 0x12 &
+                (ulonglong)((int)uVar2 >> 0xd & 0xffff)) * 0x40;
+        lVar8 = (ulonglong)((uVar2 & 0x1fff) * *(int *)(lVar6 + 0x30 + lVar4)) +
+                *(longlong *)(lVar6 + 8 + lVar4);
+        lVar8 = lVar8 - ((longlong)*(int *)(lVar6 + 0x34 + lVar4) & *(ulonglong *)(lVar8 + 8));
+        lVar4 = *(longlong *)(lVar8 + 0x18) + lVar8 + 0x28 + lVar5 * 0x88;
+        uVar14 = 0;
+        puVar15 = (ushort *)(lVar4 + 0x28);
+        do {
+          iVar9 = 0;
+          iVar10 = (uint)*(ushort *)(lVar4 + 0x28 + (ulonglong)((int)uVar14 + 1) * 2) -
+                   (uint)*(ushort *)(lVar4 + 0x28 + uVar14 * 2);
+          if (0 < iVar10) {
+            do {
+              lVar5 = *(longlong *)(lVar4 + 0x20) + lVar4;
+              lVar8 = (longlong)(int)((uint)*puVar15 + iVar9) * 0x20;
+              if (-1 < *(short *)(lVar8 + 0x44 + lVar5)) {
+                iVar12 = (int)*(short *)(lVar8 + 0x44 + lVar5);
+                iVar3 = FUN_7ff618607b70(param_1);
+                if ((iVar12 < iVar3) && (cVar1 = FUN_7ff618609000(param_1,iVar12), cVar1 != '\0')) {
+                  iVar11 = iVar11 + 1;
+                }
+              }
+              iVar9 = iVar9 + 1;
+            } while (iVar9 < iVar10);
+          }
+          bVar13 = (char)uVar14 + 1;
+          uVar14 = (ulonglong)bVar13;
+          puVar15 = puVar15 + 1;
+        } while (bVar13 < 0x17);
+        iStackX_8 = iStackX_8 + 1;
+        uVar2 = *(uint *)(lVar7 + 0x1dc);
+        lVar4 = *_DAT_7ff61a4a9c70;
+        lVar6 = (((ulonglong)(uint)((int)uVar2 >> 0xd) | 0xffc0000) >> 0x12 &
+                (ulonglong)((int)uVar2 >> 0xd & 0xffff)) * 0x40;
+        lVar8 = (ulonglong)((uVar2 & 0x1fff) * *(int *)(lVar6 + 0x30 + lVar4)) +
+                *(longlong *)(lVar6 + 8 + lVar4);
+        lVar5 = (longlong)iStackX_8;
+      } while (lVar5 < *(longlong *)
+                        ((lVar8 - ((longlong)*(int *)(lVar6 + 0x34 + lVar4) &
+                                  *(ulonglong *)(lVar8 + 8))) + 0x10));
+      if (iVar11 != 0) {
+        FUN_7ff6191e79f0(param_1);
+        FUN_7ff619296e80(param_1);
+      }
+    }
+    FUN_7ff6191e94d0(auStackX_18);
+  }
+  return;
+}
+
+

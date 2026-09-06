@@ -1,0 +1,28 @@
+################ @7ff6197ada60 (?) ################
+NO FUNCTION
+
+################ @7ff6197ad310 (FUN_7ff6197ad2f0) ################
+size=62
+
+longlong FUN_7ff6197ad2f0(longlong param_1,int param_2,longlong param_3)
+
+{
+  char cVar1;
+  uint uVar2;
+  longlong lVar3;
+  
+  if (0 < param_2) {
+    uVar2 = 0;
+    do {
+      if (param_2 + -1 <= (int)uVar2) break;
+      lVar3 = (longlong)(int)uVar2;
+      cVar1 = (char)uVar2;
+      uVar2 = uVar2 + 1;
+      *(byte *)(lVar3 + param_3) = *(byte *)(lVar3 + 8 + param_1) ^ cVar1 + 0x71U;
+    } while (uVar2 < 0x5b);
+    *(undefined1 *)((int)uVar2 + param_3) = 0;
+  }
+  return param_3;
+}
+
+
