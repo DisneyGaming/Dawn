@@ -2,7 +2,7 @@
 param(
     [string]$SourcePath = (Join-Path $PSScriptRoot 'build\omega-src-port\Release\steam_api64.dll'),
     [ValidatePattern('^[A-Fa-f0-9]{64}$')]
-    [string]$ExpectedSha256 = '7CB7EFF1E0C199286B6E9DE46352F9F9359C0BBCDF3000A79C9FA7A54FAA8CA1'
+    [string]$ExpectedSha256 = 'F4FFA03E31DDC8A0F5927D4038448AA71DE2870A649E0064873D1EB34F1FE92F'
 )
 
 Set-StrictMode -Version Latest

@@ -631,9 +631,9 @@
   },
   {
     "path": "src/client/hooks/bootflow/omega_ikora_origin_probe.cpp",
-    "referenceIdentical": true,
+    "referenceIdentical": false,
     "new": false,
-    "sha256": "cfcabf3ca8b31e9fed2a3f09df2c39808246086a48a339dd9185cff80351d25a"
+    "sha256": "5c380864e70e7a06a8788fc3453b13b03101563118a1b59d182ebf8686886043"
   },
   {
     "path": "src/client/hooks/bootflow/omega_lair_cinematic.cpp",
