@@ -1,3 +1,4 @@
+#include "../../../state/activity/gateway/runtime.h"
 #include <Windows.h>
 #include <intrin.h>
 
@@ -1203,6 +1204,7 @@ __declspec(noinline) void __fastcall dialogue_dispatch(std::byte* component,
                          core::log::Level::info,
                          {line.data(), static_cast<std::size_t>(length)});
     }
+    const auto gatewayDispatchRun = state::activity::mission_run_generation();
     const DialogueDispatch original = g_dispatchOriginal.load(std::memory_order_acquire);
     if (original != nullptr) {
         original(component, index);
@@ -1212,7 +1214,9 @@ __declspec(noinline) void __fastcall dialogue_dispatch(std::byte* component,
             const auto bank = resolve_bank_handle(component, self, offset);
             const auto generation = read_value<std::uint32_t>(
                 component + kRecordGenerationOffset + static_cast<std::size_t>(index)*0x20U);
-            if (bank != kDialogueBankHandle) {
+            state::activity::gateway::observe_submission(gatewayDispatchRun,self,offset,bank,
+                static_cast<std::uint8_t>(index),generation);
+            if (bank != kDialogueBankHandle && bank != 0x80F1FC9EU) {
                 // observe_submission() drops a foreign bank silently; say so once per row.
                 log_reject("dispatch_bank", component, static_cast<std::uint32_t>(index),
                            generation, bank);

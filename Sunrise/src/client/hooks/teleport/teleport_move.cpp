@@ -22,6 +22,7 @@
 #include "../polled_input/runtime.h"
 #include "internal.h"
 #include "runtime.h"
+#include "local_player_identity.h"
 
 namespace sunrise::client::hooks::teleport {
 namespace {
@@ -225,15 +226,8 @@ void report_gates(const std::byte* component, const std::byte* body) noexcept {
  * @return True when it drives the object the local player controls.
  */
 [[nodiscard]] bool owns_player(std::byte* component) noexcept {
-    std::uint32_t controlled = kInvalidHandle;
-    g_controlledHandle(&controlled);
-    if (controlled == kInvalidHandle) {
-        return false;
-    }
-    std::uint16_t owner = 0;
-    return read_at(component + kPhysicsComponentObjectHandle, owner)
-           && (controlled & kHandleIndexMask)
-                  == (static_cast<std::uint32_t>(owner) & kHandleIndexMask);
+    std::uint32_t entity=kInvalidHandle;
+    return read_local_player_entity(component,entity);
 }
 
 /** @param reason Key naming the step that stopped the move. */
@@ -407,6 +401,16 @@ void set_vertical_velocity(std::byte* body, float value) noexcept {
 
 } // namespace
 
+/** Reads the native player ownership independently of the cached physics component. */
+bool read_controlled_entity(std::uint32_t& entity) noexcept {
+    entity = kInvalidHandle;
+    if (g_controlledHandle == nullptr) {
+        return false;
+    }
+    g_controlledHandle(&entity);
+    return entity != kInvalidHandle;
+}
+
 /** Publishes the two functions the hooks call. */
 void publish_targets(ControlledHandle controlled, CameraSingleton singleton) noexcept {
     g_controlledHandle = controlled;
@@ -567,7 +571,7 @@ bool read_local_player_entity(void* component,std::uint32_t& entity) noexcept {
         || !read_at(static_cast<const std::byte*>(component)+kPhysicsComponentObjectHandle,owner)
         || owner!=before) { return false; }
     g_controlledHandle(&after);
-    if(after!=before) { return false; }
+    if(!identity::current(before,owner,after)) { return false; }
     entity=before;return true;
 }
 

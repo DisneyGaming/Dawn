@@ -113,6 +113,9 @@ std::atomic_uint64_t g_publishedTick{0};
 
 /** Publishes the client's own boot-flow step. */
 void poll_world_step() noexcept {
+    // Spawning can finish before step 38, after which Destiny no longer calls the spawn gate.
+    // Keep arrival observation and its pending fade completion alive on the camera frame.
+    poll_spawn_arrival();
     g_publishedStep.store(read_step(), std::memory_order_relaxed);
     g_publishedTick.store(GetTickCount64(), std::memory_order_release);
     // The sole Type-31 owner is global to its proved BA6/A9 schema gate. Queue maintenance is not

@@ -223,6 +223,53 @@ template <typename Predicate> [[nodiscard]] bool wait_until(Predicate predicate)
     return predicate();
 }
 
+void frame_completion_after_last_spawn_call() {
+    // Gateway: the timeout lets the native player spawn during loading. There are no
+    // more spawn-gate calls after this, so only the camera frame can finish arrival.
+    const auto lastSpawn = policy::decide(
+        input(true, policy::Phase::transitioning, true, true, false, false));
+    CHECK(lastSpawn.result);
+    CHECK(!lastSpawn.releaseFade);
+    policy::FrameArrival frame{
+        policy::Phase::transitioning, false, true, true, 3, true, true, false};
+    CHECK(!policy::frame_arrival_ready(frame));
+    frame.phase = policy::Phase::arrived;
+    frame.loaderBusy = true;
+    CHECK(!policy::frame_arrival_ready(frame));
+    frame.loaderBusy = false;
+    CHECK(policy::frame_arrival_ready(frame));
+    frame.alreadyReleased = true;
+    CHECK(!policy::frame_arrival_ready(frame));
+}
+
+void frame_completion_requires_current_native_evidence() {
+    const policy::FrameArrival ready{
+        policy::Phase::arrived, false, true, true, 3, true, true, false};
+    auto frame = ready;
+    frame.controlledEntity = false;
+    CHECK(!policy::frame_arrival_ready(frame));
+    frame = ready;
+    frame.worldReadable = false;
+    CHECK(!policy::frame_arrival_ready(frame));
+    frame = ready;
+    frame.worldState = 2;
+    CHECK(!policy::frame_arrival_ready(frame));
+    frame = ready;
+    frame.localReady = false;
+    CHECK(!policy::frame_arrival_ready(frame));
+    frame = ready;
+    frame.loaderReadable = false;
+    CHECK(!policy::frame_arrival_ready(frame));
+    frame = ready;
+    frame.phase = policy::Phase::idle;
+    CHECK(!policy::frame_arrival_ready(frame));
+    // A completed prior arrival must not complete another load while it is still transitioning.
+    frame = ready;
+    frame.alreadyReleased = true;
+    frame.phase = policy::Phase::transitioning;
+    CHECK(!policy::frame_arrival_ready(frame));
+}
+
 void generic_publication_window_waits_then_forwards_exactly_once() {
     reset_native_barrier();
     GenericCallGateForwarder forwarder{};
@@ -283,6 +330,8 @@ void generic_active_call_stays_owned_through_native_interval() {
 } // namespace
 
 int main() {
+    frame_completion_after_last_spawn_call();
+    frame_completion_requires_current_native_evidence();
     generic_publication_window_waits_then_forwards_exactly_once();
     generic_quiesced_call_forwards_without_side_effects();
     generic_active_call_stays_owned_through_native_interval();

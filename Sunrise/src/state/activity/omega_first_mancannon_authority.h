@@ -1,5 +1,6 @@
 #pragma once
 
+#include "coo/native_device_authority.h"
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -71,18 +72,8 @@ struct Preparation {
     // The preceding package marker is absent at runtime and is not inspected.
     if (cannon == nullptr || read32(prefix.data() + 4) != 0x80809928U
         || read64(prefix.data() + 8) != 0x4C8U) { return false; }
+    if(!coo::native_device::inactive_state(state)) { return false; }
     const auto generation = read32(state.data());
-    if (generation == 0U || generation >= 0x7FFFFFFFU
-        || read32(state.data() + 4) != 0U
-        || state[8] != std::byte{} || state[9] != std::byte{}
-        || read32(state.data() + 0xC) != 0xFFFFFFFFU
-        || read64(state.data() + 0x10) != 0xFFFF00FF811C9DC5ULL
-        || read32(state.data() + 0x20) != 0U
-        || read32(state.data() + 0x24) != 0U
-        || read32(state.data() + 0x28) != 0U
-        || read32(state.data() + 0x2C) != 0x3F800000U
-        || state[0x30] != std::byte{}
-        || read32(state.data() + 0x40) != 0U) { return false; }
     receipt = {generation, cannon->index};
     return true;
 }
@@ -98,17 +89,7 @@ struct Preparation {
 template<class Writer>
 [[nodiscard]] bool write_authority(Writer& writer, std::uint32_t generation,
                                    bool active) noexcept {
-    return writer.write(generation ^ 0x80000000U, 32) // decoded generation
-        && writer.write(0x80000000U, 32)              // decoded candidate index 0
-        && writer.write(active ? 1U : 0U, 1)
-        && writer.write(0U, 1)                       // no placement override
-        && writer.write(0x7FFFFFFFU, 32)              // retain authored auxiliary integer -1
-        && writer.write(0x811C9DC5U, 32)             // canonical absent scoped ref
-        && writer.write(0U, 7)                       // decoded type -1
-        && writer.write(0x7FFFU, 16)                 // decoded index -1
-        && writer.write(0U, 32) && writer.write(0U, 32) && writer.write(0U, 32)
-        && writer.write(0U, 1)                       // auxiliary object flag off
-        && writer.write(0U, 2);                      // zero dynamic component states
+    return coo::native_device::object(writer,generation,active);
 }
 
 } // namespace sunrise::state::activity::omega_first_mancannon

@@ -10,6 +10,8 @@
 #include <span>
 
 #include "omega_rescue_scene_receipts.h"
+#include "gateway_vance_native_path.h"
+#include "../../../state/activity/gateway/runtime.h"
 #include "omega_enemy_native_reference.h"
 #include "../../hooking/call_gate.h"
 #include "../../hooking/detour.h"
@@ -327,6 +329,56 @@ void report(const Capture& captured,fight::SceneMilestone milestone) noexcept {
             {text.data(),static_cast<std::size_t>(size)});
     }
 }
+namespace gateway=state::activity::gateway;
+struct GatewaySceneCapture {
+    gateway::SceneReceipt receipt{};
+    Weak weak{};
+    std::uintptr_t address{};
+    Reject rejected{};
+};
+bool capture_gateway_scene(Read& read,std::uintptr_t component,const gateway::EndingRequest& request,GatewaySceneCapture& out) noexcept {
+    if(!request.enabled || !request.sceneGeneration) { return false; }
+    Ref ref{};std::uintptr_t definition{};std::array<std::byte,8> scope{};
+    if(!read.value(component,ref) || ref.handle!=0x80F46DE0U || ref.kind!=0x80806266U || ref.offset!=0x368) { return false; }
+    out.rejected=Reject::definition;
+    if(!read.resolve(ref,definition) || !read.copy(definition+0x30,scope)
+        || at<std::uint32_t>(scope.data())!=0xBA0B27A0U || at<std::uint16_t>(scope.data()+4)!=43
+        || at<std::uint16_t>(scope.data()+6)!=5) { return false; }
+    std::uint16_t index{};std::uint32_t group{},sensor{},generation{};Weak weak{};Diag diag{};
+    out.rejected=Reject::group;
+    if(!group_handle(read,component,group,index) || !read.value(component+0x170,sensor) || sensor==UINT32_MAX) { return false; }
+    out.rejected=Reject::generation;
+    if(!read.value(component+0x254,generation) || generation!=request.sceneGeneration) { return false; }
+    out.rejected=Reject::weak;
+    if(!read.value(component+0x2E8,weak) || !read.weak(weak,out.address,diag)) { return false; }
+    out.rejected=Reject::selector;
+    Ref selector{};std::uint32_t self{},owner{};
+    if(!read.value(out.address,selector) || selector.handle!=0x80EC0ABCU || selector.kind!=0x80806384U
+        || !read.value(out.address+0x24,self) || self!=weak.handle
+        || !read.value(out.address+0x2C,owner) || owner==UINT32_MAX) { return false; }
+    out.weak=weak;out.receipt={request.run,generation,group,sensor,self};out.rejected=Reject::none;return true;
+}
+void complete_gateway_scene(Read& read,std::uintptr_t component,const GatewaySceneCapture& capture) noexcept {
+    std::uint32_t group{},sensor{},generation{},count{};std::uint16_t index{};std::uint8_t complete{};
+    if(!group_handle(read,component,group,index) || group!=capture.receipt.group
+        || !read.value(component+0x170,sensor) || sensor!=capture.receipt.sensor
+        || !read.value(component+0x254,generation) || generation!=capture.receipt.generation
+        || !read.value(component+0x258,complete) || complete>1
+        || !read.value(component+0x264,count) || count>32) { return; }
+    Weak weak{};Diag diag{};std::uintptr_t address{};
+    if(!read.value(component+0x2E8,weak) || weak.serial!=capture.weak.serial || weak.handle!=capture.weak.handle
+        || !read.weak(weak,address,diag)) { return; }
+    const auto stage=gateway_vance_native_path::probe(read,address,weak.handle,
+        [&](const gateway_vance_native_path::Weak& child,std::uintptr_t& out) noexcept {
+            return read.weak({child.serial,child.handle},out,diag);
+        });
+    Weak after{};
+    if(!stage.valid || !read.value(component+0x2E8,after) || after.serial!=weak.serial || after.handle!=weak.handle) { return; }
+    gateway::observe_scene(capture.receipt,false);
+    if(stage.turned) { gateway::observe_vance(capture.receipt,gateway::VanceMilestone::turned); }
+    if(stage.conversation) { gateway::observe_vance(capture.receipt,gateway::VanceMilestone::conversationStarted); }
+    if(complete) { gateway::observe_scene(capture.receipt,true); }
+}
 __declspec(noinline) void __fastcall tick(void* raw) noexcept {
     hooking::CallGate::Scope gate(g_gate);
     const auto original=hooking::await_original(g_original);
@@ -335,7 +387,19 @@ __declspec(noinline) void __fastcall tick(void* raw) noexcept {
     const auto component=reinterpret_cast<std::uintptr_t>(raw);
     const bool observing=gate.accepts_side_effects() && nav.enabled && nav.run!=0;
     const bool owned=observing && capture(read,component,nav.run,captured,diag);
+    const auto gatewayRequest=gate.accepts_side_effects()?gateway::ending_request():gateway::EndingRequest{};
+    GatewaySceneCapture gatewayCapture{};Read gatewayRead{};
+    const bool gatewayOwned=capture_gateway_scene(gatewayRead,component,gatewayRequest,gatewayCapture);
+    if(!gatewayOwned && gatewayCapture.rejected!=Reject::none
+        && admit_reject(gatewayRequest.run,component,gatewayCapture.rejected)) {
+        std::array<char,256> line{};
+        const int size=std::snprintf(line.data(),line.size(),
+            "ev=gateway stage=vance_scene_wait run=%llu generation=%u reason=%s component=%016llX boundary=B438B0 mutation=observe_only",
+            static_cast<unsigned long long>(gatewayRequest.run),gatewayRequest.sceneGeneration,name(gatewayCapture.rejected),static_cast<unsigned long long>(component));
+        if(size>0 && static_cast<std::size_t>(size)<line.size()) { core::log::write(core::log::Channel::client,core::log::Level::info,{line.data(),static_cast<std::size_t>(size)}); }
+    }
     original(raw);
+    if(gatewayOwned && gate.accepts_side_effects()) { complete_gateway_scene(gatewayRead,component,gatewayCapture); }
     if(!observing || !gate.accepts_side_effects()) {return;}
     const auto now=state::activity::omega_presentation::navigation();
     if(!now.enabled || now.run!=nav.run) {return;}
@@ -397,6 +461,8 @@ bool uninstall_omega_rescue_scene_receipts() noexcept {
     if(g_original.load(std::memory_order_acquire)==nullptr) {return true;}
     const std::array protectedEntries{
         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&tick)},
+        hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&capture_gateway_scene)},
+        hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&complete_gateway_scene)},
         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&hooking::call_gate_detail::enter)},
         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&hooking::call_gate_detail::leave)}};
     if(hooking::detour::uninstall(g_handle,protectedEntries,&idle)!=hooking::detour::UninstallResult::removed) {return false;}

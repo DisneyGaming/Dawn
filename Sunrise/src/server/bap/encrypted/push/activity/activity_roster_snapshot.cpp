@@ -30,6 +30,8 @@
 #include "activity_region_snapshot.h"
 #include "internal.h"
 #include "omega_lair_roster.h"
+#include "gateway_roster.h"
+#include "../../../../../state/activity/gateway/runtime.h"
 #include "../../../../../middleware/bap/activity_message/tower_watch_cue_manifest.h"
 
 namespace sunrise::server::bap::encrypted::push::activity {
@@ -470,6 +472,15 @@ RosterOutcome build_roster_snapshot(Session& session,
     const std::string_view name(reinterpret_cast<const char*>(selection.packageName.data()),
                                 selection.packageNameLength);
     const bool omegaDestination = name == "mission_scot";
+    // Mission ownership survives ordinary z-legs (including 120 -> 128). Using the
+    // current region here resets the controller and removes its roster on the return
+    // trip. Bubble sub-blocks still scope native objects to their authored bubble.
+    const bool gatewayDestination = name == "mission_abs"
+        && !session.activity.joinedForeignSession;
+    const bool gatewayPrepared = !session.activity.joinedForeignSession
+        && state::activity::gateway::prepare(
+        state::activity::mission_run_generation(), gatewayDestination);
+    if(gatewayDestination && !gatewayPrepared) { return RosterOutcome::noGroups; }
     const auto& omegaExperiments = core::settings::get().omegaExperiments;
     const bool syntheticOmega = omegaDestination;
     // Forest-D's native encounter classifier requires the selected race global
@@ -679,6 +690,25 @@ RosterOutcome build_roster_snapshot(Session& session,
                 return RosterOutcome::noGroups;
             }
         }
+    }
+    if(gatewayPrepared) {
+        std::uint32_t failedKey{};
+        const bool admitted=gateway_roster::admit(layout,scratch,snapshot.roster,
+            [](std::size_t index,layouts::RosterGroup& group) noexcept {
+                return state::build_data::find_roster_group(index,group);
+            },&failedKey);
+        const auto gatewayRun=state::activity::mission_run_generation();
+        static std::atomic_uint64_t lastGatewayAdmission{UINT64_MAX};
+        const auto stamp=(gatewayRun<<1)|(admitted?1ULL:0ULL);
+        if(lastGatewayAdmission.exchange(stamp)!=stamp) {
+            std::array<char,256> line{};
+            std::snprintf(line.data(),line.size(),"ev=gateway stage=roster result=%s run=%llu groups=%zu failed_registry=%08X scope=lighthouse_15_state_0",
+                admitted?"admitted":"failed",static_cast<unsigned long long>(gatewayRun),snapshot.roster.groupCount,failedKey);
+            core::log::write(core::log::Channel::server,admitted?core::log::Level::info:core::log::Level::error,line.data());
+        }
+        if(!admitted) { return RosterOutcome::noGroups; }
+        snapshot.gateway=state::activity::gateway::snapshot(state::activity::mission_run_generation(),
+            GetTickCount64(),state::activity::mission_seed_armed());
     }
     if(snapshot.omegaEndingRetire) {
         if(!omega_lair::terminal_roster(scratch,snapshot.roster,

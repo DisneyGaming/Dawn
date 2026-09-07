@@ -1,0 +1,1479 @@
+{
+  "format_version": 2,
+  "mission": "gateway",
+  "profile": "gateway.ending.v2",
+  "authority_schema": "otherMissions",
+  "assets": {
+    "module": {
+      "registry": "0x986985D0",
+      "definition": "0x80F46DB0",
+      "type": 0,
+      "slot": 0
+    },
+    "facts": {
+      "registry": "0x00000000",
+      "definition": "0x00000000",
+      "type": 0,
+      "slot": 0
+    },
+    "landing": {
+      "registry": "0x85742F3E",
+      "definition": "0x80F470E5",
+      "type": 60,
+      "slot": 359
+    },
+    "recess": {
+      "registry": "0x85742F3E",
+      "definition": "0x80F470E5",
+      "type": 60,
+      "slot": 361
+    },
+    "objective": {
+      "registry": "0x986985D0",
+      "definition": "0x80F47420",
+      "type": 68,
+      "slot": 0
+    },
+    "dialogue": {
+      "registry": "0x986985D0",
+      "definition": "0x80F47426",
+      "type": 53,
+      "slot": 2
+    },
+    "recess_reinforce": {
+      "registry": "0x85742F3E",
+      "definition": "0x80F470E5",
+      "type": 60,
+      "slot": 367
+    },
+    "shelf_entry": {
+      "registry": "0x85742F3E",
+      "definition": "0x80F470E5",
+      "type": 60,
+      "slot": 369
+    },
+    "shelf_reinforce": {
+      "registry": "0x85742F3E",
+      "definition": "0x80F470E5",
+      "type": 60,
+      "slot": 372
+    },
+    "end_entry": {
+      "registry": "0x85742F3E",
+      "definition": "0x80F470E5",
+      "type": 60,
+      "slot": 375
+    },
+    "end_reinforce": {
+      "registry": "0x85742F3E",
+      "definition": "0x80F470E5",
+      "type": 60,
+      "slot": 379
+    },
+    "lighthouse_landing": {
+      "registry": "0x85742F3E",
+      "definition": "0x80F470E5",
+      "type": 60,
+      "slot": 378
+    },
+    "shelf_exit": {
+      "registry": "0x85742F3E",
+      "definition": "0x80F470E5",
+      "type": 60,
+      "slot": 375
+    },
+    "battle_intro": {
+      "registry": "0x4B946B28",
+      "definition": "0x80F46EC0",
+      "type": 60,
+      "slot": 439
+    },
+    "forest_stairs": {
+      "registry": "0x4B946B28",
+      "definition": "0x80F46EC0",
+      "type": 60,
+      "slot": 441
+    },
+    "forest_entrance": {
+      "registry": "0x4B946B28",
+      "definition": "0x80F46EC0",
+      "type": 60,
+      "slot": 448
+    },
+    "finale_approach": {
+      "registry": "0x4B946B28",
+      "definition": "0x80F46EC0",
+      "type": 60,
+      "slot": 461
+    },
+    "module_target": {
+      "registry": "0x4B946B28",
+      "definition": "0x80F46F23",
+      "type": 4,
+      "slot": 32
+    },
+    "lighthouse_inside": {
+      "registry": "0xBA0B27A0",
+      "definition": "0x80F46DCD",
+      "type": 60,
+      "slot": 11
+    },
+    "vance_near": {
+      "registry": "0xBA0B27A0",
+      "definition": "0x80F46DCD",
+      "type": 60,
+      "slot": 13
+    },
+    "vance_scene": {
+      "registry": "0xBA0B27A0",
+      "definition": "0x80F46DE0",
+      "type": 43,
+      "slot": 5
+    },
+    "lighthouse_walls": {
+      "registry": "0xBA0B27A0",
+      "definition": "0x80F46DD0",
+      "type": 23,
+      "slot": 0
+    },
+    "lighthouse_lighting": {
+      "registry": "0xBA0B27A0",
+      "definition": "0x80F46DD3",
+      "type": 23,
+      "slot": 1
+    }
+  },
+  "bindings": {
+    "opening.module": {
+      "capability": "opening.module",
+      "operation": "mechanic",
+      "asset": "module",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "opening.checked": {
+      "capability": "opening.checked",
+      "operation": "observation",
+      "asset": "facts",
+      "argument": 0,
+      "wait": "observed"
+    },
+    "landing.entered": {
+      "capability": "landing.entered",
+      "operation": "observation",
+      "asset": "landing",
+      "argument": 0,
+      "wait": "observed"
+    },
+    "objective.find_gateway": {
+      "capability": "objective.find_gateway",
+      "operation": "objective",
+      "asset": "objective",
+      "argument": 3369893117,
+      "wait": "requested"
+    },
+    "dialogue.ikora_gateway": {
+      "capability": "dialogue.ikora_gateway",
+      "operation": "dialogue",
+      "asset": "dialogue",
+      "argument": 1,
+      "wait": "nativeReady"
+    },
+    "recess.entered": {
+      "capability": "recess.entered",
+      "operation": "observation",
+      "asset": "recess",
+      "argument": 0,
+      "wait": "observed"
+    },
+    "marchers.start": {
+      "capability": "marchers.start",
+      "operation": "mechanic",
+      "asset": "module",
+      "argument": 10,
+      "wait": "requested"
+    },
+    "recess.initial": {
+      "capability": "recess.initial",
+      "operation": "population",
+      "asset": "module",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "recess.reinforce_trigger": {
+      "capability": "recess.reinforce_trigger",
+      "operation": "observation",
+      "asset": "recess_reinforce",
+      "argument": 1,
+      "wait": "observed"
+    },
+    "recess.reinforcements": {
+      "capability": "recess.reinforcements",
+      "operation": "population",
+      "asset": "module",
+      "argument": 2,
+      "wait": "requested"
+    },
+    "recess.cleared": {
+      "capability": "recess.cleared",
+      "operation": "population",
+      "asset": "module",
+      "argument": 1,
+      "wait": "completed"
+    },
+    "recess.reinforcements_cleared": {
+      "capability": "recess.reinforcements_cleared",
+      "operation": "population",
+      "asset": "module",
+      "argument": 2,
+      "wait": "completed"
+    },
+    "recess.cannons": {
+      "capability": "recess.cannons",
+      "operation": "device",
+      "asset": "module",
+      "argument": 1,
+      "wait": "nativeReady"
+    },
+    "shelf.entered": {
+      "capability": "shelf.entered",
+      "operation": "observation",
+      "asset": "shelf_entry",
+      "argument": 0,
+      "wait": "observed"
+    },
+    "shelf.initial": {
+      "capability": "shelf.initial",
+      "operation": "population",
+      "asset": "module",
+      "argument": 3,
+      "wait": "requested"
+    },
+    "shelf.reinforce_trigger": {
+      "capability": "shelf.reinforce_trigger",
+      "operation": "observation",
+      "asset": "shelf_reinforce",
+      "argument": 3,
+      "wait": "observed"
+    },
+    "shelf.reinforcements": {
+      "capability": "shelf.reinforcements",
+      "operation": "population",
+      "asset": "module",
+      "argument": 4,
+      "wait": "requested"
+    },
+    "end.entered": {
+      "capability": "end.entered",
+      "operation": "observation",
+      "asset": "end_entry",
+      "argument": 0,
+      "wait": "observed"
+    },
+    "end.initial": {
+      "capability": "end.initial",
+      "operation": "population",
+      "asset": "module",
+      "argument": 5,
+      "wait": "requested"
+    },
+    "end.reinforce_trigger": {
+      "capability": "end.reinforce_trigger",
+      "operation": "observation",
+      "asset": "end_reinforce",
+      "argument": 5,
+      "wait": "observed"
+    },
+    "end.reinforcements": {
+      "capability": "end.reinforcements",
+      "operation": "population",
+      "asset": "module",
+      "argument": 6,
+      "wait": "requested"
+    },
+    "end.cleared": {
+      "capability": "end.cleared",
+      "operation": "population",
+      "asset": "module",
+      "argument": 5,
+      "wait": "completed"
+    },
+    "end.reinforcements_cleared": {
+      "capability": "end.reinforcements_cleared",
+      "operation": "population",
+      "asset": "module",
+      "argument": 6,
+      "wait": "completed"
+    },
+    "end.cannon": {
+      "capability": "end.cannon",
+      "operation": "device",
+      "asset": "module",
+      "argument": 2,
+      "wait": "requested"
+    },
+    "dialogue.vance": {
+      "capability": "dialogue.vance",
+      "operation": "dialogue",
+      "asset": "dialogue",
+      "argument": 2,
+      "wait": "nativeReady"
+    },
+    "lighthouse.landed": {
+      "capability": "lighthouse.landed",
+      "operation": "observation",
+      "asset": "lighthouse_landing",
+      "argument": 0,
+      "wait": "observed"
+    },
+    "shelf.passed": {
+      "capability": "shelf.passed",
+      "operation": "observation",
+      "asset": "shelf_exit",
+      "argument": 256,
+      "wait": "observed"
+    },
+    "mainland.outskirts": {
+      "capability": "mainland.outskirts",
+      "operation": "population",
+      "asset": "module",
+      "argument": 7,
+      "wait": "requested"
+    },
+    "mainland.center": {
+      "capability": "mainland.center",
+      "operation": "population",
+      "asset": "module",
+      "argument": 8,
+      "wait": "requested"
+    },
+    "objective.forest_gate": {
+      "capability": "objective.forest_gate",
+      "operation": "objective",
+      "asset": "objective",
+      "argument": 4154833763,
+      "wait": "requested"
+    },
+    "mainland.intro": {
+      "capability": "mainland.intro",
+      "operation": "observation",
+      "asset": "battle_intro",
+      "argument": 0,
+      "wait": "observed"
+    },
+    "dialogue.forest_gate": {
+      "capability": "dialogue.forest_gate",
+      "operation": "dialogue",
+      "asset": "dialogue",
+      "argument": 3,
+      "wait": "nativeReady"
+    },
+    "mainland.cleared": {
+      "capability": "mainland.cleared",
+      "operation": "population",
+      "asset": "module",
+      "argument": 8,
+      "wait": "completed"
+    },
+    "forest.approached": {
+      "capability": "forest.approached",
+      "operation": "observation",
+      "asset": "forest_stairs",
+      "argument": 0,
+      "wait": "observed"
+    },
+    "dialogue.at_gate": {
+      "capability": "dialogue.at_gate",
+      "operation": "dialogue",
+      "asset": "dialogue",
+      "argument": 4,
+      "wait": "nativeReady"
+    },
+    "forest.blocked": {
+      "capability": "forest.blocked",
+      "operation": "observation",
+      "asset": "forest_entrance",
+      "argument": 0,
+      "wait": "observed"
+    },
+    "dialogue.blocked": {
+      "capability": "dialogue.blocked",
+      "operation": "dialogue",
+      "asset": "dialogue",
+      "argument": 5,
+      "wait": "nativeReady"
+    },
+    "objective.bring_sagira": {
+      "capability": "objective.bring_sagira",
+      "operation": "objective",
+      "asset": "objective",
+      "argument": 4197838318,
+      "wait": "requested"
+    },
+    "return.center": {
+      "capability": "return.center",
+      "operation": "population",
+      "asset": "module",
+      "argument": 9,
+      "wait": "requested"
+    },
+    "return.outskirts": {
+      "capability": "return.outskirts",
+      "operation": "population",
+      "asset": "module",
+      "argument": 10,
+      "wait": "requested"
+    },
+    "objective.return": {
+      "capability": "objective.return",
+      "operation": "objective",
+      "asset": "objective",
+      "argument": 3034087627,
+      "wait": "requested"
+    },
+    "return.contact": {
+      "capability": "return.contact",
+      "operation": "observation",
+      "asset": "finale_approach",
+      "argument": 512,
+      "wait": "observed"
+    },
+    "dialogue.descendants": {
+      "capability": "dialogue.descendants",
+      "operation": "dialogue",
+      "asset": "dialogue",
+      "argument": 6,
+      "wait": "nativeReady"
+    },
+    "finale.approached": {
+      "capability": "finale.approached",
+      "operation": "observation",
+      "asset": "finale_approach",
+      "argument": 0,
+      "wait": "observed"
+    },
+    "finale.wave_1": {
+      "capability": "finale.wave_1",
+      "operation": "population",
+      "asset": "module",
+      "argument": 11,
+      "wait": "completed"
+    },
+    "finale.wave_2": {
+      "capability": "finale.wave_2",
+      "operation": "population",
+      "asset": "module",
+      "argument": 12,
+      "wait": "completed"
+    },
+    "finale.wave_3": {
+      "capability": "finale.wave_3",
+      "operation": "population",
+      "asset": "module",
+      "argument": 13,
+      "wait": "completed"
+    },
+    "finale.support": {
+      "capability": "finale.support",
+      "operation": "population",
+      "asset": "module",
+      "argument": 14,
+      "wait": "requested"
+    },
+    "module.expose": {
+      "capability": "module.expose",
+      "operation": "mechanic",
+      "asset": "module_target",
+      "argument": 20,
+      "wait": "requested"
+    },
+    "objective.module": {
+      "capability": "objective.module",
+      "operation": "objective",
+      "asset": "objective",
+      "argument": 2164099943,
+      "wait": "requested"
+    },
+    "dialogue.module": {
+      "capability": "dialogue.module",
+      "operation": "dialogue",
+      "asset": "dialogue",
+      "argument": 7,
+      "wait": "nativeReady"
+    },
+    "module.destroyed": {
+      "capability": "module.destroyed",
+      "operation": "observation",
+      "asset": "module_target",
+      "argument": 513,
+      "wait": "observed"
+    },
+    "lighthouse.unlock": {
+      "capability": "lighthouse.unlock",
+      "operation": "mechanic",
+      "asset": "module_target",
+      "argument": 21,
+      "wait": "requested"
+    },
+    "objective.enter": {
+      "capability": "objective.enter",
+      "operation": "objective",
+      "asset": "objective",
+      "argument": 2970444885,
+      "wait": "requested"
+    },
+    "dialogue.timelines": {
+      "capability": "dialogue.timelines",
+      "operation": "dialogue",
+      "asset": "dialogue",
+      "argument": 8,
+      "wait": "nativeReady"
+    },
+    "lighthouse.entered": {
+      "capability": "lighthouse.entered",
+      "operation": "observation",
+      "asset": "lighthouse_inside",
+      "argument": 0,
+      "wait": "observed"
+    },
+    "dialogue.old_place": {
+      "capability": "dialogue.old_place",
+      "operation": "dialogue",
+      "asset": "dialogue",
+      "argument": 9,
+      "wait": "nativeReady"
+    },
+    "objective.vance": {
+      "capability": "objective.vance",
+      "operation": "objective",
+      "asset": "objective",
+      "argument": 1915741729,
+      "wait": "requested"
+    },
+    "vance.approached": {
+      "capability": "vance.approached",
+      "operation": "observation",
+      "asset": "vance_near",
+      "argument": 0,
+      "wait": "observed"
+    },
+    "dialogue.come_closer": {
+      "capability": "dialogue.come_closer",
+      "operation": "dialogue",
+      "asset": "dialogue",
+      "argument": 10,
+      "wait": "nativeReady"
+    },
+    "vance.scene": {
+      "capability": "vance.scene",
+      "operation": "scene",
+      "asset": "vance_scene",
+      "argument": 1,
+      "wait": "nativeReady"
+    },
+    "mission.finish": {
+      "capability": "mission.finish",
+      "operation": "mechanic",
+      "asset": "module",
+      "argument": 30,
+      "wait": "requested"
+    },
+    "vance.ascent_cue": {
+      "capability": "vance.ascent_cue",
+      "operation": "observation",
+      "asset": "vance_scene",
+      "argument": 22640,
+      "wait": "observed"
+    },
+    "lighthouse.raise": {
+      "capability": "lighthouse.raise",
+      "operation": "device",
+      "asset": "lighthouse_walls",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "lighthouse.light": {
+      "capability": "lighthouse.light",
+      "operation": "device",
+      "asset": "lighthouse_lighting",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "vance.ending_cue": {
+      "capability": "vance.ending_cue",
+      "operation": "observation",
+      "asset": "vance_scene",
+      "argument": 31000,
+      "wait": "observed"
+    }
+  },
+  "graphs": {
+    "composition": {
+      "name": "The Gateway",
+      "domain": "composition",
+      "steps": [
+        {
+          "id": "opening",
+          "after": [],
+          "commands": [
+            {
+              "id": "opening.module",
+              "binding": "opening.module"
+            },
+            {
+              "id": "opening.checked",
+              "binding": "opening.checked"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "opening.checked": "opening.checked"
+      }
+    },
+    "opening": {
+      "name": "Gateway traversal and Forest gate",
+      "domain": "opening",
+      "steps": [
+        {
+          "id": "landing",
+          "after": [],
+          "commands": [
+            {
+              "id": "landing.entered",
+              "binding": "landing.entered"
+            }
+          ]
+        },
+        {
+          "id": "presentation",
+          "after": [
+            "landing"
+          ],
+          "commands": [
+            {
+              "id": "objective.find_gateway",
+              "binding": "objective.find_gateway"
+            },
+            {
+              "id": "dialogue.ikora_gateway",
+              "binding": "dialogue.ikora_gateway"
+            }
+          ]
+        },
+        {
+          "id": "recess",
+          "after": [
+            "presentation"
+          ],
+          "commands": [
+            {
+              "id": "recess.entered",
+              "binding": "recess.entered"
+            }
+          ]
+        },
+        {
+          "id": "marchers",
+          "after": [
+            "landing"
+          ],
+          "commands": [
+            {
+              "id": "marchers.start",
+              "binding": "marchers.start"
+            }
+          ]
+        },
+        {
+          "id": "recess_initial",
+          "after": [
+            "recess",
+            "marchers"
+          ],
+          "commands": [
+            {
+              "id": "recess.initial",
+              "binding": "recess.initial"
+            }
+          ]
+        },
+        {
+          "id": "recess_reinforce_trigger",
+          "after": [
+            "recess_initial"
+          ],
+          "commands": [
+            {
+              "id": "recess.reinforce_trigger",
+              "binding": "recess.reinforce_trigger"
+            }
+          ]
+        },
+        {
+          "id": "recess_reinforcements",
+          "after": [
+            "recess_reinforce_trigger"
+          ],
+          "commands": [
+            {
+              "id": "recess.reinforcements",
+              "binding": "recess.reinforcements"
+            }
+          ]
+        },
+        {
+          "id": "recess_clear",
+          "after": [
+            "recess_reinforcements"
+          ],
+          "commands": [
+            {
+              "id": "recess.cleared",
+              "binding": "recess.cleared"
+            },
+            {
+              "id": "recess.reinforcements_cleared",
+              "binding": "recess.reinforcements_cleared"
+            }
+          ]
+        },
+        {
+          "id": "recess_cannons",
+          "after": [
+            "recess_clear"
+          ],
+          "commands": [
+            {
+              "id": "recess.cannons",
+              "binding": "recess.cannons"
+            }
+          ]
+        },
+        {
+          "id": "shelf_entry",
+          "after": [
+            "recess_cannons"
+          ],
+          "commands": [
+            {
+              "id": "shelf.entered",
+              "binding": "shelf.entered"
+            }
+          ]
+        },
+        {
+          "id": "shelf_initial",
+          "after": [
+            "shelf_entry"
+          ],
+          "commands": [
+            {
+              "id": "shelf.initial",
+              "binding": "shelf.initial"
+            }
+          ]
+        },
+        {
+          "id": "shelf_reinforce_trigger",
+          "after": [
+            "shelf_initial"
+          ],
+          "commands": [
+            {
+              "id": "shelf.reinforce_trigger",
+              "binding": "shelf.reinforce_trigger"
+            }
+          ]
+        },
+        {
+          "id": "shelf_reinforcements",
+          "after": [
+            "shelf_reinforce_trigger"
+          ],
+          "commands": [
+            {
+              "id": "shelf.reinforcements",
+              "binding": "shelf.reinforcements"
+            }
+          ]
+        },
+        {
+          "id": "shelf_clear",
+          "after": [
+            "shelf_reinforcements"
+          ],
+          "commands": [
+            {
+              "id": "shelf.passed",
+              "binding": "shelf.passed"
+            }
+          ]
+        },
+        {
+          "id": "end_entry",
+          "after": [
+            "shelf_clear"
+          ],
+          "commands": [
+            {
+              "id": "end.entered",
+              "binding": "end.entered"
+            }
+          ]
+        },
+        {
+          "id": "end_initial",
+          "after": [
+            "end_entry"
+          ],
+          "commands": [
+            {
+              "id": "end.initial",
+              "binding": "end.initial"
+            }
+          ]
+        },
+        {
+          "id": "end_reinforce_trigger",
+          "after": [
+            "end_initial"
+          ],
+          "commands": [
+            {
+              "id": "end.reinforce_trigger",
+              "binding": "end.reinforce_trigger"
+            }
+          ]
+        },
+        {
+          "id": "end_reinforcements",
+          "after": [
+            "end_reinforce_trigger"
+          ],
+          "commands": [
+            {
+              "id": "end.reinforcements",
+              "binding": "end.reinforcements"
+            }
+          ]
+        },
+        {
+          "id": "end_clear",
+          "after": [
+            "end_reinforcements"
+          ],
+          "commands": [
+            {
+              "id": "end.cleared",
+              "binding": "end.cleared"
+            },
+            {
+              "id": "end.reinforcements_cleared",
+              "binding": "end.reinforcements_cleared"
+            }
+          ]
+        },
+        {
+          "id": "final_cannon",
+          "after": [
+            "end_clear"
+          ],
+          "commands": [
+            {
+              "id": "end.cannon",
+              "binding": "end.cannon"
+            },
+            {
+              "id": "dialogue.vance",
+              "binding": "dialogue.vance"
+            }
+          ]
+        },
+        {
+          "id": "lighthouse_landing",
+          "after": [
+            "final_cannon"
+          ],
+          "commands": [
+            {
+              "id": "lighthouse.landed",
+              "binding": "lighthouse.landed"
+            }
+          ]
+        },
+        {
+          "id": "mainland",
+          "after": [
+            "lighthouse_landing"
+          ],
+          "commands": [
+            {
+              "id": "mainland.outskirts",
+              "binding": "mainland.outskirts"
+            },
+            {
+              "id": "mainland.center",
+              "binding": "mainland.center"
+            },
+            {
+              "id": "objective.forest_gate",
+              "binding": "objective.forest_gate"
+            }
+          ]
+        },
+        {
+          "id": "battle_intro",
+          "after": [
+            "mainland"
+          ],
+          "commands": [
+            {
+              "id": "mainland.intro",
+              "binding": "mainland.intro"
+            }
+          ]
+        },
+        {
+          "id": "forest_description",
+          "after": [
+            "battle_intro"
+          ],
+          "commands": [
+            {
+              "id": "dialogue.forest_gate",
+              "binding": "dialogue.forest_gate"
+            }
+          ]
+        },
+        {
+          "id": "mainland_clear",
+          "after": [
+            "mainland"
+          ],
+          "commands": [
+            {
+              "id": "mainland.cleared",
+              "binding": "mainland.cleared"
+            }
+          ]
+        },
+        {
+          "id": "forest_approach",
+          "after": [
+            "mainland_clear",
+            "forest_description"
+          ],
+          "commands": [
+            {
+              "id": "forest.approached",
+              "binding": "forest.approached"
+            }
+          ]
+        },
+        {
+          "id": "forest_ready",
+          "after": [
+            "forest_approach"
+          ],
+          "commands": [
+            {
+              "id": "dialogue.at_gate",
+              "binding": "dialogue.at_gate"
+            }
+          ]
+        },
+        {
+          "id": "forest_attempt",
+          "after": [
+            "forest_ready"
+          ],
+          "commands": [
+            {
+              "id": "forest.blocked",
+              "binding": "forest.blocked"
+            }
+          ]
+        },
+        {
+          "id": "forest_blocked",
+          "after": [
+            "forest_attempt"
+          ],
+          "commands": [
+            {
+              "id": "dialogue.blocked",
+              "binding": "dialogue.blocked"
+            }
+          ]
+        },
+        {
+          "id": "bring_sagira",
+          "after": [
+            "forest_blocked"
+          ],
+          "commands": [
+            {
+              "id": "objective.bring_sagira",
+              "binding": "objective.bring_sagira"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "landing.entered": "landing.entered",
+        "dialogue.submitted": "dialogue.ikora_gateway",
+        "recess.entered": "recess.entered",
+        "recess.reinforce_trigger": "recess.reinforce_trigger",
+        "recess.cleared": "recess.cleared",
+        "recess.reinforcements_cleared": "recess.reinforcements_cleared",
+        "recess.cannons": "recess.cannons",
+        "shelf.entered": "shelf.entered",
+        "shelf.reinforce_trigger": "shelf.reinforce_trigger",
+        "end.entered": "end.entered",
+        "end.reinforce_trigger": "end.reinforce_trigger",
+        "end.cleared": "end.cleared",
+        "end.reinforcements_cleared": "end.reinforcements_cleared",
+        "dialogue.vance": "dialogue.vance",
+        "lighthouse.landed": "lighthouse.landed",
+        "shelf.passed": "shelf.passed",
+        "mainland.intro": "mainland.intro",
+        "dialogue.forest_gate": "dialogue.forest_gate",
+        "mainland.cleared": "mainland.cleared",
+        "forest.approached": "forest.approached",
+        "dialogue.at_gate": "dialogue.at_gate",
+        "forest.blocked": "forest.blocked",
+        "dialogue.blocked": "dialogue.blocked"
+      }
+    },
+    "ending": {
+      "name": "Gateway return, Lighthouse defense and Brother Vance",
+      "domain": "ending",
+      "steps": [
+        {
+          "id": "return",
+          "after": [],
+          "commands": [
+            {
+              "id": "return.center",
+              "binding": "return.center"
+            },
+            {
+              "id": "return.outskirts",
+              "binding": "return.outskirts"
+            },
+            {
+              "id": "objective.return",
+              "binding": "objective.return"
+            }
+          ]
+        },
+        {
+          "id": "contact",
+          "after": [
+            "return"
+          ],
+          "commands": [
+            {
+              "id": "return.contact",
+              "binding": "return.contact"
+            }
+          ]
+        },
+        {
+          "id": "descendants",
+          "after": [
+            "contact"
+          ],
+          "commands": [
+            {
+              "id": "dialogue.descendants",
+              "binding": "dialogue.descendants"
+            }
+          ]
+        },
+        {
+          "id": "approach",
+          "after": [
+            "return"
+          ],
+          "commands": [
+            {
+              "id": "finale.approached",
+              "binding": "finale.approached"
+            }
+          ]
+        },
+        {
+          "id": "wave_one",
+          "after": [
+            "approach"
+          ],
+          "commands": [
+            {
+              "id": "finale.wave_1",
+              "binding": "finale.wave_1"
+            }
+          ]
+        },
+        {
+          "id": "wave_two",
+          "after": [
+            "wave_one"
+          ],
+          "commands": [
+            {
+              "id": "finale.wave_2",
+              "binding": "finale.wave_2"
+            }
+          ]
+        },
+        {
+          "id": "wave_three",
+          "after": [
+            "wave_two"
+          ],
+          "commands": [
+            {
+              "id": "finale.wave_3",
+              "binding": "finale.wave_3"
+            },
+            {
+              "id": "finale.support",
+              "binding": "finale.support"
+            }
+          ]
+        },
+        {
+          "id": "module_exposed",
+          "after": [
+            "wave_three"
+          ],
+          "commands": [
+            {
+              "id": "module.expose",
+              "binding": "module.expose"
+            },
+            {
+              "id": "objective.module",
+              "binding": "objective.module"
+            },
+            {
+              "id": "dialogue.module",
+              "binding": "dialogue.module"
+            }
+          ]
+        },
+        {
+          "id": "module_destroyed",
+          "after": [
+            "module_exposed"
+          ],
+          "commands": [
+            {
+              "id": "module.destroyed",
+              "binding": "module.destroyed"
+            }
+          ]
+        },
+        {
+          "id": "unlocked",
+          "after": [
+            "module_destroyed"
+          ],
+          "commands": [
+            {
+              "id": "lighthouse.unlock",
+              "binding": "lighthouse.unlock"
+            },
+            {
+              "id": "objective.enter",
+              "binding": "objective.enter"
+            },
+            {
+              "id": "dialogue.timelines",
+              "binding": "dialogue.timelines"
+            }
+          ]
+        },
+        {
+          "id": "entered",
+          "after": [
+            "unlocked"
+          ],
+          "commands": [
+            {
+              "id": "lighthouse.entered",
+              "binding": "lighthouse.entered"
+            }
+          ]
+        },
+        {
+          "id": "invitation",
+          "after": [
+            "entered"
+          ],
+          "commands": [
+            {
+              "id": "dialogue.come_closer",
+              "binding": "dialogue.come_closer"
+            },
+            {
+              "id": "objective.vance",
+              "binding": "objective.vance"
+            }
+          ]
+        },
+        {
+          "id": "vance",
+          "after": [
+            "entered"
+          ],
+          "commands": [
+            {
+              "id": "vance.approached",
+              "binding": "vance.approached"
+            }
+          ]
+        },
+        {
+          "id": "entry_ghost",
+          "after": [
+            "invitation"
+          ],
+          "commands": [
+            {
+              "id": "dialogue.old_place",
+              "binding": "dialogue.old_place"
+            }
+          ]
+        },
+        {
+          "id": "scene",
+          "after": [
+            "vance",
+            "entry_ghost"
+          ],
+          "commands": [
+            {
+              "id": "vance.scene",
+              "binding": "vance.scene"
+            }
+          ]
+        },
+        {
+          "id": "ascent_cue",
+          "after": [
+            "scene"
+          ],
+          "commands": [
+            {
+              "id": "vance.ascent_cue",
+              "binding": "vance.ascent_cue"
+            }
+          ]
+        },
+        {
+          "id": "ascent",
+          "after": [
+            "ascent_cue"
+          ],
+          "commands": [
+            {
+              "id": "lighthouse.raise",
+              "binding": "lighthouse.raise"
+            },
+            {
+              "id": "lighthouse.light",
+              "binding": "lighthouse.light"
+            }
+          ]
+        },
+        {
+          "id": "ending_cue",
+          "after": [
+            "scene"
+          ],
+          "commands": [
+            {
+              "id": "vance.ending_cue",
+              "binding": "vance.ending_cue"
+            }
+          ]
+        },
+        {
+          "id": "complete",
+          "after": [
+            "ascent",
+            "ending_cue",
+            "descendants"
+          ],
+          "commands": [
+            {
+              "id": "mission.finish",
+              "binding": "mission.finish"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "return.contact": "return.contact",
+        "dialogue.descendants": "dialogue.descendants",
+        "finale.approached": "finale.approached",
+        "finale.wave_1": "finale.wave_1",
+        "finale.wave_2": "finale.wave_2",
+        "finale.wave_3": "finale.wave_3",
+        "dialogue.module": "dialogue.module",
+        "module.destroyed": "module.destroyed",
+        "dialogue.timelines": "dialogue.timelines",
+        "lighthouse.entered": "lighthouse.entered",
+        "dialogue.old_place": "dialogue.old_place",
+        "vance.approached": "vance.approached",
+        "dialogue.come_closer": "dialogue.come_closer",
+        "vance.scene": "vance.scene",
+        "vance.ascent_cue": "vance.ascent_cue",
+        "vance.ending_cue": "vance.ending_cue"
+      }
+    }
+  },
+  "roles": {
+    "mission": "composition",
+    "opening": "opening",
+    "ending": "ending"
+  },
+  "entry": "composition",
+  "modules": [
+    "opening"
+  ],
+  "observations": [
+    {
+      "fact": "opening.checked",
+      "receipt": "opening.checked"
+    }
+  ],
+  "presentation": {
+    "dialogue": {
+      "bank": "0x80F1FC9E",
+      "rows": [
+        {
+          "row": 0,
+          "selector": "0xDD9B3C5B",
+          "duration_ms": 23214,
+          "native_delay_ms": 0,
+          "scene_owned": true
+        },
+        {
+          "row": 1,
+          "selector": "0x9418463C",
+          "duration_ms": 20806,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 2,
+          "selector": "0xEEA21008",
+          "duration_ms": 19142,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 3,
+          "selector": "0xABCC9491",
+          "duration_ms": 7135,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 4,
+          "selector": "0xE366CFBA",
+          "duration_ms": 5080,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 5,
+          "selector": "0xBAF640CA",
+          "duration_ms": 11702,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 6,
+          "selector": "0xA4A4A944",
+          "duration_ms": 3959,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 7,
+          "selector": "0xFE8EFB0F",
+          "duration_ms": 2059,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 8,
+          "selector": "0x06594716",
+          "duration_ms": 6327,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 9,
+          "selector": "0xD61E6C5F",
+          "duration_ms": 4330,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 10,
+          "selector": "0xDB2C8738",
+          "duration_ms": 748,
+          "native_delay_ms": 0,
+          "scene_owned": false
+        },
+        {
+          "row": 11,
+          "selector": "0x057FF1E6",
+          "duration_ms": 4383,
+          "native_delay_ms": 0,
+          "scene_owned": true
+        },
+        {
+          "row": 12,
+          "selector": "0x80A617F1",
+          "duration_ms": 9305,
+          "native_delay_ms": 0,
+          "scene_owned": true
+        },
+        {
+          "row": 13,
+          "selector": "0x65BDC761",
+          "duration_ms": 2302,
+          "native_delay_ms": 0,
+          "scene_owned": true
+        },
+        {
+          "row": 14,
+          "selector": "0xDF2E40B0",
+          "duration_ms": 9487,
+          "native_delay_ms": 0,
+          "scene_owned": true
+        },
+        {
+          "row": 15,
+          "selector": "0x5B932E1B",
+          "duration_ms": 2471,
+          "native_delay_ms": 0,
+          "scene_owned": true
+        }
+      ],
+      "objective_cues": [],
+      "dispatch_timeout_ms": 15000,
+      "spacing_ms": 250
+    },
+    "cue_sets": {},
+    "action_sets": {},
+    "binding_tables": {}
+  }
+}

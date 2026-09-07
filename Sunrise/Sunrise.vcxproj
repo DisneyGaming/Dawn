@@ -98,6 +98,8 @@
   <ItemGroup>
     <ClCompile Include="src\dllmain.cpp" />
     <ClCompile Include="src\state\activity\coo\omega_script.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="src\state\activity\gateway\runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="src\state\activity\gateway\controller.cpp" />
     <ClCompile Include="src\state\activity\coo\mission_script.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\core\logging\log.cpp" />
     <ClCompile Include="src\core\provenance\build_provenance.cpp" />

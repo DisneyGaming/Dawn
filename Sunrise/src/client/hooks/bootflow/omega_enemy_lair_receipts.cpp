@@ -9,6 +9,7 @@
 #include <span>
 
 #include "omega_enemy_lair_receipts.h"
+#include "../../../state/activity/gateway/runtime.h"
 #include "omega_enemy_native_reference.h"
 #include "omega_enemy_native_admission.h"
 #include "omega_enemy_native_health.h"
@@ -25,6 +26,13 @@ namespace sunrise::client::hooks::bootflow {
 namespace {
 namespace catalog=state::activity::omega_enemy_lair;
 namespace crownCatalog=state::activity::omega_enemy_crown;
+namespace gateway=state::activity::gateway;
+struct Context final { bool enabled;std::uint64_t run;bool gateway; };
+Context selected_context() noexcept {
+    const auto run=gateway::native_run();if(run!=0) { return {true,run,true}; }
+    const auto nav=state::activity::omega_presentation::navigation();return {nav.enabled,nav.run,false};
+}
+
 using Admission=std::uint64_t(__fastcall*)(void*,const void*) noexcept;
 using CandidateEvent=std::uint64_t(__fastcall*)(void*,std::uint32_t) noexcept;
 hooking::CallGate g_gate;
@@ -164,18 +172,24 @@ enum : std::uint8_t {
     kSourceDefinitionRef=1,kSourceUnknownResource,kSourceResolve,kSourceRegistry,
     kSourceType,kSourceSlot,kSourceGenerationRead
 };
-bool source(Read& read,std::uintptr_t instance,Source& source) noexcept {
+bool source(Read& read,std::uintptr_t instance,Source& source,bool gatewayContext) noexcept {
     source.reason=0;source.nativeRegistry=0;source.nativeType=0;source.nativeSlot=-1;
     source.expectedRegistry=0;source.expectedSlot=0;
     Ref definition{};
-    if(!read.value(instance,definition) || definition.kind!=0x8080948FU || definition.offset!=0x728) {
+    if(!read.value(instance,definition) || definition.kind!=0x8080948FU || (!gatewayContext && definition.offset!=0x728)) {
         source.resource=definition.handle;source.kind=definition.kind;source.reason=kSourceDefinitionRef;return false;
     }
     source.resource=definition.handle;source.kind=definition.kind;
     std::uint32_t expectedRegistry{};
     std::uint16_t expectedSlot{};
+    if(gatewayContext) {
+        for(const auto& row:gateway::kSpawns) {
+            if(row.definition==definition.handle && row.offset==definition.offset) { expectedRegistry=row.registry;expectedSlot=row.source;break; }
+        }
+        if(expectedRegistry==0) { source.reason=kSourceUnknownResource;return false; }
+    }
     for(const auto& row:catalog::kSpawners) {
-        if(catalog::supported_by_encounter(row) && row.resource==definition.handle) {
+        if(!gatewayContext && catalog::supported_by_encounter(row) && row.resource==definition.handle) {
             expectedRegistry=catalog::kRegistry;expectedSlot=row.slot;break;
         }
     }
@@ -236,7 +250,7 @@ void reject(std::uint64_t run,std::uint8_t boundary,std::uint8_t reason,std::uin
 /** A0D510 copies source/member backlinks directly from its spawn context. The
  * callback pointer may have moved, so resolve the pre-call full selfhandle anew. */
 __declspec(noinline) void observe_admission(std::uint32_t parent,std::uint64_t callRun) noexcept {
-    const auto nav=state::activity::omega_presentation::navigation();
+    const auto nav=selected_context();
     if(!nav.enabled || nav.run==0) {return;}
     if(nav.run!=callRun) {
         // The run advanced between the pre-call identity copy and this callback.
@@ -263,7 +277,7 @@ __declspec(noinline) void observe_admission(std::uint32_t parent,std::uint64_t c
         handle,actorState.handle,actorState.parent)
         || !read.resolve({actorState.parent,0,0},parentAgain) || parentAgain!=currentParent) {rejection=5;}
     else if(!read.resolve(actorState.source,linked)) {rejection=6;}
-    else if(!read.value(linked,definition) || !source(read,linked,sourceState)) {rejection=7;}
+    else if(!read.value(linked,definition) || !source(read,linked,sourceState,nav.gateway)) {rejection=7;}
     else if(sourceState.generation==0 || sourceState.generation!=sourceState.senseGeneration) {rejection=8;}
 
     // Progression delivery must never depend on the best-effort diagnostic lock.
@@ -271,7 +285,9 @@ __declspec(noinline) void observe_admission(std::uint32_t parent,std::uint64_t c
     // deduplicates full actor IDs, and fails closed on unexpected population.
     bool accepted=false;
     if(rejection==0) {
-        accepted=state::activity::omega_first_lair::observe_admission(
+        accepted=nav.gateway?gateway::observe_admission(
+            {nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
+            :state::activity::omega_first_lair::observe_admission(
             {nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry});
     }
     if(!TryAcquireSRWLockExclusive(&g_lock)) {return;}
@@ -342,7 +358,7 @@ bool event_payload(Read& read,std::uint32_t event,std::array<std::byte,0x3C>& he
 }
 __declspec(noinline) void observe_candidate(void* instance,std::uint32_t event,
     const hooking::CallGate::Scope& call) noexcept {
-    const auto nav=state::activity::omega_presentation::navigation();
+    const auto nav=selected_context();
     if(!nav.enabled || nav.run==0) {return;}
     Read read;std::array<std::byte,0xC4> character{};Actor actorState;Source sourceState;
     std::uintptr_t linked{},characterAddress{};
@@ -354,7 +370,7 @@ __declspec(noinline) void observe_candidate(void* instance,std::uint32_t event,
     else if(!read.resolve({at<std::uint32_t>(character.data()+0x24),0,0},characterAddress)) {rejection=4;}
     else if(characterAddress!=address) {rejection=5;}
     else if(!read.resolve(actorState.source,linked)) {rejection=6;}
-    else if(!source(read,linked,sourceState)) {rejection=7;}
+    else if(!source(read,linked,sourceState,nav.gateway)) {rejection=7;}
     std::array<std::byte,0x3C> eventHeader{};std::array<std::byte,0x38> payload{};
     std::uint32_t eventDefinition{};bool eventValid=false,healthValid=false,deathAccepted=false;
     Ref healthRef{};std::uintptr_t healthAddress{},memberAddress{};
@@ -380,7 +396,9 @@ __declspec(noinline) void observe_candidate(void* instance,std::uint32_t event,
         const bool qualified=omega_enemy_native_health::death(eventValid,eventDefinition,healthValid,
             healthFlags,sourceState.generation,sourceState.senseGeneration);
         if(qualified && call.accepts_side_effects()) {
-            deathAccepted=state::activity::omega_first_lair::observe_death(
+            deathAccepted=nav.gateway?gateway::observe_death(
+                {nav.run,actorState.handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
+                :state::activity::omega_first_lair::observe_death(
                 {nav.run,actorState.handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry});
             if(!deathAccepted) {deathReject=kRejectStateDeath;}
         } else if(qualified) {deathReject=kRejectGateClosed;}
@@ -459,7 +477,7 @@ __declspec(noinline) void observe_candidate(void* instance,std::uint32_t event,
 }
 __declspec(noinline) std::uint64_t __fastcall admission_hook(void* instance,const void* context) noexcept {
     const hooking::CallGate::Scope scope{g_gate};
-    const auto nav=state::activity::omega_presentation::navigation();
+    const auto nav=selected_context();
     std::uint32_t parent=UINT32_MAX;
     if(scope.accepts_side_effects() && nav.enabled && nav.run!=0) {
         Read read;std::array<std::byte,0x28> header{};

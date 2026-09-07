@@ -1,3 +1,5 @@
+#include "../../../state/activity/gateway/runtime.h"
+#include "../../../state/activity/gateway/preparation.h"
 #include <Windows.h>
 #include "omega_arc_charge_receipts.h"
 #include <bcrypt.h>
@@ -2692,6 +2694,18 @@ void report_omega_visual_trace(const char* stage,
         || state::activity::omega_crown_transit::preparation(prefix, state, transitReceipt);
 }
 
+// Narrow copied-state receipt using the already installed type-4 apply boundary.
+__declspec(noinline) void observe_gateway_preparation(void* component,std::uint64_t run) noexcept {
+    if(!component || run==0) { return; }
+    std::array<std::byte,16> prefix{};std::array<std::byte,0x44> state{};
+    __try {
+        const auto* bytes=static_cast<const std::byte*>(component);
+        std::memcpy(prefix.data(),bytes,prefix.size());std::memcpy(state.data(),bytes+0x180,state.size());
+    } __except(EXCEPTION_EXECUTE_HANDLER) { return; }
+    std::uint32_t generation{};std::uint8_t index{};
+    if(state::activity::gateway::preparation(prefix,state,generation,index)) { state::activity::gateway::observe_prepared(run,generation,index); }
+}
+
 /** Post-original receipt only; native state and entity ownership remain untouched. */
 __declspec(noinline) void observe_first_cannon_preparation(void* component,
                                                           std::uint64_t enteredRun) noexcept {
@@ -2753,6 +2767,7 @@ __declspec(noinline) void observe_first_cannon_preparation(void* component,
 __declspec(noinline) void __fastcall omega_visual_apply(void* component,
                                                          void* stateKey) noexcept {
     const hooking::CallGate::Scope call(g_omegaCannonReceiptGate);
+    const auto gatewayRun=call.accepts_side_effects()?state::activity::gateway::native_run():0;
     const auto nav = call.accepts_side_effects()
         ? state::activity::omega_presentation::navigation()
         : state::activity::omega_presentation::Navigation{};
@@ -2769,6 +2784,7 @@ __declspec(noinline) void __fastcall omega_visual_apply(void* component,
     hooking::await_original(g_omegaVisualApplyOriginal)(component, stateKey);
     if (trace) { --g_omegaVisualTraceDepth; }
     if (!call.accepts_side_effects()) { return; }
+    if (gatewayRun!=0) { observe_gateway_preparation(component,gatewayRun); }
     if (nav.enabled) { observe_first_cannon_preparation(component, nav.run); }
     if (nav.enabled) { observe_omega_arc_charge_carrier(component,nav.run); }
     if (!trace) { return; }
@@ -4718,9 +4734,10 @@ void quiesce_omega_first_cannon_receipt() noexcept {
 bool uninstall_omega_first_cannon_receipt() noexcept {
     quiesce_omega_first_cannon_receipt();
     if (!g_omegaVisualApplyHandle.attached) { return true; }
-    const std::array<hooking::detour::ProtectedCodeEntry, 5> protectedCode{{
+    const std::array<hooking::detour::ProtectedCodeEntry, 6> protectedCode{{
         {reinterpret_cast<void*>(&omega_visual_apply)},
         {reinterpret_cast<void*>(&observe_first_cannon_preparation)},
+        {reinterpret_cast<void*>(&observe_gateway_preparation)},
         {reinterpret_cast<void*>(&first_cannon_preparation)},
         {reinterpret_cast<void*>(&hooking::call_gate_detail::enter)},
         {reinterpret_cast<void*>(&hooking::call_gate_detail::leave)},

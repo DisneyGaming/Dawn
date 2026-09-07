@@ -13,6 +13,7 @@
 
 #include "../../../core/logging/log.h"
 #include "../../../state/activity/forced/activity_forced_destination.h"
+#include "../../../state/activity/forced/prelaunch_profile.h"
 #include "../../hooking/call_gate.h"
 #include "../../hooking/detour.h"
 #include "../retail_log/retail_log_enqueue_observer.h"
@@ -20,6 +21,8 @@
 
 namespace sunrise::client::hooks::bootflow {
 namespace {
+
+namespace prelaunch = state::activity::forced::prelaunch;
 
 constexpr std::uintptr_t kManagerUpdateLoopRva = 0x1764EC0U;
 constexpr std::uintptr_t kLaunchProducerRva = 0x1763B20U;
@@ -39,10 +42,6 @@ constexpr std::uint16_t kTowerfallActivity = 266U;
 constexpr std::string_view kOmegaPackage = "mission_scot";
 constexpr bool kTowerfallIdentityMutationEnabled = false;
 /** Activity-266 identifiers extracted from the installed public activity/package tables. */
-constexpr std::uint32_t kTowerfallInvestmentHash = 0x62D85FB3U;
-constexpr std::uint32_t kTowerfallPackageDefinitionHash = 0x9ACCB518U;
-constexpr std::uint32_t kTowerfallActivityTag = 0x80B500ACU;
-constexpr std::uint32_t kTowerfallLaunchDescriptorTag = 0x80FDB97FU;
 constexpr std::uint64_t kRetryIntervalMs = 100U;
 constexpr std::uint32_t kMaxDiagnosticRetryAttempts = 4U;
 constexpr std::uint64_t kPrelaunchInstallRetryMs = 1000U;
@@ -224,7 +223,7 @@ std::atomic_uint64_t g_lastRouteSignature{~std::uint64_t{0}};
 std::array<std::atomic_uint64_t, 8> g_lastManagerSignatures{};
 std::atomic<std::byte*> g_lastRouteManager{nullptr};
 std::atomic_bool g_prelaunchInstallInProgress{};
-std::atomic_bool g_prelaunchPublicationPending{};
+std::atomic<const prelaunch::Profile*> g_prelaunchPublicationPending{};
 std::atomic_bool g_directContractPublished{};
 std::atomic_uint64_t g_nextPrelaunchInstallTick{};
 std::atomic_uint32_t g_prelaunchInstallAttempts{};
@@ -465,14 +464,10 @@ void write_line(core::log::Level level,
     return g_bindingTimelineSequence.fetch_add(1U, std::memory_order_acq_rel) + 1U;
 }
 
-[[nodiscard]] bool configured_towerfall() noexcept {
+[[nodiscard]] const prelaunch::Profile* configured_prelaunch() noexcept {
     state::activity::forced::ForcedDestination forced{};
     state::activity::forced::snapshot(forced);
-    const std::size_t length = forced.packageNameLength <= forced.packageName.size()
-                                   ? forced.packageNameLength
-                                   : forced.packageName.size();
-    return state::activity::forced::active(forced)
-           && std::string_view(forced.packageName.data(), length) == "mission_towerfall";
+    return prelaunch::configured(forced);
 }
 
 [[nodiscard]] std::size_t bounded_package_length(const std::byte* package,
@@ -489,18 +484,17 @@ void write_line(core::log::Level level,
 }
 
 [[nodiscard]] bool correct_selection_record(std::byte* state,
-                                            const char* package,
-                                            std::size_t packageLength) noexcept {
+                                            const prelaunch::Profile& profile) noexcept {
     bool corrected = false;
-    const std::int16_t activity = static_cast<std::int16_t>(kTowerfallActivity);
+    const std::int16_t activity = profile.activity;
     __try {
         // A direct native mission is self-selected (Omega is 299 -> 299). Setting both halves of
         // the tuple lets Destiny resolve the activity definition, type, destination and
-        // matchmaking hash from activity 266 when its state-0 producer builds the publication.
+        // matchmaking hash from the selected profile when its state-0 producer builds the publication.
         std::memcpy(state + kSelectionSourceOffset, &activity, sizeof activity);
         std::memcpy(state + kSelectionDestinationOffset, &activity, sizeof activity);
         std::memset(state + kSelectionPackageOffset, 0, kSelectionPackageCapacity);
-        std::memcpy(state + kSelectionPackageOffset, package, packageLength);
+        std::memcpy(state + kSelectionPackageOffset, profile.package.data(), profile.package.size());
         corrected = true;
     } __except (EXCEPTION_EXECUTE_HANDLER) {
         corrected = false;
@@ -563,27 +557,16 @@ __declspec(noinline) std::byte* __fastcall selection_launch_state_accessor(
         state + kSelectionSourceOffset, static_cast<std::int16_t>(-1));
     const std::int16_t destinationBefore = safe_read<std::int16_t>(
         state + kSelectionDestinationOffset, static_cast<std::int16_t>(-1));
-    if (source != static_cast<std::int16_t>(kChosenActivity)
-        || destinationBefore != static_cast<std::int16_t>(kChosenActivity)
-        || !state::activity::forced::commit_homecoming_authored_selection(source,
-                                                                           destinationBefore)) {
+    state::activity::forced::ForcedDestination forced{};
+    if (!prelaunch::donor(source, destinationBefore)
+        || !state::activity::forced::commit_prelaunch_authored_selection(
+            source, destinationBefore, forced)) {
         return state;
     }
-
-    state::activity::forced::ForcedDestination forced{};
-    state::activity::forced::snapshot(forced);
-    const bool validPackage = forced.packageNameLength != 0U
-                              && forced.packageNameLength <= kSelectionPackageCapacity
-                              && std::string_view(forced.packageName.data(),
-                                                  forced.packageNameLength)
-                                     == "mission_towerfall";
-    bool corrected = false;
-    if (validPackage) {
-        corrected = correct_selection_record(
-            state, forced.packageName.data(), forced.packageNameLength);
-    }
+    const auto* profile = prelaunch::configured(forced);
+    const bool corrected = profile != nullptr && correct_selection_record(state, *profile);
     if (corrected) {
-        g_prelaunchPublicationPending.store(true, std::memory_order_release);
+        g_prelaunchPublicationPending.store(profile, std::memory_order_release);
         g_directContractPublished.store(false, std::memory_order_release);
     }
 
@@ -591,15 +574,17 @@ __declspec(noinline) std::byte* __fastcall selection_launch_state_accessor(
     const int length = std::snprintf(
         line.data(),
         line.size(),
-        "ev=towerfall_direct stage=selection_contract result=%s caller_rva=0x%llX "
+        "ev=%s stage=selection_contract result=%s caller_rva=0x%llX "
         "source_before=%d source_after=%d destination_before=%d destination_after=%d "
-        "package=mission_towerfall contract=self_contained",
+        "package=%.*s contract=self_contained",
+        profile != nullptr ? profile->event : "mission_prelaunch",
         corrected ? "corrected" : "failed",
         static_cast<unsigned long long>(caller - image),
         static_cast<int>(source),
-        corrected ? static_cast<int>(kTowerfallActivity) : static_cast<int>(source),
+        corrected ? static_cast<int>(profile->activity) : static_cast<int>(source),
         static_cast<int>(destinationBefore),
-        corrected ? static_cast<int>(kTowerfallActivity) : static_cast<int>(destinationBefore));
+        corrected ? static_cast<int>(profile->activity) : static_cast<int>(destinationBefore),
+        static_cast<int>(forced.packageNameLength), forced.packageName.data());
     write_line(corrected ? core::log::Level::info : core::log::Level::warn, line, length);
     return state;
 }
@@ -615,9 +600,9 @@ __declspec(noinline) bool __fastcall selection_launch_publisher(
     const auto* const caller = static_cast<const std::byte*>(_ReturnAddress());
     const bool launcherCall = image != nullptr
                               && caller == image + kSelectionLaunchPublisherReturnRva;
-    const bool pending = call.accepts_side_effects() && launcherCall
-                         && g_prelaunchPublicationPending.exchange(
-                             false, std::memory_order_acq_rel);
+    const auto* profile = call.accepts_side_effects() && launcherCall
+        ? g_prelaunchPublicationPending.exchange(nullptr, std::memory_order_acq_rel) : nullptr;
+    const bool pending = profile != nullptr;
 
     std::uint8_t typeBefore = 0U;
     std::uint8_t stateBefore = 0U;
@@ -640,15 +625,9 @@ __declspec(noinline) bool __fastcall selection_launch_publisher(
     const std::size_t packageLength = bounded_package_length(
         descriptor != nullptr ? descriptor + kPublicationPackageOffset : nullptr,
         kSelectionPackageCapacity);
-    const bool populated = pending
-                           && source == static_cast<std::int16_t>(kTowerfallActivity)
-                           && destination == static_cast<std::int16_t>(kTowerfallActivity)
-                           && descriptor != nullptr
-                           && std::string_view(
-                                  reinterpret_cast<const char*>(
-                                      descriptor + kPublicationPackageOffset),
-                                  packageLength)
-                                  == "mission_towerfall";
+    const bool populated = pending && descriptor != nullptr
+        && prelaunch::matches(*profile, source, destination,
+            {reinterpret_cast<const char*>(descriptor + kPublicationPackageOffset), packageLength});
     const bool published = original(owner, descriptor);
 
     if (pending) {
@@ -659,16 +638,18 @@ __declspec(noinline) bool __fastcall selection_launch_publisher(
         const std::int32_t component = safe_read<std::int32_t>(
             manager != nullptr ? manager + 0xE93CU : nullptr, -1);
         const bool accepted = populated && published;
-        const bool retained = accepted && retain_prelaunch_route(owner, descriptor);
-        g_directContractPublished.store(accepted, std::memory_order_release);
+        const bool retained = accepted && profile == &prelaunch::kTowerfall
+            && retain_prelaunch_route(owner, descriptor);
+        g_directContractPublished.store(accepted && profile == &prelaunch::kTowerfall, std::memory_order_release);
         std::array<char, core::log::kLineCapacity> line{};
         const int length = std::snprintf(
             line.data(),
             line.size(),
-            "ev=towerfall_direct stage=prelaunch_publication result=%s caller_rva=0x%llX "
+            "ev=%s stage=prelaunch_publication result=%s caller_rva=0x%llX "
             "type=%u state_before=%u state_after=%u source=%d destination=%d package=%.*s "
             "owner=%p manager=%p identity=%d component_index=%d native_publish=%u "
             "route_retained=%u expected_activity_hash=0x%08X",
+            profile->event,
             accepted ? "accepted" : "rejected",
             static_cast<unsigned long long>(caller - image),
             static_cast<unsigned int>(typeBefore),
@@ -687,7 +668,7 @@ __declspec(noinline) bool __fastcall selection_launch_publisher(
             component,
             published ? 1U : 0U,
             retained ? 1U : 0U,
-            kTowerfallInvestmentHash);
+            profile->investmentHash);
         write_line(accepted ? core::log::Level::info : core::log::Level::warn, line, length);
 
         if (retained) {
@@ -701,7 +682,8 @@ __declspec(noinline) bool __fastcall selection_launch_publisher(
 }
 
 void try_install_prelaunch_contract() noexcept {
-    if (g_handles[selectionLaunchStateAccessorIndex].attached || !configured_towerfall()) {
+    const auto* profile = configured_prelaunch();
+    if (g_handles[selectionLaunchStateAccessorIndex].attached || profile == nullptr) {
         return;
     }
     const std::uint64_t now = GetTickCount64();
@@ -761,15 +743,17 @@ void try_install_prelaunch_contract() noexcept {
         const int length = std::snprintf(
             line.data(),
             line.size(),
-            "ev=towerfall_direct stage=install attempt=%u result=%s "
-            "mode=native_prelaunch_contract activity=266 investment_hash=0x%08X "
+            "ev=%s stage=install attempt=%u result=%s "
+            "mode=native_prelaunch_contract activity=%d investment_hash=0x%08X "
             "definition_hash=0x%08X activity_tag=0x%08X launch_descriptor_tag=0x%08X",
+            profile->event,
             attempt,
             installed ? "ok" : "deferred",
-            kTowerfallInvestmentHash,
-            kTowerfallPackageDefinitionHash,
-            kTowerfallActivityTag,
-            kTowerfallLaunchDescriptorTag);
+            static_cast<int>(profile->activity),
+            profile->investmentHash,
+            profile->packageHash,
+            profile->activityTag,
+            profile->launchTag);
         write_line(installed ? core::log::Level::info : core::log::Level::warn, line, length);
     }
     g_prelaunchInstallInProgress.store(false, std::memory_order_release);
@@ -2049,7 +2033,7 @@ void clear_runtime_state() noexcept {
         signature.store(~std::uint64_t{0}, std::memory_order_release);
     }
     g_lastRouteManager.store(nullptr, std::memory_order_release);
-    g_prelaunchPublicationPending.store(false, std::memory_order_release);
+    g_prelaunchPublicationPending.store(nullptr, std::memory_order_release);
     g_directContractPublished.store(false, std::memory_order_release);
     g_identityBindingInProgress.store(false, std::memory_order_release);
     g_identityBindingPublished.store(false, std::memory_order_release);

@@ -376,6 +376,9 @@ void uninstall_world_step() noexcept;
  */
 void observe_world_step() noexcept;
 
+/** Completes arrival from the camera frame after an early spawn stops polling its gate. */
+void poll_spawn_arrival() noexcept;
+
 /**
  * Attaches the spawn hold, which puts the player spawn after the world-transition fade is armed.
  * @return True when the target is found and the detour attaches.

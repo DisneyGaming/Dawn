@@ -10,6 +10,10 @@
 
 #include "omega_arc_charge_receipts.h"
 #include "omega_arc_charge_native.h"
+#include "gateway_native_read.h"
+#include "gateway_module_native_path.h"
+#include "gateway_module_damage.h"
+#include "../../../state/activity/gateway/runtime.h"
 #include "../../hooking/call_gate.h"
 #include "../../hooking/detour.h"
 #include "../../../core/logging/log.h"
@@ -44,7 +48,7 @@ using SinkEnable = void(__fastcall*)(void*, const void*) noexcept;
 using Interaction = void(__fastcall*)(void*, std::uint32_t, std::uint8_t, const void*,
     std::uint64_t, std::uint64_t, std::uint64_t, std::uint64_t, std::uint8_t, void*) noexcept;
 hooking::CallGate g_gate;
-std::array<hooking::detour::Handle, 4> g_handles{};
+std::array<hooking::detour::Handle, 8> g_handles{};
 std::atomic<Carry> g_carry{};
 std::atomic<Dunk> g_dunk{};
 std::atomic<Create> g_create{};
@@ -62,6 +66,7 @@ std::array<SinkSource, catalog::kCycles.size()> g_sinkSources{};
 std::uint64_t g_run{};
 lair::CrownToken g_heldToken{};
 unsigned g_lines{};
+unsigned g_gatewayModuleLines{};
 thread_local bool g_dunkInFlight{};
 /** Last reported native state of each deferred Crown transit object (platform,
  * bridge, rings, portal, destinations, final FX/disk): one line per change, so
@@ -688,6 +693,9 @@ void after_dunk(void* component, PendingDunk pending) noexcept {
                after.boss.generation);
     }
 }
+#include "gateway_module_receipts.inl"
+#include "gateway_module_damage_hooks.inl"
+
 __declspec(noinline) void __fastcall carry_hook(void* component, std::uint8_t state, const void* holder) noexcept {
     const hooking::CallGate::Scope scope{g_gate};
     const auto nav = state::activity::omega_presentation::navigation();
@@ -708,6 +716,7 @@ __declspec(noinline) bool __fastcall create_hook(void* component) noexcept {
     const hooking::CallGate::Scope scope{g_gate};
     const bool created = hooking::await_original(g_create)(component);
     if (created && scope.accepts_side_effects()) {
+        observe_gateway_module(component);
         const auto nav = state::activity::omega_presentation::navigation();
         if (nav.enabled) {
             observe_carrier(component, nav.run, "create");
@@ -782,11 +791,15 @@ bool install_omega_arc_charge_receipts() noexcept {
     if (g_handles[0].attached) { return g_gate.accepting(); }
     g_image = reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
     if (g_image == 0) { return false; }
-    const std::array<hooking::detour::Spec, 4> specs{{
+    const std::array<hooking::detour::Spec, 8> specs{{
         {target(0xD99620U, {0x48,0x89,0x6C,0x24,0x10,0x48,0x89,0x74,0x24,0x18,0x57,0x48,0x83,0xEC,0x50,0x49}), reinterpret_cast<void*>(&carry_hook)},
         {target(0xF36640U, {0x48,0x89,0x5C,0x24,0x18,0x57,0x48,0x83,0xEC,0x20,0x44,0x8B,0x01,0x48,0x8B,0xD9}), reinterpret_cast<void*>(&dunk_hook)},
         {target(0x9EFFC0U, {0x48,0x89,0x74,0x24,0x18,0x48,0x89,0x7C,0x24,0x20,0x41,0x56,0x48,0x83,0xEC,0x20}), reinterpret_cast<void*>(&create_hook)},
         {target(0xF32CD0U, {0x48,0x89,0x5C,0x24,0x10,0x55,0x56,0x57,0x41,0x54,0x41,0x55,0x41,0x56,0x41,0x57}), reinterpret_cast<void*>(&interaction_hook)},
+        {target(0x9F0750U, {0x40,0x55,0x56,0x41,0x54,0x48,0x8D,0xAC,0x24,0x60,0xF4,0xFF,0xFF,0x48,0x81,0xEC}), reinterpret_cast<void*>(&gateway_sense_hook)},
+        {target(0xB804E0U, {0xE9,0xA5,0xC5,0xAB,0x04,0x53,0x52,0x41,0x54,0x41,0x53,0x41,0x55,0x57,0x41,0x51}), reinterpret_cast<void*>(&gateway_damage_hook)},
+        {target(0xCDCB60U, {0x48,0x8B,0x41,0x08,0x0F,0xB6,0x80,0x38,0x03,0x00,0x00,0xD0,0xE8,0xF6,0xD0,0x24}), reinterpret_cast<void*>(&gateway_damage_gate_hook)},
+        {target(0xB7E3C0U, {0x48,0x8B,0xC4,0x48,0x89,0x58,0x18,0x48,0x89,0x70,0x20,0x55,0x57,0x41,0x56,0x48}), reinterpret_cast<void*>(&gateway_damage_summary_hook)},
     }};
     g_association = reinterpret_cast<Association>(target(0x352310U,
         {0x48,0x83,0xEC,0x08,0x44,0x8B,0x51,0x04,0x4C,0x8B,0xCA,0xC7,0x02,0xFF,0xFF,0xFF}));
@@ -799,7 +812,8 @@ bool install_omega_arc_charge_receipts() noexcept {
     g_sinkEnable = reinterpret_cast<SinkEnable>(target(0xF33930U,
         {0x48,0x89,0x5C,0x24,0x08,0x44,0x8B,0x12,0x45,0x33,0xC9,0x48,0x8B,0xDA,0x4C,0x8B}));
     if (specs[0].target == nullptr || specs[1].target == nullptr || specs[2].target == nullptr
-        || specs[3].target == nullptr || g_sinkEnable == nullptr
+        || specs[3].target == nullptr || specs[4].target == nullptr || specs[5].target == nullptr
+        || specs[6].target == nullptr || specs[7].target == nullptr || g_sinkEnable == nullptr
         || g_association == nullptr || g_holder == nullptr || g_localPlayer == nullptr
         || g_controlled == nullptr || !hooking::detour::install(specs, g_handles)) {
         core::log::write(core::log::Channel::client, core::log::Level::info,
@@ -811,16 +825,24 @@ bool install_omega_arc_charge_receipts() noexcept {
     hooking::publish_original(g_dunk, reinterpret_cast<Dunk>(g_handles[1].original));
     hooking::publish_original(g_create, reinterpret_cast<Create>(g_handles[2].original));
     hooking::publish_original(g_interaction, reinterpret_cast<Interaction>(g_handles[3].original));
+    hooking::publish_original(g_gatewaySense, reinterpret_cast<SourceSense>(g_handles[4].original));
+    hooking::publish_original(g_moduleDamage, reinterpret_cast<ModuleDamage>(g_handles[5].original));
+    hooking::publish_original(g_moduleDamageGate, reinterpret_cast<ModuleDamageGate>(g_handles[6].original));
+    hooking::publish_original(g_moduleDamageSummary, reinterpret_cast<ModuleDamageSummary>(g_handles[7].original));
     g_gate.accept();
     core::log::write(core::log::Channel::client, core::log::Level::info,
-                    "ev=omega_charge stage=install result=ok carry=D99620 dunk=F36640 create=9EFFC0 interaction=F32CD0 enable=F33930 mutation=native_sink_enable_with_observed_receipts");
+                    "ev=omega_charge stage=install result=ok carry=D99620 dunk=F36640 create=9EFFC0 interaction=F32CD0 enable=F33930 gateway_module_damage=B804E0 gate=CDCB60 summary=B7E3C0 mutation=native_sink_enable_with_observed_receipts");
     return true;
 }
 void quiesce_omega_arc_charge_receipts() noexcept { g_gate.quiesce(); }
 bool uninstall_omega_arc_charge_receipts() noexcept {
     quiesce_omega_arc_charge_receipts();
     if (!g_handles[0].attached) { return true; }
-    const std::array<hooking::detour::ProtectedCodeEntry, 14> protectedCode{{
+    const std::array<hooking::detour::ProtectedCodeEntry, 21> protectedCode{{
+        {reinterpret_cast<void*>(&gateway_damage_hook)}, {reinterpret_cast<void*>(&gateway_damage_gate_hook)},
+        {reinterpret_cast<void*>(&gateway_damage_summary_hook)}, {reinterpret_cast<void*>(&gateway_damage_receipt)},
+        {reinterpret_cast<void*>(&gateway_damage_blocked)},
+        {reinterpret_cast<void*>(&gateway_sense_hook)}, {reinterpret_cast<void*>(&observe_gateway_module)},
         {reinterpret_cast<void*>(&carry_hook)}, {reinterpret_cast<void*>(&dunk_hook)},
         {reinterpret_cast<void*>(&create_hook)},
         {reinterpret_cast<void*>(&interaction_hook)}, {reinterpret_cast<void*>(&enable_sink)},
@@ -835,6 +857,10 @@ bool uninstall_omega_arc_charge_receipts() noexcept {
     if (hooking::detour::uninstall(g_handles, protectedCode, idle) != hooking::detour::UninstallResult::removed) { return false; }
     g_carry.store(nullptr, std::memory_order_release); g_dunk.store(nullptr, std::memory_order_release);
     g_create.store(nullptr, std::memory_order_release);
+    g_gatewaySense.store(nullptr, std::memory_order_release);g_gatewayModuleLines=0;
+    g_gatewayModuleState.store(UINT64_MAX,std::memory_order_relaxed);
+    g_moduleDamage.store(nullptr,std::memory_order_release);g_moduleDamageGate.store(nullptr,std::memory_order_release);
+    g_moduleDamageSummary.store(nullptr,std::memory_order_release);
     g_interaction.store(nullptr, std::memory_order_release);
     g_association = nullptr; g_holder = nullptr; g_localPlayer = nullptr; g_controlled = nullptr; g_sinkEnable = nullptr; g_image = 0;
     AcquireSRWLockExclusive(&g_lock); g_run = 0; g_bindings.reset(0); g_sinkSources = {}; g_heldToken = {};

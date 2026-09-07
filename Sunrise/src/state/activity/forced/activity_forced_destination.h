@@ -37,6 +37,12 @@ void stored(ForcedDestination& value) noexcept;
 /** Drops the selection and the switch, the same as the interface's clear action. */
 void clear() noexcept;
 
+/** Commits a supported hidden mission from the exact Chosen donor tuple.
+ * Returns the same configuration committed under the state lock. */
+[[nodiscard]] bool commit_prelaunch_authored_selection(
+    std::int16_t sourceActivityIndex, std::int16_t destinationActivityIndex,
+    ForcedDestination& committed) noexcept;
+
 /**
  * Commits a staged Homecoming override at the native launch boundary after Chosen has supplied
  * its authored activity selection.
@@ -50,7 +56,7 @@ void clear() noexcept;
 
 /**
  * @return True while the stored selection is complete and operationally committed.
- * Homecoming remains staged until Chosen supplies its authored activity-282 descriptor.
+ * Homecoming and Gateway remain staged until Chosen supplies its authored activity-282 descriptor.
  */
 [[nodiscard]] bool override_active() noexcept;
 

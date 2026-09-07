@@ -1,3 +1,4 @@
+#include "../../state/activity/gateway/runtime.h"
 /**
  * The local player's published world position.
  * The game threads write it and the interface reads it, so a seqlock guards the vector.
@@ -11,6 +12,7 @@
 #include "../../core/logging/log.h"
 
 #include <atomic>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 
@@ -122,9 +124,13 @@ void observe_crown_route(void* component,const teleport::Vector& position) noexc
  */
 [[nodiscard]] bool publish_from(void* component) noexcept {
     teleport::Vector position{};
-    // The body is gone at rest and during a load, so the last position stands until a new one
-    // reads back. A player who cannot be read has not moved.
-    if (!teleport::read_position(component, position)) {
+    std::uint32_t before=UINT32_MAX,after=UINT32_MAX;
+    // A retired component can retain the player's low pool index. Check full
+    // ownership on both sides of the body read, including a respawn during it.
+    if(!teleport::read_local_player_entity(component,before)
+        || !teleport::read_position(component,position)
+        || !teleport::read_local_player_entity(component,after) || before!=after
+        || !std::isfinite(position[0]) || !std::isfinite(position[1]) || !std::isfinite(position[2])) {
         return false;
     }
     g_sequence.fetch_add(1, std::memory_order_acq_rel);
@@ -132,6 +138,7 @@ void observe_crown_route(void* component,const teleport::Vector& position) noexc
     g_sequence.fetch_add(1, std::memory_order_release);
     g_present.store(true, std::memory_order_release);
     state::activity::omega_presentation::observe_position({position[0], position[1], position[2]});
+    state::activity::gateway::observe_position(position[0],position[1],position[2]);
     observe_crown_route(component,position);
     return true;
 }
@@ -143,18 +150,20 @@ void observe(void* component) noexcept {
     if (component == nullptr) {
         return;
     }
-    void* const known = g_component.load(std::memory_order_relaxed);
-    if (known == component) {
-        (void)publish_from(component);
+    void* known = g_component.load(std::memory_order_relaxed);
+    if(known!=nullptr && known!=component) {
+        if(teleport::owns_local_player(known)) { return; }
+        g_component.compare_exchange_strong(known,nullptr,std::memory_order_relaxed);
+        g_present.store(false,std::memory_order_release);
+    }
+    if(!publish_from(component)) {
+        void* expected=component;
+        if(g_component.compare_exchange_strong(expected,nullptr,std::memory_order_relaxed)) {
+            g_present.store(false,std::memory_order_release);
+        }
         return;
     }
-    // The ownership test is paid only until the player's component is known. The frame poll drops
-    // a stale one, which is what lets a new destination's component be found.
-    if (known != nullptr || !teleport::owns_local_player(component)) {
-        return;
-    }
-    g_component.store(component, std::memory_order_relaxed);
-    (void)publish_from(component);
+    g_component.store(component,std::memory_order_relaxed);
 }
 
 /** Refreshes the position for a player at rest, and drops a component that is no longer theirs. */
@@ -167,13 +176,12 @@ void poll() noexcept {
     if (component == nullptr) {
         return;
     }
-    if (!teleport::owns_local_player(component)) {
+    if (!publish_from(component)) {
         g_component.store(nullptr, std::memory_order_relaxed);
         g_present.store(false, std::memory_order_release);
         return;
     }
     g_component.store(component, std::memory_order_relaxed);
-    (void)publish_from(component);
 }
 
 /** Drops the published position. */

@@ -84,9 +84,34 @@ inline constexpr std::uint16_t kTowerfallOpeningSlice = 72;
 
 inline constexpr ForcedDestination kTowerfallOpening = towerfall_opening();
 
+/** Gateway's Lighthouse opening: bubble 15, region 120, and the package-derived
+ * landing-zone spawn set confirmed in game. */
+inline constexpr char kGatewayPackageName[] = "mission_abs";
+inline constexpr std::uint8_t kGatewayOpeningBubble = 15;
+inline constexpr std::uint16_t kGatewayOpeningSlice = 120;
+inline constexpr std::uint32_t kGatewayOpeningSpawn = 0x69F52B3EU;
+[[nodiscard]] constexpr ForcedDestination gateway_opening() noexcept {
+    ForcedDestination value{};
+    for (std::size_t index = 0; index < sizeof kGatewayPackageName - 1; ++index) {
+        value.packageName[index] = kGatewayPackageName[index];
+    }
+    value.packageNameLength = sizeof kGatewayPackageName - 1;
+    value.bubble = kGatewayOpeningBubble;
+    value.sliceSet = kGatewayOpeningSlice;
+    value.spawnSetHash = kGatewayOpeningSpawn;
+    value.hasBubble = true;
+    value.hasSliceSet = true;
+    value.hasSpawnSetHash = true;
+    value.enabled = true;
+    return value;
+}
+inline constexpr ForcedDestination kGatewayOpening = gateway_opening();
+
+
 } // namespace profiles
 
 static_assert(active(profiles::kTowerfallOpening));
+static_assert(active(profiles::kGatewayOpening));
 
 /**
  * Tests whether a candidate can be stored, complete or not.

@@ -1,4 +1,5 @@
 #pragma once
+#include "coo/native_device_authority.h"
 
 #include "omega_first_mancannon_authority.h"
 #include <bit>
@@ -183,14 +184,7 @@ struct Preparation final { std::uint32_t generation{};std::uint8_t index{}; };
 inline constexpr std::size_t kGateBits=147;
 template<class Writer>
 [[nodiscard]] bool write_channels(Writer& writer,float position,std::uint16_t revision) noexcept {
-    const auto channel=[&](float value,std::uint16_t rev) noexcept {
-        return writer.write(std::bit_cast<std::uint32_t>(value),32)
-            && writer.write(static_cast<std::uint32_t>(rev)+0x8000U,16)
-            && writer.write(0U,1);
-    };
-    // Zero revisions leave native power1/lock0 untouched. Smooth native device
-    // interpolation owns the animation; no host timing or manual model phase.
-    return channel(position,revision) && channel(1.F,0) && channel(0.F,0);
+    return coo::native_device::channels(writer,position,revision);
 }
 template<class Writer>
 [[nodiscard]] bool write_gate(Writer& writer,const Source& item,const TransitAuthority& state) noexcept {

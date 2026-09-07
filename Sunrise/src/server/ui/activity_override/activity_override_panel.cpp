@@ -17,6 +17,7 @@
 #include "../../../core/ui/components/section/ui_section_component.h"
 #include "../../../core/ui/components/toggle/ui_toggle_component.h"
 #include "../../../state/activity/forced/activity_forced_destination.h"
+#include "../../../state/activity/forced/prelaunch_profile.h"
 #include "../../../state/activity/omega_ending.h"
 #include "activity_override_lists.h"
 
@@ -27,8 +28,6 @@ namespace forced = state::activity::forced;
 namespace label = core::ui::components::label;
 namespace picker = core::ui::components::picker;
 
-/** Authored Homecoming opening recovered from mission_towerfall's scenario definition. */
-constexpr std::string_view kTowerfallPackage = forced::profiles::kTowerfallPackageName;
 /** Preview shown by a picker with nothing chosen. */
 constexpr char kUnset[] = "none";
 /** Preview shown by a picker whose list is empty. */
@@ -86,17 +85,18 @@ void follow_destination(const forced::ForcedDestination& value, Lists& rows) noe
 }
 
 /**
- * Selects the content-derived Homecoming opening as one isolated mission profile.
+ * Selects a content-derived opening as one isolated mission profile.
  * The next native Chosen launch supplies the transport contract. The focused prelaunch owner
- * changes that contract to Towerfall before Destiny publishes it. No spawn is forced, so the
- * authored arrival path remains responsible for choosing its point inside bubble zero.
- * @return True when the extracted Towerfall layout contains the measured opening.
+ * changes that contract before Destiny publishes it. The profile can name its arrival spawn set.
+ * @return True when the extracted layout contains the selected opening.
  */
-[[nodiscard]] bool apply_towerfall_profile(forced::ForcedDestination& value,
-                                           Lists& rows) noexcept {
+[[nodiscard]] bool apply_opening_profile(forced::ForcedDestination& value,
+                                           Lists& rows,
+                                           const forced::ForcedDestination& candidate) noexcept {
+    const auto package = name_of(candidate);
     std::size_t activityRow = kNoRow;
     for (std::size_t index = 0; index < rows.activityCount; ++index) {
-        if (std::string_view(rows.activities[index].data()) == kTowerfallPackage) {
+        if (std::string_view(rows.activities[index].data()) == package) {
             activityRow = index;
             break;
         }
@@ -105,12 +105,11 @@ void follow_destination(const forced::ForcedDestination& value, Lists& rows) noe
         return false;
     }
 
-    forced::ForcedDestination candidate = forced::profiles::kTowerfallOpening;
-    refresh_destination(rows, kTowerfallPackage);
+    refresh_destination(rows, package);
 
     std::size_t bubbleRow = kNoRow;
     for (std::size_t index = 0; index < rows.bubbleCount; ++index) {
-        if (rows.bubbleOrdinals[index] == forced::profiles::kTowerfallOpeningBubble) {
+        if (rows.bubbleOrdinals[index] == candidate.bubble) {
             bubbleRow = index;
             break;
         }
@@ -119,11 +118,11 @@ void follow_destination(const forced::ForcedDestination& value, Lists& rows) noe
         follow_destination(value, rows);
         return false;
     }
-    refresh_bubble(rows, forced::profiles::kTowerfallOpeningBubble);
+    refresh_bubble(rows, candidate.bubble);
 
     std::size_t sliceRow = kNoRow;
     for (std::size_t index = 0; index < rows.sliceCount; ++index) {
-        if (rows.sliceValues[index] == forced::profiles::kTowerfallOpeningSlice) {
+        if (rows.sliceValues[index] == candidate.sliceSet) {
             sliceRow = index;
             break;
         }
@@ -133,11 +132,26 @@ void follow_destination(const forced::ForcedDestination& value, Lists& rows) noe
         return false;
     }
 
+    std::size_t spawnRow = 0;
+    if (candidate.hasSpawnSetHash) {
+        spawnRow = kNoRow;
+        for (std::size_t index = 0; index < rows.spawnCount; ++index) {
+            if (rows.spawnHashes[index] == candidate.spawnSetHash) {
+                spawnRow = index + 1; // Row zero is the optional absent set.
+                break;
+            }
+        }
+        if (spawnRow == kNoRow) {
+            follow_destination(value, rows);
+            return false;
+        }
+    }
+
     value = candidate;
     g_activityRow = activityRow;
     g_bubbleRow = bubbleRow;
     g_sliceRow = sliceRow;
-    g_spawnRow = 0;
+    g_spawnRow = spawnRow;
     return true;
 }
 
@@ -290,9 +304,8 @@ void draw_status(const forced::ForcedDestination& value, const Lists& rows) noex
     }
     ImGui::TextUnformatted(value.hasSpawnSetHash ? "active, forcing the chosen spawn set"
                                                  : "active, the client picks its own spawn");
-    if (name_of(value) == kTowerfallPackage) {
+    if (forced::prelaunch::configured(value) != nullptr) {
         ImGui::TextUnformatted("prelaunch armed; start Chosen from the Director");
-        ImGui::TextDisabled("Destiny will publish a self-contained activity-266 contract");
     }
     if (rows.spawnUnavailable) {
         ImGui::TextDisabled("this destination's spawn sets could not be listed");
@@ -351,7 +364,11 @@ void draw() noexcept {
         changed = true;
     }
     if (ImGui::Button("Towerfall opening")) {
-        changed = apply_towerfall_profile(value, rows) || changed;
+        changed = apply_opening_profile(value, rows, forced::profiles::kTowerfallOpening) || changed;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Gateway opening")) {
+        changed = apply_opening_profile(value, rows, forced::profiles::kGatewayOpening) || changed;
     }
     ImGui::SameLine();
     if (ImGui::Button("Clear")) {

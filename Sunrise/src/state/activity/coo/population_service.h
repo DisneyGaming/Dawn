@@ -60,6 +60,9 @@ public:
         }
         return false;
     }
+    [[nodiscard]] bool admitted(std::size_t index, std::uint8_t requested) const noexcept {
+        return index < Groups && enabled_[index] && counts_[index] == requested;
+    }
     [[nodiscard]] bool cleared(std::size_t index, std::uint8_t requested) const noexcept {
         if (index >= Groups || !enabled_[index] || counts_[index] != requested) { return false; }
         for (std::uint8_t n = 0; n < counts_[index]; ++n) { if (!actors_[index][n].dead) { return false; } }

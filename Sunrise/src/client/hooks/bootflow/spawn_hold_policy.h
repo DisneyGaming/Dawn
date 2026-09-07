@@ -52,6 +52,25 @@ struct TowerfallReadiness final {
            && input.localReady && input.scriptRuntime && input.directorRuntime;
 }
 
+/** Evidence for completing a pending arrival after the native player already spawned. */
+struct FrameArrival final {
+    Phase phase{Phase::idle};
+    bool alreadyReleased{};
+    bool controlledEntity{};
+    bool worldReadable{};
+    std::int32_t worldState{-1};
+    bool localReady{};
+    bool loaderReadable{};
+    bool loaderBusy{};
+};
+
+/** A frame may finish the fade only with current player ownership and a fully loaded world. */
+[[nodiscard]] constexpr bool frame_arrival_ready(const FrameArrival& input) noexcept {
+    return input.phase == Phase::arrived && !input.alreadyReleased && input.controlledEntity
+           && input.worldReadable && input.worldState == 3 && input.localReady
+           && input.loaderReadable && !input.loaderBusy;
+}
+
 /**
  * Keeps spawn suppression and fade release on opposite sides of the arrival boundary.
  * Fade release is legal only after arrival, once no configured hold remains, and only once.

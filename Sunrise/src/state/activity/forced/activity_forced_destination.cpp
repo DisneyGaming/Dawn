@@ -1,4 +1,5 @@
 #include "activity_forced_destination.h"
+#include "prelaunch_profile.h"
 
 #include <Windows.h>
 
@@ -18,14 +19,13 @@ namespace {
 
 /** Authored investment activity indices recovered from the pinned client's activity table. */
 constexpr std::int16_t kTowerCinematicActivityIndex = 2;
-constexpr std::int16_t kHomecomingActivityIndex = 266;
 constexpr std::int16_t kChosenActivityIndex = 282;
 constexpr std::int16_t kOmegaActivityIndex = 299;
 
-/** Homecoming must not become global until Chosen's authored route descriptor reaches service 6. */
-std::atomic_bool g_homecomingCommitted{};
+/** Hidden missions stay staged until their supported native launch boundary. */
+std::atomic_bool g_prelaunchCommitted{};
 /** Bounds the staged-fallback diagnostic to one line per configured destination. */
-std::atomic_bool g_homecomingStagedReported{};
+std::atomic_bool g_prelaunchStagedReported{};
 /** Final host-migration acknowledgement for the current authored opening launch. */
 std::atomic_bool g_openingHostReady{};
 /** Protected with the stored configuration by g_stateLock. A completed Omega
@@ -61,8 +61,8 @@ opening_activity_index(std::string_view packageName) noexcept {
     if (packageName == "cine_110_twr") {
         return kTowerCinematicActivityIndex;
     }
-    if (packageName == "mission_towerfall") {
-        return kHomecomingActivityIndex;
+    if (const auto* profile = prelaunch::find(packageName)) {
+        return profile->activity;
     }
     if (packageName == "mission_scot") {
         return kOmegaActivityIndex;
@@ -159,21 +159,22 @@ bool publish(const ForcedDestination& value) noexcept {
     runtime::storage::g_state.activity.forced = value;
     if (changed || !active(value)) { g_omegaCompletionSuspended = false; }
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
-    if (changed || !active(value) || !homecoming(value)) {
-        g_homecomingCommitted.store(false, std::memory_order_release);
-        g_homecomingStagedReported.store(false, std::memory_order_release);
+    if (changed || !active(value) || !prelaunch::configured(value)) {
+        g_prelaunchCommitted.store(false, std::memory_order_release);
+        g_prelaunchStagedReported.store(false, std::memory_order_release);
     }
     // Readiness belongs to the complete forced-destination configuration, not to Homecoming.
     // An unchanged mission_scot publish must not erase the final peer-reestablish acknowledgement.
     if (changed || !active(value)) {
         g_openingHostReady.store(false, std::memory_order_release);
     }
-    if (changed && active(value) && homecoming(value)) {
+    if (changed && active(value) && prelaunch::configured(value)) {
         std::array<char, 256> line{};
         const int length = std::snprintf(
             line.data(),
             line.size(),
-            "ev=activity_profile stage=selection result=staged profile=towerfall package=mission_towerfall bubble=%u slice=%u spawn=%s commit=awaiting_chosen_activity_282",
+            "ev=activity_profile stage=selection result=staged package=%.*s bubble=%u slice=%u spawn=%s commit=awaiting_chosen_activity_282",
+            static_cast<int>(value.packageNameLength), value.packageName.data(),
             static_cast<unsigned>(value.bubble),
             static_cast<unsigned>(value.sliceSet),
             value.hasSpawnSetHash ? "forced" : "authored");
@@ -236,31 +237,43 @@ void clear() noexcept {
     runtime::storage::g_state.activity.forced = {};
     g_omegaCompletionSuspended = false;
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
-    g_homecomingCommitted.store(false, std::memory_order_release);
-    g_homecomingStagedReported.store(false, std::memory_order_release);
+    g_prelaunchCommitted.store(false, std::memory_order_release);
+    g_prelaunchStagedReported.store(false, std::memory_order_release);
     g_openingHostReady.store(false, std::memory_order_release);
+}
+
+bool commit_prelaunch_authored_selection(std::int16_t sourceActivityIndex,
+                                          std::int16_t destinationActivityIndex,
+                                          ForcedDestination& committed) noexcept {
+    // Select and commit under the same lock as panel changes. Return the exact profile
+    // that was committed so the native hook cannot resnapshot a different mission.
+    AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
+    const auto value = runtime::storage::g_state.activity.forced;
+    const bool valid = !g_omegaCompletionSuspended && prelaunch::configured(value)
+        && prelaunch::donor(sourceActivityIndex, destinationActivityIndex);
+    if (valid) {
+        committed = value;
+        g_prelaunchCommitted.store(true, std::memory_order_release);
+        g_openingHostReady.store(false, std::memory_order_release);
+    }
+    ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
+    if (valid) {
+        std::array<char, 256> line{};
+        const int length = std::snprintf(line.data(), line.size(),
+            "ev=activity_override stage=activation result=committed destination=%.*s trigger=authored_chosen_prelaunch_282",
+            static_cast<int>(value.packageNameLength), value.packageName.data());
+        if (length > 0) { core::log::write(core::log::Channel::server,
+            core::log::Level::info, {line.data(), static_cast<std::size_t>(length)}); }
+    }
+    return valid;
 }
 
 bool commit_homecoming_authored_selection(std::int16_t sourceActivityIndex,
                                           std::int16_t destinationActivityIndex) noexcept {
     ForcedDestination value{};
     snapshot(value);
-    if (!active(value) || !homecoming(value) || sourceActivityIndex != kChosenActivityIndex
-        || destinationActivityIndex != kChosenActivityIndex) {
-        return false;
-    }
-
-    const bool wasCommitted = g_homecomingCommitted.exchange(true, std::memory_order_acq_rel);
-    if (!wasCommitted) {
-        // This commit is the launch boundary. Never let a prior activity's host acknowledgement
-        // activate the new launch's mission-director authority object.
-        g_openingHostReady.store(false, std::memory_order_release);
-        core::log::write(
-            core::log::Channel::server,
-            core::log::Level::info,
-            "ev=activity_override stage=activation result=committed destination=mission_towerfall trigger=authored_chosen_prelaunch_282");
-    }
-    return true;
+    if (!homecoming(value)) { return false; }
+    return commit_prelaunch_authored_selection(sourceActivityIndex, destinationActivityIndex, value);
 }
 
 /** @return True while the stored selection is complete and operationally committed. */
@@ -268,8 +281,8 @@ bool override_active() noexcept {
     ForcedDestination value{};
     snapshot(value);
     return active(value)
-           && (!homecoming(value)
-               || g_homecomingCommitted.load(std::memory_order_acquire));
+           && (!prelaunch::configured(value)
+               || g_prelaunchCommitted.load(std::memory_order_acquire));
 }
 
 bool mission_host_reestablishment_enabled() noexcept {
@@ -321,10 +334,28 @@ bool apply(destination::DestinationSelection& selection) noexcept {
         return false;
     }
 
-    if (homecoming(value)
-        && !g_homecomingCommitted.load(std::memory_order_acquire)) {
+    if (prelaunch::configured(value) == &prelaunch::kGateway) {
+        const std::string_view incoming(reinterpret_cast<const char*>(selection.packageName.data()),
+            selection.packageNameLength <= selection.packageName.size() ? selection.packageNameLength : 0);
+        if (!g_prelaunchCommitted.load(std::memory_order_acquire)
+            || selection.descriptorBitLength == 0 || !selection.hasDescriptorName
+            || selection.descriptorBitLength > selection.descriptorBits.size() * 8
+            || selection.descriptorNameBit < 28
+            || selection.descriptorNameBit + destination::kPackageNameCapacity * 8 > selection.descriptorBitLength
+            || !prelaunch::matches(prelaunch::kGateway, selection.previousActivityIndex,
+                selection.activityIndex, incoming)) {
+            if (!g_prelaunchStagedReported.exchange(true, std::memory_order_acq_rel)) {
+                core::log::write(core::log::Channel::server, core::log::Level::info,
+                    "ev=activity_override stage=activation result=staged destination=mission_abs trigger=awaiting_native_gateway_contract_292");
+            }
+            return false;
+        }
+    }
+
+    if (prelaunch::configured(value)
+        && !g_prelaunchCommitted.load(std::memory_order_acquire)) {
         if (!authored_chosen_selection(selection)) {
-            if (!g_homecomingStagedReported.exchange(true, std::memory_order_acq_rel)) {
+            if (!g_prelaunchStagedReported.exchange(true, std::memory_order_acq_rel)) {
                 core::log::write(
                     core::log::Channel::server,
                     core::log::Level::info,
@@ -332,7 +363,7 @@ bool apply(destination::DestinationSelection& selection) noexcept {
             }
             return false;
         }
-        g_homecomingCommitted.store(true, std::memory_order_release);
+        g_prelaunchCommitted.store(true, std::memory_order_release);
         g_openingHostReady.store(false, std::memory_order_release);
         core::log::write(
             core::log::Channel::server,

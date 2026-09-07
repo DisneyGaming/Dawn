@@ -1,5 +1,6 @@
 #include "../../../state/activity/omega/omega_ending_authority.h"
 #include <array>
+#include "../../../state/activity/gateway/authority.h"
 
 #include "sensor_auth_update.h"
 #include "../../../state/activity/omega/omega_progression.h"
@@ -205,7 +206,12 @@ constexpr std::size_t kSpawnKeyCount = 32;
  */
 [[nodiscard]] bool write_lifetime(bits::Writer& writer, const Snapshot& snapshot,
                                   bool missionRestriction) noexcept {
-    bool encoded = writer.write(std::uint32_t{snapshot.lifetime} + 1, 4) && writer.write(1, 3)
+    // Gateway terminal publication is scoped to its selected controller. The native
+    // lifetime enum/output is reconstructed as phase6 / successful result1; the
+    // mission-complete HUD response requires the first live ending validation.
+    const bool gatewayFinished=snapshot.gateway.enabled && snapshot.gateway.finished;
+    const auto lifetime=gatewayFinished?6U:std::uint32_t{snapshot.lifetime};
+    bool encoded = writer.write(lifetime + 1, 4) && writer.write(gatewayFinished?2U:1U, 3)
                    && writer.write(0, kPresenceWidth) && writer.write(kSignedZero, 32)
                    && writer.write(0, 32) && writer.write(kSignedZero+(missionRestriction?14U:0U), 32)
                    && writer.write(snapshot.omegaForestVexEncounters ? 2U : 1U, 6)
@@ -732,6 +738,7 @@ legacy_auth_body_bits(const Snapshot& snapshot,
                std::uint8_t slotType,
                std::uint16_t slotIndex,
                bool carriesPlayerKey) noexcept {
+    if(const auto count=state::activity::gateway::body_bits(snapshot.gateway,key,slotType,slotIndex)) { return count; }
     if(snapshot.omegaEndingSelected && state::activity::omega::ending::slot(key,slotType,slotIndex)) return 263;
     if (snapshot.omegaBossAuthority && boss::parent_slot(key, slotType, slotIndex)) return boss::kParentBits;
     if (snapshot.omegaBossAuthority && boss::member_slot(key, slotType, slotIndex)) return boss::kMemberBits;
@@ -841,6 +848,9 @@ bool legacy_write_auth_body(bits::Writer& writer,
                      std::uint8_t slotType,
                      std::uint16_t slotIndex,
                      bool carriesPlayerKey) noexcept {
+    if(state::activity::gateway::body_bits(snapshot.gateway,key,slotType,slotIndex)) {
+        return state::activity::gateway::write_body(writer,snapshot.gateway,key,slotType,slotIndex);
+    }
     const std::size_t start = writer.bit_count();
     const std::size_t expected =
         legacy_auth_body_bits(snapshot, key, slotType, slotIndex, carriesPlayerKey);

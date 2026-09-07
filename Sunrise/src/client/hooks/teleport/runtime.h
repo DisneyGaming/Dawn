@@ -19,6 +19,9 @@ using ControlledHandle = std::uint32_t* (*)(std::uint32_t*);
 /** Returns the camera pose block array. The pointer in its global is obfuscated, so we call it. */
 using CameraSingleton = std::byte* (*)();
 
+/** Reads the native controlled entity even when its physics body is asleep. Game thread only. */
+[[nodiscard]] bool read_controlled_entity(std::uint32_t& entity) noexcept;
+
 /**
  * Publishes the two functions the hooks call.
  * @param controlled Writes the local player's object handle.

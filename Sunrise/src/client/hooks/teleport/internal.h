@@ -13,8 +13,7 @@ using patterns::signature;
 using patterns::signature_length;
 
 /**
- * Object-handle index bits. Two handles name the same object exactly when these bits match, so
- * comparing them is the whole ownership test. No datum array lookup is needed.
+ * Object-handle index bits for pool lookup only. Ownership must compare the full salted handle.
  */
 inline constexpr std::uint32_t kHandleIndexMask = 0x1FFF;
 /** The controlled-object getter writes this when the local player owns no object. */
@@ -25,7 +24,7 @@ inline constexpr std::size_t kCameraBlockStride = 0xC50;
 /** Camera forward vector. Its default is (1,0,0), so the basis is X forward, Z up. */
 inline constexpr std::size_t kCameraForwardX = 1468;
 
-/** Object handle the physics component drives, as a u16. */
+/** Full salted object handle the physics component drives, as a u32. */
 inline constexpr std::size_t kPhysicsComponentObjectHandle = 44;
 /** Non-zero here stops the sync before it reads anything else. */
 inline constexpr std::size_t kPhysicsComponentSuppress = 568;
