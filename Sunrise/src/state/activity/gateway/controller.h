@@ -89,6 +89,7 @@ private:
     coo::ObjectService<3> objects_{};
     coo::DestructibleService<ModuleReceipt> destructible_{};
     coo::SceneOrchestration<SceneReceipt> scene_{};
+    coo::EventTimeline<coo::Generation,1> returnCue_{};
     coo::ObjectiveService objectives_{};
     void project_services() noexcept;
     std::bitset<16> dialogueSubmitted_{};

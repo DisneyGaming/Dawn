@@ -4,7 +4,8 @@
 #include <span>
 namespace sunrise::client::hooks::bootflow::coo_native {
 // Read-only counterpart of native resource iterator 591290/59A350. A component
-// must resolve back to itself and the expected entity. Ambiguous matches fail.
+// must resolve back to itself and the expected entity. Reflected base/interface
+// rows may alias that same component; only distinct matching components conflict.
 template<class Read> bool component(Read& read,std::uint32_t bundle,std::uint32_t entity,
                                    std::uint32_t kind,std::uintptr_t& result) noexcept {
     result=0;std::array<std::uint32_t,64> visited{};std::size_t used{};
@@ -25,7 +26,7 @@ template<class Read> bool component(Read& read,std::uint32_t bundle,std::uint32_
                 if(!read.value(address+4,actual)) { return false; }if(actual!=kind) { continue; }
                 std::uintptr_t resolved{};
                 if(!read.value(address+0x24,self) || self==UINT32_MAX || !read.value(address+0x2C,owner) || owner!=entity
-                    || !read.resolve(self,resolved) || resolved!=address || result) { return false; }
+                    || !read.resolve(self,resolved) || resolved!=address || (result && result!=address)) { return false; }
                 result=address;
             }
         }

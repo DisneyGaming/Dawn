@@ -4,6 +4,7 @@
 namespace sunrise::state::activity::gateway {
 inline constexpr coo::Asset kVanceScene{0xBA0B27A0U,0x80F46DE0U,43,5};
 inline constexpr std::uint32_t kVanceAscentMs=22640, kVanceFinishMs=31000;
+inline constexpr std::uint32_t kReturnCueMs=8960; // First "Please" in native blocked-gate exchange.
 inline constexpr coo::Asset kModule{kRoot,kScenario,0,0};
 inline constexpr coo::Asset kLanding{0x85742F3EU,0x80F470E5U,60,359};
 inline constexpr coo::Asset kRecess{0x85742F3EU,0x80F470E5U,60,361};
@@ -47,6 +48,7 @@ inline constexpr coo::script::Capability kCapabilities[]{
     {"dialogue.at_gate","opening",{coo::Operation::dialogue,{0x986985D0U,0x80F47426U,53,2},4U,coo::Wait::nativeReady}},
     {"forest.blocked","opening",{coo::Operation::observation,{0x4B946B28U,0x80F46EC0U,60,448},0U,coo::Wait::observed}},
     {"dialogue.blocked","opening",{coo::Operation::dialogue,{0x986985D0U,0x80F47426U,53,2},5U,coo::Wait::nativeReady}},
+    {"vance.return_cue","opening",{coo::Operation::eventAfter,kDialogueAsset,kReturnCueMs,coo::Wait::observed},300000},
     {"objective.bring_sagira","opening",{coo::Operation::objective,{0x986985D0U,0x80F47420U,68,0},4197838318U,coo::Wait::requested}},
     {"return.center","ending",{coo::Operation::population,{0x986985D0U,0x80F46DB0U,0,0},9U,coo::Wait::requested}},
     {"return.outskirts","ending",{coo::Operation::population,{0x986985D0U,0x80F46DB0U,0,0},10U,coo::Wait::requested}},
@@ -118,7 +120,7 @@ inline constexpr std::string_view kStep24[]{"mainland.cleared"};
 inline constexpr std::string_view kStep25[]{"forest.approached"};
 inline constexpr std::string_view kStep26[]{"dialogue.at_gate"};
 inline constexpr std::string_view kStep27[]{"forest.blocked"};
-inline constexpr std::string_view kStep28[]{"dialogue.blocked"};
+inline constexpr std::string_view kStep28[]{"dialogue.blocked","vance.return_cue"};
 inline constexpr std::string_view kStep29[]{"objective.bring_sagira"};
 inline constexpr ContractStep kContract[]{
     {0U,kStep0},

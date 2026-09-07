@@ -17,7 +17,7 @@ struct Frame final {
     std::uint8_t activeRow{coo::kNoDialogue};
     std::array<coo::ObjectState,3> objects{};
     coo::ObjectiveState presentation{};
-    bool services{},pendingServices{};
+    bool services{},pendingServices{},returnCuePending{};
     coo::CompletionPublication completion{};
 };
 }

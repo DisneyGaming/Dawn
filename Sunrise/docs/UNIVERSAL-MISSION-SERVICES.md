@@ -36,3 +36,9 @@ Run `python tools/coo/verify_universal_services.py`. It protects unrelated sourc
 The independent fixture covers reordered scene signals, exact timer boundaries, intentionally idle enemies, early boss death, stale owners, wrong controllers, full/unknown population capacity, marker replacement/clear encoding, generation reuse and an independent mission completing at state 6. Gateway integration tests cover all three native object acknowledgements, linked retirement, the retained approach, ending timing and both completion encoders.
 
 Fresh in-game validation is still required for the newly added native readiness probes and marker placement. Unit tests and native wire parity do not prove visual placement or audible playback. Installation records that distinction and does not launch the game.
+
+## Native component alias correction
+
+A live Gateway capture showed ten reflected metadata rows pointing to each single cube, barrier and beam controller. The component lookup now accepts repeated rows for the same validated address. It still rejects two distinct matching components, wrong entity ownership and broken self references. The readiness requirement remains enabled.
+
+`unit/fixtures/gateway_controller_components.bin` preserves the relevant reads from that failing run. The shared-service regression replays all three controllers: the pre-fix implementation fails and the corrected implementation passes. Installation and regression evidence are under `build/coo/validation-component-aliases/`. A fresh run of the installed DLL must still confirm visible activation and the ending sequence.

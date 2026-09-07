@@ -102,7 +102,7 @@ g::Point interior(std::uint16_t slot,std::uint32_t registry=g::kTraversalRegistr
     }
     CHECK(false);return {};
 }
-void traversal_tests(const c::script::Views& views,bool retainShelfActor,bool skipShelfReinforcement) {
+void traversal_tests(const c::script::Views& views,bool retainShelfActor,bool skipShelfReinforcement,std::uint32_t returnDelay=g::kReturnCueMs) {
     g::Controller controller;constexpr std::uint64_t run=90;CHECK(controller.select(views,run));
     std::uint64_t now=100;g::Frame frame{};
     const auto tick=[&] { for(unsigned i=0;i<4;++i) { frame=controller.update(run,++now,true); } };
@@ -200,14 +200,41 @@ void traversal_tests(const c::script::Views& views,bool retainShelfActor,bool sk
     controller.position(run,interior(441,g::kMainlandRegistry));tick();
     controller.position(run,interior(448,g::kMainlandRegistry));now+=60000;tick();
     CHECK(!frame.checked);CHECK(frame.objective==g::kObjectives[1]);CHECK(frame.activeRow==c::kNoDialogue);
-    clear(8);speak(4);CHECK(!frame.checked);speak(5);
-    CHECK(frame.openingChecked);CHECK(!frame.checked);tick();CHECK(frame.section==1);
+    clear(8);speak(4);CHECK(!frame.checked);
+    const c::CommandSpec returnCue{c::Operation::eventAfter,g::kDialogueAsset,returnDelay,c::Wait::observed};
+    CHECK(frame.returnCuePending && !frame.openingChecked);
+    CHECK(controller.missing(returnCue).missing==c::Missing::eventOrigin);
+    // Queueing, elapsed queue time, wrong receipts, and delayed native dispatch
+    // must not start return enemies or move the objective.
+    now+=25000;tick();CHECK(frame.activeRow==5);
+    now+=g::kReturnCueMs+100;frame=controller.update(run,now,true);
+    CHECK(!frame.openingChecked && frame.cohorts==511 && frame.objective==g::kObjectives[1]);
+    CHECK(!controller.submitted(run+1,g::kBank,5,frame.generations[5],now));
+    CHECK(!controller.submitted(run,g::kBank,5,frame.generations[5]+1,now));
+    CHECK(!controller.submitted(run,g::kBank+1,5,frame.generations[5],now));
+    CHECK(controller.missing(returnCue).missing==c::Missing::eventOrigin);
+    const auto exchangeAt=now;const auto exchangeGeneration=frame.generations[5];
+    CHECK(controller.submitted(run,g::kBank,5,exchangeGeneration,exchangeAt));
+    CHECK(!controller.submitted(run,g::kBank,5,exchangeGeneration,exchangeAt+100));
+    frame=controller.update(run,exchangeAt,true);CHECK(controller.missing(returnCue).missing==c::Missing::timer);
+    now=exchangeAt+returnDelay-1;frame=controller.update(run,now,true);
+    CHECK(!frame.openingChecked && frame.cohorts==511 && frame.objective==g::kObjectives[1]);
+    CHECK(frame.returnCuePending);
+    now=exchangeAt+returnDelay;frame=controller.update(run,now,true);
+    CHECK(frame.openingChecked && !frame.checked && frame.section==1 && !frame.returnCuePending);
+    CHECK(controller.missing(returnCue).missing==c::Missing::none);
+    // Both cohorts and the final Lighthouse objective are present in ONE publication.
+    // The remaining audio still owns the voice channel after the cue.
+    CHECK(frame.activeRow==c::kNoDialogue);
     CHECK(frame.objective==g::kObjectives[3]);
     CHECK(frame.presentation.active && frame.presentation.marker.asset==g::kMarkers[1].target.asset);
     CHECK((frame.cohorts&(1U<<9)) && (frame.cohorts&(1U<<10)));
     // Outbound volume sightings were cleared at the return-section boundary.
     CHECK((frame.cohorts&(1U<<11))==0);
-    clear(9);speak(6);
+    clear(9);CHECK(frame.activeRow==c::kNoDialogue);
+    now=exchangeAt+views.dialogue.rows[5].durationMs+views.dialogue.rows[5].delayMs+views.dialogue.spacingMs-1;
+    frame=controller.update(run,now,true);CHECK(frame.activeRow==c::kNoDialogue);
+    ++now;frame=controller.update(run,now,true);CHECK(frame.activeRow==6);speak(6);
     controller.position(run,interior(461,g::kMainlandRegistry));tick();CHECK(frame.cohorts&(1U<<11));
     now+=60000;tick();CHECK(!(frame.cohorts&(1U<<12)));CHECK(!frame.moduleVulnerable);
     clear(11);CHECK(frame.cohorts&(1U<<12));clear(12);CHECK(frame.cohorts&(1U<<13));
@@ -286,6 +313,8 @@ void traversal_tests(const c::script::Views& views,bool retainShelfActor,bool sk
     const auto prior=generation;controller.reset();CHECK(controller.select(views,run));
     controller.position(run,interior(359));tick();CHECK(frame.spawnGeneration>module.generation);
     CHECK(frame.sceneGeneration==frame.spawnGeneration && g::vance_event_count(frame)==0);
+    CHECK(!frame.returnCuePending && controller.missing(returnCue).missing==c::Missing::eventOrigin);
+    CHECK(!controller.submitted(run,g::kBank,5,exchangeGeneration,now));
     CHECK(!frame.completion.valid());for(std::size_t i=0;i<3;++i) { CHECK(!controller.object(i,objectReceipts[i],true,1.F,1)); }
     CHECK(!frame.vanceTurned && !frame.conversationStarted && frame.lighthouseChannels==0);
     CHECK(!controller.vance(scene,g::VanceMilestone::conversationStarted,now));
@@ -470,7 +499,10 @@ void vance_native_path_tests() {
 void ending_cadence_tests() {
     g::EndingCadence cadence;g::Frame frame{};
     CHECK(!cadence.due(1,100));frame.enabled=true;cadence.snapshot(1,100,frame);
-    CHECK(!cadence.due(1,10000)); // Opening keeps its accepted cadence.
+    CHECK(!cadence.due(1,10000)); // Opening keeps its accepted cadence except the authored cue.
+    frame.returnCuePending=true;cadence.snapshot(1,100,frame);
+    CHECK(!cadence.due(1,199));CHECK(cadence.due(1,200));
+    frame.returnCuePending=false;cadence.snapshot(1,200,frame);CHECK(!cadence.due(1,10000));
     frame.moduleVulnerable=true;cadence.snapshot(1,10000,frame);
     CHECK(!cadence.due(2,10100));CHECK(!cadence.due(0,10100));CHECK(!cadence.due(1,10099));
     CHECK(cadence.due(1,10100));CHECK(!cadence.due(1,10100));CHECK(!cadence.due(1,10199));
@@ -615,6 +647,12 @@ int main() {
     std::string error;auto document=c::script::MissionDocument::read("Sunrise/scripts/gateway.json",g::kProfile,error);
     if(!document) { std::fprintf(stderr,"%s\n",error.c_str()); }CHECK(document);CHECK(g::valid_document(document->views()));
     CHECK(document->views().dialogue.rows[0].sceneOwned);CHECK(document->views().dialogue.rows[11].sceneOwned);
+    std::ifstream cueFile("Sunrise/scripts/gateway.json");
+    std::string cueText((std::istreambuf_iterator<char>(cueFile)),std::istreambuf_iterator<char>());
+    const std::string originalCue="\"argument\": 8960";const auto cueAt=cueText.find(originalCue);CHECK(cueAt!=std::string::npos);
+    cueText.replace(cueAt,originalCue.size(),"\"argument\": 6000");
+    auto customCue=c::script::MissionDocument::parse(cueText,g::kProfile,error);CHECK(customCue && g::valid_document(customCue->views()));
+    traversal_tests(customCue->views(),false,false,6000); // Timing belongs to the document.
     auto altered=document->views();altered.missionId="omega";CHECK(!g::valid_document(altered));
     g::Controller controller;CHECK(controller.select(document->views(),71));
     CHECK(!controller.update(71,100,false).enabled);

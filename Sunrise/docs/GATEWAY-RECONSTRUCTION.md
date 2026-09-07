@@ -310,3 +310,10 @@ Gateway now uses the existing mission publication wake-up condition at a bounded
 The invitation is triggered by interior entry, before approaching Vance. Ghost's short entry line follows it. The native closing scene joins the retained approach and entry dialogue, and waits for the native turn plus the remaining audio window; an approach during the greeting is retained without another entry edge. As with existing dialogue, an earlier line already playing is allowed to finish.
 
 `tools/coo/verify_gateway_ending_response.py` protects the installed integration outside this narrow change, checks the unchanged keepalive flow after removing the single Gateway wake-up condition, and tests early/late single approaches, first-update beam shutdown, cadence bounds, retries and reset. Fresh in-game confirmation of the response timing remains necessary.
+
+
+## Vance return cue, 2026-09-07
+
+The opening forest_blocked step now waits on vance.return_cue, an eventAfter command authored in gateway.json. Its 8960 ms delay starts only on the accepted native submission of dialogue row 5 (BAF640CA). Native audio measurement: Ghost 4790.46 ms, Vance pre-delay 150 ms, first "Please" at approximately 4020 ms in his audio. Evidence: build/coo/gateway-return-cue/cue-evidence.json.
+
+The return cohorts (9 and 10) and Lighthouse objective publish together at the cue; the next dialogue retains normal audio spacing. The pending cue uses the existing 100 ms publication cadence. Reset clears its authenticated event origin. Later combat waves, module, and ending scene remain authored as before. Fresh in-game cue timing remains to validate.

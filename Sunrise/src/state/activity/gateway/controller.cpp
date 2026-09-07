@@ -49,7 +49,7 @@ bool valid_document(const coo::script::Views& views) noexcept {
 
 void Controller::reset() noexcept {
     executor_.cancel(*this); composition_.reset(); views_=nullptr;run_=0;now_=0;
-    started_=false;landingSeen_=false;dialogueSubmitted_.reset();dialogue_={};frame_={};seen_.reset();population_={};prepared_=0;returnContact_=false;destructible_={};scene_={};objects_={};objectives_={};lifecycle_.reset();vanceRequested_=false;ascentDelay_=finishDelay_=0;
+    started_=false;landingSeen_=false;dialogueSubmitted_.reset();dialogue_={};frame_={};seen_.reset();population_={};prepared_=0;returnContact_=false;destructible_={};scene_={};returnCue_.reset();objects_={};objectives_={};lifecycle_.reset();vanceRequested_=false;ascentDelay_=finishDelay_=0;
 }
 bool Controller::select(const coo::script::Views& views,std::uint64_t run) noexcept {
     if(run==0 || !valid_document(views)) { reset();return false; }
@@ -60,7 +60,8 @@ bool Controller::select(const coo::script::Views& views,std::uint64_t run) noexc
     // Lighthouse position revisions are signed 16-bit values retained by native devices.
     if(!lifecycle_.begin(run)) { return false; }
     publicationGeneration_=lifecycle_.owner().value;views_=&views;run_=run;frame_.spawnGeneration=publicationGeneration_;
-    if(!objects_.begin(lifecycle_.owner(),kEndingObjects) || !scene_.preload(run,publicationGeneration_,kSceneEvents)) { reset();return false; }
+    if(!objects_.begin(lifecycle_.owner(),kEndingObjects) || !scene_.preload(run,publicationGeneration_,kSceneEvents)
+        || !returnCue_.bind(lifecycle_.owner())) { reset();return false; }
     for(const auto& binding:views.role("ending")->commands) {
         const auto delay=views.role("ending")->definition.steps[binding.step].commands[binding.command].argument;
         if(binding.capability=="vance.ascent_cue") { ascentDelay_=delay; }
@@ -89,6 +90,9 @@ bool Controller::submitted(std::uint64_t run,std::uint32_t bank,std::uint8_t row
     if(!views_ || run!=run_ || !started_) { return false; }
     if(!dialogue_.submitted(views_->dialogue,bank,row,generation,now,frame_,frame_.revision)) { return false; }
     dialogueSubmitted_.set(row);
+    // Row 5 includes Ghost before Vance. Only the authenticated native submission
+    // starts this clock; queueing the exchange must not advance the encounter.
+    if(row==5) { static_cast<void>(returnCue_.mark(lifecycle_.owner(),0,now)); }
     // Turn with the actual first line, even if earlier dialogue delayed its dispatch.
     if(row==10 && frame_.lighthouseOpen && entered({0xBA0B27A0U,0x80F46DCDU,60,11})) {
         static_cast<void>(scene_.signal(scene_.owner(),coo::SceneSignal::greetingSubmitted,now));project_services();
@@ -110,6 +114,7 @@ bool Controller::publish(const coo::Command& command) noexcept {
     } else if(spec.operation==coo::Operation::dialogue) {
         dialogue_.enqueue(views_->dialogue,static_cast<std::uint8_t>(spec.argument),now_,0,0,frame_.revision);
     }
+    else if(spec.operation==coo::Operation::eventAfter && spec.asset==kDialogueAsset) { frame_.returnCuePending=true; }
     else if(spec.operation==coo::Operation::population) { enable(spec.argument); }
     else if(spec.operation==coo::Operation::mechanic && spec.argument==10) { enable(0);frame_.marchers=true; }
     else if(spec.operation==coo::Operation::scene) {
@@ -218,6 +223,10 @@ coo::StallDetail Controller::missing(const coo::CommandSpec& spec) const noexcep
         }return {};
     }
     if(spec.operation==coo::Operation::eventAfter) {
+        if(spec.asset==kDialogueAsset) {
+            if(!returnCue_.seen(0)) { return {Missing::eventOrigin,spec.asset}; }
+            return returnCue_.elapsed(0,now_,spec.argument)?coo::StallDetail{}:coo::StallDetail{Missing::timer,spec.asset,spec.argument};
+        }
         if(!frame_.conversationStarted) { return {Missing::eventOrigin,spec.asset}; }
         return scene_.after(coo::SceneSignal::conversationStarted,now_,spec.argument)?coo::StallDetail{}:coo::StallDetail{Missing::timer,spec.asset,spec.argument};
     }
@@ -263,9 +272,11 @@ void Controller::update_module(std::uint32_t id,const coo::MissionInput& input,F
         const bool shelfExit=spec.operation==coo::Operation::observation && spec.argument==3U
             && entered({0x85742F3EU,0x80F470E5U,60,375});
         const bool vanceCue=spec.operation==coo::Operation::eventAfter;
+        const bool cueElapsed=spec.asset==kDialogueAsset?returnCue_.elapsed(0,now_,spec.argument)
+            :scene_.after(coo::SceneSignal::conversationStarted,now_,spec.argument);
         const bool vanceApproach=spec.operation==coo::Operation::observation
             && spec.asset.registry==0xBA0B27A0U && spec.asset.slot==13;
-        const bool observed=vanceApproach?(frame_.vanceTurned && entered(spec.asset)):vanceCue?scene_.after(coo::SceneSignal::conversationStarted,now_,spec.argument):spec.argument==513U?frame_.moduleDestroyed
+        const bool observed=vanceApproach?(frame_.vanceTurned && entered(spec.asset)):vanceCue?cueElapsed:spec.argument==513U?frame_.moduleDestroyed
             :spec.argument==512U?(returnContact_ || entered(spec.asset))
             :(shelfExit || entered(spec.asset) || (spec.argument==256U?cleared(3)&&cleared(4):cleared(spec.argument)));
         if(coo::is_observation(spec.operation) && observed) {
@@ -284,12 +295,20 @@ void Controller::update_module(std::uint32_t id,const coo::MissionInput& input,F
         if(frame_.populationFault) { static_cast<void>(executor_.enqueue({token,coo::Milestone::failed})); }
     }
     executor_.update(*this);
+    // The final opening step contains only a requested objective. Retire that
+    // publication now so the return graph can share the cue's outgoing frame.
+    if(frame_.section==0 && executor_.step_state(std::size(kContract)-1).phase==coo::StepPhase::active) { executor_.update(*this); }
     dialogue_.advance(views_->dialogue,publicationGeneration_-1U,now_,false,frame_,frame_.revision);
     frame_.enabled=executor_.diagnostics().phase!=coo::Phase::failed;
     if(executor_.diagnostics().phase==coo::Phase::complete && frame_.section==0) {
         frame_.openingChecked=true;frame_.section=1;
         // Outbound Lighthouse visits cannot trigger the return encounter.
-        seen_.reset();executor_.cancel(*this);started_=false;
+        seen_.reset();executor_.cancel(*this);
+        // Publish return cohorts and their objective in this same cue frame.
+        // Deferring section startup to the next normal packet adds up to five seconds.
+        started_=executor_.start(views_->role("ending")->definition,run_);
+        if(started_) { executor_.update(*this); }
+        frame_.returnCuePending=false;
     }
     frame_.checked=frame_.finished && frame_.conversationStarted;
     frame_.preparedMask=prepared_;

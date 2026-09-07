@@ -403,6 +403,13 @@
       "argument": 5,
       "wait": "nativeReady"
     },
+    "vance.return_cue": {
+      "capability": "vance.return_cue",
+      "operation": "eventAfter",
+      "asset": "dialogue",
+      "argument": 8960,
+      "wait": "observed"
+    },
     "objective.bring_sagira": {
       "capability": "objective.bring_sagira",
       "operation": "objective",
@@ -1004,6 +1011,10 @@
             {
               "id": "dialogue.blocked",
               "binding": "dialogue.blocked"
+            },
+            {
+              "id": "vance.return_cue",
+              "binding": "vance.return_cue"
             }
           ]
         },
@@ -1043,7 +1054,8 @@
         "forest.approached": "forest.approached",
         "dialogue.at_gate": "dialogue.at_gate",
         "forest.blocked": "forest.blocked",
-        "dialogue.blocked": "dialogue.blocked"
+        "dialogue.blocked": "dialogue.blocked",
+        "vance.return_cue": "vance.return_cue"
       }
     },
     "ending": {

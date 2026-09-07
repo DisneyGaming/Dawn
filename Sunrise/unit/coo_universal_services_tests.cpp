@@ -112,12 +112,34 @@ void objectives() {
     }
 }
 struct Memory {
-    std::map<std::uintptr_t,std::byte> bytes;std::map<std::uint32_t,std::uintptr_t> handles;
+    std::map<std::uintptr_t,std::byte> bytes;std::map<std::uint32_t,std::uintptr_t> handles;std::map<std::uint32_t,std::uintptr_t> allocations;
     template<class T> void put(std::uintptr_t address,T value) { const auto* b=reinterpret_cast<const std::byte*>(&value);for(std::size_t i=0;i<sizeof(T);++i) { bytes[address+i]=b[i]; } }
     bool copy(std::uintptr_t address,std::span<std::byte> out) { for(std::size_t i=0;i<out.size();++i) { const auto it=bytes.find(address+i);if(it==bytes.end()) { return false; }out[i]=it->second; }return true; }
     template<class T> bool value(std::uintptr_t address,T& out) { return copy(address,std::as_writable_bytes(std::span{&out,1})); }
-    bool resolve(std::uint32_t handle,std::uintptr_t& out,std::uintptr_t* allocation=nullptr) { const auto it=handles.find(handle);if(it==handles.end()) { return false; }out=it->second;if(allocation) { *allocation=out; }return true; }
+    bool resolve(std::uint32_t handle,std::uintptr_t& out,std::uintptr_t* allocation=nullptr) { const auto it=handles.find(handle);if(it==handles.end()) { return false; }out=it->second;if(allocation) { const auto a=allocations.find(handle);*allocation=a==allocations.end()?out:a->second; }return true; }
 };
+void captured_components() {
+    // Read-only capture from the failing Gateway run: all three controllers have
+    // multiple reflected rows referring to one identical native component.
+    std::ifstream file("Sunrise/unit/fixtures/gateway_controller_components.bin",std::ios::binary);CHECK(file.good());
+    const auto get=[&]<class T>(T& value) { file.read(reinterpret_cast<char*>(&value),sizeof value);CHECK(file.good()); };
+    std::array<char,8> magic{};get(magic);CHECK((magic==std::array<char,8>{'G','W','C','M','0','0','0','1'}));
+    std::uint32_t caseCount{},mappingCount{},regionCount{};get(caseCount);get(mappingCount);get(regionCount);
+    CHECK(caseCount==3 && mappingCount<=64 && regionCount<=2048);
+    struct Case { std::uint32_t bundle{},entity{};std::uint64_t expected{};std::uint32_t aliases{}; };
+    std::array<Case,3> cases{};for(auto& item:cases) { get(item.bundle);get(item.entity);get(item.expected);get(item.aliases);CHECK(item.aliases>1); }
+    Memory m;
+    for(std::uint32_t i=0;i<mappingCount;++i) { std::uint32_t handle{};std::uint64_t address{},allocation{};get(handle);get(address);get(allocation);m.handles[handle]=address;m.allocations[handle]=allocation; }
+    for(std::uint32_t i=0;i<regionCount;++i) {
+        std::uint64_t address{};std::uint32_t size{};get(address);get(size);CHECK(size<=65536);
+        std::array<std::uint8_t,65536> data{};file.read(reinterpret_cast<char*>(data.data()),size);CHECK(file.good());
+        for(std::uint32_t n=0;n<size;++n) { m.put<std::uint8_t>(address+n,data[n]); }
+    }
+    for(const auto& item:cases) {
+        std::uintptr_t found{};CHECK(n::component(m,item.bundle,item.entity,0x80803910U,found));CHECK(found==item.expected);
+        CHECK(!n::component(m,item.bundle,item.entity^0x2000U,0x80803910U,found));
+    }
+}
 void native_capacity() {
     Memory m;m.put<std::uintptr_t>(0x10000,0x20000);m.put<std::uint32_t>(0x10014,80);m.put<std::uint16_t>(0x2001C,80);
     m.put<std::uintptr_t>(0x20008,0x30000);m.put<std::uintptr_t>(0x30010,0x40000);
@@ -154,7 +176,13 @@ void native_enemy() {
     std::uintptr_t found{};m.put<std::uint64_t>(metadata+0x68,0);m.put<std::int64_t>(metadata+0x70,INT64_MIN);
     CHECK(!n::component(m,12,5,0x80806832U,found)); // Empty list has no relative pointer to evaluate.
     m.put<std::uint64_t>(metadata+0x68,2);m.put<std::int64_t>(metadata+0x70,0x80);m.put<std::int32_t>(metadata+0x100+24+0x14,0x100);
-    CHECK(!n::component(m,12,5,0x80806832U,found)); // Duplicate native component ownership is ambiguous.
+    CHECK(n::component(m,12,5,0x80806832U,found));CHECK(found==character); // Reflected aliases are the same owner.
+    const auto other=character+0x80;m.handles[18]=other;
+    m.put<std::int32_t>(metadata+0x100+24+0x14,0x180);m.put<std::uint32_t>(other+4,0x80806832);
+    m.put<std::uint32_t>(other+0x24,18);m.put<std::uint32_t>(other+0x2C,5);
+    CHECK(!n::component(m,12,5,0x80806832U,found)); // Two distinct matching components remain ambiguous.
+    m.put<std::uint64_t>(metadata+0x68,1);m.handles[14]=character+1;
+    CHECK(!n::component(m,12,5,0x80806832U,found)); // A matching header cannot excuse a bad self reference.
 
 }
 void alternate_script() {
@@ -191,4 +219,4 @@ void alternate_script() {
     CHECK(executor.enqueue({executor.token(1,0),c::Milestone::observed}));executor.update(host);CHECK(host.life.activity_state()==6);CHECK(!host.hud.state().active);CHECK(!host.hud.state().marker.valid());
     executor.update(host);CHECK(executor.diagnostics().phase==c::Phase::complete);const auto stale=executor.token(1,0);executor.cancel(host);host.life.reset();CHECK(host.life.begin(37));CHECK(executor.start(graph.definition,37));executor.update(host);CHECK(!executor.enqueue({stale,c::Milestone::observed}));
 }
-int main() { population();objects();scenes();lifecycle();objectives();native_capacity();native_enemy();alternate_script();std::printf("Universal services: %u checks passed\n",checks); }
+int main() { population();objects();scenes();lifecycle();objectives();captured_components();native_capacity();native_enemy();alternate_script();std::printf("Universal services: %u checks passed\n",checks); }
