@@ -7,10 +7,11 @@
 namespace sunrise::state::activity::coo::script {
 // Trusted native capabilities. A document selects a registered profile; it
 // cannot define executable code, invent a wire schema, or add native authority.
-struct Capability final { std::string_view id,domain; CommandSpec spec{}; };
+struct Capability final { std::string_view id,domain; CommandSpec spec{}; std::uint32_t argumentMaximum{}; };
 struct ModuleCapability final { std::string_view id; ModuleBinding binding{}; };
 struct FactCapability final { std::string_view id; std::uint8_t fact{}; };
 struct EventCapability final { std::string_view set,id; std::uint32_t event{}; std::uint8_t allowedCycles{}; };
+struct MarkerCapability final { std::string_view id;MarkerTarget target; };
 struct Profile final {
     std::string_view id,schemaName;
     Schema schema{};
@@ -21,6 +22,7 @@ struct Profile final {
     std::span<const std::uint32_t> objectives;
     std::span<const EventCapability> events;
     std::span<const PresentationTable> tables;
+    std::span<const MarkerCapability> markers{};
 };
 // All spans in views() refer to storage owned by this immutable document.
 // Parsing is transactional and never publishes, executes, or loads native code.

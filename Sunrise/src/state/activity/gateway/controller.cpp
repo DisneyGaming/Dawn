@@ -1,4 +1,5 @@
 #include "controller.h"
+#include "ai_bindings.h"
 namespace sunrise::state::activity::gateway {
 namespace {
 bool same(const coo::CommandSpec& a,const coo::CommandSpec& b) noexcept {
@@ -35,7 +36,9 @@ bool valid_document(const coo::script::Views& views) noexcept {
         unsigned found{};
         for(const auto& command:graph->commands) {
             if(command.capability==capability.id) {
-                if(!same(graph->definition.steps[command.step].commands[command.command],capability.spec)) { return false; }
+                const auto& spec=graph->definition.steps[command.step].commands[command.command];
+                if(!same(spec,capability.spec) && !(capability.argumentMaximum && spec.operation==coo::Operation::eventAfter
+                    && spec.asset==capability.spec.asset && spec.wait==capability.spec.wait && spec.argument>0 && spec.argument<=capability.argumentMaximum)) { return false; }
                 ++found;
             }
         }
@@ -46,7 +49,7 @@ bool valid_document(const coo::script::Views& views) noexcept {
 
 void Controller::reset() noexcept {
     executor_.cancel(*this); composition_.reset(); views_=nullptr;run_=0;now_=0;
-    started_=false;landingSeen_=false;dialogueSubmitted_.reset();dialogue_={};frame_={};seen_.reset();population_={};prepared_=0;returnContact_=false;moduleOwner_={};sceneOwner_={};vanceRequested_=false;conversationAt_=0;
+    started_=false;landingSeen_=false;dialogueSubmitted_.reset();dialogue_={};frame_={};seen_.reset();population_={};prepared_=0;returnContact_=false;destructible_={};scene_={};objects_={};objectives_={};lifecycle_.reset();vanceRequested_=false;ascentDelay_=finishDelay_=0;
 }
 bool Controller::select(const coo::script::Views& views,std::uint64_t run) noexcept {
     if(run==0 || !valid_document(views)) { reset();return false; }
@@ -55,8 +58,15 @@ bool Controller::select(const coo::script::Views& views,std::uint64_t run) noexc
     // Reserve a second generation for the module after its inactive preparation.
     // Native 9F2F30 requires requested > committed, even when the entity is gone.
     // Lighthouse position revisions are signed 16-bit values retained by native devices.
-    if(publicationGeneration_>=32764U) { return false; }
-    publicationGeneration_=publicationGeneration_?publicationGeneration_+2U:1U;views_=&views;run_=run;frame_.spawnGeneration=publicationGeneration_;return true;
+    if(!lifecycle_.begin(run)) { return false; }
+    publicationGeneration_=lifecycle_.owner().value;views_=&views;run_=run;frame_.spawnGeneration=publicationGeneration_;
+    if(!objects_.begin(lifecycle_.owner(),kEndingObjects) || !scene_.preload(run,publicationGeneration_,kSceneEvents)) { reset();return false; }
+    for(const auto& binding:views.role("ending")->commands) {
+        const auto delay=views.role("ending")->definition.steps[binding.step].commands[binding.command].argument;
+        if(binding.capability=="vance.ascent_cue") { ascentDelay_=delay; }
+        if(binding.capability=="vance.ending_cue") { finishDelay_=delay; }
+    }
+    if(finishDelay_<ascentDelay_) { reset();return false; }frame_.services=true;return true;
 }
 void Controller::position(std::uint64_t run,Point point) noexcept {
     if(run!=run_ || !views_) { return; }
@@ -80,17 +90,23 @@ bool Controller::submitted(std::uint64_t run,std::uint32_t bank,std::uint8_t row
     if(!dialogue_.submitted(views_->dialogue,bank,row,generation,now,frame_,frame_.revision)) { return false; }
     dialogueSubmitted_.set(row);
     // Turn with the actual first line, even if earlier dialogue delayed its dispatch.
-    if(row==10 && frame_.lighthouseOpen && entered({0xBA0B27A0U,0x80F46DCDU,60,11})) { frame_.vanceEntered=true; }
+    if(row==10 && frame_.lighthouseOpen && entered({0xBA0B27A0U,0x80F46DCDU,60,11})) {
+        static_cast<void>(scene_.signal(scene_.owner(),coo::SceneSignal::greetingSubmitted,now));project_services();
+    }
     return true;
 }
 bool Controller::publish(const coo::Command& command) noexcept {
     if(command.token.run!=run_ || command.schema!=coo::Schema::otherMissions) { return false; }
     bool registered{};
-    for(const auto& cap:kCapabilities) { registered|=cap.domain==(frame_.section==0?"opening":"ending") && same(cap.spec,command.spec); }
+    for(const auto& step:views_->role(frame_.section==0?"opening":"ending")->definition.steps) {
+        for(const auto& spec:step.commands) { registered|=same(spec,command.spec); }
+    }
     if(!registered) { return false; }
     const auto& spec=command.spec;
     if(spec.operation==coo::Operation::objective) {
         dialogue_.objective(views_->dialogue,spec.argument,frame_,frame_.revision);
+        coo::MarkerTarget marker{};for(const auto& binding:views_->markers) { if(binding.event==spec.argument) { marker=binding.target; } }
+        objectives_.set(spec.argument,marker);
     } else if(spec.operation==coo::Operation::dialogue) {
         dialogue_.enqueue(views_->dialogue,static_cast<std::uint8_t>(spec.argument),now_,0,0,frame_.revision);
     }
@@ -101,15 +117,18 @@ bool Controller::publish(const coo::Command& command) noexcept {
         vanceRequested_=true;
     }
     else if(spec.operation==coo::Operation::mechanic) {
-        if(spec.argument==20) { frame_.moduleVulnerable=true; }
+        if(spec.argument==20) { destructible_.expose();frame_.moduleVulnerable=true; }
         else if(spec.argument==21 && frame_.moduleDestroyed) { frame_.lighthouseOpen=true; }
-        else if(spec.argument==30 && frame_.conversationStarted && frame_.lighthouseChannels==3
-            && now_>=conversationAt_ && now_-conversationAt_>=kVanceFinishMs) { frame_.finished=true; }
         else { return false; }
+    }
+    else if(spec.operation==coo::Operation::complete) {
+        if(spec.argument!=6 || !scene_.seen(coo::SceneSignal::conversationFinished) || frame_.lighthouseChannels!=3
+            || !lifecycle_.complete(lifecycle_.owner())) { return false; }
+        objectives_.clear();frame_.finished=true;
     }
     else if(spec.operation==coo::Operation::device) {
         if(spec.asset.registry==0xBA0B27A0U && spec.asset.type==23 && spec.asset.slot<=1) {
-            if(!frame_.conversationStarted || now_<conversationAt_ || now_-conversationAt_<kVanceAscentMs) { return false; }
+            if(!scene_.after(coo::SceneSignal::conversationStarted,now_,ascentDelay_)) { return false; }
             frame_.lighthouseChannels|=static_cast<std::uint8_t>(1U<<spec.asset.slot);
         } else if(spec.argument==1) { frame_.cannons=true; } else if(spec.argument==2) { frame_.finalCannon=true; }
     }
@@ -118,12 +137,14 @@ bool Controller::publish(const coo::Command& command) noexcept {
 void Controller::enable(std::uint32_t cohort) noexcept {
     if(cohort>kLastCohort) { return; }
     frame_.cohorts|=1U<<cohort;
-    for(std::size_t i=0;i<kSpawns.size();++i) { if(kSpawns[i].cohort==cohort) { population_.enable(i); } }
+    for(std::size_t i=0;i<kSpawns.size();++i) { if(kSpawns[i].cohort==cohort) {
+        const auto task=tactical_group(kSpawns[i]);population_.policy(i,{true,coo::EnemyIntent::combat,task.registry,task.slot,task.row});population_.enable(i);
+    } }
 }
 bool Controller::ready(std::uint32_t cohort) const noexcept {
     if(cohort==0 || cohort>kLastCohort || frame_.populationFault) { return false; }
     for(std::size_t i=0;i<kSpawns.size();++i) {
-        if(kSpawns[i].cohort==cohort && !population_.admitted(i,kSpawns[i].count)) { return false; }
+        if(kSpawns[i].cohort==cohort && !population_.ready(i,kSpawns[i].count)) { return false; }
     }
     return true;
 }
@@ -148,43 +169,86 @@ bool Controller::died(const EnemyReceipt& receipt) noexcept {
 }
 bool Controller::prepared(std::uint64_t run,std::uint32_t generation,std::uint8_t index) noexcept {
     if(!views_ || !frame_.enabled || run!=run_ || generation!=publicationGeneration_ || index>6 || (prepared_&(1U<<index))) { return false; }
-    prepared_|=static_cast<std::uint8_t>(1U<<index);return true;
+    prepared_|=static_cast<std::uint8_t>(1U<<index);
+    for(std::size_t i=0;i<std::size(kObjectPreparation);++i) { if(kObjectPreparation[i]==index) { static_cast<void>(objects_.prepared(lifecycle_.owner(),i)); } }
+    return true;
 }
 bool Controller::module(const ModuleReceipt& receipt,bool dead) noexcept {
     if(!views_ || !frame_.enabled || frame_.moduleDestroyed || (prepared_&(1U<<5))==0 || !receipt.valid() || receipt.run!=run_ || receipt.generation!=publicationGeneration_+1U) { return false; }
     if(dead) {
-        if(!frame_.moduleVulnerable || receipt!=moduleOwner_ || frame_.moduleDestroyed) { return false; }
-        frame_.moduleDestroyed=true;return true;
+        if(!destructible_.destroyed(receipt)) { return false; }
+        frame_.moduleDestroyed=true;project_services();return true;
     }
-    if(moduleOwner_.valid()) { return false; }
-    moduleOwner_=receipt;return true;
+    return destructible_.bind(receipt);
+}
+bool Controller::object(std::size_t index,const coo::ObjectReceipt& receipt,bool applied,float position,std::int16_t revision) noexcept {
+    if(!views_ || !frame_.enabled) { return false; }
+    const bool changed=objects_.observe(index,receipt,applied,position,revision);project_services();return changed;
 }
 bool Controller::scene(const SceneReceipt& receipt,bool completed) noexcept {
-    if(!views_ || !frame_.enabled || !receipt.valid() || receipt.run!=run_ || !frame_.sceneGeneration
-        || receipt.generation!=frame_.sceneGeneration) { return false; }
+    if(!views_ || !frame_.enabled || !receipt.valid() || receipt.run!=run_ || receipt.generation!=frame_.sceneGeneration) { return false; }
     if(completed) {
-        if(!frame_.vanceConversation || !frame_.sceneStarted || frame_.sceneComplete || receipt!=sceneOwner_) { return false; }
-        frame_.sceneComplete=true;return true;
-    }
-    if(frame_.sceneStarted) { return false; }
-    sceneOwner_=receipt;frame_.sceneStarted=true;return true;
+        if(!frame_.vanceConversation || !scene_.signal(receipt,coo::SceneSignal::sceneFinished,now_)) { return false; }
+    } else if(!scene_.bind(receipt)) { return false; }
+    project_services();return true;
 }
 bool Controller::vance(const SceneReceipt& receipt,VanceMilestone milestone,std::uint64_t now) noexcept {
-    if(!views_ || !frame_.enabled || !frame_.sceneStarted || !receipt.valid()
-        || receipt!=sceneOwner_ || receipt.generation!=frame_.sceneGeneration || !frame_.vanceEntered) { return false; }
-    if(milestone==VanceMilestone::turned) {
-        if(frame_.vanceTurned) { return false; }frame_.vanceTurned=true;return true;
+    if((milestone!=VanceMilestone::turned && milestone!=VanceMilestone::conversationStarted) || !views_ || !frame_.enabled || !frame_.vanceEntered || receipt!=scene_.owner()) { return false; }
+    if(milestone==VanceMilestone::conversationStarted && (!frame_.vanceTurned || !frame_.vanceConversation)) { return false; }
+    const bool accepted=scene_.signal(receipt,milestone==VanceMilestone::turned?coo::SceneSignal::animationReady:coo::SceneSignal::conversationStarted,now);
+    project_services();return accepted;
+}
+void Controller::project_services() noexcept {
+    frame_.pendingServices=false;destructible_.project(objects_,kModuleLinks);
+    for(std::size_t i=0;i<frame_.objects.size();++i) { frame_.objects[i]=objects_.state(i);frame_.pendingServices|=frame_.objects[i].phase!=coo::ObjectPhase::ready && frame_.objects[i].phase!=coo::ObjectPhase::retired; }
+    frame_.sceneStarted=scene_.owner().valid();frame_.sceneComplete=scene_.seen(coo::SceneSignal::sceneFinished);
+    frame_.vanceEntered=scene_.event_count()>=1;frame_.vanceConversation=scene_.event_count()>=2;
+    frame_.vanceTurned=scene_.seen(coo::SceneSignal::animationReady);frame_.conversationStarted=scene_.seen(coo::SceneSignal::conversationStarted);
+    frame_.presentation=objectives_.state();frame_.completion=lifecycle_.publication();
+}
+
+coo::StallDetail Controller::missing(const coo::CommandSpec& spec) const noexcept {
+    using coo::Missing;
+    if(spec.wait==coo::Wait::requested) { return {}; }
+    if(spec.operation==coo::Operation::population) {
+        for(std::size_t i=0;i<kSpawns.size();++i) {
+            const auto& source=kSpawns[i];if(source.cohort!=spec.argument) { continue; }
+            auto detail=population_.missing(i,source.count,true);
+            if(detail.missing!=Missing::none) { detail.asset={source.registry,source.definition,1,source.source};return detail; }
+        }return {};
     }
-    if(milestone!=VanceMilestone::conversationStarted || !frame_.vanceTurned || !frame_.vanceConversation || frame_.conversationStarted) { return false; }
-    frame_.conversationStarted=true;conversationAt_=now;return true;
+    if(spec.operation==coo::Operation::eventAfter) {
+        if(!frame_.conversationStarted) { return {Missing::eventOrigin,spec.asset}; }
+        return scene_.after(coo::SceneSignal::conversationStarted,now_,spec.argument)?coo::StallDetail{}:coo::StallDetail{Missing::timer,spec.asset,spec.argument};
+    }
+    if(spec.operation==coo::Operation::scene) {
+        return frame_.conversationStarted?coo::StallDetail{}:coo::StallDetail{!frame_.sceneStarted?Missing::sceneBinding:scene_.pending_signals()?Missing::sceneEvent:Missing::conversation,spec.asset,scene_.pending_signals()};
+    }
+    if(spec.operation==coo::Operation::dialogue) {
+        return spec.argument<16 && dialogueSubmitted_[spec.argument]?coo::StallDetail{}:coo::StallDetail{Missing::dialogue,spec.asset,spec.argument};
+    }
+    if(spec.asset==kEndingObjects[1].source && !frame_.moduleDestroyed) {
+        for(std::size_t i=0;i<3;++i) {
+            const auto phase=objects_.state(i).phase;
+            if(phase!=coo::ObjectPhase::ready && phase!=coo::ObjectPhase::retired) {
+                return {phase==coo::ObjectPhase::prepare?Missing::preparation:phase==coo::ObjectPhase::create?Missing::object:phase==coo::ObjectPhase::bind?Missing::controller:Missing::device,kEndingObjects[i].source};
+            }
+        }
+        return {Missing::death,spec.asset};
+    }
+    if(spec.operation==coo::Operation::device) { return {(prepared_&3)==3?Missing::none:Missing::preparation,spec.asset,3,static_cast<std::uint32_t>(prepared_&3)}; }
+    return {entered(spec.asset)?Missing::none:Missing::observation,spec.asset};
 }
 void Controller::update_module(std::uint32_t id,const coo::MissionInput& input,Frame& output) noexcept {
     if(id!=1 || !views_ || input.run!=run_) { return; }
     now_=input.now;
     // Start the native cast/idle on world arrival, keeping this owner through the ending.
-    frame_.sceneGeneration=publicationGeneration_;
+    frame_.sceneGeneration=scene_.generation();
     // Retain the second event only after the native turn and the greeting audio finish.
-    if(vanceRequested_ && frame_.vanceTurned && dialogueSubmitted_[9] && dialogueSubmitted_[10] && now_>=dialogue_.voice_until()) { frame_.vanceConversation=true; }
+    if(dialogueSubmitted_[10] && frame_.lighthouseOpen && entered({0xBA0B27A0U,0x80F46DCDU,60,11})) { static_cast<void>(scene_.signal(scene_.owner(),coo::SceneSignal::greetingSubmitted,now_)); }
+    if(vanceRequested_) { static_cast<void>(scene_.signal(scene_.owner(),coo::SceneSignal::approached,now_)); }
+    if(dialogueSubmitted_[9] && dialogueSubmitted_[10] && now_>=dialogue_.voice_until()) { static_cast<void>(scene_.signal(scene_.owner(),coo::SceneSignal::prerollFinished,now_)); }
+    scene_.update(now_,finishDelay_);project_services();
     const auto& graph=*views_->role(frame_.section==0?"opening":"ending");
     if(!started_) { started_=executor_.start(graph.definition,run_); }
     if(!started_) { return; }
@@ -198,14 +262,13 @@ void Controller::update_module(std::uint32_t id,const coo::MissionInput& input,F
         // volume was missed. Route observations never create enemy-death receipts.
         const bool shelfExit=spec.operation==coo::Operation::observation && spec.argument==3U
             && entered({0x85742F3EU,0x80F470E5U,60,375});
-        const bool vanceCue=spec.asset==kVanceScene && spec.operation==coo::Operation::observation;
+        const bool vanceCue=spec.operation==coo::Operation::eventAfter;
         const bool vanceApproach=spec.operation==coo::Operation::observation
             && spec.asset.registry==0xBA0B27A0U && spec.asset.slot==13;
-        const bool observed=vanceApproach?(frame_.vanceTurned && entered(spec.asset)):vanceCue?(frame_.conversationStarted && now_>=conversationAt_
-            && now_-conversationAt_>=spec.argument):spec.argument==513U?frame_.moduleDestroyed
+        const bool observed=vanceApproach?(frame_.vanceTurned && entered(spec.asset)):vanceCue?scene_.after(coo::SceneSignal::conversationStarted,now_,spec.argument):spec.argument==513U?frame_.moduleDestroyed
             :spec.argument==512U?(returnContact_ || entered(spec.asset))
             :(shelfExit || entered(spec.asset) || (spec.argument==256U?cleared(3)&&cleared(4):cleared(spec.argument)));
-        if(spec.operation==coo::Operation::observation && observed) {
+        if(coo::is_observation(spec.operation) && observed) {
             static_cast<void>(executor_.enqueue({token,coo::Milestone::observed}));
         } else if(spec.operation==coo::Operation::dialogue && spec.argument<16 && dialogueSubmitted_[spec.argument]) {
             static_cast<void>(executor_.enqueue({token,coo::Milestone::nativeReady}));
@@ -230,7 +293,7 @@ void Controller::update_module(std::uint32_t id,const coo::MissionInput& input,F
     }
     frame_.checked=frame_.finished && frame_.conversationStarted;
     frame_.preparedMask=prepared_;
-    output=frame_;
+    project_services();output=frame_;
     output.cannons=frame_.cannons && (prepared_&3)==3;
 }
 Frame Controller::update(std::uint64_t run,std::uint64_t now,bool ready) noexcept {

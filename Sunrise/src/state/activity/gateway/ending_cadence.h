@@ -7,7 +7,7 @@ class EndingCadence final {
 public:
     void reset() noexcept { run_=0;next_=0;enabled_=false; }
     void snapshot(std::uint64_t run,std::uint64_t now,const Frame& frame) noexcept {
-        run_=run;enabled_=frame.enabled && frame.moduleVulnerable && !frame.finished;next_=now+100;
+        run_=run;enabled_=frame.enabled && (frame.moduleVulnerable || frame.pendingServices) && !frame.finished;next_=now+100;
     }
     [[nodiscard]] bool due(std::uint64_t run,std::uint64_t now) noexcept {
         if(!run || run!=run_ || !enabled_ || now<next_) { return false; }

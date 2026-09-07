@@ -6,7 +6,7 @@
 namespace sunrise::state::activity::coo::script {
 namespace {
 using json::Value;
-constexpr std::string_view operations[]{"scene","population","objective","dialogue","device","cinematic","traversal","mechanic","observation"};
+constexpr std::string_view operations[]{"scene","population","objective","dialogue","device","cinematic","traversal","mechanic","observation","eventAfter","complete"};
 constexpr std::string_view waits[]{"requested","nativeReady","completed","observed"};
 const auto& object(const Value& v,std::size_t maximum) {
     if(v.kind!=Value::Kind::object || v.members.size()>maximum) { v.fail("expected bounded object"); }return v.members;
@@ -44,7 +44,8 @@ void validate_profile(const Profile& p,const Value& root) {
     for(std::size_t i=0;i<p.capabilities.size();++i) {
         const auto& cap=p.capabilities[i];name(cap.id,root);name(cap.domain,root);
         if(static_cast<unsigned>(cap.spec.operation)>=std::size(operations) || static_cast<unsigned>(cap.spec.wait)>=std::size(waits)
-            || (cap.spec.operation==Operation::observation)!=(cap.spec.wait==Wait::observed)) { root.fail("invalid native operation contract"); }
+            || (is_observation(cap.spec.operation))!=(cap.spec.wait==Wait::observed)
+            || (cap.argumentMaximum && (cap.spec.operation!=Operation::eventAfter || cap.spec.argument>cap.argumentMaximum))) { root.fail("invalid native operation contract"); }
         for(std::size_t j=0;j<i;++j) { if(cap.id==p.capabilities[j].id) { root.fail("duplicate native capability"); } }
     }
     for(std::size_t i=0;i<p.modules.size();++i) {
@@ -58,6 +59,11 @@ void validate_profile(const Profile& p,const Value& root) {
     for(std::size_t i=0;i<p.events.size();++i) {
         name(p.events[i].set,root);name(p.events[i].id,root);
         for(std::size_t j=0;j<i;++j) { if(p.events[i].set==p.events[j].set && (p.events[i].id==p.events[j].id || p.events[i].event==p.events[j].event)) { root.fail("ambiguous native presentation event"); } }
+    }
+    if(p.markers.size()>256) { root.fail("too many native marker targets"); }
+    for(std::size_t i=0;i<p.markers.size();++i) {
+        name(p.markers[i].id,root);if(!p.markers[i].target.valid()) { root.fail("invalid native marker target"); }
+        for(std::size_t j=0;j<i;++j) { if(p.markers[j].id==p.markers[i].id) { root.fail("ambiguous native marker target"); } }
     }
     for(std::size_t i=0;i<p.tables.size();++i) {
         name(p.tables[i].id,root);if(p.tables[i].bindings.schema!=p.schema) { root.fail("native presentation schema mismatch"); }
@@ -91,6 +97,7 @@ struct MissionDocument::Storage final {
     std::vector<ObservationBinding> observations;
     std::vector<DialogueRow> rows;
     std::vector<ObjectiveCueBinding> objectiveCues;
+    std::vector<ObjectiveMarker> markers;
     std::vector<std::vector<PresentationCue>> cueLists;
     std::vector<std::vector<PresentationAction>> actionLists;
     std::vector<CueSet> cueSets;
@@ -168,7 +175,18 @@ struct MissionDocument::Storage final {
         return result;
     }
     void presentation(const Value& v,const Profile& profile) {
-        v.fields({"dialogue","cue_sets","action_sets","binding_tables"});
+        bool hasMarkers{};for(const auto& item:v.members) { hasMarkers|=item.first=="markers"; }
+        if(hasMarkers) {
+            v.fields({"dialogue","cue_sets","action_sets","binding_tables","markers"});
+            for(const auto& item:v.at("markers").array(256)) {
+                item.fields({"objective","target"});const auto event=hex(item.at("objective"));
+                if(!objective(profile,event)) { item.fail("marker objective is not registered"); }
+                for(const auto& prior:markers) { if(prior.event==event) { item.fail("duplicate objective marker"); } }
+                const auto& cap=lookup(profile.markers,name(item.at("target")),item);
+                if(!cap.target.valid()) { item.fail("invalid native marker target"); }markers.push_back({event,cap.target});
+            }
+            views.markers=markers;
+        } else { v.fields({"dialogue","cue_sets","action_sets","binding_tables"}); }
         const auto& dialogue=v.at("dialogue");dialogue.fields({"bank","rows","objective_cues","dispatch_timeout_ms","spacing_ms"});
         if(hex(dialogue.at("bank"))!=profile.dialogue.bank) { dialogue.fail("unregistered dialogue bank"); }
         const auto& rowList=dialogue.at("rows").array(64);rows.resize(profile.dialogue.rows.size());
@@ -251,7 +269,7 @@ struct MissionDocument::Storage final {
             name(id,value);value.fields({"capability","operation","asset","argument","wait"});
             const auto key=name(value.at("capability"));const auto& cap=lookup(profile.capabilities,key,value);
             CommandSpec spec{static_cast<Operation>(enumeration(value.at("operation"),operations)),named_asset(value.at("asset")),value.at("argument").integer(),static_cast<Wait>(enumeration(value.at("wait"),waits))};
-            if(!same(spec,cap.spec)) { value.fail("operation does not match registered native capability"); }
+            if(!(same(spec,cap.spec) || (cap.argumentMaximum && spec.operation==Operation::eventAfter && spec.asset==cap.spec.asset && spec.wait==cap.spec.wait && spec.argument>0 && spec.argument<=cap.argumentMaximum))) { value.fail("operation does not match registered native capability"); }
             bindings.push_back({id,key,cap.domain,spec});
         }
         const auto& graphList=object(root.at("graphs"),64);if(graphList.empty()) { root.fail("mission requires graphs"); }

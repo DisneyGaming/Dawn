@@ -1,0 +1,183 @@
+{
+  "format_version": 2,
+  "mission": "chamber",
+  "profile": "chamber.native.v1",
+  "authority_schema": "otherMissions",
+  "assets": {
+    "module": {
+      "registry": "0x00000100",
+      "definition": "0x00000200",
+      "type": 0,
+      "slot": 0
+    },
+    "scene": {
+      "registry": "0x00000101",
+      "definition": "0x00000201",
+      "type": 43,
+      "slot": 8
+    },
+    "objective": {
+      "registry": "0x00000100",
+      "definition": "0x00000202",
+      "type": 68,
+      "slot": 0
+    }
+  },
+  "bindings": {
+    "launch": {
+      "capability": "launch",
+      "operation": "mechanic",
+      "asset": "module",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "done": {
+      "capability": "done",
+      "operation": "observation",
+      "asset": "module",
+      "argument": 0,
+      "wait": "observed"
+    },
+    "talk": {
+      "capability": "talk",
+      "operation": "scene",
+      "asset": "scene",
+      "argument": 1,
+      "wait": "nativeReady"
+    },
+    "timer": {
+      "capability": "timer",
+      "operation": "eventAfter",
+      "asset": "scene",
+      "argument": 500,
+      "wait": "observed"
+    },
+    "objective": {
+      "capability": "objective",
+      "operation": "objective",
+      "asset": "objective",
+      "argument": 256,
+      "wait": "requested"
+    },
+    "finish": {
+      "capability": "finish",
+      "operation": "complete",
+      "asset": "module",
+      "argument": 6,
+      "wait": "requested"
+    }
+  },
+  "graphs": {
+    "root": {
+      "name": "chamber root",
+      "domain": "composition",
+      "steps": [
+        {
+          "id": "launch",
+          "after": [],
+          "commands": [
+            {
+              "id": "launch",
+              "binding": "launch"
+            }
+          ]
+        },
+        {
+          "id": "done",
+          "after": [
+            "launch"
+          ],
+          "commands": [
+            {
+              "id": "done",
+              "binding": "done"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "complete": "done"
+      }
+    },
+    "room": {
+      "name": "chamber ending",
+      "domain": "room",
+      "steps": [
+        {
+          "id": "scene",
+          "after": [],
+          "commands": [
+            {
+              "id": "talk",
+              "binding": "talk"
+            },
+            {
+              "id": "objective",
+              "binding": "objective"
+            }
+          ]
+        },
+        {
+          "id": "elapsed",
+          "after": [
+            "scene"
+          ],
+          "commands": [
+            {
+              "id": "timer",
+              "binding": "timer"
+            }
+          ]
+        },
+        {
+          "id": "complete",
+          "after": [
+            "elapsed"
+          ],
+          "commands": [
+            {
+              "id": "finish",
+              "binding": "finish"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "scene.started": "talk",
+        "timer.elapsed": "timer"
+      }
+    }
+  },
+  "roles": {
+    "mission": "root",
+    "ending": "room"
+  },
+  "entry": "root",
+  "modules": [
+    "room"
+  ],
+  "observations": [
+    {
+      "fact": "done",
+      "receipt": "complete"
+    }
+  ],
+  "presentation": {
+    "dialogue": {
+      "bank": "0x00000300",
+      "rows": [],
+      "objective_cues": [],
+      "dispatch_timeout_ms": 15000,
+      "spacing_ms": 250
+    },
+    "cue_sets": {},
+    "action_sets": {},
+    "binding_tables": {},
+    "markers": [
+      {
+        "objective": "0x00000100",
+        "target": "npc"
+      }
+    ]
+  }
+}

@@ -10,8 +10,9 @@ namespace sunrise::state::activity::coo {
 
 enum class Schema : std::uint8_t { unspecified, omegaArchive, otherMissions };
 enum class Operation : std::uint8_t {
-    scene, population, objective, dialogue, device, cinematic, traversal, mechanic, observation
+    scene, population, objective, dialogue, device, cinematic, traversal, mechanic, observation, eventAfter, complete
 };
+constexpr bool is_observation(Operation op) noexcept { return op==Operation::observation || op==Operation::eventAfter; }
 enum class Milestone : std::uint8_t { nativeReady, completed, observed, failed };
 enum class Wait : std::uint8_t { requested, nativeReady, completed, observed };
 enum class Phase : std::uint8_t { idle, running, complete, cancelled, failed };
@@ -98,7 +99,7 @@ public:
             if (step.name.empty() || step.commands.empty() || step.commands.size() > kMaxCommands
                 || (step.dependencies & ~earlier) != 0) { return false; }
             for (const auto& command : step.commands) {
-                if ((command.wait == Wait::observed) != (command.operation == Operation::observation)) { return false; }
+                if ((command.wait == Wait::observed) != (is_observation(command.operation))) { return false; }
             }
             for (std::size_t j = 0; j < i; ++j) {
                 if (definition.steps[j].name == step.name) { return false; }
@@ -177,7 +178,7 @@ public:
             auto& state = states_[event.token.step].commands[event.token.command];
             if (event.milestone == Milestone::failed) { fail(Failure::native, services); return; }
             const auto& spec = definition_->steps[event.token.step].commands[event.token.command];
-            if ((event.milestone == Milestone::observed) != (spec.operation == Operation::observation)) {
+            if ((event.milestone == Milestone::observed) != (is_observation(spec.operation))) {
                 ++rejected_; continue;
             }
             bool& flag = event.milestone == Milestone::nativeReady ? state.ready : state.completed;

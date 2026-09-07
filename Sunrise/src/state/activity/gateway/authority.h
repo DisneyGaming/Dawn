@@ -2,6 +2,7 @@
 #include "frame.h"
 #include "traversal_catalog.h"
 #include "ai_bindings.h"
+#include "service_bindings.h"
 #include "../coo/native_scene_authority.h"
 #include "../coo/native_presentation_authority.h"
 #include "../coo/native_combatant_authority.h"
@@ -16,7 +17,7 @@ inline constexpr std::array<std::uint32_t,2> kVanceEvents{0x3A5C256CU,0xC2656F80
     if(!frame.enabled) { return 0; }
     if(key==0x986985D0U) {
         if(type==53 && slot==2) { return coo::native_presentation::kDialogueBits+(frame.activeRow==coo::kNoDialogue?0U:64U); }
-        if(type==68 && slot==0 && frame.objective!=0) { return coo::native_presentation::kDirectiveBits; }
+        if(type==68 && slot==0 && (frame.objective!=0 || frame.presentation.published)) { return coo::native_presentation::kDirectiveBits; }
     }
     // The physical Forest lattice is closed throughout this mission, including arrival.
     if(key==kMainlandRegistry && type==23 && slot==2) { return 147; }
@@ -46,6 +47,7 @@ template<class Writer> bool write_body(Writer& writer,const Frame& frame,std::ui
     if(body_bits(frame,key,type,slot)==0) { return false; }
     if(key==0x986985D0U) {
         if(type==53) { return coo::native_presentation::dialogue(writer,frame.generations,frame.activeRow); }
+        if(frame.services) { return coo::native_presentation::objective(writer,frame.presentation); }
         if(!frame.finished) { return coo::native_presentation::directive(writer,frame.objective); }
         // Retire the Vance objective after the validated ending timeline finishes.
         using namespace coo::native_presentation;
@@ -60,6 +62,13 @@ template<class Writer> bool write_body(Writer& writer,const Frame& frame,std::ui
         }
         return type==1?coo::native_scene::write_source(writer,frame.spawnGeneration,frame.sceneGeneration!=0)
             :coo::native_scene::scene(writer,key,4,frame.sceneGeneration,std::span{kVanceEvents}.first(vance_event_count(frame)));
+    }
+    if(frame.services && key==kMainlandRegistry) {
+        for(std::size_t i=0;i<frame.objects.size();++i) {
+            const auto& b=kEndingObjects[i];const auto& state=frame.objects[i];
+            if(type==4 && slot==b.source.slot) { return coo::native_device::object(writer,state.generation,state.create); }
+            if(type==23 && slot==b.device.slot) { return coo::native_device::position_only(writer,state.position,state.apply?state.revision:std::int16_t{-1},true); }
+        }
     }
     if(key==kMainlandRegistry && type==4) {
         const auto index=slot<=28?slot-24:slot-27;

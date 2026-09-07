@@ -71,16 +71,23 @@ inline constexpr coo::script::Capability kCapabilities[]{
     {"vance.approached","ending",{coo::Operation::observation,{0xBA0B27A0U,0x80F46DCDU,60,13},0U,coo::Wait::observed}},
     {"dialogue.come_closer","ending",{coo::Operation::dialogue,{0x986985D0U,0x80F47426U,53,2},10U,coo::Wait::nativeReady}},
     {"vance.scene","ending",{coo::Operation::scene,{0xBA0B27A0U,0x80F46DE0U,43,5},1U,coo::Wait::nativeReady}},
-    {"vance.ascent_cue","ending",{coo::Operation::observation,kVanceScene,kVanceAscentMs,coo::Wait::observed}},
+    {"vance.ascent_cue","ending",{coo::Operation::eventAfter,kVanceScene,kVanceAscentMs,coo::Wait::observed},300000},
     {"lighthouse.raise","ending",{coo::Operation::device,{0xBA0B27A0U,0x80F46DD0U,23,0},1U,coo::Wait::requested}},
     {"lighthouse.light","ending",{coo::Operation::device,{0xBA0B27A0U,0x80F46DD3U,23,1},1U,coo::Wait::requested}},
-    {"vance.ending_cue","ending",{coo::Operation::observation,kVanceScene,kVanceFinishMs,coo::Wait::observed}},
-    {"mission.finish","ending",{coo::Operation::mechanic,{0x986985D0U,0x80F46DB0U,0,0},30U,coo::Wait::requested}},
+    {"vance.ending_cue","ending",{coo::Operation::eventAfter,kVanceScene,kVanceFinishMs,coo::Wait::observed},300000},
+    {"mission.finish","ending",{coo::Operation::complete,{0x986985D0U,0x80F46DB0U,0,0},6U,coo::Wait::requested}},
 };
 inline constexpr coo::script::ModuleCapability kModules[]{{"opening",{kModule,1}}};
 inline constexpr coo::script::FactCapability kFacts[]{{"opening.checked",0}};
+// Beacon references use existing entity providers. They do not create objects.
+inline constexpr coo::script::MarkerCapability kMarkers[]{
+    {"forest_gate",{{0x4B946B28U,0x80F46F17U,4,28},{}}},
+    {"lighthouse_portal",{{0x4B946B28U,0x80F46F11U,4,26},{}}},
+    {"module",{{0x4B946B28U,0x80F46F23U,4,32},{}}},
+    {"vance",{{0xBA0B27A0U,0x80F46DDDU,1,4},{}}}
+};
 inline constexpr coo::script::Profile kProfile{"gateway.ending.v2","otherMissions",coo::Schema::otherMissions,
-    kCapabilities,kModules,kFacts,kDialogue,kObjectives,{},{}};
+    kCapabilities,kModules,kFacts,kDialogue,kObjectives,{},{},kMarkers};
 // Opening contract is retained; ending has its own executor incarnation.
 struct ContractStep final { std::uint32_t dependencies; std::span<const std::string_view> commands; };
 inline constexpr std::string_view kStep0[]{"landing.entered"};

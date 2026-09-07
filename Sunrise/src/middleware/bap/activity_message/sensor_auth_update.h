@@ -122,6 +122,7 @@ struct Snapshot final {
     /** Selects the archive protocol only for mission_scot. */
     bool archiveOmega{};
     state::activity::gateway::Frame gateway{};
+    state::activity::coo::CompletionPublication missionCompletion{};
     /** Message 52's payload, echoed exactly. A wrong epoch skips phase 2 and reports nothing. */
     patch_epoch::PatchEpoch patchEpoch{};
     Roster roster{};

@@ -127,6 +127,18 @@ void traversal_tests(const c::script::Views& views,bool retainShelfActor,bool sk
     CHECK(!controller.module(badModule,false));CHECK(controller.module(module,false));
     CHECK(!controller.module(module,false));CHECK(!controller.module(module,true));
     CHECK(controller.ending_request().owner==module);CHECK(!frame.moduleDestroyed && !frame.lighthouseOpen);
+    // Each linked device waits for its own native entity/controller and revision receipt.
+    std::array<c::ObjectReceipt,3> objectReceipts{};
+    for(std::size_t i=0;i<3;++i) {
+        if(i!=1) { CHECK(controller.prepared(run,generation,g::kObjectPreparation[i])); }tick();
+        auto& receipt=objectReceipts[i];receipt={{run,generation+1U},g::kEndingObjects[i].source,100+static_cast<unsigned>(i),50,UINT32_MAX};
+        CHECK(frame.objects[i].phase==c::ObjectPhase::create && !frame.objects[i].apply);
+        CHECK(controller.object(i,receipt,false,0,-1));tick();CHECK(frame.objects[i].phase==c::ObjectPhase::bind);
+        receipt.controller=200+static_cast<unsigned>(i);CHECK(controller.object(i,receipt,false,0,-1));tick();
+        CHECK(frame.objects[i].apply && frame.objects[i].position==1.F);
+        CHECK(controller.object(i,receipt,true,1.F,frame.objects[i].revision));tick();CHECK(frame.objects[i].phase==c::ObjectPhase::ready);
+    }
+    CHECK(!frame.pendingServices);
     std::uint32_t nextActor=0x12340000U;
     g::EnemyReceipt shelfStraggler{};
     const auto clear=[&](std::uint8_t cohort) {
@@ -191,6 +203,7 @@ void traversal_tests(const c::script::Views& views,bool retainShelfActor,bool sk
     clear(8);speak(4);CHECK(!frame.checked);speak(5);
     CHECK(frame.openingChecked);CHECK(!frame.checked);tick();CHECK(frame.section==1);
     CHECK(frame.objective==g::kObjectives[3]);
+    CHECK(frame.presentation.active && frame.presentation.marker.asset==g::kMarkers[1].target.asset);
     CHECK((frame.cohorts&(1U<<9)) && (frame.cohorts&(1U<<10)));
     // Outbound volume sightings were cleared at the return-section boundary.
     CHECK((frame.cohorts&(1U<<11))==0);
@@ -200,6 +213,10 @@ void traversal_tests(const c::script::Views& views,bool retainShelfActor,bool sk
     clear(11);CHECK(frame.cohorts&(1U<<12));clear(12);CHECK(frame.cohorts&(1U<<13));
     CHECK(frame.cohorts&(1U<<14));CHECK(!frame.moduleVulnerable);clear(13);
     CHECK(frame.moduleVulnerable);CHECK(!frame.lighthouseOpen);speak(7);
+    CHECK(frame.objects[1].position==.75F && frame.objects[1].phase==c::ObjectPhase::apply);
+    CHECK(frame.objects[0].position==1.F && frame.objects[2].position==1.F);
+    CHECK(controller.object(1,objectReceipts[1],true,.75F,frame.objects[1].revision));tick();
+
     CHECK(controller.ending_request().owner==module); // Boss exposure preserves the live entity.
     now+=60000;tick();CHECK(!frame.lighthouseOpen);CHECK(!frame.moduleDestroyed);
     // Boss death and player overlap do not substitute for module destruction.
@@ -208,6 +225,8 @@ void traversal_tests(const c::script::Views& views,bool retainShelfActor,bool sk
     badModule=module;badModule.serial++;CHECK(!controller.module(badModule,true));
     badModule=module;badModule.health++;CHECK(!controller.module(badModule,true));
     CHECK(controller.module(module,true));CHECK(!controller.module(module,true));
+    for(const auto& object:controller.frame().objects) { CHECK(object.position==0.F && !object.create && object.phase==c::ObjectPhase::retired); }
+
     frame=controller.update(run,++now,true);
     // First authority update after the real death clears BOTH beam device and source.
     std::array<std::byte,32> beamDevice{},beamSource{};bits::Writer bd(beamDevice),bs(beamSource);
@@ -258,6 +277,7 @@ void traversal_tests(const c::script::Views& views,bool retainShelfActor,bool sk
     CHECK(!frame.finished && !frame.checked && !frame.sceneComplete);
     now=conversationAt+g::kVanceFinishMs;tick();CHECK(frame.checked && frame.finished);
     CHECK(!frame.sceneComplete); // The actor's native idle timeline deliberately stays alive.
+    CHECK(frame.completion.valid() && frame.completion.owner.run==run);CHECK(!frame.presentation.active && !frame.presentation.marker.valid());
     CHECK(controller.diagnostics().phase==c::Phase::complete);
     // The outskirts are a route fight; no distant optional actor is a gate-clear requirement.
     // Closed lattice persists after the blocked-entry dialogue; no Forest transition.
@@ -266,6 +286,7 @@ void traversal_tests(const c::script::Views& views,bool retainShelfActor,bool sk
     const auto prior=generation;controller.reset();CHECK(controller.select(views,run));
     controller.position(run,interior(359));tick();CHECK(frame.spawnGeneration>module.generation);
     CHECK(frame.sceneGeneration==frame.spawnGeneration && g::vance_event_count(frame)==0);
+    CHECK(!frame.completion.valid());for(std::size_t i=0;i<3;++i) { CHECK(!controller.object(i,objectReceipts[i],true,1.F,1)); }
     CHECK(!frame.vanceTurned && !frame.conversationStarted && frame.lighthouseChannels==0);
     CHECK(!controller.vance(scene,g::VanceMilestone::conversationStarted,now));
     CHECK(!controller.prepared(run,prior,0));CHECK(!controller.module(module,true));CHECK(!controller.scene(scene,true));
@@ -576,12 +597,16 @@ void ending_identity_and_codec_tests() {
     frame.lighthouseOpen=true;CHECK(targetPosition(0)==0.F);
     frame.preparedMask=0;frame.moduleVulnerable=false;frame.moduleDestroyed=false;frame.lighthouseOpen=false;
     for(bool finished:{false,true}) {
-        wire::Snapshot snapshot{};snapshot.lifetime=3;snapshot.gateway=frame;snapshot.gateway.finished=finished;
+        wire::Snapshot snapshot{};snapshot.lifetime=3;snapshot.gateway=frame;snapshot.gateway.finished=finished;snapshot.missionCompletion={{71,1},finished};
         std::array<std::byte,128> packet{};bits::Writer writer(packet);
         CHECK(wire::write_auth_body(writer,snapshot,g::kGroups[0].key,17,3,false));
         const auto head=std::to_integer<unsigned>(packet[0]);auto phase=head>>4,result=(head>>1)&7U;
         CHECK(phase==(finished?7U:4U));CHECK(result==(finished?2U:1U));
-        snapshot.gateway.enabled=false;std::array<std::byte,128> foreign{};bits::Writer fw(foreign);
+        snapshot.archiveOmega=true;std::array<std::byte,128> archive{};bits::Writer aw(archive);
+        CHECK(wire::write_auth_body(aw,snapshot,0x82FB58B7U,17,3,false));
+        CHECK((std::to_integer<unsigned>(archive[0])>>4)==(finished?7U:4U));
+        CHECK(((std::to_integer<unsigned>(archive[0])>>1)&7U)==(finished?2U:1U));snapshot.archiveOmega=false;
+        snapshot.gateway.enabled=false;snapshot.missionCompletion={};std::array<std::byte,128> foreign{};bits::Writer fw(foreign);
         CHECK(wire::write_auth_body(fw,snapshot,g::kGroups[0].key,17,3,false));phase=std::to_integer<unsigned>(foreign[0])>>4;result=(std::to_integer<unsigned>(foreign[0])>>1)&7U;
         CHECK(phase==4 && result==1);
     }

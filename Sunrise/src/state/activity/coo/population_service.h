@@ -3,9 +3,22 @@
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
+#include "stall_diagnostics.h"
 
 namespace sunrise::state::activity::coo {
 enum class Admission : std::uint8_t { ignored, accepted, overflow };
+enum class EnemyIntent : std::uint8_t { combat, idleReveal };
+struct EnemyPolicy final {
+    bool verify{};EnemyIntent intent{};
+    std::uint32_t tacticalRegistry{};std::uint16_t tacticalSlot{};std::int8_t tacticalRow{-1};
+    friend bool operator==(const EnemyPolicy&,const EnemyPolicy&)=default;
+};
+struct EnemyReadiness final {
+    bool created{},health{},ai{},tactical{};
+    std::uint32_t healthHandle{UINT32_MAX},tacticalRegistry{};
+    std::uint16_t tacticalSlot{};std::int8_t tacticalRow{-1};
+};
+struct PopulationCapacity final { bool known{};std::uint32_t used{},maximum{}; };
 
 // The mission selects cohorts and native summon timing. This ledger owns
 // admission, salted identity retention, verified deaths, and clearance joins.
@@ -14,6 +27,48 @@ class PopulationService final {
     static_assert(Groups > 0 && MaximumPopulation > 0 && MaximumPopulation <= UINT8_MAX);
     static_assert(std::is_trivially_copyable_v<Receipt>);
 public:
+    void policy(std::size_t index,EnemyPolicy policy) noexcept {
+        if(index>=Groups || policies_[index]==policy) { return; }policies_[index]=policy;
+        for(std::uint8_t n=0;n<counts_[index];++n) { actors_[index][n].ready=matches(policy,actors_[index][n].readiness); }
+    }
+    void capacity(PopulationCapacity value) noexcept {
+        capacity_=(value.known && value.maximum>0 && value.used<=value.maximum)?value:PopulationCapacity{};
+    }
+    PopulationCapacity capacity() const noexcept { return capacity_; }
+    bool observe(const Receipt& receipt,EnemyReadiness readiness) noexcept {
+        if(!receipt.valid()) { return false; }
+        for(std::size_t i=0;i<Groups;++i) for(std::uint8_t n=0;n<counts_[i];++n) {
+            auto& actor=actors_[i][n];if(actor.receipt!=receipt || actor.dead) { continue; }
+            // Retain readiness through later damage and intentional scene holds.
+            actor.readiness=readiness;actor.ready|=matches(policies_[i],readiness);return true;
+        }return false;
+    }
+    template<class Visit> void pending(Visit visit) const noexcept {
+        for(std::size_t i=0;i<Groups;++i) for(std::uint8_t n=0;n<counts_[i];++n) {
+            const auto& a=actors_[i][n];if(policies_[i].verify && !a.ready && !a.dead) { visit(a.receipt); }
+        }
+    }
+    bool ready(std::size_t index,std::uint8_t requested) const noexcept {
+        if(!admitted(index,requested)) { return false; }
+        for(std::uint8_t n=0;n<counts_[index];++n) {
+            const auto& a=actors_[index][n];if(policies_[index].verify && !a.ready && !a.dead) { return false; }
+        }return true;
+    }
+    StallDetail missing(std::size_t index,std::uint8_t requested,bool deaths) const noexcept {
+        if(index>=Groups) { return {Missing::admission,{},requested,0}; }
+        if(counts_[index]!=requested) { return {capacity_.known && capacity_.used==capacity_.maximum?Missing::capacity:Missing::admission,{},requested,counts_[index],capacity_.known?capacity_.maximum:0}; }
+        for(std::uint8_t n=0;n<counts_[index];++n) {
+            const auto& a=actors_[index][n];if(a.dead) { continue; }
+            if(policies_[index].verify && !a.ready) {
+                const auto& r=a.readiness;
+                return {!r.created?Missing::admission:(!r.health || r.healthHandle==UINT32_MAX)?Missing::health:!r.ai?Missing::ai:Missing::tactical,{},requested,counts_[index],a.receipt.actor};
+            }
+        }
+        if(deaths) {
+            std::uint32_t dead{};for(std::uint8_t n=0;n<counts_[index];++n) { dead+=actors_[index][n].dead?1U:0U; }
+            if(dead!=requested) { return {Missing::death,{},requested,dead}; }
+        }return {};
+    }
     void enable(std::size_t index) noexcept { if (index < Groups) { enabled_[index] = true; } }
     [[nodiscard]] bool enabled(std::size_t index) const noexcept { return index < Groups && enabled_[index]; }
     template<class Catalog>
@@ -69,9 +124,16 @@ public:
         return true;
     }
 private:
-    struct Actor final { Receipt receipt{}; bool dead{}; };
+    static bool matches(const EnemyPolicy& p,const EnemyReadiness& r) noexcept {
+        return r.created && r.health && r.healthHandle!=UINT32_MAX && r.ai
+            && (p.intent==EnemyIntent::idleReveal || (r.tactical && r.tacticalRegistry==p.tacticalRegistry
+                && r.tacticalSlot==p.tacticalSlot && r.tacticalRow==p.tacticalRow));
+    }
+    struct Actor final { Receipt receipt{}; bool dead{},ready{};EnemyReadiness readiness{}; };
     std::array<std::array<Actor, MaximumPopulation>, Groups> actors_{};
     std::array<std::uint8_t, Groups> counts_{};
     std::array<bool, Groups> enabled_{};
+    std::array<EnemyPolicy,Groups> policies_{};
+    PopulationCapacity capacity_{};
 };
 } // namespace sunrise::state::activity::coo

@@ -13,6 +13,8 @@
 #include "omega_enemy_native_reference.h"
 #include "omega_enemy_native_admission.h"
 #include "omega_enemy_native_health.h"
+#include "gateway_native_read.h"
+#include "coo_enemy_readiness.h"
 #include "omega_boss_health.h"
 #include "../../hooking/call_gate.h"
 #include "../../hooking/detour.h"
@@ -289,6 +291,11 @@ __declspec(noinline) void observe_admission(std::uint32_t parent,std::uint64_t c
             {nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
             :state::activity::omega_first_lair::observe_admission(
             {nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry});
+    }
+    if(nav.gateway && rejection==0) {
+        gateway_native::Read probe{g_image};
+        const gateway::EnemyReceipt receipt{nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry};
+        gateway::observe_readiness(receipt,coo_native::enemy(probe,g_image,receipt));
     }
     if(!TryAcquireSRWLockExclusive(&g_lock)) {return;}
     run(nav.run);

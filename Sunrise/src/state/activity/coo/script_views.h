@@ -3,6 +3,7 @@
 #include "dialogue_service.h"
 #include "presentation_cues.h"
 #include "presentation_services.h"
+#include "objective_service.h"
 
 namespace sunrise::state::activity::coo::script {
 struct CommandBinding final { std::string_view id, capability; std::uint8_t step{}, command{}; };
@@ -28,6 +29,7 @@ struct Views final {
     std::span<const CueSet> cueSets;
     std::span<const ActionSet> actionSets;
     std::span<const PresentationTable> tables;
+    std::span<const ObjectiveMarker> markers{};
     [[nodiscard]] const GraphView* graph(std::string_view id) const noexcept {
         for(const auto& item:graphs) { if(item.id==id) { return &item; } }return nullptr;
     }

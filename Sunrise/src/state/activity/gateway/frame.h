@@ -1,5 +1,7 @@
 #pragma once
 #include "../coo/dialogue_service.h"
+#include "../coo/object_service.h"
+#include "../coo/objective_service.h"
 namespace sunrise::state::activity::gateway {
 struct Frame final {
     bool enabled{}, checked{},openingChecked{};
@@ -13,5 +15,9 @@ struct Frame final {
     bool marchers{},cannons{},finalCannon{},populationFault{};
     std::array<std::uint32_t,16> generations{};
     std::uint8_t activeRow{coo::kNoDialogue};
+    std::array<coo::ObjectState,3> objects{};
+    coo::ObjectiveState presentation{};
+    bool services{},pendingServices{};
+    coo::CompletionPublication completion{};
 };
 }

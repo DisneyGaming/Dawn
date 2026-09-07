@@ -1,5 +1,7 @@
 # The Gateway reconstruction
 
+Current shared-service integration: [Universal mission services](UNIVERSAL-MISSION-SERVICES.md). Gateway now exercises readiness, object/destructible lifecycle, scene milestones, event-relative timing, marker lifecycle, stall diagnostics and shared completion. The older acceptance records below remain historical; this integration requires a fresh in-game run.
+
 Current integration: `gateway.ending.v2`, format-2 mission JSON. The complete ending was validated live, including the shielded cube and portal blocker, native Vance turn and conversation, timed Lighthouse ascent, and native activity phase 6 / result 1. This integration replaces those temporary memory overrides with retained mission authority. A fresh run of the assembled DLL remains the final integration check.
 
 The JSON keeps the existing opening, combat cohorts, wave order, boss/module destruction gates, and dialogue bindings. Its ending now waits for the actual native conversation to start, requests both Lighthouse controls at 22,640 ms (the validated “lost prophecies” cue), and finishes at 31,000 ms after the ascent requests. The existing lifetime writer publishes phase 6 / result 1 and retires the objective. It does not request another activity.

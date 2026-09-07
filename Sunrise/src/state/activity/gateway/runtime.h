@@ -2,7 +2,13 @@
 #include "frame.h"
 #include "ending_receipts.h"
 #include "traversal_catalog.h"
+#include "../coo/population_service.h"
+#include "../coo/object_service.h"
 namespace sunrise::state::activity::gateway {
+struct ObjectRequest { coo::Generation owner{};std::array<coo::ObjectState,3> states{};bool enabled{}; };
+[[nodiscard]] ObjectRequest object_request() noexcept;
+void observe_object(std::size_t,const coo::ObjectReceipt&,bool,float,std::int16_t) noexcept;
+void observe_readiness(const EnemyReceipt&,coo::EnemyReadiness) noexcept;
 [[nodiscard]] EndingRequest ending_request() noexcept;
 void observe_module(const ModuleReceipt&,bool dead) noexcept;
 void observe_scene(const SceneReceipt&,bool completed) noexcept;

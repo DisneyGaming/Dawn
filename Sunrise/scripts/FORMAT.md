@@ -9,13 +9,13 @@ The generic compiler builds bounded executor definitions from JSON. It has no Om
 - `profile`: a registered native profile. Profiles supply supported operations, domains, modules, facts, dialogue metadata, presentation events and binding tables. JSON cannot register executable native code.
 - `authority_schema`: the supplied profile's native schema name.
 - `assets`: named registry/definition/type/slot identities belonging to registered capabilities.
-- `bindings`: named commands declaring `capability`, `operation`, named `asset`, `argument`, and `wait`. All fields must agree with the capability. Capability identifiers are independent of authored step and command IDs, even where the existing Omega profile uses descriptive legacy names containing slashes.
+- `bindings`: named commands declaring `capability`, `operation`, named `asset`, `argument`, and `wait`. All fields must agree with the capability, except that an `eventAfter` capability with a nonzero `argumentMaximum` accepts a positive delay up to that maximum. Capability identifiers are independent of authored step and command IDs, even where the existing Omega profile uses descriptive legacy names containing slashes.
 - `graphs`: named graphs declaring `name`, native service `domain`, `steps`, and `receipts`.
 - `roles`: integration role names mapped to graph IDs. Renaming a graph requires updating its references. The generic compiler imposes no particular role names.
 - `entry`: the composition graph ID; it publishes registered modules and joins their registered facts.
 - `modules`: registered producer names in publication order. Native integration may enforce producer dependencies.
 - `observations`: entries containing a registered `fact` name and a named `receipt` in the entry graph.
-- `presentation`: generic dialogue, named cue sets, named action sets and named binding tables.
+- `presentation`: generic dialogue, named cue sets, named action sets, named binding tables and optional `markers`.
 
 ## Graphs and receipts
 
@@ -32,7 +32,7 @@ Wait meanings:
 - `requested`: the service accepted the request.
 - `nativeReady`: a qualified native readiness receipt arrived.
 - `completed`: native readiness and completion were both observed.
-- `observed`: a qualified observation arrived; reserved for observation operations.
+- `observed`: a qualified observation arrived; reserved for `observation` and `eventAfter` operations.
 
 The generic loader permits new graphs and additional occurrences of registered operations. Native integration can impose narrower requirements for a stateful mechanic. Structural validity alone does not prove that a script completes in game.
 
@@ -61,3 +61,21 @@ Limits: 1 MiB input, nesting depth 16, 30000 JSON nodes, 256 bytes per string, 6
 `Sunrise/unit/fixtures/mission_script_alternate.json` uses another native profile, schema, module order and graph layout. Its tests add a step through JSON alone and execute scene/population receipts through the shared executor. The executable links only the generic compiler, without the Omega profile or publication bridge. This proves compiler reuse; it is not a second mapped playable mission.
 
 The Omega suite renames every graph, step and command, reorders independent steps, changes native receipt command slots, and exercises opening direct entry, reveal retry and ending retry/handoff. Full frozen parity suites remain required before deployment.
+
+## Relative events, completion and markers
+
+`eventAfter` is an observed operation. Its `argument` is the delay in milliseconds after the authenticated event selected by the native capability. Publication time is not an event origin. The shared timeline retains the first matching event even when it precedes the graph wait. Zero or values above the registered `argumentMaximum` are rejected for adjustable timers.
+
+`complete` exposes terminal mission publication. The registered capability chooses its state and prerequisites; Gateway uses argument `6` with `wait: requested`. The controller publishes a generation-owned completion only after its final scene conditions pass. It clears owned objectives and markers as part of that transition.
+
+The optional `presentation.markers` array maps registered objective events to registered target names:
+
+```json
+"markers": [
+  { "objective": "0x722FE621", "target": "vance" }
+]
+```
+
+Each objective may occur once in this mapping. Unknown objectives and target names are rejected. The trusted `Profile::markers` entries provide native scope and optional locator values. An objective without a mapping clears the prior marker. Existing format-2 scripts that omit the array remain valid.
+
+See `Sunrise/docs/UNIVERSAL-MISSION-SERVICES.md` for initialization, destructible, scene, readiness and restart integration.

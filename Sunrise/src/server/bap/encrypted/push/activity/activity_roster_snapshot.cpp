@@ -709,6 +709,7 @@ RosterOutcome build_roster_snapshot(Session& session,
         if(!admitted) { return RosterOutcome::noGroups; }
         snapshot.gateway=state::activity::gateway::snapshot(state::activity::mission_run_generation(),
             GetTickCount64(),state::activity::mission_seed_armed());
+        if(snapshot.gateway.enabled) { snapshot.missionCompletion=snapshot.gateway.completion; }
     }
     if(snapshot.omegaEndingRetire) {
         if(!omega_lair::terminal_roster(scratch,snapshot.roster,

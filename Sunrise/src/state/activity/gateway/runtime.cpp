@@ -2,6 +2,8 @@
 #include "runtime.h"
 #include "controller.h"
 #include "ending_cadence.h"
+#include "../../../client/hooks/bootflow/gateway_native_read.h"
+#include "../../../client/hooks/bootflow/coo_enemy_readiness.h"
 #include "../runtime.h"
 #include "../../../core/logging/log.h"
 #include <cstdio>
@@ -11,6 +13,8 @@ namespace {
 std::mutex mutex;
 Controller controller;
 EndingCadence endingCadence;
+coo::StallDiagnostics stalled,background;
+std::size_t probeCursor{};std::uint64_t nextProbe{};
 std::uint64_t selectedRun{};
 std::unique_ptr<coo::script::MissionDocument> document;
 std::bitset<std::size(kVolumes)> loggedVolumes;
@@ -52,14 +56,49 @@ bool prepare(std::uint64_t run,bool selected) noexcept {
             std::snprintf(line.data(),line.size(),"ev=gateway stage=reset run=%llu reason=destination_changed",
                 static_cast<unsigned long long>(selectedRun));log(line.data());
         }
-        controller.reset();endingCadence.reset();selectedRun=0;loggedVolumes.reset();loggedActive=UINT32_MAX;loggedSection=UINT8_MAX;loggedTimeouts=0;loggedPhase=coo::Phase::idle;return false;
+        controller.reset();endingCadence.reset();stalled.reset();background.reset();probeCursor=0;nextProbe=0;selectedRun=0;loggedVolumes.reset();loggedActive=UINT32_MAX;loggedSection=UINT8_MAX;loggedTimeouts=0;loggedPhase=coo::Phase::idle;return false;
     }
     if(!load()) { return false; }
-    if(run!=selectedRun) { endingCadence.reset();loggedVolumes.reset();loggedActive=UINT32_MAX;loggedSection=UINT8_MAX;loggedTimeouts=0;loggedPhase=coo::Phase::idle; }
+    if(run!=selectedRun) { stalled.reset();background.reset();probeCursor=0;nextProbe=0;endingCadence.reset();loggedVolumes.reset();loggedActive=UINT32_MAX;loggedSection=UINT8_MAX;loggedTimeouts=0;loggedPhase=coo::Phase::idle; }
     if(!controller.select(document->views(),run)) { return false; }
     selectedRun=run;return true;
 }
+// Copy identities under the owner lock, then sample native state without it.
+void poll_enemies(std::uint64_t run) noexcept {
+    if(!mission_seed_armed() || world_phase()!=WorldPhase::arrived || run!=mission_run_generation()) { return; }
+    std::array<EnemyReceipt,252> pending{};std::size_t count{},begin{};
+    { const std::lock_guard lock(mutex);if(run!=selectedRun || GetTickCount64()<nextProbe) { return; }nextProbe=GetTickCount64()+500;
+      controller.pending_enemies([&](const EnemyReceipt& receipt) noexcept { if(count<pending.size()) { pending[count++]=receipt; } });
+      if(count) { begin=probeCursor%count;probeCursor=(begin+12)%count; }
+    }
+    const auto image=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
+    { client::hooks::bootflow::gateway_native::Read read{image};
+      const auto capacity=client::hooks::bootflow::coo_native::capacity(read,image+0x1F9D7F0);
+      const std::lock_guard lock(mutex);if(run==selectedRun) { controller.capacity(capacity); }
+    }
+    for(std::size_t i=0;i<(std::min)(count,std::size_t{12});++i) {
+        client::hooks::bootflow::gateway_native::Read read{image};const auto& receipt=pending[(begin+i)%count];
+        observe_readiness(receipt,client::hooks::bootflow::coo_native::enemy(read,image,receipt));
+    }
+}
+ObjectRequest object_request() noexcept {
+    if(!mission_seed_armed() || world_phase()!=WorldPhase::arrived) { return {}; }
+    const std::lock_guard lock(mutex);if(!selectedRun || selectedRun!=mission_run_generation()) { return {}; }
+    const auto& frame=controller.frame();return {{selectedRun,frame.spawnGeneration},frame.objects,frame.enabled};
+}
+void observe_object(std::size_t index,const coo::ObjectReceipt& receipt,bool applied,float position,std::int16_t revision) noexcept {
+    const std::lock_guard lock(mutex);
+    if(receipt.owner.run!=selectedRun || receipt.owner.run!=mission_run_generation() || !controller.object(index,receipt,applied,position,revision)) { return; }
+    std::array<char,256> line{};std::snprintf(line.data(),line.size(),"ev=coo_object mission=gateway run=%llu object=%u entity=%08X controller=%08X phase=%u revision=%d",
+        static_cast<unsigned long long>(receipt.owner.run),static_cast<unsigned>(index),receipt.entity,receipt.controller,
+        static_cast<unsigned>(controller.frame().objects[index].phase),static_cast<int>(revision));log(line.data());
+}
+void observe_readiness(const EnemyReceipt& receipt,coo::EnemyReadiness value) noexcept {
+    const std::lock_guard lock(mutex);if(receipt.run!=selectedRun || receipt.run!=mission_run_generation()) { return; }
+    static_cast<void>(controller.readiness(receipt,value));
+}
 Frame snapshot(std::uint64_t run,std::uint64_t now,bool ready) noexcept {
+    poll_enemies(run);
     const std::lock_guard lock(mutex);
     if(run!=selectedRun || run!=mission_run_generation()) { return {}; }
     const auto frame=controller.update(run,now,ready && mission_seed_armed() && world_phase()==WorldPhase::arrived);
@@ -77,6 +116,31 @@ Frame snapshot(std::uint64_t run,std::uint64_t now,bool ready) noexcept {
         loggedActive=d.active;loggedPhase=d.phase;loggedTimeouts=controller.timeouts();std::array<char,320> line{};
         std::snprintf(line.data(),line.size(),"ev=coo_executor mission=gateway scope=ending run=%llu phase=%u active=%08X complete=%08X failure=%u dialogue_timeouts=%u section=%u mission_finished=%u",
             static_cast<unsigned long long>(run),static_cast<unsigned>(d.phase),d.active,d.complete,static_cast<unsigned>(d.failure),loggedTimeouts,frame.section,frame.finished?1U:0U);log(line.data());
+    }
+    if(const auto* graph=controller.graph();graph && d.phase==coo::Phase::running) {
+        unsigned lines{};
+        for(const auto& binding:graph->commands) {
+            if(controller.step_state(binding.step).phase!=coo::StepPhase::active || lines>=8) { continue; }
+            const auto& spec=graph->definition.steps[binding.step].commands[binding.command];coo::StallReport report{};
+            if(!stalled.observe({run,d.incarnation,binding.step,binding.command},controller.missing(spec),now,report)) { continue; }
+            ++lines;std::array<char,512> line{};
+            std::snprintf(line.data(),line.size(),"ev=coo_stall mission=gateway step=%.*s command=%.*s missing=%s registry=%08X type=%u slot=%u expected=%u actual=%u detail=%u waiting_ms=%llu",
+                static_cast<int>(graph->definition.steps[binding.step].name.size()),graph->definition.steps[binding.step].name.data(),
+                static_cast<int>(binding.id.size()),binding.id.data(),coo::missing_name(report.detail.missing),report.detail.asset.registry,
+                report.detail.asset.type,report.detail.asset.slot,report.detail.expected,report.detail.actual,report.detail.detail,
+                static_cast<unsigned long long>(report.waitingMs));log(line.data());
+        }
+    }
+    if(frame.enabled && !frame.finished) {
+        unsigned lines{};
+        controller.background_diagnostics([&](std::size_t i,coo::StallDetail detail) noexcept {
+            coo::StallReport report{};
+            if(lines>=8 || !background.observe({run,d.incarnation,static_cast<std::uint8_t>(i/8),static_cast<std::uint8_t>(i%8)},detail,now,report)) { return; }
+            ++lines;std::array<char,400> line{};const auto capacity=controller.capacity();
+            std::snprintf(line.data(),line.size(),"ev=coo_readiness_stall mission=gateway missing=%s registry=%08X type=%u slot=%u expected=%u actual=%u actor=%08X capacity_known=%u allocated=%u maximum=%u waiting_ms=%llu",
+                coo::missing_name(detail.missing),detail.asset.registry,detail.asset.type,detail.asset.slot,detail.expected,detail.actual,detail.detail,
+                capacity.known?1U:0U,capacity.used,capacity.maximum,static_cast<unsigned long long>(report.waitingMs));log(line.data());
+        });
     }
     endingCadence.snapshot(run,now,frame);return frame;
 }

@@ -206,12 +206,10 @@ constexpr std::size_t kSpawnKeyCount = 32;
  */
 [[nodiscard]] bool write_lifetime(bits::Writer& writer, const Snapshot& snapshot,
                                   bool missionRestriction) noexcept {
-    // Gateway terminal publication is scoped to its selected controller. The native
-    // lifetime enum/output is reconstructed as phase6 / successful result1; the
-    // mission-complete HUD response requires the first live ending validation.
-    const bool gatewayFinished=snapshot.gateway.enabled && snapshot.gateway.finished;
-    const auto lifetime=gatewayFinished?6U:std::uint32_t{snapshot.lifetime};
-    bool encoded = writer.write(lifetime + 1, 4) && writer.write(gatewayFinished?2U:1U, 3)
+    // Shared terminal publication: native mission-complete phase 6 / success 1.
+    const bool completed=snapshot.missionCompletion.valid();
+    const auto lifetime=completed?6U:std::uint32_t{snapshot.lifetime};
+    bool encoded = writer.write(lifetime + 1, 4) && writer.write(completed?2U:1U, 3)
                    && writer.write(0, kPresenceWidth) && writer.write(kSignedZero, 32)
                    && writer.write(0, 32) && writer.write(kSignedZero+(missionRestriction?14U:0U), 32)
                    && writer.write(snapshot.omegaForestVexEncounters ? 2U : 1U, 6)

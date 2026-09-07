@@ -1,9 +1,38 @@
+// Generic object initialization receipts at the existing source create/sense boundary.
+void observe_gateway_object(void* raw) noexcept {
+    namespace gateway=state::activity::gateway;namespace coo=state::activity::coo;namespace gn=gateway_native;
+    gn::Read read{g_image};const auto source=reinterpret_cast<std::uintptr_t>(raw);std::array<std::byte,16> header{};
+    if(!read.copy(source,header)) { return; }
+    std::size_t index{};for(;index<std::size(gateway::kEndingObjects);++index) {
+        if(prefix(header.data(),gateway::kEndingObjects[index].source.definition,0x80809928U,0x4C8U)) { break; }
+    }
+    if(index==std::size(gateway::kEndingObjects)) { return; }
+    const auto request=gateway::object_request();if(!request.enabled) { return; }
+    const auto& desired=request.states[index];std::uint32_t generation{},committed{},bundle{};std::uint8_t active{};gn::Weak entity{},after{};
+    if(desired.phase<coo::ObjectPhase::create || desired.phase==coo::ObjectPhase::ready || desired.phase==coo::ObjectPhase::retired
+        || !read.value(source+0x180,generation) || generation!=desired.generation || !read.value(source+0x2F0,committed) || committed!=generation
+        || !read.value(source+0x188,active) || active!=1 || !read.value(source+0x440,entity)) { return; }
+    std::uintptr_t row{},controller{};coo::ObjectReceipt receipt{{request.owner.run,generation},gateway::kEndingObjects[index].source,entity.handle,entity.serial};
+    if(!read.entity_row(entity,row) || !read.value(row+0x4C,bundle)) { return; }
+    std::int32_t revision{-1};
+    if(coo_native::component(read,bundle,entity.handle,0x80803910U,controller)) {
+        if(!read.value(controller+0x24,receipt.controller) || !read.value(controller+0x960,revision)) { return; }
+    }
+    std::uint32_t again{};
+    if(!read.value(source+0x440,after) || after!=entity || !read.weak(after)
+        || !read.value(source+0x180,again) || again!=generation || !read.value(source+0x2F0,again) || again!=generation) { return; }
+    // +960 is the controller's acknowledged position revision. The matching
+    // revision proves consumption of this desired position, not animation end.
+    gateway::observe_object(index,receipt,desired.apply && revision==desired.revision,desired.position,
+        revision>=INT16_MIN && revision<=INT16_MAX?static_cast<std::int16_t>(revision):std::int16_t{-1});
+}
 // Included inside the existing guarded object-source hook translation unit.
 // 9F0750 is the native source sense writer: void(source, output_ref).
 using SourceSense=void(__fastcall*)(void*,void*) noexcept;
 std::atomic<SourceSense> g_gatewaySense{};
 std::atomic<std::uint64_t> g_gatewayModuleState{UINT64_MAX};
 void observe_gateway_module(void* raw) noexcept {
+    observe_gateway_object(raw);
     namespace gateway=state::activity::gateway;
     namespace gn=gateway_native;
     gn::Read read{g_image};const auto source=reinterpret_cast<std::uintptr_t>(raw);

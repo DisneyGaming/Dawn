@@ -1,3 +1,5 @@
+#include "coo_native_components.h"
+#include "../../../state/activity/gateway/service_bindings.h"
 #include <Windows.h>
 
 #include <array>

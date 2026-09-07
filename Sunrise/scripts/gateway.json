@@ -573,14 +573,14 @@
     },
     "mission.finish": {
       "capability": "mission.finish",
-      "operation": "mechanic",
+      "operation": "complete",
       "asset": "module",
-      "argument": 30,
+      "argument": 6,
       "wait": "requested"
     },
     "vance.ascent_cue": {
       "capability": "vance.ascent_cue",
-      "operation": "observation",
+      "operation": "eventAfter",
       "asset": "vance_scene",
       "argument": 22640,
       "wait": "observed"
@@ -601,7 +601,7 @@
     },
     "vance.ending_cue": {
       "capability": "vance.ending_cue",
-      "operation": "observation",
+      "operation": "eventAfter",
       "asset": "vance_scene",
       "argument": 31000,
       "wait": "observed"
@@ -1474,6 +1474,32 @@
     },
     "cue_sets": {},
     "action_sets": {},
-    "binding_tables": {}
+    "binding_tables": {},
+    "markers": [
+      {
+        "objective": "0xF7A5BB63",
+        "target": "forest_gate"
+      },
+      {
+        "objective": "0xFA35EDEE",
+        "target": "lighthouse_portal"
+      },
+      {
+        "objective": "0xB4D880CB",
+        "target": "lighthouse_portal"
+      },
+      {
+        "objective": "0x80FD8B67",
+        "target": "module"
+      },
+      {
+        "objective": "0xB10D6455",
+        "target": "lighthouse_portal"
+      },
+      {
+        "objective": "0x722FE621",
+        "target": "vance"
+      }
+    ]
   }
 }
