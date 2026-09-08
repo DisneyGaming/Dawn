@@ -100,6 +100,8 @@
     <ClCompile Include="src\state\activity\coo\omega_script.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\state\activity\gateway\runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\state\activity\gateway\controller.cpp" />
+    <ClCompile Include="src\state\activity\deadly_trial\deadly_trial_controller.cpp" />
+    <ClCompile Include="src\state\activity\deadly_trial\deadly_trial_runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\state\activity\coo\mission_script.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\core\logging\log.cpp" />
     <ClCompile Include="src\core\provenance\build_provenance.cpp" />
@@ -274,6 +276,9 @@
     <ClCompile Include="src\client\hooks\bootflow\omega_enemy_lair_receipts.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\omega_lair_cinematic.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\omega_navigation.cpp" />
+    <ClCompile Include="src\client\hooks\bootflow\deadly_trial_presentation.cpp" />
+    <ClCompile Include="src\client\hooks\bootflow\deadly_trial_revival.cpp" />
+    <ClCompile Include="src\client\hooks\bootflow\deadly_trial_lifetime.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\omega_rescue_scene_receipts.cpp" />
     <ClCompile Include="src\middleware\bap\activity_message\activity_sensor_auth_bodies_other_missions.cpp" />
     <ClCompile Include="src\middleware\bap\activity_message\activity_sensor_auth_blocks_other_missions.cpp" />

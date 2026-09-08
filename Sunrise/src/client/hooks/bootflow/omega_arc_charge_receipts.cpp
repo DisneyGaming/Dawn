@@ -16,6 +16,7 @@
 #include "gateway_module_native_path.h"
 #include "gateway_module_damage.h"
 #include "../../../state/activity/gateway/runtime.h"
+#include "../../../state/activity/deadly_trial/runtime.h"
 #include "../../hooking/call_gate.h"
 #include "../../hooking/detour.h"
 #include "../../../core/logging/log.h"
@@ -695,6 +696,79 @@ void after_dunk(void* component, PendingDunk pending) noexcept {
                after.boss.generation);
     }
 }
+// The same generic interaction template is used by unrelated world objects.
+// Bind it only through this mission's current native source, weak entity, and
+// controller. F36640 must consume the local player's real hold request.
+void observe_trial_object(void* raw) noexcept {
+    namespace trial=state::activity::deadly_trial;namespace gn=gateway_native;
+    const auto request=trial::request();if(!request.enabled || request.interaction.valid()) { return; }
+    gn::Read read{g_image};const auto source=reinterpret_cast<std::uintptr_t>(raw);std::array<std::byte,16> header{};
+    if(!read.copy(source,header) || !prefix(header.data(),0x80B2EBA7U,0x80809928U,0x4C8U)) { return; }
+    std::uint32_t generation{},committed{},bundle{};std::uint8_t active{};gn::Weak entity{},after{};
+    if(!read.value(source+0x180,generation) || generation!=request.owner.value || !read.value(source+0x2F0,committed) || committed!=generation
+        || !read.value(source+0x188,active) || active!=1 || !read.value(source+0x440,entity)) { return; }
+    std::uintptr_t row{},controller{};std::uint32_t handle{},parent{};
+    if(!read.entity_row(entity,row) || !read.value(row+0x4C,bundle)
+        || !coo_native::component(read,bundle,entity.handle,0x80804FB2U,controller)
+        || !read.copy(controller,header) || !prefix(header.data(),0x80FEAB33U,0x80804FB2U,0x388U)
+        || !read.value(controller+0x24,handle) || handle==UINT32_MAX || !read.value(controller+0x2C,parent) || parent!=entity.handle) { return; }
+    if(!read.value(source+0x440,after) || after!=entity || !read.weak(after)
+        || !read.value(source+0x180,generation) || generation!=request.owner.value || !read.value(source+0x2F0,committed) || committed!=generation) { return; }
+    trial::observe_binding({request.owner,source,entity.handle,entity.serial,handle});
+}
+// Source creation and interaction availability are separate native operations.
+// Keep the authored predicate; F33930 mode 2 clears only this unused pedestal's
+// blocked state. The real local-player hold still has to pass F36640.
+void enable_trial_pedestal(void* raw) noexcept {
+    namespace trial=state::activity::deadly_trial;namespace gn=gateway_native;
+    if(!g_sinkEnable) { return; }const auto request=trial::request();const auto& b=request.interaction;
+    if(!request.enabled || !b.valid()) { return; }
+    const auto component=reinterpret_cast<std::uintptr_t>(raw);gn::Read read{g_image};
+    std::array<std::byte,0x2E8> bytes{};std::uintptr_t resolved{};
+    if(!read.copy(component,bytes) || !prefix(bytes.data(),0x80FEAB33U,0x80804FB2U,0x388U)
+        || at<std::uint32_t>(bytes.data()+0x24)!=b.controller || at<std::uint32_t>(bytes.data()+0x2C)!=b.entity
+        || !read.resolve(b.controller,resolved) || resolved!=component
+        || bytes[0x2C0]!=std::byte{1} || bytes[0x2D0]!=std::byte{}
+        || at<std::int32_t>(bytes.data()+0x2D8)!=0 || at<std::int32_t>(bytes.data()+0x2DC)!=0) { return; }
+    std::array<std::byte,16> header{};gn::Weak entity{},again{};std::uint32_t generation{},committed{};std::uint8_t active{};
+    if(!read.copy(b.source,header) || !prefix(header.data(),0x80B2EBA7U,0x80809928U,0x4C8U)
+        || !read.value(b.source+0x180,generation) || generation!=b.owner.value
+        || !read.value(b.source+0x2F0,committed) || committed!=generation
+        || !read.value(b.source+0x188,active) || active!=1
+        || !read.value(b.source+0x440,entity) || entity.handle!=b.entity || entity.serial!=b.serial || !read.weak(entity)
+        || !read.value(b.source+0x440,again) || again!=entity) { return; }
+    const auto current=trial::request();if(!current.enabled || current.interaction!=b || current.owner!=request.owner) { return; }
+    const native::SinkEnableCommand command{std::span<const std::byte,8>{bytes.data()+0x2C4,8}};
+    g_sinkEnable(raw,command.bytes.data());
+    std::array<std::byte,0x2E8> after{};
+    const bool verified=copy(raw,after) && prefix(after.data(),0x80FEAB33U,0x80804FB2U,0x388U)
+        && at<std::uint32_t>(after.data()+0x24)==b.controller && at<std::uint32_t>(after.data()+0x2C)==b.entity
+        && after[0x2C0]==std::byte{} && after[0x280]==std::byte{1}
+        && std::memcmp(after.data()+0x2C4,bytes.data()+0x2C4,8)==0
+        && std::memcmp(after.data()+0x2D0,bytes.data()+0x2D0,0x18)==0;
+    report("ev=deadly_trial stage=pedestal_enabled run=%llu generation=%u entity=%08X controller=%08X verified=%u mutation=native_F33930_mode2",
+        static_cast<unsigned long long>(b.owner.run),b.owner.value,b.entity,b.controller,verified?1U:0U);
+}
+struct TrialUse { state::activity::deadly_trial::InteractionBinding binding{};std::int32_t requested{},before{};std::uint32_t player{UINT32_MAX}; };
+TrialUse before_trial_use(void* component) noexcept {
+    namespace trial=state::activity::deadly_trial;const auto request=trial::request();const auto& b=request.interaction;
+    if(!request.enabled || !b.valid()) { return {}; }
+    std::array<std::byte,0x2E8> bytes{};if(!copy(component,bytes) || !prefix(bytes.data(),0x80FEAB33U,0x80804FB2U,0x388U)
+        || at<std::uint32_t>(bytes.data()+0x24)!=b.controller || at<std::uint32_t>(bytes.data()+0x2C)!=b.entity) { return {}; }
+    gateway_native::Read read{g_image};gateway_native::Weak entity{};std::uint32_t generation{};
+    if(!read.value(b.source+0x440,entity) || entity.handle!=b.entity || entity.serial!=b.serial || !read.weak(entity)
+        || !read.value(b.source+0x180,generation) || generation!=b.owner.value) { return {}; }
+    const auto player=local_controlled_entity();if(player==UINT32_MAX) { return {}; }
+    const auto who=resolve_requester(static_cast<const std::byte*>(component)+0x2E0,player);
+    if(who.entity!=player || who.localEntity!=player) { return {}; }
+    return {b,at<std::int32_t>(bytes.data()+0x2DC),at<std::int32_t>(bytes.data()+0x2D8),player};
+}
+void after_trial_use(void* component,const TrialUse& before) noexcept {
+    if(!before.binding.valid()) { return; }const auto after=before_trial_use(component);
+    if(after.binding!=before.binding || after.player!=before.player || after.requested!=before.requested) { return; }
+    std::uint8_t active{};if(!read_at(reinterpret_cast<std::uintptr_t>(component)+0x2D0,active) || active>1) { return; }
+    state::activity::deadly_trial::observe_interaction(before.binding,before.requested,before.before,after.before,active==1);
+}
 #include "gateway_module_receipts.inl"
 #include "gateway_module_damage_hooks.inl"
 
@@ -708,11 +782,12 @@ __declspec(noinline) void __fastcall dunk_hook(void* component) noexcept {
     const hooking::CallGate::Scope scope{g_gate};
     const auto nav = state::activity::omega_presentation::navigation();
     const auto pending = scope.accepts_side_effects() && nav.enabled ? before_dunk(component, nav.run) : PendingDunk{};
+    const auto trialUse=scope.accepts_side_effects()?before_trial_use(component):TrialUse{};
     const bool previous = g_dunkInFlight;
     g_dunkInFlight = pending.proof.held.valid();
     hooking::await_original(g_dunk)(component);
     g_dunkInFlight = previous;
-    if (scope.accepts_side_effects()) { after_dunk(component, pending); }
+    if (scope.accepts_side_effects()) { after_dunk(component, pending);after_trial_use(component,trialUse); }
 }
 __declspec(noinline) bool __fastcall create_hook(void* component) noexcept {
     const hooking::CallGate::Scope scope{g_gate};
@@ -735,6 +810,7 @@ __declspec(noinline) void __fastcall interaction_hook(void* component, std::uint
     if (scope.accepts_side_effects()) {
         const auto nav = state::activity::omega_presentation::navigation();
         if (nav.enabled) { enable_sink(component, nav.run); }
+        enable_trial_pedestal(component);
     }
     hooking::await_original(g_interaction)(component, player, flags, view,
         value5, value6, value7, value8, publish, output);
@@ -840,7 +916,7 @@ void quiesce_omega_arc_charge_receipts() noexcept { g_gate.quiesce(); }
 bool uninstall_omega_arc_charge_receipts() noexcept {
     quiesce_omega_arc_charge_receipts();
     if (!g_handles[0].attached) { return true; }
-    const std::array<hooking::detour::ProtectedCodeEntry, 21> protectedCode{{
+    const std::array<hooking::detour::ProtectedCodeEntry, 24> protectedCode{{
         {reinterpret_cast<void*>(&gateway_damage_hook)}, {reinterpret_cast<void*>(&gateway_damage_gate_hook)},
         {reinterpret_cast<void*>(&gateway_damage_summary_hook)}, {reinterpret_cast<void*>(&gateway_damage_receipt)},
         {reinterpret_cast<void*>(&gateway_damage_blocked)},
@@ -853,6 +929,8 @@ bool uninstall_omega_arc_charge_receipts() noexcept {
         {reinterpret_cast<void*>(&observe_rescue_marker)},
         {reinterpret_cast<void*>(&observe_omega_arc_charge_carrier)},
         {reinterpret_cast<void*>(&resolve_requester)},
+        {reinterpret_cast<void*>(&observe_trial_object)}, {reinterpret_cast<void*>(&before_trial_use)},
+        {reinterpret_cast<void*>(&after_trial_use)},
         {reinterpret_cast<void*>(&hooking::call_gate_detail::enter)},
         {reinterpret_cast<void*>(&hooking::call_gate_detail::leave)},
     }};

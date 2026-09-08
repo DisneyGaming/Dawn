@@ -108,6 +108,16 @@ inline constexpr std::uint32_t kGatewayOpeningSpawn = 0x69F52B3EU;
 inline constexpr ForcedDestination kGatewayOpening = gateway_opening();
 
 
+// A Deadly Trial native town opening. Spawn is the recovered point set inside
+// the opening dialogue filter; final orientation requires a live run.
+constexpr ForcedDestination deadly_trial_opening() noexcept {
+    ForcedDestination v{};constexpr char name[]="adventure_ginger";
+    for(std::size_t i=0;i<sizeof(name)-1;++i) { v.packageName[i]=name[i]; }
+    v.packageNameLength=sizeof(name)-1;v.bubble=51;v.sliceSet=408;v.spawnSetHash=0x43954D08U;
+    v.hasBubble=v.hasSliceSet=v.hasSpawnSetHash=v.enabled=true;return v;
+}
+inline constexpr ForcedDestination kDeadlyTrialOpening=deadly_trial_opening();
+static_assert(active(kDeadlyTrialOpening));
 } // namespace profiles
 
 static_assert(active(profiles::kTowerfallOpening));

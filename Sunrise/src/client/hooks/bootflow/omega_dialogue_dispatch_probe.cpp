@@ -1,5 +1,7 @@
 #include "../../../state/activity/gateway/runtime.h"
+#include "../../../state/activity/deadly_trial/runtime.h"
 #include <Windows.h>
+#include "deadly_trial_presentation.h"
 #include <intrin.h>
 
 #include <array>
@@ -78,7 +80,7 @@ constexpr std::array<std::byte, 21> kDeviceSetterPrefix{
 /** The .data object-authority bitmap the setters and the gate tick both consult. */
 constexpr std::uintptr_t kObjectAuthorityTableRva = 0x26BE0E0U;
 /**
- * Native type-7 transition entry points (recovered ABI, PORTAL-TRAVERSAL-ASSESSMENT §9).
+ * Native type-7 transition entry points (recovered ABI, PORTAL-TRAVERSAL-ASSESSMENT Â§9).
  * +0xE2E720: precondition check - the pending-request slice at manager+0x524 must be empty.
  * +0xE2E7E0: mode-1 request wrapper (targetSlice, &spawnHash, nativeLocalToken=0); it locates
  * the world-transition manager itself and installs the pending request; native promotion
@@ -192,7 +194,7 @@ constexpr std::array<std::byte, 16> kForestWorkerTickPrefix{
     std::byte{0x89}, std::byte{0x7B}, std::byte{0x20}, std::byte{0x55}};
 // NOTE: the map factory (+0x56D9B0) is already detoured by omega_ikora_origin_probe, which
 // installs first; a second competing detour here failed its prefix verification against the
-// JMP-patched site and aborted this probe's whole install (dropping the index-heap guard — the
+// JMP-patched site and aborted this probe's whole install (dropping the index-heap guard â€” the
 // 2026-08-27 tunnel freeze). Forest construction logging lives in that probe's hook instead.
 
 /** Device CONFIGURE handler: resolves the property-name handle in the config record and
@@ -1151,6 +1153,7 @@ __declspec(noinline) void __fastcall dialogue_scan(std::byte* component) noexcep
             log_record_zero("scan", component, count);
         }
     }
+    deadly_trial_presentation::update_dialogue(component);
     const DialogueScan original = g_scanOriginal.load(std::memory_order_acquire);
     if (original != nullptr) {
         original(component);
@@ -1216,7 +1219,9 @@ __declspec(noinline) void __fastcall dialogue_dispatch(std::byte* component,
                 component + kRecordGenerationOffset + static_cast<std::size_t>(index)*0x20U);
             state::activity::gateway::observe_submission(gatewayDispatchRun,self,offset,bank,
                 static_cast<std::uint8_t>(index),generation);
-            if (bank != kDialogueBankHandle && bank != 0x80F1FC9EU) {
+            state::activity::deadly_trial::observe_submission(gatewayDispatchRun,self,offset,bank,
+                static_cast<std::uint8_t>(index),generation);
+            if (bank != kDialogueBankHandle && bank != 0x80F1FC9EU && bank != 0x80F1F086U) {
                 // observe_submission() drops a foreign bank silently; say so once per row.
                 log_reject("dispatch_bank", component, static_cast<std::uint32_t>(index),
                            generation, bank);
@@ -1907,7 +1912,7 @@ __declspec(noinline) std::uint64_t __fastcall forest_worker_tick_hook(void* inst
     // anchor block @+0x08 (see forest_tuner_record.h), bit3 enable@+0x2D, bits 4..6 ints
     // @+0x40/44/48; f32s @+0x30/34 and ints @+0x38/3C use -1 sentinels). Values come from
     // the Forest menu's shared diagnostic dial, applied before every tick; any change makes the worker's
-    // change-detect rebuild the whole layout in-place — a live combination dial.
+    // change-detect rebuild the whole layout in-place â€” a live combination dial.
     void* const sensor = g_forestSensorPtr.load(std::memory_order_acquire);
     if (sensor != nullptr) {
         auto* const record = static_cast<std::byte*>(sensor) + kForestAuthorityOffset;
@@ -2013,7 +2018,7 @@ __declspec(noinline) std::uint64_t __fastcall forest_worker_tick_hook(void* inst
     }
     // Authority verdict probe: the build (+0xFF8300) SKIPS network-replicated pieces (def+0x98
     // bit 4, filter +0x14E4720) when self-authority (+0xFFF500 -> +0x4E7F70 bubble-mask/
-    // registry gate) is false — the missing first/last platforms are the replicated ones.
+    // registry gate) is false â€” the missing first/last platforms are the replicated ones.
     {
         static std::atomic_uint32_t s_authorityProbes{0};
         const std::uint32_t probe = s_authorityProbes.fetch_add(1, std::memory_order_relaxed);

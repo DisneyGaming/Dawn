@@ -25,6 +25,9 @@ struct Source final {
     std::uint8_t secondRequested{};
     bool hasSecondCategory{};
     bool hasRule{true};
+    // Members own their actor requests. Preserve the native parent defaults
+    // observed in 80807EC9 instead of the loose-spawn override fields.
+    bool memberOwned{};
 };
 inline constexpr std::size_t kSourceBits = 641;
 inline constexpr std::size_t kTwoCategorySourceBits = 673;
@@ -42,6 +45,7 @@ template<class Writer>
     if(assigned ? (tactical.registry==0 || tactical.registry==0x811C9DC5U
                    || tactical.slot>0x7FFFU || tactical.row>=24)
                 : (tactical.row!=-1 || tactical.registry!=0 || tactical.slot!=0)) { return false; }
+    if(source.memberOwned && (source.looseRequested || source.secondRequested || assigned)) { return false; }
     const auto begin=writer.bit_count();
     const auto absent=[&writer]() noexcept {
         return writer.write(1,1) && writer.write(0x811C9DC5U,32)
@@ -62,17 +66,17 @@ template<class Writer>
         && writer.write(1,2) && writer.write(0,8)
         && writer.write(1,1) && writer.write(source.generation,31)
         && writer.write(1,1) && writer.write(0,32)
-        && writer.write(1,1) && writer.write(0,32)
+        && writer.write(1,1) && writer.write(source.memberOwned?0x811C9DC5U:0U,32)
         && absent() && absent()
         && (source.hasRule ? (writer.write(1,1) && writer.write(source.registry,32)
             && writer.write(67,7) && writer.write(32768U+source.ruleSlot,16)) : absent())
         && absent()
         && writer.write(1,1) && writer.write(0,31)
         && writer.write(1,1) && writer.write(0,31)
-        && writer.write(1,1) && writer.write(0,6)
-        && writer.write(1,1) && writer.write(assigned?static_cast<std::uint32_t>(tactical.row)+1U:0U,5)
+        && writer.write(1,1) && writer.write(source.memberOwned?1U:0U,6)
+        && writer.write(1,1) && writer.write(source.memberOwned?1U:assigned?static_cast<std::uint32_t>(tactical.row)+1U:0U,5)
         && writer.write(1,1) && writer.write(source.generation,31)
-        && writer.write(2,2) && writer.write(1,3)
+        && writer.write(source.memberOwned?1U:2U,2) && writer.write(1,3)
         && writer.write(1,1) && writer.write(0x811C9DC5U,32);
     return ok && writer.bit_count()-begin==(source.hasSecondCategory?kTwoCategorySourceBits:kSourceBits);
 }

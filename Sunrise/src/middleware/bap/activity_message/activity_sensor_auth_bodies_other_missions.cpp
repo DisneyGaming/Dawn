@@ -1,6 +1,7 @@
 #include "../../../state/activity/omega/omega_ending_authority.h"
 #include <array>
 #include "../../../state/activity/gateway/authority.h"
+#include "../../../state/activity/deadly_trial/authority.h"
 
 #include "sensor_auth_update.h"
 #include "../../../state/activity/omega/omega_progression.h"
@@ -736,6 +737,7 @@ legacy_auth_body_bits(const Snapshot& snapshot,
                std::uint8_t slotType,
                std::uint16_t slotIndex,
                bool carriesPlayerKey) noexcept {
+    if(const auto count=state::activity::deadly_trial::body_bits(snapshot.deadly_trial,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::gateway::body_bits(snapshot.gateway,key,slotType,slotIndex)) { return count; }
     if(snapshot.omegaEndingSelected && state::activity::omega::ending::slot(key,slotType,slotIndex)) return 263;
     if (snapshot.omegaBossAuthority && boss::parent_slot(key, slotType, slotIndex)) return boss::kParentBits;
@@ -846,6 +848,9 @@ bool legacy_write_auth_body(bits::Writer& writer,
                      std::uint8_t slotType,
                      std::uint16_t slotIndex,
                      bool carriesPlayerKey) noexcept {
+    if(state::activity::deadly_trial::body_bits(snapshot.deadly_trial,key,slotType,slotIndex)) {
+        return state::activity::deadly_trial::write_body(writer,snapshot.deadly_trial,key,slotType,slotIndex);
+    }
     if(state::activity::gateway::body_bits(snapshot.gateway,key,slotType,slotIndex)) {
         return state::activity::gateway::write_body(writer,snapshot.gateway,key,slotType,slotIndex);
     }

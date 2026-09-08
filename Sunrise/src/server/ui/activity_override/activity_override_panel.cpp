@@ -367,6 +367,9 @@ void draw() noexcept {
         changed = apply_opening_profile(value, rows, forced::profiles::kTowerfallOpening) || changed;
     }
     ImGui::SameLine();
+    if (ImGui::Button("A Deadly Trial opening")) {
+        changed = apply_opening_profile(value, rows, forced::profiles::kDeadlyTrialOpening) || changed;
+    }
     if (ImGui::Button("Gateway opening")) {
         changed = apply_opening_profile(value, rows, forced::profiles::kGatewayOpening) || changed;
     }

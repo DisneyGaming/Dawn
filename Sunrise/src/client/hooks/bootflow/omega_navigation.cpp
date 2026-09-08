@@ -9,6 +9,7 @@
 #include <span>
 
 #include "omega_forest_recipe.h"
+#include "deadly_trial_presentation.h"
 #include "omega_navigation_rules.h"
 #include "internal.h"
 #include "../../hooking/detour.h"
@@ -172,6 +173,10 @@ __declspec(noinline) void __fastcall directive_tick_hook(void* component) noexce
     const Call call;
     const auto original=g_directiveTickOriginal.load(std::memory_order_acquire);
     if (original != nullptr) { original(component); }
+    if(g_enabled.load(std::memory_order_acquire)) {
+        deadly_trial_presentation::update_directive(component,g_directiveBuildOriginal.load(std::memory_order_acquire),
+            reinterpret_cast<deadly_trial_presentation::Register>(g_registerPoint.load(std::memory_order_acquire)));
+    }
     update_directive_navigation(component);
 }
 

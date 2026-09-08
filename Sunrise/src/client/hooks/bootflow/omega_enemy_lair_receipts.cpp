@@ -10,6 +10,7 @@
 
 #include "omega_enemy_lair_receipts.h"
 #include "../../../state/activity/gateway/runtime.h"
+#include "../../../state/activity/deadly_trial/runtime.h"
 #include "omega_enemy_native_reference.h"
 #include "omega_enemy_native_admission.h"
 #include "omega_enemy_native_health.h"
@@ -29,8 +30,10 @@ namespace {
 namespace catalog=state::activity::omega_enemy_lair;
 namespace crownCatalog=state::activity::omega_enemy_crown;
 namespace gateway=state::activity::gateway;
-struct Context final { bool enabled;std::uint64_t run;bool gateway; };
+namespace trial=state::activity::deadly_trial;
+struct Context final { bool enabled;std::uint64_t run;bool gateway;bool trial{}; };
 Context selected_context() noexcept {
+    const auto trialRun=trial::native_run();if(trialRun) { return {true,trialRun,false,true}; }
     const auto run=gateway::native_run();if(run!=0) { return {true,run,true}; }
     const auto nav=state::activity::omega_presentation::navigation();return {nav.enabled,nav.run,false};
 }
@@ -174,16 +177,22 @@ enum : std::uint8_t {
     kSourceDefinitionRef=1,kSourceUnknownResource,kSourceResolve,kSourceRegistry,
     kSourceType,kSourceSlot,kSourceGenerationRead
 };
-bool source(Read& read,std::uintptr_t instance,Source& source,bool gatewayContext) noexcept {
+bool source(Read& read,std::uintptr_t instance,Source& source,bool gatewayContext,bool trialContext) noexcept {
     source.reason=0;source.nativeRegistry=0;source.nativeType=0;source.nativeSlot=-1;
     source.expectedRegistry=0;source.expectedSlot=0;
     Ref definition{};
-    if(!read.value(instance,definition) || definition.kind!=0x8080948FU || (!gatewayContext && definition.offset!=0x728)) {
+    if(!read.value(instance,definition) || definition.kind!=0x8080948FU || (!gatewayContext && !trialContext && definition.offset!=0x728)) {
         source.resource=definition.handle;source.kind=definition.kind;source.reason=kSourceDefinitionRef;return false;
     }
     source.resource=definition.handle;source.kind=definition.kind;
     std::uint32_t expectedRegistry{};
     std::uint16_t expectedSlot{};
+    if(trialContext) {
+        for(const auto& row:trial::kSpawns) {
+            if(row.definition==definition.handle && row.offset==definition.offset) { expectedRegistry=row.registry;expectedSlot=row.source;break; }
+        }
+        if(!expectedRegistry) { source.reason=kSourceUnknownResource;return false; }
+    }
     if(gatewayContext) {
         for(const auto& row:gateway::kSpawns) {
             if(row.definition==definition.handle && row.offset==definition.offset) { expectedRegistry=row.registry;expectedSlot=row.source;break; }
@@ -191,7 +200,7 @@ bool source(Read& read,std::uintptr_t instance,Source& source,bool gatewayContex
         if(expectedRegistry==0) { source.reason=kSourceUnknownResource;return false; }
     }
     for(const auto& row:catalog::kSpawners) {
-        if(!gatewayContext && catalog::supported_by_encounter(row) && row.resource==definition.handle) {
+        if(!gatewayContext && !trialContext && catalog::supported_by_encounter(row) && row.resource==definition.handle) {
             expectedRegistry=catalog::kRegistry;expectedSlot=row.slot;break;
         }
     }
@@ -279,7 +288,7 @@ __declspec(noinline) void observe_admission(std::uint32_t parent,std::uint64_t c
         handle,actorState.handle,actorState.parent)
         || !read.resolve({actorState.parent,0,0},parentAgain) || parentAgain!=currentParent) {rejection=5;}
     else if(!read.resolve(actorState.source,linked)) {rejection=6;}
-    else if(!read.value(linked,definition) || !source(read,linked,sourceState,nav.gateway)) {rejection=7;}
+    else if(!read.value(linked,definition) || !source(read,linked,sourceState,nav.gateway,nav.trial)) {rejection=7;}
     else if(sourceState.generation==0 || sourceState.generation!=sourceState.senseGeneration) {rejection=8;}
 
     // Progression delivery must never depend on the best-effort diagnostic lock.
@@ -287,10 +296,17 @@ __declspec(noinline) void observe_admission(std::uint32_t parent,std::uint64_t c
     // deduplicates full actor IDs, and fails closed on unexpected population.
     bool accepted=false;
     if(rejection==0) {
-        accepted=nav.gateway?gateway::observe_admission(
+        accepted=nav.trial?trial::observe_admission(
+            {nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
+            :nav.gateway?gateway::observe_admission(
             {nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
             :state::activity::omega_first_lair::observe_admission(
             {nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry});
+    }
+    if(nav.trial && rejection==0) {
+        gateway_native::Read probe{g_image};
+        const trial::EnemyReceipt receipt{nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry};
+        trial::observe_readiness(receipt,coo_native::enemy(probe,g_image,receipt));
     }
     if(nav.gateway && rejection==0) {
         gateway_native::Read probe{g_image};
@@ -377,7 +393,7 @@ __declspec(noinline) void observe_candidate(void* instance,std::uint32_t event,
     else if(!read.resolve({at<std::uint32_t>(character.data()+0x24),0,0},characterAddress)) {rejection=4;}
     else if(characterAddress!=address) {rejection=5;}
     else if(!read.resolve(actorState.source,linked)) {rejection=6;}
-    else if(!source(read,linked,sourceState,nav.gateway)) {rejection=7;}
+    else if(!source(read,linked,sourceState,nav.gateway,nav.trial)) {rejection=7;}
     std::array<std::byte,0x3C> eventHeader{};std::array<std::byte,0x38> payload{};
     std::uint32_t eventDefinition{};bool eventValid=false,healthValid=false,deathAccepted=false;
     Ref healthRef{};std::uintptr_t healthAddress{},memberAddress{};
@@ -403,7 +419,9 @@ __declspec(noinline) void observe_candidate(void* instance,std::uint32_t event,
         const bool qualified=omega_enemy_native_health::death(eventValid,eventDefinition,healthValid,
             healthFlags,sourceState.generation,sourceState.senseGeneration);
         if(qualified && call.accepts_side_effects()) {
-            deathAccepted=nav.gateway?gateway::observe_death(
+            deathAccepted=nav.trial?trial::observe_death(
+                {nav.run,actorState.handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
+                :nav.gateway?gateway::observe_death(
                 {nav.run,actorState.handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
                 :state::activity::omega_first_lair::observe_death(
                 {nav.run,actorState.handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry});

@@ -31,6 +31,8 @@
 #include "internal.h"
 #include "omega_lair_roster.h"
 #include "gateway_roster.h"
+#include "deadly_trial_roster.h"
+#include "../../../../../state/activity/deadly_trial/runtime.h"
 #include "../../../../../state/activity/gateway/runtime.h"
 #include "../../../../../middleware/bap/activity_message/tower_watch_cue_manifest.h"
 
@@ -481,6 +483,9 @@ RosterOutcome build_roster_snapshot(Session& session,
         && state::activity::gateway::prepare(
         state::activity::mission_run_generation(), gatewayDestination);
     if(gatewayDestination && !gatewayPrepared) { return RosterOutcome::noGroups; }
+    const bool trialDestination=name=="adventure_ginger" && !session.activity.joinedForeignSession;
+    const bool trialPrepared=!session.activity.joinedForeignSession && state::activity::deadly_trial::prepare(state::activity::mission_run_generation(),trialDestination);
+    if(trialDestination && !trialPrepared) { return RosterOutcome::noGroups; }
     const auto& omegaExperiments = core::settings::get().omegaExperiments;
     const bool syntheticOmega = omegaDestination;
     // Forest-D's native encounter classifier requires the selected race global
@@ -592,6 +597,10 @@ RosterOutcome build_roster_snapshot(Session& session,
     if (!state::build_data::find_scenario_layout(name, layout)) {
         return RosterOutcome::noLayout;
     }
+    if(trialPrepared && !deadly_trial_roster::prepare_layout(layout,
+        [](std::size_t index,layouts::RosterGroup& group) noexcept {
+            return state::build_data::find_roster_group(index,group);
+        })) { return RosterOutcome::noGroups; }
     // Publish the map generator group for the WHOLE activity, not per-region: a group set that
     // changes at the tunnel crossing advances the roster state sequence, which destroys and
     // recreates every authored object mid-run (killing the dialogue/directive components and the
@@ -710,6 +719,26 @@ RosterOutcome build_roster_snapshot(Session& session,
         snapshot.gateway=state::activity::gateway::snapshot(state::activity::mission_run_generation(),
             GetTickCount64(),state::activity::mission_seed_armed());
         if(snapshot.gateway.enabled) { snapshot.missionCompletion=snapshot.gateway.completion; }
+    }
+    if(trialPrepared) {
+        std::uint32_t failedKey{};
+        const bool admitted=deadly_trial_roster::admit(layout,scratch,snapshot.roster,
+            [](std::size_t index,layouts::RosterGroup& group) noexcept {
+                return state::build_data::find_roster_group(index,group);
+            },&failedKey);
+        const auto deadly_trialRun=state::activity::mission_run_generation();
+        static std::atomic_uint64_t lastDeadlyTrialAdmission{UINT64_MAX};
+        const auto stamp=(deadly_trialRun<<1)|(admitted?1ULL:0ULL);
+        if(lastDeadlyTrialAdmission.exchange(stamp)!=stamp) {
+            std::array<char,256> line{};
+            std::snprintf(line.data(),line.size(),"ev=deadly_trial stage=roster result=%s run=%llu groups=%zu failed_registry=%08X scope=town_51_alleys_0_1",
+                admitted?"admitted":"failed",static_cast<unsigned long long>(deadly_trialRun),snapshot.roster.groupCount,failedKey);
+            core::log::write(core::log::Channel::server,admitted?core::log::Level::info:core::log::Level::error,line.data());
+        }
+        if(!admitted) { return RosterOutcome::noGroups; }
+        snapshot.deadly_trial=state::activity::deadly_trial::snapshot(state::activity::mission_run_generation(),
+            GetTickCount64(),state::activity::mission_seed_armed());
+        if(snapshot.deadly_trial.enabled) { snapshot.missionCompletion=snapshot.deadly_trial.completion; }
     }
     if(snapshot.omegaEndingRetire) {
         if(!omega_lair::terminal_roster(scratch,snapshot.roster,

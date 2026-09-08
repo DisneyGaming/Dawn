@@ -22,9 +22,13 @@ inline constexpr Profile kTowerfall{"mission_towerfall", 266, 0x62D85FB3U,
 inline constexpr Profile kGateway{"mission_abs", 292, 0x5A2E3FF4U,
     0x986985D0U, 0x80F46D99U, 0x80F9FDD2U, "gateway_direct"};
 
+inline constexpr Profile kDeadlyTrial{"adventure_ginger",293,0x87D9CA16U,
+    0xC9BC773AU,0x80B2E004U,0x80FDB97FU,"deadly_trial_direct"};
+
 [[nodiscard]] constexpr const Profile* find(std::string_view package) noexcept {
     if (package == kTowerfall.package) { return &kTowerfall; }
     if (package == kGateway.package) { return &kGateway; }
+    if (package == kDeadlyTrial.package) { return &kDeadlyTrial; }
     return nullptr;
 }
 [[nodiscard]] constexpr const Profile* configured(const ForcedDestination& value) noexcept {

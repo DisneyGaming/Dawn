@@ -1,4 +1,5 @@
 #include "../../state/activity/gateway/runtime.h"
+#include "../../state/activity/deadly_trial/runtime.h"
 /**
  * The local player's published world position.
  * The game threads write it and the interface reads it, so a seqlock guards the vector.
@@ -139,6 +140,7 @@ void observe_crown_route(void* component,const teleport::Vector& position) noexc
     g_present.store(true, std::memory_order_release);
     state::activity::omega_presentation::observe_position({position[0], position[1], position[2]});
     state::activity::gateway::observe_position(position[0],position[1],position[2]);
+    state::activity::deadly_trial::observe_position(position[0],position[1],position[2]);
     observe_crown_route(component,position);
     return true;
 }

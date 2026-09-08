@@ -8,6 +8,7 @@
 #include "../../encoding/bit_writer.h"
 #include "activity_patch_epoch_parser.h"
 #include "../../../state/activity/gateway/frame.h"
+#include "../../../state/activity/deadly_trial/frame.h"
 #include "../../../state/activity/omega/omega_mission_state.h"
 #include "../../../state/activity/omega_crown_respawn_authority.h"
 #include "../../../state/activity/omega_rescue_scene_authority.h"
@@ -122,6 +123,7 @@ struct Snapshot final {
     /** Selects the archive protocol only for mission_scot. */
     bool archiveOmega{};
     state::activity::gateway::Frame gateway{};
+    state::activity::deadly_trial::Frame deadly_trial{};
     state::activity::coo::CompletionPublication missionCompletion{};
     /** Message 52's payload, echoed exactly. A wrong epoch skips phase 2 and reports nothing. */
     patch_epoch::PatchEpoch patchEpoch{};

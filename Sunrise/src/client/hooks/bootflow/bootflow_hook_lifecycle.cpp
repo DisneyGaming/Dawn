@@ -16,6 +16,8 @@
 #include "omega_vex_lattice_probe.h"
 #include "omega_arc_charge_receipts.h"
 #include "omega_rescue_scene_receipts.h"
+#include "deadly_trial_revival.h"
+#include "deadly_trial_lifetime.h"
 
 namespace sunrise::client::hooks::bootflow {
 namespace {
@@ -244,6 +246,8 @@ bool install() noexcept {
     const bool omegaCannonReceipt = install_omega_first_cannon_receipt();
     const bool omegaArcCharge = install_omega_arc_charge_receipts();
     const bool omegaRescueScenes = install_omega_rescue_scene_receipts();
+    const bool trialRevival = deadly_trial_revival::install();
+    const bool trialLifetime = deadly_trial_lifetime::install();
     const bool omegaLatticeProbe = omega_vex_lattice_probe::install();
     const bool prologueFiller = install_prologue_filler_ready();
     const bool regionPrivate = install_region_private();
@@ -258,7 +262,7 @@ bool install() noexcept {
                         || omegaDirectivePresentationInstalled
                         || omegaSceneRetirementInstalled
                         || type31CaptureInstalled || dialogueDispatchProbe || omegaNavigation || omegaLairCinematic
-                        || omegaLairReceipts || omegaCannonReceipt || omegaArcCharge || omegaRescueScenes
+                        || omegaLairReceipts || omegaCannonReceipt || omegaArcCharge || omegaRescueScenes || trialRevival || trialLifetime
                         || omegaLatticeProbe
                         || featureFlagInstalled
                         || prologueFiller || regionPrivate
@@ -273,7 +277,7 @@ bool install() noexcept {
                               && omegaIkoraOrigin && omegaDirectivePresentation
                               && omegaSceneRetirement && type31Capture && dialogueDispatchProbe
                               && omegaNavigation && omegaLairCinematic
-                              && omegaLairReceipts && omegaCannonReceipt && omegaArcCharge && omegaRescueScenes
+                              && omegaLairReceipts && omegaCannonReceipt && omegaArcCharge && omegaRescueScenes && trialRevival && trialLifetime
                               && featureFlag && prologueFiller && regionPrivate
                               && worldStep && spawn && towerfallExecutor && fade;
     // Admission opens only for this fresh lifecycle and before its installed publication. The
@@ -300,6 +304,8 @@ void quiesce() noexcept {
     quiesce_omega_first_cannon_receipt();
     quiesce_omega_arc_charge_receipts();
     quiesce_omega_rescue_scene_receipts();
+    deadly_trial_revival::quiesce();
+    deadly_trial_lifetime::quiesce();
     omega_vex_lattice_probe::quiesce();
 
     quiesce_type31_objective_capture();
@@ -366,6 +372,8 @@ bool uninstall() noexcept {
     if (!uninstall_omega_first_cannon_receipt()) { return false; }
     if (!uninstall_omega_arc_charge_receipts()) { return false; }
     if (!uninstall_omega_rescue_scene_receipts()) { return false; }
+    if (!deadly_trial_revival::uninstall()) { return false; }
+    if (!deadly_trial_lifetime::uninstall()) { return false; }
     if (!omega_vex_lattice_probe::uninstall()) { return false; }
     uninstall_omega_dialogue_dispatch_probe();
     uninstall_activity_spawner_chain_probe();

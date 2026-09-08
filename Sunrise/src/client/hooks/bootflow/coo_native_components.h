@@ -6,8 +6,9 @@ namespace sunrise::client::hooks::bootflow::coo_native {
 // Read-only counterpart of native resource iterator 591290/59A350. A component
 // must resolve back to itself and the expected entity. Reflected base/interface
 // rows may alias that same component; only distinct matching components conflict.
-template<class Read> bool component(Read& read,std::uint32_t bundle,std::uint32_t entity,
+template<class Read,std::size_t MaximumRows=256> bool component(Read& read,std::uint32_t bundle,std::uint32_t entity,
                                    std::uint32_t kind,std::uintptr_t& result) noexcept {
+    static_assert(MaximumRows<=1024);
     result=0;std::array<std::uint32_t,64> visited{};std::size_t used{};
     while(bundle!=UINT32_MAX && used<visited.size()) {
         for(std::size_t i=0;i<used;++i) { if(visited[i]==bundle) { return false; } }visited[used++]=bundle;
@@ -16,7 +17,7 @@ template<class Read> bool component(Read& read,std::uint32_t bundle,std::uint32_
         if((flags&2U)==0) {
             std::uintptr_t metadata{};std::uint64_t count{};std::int64_t relative{};
             if(!read.value(base+4,type) || !read.resolve(type,metadata)
-                || !read.value(metadata+0x68,count) || count>256 || !read.value(metadata+0x70,relative)) { return false; }
+                || !read.value(metadata+0x68,count) || count>MaximumRows || !read.value(metadata+0x70,relative)) { return false; }
             if(count && (!relative || relative>0x1000000 || relative < -0x1000000 || metadata>UINTPTR_MAX-0x1000080 || (relative<0 && metadata+0x80<static_cast<std::uintptr_t>(-relative)))) { return false; }
             const auto rows=count==0?std::uintptr_t{}:relative<0?metadata+0x80-static_cast<std::uintptr_t>(-relative):metadata+0x80+static_cast<std::uintptr_t>(relative);
             for(std::uint64_t i=0;i<count;++i) {

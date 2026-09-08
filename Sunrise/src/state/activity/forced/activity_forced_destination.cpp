@@ -334,7 +334,7 @@ bool apply(destination::DestinationSelection& selection) noexcept {
         return false;
     }
 
-    if (prelaunch::configured(value) == &prelaunch::kGateway) {
+    if (const auto* profile=prelaunch::configured(value); profile==&prelaunch::kGateway || profile==&prelaunch::kDeadlyTrial) {
         const std::string_view incoming(reinterpret_cast<const char*>(selection.packageName.data()),
             selection.packageNameLength <= selection.packageName.size() ? selection.packageNameLength : 0);
         if (!g_prelaunchCommitted.load(std::memory_order_acquire)
@@ -342,11 +342,11 @@ bool apply(destination::DestinationSelection& selection) noexcept {
             || selection.descriptorBitLength > selection.descriptorBits.size() * 8
             || selection.descriptorNameBit < 28
             || selection.descriptorNameBit + destination::kPackageNameCapacity * 8 > selection.descriptorBitLength
-            || !prelaunch::matches(prelaunch::kGateway, selection.previousActivityIndex,
+            || !prelaunch::matches(*profile, selection.previousActivityIndex,
                 selection.activityIndex, incoming)) {
             if (!g_prelaunchStagedReported.exchange(true, std::memory_order_acq_rel)) {
                 core::log::write(core::log::Channel::server, core::log::Level::info,
-                    "ev=activity_override stage=activation result=staged destination=mission_abs trigger=awaiting_native_gateway_contract_292");
+                    profile==&prelaunch::kGateway ? "ev=activity_override stage=activation result=staged destination=mission_abs trigger=awaiting_native_gateway_contract_292" : "ev=activity_override stage=activation result=staged destination=adventure_ginger trigger=awaiting_native_trial_contract_293");
             }
             return false;
         }
