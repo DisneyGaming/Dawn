@@ -48,6 +48,7 @@ struct InvestmentConstants {
     /** Stat row the banner's power number is searched by. Row 0 is a real row, so there is no
      * unset value; an unextracted blob leaves `extracted` clear instead. */
     std::uint8_t lightStatRow{};
+    std::uint8_t weaponPowerStatRow{};
     std::array<std::uint8_t, constants::kCharacterStatRowCount> characterStatRows{};
     /** One when the constants blob was read, zero when the domain has never been extracted. */
     std::uint8_t extracted{};
@@ -420,7 +421,7 @@ struct RosterGroupRecord {
 
 static_assert(sizeof(Prefix) == kCacheMagic.size() + sizeof(std::uint32_t));
 static_assert(sizeof(InvestmentConstants)
-              == constants::kCharacterStatRowCount + 2 * sizeof(std::uint8_t));
+              == constants::kCharacterStatRowCount + 3 * sizeof(std::uint8_t));
 static_assert(sizeof(Header)
               == kCacheMagic.size() + 26 * sizeof(std::uint32_t) + 2 * sizeof(std::uint64_t)
                      + 2 * sizeof(core::provenance::Sha256Digest)
