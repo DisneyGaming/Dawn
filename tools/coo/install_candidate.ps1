@@ -1,11 +1,8 @@
 [CmdletBinding()]
 param(
-    [string]$ValidationDirectory = 'build\coo\validation-opening',
-    [ValidatePattern('^[A-Fa-f0-9]{64}$')]
-    [string]$ExpectedInstalledHash = '677B39E4FD50ECB83A9E5318F22E8A35A6568CCF40AD1A7956519CF6ADF91435',
-    [string]$Mode = 'omega-opening',
-    [string]$PreviousScriptPath,
-    [string]$ExpectedPreviousScriptHash
+    [Parameter(Mandatory=$true)]
+    [string]$ValidationDirectory,
+    [switch]$ValidateOnly
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -15,119 +12,84 @@ $validationRoot = [IO.Path]::GetFullPath((Join-Path $taskRoot 'build\coo')) + '\
 if (-not $validation.StartsWith($validationRoot, [StringComparison]::OrdinalIgnoreCase)) {
     throw 'Validation output must stay under build/coo.'
 }
-if (Test-Path -LiteralPath (Join-Path $validation 'installation.json')) {
-    throw 'This candidate already has an installation receipt; preserve that evidence.'
+$receiptPath = Join-Path $validation 'installation.json'
+if (Test-Path -LiteralPath $receiptPath) { throw 'This candidate has an installation receipt; preserve that evidence.' }
+$manifest = Get-Content -Raw -LiteralPath (Join-Path $validation 'package.json') | ConvertFrom-Json
+$names = @('steam_api64.dll', 'steam_api64.pdb', 'Lua_LICENSE.txt',
+    'Sunrise/scripts/omega.lua', 'Sunrise/scripts/deadly_trial.lua', 'Sunrise/scripts/gateway.lua')
+if ($manifest.format -ne 1 -or @($manifest.files.PSObject.Properties).Count -ne $names.Count -or $manifest.buildsAndTests -ne 34) {
+    throw 'Expected a complete Lua mission package.'
 }
-$results = Get-Content -Raw -LiteralPath (Join-Path $validation 'results.json') | ConvertFrom-Json
-$candidate = @($results | Where-Object { $_.project -eq 'Sunrise' })
-if ($candidate.Count -ne 1) { throw 'Expected one validated candidate DLL.' }
-$candidate = $candidate[0]
-$source = [IO.Path]::GetFullPath($candidate.dll)
-if (-not $source.StartsWith($validation + '\', [StringComparison]::OrdinalIgnoreCase)) {
-    throw 'Candidate must be inside the validated output directory.'
+if ((Get-FileHash -LiteralPath (Join-Path $validation 'source-manifest.json')).Hash -ne $manifest.sourceManifestSha256) {
+    throw 'Source manifest changed after packaging.'
 }
-$expectedBaseline = $ExpectedInstalledHash
-$target = Join-Path $taskRoot 'steam_api64.dll'
-$settingsPath = Join-Path $taskRoot 'Sunrise\settings.json'
-$scriptPath = Join-Path $taskRoot 'Sunrise\scripts\omega.json'
-$scriptHash = $null
-if ($Mode -in @('omega-json-script', 'omega-generic-script')) {
-    $manifest = Get-Content -Raw -LiteralPath (Join-Path $validation 'candidate-source.json') | ConvertFrom-Json
-    $scriptHash = $manifest.'Sunrise/scripts/omega.json'
-    if (-not $scriptHash -or (Get-FileHash -LiteralPath $scriptPath).Hash -ne $scriptHash) {
-        throw 'Omega JSON differs from the validated candidate. Validate the edited script before installing.'
-    }
+$before = @{}
+foreach ($name in $names) {
+    $expected = $manifest.files.PSObject.Properties[$name]
+    $source = Join-Path $validation ('payload/' + $name)
+    if (-not $expected -or (Get-FileHash -LiteralPath $source).Hash -ne $expected.Value) { throw "Payload changed: $name" }
+    $target = Join-Path $taskRoot $name
+    $previous = $manifest.previousFiles.PSObject.Properties[$name]
+    if (Test-Path -LiteralPath $target) {
+        $before[$name] = (Get-FileHash -LiteralPath $target).Hash
+        if (-not $previous -or $before[$name] -ne $previous.Value) { throw "Installed file changed since packaging: $name" }
+    } elseif ($previous) { throw "Installed file disappeared since packaging: $name" }
 }
-
-$previousScript = $null
-if ($Mode -eq 'omega-generic-script') {
-    if (-not $PreviousScriptPath -or $ExpectedPreviousScriptHash -notmatch '^[A-Fa-f0-9]{64}$') {
-        throw 'The format migration requires the accepted previous script and its hash for rollback.'
-    }
-    $previousScript = [IO.Path]::GetFullPath((Join-Path $taskRoot $PreviousScriptPath))
-    if (-not $previousScript.StartsWith($taskRoot + '\', [StringComparison]::OrdinalIgnoreCase) -or
-        (Get-FileHash -LiteralPath $previousScript).Hash -ne $ExpectedPreviousScriptHash) {
-        throw 'Previous script path or accepted hash mismatch.'
-    }
-}
+if (-not $before.ContainsKey('steam_api64.dll')) { throw 'Expected an installed DLL to back up.' }
+if ($ValidateOnly) { Write-Output 'Package and installed baseline verified. No files changed.'; return }
 if (Get-Process -Name destiny2 -ErrorAction SilentlyContinue) { throw 'Close Destiny 2 before installation.' }
-if ((Get-FileHash -LiteralPath $source).Hash -ne $candidate.sha256) { throw 'Candidate DLL hash mismatch.' }
-$beforeDll = (Get-FileHash -LiteralPath $target).Hash
-$beforeSettings = (Get-FileHash -LiteralPath $settingsPath).Hash
-if ($beforeDll -ne $expectedBaseline) { throw 'Installed DLL differs from the expected accepted candidate; review before installing.' }
-$text = [IO.File]::ReadAllText($settingsPath)
-$pattern = '(?s)("experiments"\s*:\s*\{\s*"omega"\s*:\s*\{)([^{}]*)(\})'
-$matches = [regex]::Matches($text, $pattern)
-if ($matches.Count -ne 1) { throw 'Expected one flat experiments.omega settings object.' }
-$match = $matches[0]
-$body = $match.Groups[2].Value
-if ($body -match '"coo_executor"\s*:') {
-    if ([regex]::Matches($body, '"coo_executor"\s*:\s*(true|false)').Count -ne 1) {
-        throw 'Invalid or duplicate executor selector.'
-    }
-    $body = [regex]::Replace($body, '"coo_executor"\s*:\s*(true|false)', '"coo_executor": true')
-} else {
-    $newline = if ($text.Contains("`r`n")) { "`r`n" } else { "`n" }
-    $separator = if ($body.Trim().Length -gt 0) { ',' } else { '' }
-    $body = $newline + '      "coo_executor": true' + $separator + $body
+$backup = Join-Path $taskRoot ('.sunrise\backups\lua-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [guid]::NewGuid().ToString('N').Substring(0,8))
+New-Item -ItemType Directory -Path $backup | Out-Null
+foreach ($name in $before.Keys) {
+    $saved = Join-Path $backup $name
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $saved) | Out-Null
+    Copy-Item -LiteralPath (Join-Path $taskRoot $name) -Destination $saved
+    if ((Get-FileHash -LiteralPath $saved).Hash -ne $before[$name]) { throw "Backup failed: $name" }
 }
-$updated = $text.Substring(0, $match.Index) + $match.Groups[1].Value + $body +
-    $match.Groups[3].Value + $text.Substring($match.Index + $match.Length)
-if (-not ($updated | ConvertFrom-Json).experiments.omega.coo_executor) { throw 'Staged selector failed validation.' }
-$backup = Join-Path $taskRoot ('.sunrise\backups\coo-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [guid]::NewGuid().ToString('N').Substring(0,8))
-$null = New-Item -ItemType Directory -Path $backup
-Copy-Item -LiteralPath $target -Destination (Join-Path $backup 'steam_api64.dll')
-Copy-Item -LiteralPath $settingsPath -Destination (Join-Path $backup 'settings.json')
-if ($previousScript) {
-    Copy-Item -LiteralPath $previousScript -Destination (Join-Path $backup 'previous-omega.json')
-    if ((Get-FileHash -LiteralPath (Join-Path $backup 'previous-omega.json')).Hash -ne $ExpectedPreviousScriptHash) {
-        throw 'Previous script rollback backup mismatch.'
-    }
-}
-
-if ($scriptHash) {
-    Copy-Item -LiteralPath $scriptPath -Destination (Join-Path $backup 'candidate-omega.json')
-    if ((Get-FileHash -LiteralPath (Join-Path $backup 'candidate-omega.json')).Hash -ne $scriptHash) {
-        throw 'Candidate script backup verification failed.'
-    }
-}
-
-if ((Get-FileHash -LiteralPath (Join-Path $backup 'steam_api64.dll')).Hash -ne $beforeDll -or
-    (Get-FileHash -LiteralPath (Join-Path $backup 'settings.json')).Hash -ne $beforeSettings) {
-    throw 'Backup verification failed.'
-}
+$before | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $backup 'files.json') -Encoding utf8
 if (Get-Process -Name destiny2 -ErrorAction SilentlyContinue) { throw 'Destiny 2 started during staging.' }
-if ((Get-FileHash -LiteralPath $target).Hash -ne $beforeDll -or
-    (Get-FileHash -LiteralPath $settingsPath).Hash -ne $beforeSettings) { throw 'Installation changed during staging.' }
-try {
-    Copy-Item -LiteralPath $source -Destination $target -Force
-    [IO.File]::WriteAllText($settingsPath, $updated, [Text.UTF8Encoding]::new($false))
-    if ((Get-FileHash -LiteralPath $target).Hash -ne $candidate.sha256) { throw 'Installed DLL hash mismatch.' }
-    if ($scriptHash -and (Get-FileHash -LiteralPath $scriptPath).Hash -ne $scriptHash) {
-        throw 'Omega JSON changed during installation.'
-    }
-
-    if (-not (Get-Content -Raw -LiteralPath $settingsPath | ConvertFrom-Json).experiments.omega.coo_executor) {
-        throw 'Installed selector validation failed.'
-    }
-} catch {
-    Copy-Item -LiteralPath (Join-Path $backup 'steam_api64.dll') -Destination $target -Force
-    Copy-Item -LiteralPath (Join-Path $backup 'settings.json') -Destination $settingsPath -Force
-    if ((Get-FileHash -LiteralPath $target).Hash -ne $beforeDll -or
-        (Get-FileHash -LiteralPath $settingsPath).Hash -ne $beforeSettings) {
-        throw "Rollback verification failed. Restore files from $backup."
-    }
-    if ($previousScript) {
-        Copy-Item -LiteralPath $scriptPath -Destination (Join-Path $backup 'failed-install-omega.json')
-        Copy-Item -LiteralPath (Join-Path $backup 'previous-omega.json') -Destination $scriptPath -Force
-        if ((Get-FileHash -LiteralPath $scriptPath).Hash -ne $ExpectedPreviousScriptHash) { throw 'Script rollback verification failed.' }
-    }
-    throw
+foreach ($name in $names) {
+    $target = Join-Path $taskRoot $name
+    if ($before.ContainsKey($name)) {
+        if ((Get-FileHash -LiteralPath $target).Hash -ne $before[$name]) { throw "Installed file changed during staging: $name" }
+    } elseif (Test-Path -LiteralPath $target) { throw "Installed file appeared during staging: $name" }
 }
-[ordered]@{ dllSha256=$candidate.sha256; previousDllSha256=$beforeDll; backup=$backup;
-    previousSettingsSha256=$beforeSettings; settingsSha256=(Get-FileHash -LiteralPath $settingsPath).Hash;
-    installedAt=(Get-Date).ToString('o'); mode=$Mode; gameLaunched=$false;
-    scriptPath=$(if ($scriptHash) { $scriptPath } else { $null }); scriptSha256=$scriptHash; previousScriptSha256=$ExpectedPreviousScriptHash
-} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $validation 'installation.json') -Encoding utf8
-Write-Output "Installed validated CoO candidate. Backup: $backup"
-Write-Output 'Launch through your usual CMD. This script does not launch Destiny or clear the cache.'
+$copied = [Collections.Generic.List[string]]::new()
+try {
+    foreach ($name in $names) {
+        if (Get-Process -Name destiny2 -ErrorAction SilentlyContinue) { throw 'Destiny 2 started during installation.' }
+        $target = Join-Path $taskRoot $name
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target) | Out-Null
+        $copied.Add($name)
+        Copy-Item -LiteralPath (Join-Path $validation ('payload/' + $name)) -Destination $target -Force
+        if ((Get-FileHash -LiteralPath $target).Hash -ne $manifest.files.PSObject.Properties[$name].Value) { throw "Installed hash mismatch: $name" }
+    }
+    if (Get-Process -Name destiny2 -ErrorAction SilentlyContinue) { throw 'Destiny 2 started before installation completed.' }
+[ordered]@{status='installed';utc=[DateTime]::UtcNow.ToString('o');files=$manifest.files;
+    previousFiles=$before;backup=$backup;buildsAndTests=$manifest.buildsAndTests;compilerWarnings=0;
+    nativePlaythrough='not_yet_verified';gameLaunched=$false
+} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $receiptPath -Encoding utf8
+} catch {
+    $installFailure = $_.Exception.Message
+    $restoreFailures = [Collections.Generic.List[string]]::new()
+    for ($restoreIndex = $copied.Count - 1; $restoreIndex -ge 0; --$restoreIndex) {
+        $name = $copied[$restoreIndex]
+        try {
+            $target = [IO.Path]::GetFullPath((Join-Path $taskRoot $name))
+            if (-not $target.StartsWith($taskRoot + '\', [StringComparison]::OrdinalIgnoreCase)) { throw 'Rollback target outside workspace.' }
+            if ($before.ContainsKey($name)) {
+                Copy-Item -LiteralPath (Join-Path $backup $name) -Destination $target -Force
+                if ((Get-FileHash -LiteralPath $target).Hash -ne $before[$name]) { throw 'Restored file hash mismatch.' }
+            } elseif (Test-Path -LiteralPath $target) { Remove-Item -LiteralPath $target }
+        } catch { $restoreFailures.Add($name + ': ' + $_.Exception.Message) }
+    }
+    try { if (Test-Path -LiteralPath $receiptPath) { Remove-Item -LiteralPath $receiptPath } }
+    catch { $restoreFailures.Add('Installation receipt: ' + $_.Exception.Message) }
+    if ($restoreFailures.Count) {
+        throw ("Installation failed: $installFailure. Close Destiny and restore from $backup. Rollback failures: " + ($restoreFailures -join '; '))
+    }
+    throw "Installation failed and previous files were restored. Backup: $backup. Cause: $installFailure"
+}
+
+Write-Output "Installed validated Lua missions. Backup: $backup"
+Write-Output 'Launch through your usual command. Scripts reload on the next game process.'

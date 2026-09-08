@@ -8,6 +8,7 @@
 #include "middleware/encoding/bit_writer.h"
 #include "state/build_data/cache/records/codec.h"
 #include <cstring>
+#include "fixtures/mission_semantics.h"
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -68,19 +69,29 @@ t::Point interior(const t::Volume& v) {
         if(t::contains(v,p)) { return p; }
     }CHECK(false);return {};
 }
+const c::CommandSpec& authored(const c::script::Views& views,std::string_view id) {
+    for(const auto& graph:views.graphs) for(const auto& command:graph.commands) {
+        if(command.capability==id) { return graph.definition.steps[command.step].commands[command.command]; }
+    }
+    CHECK(false);return t::kCapabilities[0].spec;
+}
 struct Harness {
-    t::Controller controller;std::uint64_t now{1000};std::bitset<t::kSpawns.size()> admitted,dead;
+    const c::script::Views& views; t::Controller controller;std::uint64_t now{1000};std::bitset<t::kSpawns.size()> admitted,dead;
     std::array<unsigned,11> dialogueSubmissions{};bool audioCueFed{};
-    explicit Harness(const c::script::Views& v) { CHECK(controller.select(v,41)); }
+    explicit Harness(const c::script::Views& v):views(v) { CHECK(controller.select(v,41)); }
     t::EnemyReceipt enemy(std::size_t i) const { const auto& s=t::kSpawns[i];return {41,static_cast<std::uint32_t>(100+i*2),static_cast<std::uint32_t>(1000+i),controller.frame().spawnGeneration,s.source,s.registry}; }
     void tick(bool walker,bool use,bool finishScene,bool followRoad=true,bool clearTower=true,bool startScene=true,bool recordAudio=true) {
         const auto f=controller.update(41,now,true);now+=100;
         if(f.activeRow!=c::kNoDialogue) { CHECK(controller.submitted(41,t::kBank,f.activeRow,f.generations[f.activeRow],now));++dialogueSubmissions[f.activeRow]; }
         if(const auto* g=controller.graph()) for(const auto& b:g->commands) {
             const auto& s=g->definition.steps[b.step].commands[b.command];if(controller.step_state(b.step).phase!=c::StepPhase::active) { continue; }
-            if(s.operation==c::Operation::observation && s.asset.type==60) for(const auto& v:t::kVolumes) {
-                if(s.asset.registry==v.registry && s.asset.slot==v.slot && (followRoad || v.registry==0x3A62993FU || v.registry==0x40ADE010U)) { controller.position(41,interior(v)); }
-            }
+            const auto travel=[&](const c::CommandSpec& leaf) {
+                if(leaf.operation==c::Operation::observation && leaf.asset.type==60) for(const auto& v:t::kVolumes) {
+                    if(leaf.asset.registry==v.registry && leaf.asset.slot==v.slot && (followRoad || v.registry==0x3A62993FU || v.registry==0x40ADE010U)) { controller.position(41,interior(v)); }
+                }
+                return true;
+            };
+            if(views.condition(s)) { static_cast<void>(views.evaluate(s,travel)); }else { static_cast<void>(travel(s)); }
         }
         for(std::size_t i=0;i<t::kSpawns.size();++i) {
             const auto& s=t::kSpawns[i];if(!(f.cohorts&(1U<<s.cohort))) { continue; }
@@ -226,7 +237,8 @@ void presentation_and_overpass(const c::script::Views& views) {
     controller.position(51,{843.674561F,475.404388F,135.641403F});
     for(const auto& cap:t::kCapabilities) {
         if(cap.id=="followers.entered" || cap.id=="streets.entered" || cap.id=="choke.entered" || cap.id=="overpass.entered") {
-            CHECK(controller.missing(cap.spec).missing==c::Missing::none);
+            std::string id{cap.id};id.replace(id.find("entered"),7,"arrived");
+            CHECK(controller.missing(authored(views,id)).missing==c::Missing::none);
         }
     }
     CHECK(!controller.seen()[21]);auto observed=controller.update(51,1000,true);CHECK(!observed.barrierOpen);
@@ -234,9 +246,8 @@ void presentation_and_overpass(const c::script::Views& views) {
 }
 
 void post_walker_route(const c::script::Views& views) {
-    const auto capability=[](std::string_view id) -> const c::CommandSpec& {
-        for(const auto& cap:t::kCapabilities) if(cap.id==id) { return cap.spec; }
-        CHECK(false);return t::kCapabilities[0].spec;
+    const auto capability=[&](std::string_view id) -> const c::CommandSpec& {
+        std::string condition{id};condition.replace(condition.find("entered"),7,"arrived");return authored(views,condition);
     };
     const auto volume=[](std::uint32_t registry,std::uint16_t slot) -> const t::Volume& {
         for(const auto& v:t::kVolumes) if(v.registry==registry && v.slot==slot) { return v; }
@@ -392,6 +403,70 @@ void pike_mount(const c::script::Views& views) {
     for(const auto& cap:t::kCapabilities) if(cap.id=="followers.entered") { CHECK(h.controller.missing(cap.spec).missing==c::Missing::observation); }
 }
 
+void changed_lua_flow() {
+    // Reorder phases, omit all original objectives, and replace the barrier's
+    // Walker gate with raw square arrival using only registered native bindings.
+    const std::string script=R"lua(
+local gate=condition("alternate.ready",any_of("square.entered","pike.mounted"))
+local composition=graph("composition","alternate mission",sequence(
+    step("run",parallel("opening.module","opening.checked"))))
+local first=graph("reordered","reordered actions",sequence(
+    step("objective","objective.search"),
+    step("gate","alternate.ready"),
+    step("actions",parallel("barrier.open","revive.enable","tower.enable"))))
+local second=graph("custom_end","custom ending",sequence(
+    step("finish","mission.finish")))
+return mission{id="deadly_trial",graphs={composition,second,first},
+    roles={mission="composition"},phases={"reordered","custom_end"},
+    conditions={gate},entry="composition",modules={"opening"},observations={"opening.checked"}}
+)lua";
+    std::string error;auto doc=c::script::MissionDocument::parse_lua(script,t::kProfile,error);
+    if(!doc) { std::fprintf(stderr,"changed flow: %s\n",error.c_str()); }CHECK(doc);CHECK(t::valid_document(doc->views()));
+    t::Controller controller;CHECK(controller.select(doc->views(),61));
+    auto frame=controller.update(61,1000,true);CHECK(frame.objective==0x882DD31EU);CHECK(!frame.barrierOpen);
+    CHECK(controller.graph()->id=="reordered");CHECK(!frame.cohorts);CHECK(!frame.sceneGeneration);
+    for(const auto& volume:t::kVolumes) if(volume.registry==0x40ADE010U && volume.slot==3) { controller.position(61,interior(volume)); }
+    frame=controller.update(61,1100,true);CHECK(frame.barrierOpen);CHECK(frame.reviveEnabled);CHECK(frame.cohorts==(1U<<8));
+    for(unsigned i=0;i<4 && !frame.finished;++i) { frame=controller.update(61,1200+i*100,true); }
+    CHECK(frame.finished);CHECK(frame.completion.valid());CHECK(!frame.interacted);CHECK(!frame.sceneComplete);
+    frame=controller.update(61,1700,true);CHECK(frame.finished);CHECK(controller.diagnostics().phase==c::Phase::complete);
+    CHECK(controller.graph()->id=="custom_end");
+    // Native admission identities remain mandatory in changed flows.
+    t::EnemyReceipt foreign{62,100,1000,frame.spawnGeneration,t::kSpawns[0].source,t::kSpawns[0].registry};
+    CHECK(!controller.died(foreign));
+}
+
+void immediate_authored_death_branch() {
+    const std::string script=R"lua(
+local composition=graph("composition","death branch mission",sequence(
+    step("run",parallel("opening.module","opening.checked"))))
+local encounter=graph("encounter","independent tower",{
+    step("roadblock",parallel("walker.enable","dialogue.0")),
+    step("death","walker.cleared"),
+    step("tower","tower.enable",{after={"death"}})})
+return mission{id="deadly_trial",graphs={composition,encounter},
+    roles={mission="composition"},phases={"encounter"},entry="composition",
+    modules={"opening"},observations={"opening.checked"}}
+)lua";
+    std::string error;auto doc=c::script::MissionDocument::parse_lua(script,t::kProfile,error);CHECK(doc);
+    t::Controller controller;CHECK(controller.select(doc->views(),71));
+    const auto frame=controller.update(71,1000,true);CHECK(frame.cohorts==(1U<<4));
+    CHECK(frame.activeRow==0);CHECK(controller.step_state(0).phase==c::StepPhase::active);
+    for(std::size_t i=0;i<t::kSpawns.size();++i) if(t::kSpawns[i].cohort==4) {
+        const auto& spawn=t::kSpawns[i];
+        for(unsigned n=0;n<spawn.count;++n) {
+            t::EnemyReceipt receipt{71,static_cast<std::uint32_t>(100+i*2+n),static_cast<std::uint32_t>(1000+i),frame.spawnGeneration,spawn.source,spawn.registry};
+            CHECK(controller.admitted(receipt));
+            CHECK(controller.readiness(receipt,{true,true,true,true,1234,spawn.tactical.registry,spawn.tactical.slot,spawn.tactical.row}));
+            auto foreign=receipt;++foreign.run;CHECK(!controller.died(foreign));
+            CHECK(!(controller.frame().cohorts&(1U<<8)));CHECK(controller.died(receipt));
+        }
+    }
+    // No update, travel, or dialogue submission occurs between death and intent.
+    CHECK(controller.frame().cohorts&(1U<<8));CHECK(controller.frame().activeRow==0);
+    CHECK(controller.step_state(0).phase==c::StepPhase::active);CHECK(!controller.frame().barrierOpen);
+}
+
 void scene_owned_dialogue() {
     std::array<std::byte,200> fixture{};std::ifstream file("Sunrise/unit/fixtures/deadly_trial_revival_dialogue.bin",std::ios::binary);
     CHECK(file.read(reinterpret_cast<char*>(fixture.data()),fixture.size()));
@@ -414,13 +489,11 @@ void scene_owned_dialogue() {
     CHECK(!t::valid_revival_audio_cue(9.999F));CHECK(!t::valid_revival_audio_cue(37.75F));
     CHECK(t::valid_revival_audio_cue(10.F));
 }
-int main() {
-    scene_owned_dialogue();
-    std::string error;auto doc=c::script::MissionDocument::read("Sunrise/scripts/deadly_trial.json",t::kProfile,error);
+int main(int argc,char** argv) {
+    scene_owned_dialogue();changed_lua_flow();immediate_authored_death_branch();
+    static_cast<void>(argc);static_cast<void>(argv);
+    std::string error;auto doc=c::script::MissionDocument::read("Sunrise/scripts/deadly_trial.lua",t::kProfile,error);
     if(!doc) { std::fprintf(stderr,"script: %s\n",error.c_str()); }CHECK(doc);CHECK(t::valid_document(doc->views()));pike_mount(doc->views());
-    std::ifstream scriptFile("Sunrise/scripts/deadly_trial.json");std::string text{std::istreambuf_iterator<char>(scriptFile),{}};
-    const auto dependency=text.find("\"roadblock\"",text.find("\"id\": \"barrier\""));CHECK(dependency!=std::string::npos);
-    text.replace(dependency,11,"\"overpass\"");auto bypass=c::script::MissionDocument::parse(text,t::kProfile,error);CHECK(bypass);CHECK(!t::valid_document(bypass->views()));
     // Independent 80804D3F schema fixture: i32 (biased), bool, FNV selector.
     // Native capture is revision 2 / active 1 / 811C9DC5. MSB-first 65-bit body.
     const std::array<std::byte,9> activeBody{std::byte{0x80},std::byte{0},std::byte{0},std::byte{2},std::byte{0xC0},std::byte{0x8E},std::byte{0x4E},std::byte{0xE2},std::byte{0x80}};

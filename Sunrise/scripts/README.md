@@ -1,16 +1,25 @@
 # Mission scripts
 
-`omega.json` uses format 2 and the registered `omega.archive.v1` native profile. It is loaded through the generic mission compiler in `coo/mission_script.cpp`. The Omega integration checks its native phase requirements before publication.
+The installed missions use `omega.lua`, `deadly_trial.lua`, and `gateway.lua`. Each returns one definition through the shared Lua builders. C++ validates it and the universal executor runs the compiled graph.
 
-## Edit and validate
+Edit the script beside the installed DLL, validate it, and restart Destiny. Scripts load once per process; mission restarts and death keep the loaded definition. Logs in `Sunrise/logs/sunrise.log` identify the mission, `format=lua`, path, and source fingerprint. Missing or invalid files block executor selection.
 
-1. Edit `Sunrise/scripts/omega.json` beside the installed DLL.
-2. From the game root, run `build/coo/validation-generic/coo_script_tests-local/Release/coo_script_tests.exe --validate Sunrise/scripts/omega.json`.
-3. Restart Destiny. Omega reads the file once per process, resolving its path from the DLL directory. Death and mission restarts retain the same immutable definition.
-4. Look for `ev=coo_script mission=omega result=loaded format=2` and the file fingerprint in `Sunrise/logs/sunrise.log`.
+Read [Lua mission authoring](../docs/LUA-MISSION-AUTHORING.md) for builders, native bindings, limits, and ownership. [Format reference](FORMAT.md) covers composition and Omega's additional native requirements.
 
-Supported edits do not need a DLL rebuild. A failed load blocks executor publication and logs its cause; it does not automatically select the compiled legacy mission. The validator checks references and native contracts, not gameplay completion.
+From the workspace root, run:
 
-Format 1 belongs to the preceding accepted DLL. When rolling back this migration, restore both the accepted DLL and its `previous-omega.json` backup (to `Sunrise/scripts/omega.json`). Keep the existing settings backup with them. The installer records both script hashes.
+```powershell
+python tools/coo/verify_lua.py --out build/coo/validation-my-change
+python tools/coo/package_lua.py --validation build/coo/validation-my-change
+powershell -File tools/coo/install_candidate.ps1 -ValidationDirectory build/coo/validation-my-change
+```
 
-See `FORMAT.md` for the common format and authoring boundaries. New native capabilities or a new game's wire schema still require a verified C++ profile and native integration.
+The first command runs all 16 suites in Debug and Release and builds both DLL configurations. Packaging verifies the exact source and binary hashes. Installation requires Destiny to be closed and backs up the previous DLL, symbols, license, and scripts together. It does not change launch settings or start the game. Use the installer's `-ValidateOnly` switch for a read-only package check.
+
+For a focused Omega script check, use the validator from your validation directory:
+
+```powershell
+& build/coo/validation-my-change/coo_script_tests-local/Release/coo_script_tests.exe --validate Sunrise/scripts/omega.lua
+```
+
+Mission JSON and its loader have been removed. Settings, recovered package data, and validation receipts still use their existing formats. Historical rollback archives retain the files required by their older DLLs.

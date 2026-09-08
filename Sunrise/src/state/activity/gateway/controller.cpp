@@ -1,55 +1,16 @@
 #include "controller.h"
 #include "ai_bindings.h"
 namespace sunrise::state::activity::gateway {
-namespace {
-bool same(const coo::CommandSpec& a,const coo::CommandSpec& b) noexcept {
-    return a.operation==b.operation && a.asset==b.asset && a.argument==b.argument && a.wait==b.wait;
-}
-}
 bool valid_document(const coo::script::Views& views) noexcept {
-    if(!views.valid || views.missionId!="gateway" || views.profileId!=kProfile.id
-        || views.graphs.size()!=3 || views.mission.modules.size()!=1
-        || views.mission.modules[0].asset!=kModule || views.mission.modules[0].id!=1) { return false; }
-    const auto* root=views.role("mission");
-    if(!root || root->definition.steps.data()!=views.mission.sequence.steps.data()
-        || root->domain!="composition" || root->commands.size()!=2) { return false; }
-    for(const auto domain:{std::string_view{"opening"},std::string_view{"ending"}}) {
-        const auto* graph=views.role(domain);
-        const auto contract=domain=="opening"?std::span<const ContractStep>{kContract}:std::span<const ContractStep>{kEndingContract};
-        if(!graph || graph->domain!=domain || graph->definition.steps.size()!=contract.size()) { return false; }
-        std::size_t commandCount{};
-        for(std::size_t i=0;i<contract.size();++i) {
-            const auto& expected=contract[i];const auto& step=graph->definition.steps[i];
-            if(step.dependencies!=expected.dependencies || step.commands.size()!=expected.commands.size()) { return false; }
-            commandCount+=expected.commands.size();
-            for(std::size_t n=0;n<expected.commands.size();++n) {
-                unsigned found{};
-                for(const auto& command:graph->commands) { found+=command.step==i && command.command==n && command.capability==expected.commands[n]; }
-                if(found!=1) { return false; }
-            }
-        }
-        if(graph->commands.size()!=commandCount) { return false; }
-    }
-    for(const auto& capability:kCapabilities) {
-        const auto* graph=capability.domain=="composition"?root:views.role(capability.domain);
-        if(!graph) { return false; }
-        unsigned found{};
-        for(const auto& command:graph->commands) {
-            if(command.capability==capability.id) {
-                const auto& spec=graph->definition.steps[command.step].commands[command.command];
-                if(!same(spec,capability.spec) && !(capability.argumentMaximum && spec.operation==coo::Operation::eventAfter
-                    && spec.asset==capability.spec.asset && spec.wait==capability.spec.wait && spec.argument>0 && spec.argument<=capability.argumentMaximum)) { return false; }
-                ++found;
-            }
-        }
-        if(found!=1) { return false; }
-    }
-    return true;
+    if(!views.valid || views.missionId!="gateway" || views.profileId!=kProfile.id || views.phases.empty()
+        || views.mission.modules.size()!=1 || views.mission.modules[0].asset!=kModule
+        || views.mission.modules[0].id!=1) { return false; }
+    return coo::script::authorized(views,kProfile);
 }
 
 void Controller::reset() noexcept {
     executor_.cancel(*this); composition_.reset(); views_=nullptr;run_=0;now_=0;
-    started_=false;landingSeen_=false;dialogueSubmitted_.reset();dialogue_={};frame_={};seen_.reset();population_={};prepared_=0;returnContact_=false;destructible_={};scene_={};returnCue_.reset();objects_={};objectives_={};lifecycle_.reset();vanceRequested_=false;ascentDelay_=finishDelay_=0;
+    started_=false;landingSeen_=false;dialogueSubmitted_.reset();dialogue_={};frame_={};seen_.reset();population_={};prepared_=0;deathCohorts_.reset();destructible_={};scene_={};dialogueClock_.reset();objects_={};objectives_={};lifecycle_.reset();vanceRequested_=greetingRequested_=false;voiceEnds_={};
 }
 bool Controller::select(const coo::script::Views& views,std::uint64_t run) noexcept {
     if(run==0 || !valid_document(views)) { reset();return false; }
@@ -61,19 +22,15 @@ bool Controller::select(const coo::script::Views& views,std::uint64_t run) noexc
     if(!lifecycle_.begin(run)) { return false; }
     publicationGeneration_=lifecycle_.owner().value;views_=&views;run_=run;frame_.spawnGeneration=publicationGeneration_;
     if(!objects_.begin(lifecycle_.owner(),kEndingObjects) || !scene_.preload(run,publicationGeneration_,kSceneEvents)
-        || !returnCue_.bind(lifecycle_.owner())) { reset();return false; }
-    for(const auto& binding:views.role("ending")->commands) {
-        const auto delay=views.role("ending")->definition.steps[binding.step].commands[binding.command].argument;
-        if(binding.capability=="vance.ascent_cue") { ascentDelay_=delay; }
-        if(binding.capability=="vance.ending_cue") { finishDelay_=delay; }
-    }
-    if(finishDelay_<ascentDelay_) { reset();return false; }frame_.services=true;return true;
+        || !dialogueClock_.bind(lifecycle_.owner())) { reset();return false; }
+    frame_.services=true;return true;
 }
 void Controller::position(std::uint64_t run,Point point) noexcept {
     if(run!=run_ || !views_) { return; }
-    // Only the verified opening can start this profile. A far spawn cannot arm it.
-    for(std::size_t i=0;i<std::size(kVolumes);++i) {
-        if(kVolumes[i].registry==kLanding.registry && kVolumes[i].slot==kLanding.slot
+    if(!views_->observationStart) { landingSeen_=true; }
+    for(std::size_t i=0;i<std::size(kVolumes) && !landingSeen_;++i) {
+        const auto& asset=views_->observationStart->asset;
+        if(kVolumes[i].registry==asset.registry && kVolumes[i].slot==asset.slot
             && contains(kVolumes[i],point)) { landingSeen_=true; }
     }
     if(!landingSeen_) { return; }
@@ -90,22 +47,12 @@ bool Controller::submitted(std::uint64_t run,std::uint32_t bank,std::uint8_t row
     if(!views_ || run!=run_ || !started_) { return false; }
     if(!dialogue_.submitted(views_->dialogue,bank,row,generation,now,frame_,frame_.revision)) { return false; }
     dialogueSubmitted_.set(row);
-    // Row 5 includes Ghost before Vance. Only the authenticated native submission
-    // starts this clock; queueing the exchange must not advance the encounter.
-    if(row==5) { static_cast<void>(returnCue_.mark(lifecycle_.owner(),0,now)); }
-    // Turn with the actual first line, even if earlier dialogue delayed its dispatch.
-    if(row==10 && frame_.lighthouseOpen && entered({0xBA0B27A0U,0x80F46DCDU,60,11})) {
-        static_cast<void>(scene_.signal(scene_.owner(),coo::SceneSignal::greetingSubmitted,now));project_services();
-    }
+    static_cast<void>(dialogueClock_.mark(lifecycle_.owner(),row,now));
+    voiceEnds_[row]=dialogue_.voice_until();
     return true;
 }
 bool Controller::publish(const coo::Command& command) noexcept {
-    if(command.token.run!=run_ || command.schema!=coo::Schema::otherMissions) { return false; }
-    bool registered{};
-    for(const auto& step:views_->role(frame_.section==0?"opening":"ending")->definition.steps) {
-        for(const auto& spec:step.commands) { registered|=same(spec,command.spec); }
-    }
-    if(!registered) { return false; }
+    if(!views_ || !graph() || !coo::script::valid_token(graph()->definition,executor_,command)) { return false; }
     const auto& spec=command.spec;
     if(spec.operation==coo::Operation::objective) {
         dialogue_.objective(views_->dialogue,spec.argument,frame_,frame_.revision);
@@ -114,26 +61,25 @@ bool Controller::publish(const coo::Command& command) noexcept {
     } else if(spec.operation==coo::Operation::dialogue) {
         dialogue_.enqueue(views_->dialogue,static_cast<std::uint8_t>(spec.argument),now_,0,0,frame_.revision);
     }
-    else if(spec.operation==coo::Operation::eventAfter && spec.asset==kDialogueAsset) { frame_.returnCuePending=true; }
+    else if(spec.operation==coo::Operation::eventAfter && spec.asset.definition==kDialogueAsset.definition) { frame_.returnCuePending=true; }
     else if(spec.operation==coo::Operation::population) { enable(spec.argument); }
     else if(spec.operation==coo::Operation::mechanic && spec.argument==10) { enable(0);frame_.marchers=true; }
     else if(spec.operation==coo::Operation::scene) {
-        if(!frame_.lighthouseOpen || !frame_.vanceEntered || !entered({0xBA0B27A0U,0x80F46DCDU,60,13})) { return false; }
         vanceRequested_=true;
     }
     else if(spec.operation==coo::Operation::mechanic) {
-        if(spec.argument==20) { destructible_.expose();frame_.moduleVulnerable=true; }
-        else if(spec.argument==21 && frame_.moduleDestroyed) { frame_.lighthouseOpen=true; }
+        if(spec.asset==kVanceScene) { greetingRequested_=true; }
+        else if(spec.argument==30) { seen_.reset();frame_.returnCuePending=false; }
+        else if(spec.argument==20) { destructible_.expose();frame_.moduleVulnerable=true; }
+        else if(spec.argument==21) { frame_.lighthouseOpen=true; }
         else { return false; }
     }
     else if(spec.operation==coo::Operation::complete) {
-        if(spec.argument!=6 || !scene_.seen(coo::SceneSignal::conversationFinished) || frame_.lighthouseChannels!=3
-            || !lifecycle_.complete(lifecycle_.owner())) { return false; }
+        if(!lifecycle_.complete(lifecycle_.owner())) { return false; }
         objectives_.clear();frame_.finished=true;
     }
     else if(spec.operation==coo::Operation::device) {
         if(spec.asset.registry==0xBA0B27A0U && spec.asset.type==23 && spec.asset.slot<=1) {
-            if(!scene_.after(coo::SceneSignal::conversationStarted,now_,ascentDelay_)) { return false; }
             frame_.lighthouseChannels|=static_cast<std::uint8_t>(1U<<spec.asset.slot);
         } else if(spec.argument==1) { frame_.cannons=true; } else if(spec.argument==2) { frame_.finalCannon=true; }
     }
@@ -169,7 +115,7 @@ bool Controller::admitted(const EnemyReceipt& receipt) noexcept {
 bool Controller::died(const EnemyReceipt& receipt) noexcept {
     if(!views_ || !frame_.enabled || !population_.died(receipt,run_,publicationGeneration_)) { return false; }
     const auto* source=spawn(receipt.registry,receipt.source);
-    if(source && source->cohort==9) { returnContact_=true; }
+    if(source && source->cohort<deathCohorts_.size()) { deathCohorts_.set(source->cohort); }
     return true;
 }
 bool Controller::prepared(std::uint64_t run,std::uint32_t generation,std::uint8_t index) noexcept {
@@ -212,9 +158,24 @@ void Controller::project_services() noexcept {
     frame_.presentation=objectives_.state();frame_.completion=lifecycle_.publication();
 }
 
+bool Controller::observed(const coo::CommandSpec& spec) const noexcept {
+    if(views_ && views_->condition(spec)) { return views_->evaluate(spec,[this](const auto& native) noexcept { return observed(native); }); }
+    if(spec.operation==coo::Operation::eventAfter) {
+        if(spec.asset.definition==kDialogueAsset.definition) { return dialogueClock_.elapsed(spec.asset.slot,now_,spec.argument); }
+        return scene_.after(coo::SceneSignal::conversationStarted,now_,spec.argument);
+    }
+    if(spec.asset==kModule) {
+        return spec.argument>=256 ? spec.argument-256<deathCohorts_.size() && deathCohorts_[spec.argument-256] : cleared(spec.argument);
+    }
+    if(spec.asset==kDialogueAsset) { return spec.argument<16 && dialogueSubmitted_[spec.argument] && now_>=voiceEnds_[spec.argument]; }
+    if(spec.asset==kVanceScene) { return scene_.seen(coo::SceneSignal::animationReady); }
+    if(spec.asset==kEndingObjects[1].source) { return frame_.moduleDestroyed; }
+    return entered(spec.asset);
+}
 coo::StallDetail Controller::missing(const coo::CommandSpec& spec) const noexcept {
     using coo::Missing;
-    if(spec.wait==coo::Wait::requested) { return {}; }
+    if(spec.wait==coo::Wait::requested || (coo::is_observation(spec.operation) && observed(spec))) { return {}; }
+    if(views_ && views_->condition(spec)) { return {Missing::observation,spec.asset}; }
     if(spec.operation==coo::Operation::population) {
         for(std::size_t i=0;i<kSpawns.size();++i) {
             const auto& source=kSpawns[i];if(source.cohort!=spec.argument) { continue; }
@@ -223,9 +184,9 @@ coo::StallDetail Controller::missing(const coo::CommandSpec& spec) const noexcep
         }return {};
     }
     if(spec.operation==coo::Operation::eventAfter) {
-        if(spec.asset==kDialogueAsset) {
-            if(!returnCue_.seen(0)) { return {Missing::eventOrigin,spec.asset}; }
-            return returnCue_.elapsed(0,now_,spec.argument)?coo::StallDetail{}:coo::StallDetail{Missing::timer,spec.asset,spec.argument};
+        if(spec.asset.definition==kDialogueAsset.definition) {
+            if(!dialogueClock_.seen(spec.asset.slot)) { return {Missing::eventOrigin,spec.asset}; }
+            return dialogueClock_.elapsed(spec.asset.slot,now_,spec.argument)?coo::StallDetail{}:coo::StallDetail{Missing::timer,spec.asset,spec.argument};
         }
         if(!frame_.conversationStarted) { return {Missing::eventOrigin,spec.asset}; }
         return scene_.after(coo::SceneSignal::conversationStarted,now_,spec.argument)?coo::StallDetail{}:coo::StallDetail{Missing::timer,spec.asset,spec.argument};
@@ -253,33 +214,22 @@ void Controller::update_module(std::uint32_t id,const coo::MissionInput& input,F
     now_=input.now;
     // Start the native cast/idle on world arrival, keeping this owner through the ending.
     frame_.sceneGeneration=scene_.generation();
-    // Retain the second event only after the native turn and the greeting audio finish.
-    if(dialogueSubmitted_[10] && frame_.lighthouseOpen && entered({0xBA0B27A0U,0x80F46DCDU,60,11})) { static_cast<void>(scene_.signal(scene_.owner(),coo::SceneSignal::greetingSubmitted,now_)); }
-    if(vanceRequested_) { static_cast<void>(scene_.signal(scene_.owner(),coo::SceneSignal::approached,now_)); }
-    if(dialogueSubmitted_[9] && dialogueSubmitted_[10] && now_>=dialogue_.voice_until()) { static_cast<void>(scene_.signal(scene_.owner(),coo::SceneSignal::prerollFinished,now_)); }
-    scene_.update(now_,finishDelay_);project_services();
-    const auto& graph=*views_->role(frame_.section==0?"opening":"ending");
-    if(!started_) { started_=executor_.start(graph.definition,run_); }
+    if(greetingRequested_) { static_cast<void>(scene_.signal(scene_.owner(),coo::SceneSignal::greetingSubmitted,now_)); }
+    if(vanceRequested_) {
+        static_cast<void>(scene_.signal(scene_.owner(),coo::SceneSignal::approached,now_));
+        static_cast<void>(scene_.signal(scene_.owner(),coo::SceneSignal::prerollFinished,now_));
+    }
+    project_services();
+    const auto& currentGraph=*graph();
+    if(!started_) { started_=executor_.start(currentGraph.definition,run_); }
     if(!started_) { return; }
     executor_.update(*this);
-    for(const auto& binding:graph.commands) {
-        const auto& spec=graph.definition.steps[binding.step].commands[binding.command];
+    for(const auto& binding:currentGraph.commands) {
+        const auto& spec=currentGraph.definition.steps[binding.step].commands[binding.command];
         const auto state=executor_.step_state(binding.step);
         if(state.phase!=coo::StepPhase::active || !state.commands[binding.command].requested) { continue; }
         const coo::Token token{run_,executor_.diagnostics().incarnation,binding.step,binding.command};
-        // Forward passage also releases the shelf reinforcement trigger if its smaller
-        // volume was missed. Route observations never create enemy-death receipts.
-        const bool shelfExit=spec.operation==coo::Operation::observation && spec.argument==3U
-            && entered({0x85742F3EU,0x80F470E5U,60,375});
-        const bool vanceCue=spec.operation==coo::Operation::eventAfter;
-        const bool cueElapsed=spec.asset==kDialogueAsset?returnCue_.elapsed(0,now_,spec.argument)
-            :scene_.after(coo::SceneSignal::conversationStarted,now_,spec.argument);
-        const bool vanceApproach=spec.operation==coo::Operation::observation
-            && spec.asset.registry==0xBA0B27A0U && spec.asset.slot==13;
-        const bool observed=vanceApproach?(frame_.vanceTurned && entered(spec.asset)):vanceCue?cueElapsed:spec.argument==513U?frame_.moduleDestroyed
-            :spec.argument==512U?(returnContact_ || entered(spec.asset))
-            :(shelfExit || entered(spec.asset) || (spec.argument==256U?cleared(3)&&cleared(4):cleared(spec.argument)));
-        if(coo::is_observation(spec.operation) && observed) {
+        if(coo::is_observation(spec.operation) && observed(spec)) {
             static_cast<void>(executor_.enqueue({token,coo::Milestone::observed}));
         } else if(spec.operation==coo::Operation::dialogue && spec.argument<16 && dialogueSubmitted_[spec.argument]) {
             static_cast<void>(executor_.enqueue({token,coo::Milestone::nativeReady}));
@@ -295,22 +245,16 @@ void Controller::update_module(std::uint32_t id,const coo::MissionInput& input,F
         if(frame_.populationFault) { static_cast<void>(executor_.enqueue({token,coo::Milestone::failed})); }
     }
     executor_.update(*this);
-    // The final opening step contains only a requested objective. Retire that
-    // publication now so the return graph can share the cue's outgoing frame.
-    if(frame_.section==0 && executor_.step_state(std::size(kContract)-1).phase==coo::StepPhase::active) { executor_.update(*this); }
+    // Drain requested publications and advance the authored phase list in the same frame.
+    executor_.update(*this);
     dialogue_.advance(views_->dialogue,publicationGeneration_-1U,now_,false,frame_,frame_.revision);
     frame_.enabled=executor_.diagnostics().phase!=coo::Phase::failed;
-    if(executor_.diagnostics().phase==coo::Phase::complete && frame_.section==0) {
-        frame_.openingChecked=true;frame_.section=1;
-        // Outbound Lighthouse visits cannot trigger the return encounter.
-        seen_.reset();executor_.cancel(*this);
-        // Publish return cohorts and their objective in this same cue frame.
-        // Deferring section startup to the next normal packet adds up to five seconds.
-        started_=executor_.start(views_->role("ending")->definition,run_);
+    if(executor_.diagnostics().phase==coo::Phase::complete && std::size_t(frame_.section)+1<views_->phases.size()) {
+        frame_.openingChecked=true;++frame_.section;executor_.cancel(*this);
+        started_=executor_.start(graph()->definition,run_);
         if(started_) { executor_.update(*this); }
-        frame_.returnCuePending=false;
     }
-    frame_.checked=frame_.finished && frame_.conversationStarted;
+    frame_.checked=frame_.finished;
     frame_.preparedMask=prepared_;
     project_services();output=frame_;
     output.cannons=frame_.cannons && (prepared_&3)==3;

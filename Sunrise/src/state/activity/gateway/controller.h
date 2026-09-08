@@ -59,7 +59,7 @@ public:
     bool object(std::size_t index,const coo::ObjectReceipt& receipt,bool applied,float position,std::int16_t revision) noexcept;
     [[nodiscard]] const Frame& frame() const noexcept { return frame_; }
     coo::StallDetail missing(const coo::CommandSpec&) const noexcept;
-    [[nodiscard]] const coo::script::GraphView* graph() const noexcept { return views_?views_->role(frame_.section==0?"opening":"ending"):nullptr; }
+    [[nodiscard]] const coo::script::GraphView* graph() const noexcept { return views_ && frame_.section<views_->phases.size()?views_->phases[frame_.section]:nullptr; }
     [[nodiscard]] auto step_state(std::size_t i) const noexcept { return executor_.step_state(i); }
     [[nodiscard]] bool died(const EnemyReceipt& receipt) noexcept;
     [[nodiscard]] bool prepared(std::uint64_t run,std::uint32_t generation,std::uint8_t index) noexcept;
@@ -77,19 +77,21 @@ private:
     void update_module(std::uint32_t,const coo::MissionInput&,Frame&) noexcept override;
     std::uint32_t observations(std::uint64_t,const Frame& frame) noexcept override { return frame.checked?1U:0U; }
     bool entered(coo::Asset asset) const noexcept;
+    bool observed(const coo::CommandSpec&) const noexcept;
     bool cleared(std::uint32_t cohort) const noexcept;
     bool ready(std::uint32_t cohort) const noexcept;
     void enable(std::uint32_t cohort) noexcept;
     const coo::script::Views* views_{};
     std::uint64_t run_{},now_{};
     std::uint32_t publicationGeneration_{}; // Retained across resets, including a reused run.
-    bool started_{},landingSeen_{},returnContact_{},vanceRequested_{};
-    std::uint32_t ascentDelay_{},finishDelay_{};
+    bool started_{},landingSeen_{},vanceRequested_{},greetingRequested_{};
+    std::bitset<32> deathCohorts_{};
+    std::array<std::uint64_t,16> voiceEnds_{};
     coo::LifecycleService lifecycle_{};
     coo::ObjectService<3> objects_{};
     coo::DestructibleService<ModuleReceipt> destructible_{};
     coo::SceneOrchestration<SceneReceipt> scene_{};
-    coo::EventTimeline<coo::Generation,1> returnCue_{};
+    coo::EventTimeline<coo::Generation,16> dialogueClock_{};
     coo::ObjectiveService objectives_{};
     void project_services() noexcept;
     std::bitset<16> dialogueSubmitted_{};

@@ -201,7 +201,7 @@ void traversal_tests(const c::script::Views& views,bool retainShelfActor,bool sk
     controller.position(run,interior(448,g::kMainlandRegistry));now+=60000;tick();
     CHECK(!frame.checked);CHECK(frame.objective==g::kObjectives[1]);CHECK(frame.activeRow==c::kNoDialogue);
     clear(8);speak(4);CHECK(!frame.checked);
-    const c::CommandSpec returnCue{c::Operation::eventAfter,g::kDialogueAsset,returnDelay,c::Wait::observed};
+    const c::CommandSpec returnCue{c::Operation::eventAfter,g::kBlockedDialogueClock,returnDelay,c::Wait::observed};
     CHECK(frame.returnCuePending && !frame.openingChecked);
     CHECK(controller.missing(returnCue).missing==c::Missing::eventOrigin);
     // Queueing, elapsed queue time, wrong receipts, and delayed native dispatch
@@ -643,15 +643,60 @@ void ending_identity_and_codec_tests() {
         CHECK(phase==4 && result==1);
     }
 }
+void changed_lua_flow_tests() {
+    // The authored route uses an authentic enemy death AND Vance's native turn.
+    // Its early unlock/lift omit the original module, travel, dialogue and timer gates.
+    const std::string script=R"lua(
+local ready=condition("custom.ready",all_of("population.contact.9","vance.turned"))
+local root=graph("composition","custom Gateway",sequence(
+    step("run",parallel("opening.module","opening.checked"))))
+local finish=graph("custom_finish","finish after native conversation starts",sequence(
+    step("complete","mission.finish")))
+local encounter=graph("custom_encounter","new native gate",sequence(
+    step("begin",parallel("return.center","vance.greeting","objective.enter")),
+    step("ready","custom.ready"),
+    step("release",parallel("module.expose","lighthouse.unlock","lighthouse.raise","lighthouse.light","vance.scene"))))
+return mission{id="gateway",graphs={root,finish,encounter},roles={mission="composition"},
+    phases={"custom_encounter","custom_finish"},conditions={ready},
+    entry="composition",modules={"opening"},observations={"opening.checked"}}
+)lua";
+    std::string error;auto document=c::script::MissionDocument::parse_lua(script,g::kProfile,error);
+    if(!document) { std::fprintf(stderr,"custom Gateway: %s\n",error.c_str()); }CHECK(document);CHECK(g::valid_document(document->views()));
+    g::Controller controller;constexpr std::uint64_t run=191;CHECK(controller.select(document->views(),run));
+    std::uint64_t now=1000;g::Frame frame{};
+    const auto tick=[&] { for(unsigned i=0;i<4;++i) { frame=controller.update(run,++now,true); } };
+    tick();CHECK(controller.graph()->id=="custom_encounter");CHECK(frame.cohorts==(1U<<9));
+    CHECK(frame.objective==0xB10D6455U);CHECK(frame.activeRow==c::kNoDialogue);
+    CHECK(!frame.lighthouseOpen && !frame.moduleVulnerable && !frame.lighthouseChannels);
+    g::SceneReceipt scene{run,frame.sceneGeneration,0xDAAA0101U,0xDBBB0102U,0xDCCC0103U};
+    CHECK(controller.scene(scene,false));tick();CHECK(frame.vanceEntered);CHECK(!frame.vanceConversation);
+    const g::Spawn* source{};for(const auto& candidate:g::kSpawns) if(candidate.cohort==9) { source=&candidate;break; }CHECK(source);
+    g::EnemyReceipt enemy{run,0x12345000U,0x12346000U,frame.spawnGeneration,source->source,source->registry};
+    CHECK(!controller.died(enemy));CHECK(controller.admitted(enemy));auto stale=enemy;++stale.generation;CHECK(!controller.died(stale));
+    CHECK(controller.died(enemy));CHECK(!controller.died(enemy));tick();
+    CHECK(!frame.moduleVulnerable && !frame.lighthouseOpen && !frame.lighthouseChannels); // all_of still waits for turn.
+    auto foreign=scene;++foreign.sensor;CHECK(!controller.vance(foreign,g::VanceMilestone::turned,now));
+    CHECK(controller.vance(scene,g::VanceMilestone::turned,now));tick();
+    CHECK(frame.moduleVulnerable && frame.lighthouseOpen && frame.lighthouseChannels==3);
+    CHECK(!frame.moduleDestroyed);CHECK(frame.vanceConversation);CHECK(!frame.finished);
+    CHECK(!frame.generations[9] && !frame.generations[10]);CHECK(!controller.seen().any());
+    CHECK(!controller.vance(foreign,g::VanceMilestone::conversationStarted,now));tick();CHECK(!frame.finished);
+    CHECK(controller.vance(scene,g::VanceMilestone::conversationStarted,now));tick();
+    CHECK(controller.graph()->id=="custom_finish");CHECK(frame.finished && frame.checked && frame.completion.valid());
+    CHECK(frame.completion.owner.run==run);CHECK(!frame.sceneComplete);CHECK(!frame.moduleDestroyed);
+    CHECK(controller.diagnostics().phase==c::Phase::complete);
+}
+
 int main() {
-    std::string error;auto document=c::script::MissionDocument::read("Sunrise/scripts/gateway.json",g::kProfile,error);
+    changed_lua_flow_tests();
+    std::string error;auto document=c::script::MissionDocument::read("Sunrise/scripts/gateway.lua",g::kProfile,error);
     if(!document) { std::fprintf(stderr,"%s\n",error.c_str()); }CHECK(document);CHECK(g::valid_document(document->views()));
     CHECK(document->views().dialogue.rows[0].sceneOwned);CHECK(document->views().dialogue.rows[11].sceneOwned);
-    std::ifstream cueFile("Sunrise/scripts/gateway.json");
+    std::ifstream cueFile("Sunrise/scripts/gateway.lua");
     std::string cueText((std::istreambuf_iterator<char>(cueFile)),std::istreambuf_iterator<char>());
-    const std::string originalCue="\"argument\": 8960";const auto cueAt=cueText.find(originalCue);CHECK(cueAt!=std::string::npos);
-    cueText.replace(cueAt,originalCue.size(),"\"argument\": 6000");
-    auto customCue=c::script::MissionDocument::parse(cueText,g::kProfile,error);CHECK(customCue && g::valid_document(customCue->views()));
+    const std::string originalCue="argument=8960";const auto cueAt=cueText.find(originalCue);CHECK(cueAt!=std::string::npos);
+    cueText.replace(cueAt,originalCue.size(),"argument=6000");
+    auto customCue=c::script::MissionDocument::parse_lua(cueText,g::kProfile,error);CHECK(customCue && g::valid_document(customCue->views()));
     traversal_tests(customCue->views(),false,false,6000); // Timing belongs to the document.
     auto altered=document->views();altered.missionId="omega";CHECK(!g::valid_document(altered));
     g::Controller controller;CHECK(controller.select(document->views(),71));

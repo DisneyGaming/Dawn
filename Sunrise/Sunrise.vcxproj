@@ -88,7 +88,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\default_settings.json" />
-    <None Include="scripts\omega.json" />
+    <None Include="scripts\omega.lua" />
     <None Include="scripts\README.md" />
     <None Include="scripts\FORMAT.md" />
     <None Include="resources\logo_sheet.png" />
@@ -1368,7 +1368,7 @@
     <ClInclude Include="src\state\activity\coo\script_views.h" />
     <ClInclude Include="src\state\activity\coo\mission_script.h" />
     <ClInclude Include="src\state\activity\coo\omega_script_views.h" />
-    <ClInclude Include="src\state\activity\coo\script_json.h" />
+    <ClInclude Include="src\state\activity\coo\script_value.h" />
     <ClInclude Include="src\state\activity\coo\omega_projection.h" />
     <ClInclude Include="src\state\activity\omega_ending_rules.h" />
     <ClInclude Include="src\state\activity\omega_ending_transit_rules.h" />
@@ -1421,5 +1421,12 @@
     <ClInclude Include="src\client\hooks\bootflow\omega_teardown_native.h" />
     <ClInclude Include="src\client\hooks\bootflow\omega_vex_lattice_probe.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\state\activity\deadly_trial\bindings.h" />
+    <ClInclude Include="src\state\activity\gateway\bindings.h" />
+    <None Include="scripts\deadly_trial.lua" />
+    <None Include="scripts\gateway.lua" />
+  </ItemGroup>
+  <Import Project="lua-items.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

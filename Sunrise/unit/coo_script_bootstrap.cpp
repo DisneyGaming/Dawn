@@ -6,11 +6,11 @@ namespace {
 // This storage outlives every run constructed by main(). No test reload API.
 const auto document=[] {
     namespace script=sunrise::state::activity::coo::script;
-    std::string error;auto result=script::Document::read("Sunrise/scripts/omega.json",error);
+    std::string error;auto result=script::Document::read("Sunrise/scripts/omega.lua",error);
     if(!result || !result->activate()) {
-        std::fprintf(stderr,"Omega JSON bootstrap failed: %s\n",error.c_str());std::abort();
+        std::fprintf(stderr,"Omega Lua bootstrap failed: %s\n",error.c_str());std::abort();
     }
-    std::printf("Omega JSON loaded: %016llX\n",static_cast<unsigned long long>(result->fingerprint()));
+    std::printf("Omega Lua loaded: %016llX\n",static_cast<unsigned long long>(result->fingerprint()));
     return result;
 }();
 }

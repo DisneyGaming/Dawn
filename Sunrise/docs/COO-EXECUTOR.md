@@ -1,8 +1,10 @@
 # CoO executor migration
 
-Current shared-service integration: [Universal mission services](UNIVERSAL-MISSION-SERVICES.md). Gateway now exercises readiness, object/destructible lifecycle, scene milestones, event-relative timing, marker lifecycle, stall diagnostics and shared completion. The older acceptance records below remain historical; this integration requires a fresh in-game run.
+Current implementation: all shipped mission scripts use the shared Lua loader and universal executor. See [Lua mission authoring](LUA-MISSION-AUTHORING.md), [script format](../scripts/FORMAT.md), and [universal mission services](UNIVERSAL-MISSION-SERVICES.md). Omega retains its native phase constraints; Deadly Trial and Gateway author their story sequence in Lua.
 
-## Current implementation - generic format and named receipts
+The records below are historical migration and acceptance evidence. Their DLL hashes, JSON formats, and statements about unmapped missions describe those earlier builds. The current loader has no mission JSON path; use the current build's installation receipt for active file hashes.
+
+## Historical generic-format and named-receipt migration
 
 Format 2 is implemented in `coo/mission_script.h/.cpp`. It accepts trusted native capability profiles and compiles authored graphs, forward dependencies, named command/receipt mappings, composition modules/facts and generic presentation sets into immutable definitions. It has no Omega dependency. `script_views.h` is generic; `omega_script_views.h` retains the once-only Omega publication bridge.
 

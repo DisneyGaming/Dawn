@@ -48,7 +48,7 @@ struct NativeProfile final {
 [[noreturn]] void fail(std::string_view role,std::string_view reason) {
     throw std::runtime_error("native Omega role '"+std::string(role)+"': "+std::string(reason));
 }
-// These are constraints of Omega's native state machines, not JSON parser
+// These are constraints of Omega's native state machines, not Lua authoring
 // rules. Roles, phase capabilities and receipt names survive graph/step renames
 // and independent-step reorderings. The generic compiler knows none of them.
 void validate_native(const Views& views) {
@@ -103,9 +103,9 @@ Document::Document():storage_(std::make_unique<Storage>()) {}
 Document::~Document()=default;
 const Views& Document::views() const noexcept { return storage_->document->views(); }
 std::uint64_t Document::fingerprint() const noexcept { return storage_->document->fingerprint(); }
-std::unique_ptr<Document> Document::parse(std::string_view text,std::string& error) noexcept {
+std::unique_ptr<Document> Document::parse_lua(std::string_view text,std::string& error) noexcept {
     try {
-        auto result=std::unique_ptr<Document>(new Document);result->storage_->document=MissionDocument::parse(text,omega_profile(),error);
+        auto result=std::unique_ptr<Document>(new Document);result->storage_->document=MissionDocument::parse_lua(text,omega_profile(),error,"omega.lua");
         if(!result->storage_->document) { return {}; }validate_native(result->views());return result;
     } catch(const std::exception& exception) { error=exception.what();return {}; }
 }

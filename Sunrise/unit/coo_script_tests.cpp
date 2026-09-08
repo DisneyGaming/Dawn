@@ -1,5 +1,4 @@
 #include "state/activity/coo/omega_script.h"
-#include "state/activity/coo/script_json.h"
 #include "state/activity/coo/omega_opening.h"
 #include "state/activity/coo/omega_forest.h"
 #include "state/activity/coo/omega_definition.h"
@@ -7,8 +6,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
-#include <iomanip>
-#include <sstream>
 #include <algorithm>
 using namespace sunrise::state::activity::coo;
 namespace sc=sunrise::state::activity::coo::script;
@@ -18,26 +15,42 @@ std::string altered(std::string text,std::string_view from,std::string_view to) 
     const auto pos=text.find(from);if(pos==std::string::npos) { std::fprintf(stderr,"Missing replacement: %.*s\n",static_cast<int>(from.size()),from.data()); }CHECK(pos!=std::string::npos);text.replace(pos,from.size(),to);return text;
 }
 void reject(const std::string& text) {
-    std::string error;CHECK(!sc::Document::parse(text,error));CHECK(!error.empty());CHECK(sc::current()==nullptr);
+    std::string error;CHECK(!sc::Document::parse_lua(text,error));CHECK(!error.empty());CHECK(sc::current()==nullptr);
 }
-void encode(const sc::json::Value& value,std::ostream& out) {
-    using K=sc::json::Value::Kind;
-    switch(value.kind) {
-    case K::object:out<<'{';for(std::size_t i=0;i<value.members.size();++i) { if(i)out<<',';out<<std::quoted(value.members[i].first)<<':';encode(value.members[i].second,out); }out<<'}';break;
-    case K::array:out<<'[';for(std::size_t i=0;i<value.items.size();++i) { if(i)out<<',';encode(value.items[i],out); }out<<']';break;
-    case K::string:out<<std::quoted(value.text);break;
-    case K::number:out<<value.number;break;
-    case K::boolean:out<<(value.boolean?"true":"false");break;
-    }
+std::string mutated(const std::string& source,std::string_view program) {
+    auto result=altered(source,"return mission{","local authored = mission{");
+    result+='\n';result+=program;result+="\nreturn authored\n";return result;
 }
-sc::json::Value& field(sc::json::Value& value,std::string_view key) {
-    for(auto& item:value.members) { if(item.first==key) return item.second; }std::abort();
-}
+constexpr std::string_view kRenameAndReorder=R"lua(
+local function reverse(items)
+    for i=1,#items//2 do items[i],items[#items+1-i]=items[#items+1-i],items[i] end
+end
+local renamed={}
+for id,graph in pairs(authored.graphs) do
+    renamed["renamed_"..id]=graph
+    for _,step in ipairs(graph.steps) do
+        step.id="renamed_"..step.id
+        for i,dependency in ipairs(step.after) do step.after[i]="renamed_"..dependency end
+        local waits=false
+        for _,command in ipairs(step.commands) do
+            command.id="renamed_"..command.id
+            waits=waits or authored.bindings[command.binding].wait~="requested"
+        end
+        if waits then reverse(step.commands) end
+    end
+    for name,command in pairs(graph.receipts) do graph.receipts[name]="renamed_"..command end
+    reverse(graph.steps)
+end
+for role,id in pairs(authored.roles) do authored.roles[role]="renamed_"..id end
+for i,id in ipairs(authored.phases) do authored.phases[i]="renamed_"..id end
+ authored.entry="renamed_"..authored.entry
+ authored.graphs=renamed
+)lua";
 int main(int argc,char** argv) {
     if(argc==3 && std::string_view(argv[1])=="--validate") {
         std::string error;const auto doc=sc::Document::read(argv[2],error);
         if(!doc) { std::fprintf(stderr,"INVALID: %s\n",error.c_str());return 1; }
-        std::printf("VALID: Omega format 2, native profile verified, FNV1a64 %016llX\n",static_cast<unsigned long long>(doc->fingerprint()));return 0;
+        std::printf("VALID: Omega Lua, native profile verified, FNV1a64 %016llX\n",static_cast<unsigned long long>(doc->fingerprint()));return 0;
     }
     if(argc==2 && std::string_view(argv[1])=="--invalid-admission") {
         const sc::Views invalid{};CHECK(sc::publish(invalid));
@@ -53,9 +66,9 @@ int main(int argc,char** argv) {
         CHECK(runtime.selected());CHECK(ports.calls==0);CHECK(runtime.diagnostics().failure==Failure::definition);
         std::printf("PASS: invalid script blocks executor admission without invoking native publishers\n");return 0;
     }
-    std::ifstream file("Sunrise/scripts/omega.json",std::ios::binary);CHECK(file.good());
+    std::ifstream file("Sunrise/scripts/omega.lua",std::ios::binary);CHECK(file.good());
     std::string text((std::istreambuf_iterator<char>(file)),{});text.erase(std::remove(text.begin(),text.end(),'\r'),text.end());std::string error;
-    auto document=sc::Document::parse(text,error);CHECK(document);CHECK(error.empty());
+    auto document=sc::Document::parse_lua(text,error);CHECK(document);CHECK(error.empty());
     const auto& views=document->views();CHECK(views.valid);CHECK(views.graphs.size()==14);CHECK(sc::current()==nullptr);
     for(const auto& graph:views.graphs) {
         const Definition* native{};
@@ -88,67 +101,58 @@ int main(int argc,char** argv) {
     compareCues(views.cues("landmarks"),std::span(p::cues::kLandmark));compareCues(views.cues("encounters"),std::span(p::cues::kEncounter));
     compareActions(views.actions("reveal_complete"),std::span(p::cues::kRevealComplete));compareActions(views.actions("first_rescue_followup"),std::span(p::cues::kFirstRescueFollowup));
     reject("");reject(text.substr(0,text.size()/2));reject(text+"{}");reject(std::string(1048577,' '));
-    reject(altered(text,"\"format_version\": 2","\"format_version\": 99"));
-    reject(altered(text,"\"format_version\": 2","\"format_version\": 2, \"format_version\": 2"));
-    reject(altered(text,"\"format_version\": 2","\"format_version\": 2, \"unknown\": 0"));
-    reject(altered(text,"\"format_version\": 2","\"format_version\": 01"));
-    reject(altered(text,"\"format_version\": 2","\"format_version\": 2.0"));
-    reject(altered(text,"\"format_version\": 2","\"format_version\": 4294967296"));
-    reject(altered(text,"\"format_version\": 2","\"format_version\": true"));
-    reject(altered(text,"\"omegaArchive\"","\"otherMissions\""));
-    reject(altered(text,"0xD00142CF","0xD00142CE"));
-    reject(altered(text,"\"id\": \"mission services\"","\"id\": \"unknown\""));
+    reject("while true do end");reject("return os.execute('forbidden')");
+    for(const auto program:{
+        "authored.format_version=99", "authored.unknown=0", "authored.format_version=true",
+        "authored.authority_schema='otherMissions'", "authored.mission='not_omega'",
+        "authored.assets['opening/Ikora scene ready/0'].registry='0xD00142CE'",
+        "authored.bindings['mission/mission services/0'].argument=99",
+        "authored.graphs.mission.steps[2].after={'opening and Ikora'}",
+        "authored.graphs.mission.steps[2].after={'mission services','mission services'}",
+        "authored.graphs.mission.steps[2].after={'missing'}",
+        "authored.graphs.opening.steps[5].after={'roster admitted'}",
+        "authored.graphs.opening.receipts['ikora.approached']=nil",
+        "authored.presentation.cue_sets.landmarks[1].cycles={1}",
+        "authored.presentation.dialogue.rows[2].duration_ms=300001",
+        "authored.presentation.dialogue.rows[2].native_delay_ms=1001",
+        "authored.presentation.dialogue.dispatch_timeout_ms=0",
+        "authored.presentation.dialogue.spacing_ms=0.5",
+        "authored.presentation.dialogue.spacing_ms=4294967296",
+        "authored.graphs.reveal.domain='opening'",
+        "authored.modules[1],authored.modules[2]=authored.modules[2],authored.modules[1]"
+    }) { reject(mutated(text,program)); }
     reject(altered(text,"mission/mission services/0","missing/binding"));
-    reject(altered(text,"\"mission services\"\n          ]","\"opening and Ikora\"\n          ]"));
-    reject(altered(text,"\"mission services\"\n          ]","\"mission services\", \"mission services\"\n          ]"));
-    reject(altered(text,"\"cycles\": []","\"cycles\": [1]"));
-    reject(altered(text,"\"duration_ms\": 5445","\"duration_ms\": 300001"));
-    reject(altered(text,"\"native_delay_ms\": 1000","\"native_delay_ms\": 1001"));
-    reject(altered(text,"\"dispatch_timeout_ms\": 15000","\"dispatch_timeout_ms\": 0"));
-    CHECK(!sc::Document::read("Sunrise/scripts/does-not-exist.json",error));
-    // Rename every graph, step and command; preserve role, capability and
-    // receipt names. Reverse independent steps and native command slots.
-    auto root=sc::json::Reader(text).parse();
-    for(auto& item:field(root,"graphs").members) {
-        const auto oldId=item.first;item.first="renamed_"+oldId;
-        for(auto& role:field(root,"roles").members) { if(role.second.text==oldId)role.second.text=item.first; }
-        if(field(root,"entry").text==oldId)field(root,"entry").text=item.first;
-        auto& steps=field(item.second,"steps").items;
-        for(auto& step:steps) {
-            field(step,"id").text="renamed_"+field(step,"id").text;
-            for(auto& after:field(step,"after").items) { after.text="renamed_"+after.text; }
-            auto& commands=field(step,"commands").items;
-            for(auto& command:commands) { field(command,"id").text="renamed_"+field(command,"id").text; }
-            bool waits=false;for(const auto& command:commands) { waits|=root.at("bindings").at(command.at("binding").string()).at("wait").string()!="requested"; }
-            if(waits) { std::reverse(commands.begin(),commands.end()); }
-        }
-        for(auto& receipt:field(item.second,"receipts").members) { receipt.second.text="renamed_"+receipt.second.text; }
-        std::reverse(steps.begin(),steps.end());
-    }
-    std::ostringstream encoded;encode(root,encoded);auto reordered=sc::Document::parse(encoded.str(),error);CHECK(reordered);
+    CHECK(!sc::Document::read("Sunrise/scripts/does-not-exist.lua",error));
+    // Rename every graph, step and command in Lua; preserve native capability
+    // and receipt names while reversing independent steps and command slots.
+    auto reordered=sc::Document::parse_lua(mutated(text,kRenameAndReorder),error);
+    if(!reordered) { std::fprintf(stderr,"reordered: %s\n",error.c_str()); }CHECK(reordered);
     CHECK(reordered->views().role("opening")->id=="renamed_opening");
     CHECK(reordered->views().role("opening")->definition.steps[1].name=="renamed_Forest entrance observed");
-    // A receipt name must still refer to its native capability, even when
-    // swapping to another valid observation would pass structural validation.
-    auto wrong=root;auto& opening=field(field(wrong,"graphs"),"renamed_opening");
-    field(field(opening,"receipts"),"ikora.approached").text=field(field(opening,"receipts"),"forest.entered").text;
-    std::ostringstream bad;encode(wrong,bad);reject(bad.str());
-    // Edits take effect in loaded views and the real runtime consumers.
-    auto changed=altered(text,"\"duration_ms\": 8093","\"duration_ms\": 9000");
-    changed=altered(changed,"\"spacing_ms\": 250","\"spacing_ms\": 500");
-    changed=altered(changed,"\"name\": \"Omega\"","\"name\": \"Omega authored in JSON\"");
-    // All dialogue delays for this cue change; both graph-driven and landmark paths agree.
-    for(std::size_t pos=0;(pos=changed.find("\"delay_ms\": 1500",pos))!=std::string::npos;) {
-        changed.replace(pos,16,"\"delay_ms\": 2250");pos+=16;
-    }
-    const auto timing=sc::json::Reader(changed).parse();field(root,"presentation")=timing.at("presentation");
-    field(field(field(root,"graphs"),"renamed_mission"),"name").text="Omega authored in JSON";
-    std::ostringstream combined;encode(root,combined);
-    auto edited=sc::Document::parse(combined.str(),error);CHECK(edited);changed.clear();
+    // A valid observation still cannot replace another native receipt's owner.
+    auto wrong=std::string(kRenameAndReorder)+R"lua(
+local receipts=authored.graphs.renamed_opening.receipts
+receipts['ikora.approached']=receipts['forest.entered']
+)lua";
+    reject(mutated(text,wrong));
+    // Timing edits feed both the landmark and graph-driven presentation paths.
+    auto edits=std::string(kRenameAndReorder)+R"lua(
+authored.presentation.dialogue.rows[7].duration_ms=9000
+authored.presentation.dialogue.spacing_ms=500
+authored.graphs.renamed_mission.name='Omega authored in Lua'
+for _,cue in ipairs(authored.presentation.cue_sets.landmarks) do
+    for _,action in ipairs(cue.actions) do
+        if action.operation=='dialogue' and action.value==6 then action.delay_ms=2250 end
+    end
+end
+authored.presentation.binding_tables.forest.dialogue[1].delay_ms=2250
+)lua";
+    auto edited=sc::Document::parse_lua(mutated(text,edits),error);
+    if(!edited) { std::fprintf(stderr,"edited: %s\n",error.c_str()); }CHECK(edited);
     CHECK(edited->views().dialogue.rows[6].durationMs==9000);CHECK(edited->views().dialogue.spacingMs==500);
-    CHECK(edited->views().table("forest")->dialogue[0].delayMs==2250);CHECK(edited->views().mission.sequence.name=="Omega authored in JSON");
+    CHECK(edited->views().table("forest")->dialogue[0].delayMs==2250);CHECK(edited->views().mission.sequence.name=="Omega authored in Lua");
     CHECK(edited->activate());CHECK(!document->activate());
-    CHECK(sc::graph("mission", omega::kMission.sequence).name=="Omega authored in JSON");
+    CHECK(sc::graph("mission", omega::kMission.sequence).name=="Omega authored in Lua");
     p::Run run;run.initialize(42,true);run.enter(p::Landmark::tunnel,1000);run.advance(3249);CHECK(run.presentation().activeRow==p::kNoDialogue);
     run.advance(3250);CHECK(run.presentation().activeRow==6);
     p::Run legacy;legacy.initialize(43,false);legacy.enter(p::Landmark::tunnel,1000);legacy.advance(2500);CHECK(legacy.presentation().activeRow==6);
@@ -178,5 +182,5 @@ int main(int argc,char** argv) {
     CHECK(movie.claim_handoff(owner));CHECK(movie.note_handoff_result(owner,true,1204));movie.finish_handoff(1204);
     CHECK(movie.handoff()==nativeEnding::Handoff::queued);CHECK(movie.diagnostics().phase==Phase::complete);
 
-    std::printf("PASS: %u checks; JSON/native parity, malformed input rejection, named ordering, immutable publication and live presentation edits\n",checks);
+    std::printf("PASS: %u checks; Lua/native parity, malformed input rejection, named ordering, immutable publication and live presentation edits\n",checks);
 }

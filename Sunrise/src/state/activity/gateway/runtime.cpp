@@ -34,12 +34,12 @@ bool load() noexcept {
                 reinterpret_cast<LPCWSTR>(&load),&module)!=FALSE;
             const auto size=found?GetModuleFileNameW(module,path.data(),static_cast<DWORD>(path.size())):0;
             if(size==0 || size>=path.size()) { error="cannot resolve DLL-relative script path"; }
-            else { document=coo::script::MissionDocument::read(std::filesystem::path(path.data()).parent_path()/L"Sunrise"/L"scripts"/L"gateway.json",kProfile,error); }
-            if(document && !valid_document(document->views())) { document.reset();error="Gateway ending native contract mismatch"; }
+            else { document=coo::script::MissionDocument::read(std::filesystem::path(path.data()).parent_path()/L"Sunrise"/L"scripts"/L"gateway.lua",kProfile,error); }
+            if(document && !valid_document(document->views())) { document.reset();error="Gateway native binding validation failed"; }
         } catch(const std::exception& exception) { error=exception.what(); }
         std::array<char,768> line{};
         if(document) {
-            std::snprintf(line.data(),line.size(),"ev=coo_script mission=gateway result=loaded format=2 fnv1a64=%016llX path=Sunrise/scripts/gateway.json scope=ending reload=next_process",
+            std::snprintf(line.data(),line.size(),"ev=coo_script mission=gateway result=loaded format=lua fnv1a64=%016llX path=Sunrise/scripts/gateway.lua scope=ending reload=next_process",
                 static_cast<unsigned long long>(document->fingerprint()));
         } else { std::snprintf(line.data(),line.size(),"ev=coo_script mission=gateway result=failed reason=\"%.*s\"",static_cast<int>((std::min)(error.size(),std::size_t{500})),error.data()); }
         log(line.data());

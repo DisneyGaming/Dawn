@@ -1,5 +1,8 @@
 # Lua mission scripting migration — UE handoff
 
+Historical planning handoff. The migration and subsequent ownership work are implemented. Current files, Lua-only loading, and remaining Omega constraints are documented in [Lua mission authoring](LUA-MISSION-AUTHORING.md). JSON paths below identify the former baseline.
+
+
 ## Goal
 
 Implement a Lua authoring front end for the existing universal executor (UE), then port **A Deadly Trial** from JSON to Lua without changing its gameplay behavior.

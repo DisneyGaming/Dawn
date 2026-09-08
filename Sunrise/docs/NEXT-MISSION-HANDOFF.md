@@ -4,22 +4,17 @@ Updated 7 September 2026. Workspace: `C:\Destiny 2 Development`. Shell: PowerShe
 
 ## Start here
 
-Implement the next user-selected mission using the current JSON loader, executor, and shared native services. Preserve the accepted Omega and Gateway implementations. Recover the new mission's own identities, launch configuration, encounters, dialogue, scene events and device states, then supply its trusted bindings and runtime adapter. Add shared functionality only when an observed mechanic cannot be expressed with the existing services.
+Implement the next user-selected mission using the shared Lua loader, executor, and shared native services. Preserve the accepted Omega and Gateway implementations. Recover the new mission's own identities, launch configuration, encounters, dialogue, scene events and device states, then supply its trusted bindings and runtime adapter. Add shared functionality only when an observed mechanic cannot be expressed with the existing services.
 
 First obtain the mission name and supplied references if the next conversation does not contain them. Do not assume that the next story mission is the requested one. Read this handoff, then inspect current files and hashes before modifying code. No new task or separate repository has been created by this handoff.
 
-## Accepted baseline
+## Current baseline
 
-The user accepted Gateway's normal progression and ending through the iterative live tests in this conversation. The latest installed change was also reported to work flawlessly: the return enemies and Lighthouse objective now start together at Vance's first **"Please"** in the blocked-Forest exchange.
+All three missions load Lua. Deadly Trial and Gateway own their story sequence in Lua; Omega's 14 graphs and presentation use Lua while its native state machines retain phase constraints. See [Lua mission authoring](LUA-MISSION-AUTHORING.md) and the [scripts README](../scripts/README.md).
 
-- Installed DLL: `steam_api64.dll`, SHA-256 `170d239b3245ac0adab90b630f0e9c464f2259b07cc8016c90e1120fe7c377c1`.
-- Gateway script: `Sunrise/scripts/gateway.json`, SHA-256 `2728c797f1a9aa4f4e997ede5a3b9641c6bf8e8195403d5aab30d0c4182ecd1e`.
-- Frozen source, tests and installation evidence: `build/coo/validation-return-cue/`.
-- The subsequent user confirmation is recorded separately in `user-validation-return-cue.json` in that directory. Installation-time fields saying validation was pending are historical; do not rewrite them.
-- Previous DLL/script backup: `.sunrise/backups/gateway-return-cue-20260907-163916/`. The accepted current candidate also remains in the validation directory.
-- Last build: zero compiler warnings; eight Debug/Release suite runs passed. Gateway: 6,314 checks per configuration. Shared services: 682 checks. Omega wire baseline: 71,412 bodies, 12 packets, digest `A5BE474333FF4DDF`.
+Current DLL, script, source, and test evidence is recorded per build under `build/coo/`. Omega's initial Lua install is in `validation-omega-lua-first-20260908`; its replay checks are in `validation-omega-lua-replay-20260908`. The subsequent parser/tool cleanup has its own validation and installation records. Check the installed DLL hash against those records before assuming which build is active.
 
-Omega's accepted implementation remains compatible. Its JSON hash is `39e161e9481a930ea76bdeb5305d2a377c5834b7bbec8dca7d1a05e921dbcfd1`. Its older adapter has not automatically migrated to every new readiness/scene policy. Do not migrate it as incidental work for another mission.
+Gateway's earlier return-cue acceptance remains historical evidence in `build/coo/validation-return-cue/`, including its separate user confirmation. Older rollback archives retain their matching DLLs and scripts. Native readiness or checkpoint policy changes still need explicit implementation and validation.
 
 ## What is universal today
 
@@ -36,22 +31,22 @@ The executor sequences registered commands and joins authenticated observations.
 
 The core does not discover assets, recover retail encounter counts, infer scene event IDs, repair arbitrary engine versions, or choose a mission's checkpoint behavior. A new mechanic may still need a new shared capability. There is no known need for another broad executor rewrite before starting the next mission.
 
-## JSON versus native bindings
+## Lua versus native bindings
 
-**Mission JSON** selects trusted capabilities, graph dependencies, encounter/cohort requests, dialogue rows, marker targets and permitted timing arguments. Gateway uses format 2 and profile `gateway.ending.v2`.
+**Mission Lua** selects trusted capabilities, graph dependencies, encounter/cohort requests, dialogue rows, marker targets and permitted timing arguments. Gateway uses profile `gateway.ending.v2`.
 
 **The trusted C++ profile/catalog and adapter** supply native registry/definition/type/slot identities, population source counts and categories, tactical assignments, trigger geometry, scene event IDs and signals, device values, launch ownership, authority encoding and receipt authentication. The adapter connects those observations to the shared services.
 
-A new mission is therefore not currently a JSON-only drop-in. Gateway has a compiled profile and explicit graph contract; replacing its mission name or adding arbitrary JSON commands will not register a new mission. Counts in Gateway's native spawn catalog are not freely editable JSON spawn counts. Keep native data in the new mission's binding layer and story sequencing in its document. Keep specific mission IDs and story branches out of shared services.
+A new mission still needs verified native bindings and integration. Deadly Trial and Gateway use compiled `bindings.h` manifests with thin `profile.h` wrappers; they no longer require a compiled story sequence. Lua can arrange supported capabilities, but it cannot register engine objects or change fixed native spawn counts. Omega retains additional phase/receipt constraints in its older adapter. Keep mission IDs and story branches out of shared services.
 
 Current executor limits are 32 steps per graph, 8 commands per step and a 128-event queue. `MissionRuntime` supports up to 8 modules. Use deliberate sections/modules for longer missions; do not silently exceed limits. Gateway uses separate opening and ending executor sections.
 
 ## Read these files
 
 - [Shared-service overview](<C:/Destiny 2 Development/Sunrise/docs/UNIVERSAL-MISSION-SERVICES.md>) explains the eight service contracts. Its older pending-validation notes describe earlier candidates.
-- `Sunrise/src/state/activity/coo/executor.h`, `mission_runtime.h`, `mission_script.h/.cpp`, `script_views.h`: execution, composition and trusted JSON loading.
+- `Sunrise/src/state/activity/coo/executor.h`, `mission_runtime.h`, `mission_script.h/.cpp`, `script_views.h`: execution, composition and trusted Lua loading.
 - The shared headers `population_service.h`, `object_service.h`, `scene_orchestration.h`, `event_timeline.h`, `objective_service.h`, `lifecycle_service.h`, `stall_diagnostics.h` in that same directory.
-- [Gateway document](<C:/Destiny 2 Development/Sunrise/scripts/gateway.json>) and `Sunrise/src/state/activity/gateway/{profile.h,controller.h,controller.cpp,runtime.cpp,frame.h}`: current working integration example.
+- [Gateway document](<C:/Destiny 2 Development/Sunrise/scripts/gateway.lua>) and `Sunrise/src/state/activity/gateway/{profile.h,controller.h,controller.cpp,runtime.cpp,frame.h}`: current working integration example.
 - `gateway/{catalog.h,traversal_catalog.h,ai_bindings.h,service_bindings.h,preparation.h,authority.h,ending_cadence.h}`: authored assets, policies and publication cadence.
 - `Sunrise/src/client/hooks/bootflow/{coo_native_components.h,coo_enemy_readiness.h}`: shared native component/readiness probes.
 - `Sunrise/src/server/bap/encrypted/push/activity/{gateway_roster.h,activity_roster_snapshot.cpp,activity_keepalive_push.cpp}`: roster selection, snapshot routing and timely publication.
@@ -81,7 +76,7 @@ Useful existing tools to adapt: `tools/coo/package_read.py`, `extract_gateway_bi
 
 ### 3. Add the document and adapter
 
-Create `Sunrise/scripts/<mission>.json` and a mission-specific directory under `Sunrise/src/state/activity/`. Add its trusted profile, verified catalog, controller/service wiring, runtime entry points, native roster/authority routing and qualified observers. Register new compilation units in the project as required.
+Create `Sunrise/scripts/<mission>.lua` and a mission-specific directory under `Sunrise/src/state/activity/`. Add its trusted profile, verified catalog, controller/service wiring, runtime entry points, native roster/authority routing and qualified observers. Register new compilation units in the project as required.
 
 Use existing service operations for enemies, objects, destructibles, scenes, timers, objectives and completion. Native receipts must match the current run/generation and correct source/entity/controller identities. A publication request is not proof of native consumption. Reaching a trigger, elapsed time or an empty observation list is not proof of enemy death.
 
@@ -95,13 +90,13 @@ Add meaningful tests for the new mission's progression, delayed and out-of-order
 
 Run the new mission tests plus affected shared/protocol tests. Preserve Gateway and Omega regressions when touching shared code, receipt hooks, schemas or routing. Do not change existing assertions merely to accept a regression.
 
-Historical validators target specific frozen candidates. In particular, `verify_gateway_return_cue.py` refuses to overwrite its installation record, and older validators protect earlier snapshots. Create a new validation directory/script based on the current accepted manifest; do not rerun an old deployment pipeline unchanged or delete its evidence.
+Use `python tools/coo/verify_lua.py --out build/coo/validation-<change>` for the current Debug/Release suites and DLLs. Then use `package_lua.py --validation <directory>` and `install_candidate.ps1 -ValidationDirectory <directory>`. Obsolete mission JSON snapshot validators have been retired; their archived evidence remains under `build/coo/`.
 
 `tools/coo/verify.py` supplies `build(project, configuration)`. A fresh Python driver can set `verify.OUT` to a new absolute directory and build explicit `.vcxproj` files in Debug/Release. Build the DLL with `verify.build(ROOT / 'Sunrise/Sunrise.vcxproj', 'Release')` after tests pass. The helper checks compiler warnings, executes unit binaries, and records build/test logs.
 
-Available MSBuild: `C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild.exe`. Freeze the candidate source/script manifest, preserve the previous DLL and script together, and verify hashes on install. Complete the candidate build and checks before asking the user to close the game. The running game must release the DLL before replacement. Do not launch or terminate the game on the user's behalf unless asked.
+Available MSBuild: `C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\amd64\MSBuild.exe`. Freeze the candidate source/script manifest, preserve the previous DLL and script together, and verify hashes on install. Complete the candidate build and checks before asking the user to close the game. The running game must release the DLL before replacement. Do not launch or terminate the game on the user's behalf unless asked.
 
-JSON is loaded once per process in the current Gateway adapter. Editing a script does not hot-reload the active mission; install a matching DLL/document pair and restart. Do not copy live-memory addresses between processes. If a live intervention is requested, resolve current owners again and preserve evidence before making the scoped change.
+Lua is loaded once per process in the current Gateway adapter. Editing a script does not hot-reload the active mission; install a matching DLL/document pair and restart. Do not copy live-memory addresses between processes. If a live intervention is requested, resolve current owners again and preserve evidence before making the scoped change.
 
 Unit tests establish code behavior, not visible placement or audible timing. Ask for targeted live checks on the new mission. Keep user reports, code checks and native captures clearly identified as separate evidence. Record the accepted final build and leave a rollback path.
 

@@ -1,5 +1,8 @@
 # The Gateway reconstruction
 
+Current scripting reference: [Lua mission authoring](LUA-MISSION-AUTHORING.md). Mission JSON has been retired. Dated captures, hashes, and acceptance notes below describe the builds in their cited evidence directories; use the current installation receipt for the active DLL.
+
+
 Current shared-service integration: [Universal mission services](UNIVERSAL-MISSION-SERVICES.md). Gateway now exercises readiness, object/destructible lifecycle, scene milestones, event-relative timing, marker lifecycle, stall diagnostics and shared completion. The older acceptance records below remain historical; this integration requires a fresh in-game run.
 
 Current integration: `gateway.ending.v2`, format-2 mission JSON. The complete ending was validated live, including the shielded cube and portal blocker, native Vance turn and conversation, timed Lighthouse ascent, and native activity phase 6 / result 1. This integration replaces those temporary memory overrides with retained mission authority. A fresh run of the assembled DLL remains the final integration check.
@@ -95,7 +98,7 @@ Reproduce with `python tools/coo/identify_gateway_opening_spawn.py`. The resulti
 
 ## Opening foundation candidate
 
-`Sunrise/scripts/gateway.json` is an executable format-2 document, with profile `gateway.opening.v1` and the `otherMissions` authority schema. It is read once from the DLL-relative scripts directory on Gateway selection. Invalid/missing scripts fail closed with a `coo_script mission=gateway result=failed` receipt. It does not use the Omega document or the Omega archive encoder.
+`Sunrise/scripts/gateway.lua` is an executable Lua document, with profile `gateway.opening.v1` and the `otherMissions` authority schema. It is read once from the DLL-relative scripts directory on Gateway selection. Invalid/missing scripts fail closed with a `coo_script mission=gateway result=failed` receipt. It does not use the Omega document or the Omega archive encoder.
 
 The native adapter admits the main slice's complete retained groups at initialization after checking registry, object tag, type, slot, flags, descriptor tag/offset, component class and authority/sense schema. It preserves existing global groups and uses cache indices only as hints. This resolves the five-group extraction overlay limit without modifying the shared cache format.
 
@@ -314,6 +317,6 @@ The invitation is triggered by interior entry, before approaching Vance. Ghost's
 
 ## Vance return cue, 2026-09-07
 
-The opening forest_blocked step now waits on vance.return_cue, an eventAfter command authored in gateway.json. Its 8960 ms delay starts only on the accepted native submission of dialogue row 5 (BAF640CA). Native audio measurement: Ghost 4790.46 ms, Vance pre-delay 150 ms, first "Please" at approximately 4020 ms in his audio. Evidence: build/coo/gateway-return-cue/cue-evidence.json.
+The opening forest_blocked step now waits on vance.return_cue, an eventAfter command authored in gateway.lua. Its 8960 ms delay starts only on the accepted native submission of dialogue row 5 (BAF640CA). Native audio measurement: Ghost 4790.46 ms, Vance pre-delay 150 ms, first "Please" at approximately 4020 ms in his audio. Evidence: build/coo/gateway-return-cue/cue-evidence.json.
 
 The return cohorts (9 and 10) and Lighthouse objective publish together at the cue; the next dialogue retains normal audio spacing. The pending cue uses the existing 100 ms publication cadence. Reset clears its authenticated event origin. Later combat waves, module, and ending scene remain authored as before. Fresh in-game cue timing remains to validate.

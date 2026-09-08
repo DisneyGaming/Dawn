@@ -14,7 +14,7 @@ public:
     ~Document();
     Document(const Document&)=delete;
     Document& operator=(const Document&)=delete;
-    [[nodiscard]] static std::unique_ptr<Document> parse(std::string_view text,std::string& error) noexcept;
+    [[nodiscard]] static std::unique_ptr<Document> parse_lua(std::string_view text,std::string& error) noexcept;
     [[nodiscard]] static std::unique_ptr<Document> read(const std::filesystem::path& path,std::string& error) noexcept;
     [[nodiscard]] const Views& views() const noexcept;
     [[nodiscard]] bool activate() const noexcept { return publish(views()); }

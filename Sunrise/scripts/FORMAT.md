@@ -1,81 +1,43 @@
-# Mission definition format 2
+# Lua mission format
 
-The generic compiler builds bounded executor definitions from JSON. It has no Omega graph templates, mission names, compiled-definition pointer lookup, or global publication state. A caller supplies a trusted native `Profile` and retains the returned immutable `MissionDocument` for every run using its views.
+Mission files are `.lua` source. They use the builders documented in [Lua mission authoring](../docs/LUA-MISSION-AUTHORING.md). The interpreter produces an owned definition tree (`coo/script_value.h`); `coo/mission_script.cpp` validates it and publishes immutable executor views. There is no mission JSON parser, intermediate JSON text, or extension fallback.
 
-## Root fields
+## Native capabilities
 
-- `format_version`: exactly `2`.
-- `mission`: the authored mission identifier.
-- `profile`: a registered native profile. Profiles supply supported operations, domains, modules, facts, dialogue metadata, presentation events and binding tables. JSON cannot register executable native code.
-- `authority_schema`: the supplied profile's native schema name.
-- `assets`: named registry/definition/type/slot identities belonging to registered capabilities.
-- `bindings`: named commands declaring `capability`, `operation`, named `asset`, `argument`, and `wait`. All fields must agree with the capability, except that an `eventAfter` capability with a nonzero `argumentMaximum` accepts a positive delay up to that maximum. Capability identifiers are independent of authored step and command IDs, even where the existing Omega profile uses descriptive legacy names containing slashes.
-- `graphs`: named graphs declaring `name`, native service `domain`, `steps`, and `receipts`.
-- `roles`: integration role names mapped to graph IDs. Renaming a graph requires updating its references. The generic compiler imposes no particular role names.
-- `entry`: the composition graph ID; it publishes registered modules and joins their registered facts.
-- `modules`: registered producer names in publication order. Native integration may enforce producer dependencies.
-- `observations`: entries containing a registered `fact` name and a named `receipt` in the entry graph.
-- `presentation`: generic dialogue, named cue sets, named action sets, named binding tables and optional `markers`.
+`command("capability")` selects an operation, native asset, argument, and receipt policy registered in the mission's C++ binding profile. A script cannot invent native authority or engine functionality. Deadly Trial and Gateway put those mappings in their `bindings.h` files. Omega currently registers its capabilities in `omega_script.cpp` from its existing native definitions.
 
-## Graphs and receipts
+`command("cue", {id="later_cue", argument=500})` changes an adjustable argument when the profile permits it. The alias must be distinct. `eventAfter` delays run from the authenticated native event selected by that capability. Zero and delays above the registered maximum are rejected.
 
-Each step declares an `id`, an `after` array of step IDs, and a `commands` array. Each command has an `id` unique within its graph and a reference to a named `binding`.
+`complete` requests native mission completion through the adapter. It retains run ownership and clears owned objectives and markers. Authors must include the intended gameplay gates in the graph.
 
-`after` may reference a step written later in JSON. The compiler rejects missing references, duplicate IDs, self-dependencies and cycles, then performs a stable topological sort. The executor still receives bounded earlier-step dependency masks. Independent steps preserve authored order when possible. Commands within a step execute in authored order; reordering presentation actions can intentionally change behavior.
+## Graphs and composition
 
-The graph's `receipts` object maps semantic names to command IDs: for example, `"camera.ready": "request_camera"`. Every waiting command requires exactly one named receipt. Commands with `wait: requested` have no receipt bindings.
+Graphs contain named steps, dependencies, commands, and named receipts. `graph` automatically creates receipts for waiting commands unless an explicit receipt map is supplied. Forward dependency references are supported; cycles fail validation.
 
-Native controllers resolve receipt names against the definition pinned by their executor's `start()` call. The resulting token still includes run, incarnation, step and command. Missing names, stale tokens, wrong ownership and incompatible milestones remain rejected. A completion event cannot invent native readiness.
-
-Wait meanings:
-
-- `requested`: the service accepted the request.
-- `nativeReady`: a qualified native readiness receipt arrived.
-- `completed`: native readiness and completion were both observed.
-- `observed`: a qualified observation arrived; reserved for `observation` and `eventAfter` operations.
-
-The generic loader permits new graphs and additional occurrences of registered operations. Native integration can impose narrower requirements for a stateful mechanic. Structural validity alone does not prove that a script completes in game.
+The outer mission selects graphs, role mappings, a composition entry, native modules, and completion facts. Deadly Trial and Gateway also consume authored `phases` and observation conditions. Omega's native consumers select its established role names instead.
 
 ## Presentation
 
-`dialogue` declares the registered bank, all its numbered rows, objective restrictions, dispatch timeout and spacing. Row selectors, native child delays and scene ownership are native contracts. Host duration estimates and scheduling intervals are editable.
+`presentation{...}` selects validated dialogue rows, timings, objective cues, named cue/action sets, native binding tables, and markers. Dialogue bank and selector identity remain native. Cue and action order matters; named sets are looked up by their ID.
 
-`cue_sets` maps registered event-set names to arrays of `{event, cycles, actions}`. Event names resolve through the profile. Cycle numbers are 1-8, limited by the event capability; events without cycle selection use an empty array.
+```lua
+presentation{
+    markers={{objective="0x722FE621", target="vance"}},
+}
+```
 
-`action_sets` maps arbitrary names to ordered dialogue/objective action arrays. Each action has `operation`, `value`, and `delay_ms`. Dialogue values are registered non-scene-owned row numbers. Objective values are registered selectors and have zero delay.
-
-`binding_tables` maps registered table names to traversal, objective and dialogue bindings. Assets are named references; native stage/event/row associations must match the registered table. Dialogue delays are editable.
+Only registered objectives and marker targets are accepted. Each objective may have one marker mapping. Unmapped objectives clear the previous marker.
 
 ## Omega integration
 
-Omega selects role names for opening, Forest, reveal/retry, combat sections, ending/retry and composition. Its adapter checks required native capabilities and named receipts, native phase prerequisites, simultaneous activation of phase commands and receipts, and presentation then encounter then ending producer order. These checks live in `omega_script.cpp`, outside the generic parser.
+`omega.lua` supplies all 14 executable graphs, including opening, Forest, reveal/retry, seven combat sections, ending/retry, and mission composition. It also supplies dialogue and presentation data. Lua preserves the previously validated Omega behavior.
 
-Graph IDs, step IDs, command IDs and independent-step positions can change without redirecting native receipts. Required role and receipt names remain the interface to native mechanics. A new Omega phase or changed mechanic may require a profile update; the format does not make unsupported engine behavior available.
+Omega still has native state-machine constraints in `omega_script.cpp`: required roles/capabilities and receipts, native prerequisites, simultaneous phase activation and receipts, and presentation/encounter/ending producer order. Graph, step, and command IDs can change when references remain valid. Independent steps may be reordered. Native combat section order, progression observations, and special Panoptes interactions still live in C++.
 
-The old read-only `native_catalog.populations` mirror is removed from JSON. Population catalogs, enemy construction, Scene codecs, fixed navigation geometry, native transitions and special Panoptes behavior remain C++. Compiled Omega definitions remain as native phase contracts and the legacy reference.
+Deadly Trial and Gateway have already removed their compiled story sequence contracts. Omega's Lua conversion does not yet remove its native sequence constraints. Keep those limits explicit when reconstructing or editing missions.
 
-## Limits and verification
+## Validation
 
-Limits: 1 MiB input, nesting depth 16, 30000 JSON nodes, 256 bytes per string, 64 graphs, 32 steps/8 commands per graph, 256 receipts per graph, 8 composition modules, 32 composition facts, 64 dialogue rows. Graph indices are checked before narrowing. Names are nonempty printable ASCII. Unknown fields, duplicate JSON keys, unsupported types and unregistered native bindings are errors. UTF-8 BOM and ordinary JSON whitespace are accepted; comments are not JSON.
+The shared Lua sandbox and schema checks enforce resource limits, registered references, supported arguments, bounded graphs, valid dependencies and conditions, and qualified native receipts. `coo_script_tests` additionally exercises Omega's native adapter, renamed/reordered graphs, presentation edits, retries, and handoff. Full native replay suites load the shipped Lua.
 
-`Sunrise/unit/fixtures/mission_script_alternate.json` uses another native profile, schema, module order and graph layout. Its tests add a step through JSON alone and execute scene/population receipts through the shared executor. The executable links only the generic compiler, without the Omega profile or publication bridge. This proves compiler reuse; it is not a second mapped playable mission.
-
-The Omega suite renames every graph, step and command, reorders independent steps, changes native receipt command slots, and exercises opening direct entry, reveal retry and ending retry/handoff. Full frozen parity suites remain required before deployment.
-
-## Relative events, completion and markers
-
-`eventAfter` is an observed operation. Its `argument` is the delay in milliseconds after the authenticated event selected by the native capability. Publication time is not an event origin. The shared timeline retains the first matching event even when it precedes the graph wait. Zero or values above the registered `argumentMaximum` are rejected for adjustable timers.
-
-`complete` exposes terminal mission publication. The registered capability chooses its state and prerequisites; Gateway uses argument `6` with `wait: requested`. The controller publishes a generation-owned completion only after its final scene conditions pass. It clears owned objectives and markers as part of that transition.
-
-The optional `presentation.markers` array maps registered objective events to registered target names:
-
-```json
-"markers": [
-  { "objective": "0x722FE621", "target": "vance" }
-]
-```
-
-Each objective may occur once in this mapping. Unknown objectives and target names are rejected. The trusted `Profile::markers` entries provide native scope and optional locator values. An objective without a mapping clears the prior marker. Existing format-2 scripts that omit the array remain valid.
-
-See `Sunrise/docs/UNIVERSAL-MISSION-SERVICES.md` for initialization, destructible, scene, readiness and restart integration.
+See [scripts README](README.md) for build, packaging, installation, and reload instructions.

@@ -24,6 +24,9 @@ struct Profile final {
     std::span<const PresentationTable> tables;
     std::span<const MarkerCapability> markers{};
 };
+// Validate every executable specification against trusted native authority,
+// independent of authored graph names, counts, or command order.
+[[nodiscard]] bool authorized(const Views& views,const Profile& profile) noexcept;
 // All spans in views() refer to storage owned by this immutable document.
 // Parsing is transactional and never publishes, executes, or loads native code.
 class MissionDocument final {
@@ -31,7 +34,8 @@ public:
     ~MissionDocument();
     MissionDocument(const MissionDocument&)=delete;
     MissionDocument& operator=(const MissionDocument&)=delete;
-    [[nodiscard]] static std::unique_ptr<MissionDocument> parse(std::string_view text,const Profile& profile,std::string& error) noexcept;
+    [[nodiscard]] static std::unique_ptr<MissionDocument> parse_lua(std::string_view text,const Profile& profile,std::string& error,std::string_view sourceName="mission.lua") noexcept;
+    // Only .lua files are accepted; extension matching ignores ASCII case.
     [[nodiscard]] static std::unique_ptr<MissionDocument> read(const std::filesystem::path& path,const Profile& profile,std::string& error) noexcept;
     [[nodiscard]] const Views& views() const noexcept;
     [[nodiscard]] std::uint64_t fingerprint() const noexcept;

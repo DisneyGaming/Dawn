@@ -199,10 +199,10 @@ void alternate_script() {
     const script::ModuleCapability modules[]{{"room",{module,1}}};const script::FactCapability facts[]{{"done",0}};
     const std::uint32_t objectives[]{256};const script::MarkerCapability markers[]{{"npc",{{0x101,0x204,1,4},{}}}};
     const script::Profile profile{"chamber.native.v1","otherMissions",c::Schema::otherMissions,caps,modules,facts,{0x300,{},{}},objectives,{},{},markers};
-    std::ifstream input("Sunrise/unit/fixtures/mission_script_universal.json");CHECK(input.good());std::string text((std::istreambuf_iterator<char>(input)),{}),error;
-    auto doc=script::MissionDocument::parse(text,profile,error);if(!doc) { std::fprintf(stderr,"%s\n",error.c_str()); }CHECK(doc);CHECK(doc->views().markers.size()==1);
-    const auto reject=[&](const char* from,const char* to) { auto bad=text;const auto at=bad.find(from);CHECK(at!=std::string::npos);bad.replace(at,std::strlen(from),to);CHECK(!script::MissionDocument::parse(bad,profile,error)); };
-    reject("\"argument\": 500","\"argument\": 1001");reject("\"argument\": 500","\"argument\": 0");reject("\"target\": \"npc\"","\"target\": \"foreign\"");
+    std::ifstream input("Sunrise/unit/fixtures/mission_script_universal.lua");CHECK(input.good());std::string text((std::istreambuf_iterator<char>(input)),{}),error;
+    auto doc=script::MissionDocument::parse_lua(text,profile,error);if(!doc) { std::fprintf(stderr,"%s\n",error.c_str()); }CHECK(doc);CHECK(doc->views().markers.size()==1);
+    const auto reject=[&](const char* from,const char* to) { auto bad=text;const auto at=bad.find(from);CHECK(at!=std::string::npos);bad.replace(at,std::strlen(from),to);CHECK(!script::MissionDocument::parse_lua(bad,profile,error)); };
+    reject("argument=500","argument=1001");reject("argument=500","argument=0");reject("target=\"npc\"","target=\"foreign\"");
     struct Host:c::Services {
         c::LifecycleService life;c::ObjectiveService hud;
         bool publish(const c::Command& cmd) noexcept override {

@@ -26,5 +26,6 @@
     <ClCompile Include="..\src\state\activity\coo\omega_script.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="..\src\state\activity\coo\mission_script.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
   </ItemGroup>
+  <Import Project="..\lua-items.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

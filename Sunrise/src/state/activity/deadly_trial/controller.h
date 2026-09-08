@@ -28,7 +28,7 @@ public:
     const Frame& frame() const noexcept { return frame_; }
     coo::Diagnostics diagnostics() const noexcept { return executor_.diagnostics(); }
     coo::StallDetail missing(const coo::CommandSpec&) const noexcept;
-    const coo::script::GraphView* graph() const noexcept { return views_?views_->role(frame_.section?"ending":"opening"):nullptr; }
+    const coo::script::GraphView* graph() const noexcept { return views_ && phase_<views_->phases.size()?views_->phases[phase_]:nullptr; }
     auto step_state(std::size_t i) const noexcept { return executor_.step_state(i); }
     const auto& seen() const noexcept { return seen_; }
 private:
@@ -36,11 +36,13 @@ private:
     void cancel(const coo::Command&) noexcept override {}
     void update_module(std::uint32_t,const coo::MissionInput&,Frame&) noexcept override;
     std::uint32_t observations(std::uint64_t,const Frame& f) noexcept override { return f.checked?1U:0U; }
+    void pump() noexcept;
+    coo::StallDetail raw_missing(const coo::CommandSpec&) const noexcept;
     bool entered(coo::Asset) const noexcept;
     bool cleared(std::uint32_t) const noexcept;
     bool ready(std::uint32_t) const noexcept;
     void enable(std::uint32_t) noexcept;
-    const coo::script::Views* views_{};std::uint64_t run_{},now_{};bool started_{},landingSeen_{},pikeMounted_{};
+    const coo::script::Views* views_{};std::uint64_t run_{},now_{};bool started_{},observationsStarted_{},pikeMounted_{};std::size_t phase_{};
     coo::LifecycleService lifecycle_{};coo::ObjectiveService objectives_{};
     coo::MissionRuntime composition_{};coo::Executor executor_{};
     coo::PopulationService<EnemyReceipt,kSpawns.size(),2> population_{};

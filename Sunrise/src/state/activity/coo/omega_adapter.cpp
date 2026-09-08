@@ -64,15 +64,15 @@ bool ensure_script() noexcept {
                 reinterpret_cast<LPCWSTR>(&ensure_script),&module)!=FALSE;
             const auto size=found?GetModuleFileNameW(module,path.data(),static_cast<DWORD>(path.size())):0;
             if(size==0 || size>=path.size()) { error="cannot resolve DLL-relative scripts path"; }
-            else { document=script::Document::read(std::filesystem::path(path.data()).parent_path()/L"Sunrise"/L"scripts"/L"omega.json",error); }
+            else { document=script::Document::read(std::filesystem::path(path.data()).parent_path()/L"Sunrise"/L"scripts"/L"omega.lua",error); }
         } catch(const std::exception& exception) { error=exception.what(); }
         const bool loaded=document&&document->activate();
         if(!loaded) { static_cast<void>(script::publish(invalid)); }
         std::array<char,768> line{};
         const auto length=loaded?std::snprintf(line.data(),line.size(),
-            "ev=coo_script mission=omega result=loaded format=2 graphs=%zu fnv1a64=%016llX path=Sunrise/scripts/omega.json reload=next_process",
+            "ev=coo_script mission=omega result=loaded format=lua graphs=%zu fnv1a64=%016llX path=Sunrise/scripts/omega.lua reload=next_process",
             document->views().graphs.size(), static_cast<unsigned long long>(document->fingerprint())):
-            std::snprintf(line.data(),line.size(),"ev=coo_script mission=omega result=failed path=Sunrise/scripts/omega.json reason=\"%.*s\"",
+            std::snprintf(line.data(),line.size(),"ev=coo_script mission=omega result=failed path=Sunrise/scripts/omega.lua reason=\"%.*s\"",
                 static_cast<int>((std::min)(error.size(),std::size_t{500})),error.data());
         if(length>0 && static_cast<std::size_t>(length)<line.size()) {
             core::log::write(core::log::Channel::server,loaded?core::log::Level::info:core::log::Level::error,{line.data(),static_cast<std::size_t>(length)});

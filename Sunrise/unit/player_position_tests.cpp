@@ -16,7 +16,7 @@ unsigned checks{};
 struct Body { std::uint32_t owner; t::Vector position;bool readable{true},replaceDuringRead{}; };
 std::uint32_t controlled=0x08FAA000U;
 void* fallback{};
-unsigned publications{};
+unsigned publications{},trialPublications{};t::Vector trialPosition{};
 g::Controller* mission{};
 namespace sunrise::client::hooks::teleport {
 bool read_local_player_entity(void* component,std::uint32_t& entity) noexcept {
@@ -34,6 +34,7 @@ bool read_position(void* component,Vector& position) noexcept {
 }
 namespace sunrise::state::activity {
 std::uint64_t mission_run_generation() noexcept { return 1; }
+namespace deadly_trial { void observe_position(float x,float y,float z) noexcept { ++trialPublications;trialPosition={x,y,z}; } }
 namespace gateway { void observe_position(float x,float y,float z) noexcept { ++publications;if(mission) { mission->position(1,{x,y,z}); } } }
 namespace omega_presentation { void observe_position(Point) noexcept {} Navigation navigation() noexcept { return {}; } }
 namespace omega_first_lair { Status status(std::uint64_t) noexcept { return {}; } bool observe_gate_arrival(const CrownToken&,GateMilestone,std::uint32_t) noexcept { return false; } }
@@ -47,7 +48,7 @@ int main() {
     CHECK(!t::identity::current(controlled,controlled,controlled+0x2000U));
     CHECK(t::identity::current(controlled,controlled,controlled));
     Body a{controlled,{-772.25F,-130.75F,-7.5F}},b{controlled,{-681.F,50.F,5.F}},foreign{0,{500,500,500}};
-    std::string error;auto document=c::script::MissionDocument::read("Sunrise/scripts/gateway.json",g::kProfile,error);CHECK(document);
+    std::string error;auto document=c::script::MissionDocument::read("Sunrise/scripts/gateway.lua",g::kProfile,error);CHECK(document);
     g::Controller controller;mission=&controller;CHECK(controller.select(document->views(),1));
     p::reset();p::observe(&a);CHECK(p::snapshot().present);CHECK(p::snapshot().position==a.position);
     auto frame=controller.update(1,100,true);CHECK(frame.activeRow==1);
@@ -73,6 +74,7 @@ int main() {
     CHECK(publications==beforeFallback+1);
     b.position[0]+=1.F;const auto beforeCached=publications;p::poll();CHECK(p::snapshot().position==b.position);
     CHECK(publications==beforeCached+1);
+    CHECK(trialPublications==publications);CHECK(trialPosition==b.position);
     p::reset();CHECK(!p::snapshot().present);
     std::printf("Player position: %u checks; live stale-slot fixture, cache reacquisition, body loss, salt changes and Gateway traversal entry passed\n",checks);
 }

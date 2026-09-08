@@ -32,5 +32,6 @@
     <ClCompile Include="$(OmegaSourceRoot)\middleware\encoding\bit_reader.cpp" />
 
   </ItemGroup>
+  <Import Project="..\lua-items.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

@@ -24,11 +24,11 @@ bool load() noexcept {
             const bool found=GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS|GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,reinterpret_cast<LPCWSTR>(&load),&module)!=FALSE;
             const auto size=found?GetModuleFileNameW(module,path.data(),static_cast<DWORD>(path.size())):0;
             if(!size || size>=path.size()) { error="cannot resolve DLL-relative script path"; }
-            else { document=coo::script::MissionDocument::read(std::filesystem::path(path.data()).parent_path()/L"Sunrise"/L"scripts"/L"deadly_trial.json",kProfile,error); }
-            if(document && !valid_document(document->views())) { document.reset();error="A Deadly Trial native contract mismatch"; }
+            else { document=coo::script::MissionDocument::read(std::filesystem::path(path.data()).parent_path()/L"Sunrise"/L"scripts"/L"deadly_trial.lua",kProfile,error); }
+            if(document && !valid_document(document->views())) { document.reset();error="A Deadly Trial native binding validation failed"; }
         } catch(const std::exception& e) { error=e.what(); }
         std::array<char,768> line{};
-        if(document) { std::snprintf(line.data(),line.size(),"ev=coo_script mission=deadly_trial result=loaded fnv1a64=%016llX reload=next_process",static_cast<unsigned long long>(document->fingerprint())); }
+        if(document) { std::snprintf(line.data(),line.size(),"ev=coo_script mission=deadly_trial result=loaded format=lua script=Sunrise/scripts/deadly_trial.lua fnv1a64=%016llX reload=next_process",static_cast<unsigned long long>(document->fingerprint())); }
         else { std::snprintf(line.data(),line.size(),"ev=coo_script mission=deadly_trial result=failed reason=%.*s",static_cast<int>((std::min)(error.size(),std::size_t{500})),error.data()); }
         log(line.data());
     });return document!=nullptr;

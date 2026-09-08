@@ -1,5 +1,8 @@
 # A Deadly Trial: native test candidate
 
+Current scripting reference: [Lua mission authoring](LUA-MISSION-AUTHORING.md). Mission JSON has been retired. Dated captures, hashes, and acceptance notes below describe the builds in their cited evidence directories; use the current installation receipt for the active DLL.
+
+
 The supplied objectives and transcript define the requested mission. NEXT-MISSION-HANDOFF.md supplies project context, not an additional user request. The linked video could not be fetched and was not watched. Native identities and geometry come from the installed archived packages.
 
 ## Launch
@@ -44,7 +47,7 @@ Reset clears both executors and retires observations/bindings. The generation hi
 - `build/coo/deadly-trial-research/native-bindings.json`: native groups, slots, dialogue, objectives, volumes, sources, placements and source hashes.
 - `tools/coo/recover_deadly_trial.py`: native recovery entry point.
 - `tools/coo/generate_deadly_trial.py --check`: read-only verification of generated catalog, graph and capability contract.
-- `Sunrise/scripts/deadly_trial.json`: paired executable mission document, loaded once per process.
+- `Sunrise/scripts/deadly_trial.lua`: Lua mission definition, loaded once per process.
 - `Sunrise/unit/deadly_trial_tests.cpp`: full progression replay, withheld Walker death/interaction/scene completion, stale/duplicate receipts, reset, graph-bypass rejection, multi-bubble roster and wire checks. The zero-cast body is compared byte for byte with the independent Omega native scene encoder.
 - `build/coo/validation-deadly-trial-candidate-20260907/`: final build and test evidence. The earlier failed object-name-collision build is preserved separately and was not installed. New translation units now have unique filenames.
 

@@ -2168,7 +2168,7 @@ void arm_towerfall_executor_bootstrap() noexcept {
             core::log::Level::info,
             "ev=towerfall_executor stage=arm result=observe_only reason=roster_baseline identity_mutation=disabled producer_retry=disabled");
         return;
-    }
+    } else {
     const bool directContract =
         g_directContractPublished.load(std::memory_order_acquire);
     const bool retainedRoute =
@@ -2203,6 +2203,7 @@ void arm_towerfall_executor_bootstrap() noexcept {
         directContract
             ? "ev=towerfall_executor stage=arm result=ok trigger=native_spawn_runtime route=retained direct_contract=1 manual_lifecycle_event=disabled"
             : "ev=towerfall_executor stage=arm result=ok trigger=native_spawn_runtime route=native direct_contract=0 manual_lifecycle_event=disabled");
+    }
 }
 
 void quiesce_towerfall_executor_bootstrap() noexcept {

@@ -40,6 +40,7 @@
     <ClCompile Include="..\src\state\activity\gateway\controller.cpp" />
     <ClCompile Include="..\src\state\activity\coo\mission_script.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
   </ItemGroup>
+  <Import Project="..\lua-items.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
 
