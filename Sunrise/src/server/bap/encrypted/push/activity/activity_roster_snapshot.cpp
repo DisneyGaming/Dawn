@@ -32,6 +32,9 @@
 #include "omega_lair_roster.h"
 #include "gateway_roster.h"
 #include "deadly_trial_roster.h"
+#include "beyond_infinity_roster.h"
+#include "../../../../../state/activity/beyond_infinity/runtime.h"
+#include "../../../../../state/activity/beyond_infinity/transit.h"
 #include "../../../../../state/activity/deadly_trial/runtime.h"
 #include "../../../../../state/activity/gateway/runtime.h"
 #include "../../../../../middleware/bap/activity_message/tower_watch_cue_manifest.h"
@@ -486,6 +489,9 @@ RosterOutcome build_roster_snapshot(Session& session,
     const bool trialDestination=name=="adventure_ginger" && !session.activity.joinedForeignSession;
     const bool trialPrepared=!session.activity.joinedForeignSession && state::activity::deadly_trial::prepare(state::activity::mission_run_generation(),trialDestination);
     if(trialDestination && !trialPrepared) { return RosterOutcome::noGroups; }
+    const bool beyondDestination=name=="adventure_vod" && !session.activity.joinedForeignSession;
+    const bool beyondPrepared=state::activity::beyond_infinity::prepare(state::activity::mission_run_generation(),beyondDestination);
+    if(beyondDestination && !beyondPrepared) { return RosterOutcome::noGroups; }
     const auto& omegaExperiments = core::settings::get().omegaExperiments;
     const bool syntheticOmega = omegaDestination;
     // Forest-D's native encounter classifier requires the selected race global
@@ -597,6 +603,8 @@ RosterOutcome build_roster_snapshot(Session& session,
     if (!state::build_data::find_scenario_layout(name, layout)) {
         return RosterOutcome::noLayout;
     }
+    if(beyondPrepared && !beyond_infinity_roster::prepare_layout(layout,
+        [](std::size_t index,layouts::RosterGroup& group) noexcept { return state::build_data::find_roster_group(index,group); })) { return RosterOutcome::noGroups; }
     if(trialPrepared && !deadly_trial_roster::prepare_layout(layout,
         [](std::size_t index,layouts::RosterGroup& group) noexcept {
             return state::build_data::find_roster_group(index,group);
@@ -739,6 +747,20 @@ RosterOutcome build_roster_snapshot(Session& session,
         snapshot.deadly_trial=state::activity::deadly_trial::snapshot(state::activity::mission_run_generation(),
             GetTickCount64(),state::activity::mission_seed_armed());
         if(snapshot.deadly_trial.enabled) { snapshot.missionCompletion=snapshot.deadly_trial.completion; }
+    }
+    if(beyondPrepared) {
+        std::uint32_t failedKey{};
+        const bool admitted=beyond_infinity_roster::admit(layout,scratch,snapshot.roster,
+            [](std::size_t index,layouts::RosterGroup& group) noexcept { return state::build_data::find_roster_group(index,group); },&failedKey);
+        if(!admitted) {
+            std::array<char,160> line{};std::snprintf(line.data(),line.size(),"ev=beyond_infinity stage=roster result=failed registry=%08X",failedKey);
+            core::log::write(core::log::Channel::server,core::log::Level::error,line.data());return RosterOutcome::noGroups;
+        }
+        snapshot.beyond_infinity=state::activity::beyond_infinity::snapshot(state::activity::mission_run_generation(),GetTickCount64(),state::activity::mission_seed_armed());
+        if(snapshot.beyond_infinity.enabled) {
+            snapshot.missionCompletion=snapshot.beyond_infinity.completion;
+            snapshot.gameplayClockTicks=snapshot.beyond_infinity.gameplayClockTicks;
+        }
     }
     if(snapshot.omegaEndingRetire) {
         if(!omega_lair::terminal_roster(scratch,snapshot.roster,
@@ -1062,7 +1084,7 @@ namespace {
 
 /** Maps one copied membership after-image into the fixed wire schema. */
 [[nodiscard]] bool make_membership_wire(
-    state::activity::ActivityInstanceKey activity,bool validatedOmega,
+    state::activity::ActivityInstanceKey activity,bool validatedOmega,bool validatedBeyond,
     const state::activity::membership::MembershipState& membership,
     const gameplay::AdvertisementSnapshot& advertisement,
     membership_message::MembershipSnapshot& wire) noexcept {
@@ -1087,9 +1109,12 @@ namespace {
     const state::activity::omega_ending_transit::Observation nativeTransit{
         {membership.teleport.state,membership.teleport.token,membership.teleport.sliceSetIndex,
             membership.teleport.sliceSetHash},membership.region.index,membership.hasTeleportReceipt,membership.region.index>=0};
-    const auto terminal=state::activity::omega_ending::project_transit({activity,
+    auto terminal=state::activity::omega_ending::project_transit({activity,
         state::activity::mission_run_generation(),membership.identity.memberKey,validatedOmega,
         nativeTransit});
+    const auto beyond=state::activity::beyond_infinity::transit::project(activity,
+        state::activity::mission_run_generation(),membership.identity.memberKey,validatedBeyond,nativeTransit);
+    if(beyond.publish) { terminal=beyond; }
     if(terminal.publish) {
         wire.teleport={terminal.host.state,terminal.host.token,terminal.host.sliceSetIndex,
             terminal.host.sliceSetHash};
@@ -1270,6 +1295,7 @@ namespace {
     if (requires_notification(required, RegionNotification::membership)
         && !make_membership_wire(lineage.bound,allowArrival && name=="mission_scot"
                 && hasLayout && layout.tag==0x80F47522U,
+            allowArrival && name=="adventure_vod" && hasLayout && layout.tag==state::activity::beyond_infinity::kScenario,
             membershipAfter, advertisement, output.membershipWire)) {
         gameplay::group::release_host_activity_lineage(advertisementLease);
         return RegionSnapshotBuildResult::failed;

@@ -370,6 +370,9 @@ void draw() noexcept {
     if (ImGui::Button("A Deadly Trial opening")) {
         changed = apply_opening_profile(value, rows, forced::profiles::kDeadlyTrialOpening) || changed;
     }
+    if (ImGui::Button("Beyond Infinity opening")) {
+        changed = apply_opening_profile(value, rows, forced::profiles::kBeyondInfinityOpening) || changed;
+    }
     if (ImGui::Button("Gateway opening")) {
         changed = apply_opening_profile(value, rows, forced::profiles::kGatewayOpening) || changed;
     }

@@ -34,6 +34,17 @@ template<class Writer> bool collection(Writer& w,std::uint32_t registry,std::spa
     }
     return true;
 }
+// 80809578 -> ABADE0 -> 5009C0(capacity32) enumerates all entities from
+// each scoped source, including multi-category squads. The scalar layout is
+// identical to80809579; the existing one-entity collection remains unchanged.
+template<class Writer> bool collection_sources(Writer& w,std::uint32_t registry,std::span<const std::uint16_t> sources) noexcept {
+    if(sources.size()>8 || !w.write(static_cast<std::uint32_t>(sources.size()),4)) { return false; }
+    for(const auto source:sources) {
+        if(!w.write(1,1) || !w.write(0x80809578U,32) || !w.write(1,2)
+            || !w.write(registry,32) || !w.write(2,7) || !w.write(32768U+source,16)) { return false; }
+    }
+    return true;
+}
 // 8080954B linked collection is preferred by native9EF940 over dynamic selectors.
 template<class Writer> bool linked_effect(Writer& w,std::uint32_t registry,std::uint16_t collection,bool enabled) noexcept {
     if(!w.write(0,1) || !w.write(enabled?0U:1U,1)) { return false; }

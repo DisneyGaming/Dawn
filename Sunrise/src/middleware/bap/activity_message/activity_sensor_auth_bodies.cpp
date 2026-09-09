@@ -2,6 +2,7 @@
 #include <bit>
 
 #include "sensor_auth_update.h"
+#include "../../../state/activity/beyond_infinity/forest_selection.h"
 #include "../../../state/activity/omega_intro_rules.h"
 #include "../../../state/activity/omega_ending_rules.h"
 #include "../../../state/activity/omega_combatant_authority.h"
@@ -391,10 +392,12 @@ constexpr std::size_t kSpawnKeyCount = 32;
                    && writer.write(0, kPresenceWidth) && writer.write(kSignedZero, 32)
                    && writer.write(0, 32)
                    && writer.write(kSignedZero + (crownRestricted ? crown::kLairScenarioOrdinal : 0U), 32)
-                   && writer.write(snapshot.omegaForestVexEncounters ? 2U : 1U, 6)
+                   && writer.write(state::activity::beyond_infinity::forest::selected(snapshot.beyond_infinity) ? 3U : snapshot.omegaForestVexEncounters ? 2U : 1U, 6)
                    && writer.write(kWaitingSwitchKey, 32) && writer.write(1, kPresenceWidth)
                    && writer.write(kWaitingSwitchClass, 32) && writer.write(kSignedZero, 32);
-    if (encoded && snapshot.omegaForestVexEncounters) {
+    if (state::activity::beyond_infinity::forest::selected(snapshot.beyond_infinity)) {
+        encoded = encoded && state::activity::beyond_infinity::forest::write(writer,snapshot.beyond_infinity.forestPass);
+    } else if (encoded && snapshot.omegaForestVexEncounters) {
         // DBC710 merges this type-17 gameplay switch into the native global
         // store. 80F44B2B then selects the authored Vex population; native
         // encounter creation, AI, remaining counts and gate unlock own the rest.
@@ -981,7 +984,9 @@ auth_body_bits(const Snapshot& snapshot,
                    : 0;
     }
     if (slotType == kSlotTypeLifetime) {
-        return kLifetimeBits + (snapshot.omegaForestVexEncounters ? kGameplayHashSwitchBits : 0);
+        return kLifetimeBits + (state::activity::beyond_infinity::forest::selected(snapshot.beyond_infinity)
+            ? 2*state::activity::beyond_infinity::forest::kSwitchBits
+            : snapshot.omegaForestVexEncounters ? kGameplayHashSwitchBits : 0);
     }
     if (slotType == kSlotTypeActivityScript && kInitializeActivityScript
         && (snapshot.initializeMissionAuthorityRuntime

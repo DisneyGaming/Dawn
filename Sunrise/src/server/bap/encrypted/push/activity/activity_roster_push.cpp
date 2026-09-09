@@ -10,6 +10,9 @@
 
 #include "../../../../../core/logging/log.h"
 #include "../../../../../middleware/bap/activity_message/sensor_auth_update.h"
+#include "../../../../../middleware/bap/activity_message/activity_clock_state_encoder.h"
+#include "../../../../../state/activity/beyond_infinity/runtime.h"
+#include "../../../../../state/activity/runtime.h"
 #include "../../../../../middleware/secure_channel/runtime.h"
 #include "../../../../../state/activity/bubble_authority/runtime.h"
 #include "../../../../../state/activity/forced/activity_forced_destination.h"
@@ -39,6 +42,29 @@ std::atomic_uint32_t g_towerfallDeliveryReports{};
 
 [[nodiscard]] bool take_towerfall_delivery_report() noexcept {
     return g_towerfallDeliveryReports.fetch_add(1U, std::memory_order_relaxed) < 32U;
+}
+
+// The clock state and its matching authority timestamp share the roster's
+// existing rollback transaction. Other missions retain their previous traffic.
+[[nodiscard]] bool append_beyond_clock(Session& session,Scratch& scratch,
+    const message::Snapshot& snapshot,std::string_view name,
+    std::span<const std::byte,state::kAesKeySize> key,
+    std::array<std::byte,state::kBapNonceSize>& nonce,
+    std::span<std::byte> response,std::size_t& written) noexcept {
+    if(name!="adventure_vod" || !snapshot.beyond_infinity.enabled) { return true; }
+    namespace beyond=state::activity::beyond_infinity;
+    namespace clock=middleware::bap::activity_message::clock_state;
+    const auto current=beyond::request();
+    if(session.activity.joinedForeignSession || !lifecycle::activity_binding_is_current(session)
+        || session.activity.instance!=state::activity::newest_joined_activity()
+        || state::activity::world_phase()!=state::activity::WorldPhase::arrived
+        || !current.owner.valid() || current.owner.run!=state::activity::mission_run_generation()
+        || !current.frame.enabled || current.frame.spawnGeneration!=snapshot.beyond_infinity.spawnGeneration) { return false; }
+    std::array<std::byte,clock::kEncodedSize> body{};std::size_t size{};
+    if(!clock::encode(clock::kRunning,body,size)
+        || !append_notification_frame(scratch,session.activity.instance.sessionId,
+            clock::kMessageType,body,key,nonce,response,written)) { return false; }
+    middleware::secure_channel::advance_nonce(nonce);return true;
 }
 
 } // namespace
@@ -104,7 +130,8 @@ bool append_roster_notification(Session& session,
     const std::size_t initialWritten = written;
     auto initialNonce = nonce;
     std::size_t messageSize = 0;
-    bool encoded = message::encode_sensor_auth_update(snapshot, scratch.responseBody, messageSize)
+    bool encoded = append_beyond_clock(session,scratch,snapshot,name,key,nonce,response,written)
+                   && message::encode_sensor_auth_update(snapshot, scratch.responseBody, messageSize)
                    && append_notification_frame(scratch,
                                                 session.activity.instance.sessionId,
                                                 message::kMessageType,
@@ -235,7 +262,8 @@ bool append_roster_notification(
     const std::size_t initialWritten = written;
     const auto initialNonce = nonce;
     std::size_t messageSize = 0;
-    const bool encoded = message::encode_sensor_auth_update(
+    const bool encoded = append_beyond_clock(session,scratch,transition.rosterWire,destination,key,nonce,response,written)
+                         && message::encode_sensor_auth_update(
                              transition.rosterWire,
                              scratch.responseBody,
                              messageSize)

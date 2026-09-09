@@ -100,6 +100,8 @@
     <ClCompile Include="src\state\activity\coo\omega_script.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\state\activity\gateway\runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\state\activity\gateway\controller.cpp" />
+    <ClCompile Include="src\state\activity\beyond_infinity\runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling><ObjectFileName>$(IntDir)beyond_infinity_runtime.obj</ObjectFileName></ClCompile>
+    <ClCompile Include="src\state\activity\beyond_infinity\controller.cpp"><ObjectFileName>$(IntDir)beyond_infinity_controller.obj</ObjectFileName></ClCompile>
     <ClCompile Include="src\state\activity\deadly_trial\deadly_trial_controller.cpp" />
     <ClCompile Include="src\state\activity\deadly_trial\deadly_trial_runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\state\activity\coo\mission_script.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
@@ -1426,6 +1428,19 @@
     <ClInclude Include="src\state\activity\gateway\bindings.h" />
     <None Include="scripts\deadly_trial.lua" />
     <None Include="scripts\gateway.lua" />
+    <None Include="scripts\beyond_infinity.lua" />
+    <ClInclude Include="src\state\activity\beyond_infinity\catalog.h" />
+    <ClInclude Include="src\state\activity\beyond_infinity\native_catalog.h" />
+    <ClInclude Include="src\state\activity\beyond_infinity\bindings.h" />
+    <ClInclude Include="src\state\activity\beyond_infinity\frame.h" />
+    <ClInclude Include="src\state\activity\beyond_infinity\controller.h" />
+    <ClInclude Include="src\state\activity\beyond_infinity\runtime.h" />
+    <ClInclude Include="src\state\activity\beyond_infinity\authority.h" />
+    <ClInclude Include="src\state\activity\coo\native_scene_cast_authority.h" />
+    <ClInclude Include="src\server\bap\encrypted\push\activity\beyond_infinity_roster.h" />
+    <ClInclude Include="src\client\hooks\bootflow\beyond_infinity_native_receipts.h" />
+    <ClInclude Include="src\client\hooks\bootflow\beyond_infinity_scene_receipts.inl" />
+    <ClInclude Include="src\client\hooks\bootflow\beyond_infinity_object_receipts.inl" />
   </ItemGroup>
   <Import Project="lua-items.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -11,6 +11,9 @@
 
 #include "omega_rescue_scene_receipts.h"
 #include "gateway_vance_native_path.h"
+#include "beyond_infinity_native_receipts.h"
+#include "beyond_infinity_future_cast.h"
+#include "../../../state/activity/beyond_infinity/runtime.h"
 #include "../../../state/activity/gateway/runtime.h"
 #include "omega_enemy_native_reference.h"
 #include "../../hooking/call_gate.h"
@@ -379,6 +382,7 @@ void complete_gateway_scene(Read& read,std::uintptr_t component,const GatewaySce
     if(stage.conversation) { gateway::observe_vance(capture.receipt,gateway::VanceMilestone::conversationStarted); }
     if(complete) { gateway::observe_scene(capture.receipt,true); }
 }
+#include "beyond_infinity_scene_receipts.inl"
 __declspec(noinline) void __fastcall tick(void* raw) noexcept {
     hooking::CallGate::Scope gate(g_gate);
     const auto original=hooking::await_original(g_original);
@@ -398,7 +402,18 @@ __declspec(noinline) void __fastcall tick(void* raw) noexcept {
             static_cast<unsigned long long>(gatewayRequest.run),gatewayRequest.sceneGeneration,name(gatewayCapture.rejected),static_cast<unsigned long long>(component));
         if(size>0 && static_cast<std::size_t>(size)<line.size()) { core::log::write(core::log::Channel::client,core::log::Level::info,{line.data(),static_cast<std::size_t>(size)}); }
     }
+    beyond_native::SceneSample beyondBefore{};Read beyondRead{};
+    state::activity::coo::Generation beyondOwner{};bool beyondOwned{};
+    if(gate.accepts_side_effects() && read_beyond_scene(beyondRead,component,beyondBefore)) {
+        const auto request=beyond::request();beyond::SceneReceipt receipt{};
+        beyondOwned=beyond_native::scene_sample(beyondBefore,request.frame,request.owner,receipt);beyondOwner=request.owner;
+        if(beyondOwned) {
+            prepare_beyond_scene(beyondRead,component,beyondBefore,request);
+            beyond::observe_scene(receipt,false);observe_beyond_speech(beyondRead,component,beyondBefore,receipt);
+        }
+    }
     original(raw);
+    if(beyondOwned && gate.accepts_side_effects()) { finish_beyond_scene(beyondRead,component,beyondBefore,beyondOwner); }
     if(gatewayOwned && gate.accepts_side_effects()) { complete_gateway_scene(gatewayRead,component,gatewayCapture); }
     if(!observing || !gate.accepts_side_effects()) {return;}
     const auto now=state::activity::omega_presentation::navigation();
@@ -461,6 +476,13 @@ bool uninstall_omega_rescue_scene_receipts() noexcept {
     if(g_original.load(std::memory_order_acquire)==nullptr) {return true;}
     const std::array protectedEntries{
         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&tick)},
+        hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&read_beyond_scene)},
+        hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&finish_beyond_scene)},
+        hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&prepare_beyond_scene)},
+        hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&recover_beyond_future_cast)},
+        hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&create_beyond_future_actor_safe)},
+        hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&observe_beyond_speech)},
+        hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&clear_beyond_callback)},
         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&capture_gateway_scene)},
         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&complete_gateway_scene)},
         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&hooking::call_gate_detail::enter)},

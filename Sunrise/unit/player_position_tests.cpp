@@ -34,6 +34,7 @@ bool read_position(void* component,Vector& position) noexcept {
 }
 namespace sunrise::state::activity {
 std::uint64_t mission_run_generation() noexcept { return 1; }
+namespace beyond_infinity { void observe_position(float,float,float) noexcept {} }
 namespace deadly_trial { void observe_position(float x,float y,float z) noexcept { ++trialPublications;trialPosition={x,y,z}; } }
 namespace gateway { void observe_position(float x,float y,float z) noexcept { ++publications;if(mission) { mission->position(1,{x,y,z}); } } }
 namespace omega_presentation { void observe_position(Point) noexcept {} Navigation navigation() noexcept { return {}; } }

@@ -159,6 +159,9 @@ void uninstall_activity_notification_type1_apply_probe() noexcept;
 
 /** Observation-only probe over the type-53 dialogue apply/scan/dispatch chain. */
 [[nodiscard]] bool install_omega_dialogue_dispatch_probe() noexcept;
+// Available only after the exact DF6BD0 signature was verified and hooked.
+// Arc receipts quiesce before the dialogue probe releases this trampoline.
+void* omega_native_device_channel0() noexcept;
 void uninstall_omega_dialogue_dispatch_probe() noexcept;
 [[nodiscard]] bool install_omega_navigation() noexcept;
 [[nodiscard]] bool install_omega_lair_cinematic() noexcept;

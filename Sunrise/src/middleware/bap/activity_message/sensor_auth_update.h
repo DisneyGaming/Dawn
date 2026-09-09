@@ -8,6 +8,7 @@
 #include "../../encoding/bit_writer.h"
 #include "activity_patch_epoch_parser.h"
 #include "../../../state/activity/gateway/frame.h"
+#include "../../../state/activity/beyond_infinity/frame.h"
 #include "../../../state/activity/deadly_trial/frame.h"
 #include "../../../state/activity/omega/omega_mission_state.h"
 #include "../../../state/activity/omega_crown_respawn_authority.h"
@@ -123,12 +124,17 @@ struct Snapshot final {
     /** Selects the archive protocol only for mission_scot. */
     bool archiveOmega{};
     state::activity::gateway::Frame gateway{};
+    state::activity::beyond_infinity::Frame beyond_infinity{};
     state::activity::deadly_trial::Frame deadly_trial{};
     state::activity::coo::CompletionPublication missionCompletion{};
     /** Message 52's payload, echoed exactly. A wrong epoch skips phase 2 and reports nothing. */
     patch_epoch::PatchEpoch patchEpoch{};
     Roster roster{};
     Grant grant{};
+    /** Native gameplay clock base in 673200 ticks/second; zero preserves existing callers.
+     * 3CA310 reads eight raw little-endian bytes after the grant through 351070;
+     * 3CA34C publishes the resulting qword to clock+50. */
+    std::uint64_t gameplayClockTicks{};
     /** Message 12's member record key. Zero leaves every type-13 block inert. */
     std::uint64_t playerKey{};
     /** Per-entry state byte. A change tears down and rebuilds every roster-owned object. */
@@ -306,7 +312,7 @@ struct Snapshot final {
                                              std::span<std::byte> output,
                                              std::size_t& written) noexcept;
 
-/** Bits before the enable latch with no bubble block: 8 hardwipe, 128 epoch, 1 present, 64 token.
+/** Bits before the enable latch with no bubble block: 8 hardwipe, 128 epoch, 1 present, 64 clock ticks.
  */
 inline constexpr std::size_t kLatchBitWithoutGrant = 201;
 /** A bubble block adds the 65-bit authority mask, two head bits, three per element, and one token.
@@ -317,7 +323,7 @@ inline constexpr std::size_t kBubbleBlockBits =
 inline constexpr std::uint8_t kEpochWidth = 64;
 /** The unchecked hardwipe token is one byte, before the patch epoch. */
 inline constexpr std::uint8_t kHardwipeWidth = 8;
-/** The unchecked activity token follows the bubble block. */
+/** Eight raw little-endian gameplay-clock bytes follow the bubble block; retained width name. */
 inline constexpr std::uint8_t kActivityTokenWidth = 64;
 /** Changed authority tokens use the schema's unsigned 16-bit field. */
 inline constexpr std::uint8_t kGrantTokenWidth = 16;

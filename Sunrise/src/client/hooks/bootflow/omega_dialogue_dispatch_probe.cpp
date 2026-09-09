@@ -1,10 +1,12 @@
 #include "../../../state/activity/gateway/runtime.h"
+#include "../../../state/activity/beyond_infinity/runtime.h"
 #include "../../../state/activity/deadly_trial/runtime.h"
 #include <Windows.h>
 #include "deadly_trial_presentation.h"
 #include <intrin.h>
 
 #include <array>
+#include <bit>
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
@@ -17,6 +19,8 @@
 #include "forest_tuner_record.h"
 #include "forest_tuner_state.h"
 #include "omega_forest_recipe.h"
+#include "beyond_infinity_forest_recipe.h"
+#include "../../../state/activity/beyond_infinity/forest_selection.h"
 #include "omega_enemy_forest_receipts_runtime.h"
 #include "omega_dialogue_bank.h"
 #include "omega_teardown_native.h"
@@ -275,7 +279,8 @@ hooking::detour::Handle g_gateHandle{};
 std::atomic<DialogueApply> g_gateOriginal{nullptr};
 std::atomic_uint32_t g_gateCount{};
 std::atomic_uint64_t g_lastGateState{UINT64_MAX};
-using DeviceSetter = void(__fastcall*)(std::byte* device, std::uint32_t value, char snap,
+// Native DF6BD0/DF7120 receive channel values in XMM1 (float ABI).
+using DeviceSetter = void(__fastcall*)(std::byte* device, float value, char snap,
                                        std::uint32_t revision) noexcept;
 hooking::detour::Handle g_deviceCh0Handle{};
 hooking::detour::Handle g_deviceCh1Handle{};
@@ -1211,6 +1216,16 @@ __declspec(noinline) void __fastcall dialogue_dispatch(std::byte* component,
     const DialogueDispatch original = g_dispatchOriginal.load(std::memory_order_acquire);
     if (original != nullptr) {
         original(component, index);
+        bool beyondDispatch{};
+        if(component!=nullptr && index>=0 && index<49) {
+            std::uint32_t self{};std::int64_t offset{};
+            const auto bank=resolve_bank_handle(component,self,offset);
+            if(bank==state::activity::beyond_infinity::kBank) {
+                beyondDispatch=true;
+                const auto generation=read_value<std::uint32_t>(component+kRecordGenerationOffset+static_cast<std::size_t>(index)*0x20U);
+                state::activity::beyond_infinity::observe_submission(gatewayDispatchRun,self,offset,bank,static_cast<std::uint8_t>(index),generation);
+            }
+        }
         if (component != nullptr && index >= 0 && index < 34) {
             std::uint32_t self{};
             std::int64_t offset{};
@@ -1221,14 +1236,14 @@ __declspec(noinline) void __fastcall dialogue_dispatch(std::byte* component,
                 static_cast<std::uint8_t>(index),generation);
             state::activity::deadly_trial::observe_submission(gatewayDispatchRun,self,offset,bank,
                 static_cast<std::uint8_t>(index),generation);
-            if (bank != kDialogueBankHandle && bank != 0x80F1FC9EU && bank != 0x80F1F086U) {
+            if (bank != kDialogueBankHandle && bank != 0x80F1FC9EU && bank != 0x80F1F086U && !beyondDispatch) {
                 // observe_submission() drops a foreign bank silently; say so once per row.
                 log_reject("dispatch_bank", component, static_cast<std::uint32_t>(index),
                            generation, bank);
             }
             state::activity::omega_presentation::observe_submission(
                 bank, static_cast<std::uint8_t>(index), generation);
-        } else if (component != nullptr) {
+        } else if (component != nullptr && !beyondDispatch) {
             log_reject("dispatch_index", component, static_cast<std::uint32_t>(index) & 0xFFU,
                        0U, static_cast<std::uint64_t>(static_cast<std::uint32_t>(index)));
         }
@@ -1323,7 +1338,7 @@ __declspec(noinline) void __fastcall gate_apply(std::byte* component,
         if (wall != nullptr && push != nullptr
             && g_vexWallPushState.exchange(1U, std::memory_order_acq_rel) == 0U) {
             const std::int32_t before = read_value<std::int32_t>(wall + 0x960U);
-            push(wall, 0x3F800000U, 1, static_cast<std::uint32_t>(before + 1));
+            push(wall, 1.F, 1, static_cast<std::uint32_t>(before + 1));
             const std::int32_t after = read_value<std::int32_t>(wall + 0x960U);
             std::array<char, 192> line{};
             const int length = std::snprintf(
@@ -1412,7 +1427,7 @@ void log_device_setter(const char* channel,
 }
 
 __declspec(noinline) void __fastcall device_channel0_setter(std::byte* device,
-                                                            std::uint32_t value,
+                                                            float value,
                                                             char snap,
                                                             std::uint32_t revision) noexcept {
     const std::int32_t before =
@@ -1424,12 +1439,12 @@ __declspec(noinline) void __fastcall device_channel0_setter(std::byte* device,
     const std::int32_t after =
         device != nullptr ? read_value<std::int32_t>(device + 0x960U) : -2;
     if (device != nullptr) {
-        log_device_setter("ch0", device, value, snap, revision, before, after);
+        log_device_setter("ch0", device, std::bit_cast<std::uint32_t>(value), snap, revision, before, after);
     }
 }
 
 __declspec(noinline) void __fastcall device_channel1_setter(std::byte* device,
-                                                            std::uint32_t value,
+                                                            float value,
                                                             char snap,
                                                             std::uint32_t revision) noexcept {
     const std::int32_t before =
@@ -1441,7 +1456,7 @@ __declspec(noinline) void __fastcall device_channel1_setter(std::byte* device,
     const std::int32_t after =
         device != nullptr ? read_value<std::int32_t>(device + 0x950U) : -2;
     if (device != nullptr) {
-        log_device_setter("ch1", device, value, snap, revision, before, after);
+        log_device_setter("ch1", device, std::bit_cast<std::uint32_t>(value), snap, revision, before, after);
     }
 }
 
@@ -1793,6 +1808,8 @@ void apply_forest_tuner(std::byte* record) noexcept {
     dial.applies.fetch_add(1, std::memory_order_relaxed);
 }
 
+#include "beyond_infinity_forest_runtime.inl"
+
 /** Select by committed mission and worker configuration, not the last cached sensor pointer. */
 [[nodiscard]] bool omega_forest_worker(void* instance) noexcept {
     const auto* bytes = static_cast<const std::byte*>(instance);
@@ -1881,6 +1898,7 @@ __declspec(noinline) std::uint8_t __fastcall forest_solver_hook(
     const auto original = g_forestSolverOriginal.load(std::memory_order_acquire);
     omega_forest::solver_inputs(omega_forest_worker(instance),
         forest_tuner::state().writeFloats.load(std::memory_order_relaxed), first, second);
+    if(beyond_forest_runtime::selected() && beyond_forest_runtime::worker(instance)) { first=second=0.F; }
     return original != nullptr ? original(instance, first, second, blockedTiles) : 0U;
 }
 
@@ -1907,6 +1925,8 @@ __declspec(noinline) std::uint64_t __fastcall forest_worker_create_hook(void* in
 __declspec(noinline) std::uint64_t __fastcall forest_worker_tick_hook(void* instance,
                                                                       void* context) noexcept {
     prepare_omega_forest(instance);
+    const bool beyondForest=beyond_forest_runtime::selected();
+    if(beyondForest) { beyond_forest_runtime::prepare(instance); }
     // TUNER IGNITION: the worker reads the sensor authority record at instance+0x180 through
     // presence-gated accessors (+0x2C mask: bit0 seed@+0x00, bit1 mode@+0x04, bit2 the 4-group
     // anchor block @+0x08 (see forest_tuner_record.h), bit3 enable@+0x2D, bits 4..6 ints
@@ -1914,7 +1934,7 @@ __declspec(noinline) std::uint64_t __fastcall forest_worker_tick_hook(void* inst
     // the Forest menu's shared diagnostic dial, applied before every tick; any change makes the worker's
     // change-detect rebuild the whole layout in-place â€” a live combination dial.
     void* const sensor = g_forestSensorPtr.load(std::memory_order_acquire);
-    if (sensor != nullptr) {
+    if (sensor != nullptr && !beyondForest) {
         auto* const record = static_cast<std::byte*>(sensor) + kForestAuthorityOffset;
         if (readable(record, 0x60U)) {
             const std::uint8_t mask = read_value<std::uint8_t>(record + 0x2CU);
@@ -2584,6 +2604,10 @@ bool install_omega_dialogue_dispatch_probe() noexcept {
                      "ev=omega_dialogue stage=install result=ok mode=observe+omega_forest_recipe "
                      "targets=+1009B60,+100A180,+10097D0,+1009C00,+10699C0,+DF6BD0,+DF7120,+DF5070,+4E3B40,+FFE820,+10059A0,+FF2F80");
     return true;
+}
+
+void* omega_native_device_channel0() noexcept {
+    return reinterpret_cast<void*>(g_deviceCh0Original.load(std::memory_order_acquire));
 }
 
 void uninstall_omega_dialogue_dispatch_probe() noexcept {

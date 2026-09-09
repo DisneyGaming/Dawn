@@ -12,7 +12,74 @@ void check(bool value, const char* message) {
     if (!value) { std::fprintf(stderr, "%s\n", message); std::exit(1); }
 }
 
+#ifdef OMEGA_PORT_LOCAL
+// Native 3CA310 calls 351070 with an eight-byte destination. That reader copies
+// the raw MSB-first bit stream into bytes, then the caller loads a little-endian
+// qword. Decode those bytes explicitly instead of mirroring Writer::write(64).
+std::uint64_t native_raw_clock(std::span<const std::byte> packet, std::size_t firstBit) {
+    std::uint64_t ticks{};
+    for (std::size_t byte = 0; byte < 8; ++byte) {
+        std::uint8_t raw{};
+        for (std::size_t bit = 0; bit < 8; ++bit) {
+            const auto position = firstBit + byte * 8 + bit;
+            const auto source = std::to_integer<unsigned>(packet[position / 8]);
+            raw = static_cast<std::uint8_t>((raw << 1) | ((source >> (7 - position % 8)) & 1U));
+        }
+        ticks |= std::uint64_t{raw} << (byte * 8);
+    }
+    return ticks;
+}
+void check_gameplay_clock_transport() {
+    for (const bool grant : {false, true}) {
+        wire::Snapshot snapshot{};
+        snapshot.lifetime = 3;
+        snapshot.patchEpoch = {0x0123456789ABCDEFULL, 0xFEDCBA9876543210ULL};
+        snapshot.hasGrant = grant;
+        snapshot.grant = {11, 7};
+        std::array<std::byte, 4096> baseline{}, packet{};
+        std::size_t baselineSize{}, size{};
+        check(wire::encode_sensor_auth_update(snapshot, baseline, baselineSize),
+            "default clock packet encodes");
+        const std::size_t clockBit = wire::kLatchBitWithoutGrant - wire::kActivityTokenWidth
+            + (grant ? wire::kBubbleBlockBits : 0U);
+        check(native_raw_clock(baseline, clockBit) == 0, "default native clock remains zero");
+        for (const auto ticks : {std::uint64_t{0}, std::uint64_t{1}, std::uint64_t{4712400},
+                                std::uint64_t{0x0123456789ABCDEFULL},
+                                std::uint64_t{0x8000000000000000ULL}, UINT64_MAX}) {
+            snapshot.gameplayClockTicks = ticks;
+            check(wire::encode_sensor_auth_update(snapshot, packet, size) && size == baselineSize,
+                "native clock does not change packet width");
+            check(native_raw_clock(packet, clockBit) == ticks,
+                "native raw clock decodes little-endian after optional grant");
+            bits::Reader decoded(packet);
+            std::uint64_t value{};
+            check(decoded.skip(clockBit + 64) && decoded.read(1, value) && value == 1,
+                "clock preserves following enable latch");
+            bits::Reader before(baseline), after(packet);
+            for (std::size_t bit = 0; bit < size * 8; ++bit) {
+                std::uint64_t a{}, b{};
+                check(before.read(1, a) && after.read(1, b), "compare complete clock packet");
+                if (bit < clockBit || bit >= clockBit + 64) {
+                    check(a == b, "clock changes no epoch, grant, roster or padding bit");
+                }
+            }
+        }
+        snapshot.archiveOmega = true;
+        snapshot.gameplayClockTicks = 0;
+        check(wire::encode_sensor_auth_update(snapshot, baseline, baselineSize),
+            "archive baseline clock packet encodes");
+        snapshot.gameplayClockTicks = UINT64_MAX;
+        check(wire::encode_sensor_auth_update(snapshot, packet, size)
+            && size == baselineSize && packet == baseline,
+            "archive Omega ignores non-archive gameplay clock field");
+    }
+}
+#endif
+
 int main() {
+#ifdef OMEGA_PORT_LOCAL
+    check_gameplay_clock_transport();
+#endif
     // A Tower Watch publication must retain its original single dialogue record
     // and target-free directive even if unrelated Omega fields are populated.
     wire::Snapshot snapshot{};
@@ -54,5 +121,5 @@ int main() {
     bits::Reader sceneReader(buffer);
     check(sceneReader.read(32, value) && value == 0x00B82771U,
         "The existing signed Scene selector must keep its wire bias");
-    std::puts("PASS: Tower Watch dialogue, directive, Scene and Omega isolation");
+    std::puts("PASS: native clock transport, Tower Watch dialogue, directive, Scene and Omega isolation");
 }

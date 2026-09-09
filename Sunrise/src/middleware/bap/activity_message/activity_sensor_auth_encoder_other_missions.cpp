@@ -618,8 +618,12 @@ constexpr std::uint32_t kMaximumRegion = 0x7FFFFFFF;
         encoded = legacy_write_bubble_block(writer, snapshot.grant);
     }
     const std::size_t latchBit = kLatchBitWithoutGrant + (snapshot.hasGrant ? kBubbleBlockBits : 0);
-    // The token at the activity object's element 10 is not checked.
-    encoded = encoded && writer.write(0, kActivityTokenWidth) && writer.bit_count() == latchBit;
+    // Native 3CA310 uses 351070 to copy eight raw bytes, then loads a little-endian
+    // qword into the scenario clock. A numeric MSB-first 64-bit write reverses it.
+    for (std::uint8_t byte = 0; encoded && byte < kActivityTokenWidth / 8; ++byte) {
+        encoded = writer.write((snapshot.gameplayClockTicks >> (byte * 8)) & 0xFFU, 8);
+    }
+    encoded = encoded && writer.bit_count() == latchBit;
     // The enable latch is not sticky, so it goes on every message.
     encoded = encoded && writer.write(1, kPresenceWidth)
               && legacy_write_roster_delta(writer, snapshot.roster, snapshot.stateSequence)
@@ -638,7 +642,7 @@ constexpr std::uint32_t kMaximumRegion = 0x7FFFFFFF;
         } else {
             // The forest generator group is exempt from the suppression: its blocks are empty
             // ({reset=1, present=0}, no authority applied, nothing clobbered) and they are the
-            // only way its bubble-11 sync objects ever SEED — without them
+            // only way its bubble-11 sync objects ever SEED â€” without them
             // ClientRosterSync_AllRecordsInBubbleSeeded vetoes the bubble's seed commit and
             // the replicated map-generator worker never instantiates.
             encoded = write_omega_progression(writer, snapshot)

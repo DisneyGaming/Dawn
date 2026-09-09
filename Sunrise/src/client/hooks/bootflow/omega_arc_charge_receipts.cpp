@@ -1,4 +1,6 @@
 #include "coo_native_components.h"
+#include "internal.h"
+#include "beyond_infinity_plate_timer.h"
 #include "../../../state/activity/gateway/service_bindings.h"
 #include <Windows.h>
 
@@ -14,7 +16,10 @@
 #include "omega_arc_charge_native.h"
 #include "gateway_native_read.h"
 #include "gateway_module_native_path.h"
+#include "beyond_infinity_native_receipts.h"
+#include "../../../state/activity/beyond_infinity/runtime.h"
 #include "gateway_module_damage.h"
+#include "beyond_infinity_lens_damage.h"
 #include "../../../state/activity/gateway/runtime.h"
 #include "../../../state/activity/deadly_trial/runtime.h"
 #include "../../hooking/call_gate.h"
@@ -51,7 +56,7 @@ using SinkEnable = void(__fastcall*)(void*, const void*) noexcept;
 using Interaction = void(__fastcall*)(void*, std::uint32_t, std::uint8_t, const void*,
     std::uint64_t, std::uint64_t, std::uint64_t, std::uint64_t, std::uint8_t, void*) noexcept;
 hooking::CallGate g_gate;
-std::array<hooking::detour::Handle, 8> g_handles{};
+std::array<hooking::detour::Handle, 9> g_handles{};
 std::atomic<Carry> g_carry{};
 std::atomic<Dunk> g_dunk{};
 std::atomic<Create> g_create{};
@@ -70,6 +75,7 @@ std::uint64_t g_run{};
 lair::CrownToken g_heldToken{};
 unsigned g_lines{};
 unsigned g_gatewayModuleLines{};
+beyond_infinity_lens_damage::Candidate g_beyondLensCandidate{};
 thread_local bool g_dunkInFlight{};
 /** Last reported native state of each deferred Crown transit object (platform,
  * bridge, rings, portal, destinations, final FX/disk): one line per change, so
@@ -769,6 +775,8 @@ void after_trial_use(void* component,const TrialUse& before) noexcept {
     std::uint8_t active{};if(!read_at(reinterpret_cast<std::uintptr_t>(component)+0x2D0,active) || active>1) { return; }
     state::activity::deadly_trial::observe_interaction(before.binding,before.requested,before.before,after.before,active==1);
 }
+#include "beyond_infinity_plate_hooks.inl"
+#include "beyond_infinity_object_receipts.inl"
 #include "gateway_module_receipts.inl"
 #include "gateway_module_damage_hooks.inl"
 
@@ -869,7 +877,7 @@ bool install_omega_arc_charge_receipts() noexcept {
     if (g_handles[0].attached) { return g_gate.accepting(); }
     g_image = reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
     if (g_image == 0) { return false; }
-    const std::array<hooking::detour::Spec, 8> specs{{
+    const std::array<hooking::detour::Spec, 9> specs{{
         {target(0xD99620U, {0x48,0x89,0x6C,0x24,0x10,0x48,0x89,0x74,0x24,0x18,0x57,0x48,0x83,0xEC,0x50,0x49}), reinterpret_cast<void*>(&carry_hook)},
         {target(0xF36640U, {0x48,0x89,0x5C,0x24,0x18,0x57,0x48,0x83,0xEC,0x20,0x44,0x8B,0x01,0x48,0x8B,0xD9}), reinterpret_cast<void*>(&dunk_hook)},
         {target(0x9EFFC0U, {0x48,0x89,0x74,0x24,0x18,0x48,0x89,0x7C,0x24,0x20,0x41,0x56,0x48,0x83,0xEC,0x20}), reinterpret_cast<void*>(&create_hook)},
@@ -878,7 +886,15 @@ bool install_omega_arc_charge_receipts() noexcept {
         {target(0xB804E0U, {0xE9,0xA5,0xC5,0xAB,0x04,0x53,0x52,0x41,0x54,0x41,0x53,0x41,0x55,0x57,0x41,0x51}), reinterpret_cast<void*>(&gateway_damage_hook)},
         {target(0xCDCB60U, {0x48,0x8B,0x41,0x08,0x0F,0xB6,0x80,0x38,0x03,0x00,0x00,0xD0,0xE8,0xF6,0xD0,0x24}), reinterpret_cast<void*>(&gateway_damage_gate_hook)},
         {target(0xB7E3C0U, {0x48,0x8B,0xC4,0x48,0x89,0x58,0x18,0x48,0x89,0x70,0x20,0x55,0x57,0x41,0x56,0x48}), reinterpret_cast<void*>(&gateway_damage_summary_hook)},
+        {target(plate_native::kTick.rva,plate_native::kTick.signature),reinterpret_cast<void*>(&beyond_plate_tick_hook)},
     }};
+    g_plateApply=reinterpret_cast<PlateApply>(target(plate_native::kApply.rva,plate_native::kApply.signature));
+    g_plateClock=reinterpret_cast<PlateClock>(target(plate_native::kClock.rva,plate_native::kClock.signature));
+    g_plateNow=reinterpret_cast<PlateNow>(target(plate_native::kNow.rva,plate_native::kNow.signature));
+    g_plateDuration=reinterpret_cast<PlateDuration>(target(plate_native::kDuration.rva,plate_native::kDuration.signature));
+    g_plateScenario=reinterpret_cast<PlateScenario>(target(0x502350U,{0x48,0x89,0x5C,0x24,0x20,0x56,0x48,0x83,0xEC,0x50,0x48,0x8B,0xF2,0x8B,0xD9,0x83}));
+    g_plateScope=reinterpret_cast<PlateScope>(target(0x501AD0U,{0x40,0x53,0x48,0x83,0xEC,0x20,0x48,0x0F,0xBE,0x41,0x04,0x48,0x8B,0xDA,0x83,0xF8}));
+    g_plateDevice=reinterpret_cast<PlateDevice>(omega_native_device_channel0());
     g_association = reinterpret_cast<Association>(target(0x352310U,
         {0x48,0x83,0xEC,0x08,0x44,0x8B,0x51,0x04,0x4C,0x8B,0xCA,0xC7,0x02,0xFF,0xFF,0xFF}));
     g_holder = reinterpret_cast<Holder>(target(0x597B10U,
@@ -893,7 +909,9 @@ bool install_omega_arc_charge_receipts() noexcept {
         || specs[3].target == nullptr || specs[4].target == nullptr || specs[5].target == nullptr
         || specs[6].target == nullptr || specs[7].target == nullptr || g_sinkEnable == nullptr
         || g_association == nullptr || g_holder == nullptr || g_localPlayer == nullptr
-        || g_controlled == nullptr || !hooking::detour::install(specs, g_handles)) {
+        || g_controlled == nullptr || !g_plateApply || !g_plateClock || !g_plateNow || !g_plateDuration
+        || !g_plateScenario || !g_plateScope || !g_plateDevice || !specs[8].target
+        || !hooking::detour::install(specs, g_handles)) {
         core::log::write(core::log::Channel::client, core::log::Level::info,
                         "ev=omega_charge stage=install result=fail carry=D99620 dunk=F36640 create=9EFFC0 interaction=F32CD0 enable=F33930 association=352310 holder=597B10 local_player=4AFE80 controlled=4B2260");
         g_association = nullptr; g_holder = nullptr; g_localPlayer = nullptr; g_controlled = nullptr; g_sinkEnable = nullptr;
@@ -907,6 +925,7 @@ bool install_omega_arc_charge_receipts() noexcept {
     hooking::publish_original(g_moduleDamage, reinterpret_cast<ModuleDamage>(g_handles[5].original));
     hooking::publish_original(g_moduleDamageGate, reinterpret_cast<ModuleDamageGate>(g_handles[6].original));
     hooking::publish_original(g_moduleDamageSummary, reinterpret_cast<ModuleDamageSummary>(g_handles[7].original));
+    hooking::publish_original(g_plateTick,reinterpret_cast<PlateTick>(g_handles[8].original));
     g_gate.accept();
     core::log::write(core::log::Channel::client, core::log::Level::info,
                     "ev=omega_charge stage=install result=ok carry=D99620 dunk=F36640 create=9EFFC0 interaction=F32CD0 enable=F33930 gateway_module_damage=B804E0 gate=CDCB60 summary=B7E3C0 mutation=native_sink_enable_with_observed_receipts");
@@ -916,11 +935,15 @@ void quiesce_omega_arc_charge_receipts() noexcept { g_gate.quiesce(); }
 bool uninstall_omega_arc_charge_receipts() noexcept {
     quiesce_omega_arc_charge_receipts();
     if (!g_handles[0].attached) { return true; }
-    const std::array<hooking::detour::ProtectedCodeEntry, 24> protectedCode{{
+    const std::array<hooking::detour::ProtectedCodeEntry, 30> protectedCode{{
         {reinterpret_cast<void*>(&gateway_damage_hook)}, {reinterpret_cast<void*>(&gateway_damage_gate_hook)},
         {reinterpret_cast<void*>(&gateway_damage_summary_hook)}, {reinterpret_cast<void*>(&gateway_damage_receipt)},
         {reinterpret_cast<void*>(&gateway_damage_blocked)},
         {reinterpret_cast<void*>(&gateway_sense_hook)}, {reinterpret_cast<void*>(&observe_gateway_module)},
+        {reinterpret_cast<void*>(&observe_beyond_object)},
+        {reinterpret_cast<void*>(&beyond_plate_tick_hook)}, {reinterpret_cast<void*>(&drive_plate)},
+        {reinterpret_cast<void*>(&plate_command)}, {reinterpret_cast<void*>(&plate_addresses)},
+        {reinterpret_cast<void*>(&same_plate_request)},
         {reinterpret_cast<void*>(&carry_hook)}, {reinterpret_cast<void*>(&dunk_hook)},
         {reinterpret_cast<void*>(&create_hook)},
         {reinterpret_cast<void*>(&interaction_hook)}, {reinterpret_cast<void*>(&enable_sink)},
@@ -941,12 +964,15 @@ bool uninstall_omega_arc_charge_receipts() noexcept {
     g_gatewayModuleState.store(UINT64_MAX,std::memory_order_relaxed);
     g_moduleDamage.store(nullptr,std::memory_order_release);g_moduleDamageGate.store(nullptr,std::memory_order_release);
     g_moduleDamageSummary.store(nullptr,std::memory_order_release);
+    g_plateTick.store(nullptr,std::memory_order_release);g_plateDrive={};g_plateLines=0;
+    g_plateApply=nullptr;g_plateClock=nullptr;g_plateNow=nullptr;g_plateDuration=nullptr;
+    g_plateScenario=nullptr;g_plateScope=nullptr;g_plateDevice=nullptr;
     g_interaction.store(nullptr, std::memory_order_release);
     g_association = nullptr; g_holder = nullptr; g_localPlayer = nullptr; g_controlled = nullptr; g_sinkEnable = nullptr; g_image = 0;
     AcquireSRWLockExclusive(&g_lock); g_run = 0; g_bindings.reset(0); g_sinkSources = {}; g_heldToken = {};
     g_rejects = {}; g_rejectCount = 0; g_rejectLines = 0;
     g_transitSeen = {}; g_transitLines = 0; ReleaseSRWLockExclusive(&g_lock);
-    g_promptSeen = {}; g_promptLines = 0;
+    g_promptSeen = {}; g_promptLines = 0;g_beyondLensCandidate={};
     return true;
 }
 } // namespace sunrise::client::hooks::bootflow

@@ -4,6 +4,8 @@ Updated 7 September 2026. Workspace: `C:\Destiny 2 Development`. Shell: PowerShe
 
 ## Start here
 
+For the attachment checklist, contributor workflow, live-memory guidance, and a copy-paste request template, use [New mission reconstruction guide](</C:/Destiny 2 Development/Sunrise/docs/NEW-MISSION-RECONSTRUCTION-GUIDE.md>).
+
 Implement the next user-selected mission using the shared Lua loader, executor, and shared native services. Preserve the accepted Omega and Gateway implementations. Recover the new mission's own identities, launch configuration, encounters, dialogue, scene events and device states, then supply its trusted bindings and runtime adapter. Add shared functionality only when an observed mechanic cannot be expressed with the existing services.
 
 First obtain the mission name and supplied references if the next conversation does not contain them. Do not assume that the next story mission is the requested one. Read this handoff, then inspect current files and hashes before modifying code. No new task or separate repository has been created by this handoff.

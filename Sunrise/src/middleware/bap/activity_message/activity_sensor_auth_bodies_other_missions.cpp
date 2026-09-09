@@ -1,6 +1,8 @@
 #include "../../../state/activity/omega/omega_ending_authority.h"
 #include <array>
 #include "../../../state/activity/gateway/authority.h"
+#include "../../../state/activity/beyond_infinity/authority.h"
+#include "../../../state/activity/beyond_infinity/forest_selection.h"
 #include "../../../state/activity/deadly_trial/authority.h"
 
 #include "sensor_auth_update.h"
@@ -213,10 +215,12 @@ constexpr std::size_t kSpawnKeyCount = 32;
     bool encoded = writer.write(lifetime + 1, 4) && writer.write(completed?2U:1U, 3)
                    && writer.write(0, kPresenceWidth) && writer.write(kSignedZero, 32)
                    && writer.write(0, 32) && writer.write(kSignedZero+(missionRestriction?14U:0U), 32)
-                   && writer.write(snapshot.omegaForestVexEncounters ? 2U : 1U, 6)
+                   && writer.write(state::activity::beyond_infinity::forest::selected(snapshot.beyond_infinity) ? 3U : snapshot.omegaForestVexEncounters ? 2U : 1U, 6)
                    && writer.write(kWaitingSwitchKey, 32) && writer.write(1, kPresenceWidth)
                    && writer.write(kWaitingSwitchClass, 32) && writer.write(kSignedZero, 32);
-    if (snapshot.omegaForestVexEncounters) {
+    if (state::activity::beyond_infinity::forest::selected(snapshot.beyond_infinity)) {
+        encoded = encoded && state::activity::beyond_infinity::forest::write(writer,snapshot.beyond_infinity.forestPass);
+    } else if (snapshot.omegaForestVexEncounters) {
         // This value is a raw typed hash, not a biased integer or boolean.
         encoded = encoded && writer.write(encounters::kVexKey, 32)
                   && writer.write(1, kPresenceWidth) && writer.write(encounters::kHashClass, 32)
@@ -739,6 +743,7 @@ legacy_auth_body_bits(const Snapshot& snapshot,
                bool carriesPlayerKey) noexcept {
     if(const auto count=state::activity::deadly_trial::body_bits(snapshot.deadly_trial,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::gateway::body_bits(snapshot.gateway,key,slotType,slotIndex)) { return count; }
+    if(const auto count=state::activity::beyond_infinity::body_bits(snapshot.beyond_infinity,key,slotType,slotIndex)) { return count; }
     if(snapshot.omegaEndingSelected && state::activity::omega::ending::slot(key,slotType,slotIndex)) return 263;
     if (snapshot.omegaBossAuthority && boss::parent_slot(key, slotType, slotIndex)) return boss::kParentBits;
     if (snapshot.omegaBossAuthority && boss::member_slot(key, slotType, slotIndex)) return boss::kMemberBits;
@@ -805,7 +810,9 @@ legacy_auth_body_bits(const Snapshot& snapshot,
                    : 0;
     }
     if (slotType == kSlotTypeLifetime) {
-        return snapshot.omegaForestVexEncounters ? kOmegaLifetimeBits : kLifetimeBits;
+        return state::activity::beyond_infinity::forest::selected(snapshot.beyond_infinity)
+            ? kLifetimeBits+2*state::activity::beyond_infinity::forest::kSwitchBits
+            : snapshot.omegaForestVexEncounters ? kOmegaLifetimeBits : kLifetimeBits;
     }
     if (slotType == kSlotTypeActivityScript && kInitializeActivityScript
         && (snapshot.initializeMissionAuthorityRuntime
@@ -850,6 +857,9 @@ bool legacy_write_auth_body(bits::Writer& writer,
                      bool carriesPlayerKey) noexcept {
     if(state::activity::deadly_trial::body_bits(snapshot.deadly_trial,key,slotType,slotIndex)) {
         return state::activity::deadly_trial::write_body(writer,snapshot.deadly_trial,key,slotType,slotIndex);
+    }
+    if(state::activity::beyond_infinity::body_bits(snapshot.beyond_infinity,key,slotType,slotIndex)) {
+        return state::activity::beyond_infinity::write_body(writer,snapshot.beyond_infinity,key,slotType,slotIndex);
     }
     if(state::activity::gateway::body_bits(snapshot.gateway,key,slotType,slotIndex)) {
         return state::activity::gateway::write_body(writer,snapshot.gateway,key,slotType,slotIndex);

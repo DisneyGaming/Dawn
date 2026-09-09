@@ -1,7 +1,7 @@
 {
   "kind": "research_plan_not_executable",
   "mission": "gateway",
-  "runtime_document": "Sunrise/scripts/gateway.json",
+  "runtime_document": "Sunrise/scripts/gateway.lua",
   "runtime_scope": "Full gameplay reconstruction through Vance and mission finish; ending native validation pending",
   "reference": {
     "url": "https://www.youtube.com/watch?v=IB3aLj04ZT8&t=81s",

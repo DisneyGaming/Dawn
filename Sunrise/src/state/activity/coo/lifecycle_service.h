@@ -20,6 +20,12 @@ public:
         if(!run || !reserve || reserve>maximum || high_>maximum-reserve) { return false; }
         owner_={run,high_+1};high_+=reserve;return true;
     }
+    // Extend this owner's revision lease without changing its identity or completion.
+    bool reserve_through(Generation owner,std::uint32_t value,std::uint32_t maximum=32766) noexcept {
+        if(!owner.valid() || owner!=owner_ || value<owner_.value || value>maximum) { return false; }
+        if(value>high_) { high_=value; }
+        return true;
+    }
     void reset() noexcept { owner_={};complete_=false; }
     Generation owner() const noexcept { return owner_; }
     bool complete(Generation owner) noexcept {

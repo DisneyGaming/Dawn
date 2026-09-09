@@ -118,6 +118,15 @@ constexpr ForcedDestination deadly_trial_opening() noexcept {
 }
 inline constexpr ForcedDestination kDeadlyTrialOpening=deadly_trial_opening();
 static_assert(active(kDeadlyTrialOpening));
+// Recovered opening spawn; orientation and landing require live acceptance.
+constexpr ForcedDestination beyond_infinity_opening() noexcept {
+    ForcedDestination v{};constexpr char name[]="adventure_vod";
+    for(std::size_t i=0;i<sizeof(name)-1;++i) { v.packageName[i]=name[i]; }
+    v.packageNameLength=sizeof(name)-1;v.bubble=15;v.sliceSet=120;v.spawnSetHash=0x26B11B02U;
+    v.hasBubble=v.hasSliceSet=v.hasSpawnSetHash=v.enabled=true;return v;
+}
+inline constexpr ForcedDestination kBeyondInfinityOpening=beyond_infinity_opening();
+static_assert(active(kBeyondInfinityOpening));
 } // namespace profiles
 
 static_assert(active(profiles::kTowerfallOpening));

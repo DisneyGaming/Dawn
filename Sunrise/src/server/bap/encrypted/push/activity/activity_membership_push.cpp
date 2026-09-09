@@ -12,6 +12,7 @@
 #include "../../../../../state/build_data/runtime.h"
 #include "../../../../../state/activity/runtime.h"
 #include "../../../../../state/activity/omega_ending.h"
+#include "../../../../../state/activity/beyond_infinity/transit.h"
 #include "../../../../gameplay/gameplay_advertisement.h"
 #include "activity_arrival.h"
 #include "activity_notification_frame.h"
@@ -72,10 +73,14 @@ make_wire_snapshot(state::activity::ActivityInstanceKey activity,
     const state::activity::omega_ending_transit::Observation nativeTransit{
         {snapshot.teleport.state,snapshot.teleport.token,snapshot.teleport.sliceSetIndex,
             snapshot.teleport.sliceSetHash},reported,snapshot.hasTeleportReceipt,reported>=0};
-    const auto terminal=state::activity::omega_ending::project_transit({activity,
+    auto terminal=state::activity::omega_ending::project_transit({activity,
         state::activity::mission_run_generation(),snapshot.identity.memberKey,
         name=="mission_scot" && layout.tag==0x80F47522U,
         nativeTransit});
+    const auto beyond=state::activity::beyond_infinity::transit::project(activity,
+        state::activity::mission_run_generation(),snapshot.identity.memberKey,
+        name=="adventure_vod" && layout.tag==state::activity::beyond_infinity::kScenario,nativeTransit);
+    if(beyond.publish) { terminal=beyond; }
     if(terminal.publish) {
         wire.teleport={terminal.host.state,terminal.host.token,terminal.host.sliceSetIndex,
             terminal.host.sliceSetHash};
