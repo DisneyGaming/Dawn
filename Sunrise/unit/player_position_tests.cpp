@@ -16,7 +16,7 @@ unsigned checks{};
 struct Body { std::uint32_t owner; t::Vector position;bool readable{true},replaceDuringRead{}; };
 std::uint32_t controlled=0x08FAA000U;
 void* fallback{};
-unsigned publications{},trialPublications{};t::Vector trialPosition{};
+unsigned publications{},trialPublications{},deepPublications{};t::Vector trialPosition{},deepPosition{};
 g::Controller* mission{};
 namespace sunrise::client::hooks::teleport {
 bool read_local_player_entity(void* component,std::uint32_t& entity) noexcept {
@@ -34,6 +34,7 @@ bool read_position(void* component,Vector& position) noexcept {
 }
 namespace sunrise::state::activity {
 std::uint64_t mission_run_generation() noexcept { return 1; }
+namespace deep_storage { void observe_position(float x,float y,float z) noexcept {++deepPublications;deepPosition={x,y,z};} }
 namespace beyond_infinity { void observe_position(float,float,float) noexcept {} }
 namespace deadly_trial { void observe_position(float x,float y,float z) noexcept { ++trialPublications;trialPosition={x,y,z}; } }
 namespace gateway { void observe_position(float x,float y,float z) noexcept { ++publications;if(mission) { mission->position(1,{x,y,z}); } } }
@@ -75,6 +76,7 @@ int main() {
     CHECK(publications==beforeFallback+1);
     b.position[0]+=1.F;const auto beforeCached=publications;p::poll();CHECK(p::snapshot().position==b.position);
     CHECK(publications==beforeCached+1);
+    CHECK(deepPublications==publications);CHECK(deepPosition==b.position);
     CHECK(trialPublications==publications);CHECK(trialPosition==b.position);
     p::reset();CHECK(!p::snapshot().present);
     std::printf("Player position: %u checks; live stale-slot fixture, cache reacquisition, body loss, salt changes and Gateway traversal entry passed\n",checks);

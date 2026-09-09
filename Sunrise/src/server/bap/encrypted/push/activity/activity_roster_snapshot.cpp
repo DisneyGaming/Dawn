@@ -33,7 +33,9 @@
 #include "gateway_roster.h"
 #include "deadly_trial_roster.h"
 #include "beyond_infinity_roster.h"
+#include "deep_storage_roster.h"
 #include "../../../../../state/activity/beyond_infinity/runtime.h"
+#include "../../../../../state/activity/deep_storage/runtime.h"
 #include "../../../../../state/activity/beyond_infinity/transit.h"
 #include "../../../../../state/activity/deadly_trial/runtime.h"
 #include "../../../../../state/activity/gateway/runtime.h"
@@ -492,6 +494,9 @@ RosterOutcome build_roster_snapshot(Session& session,
     const bool beyondDestination=name=="adventure_vod" && !session.activity.joinedForeignSession;
     const bool beyondPrepared=state::activity::beyond_infinity::prepare(state::activity::mission_run_generation(),beyondDestination);
     if(beyondDestination && !beyondPrepared) { return RosterOutcome::noGroups; }
+    const bool deepDestination=name=="adventure_whisk" && !session.activity.joinedForeignSession;
+    const bool deepPrepared=state::activity::deep_storage::prepare(state::activity::mission_run_generation(),deepDestination);
+    if(deepDestination && !deepPrepared) { return RosterOutcome::noGroups; }
     const auto& omegaExperiments = core::settings::get().omegaExperiments;
     const bool syntheticOmega = omegaDestination;
     // Forest-D's native encounter classifier requires the selected race global
@@ -604,6 +609,8 @@ RosterOutcome build_roster_snapshot(Session& session,
         return RosterOutcome::noLayout;
     }
     if(beyondPrepared && !beyond_infinity_roster::prepare_layout(layout,
+        [](std::size_t index,layouts::RosterGroup& group) noexcept { return state::build_data::find_roster_group(index,group); })) { return RosterOutcome::noGroups; }
+    if(deepPrepared && !deep_storage_roster::prepare_layout(layout,
         [](std::size_t index,layouts::RosterGroup& group) noexcept { return state::build_data::find_roster_group(index,group); })) { return RosterOutcome::noGroups; }
     if(trialPrepared && !deadly_trial_roster::prepare_layout(layout,
         [](std::size_t index,layouts::RosterGroup& group) noexcept {
@@ -760,6 +767,20 @@ RosterOutcome build_roster_snapshot(Session& session,
         if(snapshot.beyond_infinity.enabled) {
             snapshot.missionCompletion=snapshot.beyond_infinity.completion;
             snapshot.gameplayClockTicks=snapshot.beyond_infinity.gameplayClockTicks;
+        }
+    }
+    if(deepPrepared) {
+        std::uint32_t failedKey{};
+        const bool admitted=deep_storage_roster::admit(layout,scratch,snapshot.roster,
+            [](std::size_t index,layouts::RosterGroup& group) noexcept { return state::build_data::find_roster_group(index,group); },&failedKey);
+        if(!admitted) {
+            std::array<char,160> line{};std::snprintf(line.data(),line.size(),"ev=deep_storage stage=roster result=failed registry=%08X",failedKey);
+            core::log::write(core::log::Channel::server,core::log::Level::error,line.data());return RosterOutcome::noGroups;
+        }
+        snapshot.deep_storage=state::activity::deep_storage::snapshot(state::activity::mission_run_generation(),GetTickCount64(),state::activity::mission_seed_armed());
+        if(snapshot.deep_storage.enabled) {
+            snapshot.missionCompletion=snapshot.deep_storage.completion;
+            snapshot.gameplayClockTicks=snapshot.deep_storage.gameplayClockTicks;
         }
     }
     if(snapshot.omegaEndingRetire) {

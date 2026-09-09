@@ -100,6 +100,9 @@
     <ClCompile Include="src\state\activity\coo\omega_script.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\state\activity\gateway\runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\state\activity\gateway\controller.cpp" />
+    <ClCompile Include="src\state\activity\deep_storage\runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling><ObjectFileName>$(IntDir)deep_storage_runtime.obj</ObjectFileName></ClCompile>
+    <ClCompile Include="src\state\activity\deep_storage\controller.cpp"><ExceptionHandling>Sync</ExceptionHandling><ObjectFileName>$(IntDir)deep_storage_controller.obj</ObjectFileName></ClCompile>
+    <ClCompile Include="src\state\activity\deep_storage\mechanism_bindings.cpp"><ExceptionHandling>Sync</ExceptionHandling><ObjectFileName>$(IntDir)deep_storage_mechanism_bindings.obj</ObjectFileName></ClCompile>
     <ClCompile Include="src\state\activity\beyond_infinity\runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling><ObjectFileName>$(IntDir)beyond_infinity_runtime.obj</ObjectFileName></ClCompile>
     <ClCompile Include="src\state\activity\beyond_infinity\controller.cpp"><ObjectFileName>$(IntDir)beyond_infinity_controller.obj</ObjectFileName></ClCompile>
     <ClCompile Include="src\state\activity\deadly_trial\deadly_trial_controller.cpp" />
@@ -1428,6 +1431,17 @@
     <ClInclude Include="src\state\activity\gateway\bindings.h" />
     <None Include="scripts\deadly_trial.lua" />
     <None Include="scripts\gateway.lua" />
+    <None Include="scripts\deep_storage.lua" />
+    <ClInclude Include="src\state\activity\deep_storage\runtime.h" />
+    <ClInclude Include="src\state\activity\deep_storage\controller.h" />
+    <ClInclude Include="src\state\activity\deep_storage\frame.h" />
+    <ClInclude Include="src\state\activity\deep_storage\bindings.h" />
+    <ClInclude Include="src\state\activity\deep_storage\mechanism_bindings.h" />
+    <ClInclude Include="src\state\activity\deep_storage\authority.h" />
+    <ClInclude Include="src\state\activity\deep_storage\catalog.h" />
+    <ClInclude Include="src\state\activity\deep_storage\native_catalog.h" />
+    <ClInclude Include="src\state\activity\deep_storage\ai_bindings.h" />
+    <ClInclude Include="src\server\bap\encrypted\push\activity\deep_storage_roster.h" />
     <None Include="scripts\beyond_infinity.lua" />
     <ClInclude Include="src\state\activity\beyond_infinity\catalog.h" />
     <ClInclude Include="src\state\activity\beyond_infinity\native_catalog.h" />
@@ -1444,4 +1458,11 @@
   </ItemGroup>
   <Import Project="lua-items.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ItemGroup>
+    <ClInclude Include="src\state\activity\deep_storage\scan_playback.h" />
+    <ClInclude Include="src\state\activity\deep_storage\mechanism_catalog.h" />
+    <ClInclude Include="src\client\hooks\bootflow\deep_storage_scan_receipts.inl" />
+    <ClInclude Include="src\client\hooks\bootflow\deep_storage_object_receipts.inl" />
+    <ClInclude Include="src\client\hooks\bootflow\deep_storage_plate_hooks.inl" />
+  </ItemGroup>
 </Project>

@@ -91,6 +91,7 @@ bool drive_plate(const beyond::PlateRequest& request,void* raw) noexcept {
         request.occupied && !request.destroyed?"charge":"reset",static_cast<unsigned long long>(request.plate.owner.run),request.plate.entity,request.revision,position,kWellChargeSeconds);
     return true;
 }
+#include "deep_storage_plate_hooks.inl"
 __declspec(noinline) bool __fastcall beyond_plate_tick_hook(void* raw) noexcept {
     const hooking::CallGate::Scope guard{g_gate};
     // Fast identity rejection avoids querying the mission mutex for every
@@ -100,7 +101,9 @@ __declspec(noinline) bool __fastcall beyond_plate_tick_hook(void* raw) noexcept 
         && prefix(header.data(),0x815B8B3BU,0x80804FCBU,0x248);
     const auto request=candidate?beyond::plate_request():beyond::PlateRequest{};
     const bool driven=candidate && request.enabled && drive_plate(request,raw);
+    const auto deepRequest=candidate?deep_plate::before(raw):state::activity::deep_storage::PlateRequest{};
     const bool result=hooking::await_original(g_plateTick)(raw);
+    if(guard.accepts_side_effects()) {deep_plate::after(raw,deepRequest);}
     if(!driven || !guard.accepts_side_effects() || !request.occupied || request.destroyed) { return result; }
     std::uintptr_t device{};if(!plate_addresses(request,raw,device)) { return result; }
     std::uint8_t active{},latched{};float value{},remaining{};const auto address=reinterpret_cast<std::uintptr_t>(raw);

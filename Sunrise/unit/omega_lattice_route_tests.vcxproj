@@ -39,6 +39,7 @@
     <ClCompile Include="omega_lattice_route_test_stubs.cpp" />
     <ClCompile Include="..\src\middleware\bap\activity_message\activity_sensor_auth_bodies.cpp" />
     <ClCompile Include="..\src\middleware\bap\activity_message\activity_sensor_auth_bodies_other_missions.cpp" />
+    <ClCompile Include="..\src\state\activity\deep_storage\mechanism_bindings.cpp" />
     <ClCompile Include="..\src\middleware\bap\activity_message\activity_sensor_auth_blocks.cpp" />
     <ClCompile Include="..\src\middleware\bap\activity_message\activity_sensor_auth_blocks_other_missions.cpp" />
     <ClCompile Include="..\src\middleware\bap\activity_message\activity_sensor_auth_encoder.cpp" />

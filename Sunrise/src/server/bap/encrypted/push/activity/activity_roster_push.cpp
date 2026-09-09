@@ -12,6 +12,7 @@
 #include "../../../../../middleware/bap/activity_message/sensor_auth_update.h"
 #include "../../../../../middleware/bap/activity_message/activity_clock_state_encoder.h"
 #include "../../../../../state/activity/beyond_infinity/runtime.h"
+#include "../../../../../state/activity/deep_storage/runtime.h"
 #include "../../../../../state/activity/runtime.h"
 #include "../../../../../middleware/secure_channel/runtime.h"
 #include "../../../../../state/activity/bubble_authority/runtime.h"
@@ -51,15 +52,21 @@ std::atomic_uint32_t g_towerfallDeliveryReports{};
     std::span<const std::byte,state::kAesKeySize> key,
     std::array<std::byte,state::kBapNonceSize>& nonce,
     std::span<std::byte> response,std::size_t& written) noexcept {
-    if(name!="adventure_vod" || !snapshot.beyond_infinity.enabled) { return true; }
+    const bool deep=name=="adventure_whisk" && snapshot.deep_storage.enabled;
+    if(!deep && (name!="adventure_vod" || !snapshot.beyond_infinity.enabled)) { return true; }
     namespace beyond=state::activity::beyond_infinity;
     namespace clock=middleware::bap::activity_message::clock_state;
     const auto current=beyond::request();
+    const auto deepCurrent=state::activity::deep_storage::request();
+    const auto owner=deep?deepCurrent.owner:current.owner;
+    const bool enabled=deep?deepCurrent.frame.enabled:current.frame.enabled;
+    const auto generation=deep?deepCurrent.frame.spawnGeneration:current.frame.spawnGeneration;
+    const auto expected=deep?snapshot.deep_storage.spawnGeneration:snapshot.beyond_infinity.spawnGeneration;
     if(session.activity.joinedForeignSession || !lifecycle::activity_binding_is_current(session)
         || session.activity.instance!=state::activity::newest_joined_activity()
         || state::activity::world_phase()!=state::activity::WorldPhase::arrived
-        || !current.owner.valid() || current.owner.run!=state::activity::mission_run_generation()
-        || !current.frame.enabled || current.frame.spawnGeneration!=snapshot.beyond_infinity.spawnGeneration) { return false; }
+        || !owner.valid() || owner.run!=state::activity::mission_run_generation()
+        || !enabled || generation!=expected) { return false; }
     std::array<std::byte,clock::kEncodedSize> body{};std::size_t size{};
     if(!clock::encode(clock::kRunning,body,size)
         || !append_notification_frame(scratch,session.activity.instance.sessionId,

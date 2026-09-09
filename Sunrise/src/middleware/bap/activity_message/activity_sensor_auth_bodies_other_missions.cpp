@@ -2,6 +2,7 @@
 #include <array>
 #include "../../../state/activity/gateway/authority.h"
 #include "../../../state/activity/beyond_infinity/authority.h"
+#include "../../../state/activity/deep_storage/authority.h"
 #include "../../../state/activity/beyond_infinity/forest_selection.h"
 #include "../../../state/activity/deadly_trial/authority.h"
 
@@ -208,13 +209,13 @@ constexpr std::size_t kSpawnKeyCount = 32;
  * @return True when the body fits.
  */
 [[nodiscard]] bool write_lifetime(bits::Writer& writer, const Snapshot& snapshot,
-                                  bool missionRestriction) noexcept {
+                                  std::uint32_t restrictionOrdinal) noexcept {
     // Shared terminal publication: native mission-complete phase 6 / success 1.
     const bool completed=snapshot.missionCompletion.valid();
     const auto lifetime=completed?6U:std::uint32_t{snapshot.lifetime};
     bool encoded = writer.write(lifetime + 1, 4) && writer.write(completed?2U:1U, 3)
                    && writer.write(0, kPresenceWidth) && writer.write(kSignedZero, 32)
-                   && writer.write(0, 32) && writer.write(kSignedZero+(missionRestriction?14U:0U), 32)
+                   && writer.write(0, 32) && writer.write(kSignedZero+restrictionOrdinal, 32)
                    && writer.write(state::activity::beyond_infinity::forest::selected(snapshot.beyond_infinity) ? 3U : snapshot.omegaForestVexEncounters ? 2U : 1U, 6)
                    && writer.write(kWaitingSwitchKey, 32) && writer.write(1, kPresenceWidth)
                    && writer.write(kWaitingSwitchClass, 32) && writer.write(kSignedZero, 32);
@@ -268,8 +269,8 @@ write_shared_mission_state(bits::Writer& writer, bool active) noexcept {
                                           const Snapshot& snapshot,bool missionOwned) noexcept {
     if(missionOwned) {
         // Constructed 808099BF state: no countdown, with an explicit on/off
-        // level. The lifetime filter uses scenario ordinal 14, not slice112.
-        return writer.write(snapshot.omegaMission.restriction?1U:0U,1) && writer.write(0,1)
+        // level. The lifetime filter uses each mission's scenario bubble ordinal.
+        return writer.write((snapshot.deep_storage.enabled?snapshot.deep_storage.restricted:snapshot.omegaMission.restriction)?1U:0U,1) && writer.write(0,1)
             && writer.write(1,2) && writer.write(0,2) && writer.write(0,1)
             && writer.write(0,64) && writer.write(0x134F00C00000ULL,64)
             && writer.write(0,64) && writer.write(0,64) && writer.write(UINT64_MAX,64)
@@ -744,6 +745,7 @@ legacy_auth_body_bits(const Snapshot& snapshot,
     if(const auto count=state::activity::deadly_trial::body_bits(snapshot.deadly_trial,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::gateway::body_bits(snapshot.gateway,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::beyond_infinity::body_bits(snapshot.beyond_infinity,key,slotType,slotIndex)) { return count; }
+    if(const auto count=state::activity::deep_storage::body_bits(snapshot.deep_storage,key,slotType,slotIndex)) { return count; }
     if(snapshot.omegaEndingSelected && state::activity::omega::ending::slot(key,slotType,slotIndex)) return 263;
     if (snapshot.omegaBossAuthority && boss::parent_slot(key, slotType, slotIndex)) return boss::kParentBits;
     if (snapshot.omegaBossAuthority && boss::member_slot(key, slotType, slotIndex)) return boss::kMemberBits;
@@ -822,7 +824,7 @@ legacy_auth_body_bits(const Snapshot& snapshot,
     }
     if (slotType == kSlotTypeMissionDirector && kInitializeMissionDirector
         && (snapshot.initializeMissionAuthorityRuntime
-            || (snapshot.omegaMission.generation && key==0x4786C0E0U && slotIndex==1)
+            || ((snapshot.omegaMission.generation || snapshot.deep_storage.enabled) && key==0x4786C0E0U && slotIndex==1)
             || snapshot.publishOmegaOpeningTransition
             || snapshot.publishAuthoredCueTransition)) {
         return kMissionDirectorBits;
@@ -860,6 +862,9 @@ bool legacy_write_auth_body(bits::Writer& writer,
     }
     if(state::activity::beyond_infinity::body_bits(snapshot.beyond_infinity,key,slotType,slotIndex)) {
         return state::activity::beyond_infinity::write_body(writer,snapshot.beyond_infinity,key,slotType,slotIndex);
+    }
+    if(state::activity::deep_storage::body_bits(snapshot.deep_storage,key,slotType,slotIndex)) {
+        return state::activity::deep_storage::write_body(writer,snapshot.deep_storage,key,slotType,slotIndex);
     }
     if(state::activity::gateway::body_bits(snapshot.gateway,key,slotType,slotIndex)) {
         return state::activity::gateway::write_body(writer,snapshot.gateway,key,slotType,slotIndex);
@@ -927,8 +932,9 @@ bool legacy_write_auth_body(bits::Writer& writer,
     } else if (slotType == kSlotTypeParticipation && carriesPlayerKey) {
         encoded = write_participation(writer, snapshot);
     } else if (slotType == kSlotTypeLifetime) {
-        encoded = write_lifetime(writer, snapshot,snapshot.omegaMission.generation
-            && snapshot.omegaMission.restriction && key==0x4786C0E0U && slotIndex==3);
+        encoded = write_lifetime(writer, snapshot,key==0x4786C0E0U && slotIndex==3
+            ?(snapshot.deep_storage.enabled && snapshot.deep_storage.restricted?19U:
+              snapshot.omegaMission.generation && snapshot.omegaMission.restriction?14U:0U):0U);
     } else if (slotType == kSlotTypeActivityScript && kInitializeActivityScript
                && (snapshot.initializeMissionAuthorityRuntime
                    || snapshot.publishOmegaOpeningTransition
@@ -936,10 +942,10 @@ bool legacy_write_auth_body(bits::Writer& writer,
         encoded = write_activity_script(writer, snapshot);
     } else if (slotType == kSlotTypeMissionDirector && kInitializeMissionDirector
                && (snapshot.initializeMissionAuthorityRuntime
-                   || (snapshot.omegaMission.generation && key==0x4786C0E0U && slotIndex==1)
+                   || ((snapshot.omegaMission.generation || snapshot.deep_storage.enabled) && key==0x4786C0E0U && slotIndex==1)
                    || snapshot.publishOmegaOpeningTransition
                    || snapshot.publishAuthoredCueTransition)) {
-        encoded = write_mission_director(writer, snapshot,snapshot.omegaMission.generation
+        encoded = write_mission_director(writer, snapshot,(snapshot.omegaMission.generation || snapshot.deep_storage.enabled)
             && key==0x4786C0E0U && slotIndex==1);
     } else if (slotType == kSlotTypeConfiguration) {
         // Both optional arrays absent and the terminal tag clear is the constructed state.

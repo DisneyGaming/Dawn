@@ -222,7 +222,29 @@ void adapter_parity() {
     CHECK(!executor.selected());
 }
 
+
+void deep_restriction_wire() {
+    wire::Snapshot snapshot{};snapshot.deep_storage.enabled=true;snapshot.deep_storage.spawnGeneration=7;
+    const auto field=[](const auto& bytes,std::size_t bit,unsigned width) {
+        std::uint32_t value{};for(unsigned i=0;i<width;++i) {value=(value<<1)|((std::to_integer<unsigned>(bytes[(bit+i)/8])>>(7-(bit+i)%8))&1U);}return value;
+    };
+    for(bool restricted:{false,true,false}) {
+        snapshot.deep_storage.restricted=restricted;
+        for(const auto type:std::array<std::uint8_t,2>{17,35}) {
+            std::array<std::byte,4096> bytes{};sunrise::middleware::encoding::bits::Writer w(bytes);
+            const std::uint16_t slot=type==17?3U:1U;
+            CHECK(wire::write_auth_body(w,snapshot,0x4786C0E0U,type,slot,false));
+            CHECK(w.bit_count()==wire::auth_body_bits(snapshot,0x4786C0E0U,type,slot,false));
+            if(type==17) {CHECK(field(bytes,72,32)==0x80000000U+(restricted?19U:0U));}
+            else {CHECK(field(bytes,0,1)==static_cast<unsigned>(restricted));}
+        }
+    }
+    // Disabling the restriction restores the native unrestricted lifetime ordinal.
+    std::array<std::byte,4096> bytes{};sunrise::middleware::encoding::bits::Writer w(bytes);
+    CHECK(wire::write_auth_body(w,snapshot,0x4786C0E0U,17,3,false));CHECK(field(bytes,72,32)==0x80000000U);
+}
+
 int main() {
-    contracts(); adapter_parity();
+    contracts(); adapter_parity(); deep_restriction_wire();
     std::printf("PASS: %u checks; concurrent joins, stale receipts, teardown, and 12 adapter wire phases\n", checks);
 }

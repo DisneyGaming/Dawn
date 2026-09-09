@@ -127,6 +127,15 @@ constexpr ForcedDestination beyond_infinity_opening() noexcept {
 }
 inline constexpr ForcedDestination kBeyondInfinityOpening=beyond_infinity_opening();
 static_assert(active(kBeyondInfinityOpening));
+// PACKAGE: three Io map spawn rows inside the mission's Rupture opening volume.
+constexpr ForcedDestination deep_storage_opening() noexcept {
+    ForcedDestination v{};constexpr char name[]="adventure_whisk";
+    for(std::size_t i=0;i<sizeof(name)-1;++i) {v.packageName[i]=name[i];}
+    v.packageNameLength=sizeof(name)-1;v.bubble=4;v.sliceSet=32;v.spawnSetHash=0x3AE5AC33U;
+    v.hasBubble=v.hasSliceSet=v.hasSpawnSetHash=v.enabled=true;return v;
+}
+inline constexpr ForcedDestination kDeepStorageOpening=deep_storage_opening();
+static_assert(active(kDeepStorageOpening));
 } // namespace profiles
 
 static_assert(active(profiles::kTowerfallOpening));

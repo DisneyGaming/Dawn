@@ -1,4 +1,6 @@
 #include "deadly_trial_revival.h"
+#include "../../../state/activity/deep_storage/runtime.h"
+#include "../../../state/activity/deep_storage/scan_playback.h"
 #include "../../hooking/call_gate.h"
 #include "../../hooking/detour.h"
 #include "../../../state/activity/deadly_trial/runtime.h"
@@ -133,11 +135,12 @@ void update(std::uintptr_t component) noexcept {
         state.finished=true;trial::observe_scene(state.receipt,true);
     }
 }
+#include "deep_storage_scan_receipts.inl"
 __declspec(noinline) std::uintptr_t __fastcall tick(void* component,void* output) noexcept {
     hooking::CallGate::Scope scope(gate);
     const auto fn=hooking::await_original(original);
     const auto result=fn(component,output);
-    if(scope.accepts_side_effects()) { update(reinterpret_cast<std::uintptr_t>(component)); }
+    if(scope.accepts_side_effects()) { update(reinterpret_cast<std::uintptr_t>(component));deep_scan::update(reinterpret_cast<std::uintptr_t>(component)); }
     return result;
 }
 bool idle() noexcept { return gate.idle(); }
@@ -168,6 +171,7 @@ bool uninstall() noexcept {
     const std::array protectedEntries{
         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&tick)},
         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&update)},
+        hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&deep_scan::update)},
         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&hooking::call_gate_detail::enter)},
         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&hooking::call_gate_detail::leave)}};
     if(hooking::detour::uninstall(hook,protectedEntries,&idle)!=hooking::detour::UninstallResult::removed) { return false; }

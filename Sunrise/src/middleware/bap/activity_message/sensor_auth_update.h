@@ -9,6 +9,7 @@
 #include "activity_patch_epoch_parser.h"
 #include "../../../state/activity/gateway/frame.h"
 #include "../../../state/activity/beyond_infinity/frame.h"
+#include "../../../state/activity/deep_storage/frame.h"
 #include "../../../state/activity/deadly_trial/frame.h"
 #include "../../../state/activity/omega/omega_mission_state.h"
 #include "../../../state/activity/omega_crown_respawn_authority.h"
@@ -125,6 +126,7 @@ struct Snapshot final {
     bool archiveOmega{};
     state::activity::gateway::Frame gateway{};
     state::activity::beyond_infinity::Frame beyond_infinity{};
+    state::activity::deep_storage::Frame deep_storage{};
     state::activity::deadly_trial::Frame deadly_trial{};
     state::activity::coo::CompletionPublication missionCompletion{};
     /** Message 52's payload, echoed exactly. A wrong epoch skips phase 2 and reports nothing. */

@@ -16,6 +16,7 @@ TESTS = (
     "coo_opening_tests", "coo_forest_tests", "coo_forest_runtime_tests",
     "coo_combat_tests", "coo_combat_runtime_tests", "coo_ending_tests",
     "coo_ending_runtime_tests", "beyond_infinity_catalog_tests", "beyond_infinity_tests",
+    "deep_storage_catalog_tests", "deep_storage_tests",
 )
 
 def source_manifest():

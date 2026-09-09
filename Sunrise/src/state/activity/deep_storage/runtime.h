@@ -1,0 +1,27 @@
+#pragma once
+#include "frame.h"
+namespace sunrise::state::activity::deep_storage {
+bool prepare(std::uint64_t,bool) noexcept;
+Frame snapshot(std::uint64_t,std::uint64_t,bool) noexcept;
+Request request() noexcept;
+std::uint64_t native_run() noexcept;
+bool publication_due(std::uint64_t) noexcept;
+void observe_position(float,float,float) noexcept;
+void observe_submission(std::uint64_t,std::uint32_t,std::int64_t,std::uint32_t,std::uint8_t,std::uint32_t) noexcept;
+void observe_prepared(coo::Generation,coo::Asset) noexcept;
+void observe_object(const coo::ObjectReceipt&) noexcept;
+bool observe_admission(const EnemyReceipt&) noexcept;
+bool observe_death(const EnemyReceipt&) noexcept;
+void observe_readiness(const EnemyReceipt&,coo::EnemyReadiness) noexcept;
+struct LivingEnemies {coo::Generation owner{};std::array<EnemyReceipt,256> actors{};std::size_t count{};};
+LivingEnemies living_enemies() noexcept;
+LensRequest lens_request() noexcept;
+void observe_lens(const LensReceipt&,bool) noexcept;
+PlateRequest plate_request(std::size_t) noexcept;
+void observe_plate_binding(const PlateReceipt&) noexcept;
+void observe_plate(const PlateReceipt&,std::uint32_t,float,bool) noexcept;
+void observe_contested(const PlateReceipt&,bool) noexcept;
+ScanRequest scan_request(std::size_t) noexcept;
+void observe_scan_binding(const ScanReceipt&) noexcept;
+void observe_scan(const ScanReceipt&,bool,bool) noexcept;
+}

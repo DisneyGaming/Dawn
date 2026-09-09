@@ -2,6 +2,7 @@
 #include "../../../../../state/activity/gateway/runtime.h"
 #include "../../../../../state/activity/deadly_trial/runtime.h"
 #include "../../../../../state/activity/beyond_infinity/runtime.h"
+#include "../../../../../state/activity/deep_storage/runtime.h"
 #include "../../../../../state/activity/beyond_infinity/transit.h"
 #include "../../../../../state/activity/coo/omega_opening_projection.h"
 #include "../../../../../state/activity/runtime.h"
@@ -249,7 +250,7 @@ bool consume_activity_keepalive(Session& session,
         || (!session.activity.joinedForeignSession
             && (state::activity::omega_presentation::publication_due(now)
                 || state::activity::omega_first_lair::publication_due(now)
-                || (state::activity::gateway::publication_due(now) || state::activity::deadly_trial::publication_due(now) || state::activity::beyond_infinity::publication_due(now))));
+                || (state::activity::gateway::publication_due(now) || state::activity::deadly_trial::publication_due(now) || state::activity::beyond_infinity::publication_due(now) || state::activity::deep_storage::publication_due(now))));
     if (session.activity.joinedForeignSession) {
         // This link exists only so the client's second activity instance sees traffic. A roster or
         // membership push on it leaves the transition running with no world entered.

@@ -148,6 +148,15 @@ void native_capacity() {
     m.put<std::uint32_t>(0x40008,0);cap=n::capacity(m,0x10000);CHECK(cap.used==64);m.put<std::uint32_t>(0x10014,120);CHECK(!n::capacity(m,0x10000).known);
 }
 
+// Simulate a field changing between the initial sample and ownership recheck.
+struct ChangingMemory : Memory {
+    std::uintptr_t changedAddress{};unsigned matchingReads{};
+    template<class T> bool value(std::uintptr_t address,T& out) {
+        if(!Memory::value(address,out)) {return false;}
+        if(address==changedAddress && ++matchingReads==2) {reinterpret_cast<std::byte*>(&out)[0]^=std::byte{1};}
+        return true;
+    }
+};
 void native_enemy() {
     Memory m;constexpr std::uintptr_t image=0x100000,table=0x200000,source=0x300000,parent=0x400000,entityTable=0x500000,bundle=0x600000,metadata=0x700000,health=0x800000;
     const Receipt receipt{1,3,10,7,4,0x111};const auto actor=table+3U*0x100U;const auto row=entityTable+5U*0x100U;const auto character=bundle+0x100;
@@ -159,7 +168,8 @@ void native_enemy() {
     m.put<std::uint32_t>(source+4,0x8080948F);m.put<std::uint32_t>(source+0x1FC,7);m.put<std::uint32_t>(source+0x244,7);
     m.put<std::uint32_t>(parent+4,0x808082EC);m.put<std::uint32_t>(parent+0x24,11);m.put<std::uint32_t>(parent+0x2C,5);m.put<std::uint32_t>(parent+0x1470,3);
     m.put<std::uint32_t>(source+0x180,0x111);m.put<std::uint8_t>(source+0x184,3);m.put<std::uint16_t>(source+0x186,10);
-    m.put<std::int32_t>(source+0x234,2);m.put<std::int32_t>(source+0x600,2);m.put<std::uint32_t>(source+0x5E0,16);
+    m.put<std::int32_t>(source+0x234,2);m.put<std::int32_t>(source+0x600,0);
+    m.put<std::uint32_t>(source+0x5F0,0x111);m.put<std::uint8_t>(source+0x5F4,3);m.put<std::uint16_t>(source+0x5F6,10);m.put<std::int32_t>(source+0x5FC,2);m.put<std::uint32_t>(source+0x5E0,16);
     m.put<std::uintptr_t>(image+0x1F93428,entityTable);m.put<std::uint32_t>(image+0x1F93430,0x100);m.put<std::uint32_t>(row+4,0);m.put<std::uint32_t>(row+0x4C,12);
     m.put<std::uint32_t>(bundle,0);m.put<std::uint32_t>(bundle+4,13);m.put<std::uint32_t>(bundle+0x18,UINT32_MAX);
     m.put<std::uint64_t>(metadata+0x68,1);m.put<std::int64_t>(metadata+0x70,0x80);m.put<std::int32_t>(metadata+0x100+0x14,0x100);
@@ -167,8 +177,34 @@ void native_enemy() {
     m.put<std::uint32_t>(character+0x2E8,15);m.put<std::uint32_t>(character+0x2EC,0x80804BEE);m.put<std::int64_t>(character+0x2F0,0);
     m.put<std::uint32_t>(health+4,0x80804B8A);m.put<std::uint32_t>(health+0x24,15);m.put<std::uint32_t>(health+0x2C,5);
     auto ready=n::enemy(m,image,receipt);CHECK(ready.created && ready.health && ready.ai && ready.tactical);CHECK(ready.tacticalRow==2);
+    // Deep Storage live resources: Goblin/Hobgoblin432, Fanatic453 rows.
+    // Keep the character beyond the previous256 ceiling; unrelated rows do
+    // not match, and the exact health/entity/self ownership still applies.
+    m.put<std::uint32_t>(bundle+0x84,0x80800000U);
+    for(const std::uint64_t count:{432ULL,453ULL,1024ULL}) {
+        m.put<std::uint64_t>(metadata+0x68,count);
+        for(std::uint64_t i=0;i<count;++i) {m.put<std::int32_t>(metadata+0x100+i*24+0x14,i+1==count?0x100:0x80);}
+        ready=n::enemy(m,image,receipt);CHECK(ready.created && ready.health && ready.ai && ready.tactical);
+        m.put<std::uint32_t>(health+0x2C,6);CHECK(!n::enemy(m,image,receipt).health);m.put<std::uint32_t>(health+0x2C,5);
+        m.handles[14]=character+1;CHECK(!n::enemy(m,image,receipt).health);m.handles[14]=character;
+    }
+    m.put<std::uint64_t>(metadata+0x68,1025);CHECK(!n::enemy(m,image,receipt).health);
+    m.put<std::uint64_t>(metadata+0x68,1);m.put<std::int32_t>(metadata+0x100+0x14,0x100);
     m.put<std::uint16_t>(0x90075E,5);CHECK(!n::enemy(m,image,receipt).created);m.put<std::uint16_t>(0x90075E,4);
-    m.put<std::int32_t>(source+0x600,-1);ready=n::enemy(m,image,receipt);CHECK(ready.health && ready.ai && !ready.tactical);m.put<std::int32_t>(source+0x600,2);
+    // Live Deep Storage: authored row2 is applied at+5FC, while selected+600 is0.
+    CHECK(n::enemy(m,image,receipt).tactical);
+    m.put<std::uint32_t>(source+0x5F0,0x222);CHECK(!n::enemy(m,image,receipt).tactical);m.put<std::uint32_t>(source+0x5F0,0x111);
+    m.put<std::uint8_t>(source+0x5F4,4);CHECK(!n::enemy(m,image,receipt).tactical);m.put<std::uint8_t>(source+0x5F4,3);
+    m.put<std::uint16_t>(source+0x5F6,11);CHECK(!n::enemy(m,image,receipt).tactical);m.put<std::uint16_t>(source+0x5F6,10);
+    m.put<std::int32_t>(source+0x5FC,3);CHECK(!n::enemy(m,image,receipt).tactical);m.put<std::int32_t>(source+0x5FC,2);
+    m.put<std::int32_t>(source+0x600,-1);ready=n::enemy(m,image,receipt);CHECK(ready.health && ready.ai && !ready.tactical);m.put<std::int32_t>(source+0x600,0);
+    m.put<std::uint32_t>(source+0x5E0,UINT32_MAX);CHECK(!n::enemy(m,image,receipt).tactical);m.put<std::uint32_t>(source+0x5E0,16);
+    auto stale=receipt;++stale.generation;CHECK(!n::enemy(m,image,stale).created);
+    // A reassignment during character/health reads invalidates the whole sample.
+    for(const std::uintptr_t offset:{0x180U,0x184U,0x186U,0x234U,0x244U,0x5E0U,0x5F0U,0x5F4U,0x5F6U,0x5FCU,0x600U}) {
+        ChangingMemory changed;static_cast<Memory&>(changed)=m;changed.changedAddress=source+offset;
+        CHECK(!n::enemy(changed,image,receipt).created);CHECK(changed.matchingReads==2);
+    }
     m.put<std::uint32_t>(health+0x2C,6);CHECK(!n::enemy(m,image,receipt).health);m.put<std::uint32_t>(health+0x2C,5);
     m.put<std::uint32_t>(parent+0x1470,4);CHECK(!n::enemy(m,image,receipt).ai);m.put<std::uint32_t>(parent+0x1470,3);
     m.put<std::uint32_t>(source+0x244,8);CHECK(!n::enemy(m,image,receipt).created);m.put<std::uint32_t>(source+0x244,7);

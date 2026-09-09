@@ -4,6 +4,8 @@ Contributor instructions and attachment checklist. Written against the Lua archi
 
 The intended result is a playable mission whose story decisions are authored in Lua, whose native objects and receipts are handled in C++, and whose reconstruction choices are traceable to evidence.
 
+For a fill-in mission brief, per-mechanic records, and the lessons from Beyond Infinity's live reconstruction, copy [Mission implementation template](MISSION-IMPLEMENTATION-TEMPLATE.md). Its 9 September update includes scene/dialogue separation, native portal contact, both Forest endpoints, native clocks, and fresh-build acceptance.
+
 ## 1. What the requester should provide
 
 **Minimum to start:** the mission name and scope, a complete reference walkthrough, and access to the working repository and relevant game packages. You do not need to write a Lua script or a C++ profile before requesting a new mission.
@@ -183,11 +185,11 @@ Native memory values may be inspected and, where understood, changed during the 
 
 Test the new mission's progression and its actual failure cases: delayed or repeated observations, early arrivals/kills, missing native readiness, stale owners, reset, retry, and completion. Keep existing mission/shared/native-protocol regressions when their code paths are affected. Include alternate Lua flows so tests do not silently recreate a required hardcoded story sequence.
 
-**Extend deployment before packaging a fourth mission.** At the time of writing:
+**Update deployment when adding a mission.** Checked against the source on 9 September 2026; inspect the current lists before changing them:
 
-- [verify_lua.py](</C:/Destiny 2 Development/tools/coo/verify_lua.py>) lists 16 suites in `TESTS`; register the new suite and ensure both Debug/Release configurations work.
-- [package_lua.py](</C:/Destiny 2 Development/tools/coo/package_lua.py>) explicitly lists three files in `SCRIPTS`; include the new mission script in the payload and manifest.
-- [install_candidate.ps1](</C:/Destiny 2 Development/tools/coo/install_candidate.ps1>) explicitly lists the same payload files and expects 34 build/test results. Update its file list, rollback coverage, and expected check count together with the runner. Do not bypass the checks just to accept a fourth script.
+- [verify_lua.py](</C:/Destiny 2 Development/tools/coo/verify_lua.py>) lists 18 suites in `TESTS`; register the new suite and ensure both Debug/Release configurations work.
+- [package_lua.py](</C:/Destiny 2 Development/tools/coo/package_lua.py>) explicitly lists four files in `SCRIPTS`; include the new mission script in the payload and manifest.
+- [install_candidate.ps1](</C:/Destiny 2 Development/tools/coo/install_candidate.ps1>) explicitly lists the same payload files and expects 38 build/test results. Update its file list, rollback coverage, and expected check count together with the runner. These counts must follow the configured suites and DLL builds; do not bypass checks to accept another script.
 - Include additional data/build inputs in source hashing and packaging when the new mission introduces them.
 
 After those changes, run from the workspace root using a fresh validation directory. Replace `new-mission` below with your own identifier:

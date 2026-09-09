@@ -334,7 +334,7 @@ bool apply(destination::DestinationSelection& selection) noexcept {
         return false;
     }
 
-    if (const auto* profile=prelaunch::configured(value); profile==&prelaunch::kGateway || profile==&prelaunch::kDeadlyTrial || profile==&prelaunch::kBeyondInfinity) {
+    if (const auto* profile=prelaunch::configured(value); profile==&prelaunch::kGateway || profile==&prelaunch::kDeadlyTrial || profile==&prelaunch::kBeyondInfinity || profile==&prelaunch::kDeepStorage) {
         const std::string_view incoming(reinterpret_cast<const char*>(selection.packageName.data()),
             selection.packageNameLength <= selection.packageName.size() ? selection.packageNameLength : 0);
         if (!g_prelaunchCommitted.load(std::memory_order_acquire)

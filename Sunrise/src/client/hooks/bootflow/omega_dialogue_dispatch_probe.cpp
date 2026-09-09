@@ -1,5 +1,6 @@
 #include "../../../state/activity/gateway/runtime.h"
 #include "../../../state/activity/beyond_infinity/runtime.h"
+#include "../../../state/activity/deep_storage/runtime.h"
 #include "../../../state/activity/deadly_trial/runtime.h"
 #include <Windows.h>
 #include "deadly_trial_presentation.h"
@@ -1224,6 +1225,11 @@ __declspec(noinline) void __fastcall dialogue_dispatch(std::byte* component,
                 beyondDispatch=true;
                 const auto generation=read_value<std::uint32_t>(component+kRecordGenerationOffset+static_cast<std::size_t>(index)*0x20U);
                 state::activity::beyond_infinity::observe_submission(gatewayDispatchRun,self,offset,bank,static_cast<std::uint8_t>(index),generation);
+            }
+            if(bank==state::activity::deep_storage::kBank) {
+                beyondDispatch=true;
+                const auto generation=read_value<std::uint32_t>(component+kRecordGenerationOffset+static_cast<std::size_t>(index)*0x20U);
+                state::activity::deep_storage::observe_submission(gatewayDispatchRun,self,offset,bank,static_cast<std::uint8_t>(index),generation);
             }
         }
         if (component != nullptr && index >= 0 && index < 34) {

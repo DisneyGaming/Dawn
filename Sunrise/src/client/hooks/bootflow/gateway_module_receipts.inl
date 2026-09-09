@@ -33,6 +33,7 @@ std::atomic<SourceSense> g_gatewaySense{};
 std::atomic<std::uint64_t> g_gatewayModuleState{UINT64_MAX};
 void observe_gateway_module(void* raw) noexcept {
     observe_beyond_object(raw);
+    observe_deep_storage_object(raw);
     observe_gateway_object(raw);
     observe_trial_object(raw);
     namespace gateway=state::activity::gateway;

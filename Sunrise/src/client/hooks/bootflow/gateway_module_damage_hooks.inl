@@ -12,7 +12,11 @@ __declspec(noinline) bool gateway_damage_blocked(const void* context) noexcept {
     const auto request=state::activity::beyond_infinity::lens_request();
     AcquireSRWLockShared(&g_lock);const auto candidate=g_beyondLensCandidate;ReleaseSRWLockShared(&g_lock);
     const bool current=beyond_infinity_lens_damage::current(read,request,candidate,sample);
-    return beyond_infinity_lens_damage::blocked(request,current);
+    if(beyond_infinity_lens_damage::blocked(request,current)) {return true;}
+    const auto deep=state::activity::deep_storage::lens_request();
+    AcquireSRWLockShared(&g_lock);const auto deepCandidate=g_deepLensCandidate;ReleaseSRWLockShared(&g_lock);
+    gateway_native::Read deepRead{g_image};
+    return deep_storage_lens_damage::blocked(deep,deep_storage_lens_damage::current(deepRead,deep,deepCandidate,sample));
 }
 __declspec(noinline) void gateway_damage_receipt(const void* context) noexcept {
     gateway_native::Read read{g_image};native_box_identity::Sample sample{};
@@ -25,6 +29,10 @@ __declspec(noinline) void gateway_damage_receipt(const void* context) noexcept {
     // A dead candidate never invents the live receipt required for progression.
     if(lens.lens.valid() && lens.vulnerable && beyond_infinity_lens_damage::current(read,lens,{},sample)) {
         state::activity::beyond_infinity::observe_lens(lens.lens,true);
+    }
+    const auto deep=state::activity::deep_storage::lens_request();gateway_native::Read deepRead{g_image};
+    if(deep.lens.valid() && deep.vulnerable && deep_storage_lens_damage::current(deepRead,deep,{},sample)) {
+        state::activity::deep_storage::observe_lens(deep.lens,true);
     }
 }
 __declspec(noinline) bool __fastcall gateway_damage_gate_hook(const void* context) noexcept {
@@ -39,8 +47,12 @@ __declspec(noinline) bool __fastcall gateway_damage_gate_hook(const void* contex
     const bool gatewayResult=gateway_module_damage::allowed(request,current,result);
     const auto lens=state::activity::beyond_infinity::lens_request();
     AcquireSRWLockShared(&g_lock);const auto candidate=g_beyondLensCandidate;ReleaseSRWLockShared(&g_lock);
-    return beyond_infinity_lens_damage::allowed(lens,
+    const bool beyondResult=beyond_infinity_lens_damage::allowed(lens,
         beyond_infinity_lens_damage::current(read,lens,candidate,sample),gatewayResult);
+    const auto deep=state::activity::deep_storage::lens_request();
+    AcquireSRWLockShared(&g_lock);const auto deepCandidate=g_deepLensCandidate;ReleaseSRWLockShared(&g_lock);
+    gateway_native::Read deepRead{g_image};
+    return deep_storage_lens_damage::allowed(deep,deep_storage_lens_damage::current(deepRead,deep,deepCandidate,sample),beyondResult);
 }
 __declspec(noinline) void __fastcall gateway_damage_hook(const void* context,const void* damage,std::byte* packet,
     bool mode,bool secondary,const void* extra,std::int32_t index) noexcept {

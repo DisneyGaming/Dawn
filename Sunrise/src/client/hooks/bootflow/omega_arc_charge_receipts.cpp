@@ -18,8 +18,13 @@
 #include "gateway_module_native_path.h"
 #include "beyond_infinity_native_receipts.h"
 #include "../../../state/activity/beyond_infinity/runtime.h"
+#include "../../../state/activity/deep_storage/runtime.h"
+#include "../../../state/activity/deep_storage/controller.h"
+#include "../../../state/activity/deep_storage/plate_presentation.h"
+#include "../../../state/activity/deep_storage/hologram_owner.h"
 #include "gateway_module_damage.h"
 #include "beyond_infinity_lens_damage.h"
+#include "deep_storage_lens_damage.h"
 #include "../../../state/activity/gateway/runtime.h"
 #include "../../../state/activity/deadly_trial/runtime.h"
 #include "../../hooking/call_gate.h"
@@ -76,6 +81,7 @@ lair::CrownToken g_heldToken{};
 unsigned g_lines{};
 unsigned g_gatewayModuleLines{};
 beyond_infinity_lens_damage::Candidate g_beyondLensCandidate{};
+deep_storage_lens_damage::Candidate g_deepLensCandidate{};
 thread_local bool g_dunkInFlight{};
 /** Last reported native state of each deferred Crown transit object (platform,
  * bridge, rings, portal, destinations, final FX/disk): one line per change, so
@@ -777,6 +783,7 @@ void after_trial_use(void* component,const TrialUse& before) noexcept {
 }
 #include "beyond_infinity_plate_hooks.inl"
 #include "beyond_infinity_object_receipts.inl"
+#include "deep_storage_object_receipts.inl"
 #include "gateway_module_receipts.inl"
 #include "gateway_module_damage_hooks.inl"
 
@@ -972,7 +979,7 @@ bool uninstall_omega_arc_charge_receipts() noexcept {
     AcquireSRWLockExclusive(&g_lock); g_run = 0; g_bindings.reset(0); g_sinkSources = {}; g_heldToken = {};
     g_rejects = {}; g_rejectCount = 0; g_rejectLines = 0;
     g_transitSeen = {}; g_transitLines = 0; ReleaseSRWLockExclusive(&g_lock);
-    g_promptSeen = {}; g_promptLines = 0;g_beyondLensCandidate={};
+    g_promptSeen = {}; g_promptLines = 0;g_beyondLensCandidate={};g_deepLensCandidate={};
     return true;
 }
 } // namespace sunrise::client::hooks::bootflow

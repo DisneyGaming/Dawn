@@ -1,6 +1,6 @@
 # Lua mission authoring
 
-A Deadly Trial, Gateway, and Omega load mission definitions from Lua. Deadly Trial and Gateway also put their story progression decisions in Lua; Omega retains additional native phase constraints described below. The existing universal executor runs the resulting graphs; Lua evaluates once at load time and its VM closes before gameplay starts.
+A Deadly Trial, Gateway, Omega, Beyond Infinity and Deep Storage load mission definitions from Lua. Deadly Trial and Gateway also put their story progression decisions in Lua; Omega retains additional native phase constraints described below. The existing universal executor runs the resulting graphs; Lua evaluates once at load time and its VM closes before gameplay starts.
 
 ## Ownership
 
@@ -14,7 +14,7 @@ These binding files are compiled C++ manifests, not another mission scripting la
 
 ## Loading
 
-The DLL loads all three mission `.lua` files relative to its own directory. Missing or invalid scripts fail selection. Logs record `format=lua`, the path, and a source fingerprint. Edits apply in the next game process; there is no live reload.
+The DLL loads the five mission `.lua` files relative to its own directory. Missing or invalid scripts fail selection. Logs record `format=lua`, the path, and a source fingerprint. Edits apply in the next game process; there is no live reload.
 
 The mission JSON loader and shipped mission JSON files are removed. Lua produces a neutral owned definition tree directly, without serializing JSON. Deploy the matching DLL and scripts together. Historical rollback archives retain older scripts for their matching DLLs.
 
@@ -64,7 +64,7 @@ Lua 5.4.9 is embedded, with source provenance in `vendor/lua/README.sunrise.md` 
 
 ## Verification and reconstruction workflow
 
-Run `python tools/coo/verify_lua.py` from the workspace root. The runner writes isolated Debug/Release outputs to a fresh timestamped directory under `build/coo/`, runs 16 suites, and builds both DLL configurations. It does not install or launch the game. Use a separate `--out` for focused invocations because each run replaces its own result summary.
+Run `python tools/coo/verify_lua.py` from the workspace root. The runner writes isolated Debug/Release outputs to a fresh timestamped directory under `build/coo/`, runs 20 suites in Debug and Release, and builds both DLL configurations (42 results). It does not install or launch the game. Use a separate `--out` for focused invocations because each run replaces its own result summary.
 
 The tests preserve established native receipt, audio, marker, population, lifecycle, and wire-format checks. They also execute deliberately changed Lua flows for both real missions, reordered phases, AND/OR conditions, adjustable cue timing, unknown references, cycles, sandbox limits, and stale command tokens. Omega conversion parity was checked before removing the old mission files. Its ongoing suites compare Lua execution with the established native behavior. Deadly Trial and Gateway also exercise authored decisions that previously lived in C++.
 
@@ -73,3 +73,7 @@ For another mission: recover and register its native identifiers, expose any mis
 Package a complete validation run with `python tools/coo/package_lua.py --validation <directory>`, then install with `tools/coo/install_candidate.ps1 -ValidationDirectory <directory>` after closing Destiny. Packaging rejects changed source or binaries; installation verifies and backs up the matching DLL/script set. Build records, package research, and settings remain separate from mission scripting.
 
 A live playthrough provides evidence beyond unit/replay checks. Installation and live-run evidence belongs with its exact build under `build/coo/`; consult those receipts for current acceptance rather than historical DLL hashes in older reconstruction notes.
+
+## Deep Storage
+
+`deep_storage.lua` authors the complete Rupture-to-coordinates route. The profile exposes recovered native sources, plates, Ghost interactions and portal receiving volumes. The controller does not pin a compiled story order. Full-route tests exercise receipt policies using synthetic inputs. See [the implementation record](DEEP-STORAGE-IMPLEMENTATION.md) for assumptions and live acceptance checks.

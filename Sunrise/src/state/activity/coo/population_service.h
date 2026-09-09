@@ -48,6 +48,13 @@ public:
             const auto& a=actors_[i][n];if(policies_[i].verify && !a.ready && !a.dead) { visit(a.receipt); }
         }
     }
+    // Read-side consumers (for example occupied combat plates) need the same
+    // admitted identities and terminal deaths as the clearance ledger.
+    template<class Visit> void living(Visit visit) const noexcept {
+        for(std::size_t i=0;i<Groups;++i) for(std::uint8_t n=0;n<counts_[i];++n) {
+            const auto& actor=actors_[i][n];if(!actor.dead) {visit(actor.receipt);}
+        }
+    }
     bool ready(std::size_t index,std::uint8_t requested) const noexcept {
         if(!admitted(index,requested)) { return false; }
         for(std::uint8_t n=0;n<counts_[index];++n) {
