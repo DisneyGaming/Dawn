@@ -61,6 +61,7 @@ struct Incident {
     bool hasCompressedSelector{};
     /** Set when the payload length and its bytes were reached and checked. */
     bool hasPayload{};
+    std::array<std::byte,kPayloadMaximum> payload{};
 };
 
 /** @return A short stable name for one verdict, for the log line. */

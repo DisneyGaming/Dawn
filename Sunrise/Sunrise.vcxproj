@@ -105,6 +105,8 @@
     <ClCompile Include="src\state\activity\deep_storage\mechanism_bindings.cpp"><ExceptionHandling>Sync</ExceptionHandling><ObjectFileName>$(IntDir)deep_storage_mechanism_bindings.obj</ObjectFileName></ClCompile>
     <ClCompile Include="src\state\activity\beyond_infinity\runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling><ObjectFileName>$(IntDir)beyond_infinity_runtime.obj</ObjectFileName></ClCompile>
     <ClCompile Include="src\state\activity\beyond_infinity\controller.cpp"><ObjectFileName>$(IntDir)beyond_infinity_controller.obj</ObjectFileName></ClCompile>
+    <ClCompile Include="src\state\activity\strike_pact\strike_pact_runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="src\state\activity\strike_pact\strike_pact_controller.cpp" />
     <ClCompile Include="src\state\activity\deadly_trial\deadly_trial_controller.cpp" />
     <ClCompile Include="src\state\activity\deadly_trial\deadly_trial_runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\state\activity\coo\mission_script.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
@@ -1429,6 +1431,8 @@
   <ItemGroup>
     <ClInclude Include="src\state\activity\deadly_trial\bindings.h" />
     <ClInclude Include="src\state\activity\gateway\bindings.h" />
+    <ClInclude Include="src\state\activity\strike_pact\bindings.h" />
+    <None Include="scripts\strike_pact.lua" />
     <None Include="scripts\deadly_trial.lua" />
     <None Include="scripts\gateway.lua" />
     <None Include="scripts\deep_storage.lua" />

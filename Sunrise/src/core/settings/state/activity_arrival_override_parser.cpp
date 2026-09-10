@@ -54,6 +54,13 @@ bool Parser::arrival_override(defaults::ArrivalOverride& output) noexcept {
             }
             candidate.bubble = static_cast<std::uint8_t>(value);
             candidate.hasBubble = true;
+        } else if (key == "slice_set") {
+            if (candidate.hasSliceSet || !unsigned_integer(value)
+                || value > defaults::kMaximumInitialSliceSet) {
+                return false;
+            }
+            candidate.sliceSet = static_cast<std::uint16_t>(value);
+            candidate.hasSliceSet = true;
         } else if (key == "spawn_set_hash") {
             if (candidate.hasSpawnSetHash || !unsigned_value(value)
                 || value > (std::numeric_limits<std::uint32_t>::max)()) {
@@ -71,7 +78,9 @@ bool Parser::arrival_override(defaults::ArrivalOverride& output) noexcept {
             return false;
         }
     }
-    if (!hasName || (!candidate.hasBubble && !candidate.hasSpawnSetHash)) {
+    if (!hasName || (!candidate.hasBubble && !candidate.hasSliceSet && !candidate.hasSpawnSetHash)
+        || (candidate.hasBubble && candidate.hasSliceSet
+            && candidate.sliceSet / defaults::kSliceStatesPerBubble != candidate.bubble)) {
         return false;
     }
     output = candidate;

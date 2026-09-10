@@ -12,6 +12,7 @@
 #include "../../../state/activity/gateway/runtime.h"
 #include "../../../state/activity/deadly_trial/runtime.h"
 #include "../../../state/activity/deep_storage/runtime.h"
+#include "../../../state/activity/strike_pact/runtime.h"
 #include "omega_enemy_native_reference.h"
 #include "omega_enemy_native_admission.h"
 #include "omega_enemy_native_health.h"
@@ -33,9 +34,11 @@ namespace crownCatalog=state::activity::omega_enemy_crown;
 namespace gateway=state::activity::gateway;
 namespace trial=state::activity::deadly_trial;
 namespace deep=state::activity::deep_storage;
-struct Context final { bool enabled;std::uint64_t run;bool gateway;bool trial{};bool deep{}; };
+namespace strike=state::activity::strike_pact;
+struct Context final { bool enabled;std::uint64_t run;bool gateway;bool trial{};bool deep{};bool strike{}; };
 Context selected_context() noexcept {
     const auto deepRun=deep::native_run();if(deepRun) {return {true,deepRun,false,false,true};}
+    const auto strikeRun=strike::native_run();if(strikeRun) {return {true,strikeRun,false,false,false,true};}
     const auto trialRun=trial::native_run();if(trialRun) { return {true,trialRun,false,true}; }
     const auto run=gateway::native_run();if(run!=0) { return {true,run,true}; }
     const auto nav=state::activity::omega_presentation::navigation();return {nav.enabled,nav.run,false};
@@ -180,11 +183,11 @@ enum : std::uint8_t {
     kSourceDefinitionRef=1,kSourceUnknownResource,kSourceResolve,kSourceRegistry,
     kSourceType,kSourceSlot,kSourceGenerationRead
 };
-bool source(Read& read,std::uintptr_t instance,Source& source,bool gatewayContext,bool trialContext,bool deepContext) noexcept {
+bool source(Read& read,std::uintptr_t instance,Source& source,bool gatewayContext,bool trialContext,bool deepContext,bool strikeContext) noexcept {
     source.reason=0;source.nativeRegistry=0;source.nativeType=0;source.nativeSlot=-1;
     source.expectedRegistry=0;source.expectedSlot=0;
     Ref definition{};
-    if(!read.value(instance,definition) || definition.kind!=0x8080948FU || (!gatewayContext && !trialContext && !deepContext && definition.offset!=0x728)) {
+    if(!read.value(instance,definition) || definition.kind!=0x8080948FU || (!gatewayContext && !trialContext && !deepContext && !strikeContext && definition.offset!=0x728)) {
         source.resource=definition.handle;source.kind=definition.kind;source.reason=kSourceDefinitionRef;return false;
     }
     source.resource=definition.handle;source.kind=definition.kind;
@@ -195,6 +198,19 @@ bool source(Read& read,std::uintptr_t instance,Source& source,bool gatewayContex
             if(row.definition==definition.handle && row.offset==definition.offset) {expectedRegistry=row.registry;expectedSlot=row.source;break;}
         }
         if(!expectedRegistry) {source.reason=kSourceUnknownResource;return false;}
+    } else if(strikeContext) {
+        // The strike catalog pins sources by their native scoped identity (registry, type 1,
+        // slot) rather than by descriptor tag/offset, which the SDK export does not carry.
+        std::uintptr_t scopedDefinition{};std::array<std::byte,8> scoped{};
+        if(!read.resolve(definition,scopedDefinition) || scopedDefinition>UINTPTR_MAX-0x30
+            || !read.copy(scopedDefinition+0x30,scoped)) {source.reason=kSourceResolve;return false;}
+        const auto registry=at<std::uint32_t>(scoped.data());const auto type=at<std::uint8_t>(scoped.data()+4);
+        const auto slot=at<std::int16_t>(scoped.data()+6);
+        // all_spawn, not spawn: the latter searches the opening's own thirteen rows, so an actor
+        // from any later section resolved to nothing and was rejected as an unknown resource.
+        const auto* row=type==1 && slot>=0?strike::all_spawn(registry,static_cast<std::uint16_t>(slot)):nullptr;
+        if(!row) {source.nativeRegistry=registry;source.nativeType=type;source.nativeSlot=slot;source.reason=kSourceUnknownResource;return false;}
+        expectedRegistry=row->registry;expectedSlot=row->source;
     }
     if(trialContext) {
         for(const auto& row:trial::kSpawns) {
@@ -209,7 +225,7 @@ bool source(Read& read,std::uintptr_t instance,Source& source,bool gatewayContex
         if(expectedRegistry==0) { source.reason=kSourceUnknownResource;return false; }
     }
     for(const auto& row:catalog::kSpawners) {
-        if(!gatewayContext && !trialContext && !deepContext && catalog::supported_by_encounter(row) && row.resource==definition.handle) {
+        if(!gatewayContext && !trialContext && !deepContext && !strikeContext && catalog::supported_by_encounter(row) && row.resource==definition.handle) {
             expectedRegistry=catalog::kRegistry;expectedSlot=row.slot;break;
         }
     }
@@ -297,7 +313,7 @@ __declspec(noinline) void observe_admission(std::uint32_t parent,std::uint64_t c
         handle,actorState.handle,actorState.parent)
         || !read.resolve({actorState.parent,0,0},parentAgain) || parentAgain!=currentParent) {rejection=5;}
     else if(!read.resolve(actorState.source,linked)) {rejection=6;}
-    else if(!read.value(linked,definition) || !source(read,linked,sourceState,nav.gateway,nav.trial,nav.deep)) {rejection=7;}
+    else if(!read.value(linked,definition) || !source(read,linked,sourceState,nav.gateway,nav.trial,nav.deep,nav.strike)) {rejection=7;}
     else if(sourceState.generation==0 || sourceState.generation!=sourceState.senseGeneration) {rejection=8;}
 
     // Progression delivery must never depend on the best-effort diagnostic lock.
@@ -306,6 +322,8 @@ __declspec(noinline) void observe_admission(std::uint32_t parent,std::uint64_t c
     bool accepted=false;
     if(rejection==0) {
         accepted=nav.deep?deep::observe_admission(
+            {nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
+            :nav.strike?strike::observe_admission(
             {nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
             :nav.trial?trial::observe_admission(
             {nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
@@ -328,6 +346,11 @@ __declspec(noinline) void observe_admission(std::uint32_t parent,std::uint64_t c
         gateway_native::Read probe{g_image};
         const gateway::EnemyReceipt receipt{nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry};
         gateway::observe_readiness(receipt,coo_native::enemy(probe,g_image,receipt));
+    }
+    if(nav.strike && rejection==0) {
+        gateway_native::Read probe{g_image};
+        const strike::EnemyReceipt receipt{nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry};
+        strike::observe_readiness(receipt,coo_native::enemy(probe,g_image,receipt));
     }
     if(!TryAcquireSRWLockExclusive(&g_lock)) {return;}
     run(nav.run);
@@ -409,7 +432,7 @@ __declspec(noinline) void observe_candidate(void* instance,std::uint32_t event,
     else if(!read.resolve({at<std::uint32_t>(character.data()+0x24),0,0},characterAddress)) {rejection=4;}
     else if(characterAddress!=address) {rejection=5;}
     else if(!read.resolve(actorState.source,linked)) {rejection=6;}
-    else if(!source(read,linked,sourceState,nav.gateway,nav.trial,nav.deep)) {rejection=7;}
+    else if(!source(read,linked,sourceState,nav.gateway,nav.trial,nav.deep,nav.strike)) {rejection=7;}
     std::array<std::byte,0x3C> eventHeader{};std::array<std::byte,0x38> payload{};
     std::uint32_t eventDefinition{};bool eventValid=false,healthValid=false,deathAccepted=false;
     Ref healthRef{};std::uintptr_t healthAddress{},memberAddress{};
@@ -436,6 +459,8 @@ __declspec(noinline) void observe_candidate(void* instance,std::uint32_t event,
             healthFlags,sourceState.generation,sourceState.senseGeneration);
         if(qualified && call.accepts_side_effects()) {
             deathAccepted=nav.deep?deep::observe_death(
+            {nav.run,actorState.handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
+            :nav.strike?strike::observe_death(
                 {nav.run,actorState.handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
                 :nav.trial?trial::observe_death(
                 {nav.run,actorState.handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})

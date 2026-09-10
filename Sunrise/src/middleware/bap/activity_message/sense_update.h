@@ -7,6 +7,9 @@
 
 #include "activity_patch_epoch_parser.h"
 #include "scene_sense.h"
+#include "squad_sense.h"
+#include "monitor_sense.h"
+#include "combatant_sense.h"
 
 namespace sunrise::middleware::bap::activity_message::sense_update {
 
@@ -69,14 +72,22 @@ struct SenseObject final {
     std::uint32_t nativeRevision{};
     bool hasNativeSchema{};
     bool hasRootDelta{};
-    /** Decoded Forest generator state for registry 2763EC97/type-37/index-1. */
+    /** Native type-37 activation mirror, scoped by this object's registry and slot. */
     std::uint32_t forestActive32{};
     std::uint64_t forestActive64{};
     std::uint32_t forestRevision{};
+    std::uint32_t forestSeed{};
     bool hasForestGeneratorState{};
     /** Complete reflected Scene output, including events beyond the diagnostic 256-bit prefix. */
     scene_sense::Output sceneOutput{};
     bool hasSceneOutput{};
+    /** Reflected squad delta for a slot-type-1 sensor, including the task-evaluator costs. */
+    squad_sense::Output squadOutput{};
+    bool hasSquadOutput{};
+    monitor_sense::Output monitorOutput{};
+    bool hasMonitorOutput{};
+    combatant_sense::Output combatantOutput{};
+    bool hasCombatantOutput{};
     /** True when the group envelope, rather than a recovered schema constant, set bodyBits. */
     bool inferredBodyWidth{};
     bool hasDelta{};

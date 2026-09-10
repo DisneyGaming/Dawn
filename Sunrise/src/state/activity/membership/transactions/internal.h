@@ -58,7 +58,8 @@ inline bool equal(const MembershipState& first, const MembershipState& second) n
            && first.hasIdentity == second.hasIdentity
            && first.synchronizationToken == second.synchronizationToken
            && first.hasSynchronizationToken == second.hasSynchronizationToken
-           && first.hasTeleportReceipt == second.hasTeleportReceipt;
+           && first.hasTeleportReceipt == second.hasTeleportReceipt
+           && equal(first.currentRegion, second.currentRegion);
 }
 
 /** @return True when both sparse authoritative updates match field by field. */
@@ -70,7 +71,9 @@ inline bool equal(const AuthoritativeUpdate& first, const AuthoritativeUpdate& s
            && first.hasSpawn == second.hasSpawn && first.hasTeleport == second.hasTeleport
            && first.synchronizationToken == second.synchronizationToken
            && first.hasSynchronizationToken == second.hasSynchronizationToken
-           && first.hasRegion == second.hasRegion;
+           && first.hasRegion == second.hasRegion
+           && first.hasCurrentRegion == second.hasCurrentRegion
+           && equal(first.currentRegion, second.currentRegion);
 }
 
 /** @return True when both full refresh snapshots hold the same values. */
@@ -109,8 +112,19 @@ inline MembershipState merge(const MembershipState& state,
     }
     // A negative region is the unset value the client sends on its way out, not a position.
     // Keeping it would drop the host's idea of the player back to the destination's own slice set.
-    if (update.hasRegion && update.region.index >= kAbsentRegionIndex + 1) {
+    const bool newTransition = update.hasTransitionToken
+        && (!state.hasTransitionToken || update.transitionToken != state.transitionToken);
+    // Once held is known, only a new transition turns the second leg into a prefetch target.
+    // During the swap it reports the old region, which must never undo the arrival.
+    if (update.hasRegion && update.region.index >= kAbsentRegionIndex + 1
+        && (state.currentRegion.index < 0 || newTransition)) {
         merged.region = update.region;
+    }
+    if (update.hasCurrentRegion && update.currentRegion.index >= 0) {
+        merged.currentRegion = update.currentRegion;
+        if (state.currentRegion.index != update.currentRegion.index) {
+            merged.region = update.currentRegion;
+        }
     }
     return merged;
 }
@@ -149,7 +163,8 @@ inline bool equal_authoritative(const MembershipState& first,
            && first.synchronizationToken == second.synchronizationToken
            && first.hasSynchronizationToken == second.hasSynchronizationToken
            && first.hasTeleportReceipt == second.hasTeleportReceipt
-           && equal(first.spawn, second.spawn) && equal(first.teleport, second.teleport);
+           && equal(first.spawn, second.spawn) && equal(first.teleport, second.teleport)
+           && equal(first.currentRegion, second.currentRegion);
 }
 
 /**

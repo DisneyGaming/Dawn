@@ -33,7 +33,7 @@ void report_authoritative(
         "teleport_present=%u teleport_state=%d teleport_token=%u teleport_slice=%d "
         "teleport_hash=0x%08X region_present=%u region=%d region_hash_present=%u "
         "region_hash=0x%08X changes=%u snapshot=%u region_moved=%u transition_started=%u "
-        "revision=%u",
+        "revision=%u held_present=%u held_region=%d publication_region=%d",
         result,
         bytes,
         parsed.hasTransitionToken ? 1U : 0U,
@@ -55,7 +55,9 @@ void report_authoritative(
         mutation != nullptr && mutation->hasSnapshot ? 1U : 0U,
         mutation != nullptr && mutation->movesRegion ? 1U : 0U,
         mutation != nullptr && mutation->movesTransitionToken ? 1U : 0U,
-        mutation != nullptr && mutation->hasSnapshot ? mutation->snapshot.revision : 0U);
+        mutation != nullptr && mutation->hasSnapshot ? mutation->snapshot.revision : 0U,
+        parsed.hasCurrentRegion?1U:0U,parsed.currentRegion.index,
+        mutation!=nullptr?mutation->regionTransition.after.region.index:-1);
     if (written > 0) {
         core::log::write(core::log::Channel::server,
                          result[0] == 'o' ? core::log::Level::info : core::log::Level::warn,
@@ -94,7 +96,8 @@ make_identity(const service::client_identity::ClientIdentity& parsed) noexcept {
  * @return Sparse State update with the same kept-field presence.
  */
 [[nodiscard]] membership_state::AuthoritativeUpdate make_authoritative(
-    const service::client_authoritative_data::ClientAuthoritativeData& parsed) noexcept {
+    const service::client_authoritative_data::ClientAuthoritativeData& parsed,
+    bool retainHeldRegion) noexcept {
     membership_state::AuthoritativeUpdate update{};
     update.transitionToken = parsed.transitionToken;
     update.hasTransitionToken = parsed.hasTransitionToken;
@@ -114,6 +117,10 @@ make_identity(const service::client_identity::ClientIdentity& parsed) noexcept {
     update.region.index = parsed.region.index;
     update.region.hash = parsed.region.hash;
     update.hasRegion = parsed.hasRegion;
+    if(retainHeldRegion) {
+        update.currentRegion={parsed.currentRegion.index,parsed.currentRegion.hash};
+        update.hasCurrentRegion=parsed.hasCurrentRegion;
+    }
     return update;
 }
 
@@ -181,8 +188,13 @@ bool prepare_authoritative(state::activity::ActivityInstanceKey key,
         report_authoritative("parse_failed", request.payload.size(), parsed, nullptr);
         return false;
     }
+    membership_state::RegionSnapshotInputs inputs{};
+    if(!membership_state::snapshot_region_inputs(key,key,{},inputs)) { return false; }
+    const std::string_view destination(
+        reinterpret_cast<const char*>(inputs.destination.packageName.data()),
+        inputs.destination.packageNameLength);
     if (!membership_state::prepare_authoritative(
-            key, make_authoritative(parsed), plan.membershipMutation)) {
+            key, make_authoritative(parsed,destination=="strike_pact"), plan.membershipMutation)) {
         report_authoritative("state_refused", request.payload.size(), parsed, nullptr);
         return false;
     }

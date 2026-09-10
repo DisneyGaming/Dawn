@@ -36,6 +36,7 @@ constexpr std::size_t kMaximumBubbleKeys = kBubbleMaskWords * 32;
 /** Legacy Forest form remains independently captured; the group zero is separate. */
 constexpr std::uint8_t kSlotTypeForestGenerator = 37;
 constexpr std::uint8_t kSlotTypeScene = 43;
+constexpr std::uint8_t kSlotTypeSquadSource = 1;
 constexpr std::size_t kForestGeneratorBodyBits = 1783;
 
 /** Compatibility decoder for the captured2763EC97/37/1 fixed form. These retained
@@ -320,12 +321,31 @@ constexpr std::uint64_t kProjectFnvPrime = 1099511628211ULL;
         object.nativeRevision=output.revision;
         object.hasNativeSchema=true;
         object.hasRootDelta=output.root;
+        if(object.slotType==37 && output.root) {
+            object.forestSeed=output.generatorSeed;
+            object.forestActive32=output.generatorRegions;
+            object.forestActive64=output.generatorGroups;
+            object.forestRevision=output.revision;
+            object.hasForestGeneratorState=true;
+        }
+        if (object.slotType==2 && output.root) {
+            object.combatantOutput=output.combatant;
+            object.hasCombatantOutput=true;
+        }
+        if (object.slotType==30 && output.root) {
+            object.monitorOutput=output.monitor;
+            object.hasMonitorOutput=true;
+        }
         if (object.slotType==kSlotTypeScene) {
             object.sceneOutput=output.scene;
             object.hasSceneOutput=true;
         }
+        if (object.slotType==kSlotTypeSquadSource && output.root) {
+            object.squadOutput=output.squad;
+            object.hasSquadOutput=true;
+        }
     }
-    if (object.registryKey == 0x2763EC97U && object.slotIndex == 1
+    if (!object.hasNativeSchema && object.registryKey == 0x2763EC97U && object.slotIndex == 1
         && object.slotType == kSlotTypeForestGenerator
         && bodyBits == kForestGeneratorBodyBits) {
         return read_forest_generator_body(reader, object);

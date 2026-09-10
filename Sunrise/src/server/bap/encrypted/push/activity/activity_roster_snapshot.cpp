@@ -39,6 +39,8 @@
 #include "../../../../../state/activity/beyond_infinity/transit.h"
 #include "../../../../../state/activity/deadly_trial/runtime.h"
 #include "../../../../../state/activity/gateway/runtime.h"
+#include "../../../../../state/activity/strike_pact/runtime.h"
+#include "strike_pact_roster.h"
 #include "../../../../../middleware/bap/activity_message/tower_watch_cue_manifest.h"
 
 namespace sunrise::server::bap::encrypted::push::activity {
@@ -497,6 +499,9 @@ RosterOutcome build_roster_snapshot(Session& session,
     const bool deepDestination=name=="adventure_whisk" && !session.activity.joinedForeignSession;
     const bool deepPrepared=state::activity::deep_storage::prepare(state::activity::mission_run_generation(),deepDestination);
     if(deepDestination && !deepPrepared) { return RosterOutcome::noGroups; }
+    const bool strikeDestination=name=="strike_pact" && !session.activity.joinedForeignSession;
+    const bool strikePrepared=!session.activity.joinedForeignSession && state::activity::strike_pact::prepare(state::activity::mission_run_generation(),strikeDestination);
+    if(strikeDestination && !strikePrepared) { return RosterOutcome::noGroups; }
     const auto& omegaExperiments = core::settings::get().omegaExperiments;
     const bool syntheticOmega = omegaDestination;
     // Forest-D's native encounter classifier requires the selected race global
@@ -783,6 +788,38 @@ RosterOutcome build_roster_snapshot(Session& session,
             snapshot.gameplayClockTicks=snapshot.deep_storage.gameplayClockTicks;
         }
     }
+    if(strikePrepared) {
+        // Keep each authored group's native bubble ownership stable across the whole run.
+        strike_pact_roster::Report strikeReport{};
+        if(!strike_pact_roster::admit(layout,scratch,snapshot.roster,inputs.regionIndex,
+            [](std::size_t index,layouts::RosterGroup& group) noexcept {
+                return state::build_data::find_roster_group(index,group);
+            },strikeReport)) { return RosterOutcome::noGroups; }
+        const auto strikeRun=state::activity::mission_run_generation();
+        static std::atomic_uint64_t lastStrikeRoster{UINT64_MAX};
+        const auto stamp=(strikeRun<<20)^(static_cast<std::uint64_t>(inputs.regionIndex)<<8)
+            ^strikeReport.added^(static_cast<std::uint64_t>(strikeReport.missing)<<4);
+        if(lastStrikeRoster.exchange(stamp)!=stamp) {
+            std::array<char,640> line{};
+            int used=std::snprintf(line.data(),line.size(),
+                "ev=strike_pact stage=roster run=%llu region=%d bubble=%d added=%u present=%u missing=%u full=%u last_missing=%08X groups=%zu keys=",
+                static_cast<unsigned long long>(strikeRun),inputs.regionIndex,inputs.regionIndex/8,
+                strikeReport.added,strikeReport.present,strikeReport.missing,strikeReport.full,
+                strikeReport.lastMissing,snapshot.roster.groupCount);
+            for(std::size_t i=0;i<snapshot.roster.groupCount && used>0 && static_cast<std::size_t>(used)<line.size()-12;++i) {
+                used+=std::snprintf(line.data()+used,line.size()-static_cast<std::size_t>(used),"%08X,",snapshot.roster.groups[i].key);
+            }
+            core::log::write(core::log::Channel::server,
+                strikeReport.missing?core::log::Level::warn:core::log::Level::info,line.data());
+        }
+        snapshot.strike_pact=state::activity::strike_pact::snapshot(strikeRun,GetTickCount64(),
+            state::activity::mission_seed_armed(),inputs.sourceMembership.currentRegion.index>=0
+                ?inputs.sourceMembership.currentRegion.index:inputs.regionIndex);
+        if(snapshot.strike_pact.enabled) {
+            snapshot.missionCompletion=snapshot.strike_pact.completion;
+            snapshot.gameplayClockTicks=snapshot.strike_pact.activityTime;
+        }
+    }
     if(snapshot.omegaEndingRetire) {
         if(!omega_lair::terminal_roster(scratch,snapshot.roster,
             state::activity::omega_ending::kState)) {
@@ -822,6 +859,15 @@ RosterOutcome build_roster_snapshot(Session& session,
         state::activity::destination::attachable_spawn_set_hash(selection, fallback.spawnSetHash);
     snapshot.hasSpawnOverride =
         snapshot.spawnSetHash != 0 && snapshot.spawnSetHash != message::kAbsentSpawnSetHash;
+    // The strike moves through four regions and each names its own respawn set. Its selected
+    // checkpoint replaces the destination arrival, so a death after the Forest does not put the
+    // player back at the Lighthouse. An unselected checkpoint leaves the destination's own set.
+    if (snapshot.strike_pact.enabled && snapshot.strike_pact.checkpointSpawnSet != 0
+        && snapshot.strike_pact.checkpointSpawnSet != message::kAbsentSpawnSetHash) {
+        snapshot.spawnSliceSet = snapshot.strike_pact.checkpointSliceSet;
+        snapshot.spawnSetHash = snapshot.strike_pact.checkpointSpawnSet;
+        snapshot.hasSpawnOverride = true;
+    }
     // The archived opening packages need one registration-only packet on the primary/private
     // activity before their object state arrives. Publishing phase 1 and phase 2 together there
     // makes the client authority table report type 18 as already present before the native

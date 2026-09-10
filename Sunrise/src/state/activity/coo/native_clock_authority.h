@@ -1,0 +1,24 @@
+#pragma once
+#include <bit>
+#include <cstdint>
+#include <limits>
+#include "native_activity_clock.h"
+namespace sunrise::state::activity::coo::native_clock {
+inline constexpr std::uint64_t kTicksPerSecond=673200;
+constexpr std::uint64_t ticks(std::uint64_t ms) noexcept {
+    return native_activity_ticks(ms);
+}
+// Message 5 transports the activity timestamp as eight raw little-endian bytes.
+template<class Writer> bool stamp(Writer& w,std::uint64_t value) noexcept {
+    for(unsigned shift=0;shift<64;shift+=8) { if(!w.write((value>>shift)&255U,8)) { return false; } }
+    return true;
+}
+// 80809919: fixed activity timer, with an epoch in the same domain as message 5.
+template<class Writer> bool countdown(Writer& w,bool running,std::uint64_t epoch) noexcept {
+    const auto duration=ticks(30000);
+    return w.write(running?1U:0U,1) && w.write(0,64) && w.write(duration,64)
+        && w.write(0,64) && w.write(duration,64) && w.write(epoch,64)
+        && w.write(std::bit_cast<std::uint32_t>(1.F),32) && w.write(0,1)
+        && w.write(0x80000000U,32);
+}
+}

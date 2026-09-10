@@ -2,6 +2,7 @@
 #include "../../../state/activity/beyond_infinity/runtime.h"
 #include "../../../state/activity/deep_storage/runtime.h"
 #include "../../../state/activity/deadly_trial/runtime.h"
+#include "../../../state/activity/strike_pact/runtime.h"
 #include <Windows.h>
 #include "deadly_trial_presentation.h"
 #include <intrin.h>
@@ -1242,7 +1243,10 @@ __declspec(noinline) void __fastcall dialogue_dispatch(std::byte* component,
                 static_cast<std::uint8_t>(index),generation);
             state::activity::deadly_trial::observe_submission(gatewayDispatchRun,self,offset,bank,
                 static_cast<std::uint8_t>(index),generation);
-            if (bank != kDialogueBankHandle && bank != 0x80F1FC9EU && bank != 0x80F1F086U && !beyondDispatch) {
+            state::activity::strike_pact::observe_submission(gatewayDispatchRun,self,offset,bank,
+                static_cast<std::uint8_t>(index),generation);
+            if (bank != kDialogueBankHandle && bank != 0x80F1FC9EU && bank != 0x80F1F086U
+                && !beyondDispatch && state::activity::strike_pact::native_run()==0) {
                 // observe_submission() drops a foreign bank silently; say so once per row.
                 log_reject("dispatch_bank", component, static_cast<std::uint32_t>(index),
                            generation, bank);

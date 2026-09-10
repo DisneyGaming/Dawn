@@ -112,6 +112,12 @@
       },
       "arrival_overrides": [
         {
+          "package_name": "strike_pact",
+          "bubble": 15,
+          "slice_set": 120,
+          "spawn_set_hash": "0x0E1523FE"
+        },
+        {
           "package_name": "raid_envy_v310",
           "bubble": 7
         },

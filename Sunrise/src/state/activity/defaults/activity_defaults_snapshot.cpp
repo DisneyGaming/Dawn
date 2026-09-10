@@ -47,6 +47,10 @@ void apply_arrival_override(const ActivityDefaults& defaults,
             selection.spawnSetOverride = row.spawnSetHash;
             selection.hasSpawnSetOverride = true;
         }
+        if (row.hasSliceSet) {
+            selection.sliceSetOverride = row.sliceSet;
+            selection.hasSliceSetOverride = true;
+        }
         return;
     }
 }

@@ -29,6 +29,8 @@
 #include "../../../../state/activity/destination/activity_destination_snapshot.h"
 #include "../../../../state/activity/omega_ending.h"
 #include "../../../../state/activity/runtime.h"
+#include "../../../../state/activity/strike_pact/runtime.h"
+#include "../../../../state/activity/coo/native_player_trigger.h"
 #include "../../../../state/activity/omega/omega_progression.h"
 #include "../../../../state/build_data/scenarios/cue_graph_manifest_exporter.h"
 #include "membership/activity_membership_route.h"
@@ -566,6 +568,29 @@ void report_sense_update(Session& session, const service::Request& request) noex
             state::build_data::scenarios::export_cue_observation_mapping(activity, update);
         }
     }
+    // The native task evaluator answers a published combat objective inside the squad's own sense
+    // body. Nothing else reports it, so this is the only place the strike learns which authored
+    // task groups its squads can reach.
+    if (parsed && handleBound && session.activityPatchEpochSeen
+        && same_epoch(update.epoch, session.activityPatchEpoch)
+        && state::activity::strike_pact::native_run() != 0) {
+        for (std::size_t index = 0; index < update.objectCount; ++index) {
+            const service::sense_update::SenseObject& object = update.objects[index];
+            // Every squad delta is forwarded, not only the ones carrying a cost. The revision, the
+            // costs and the initialized latch each arrive in their own report, and the strike
+            // merges them; dropping a report because it restates only one of the three loses it.
+            if (!object.hasSquadOutput) { continue; }
+            state::activity::strike_pact::TaskCosts costs{};
+            costs.mask = object.squadOutput.costMask;
+            costs.revision = object.squadOutput.revision;
+            costs.hasRevision = object.squadOutput.hasRevision;
+            costs.initialized = object.squadOutput.initialized;
+            for (std::size_t group = 0; group < costs.cost.size(); ++group) {
+                costs.cost[group] = object.squadOutput.cost[group];
+            }
+            state::activity::strike_pact::observe_costs(object.registryKey, object.slotIndex, costs);
+        }
+    }
     const bool omegaSelected = handleBound && omega_destination(session.activity.instance);
     const bool towerfallSelected = handleBound
                                    && towerfall_destination(session.activity.instance);
@@ -579,6 +604,37 @@ void report_sense_update(Session& session, const service::Request& request) noex
     const bool portalMutation = core::settings::get().omegaExperiments.portalMutation;
     const bool epochBound = parsed && session.activityPatchEpochSeen
                             && same_epoch(update.epoch, session.activityPatchEpoch);
+    if(handleBound && epochBound) {
+        const auto run=state::activity::strike_pact::native_run();
+        if(run!=0) {
+            for(std::size_t index=0;index<update.objectCount;++index) {
+                const auto& object=update.objects[index];
+                if(object.slotType==37 && object.hasForestGeneratorState) {
+                    state::activity::strike_pact::observe_generator(run,object.registryKey,object.slotIndex,
+                        object.forestSeed,object.forestActive32);
+                }
+                if(object.slotType==43 && object.hasSceneOutput) {
+                    state::activity::strike_pact::observe_scene(run,object.registryKey,object.slotIndex,object.sceneOutput);
+                }
+                if(object.slotType==1 && object.hasSquadOutput) {
+                    state::activity::strike_pact::observe_squad(run,object.registryKey,object.slotIndex,object.squadOutput);
+                }
+                if(object.slotType==2 && object.hasCombatantOutput) {
+                    state::activity::strike_pact::observe_combatant(run,object.registryKey,
+                        object.slotIndex,object.combatantOutput);
+                }
+            }
+        }
+    }
+    if(handleBound && epochBound && state::activity::strike_pact::native_run()!=0) {
+        for(std::size_t index=0;index<update.objectCount;++index) {
+            const auto& object=update.objects[index];
+            if(object.slotType!=30 || !object.hasMonitorOutput) { continue; }
+            const auto& monitor=object.monitorOutput;
+            state::activity::strike_pact::observe_monitor(object.registryKey,object.slotIndex,
+                monitor.any,monitor.count,monitor.value);
+        }
+    }
     const bool destinationBound = parsed && epochBound && omegaSelected;
     const char* validation = !parsed                 ? "decode"
                              : !handleBound          ? "session"
@@ -1008,11 +1064,21 @@ void report_accepted(std::uint32_t messageType,
     }
 }
 
-void report_incident(const service::Request& request) noexcept {
+void report_incident(const service::Request& request,bool liveBinding) noexcept {
     namespace incident = service::incident;
     namespace ending = state::activity::omega_ending;
     incident::Incident parsed;
     const incident::Verdict verdict = incident::validate(request.payload, parsed);
+    namespace player_trigger=state::activity::coo::native_player_trigger;
+    if(liveBinding && verdict==incident::Verdict::accepted && parsed.hasPayload
+        && parsed.primaryTarget==player_trigger::kIncident) {
+        const auto run=state::activity::strike_pact::native_run();
+        player_trigger::Receipt receipt{};
+        if(run!=0 && player_trigger::decode(std::span(parsed.payload).first(parsed.payloadLength),receipt)) {
+            state::activity::strike_pact::observe_player_trigger(run,receipt.registry,
+                static_cast<std::uint16_t>(receipt.slot));
+        }
+    }
     // A skip prompt only raises this incident; playback stops when the host publishes the
     // stop authority, which the ending runtime does for a movie it is currently playing.
     const bool skipRequested = verdict == incident::Verdict::accepted
@@ -1341,7 +1407,8 @@ bool process(Session& session,
         }
         return true;
     } else if (request.messageType == service::incident::kMessageType) {
-        report_incident(request);
+        report_incident(request,hasBoundHandle && lifecycle::activity_binding_is_current(session)
+            && state::activity::contains(session.activity.instance) && session.activityPatchEpochSeen);
         return true;
     } else if (request.messageType == authority::kRequestPurgeMessageType) {
         if (!report_request_purge(request)) {
