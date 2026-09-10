@@ -1,4 +1,5 @@
 #include "retail_log_enqueue_observer.h"
+#include "channel_name_repetition.h"
 
 #include <algorithm>
 #include <array>
@@ -28,7 +29,7 @@ constexpr std::size_t kNativeTextSize = 320;
 /** Site id the game uses for an unregistered line. */
 constexpr std::int32_t kUnregisteredSite = -1;
 /** Line storage holds the cleaned text plus its fixed key prefix. */
-constexpr std::size_t kEventCapacity = kNativeTextSize + 64;
+constexpr std::size_t kEventCapacity = kNativeTextSize + 160;
 /** A late config load resets the thresholds, so set them again on this period. A count will not
  *  do: a closed category emits fewer lines, so it advances slower and stays closed. */
 constexpr std::uint64_t kReassertIntervalMs = 2'000;
@@ -95,6 +96,8 @@ constexpr std::uintptr_t kGameplaySecureStateReturnRva = 0x1803184U;
 constexpr std::uintptr_t kGameplaySecureChannelStackOffset = 0x68U;
 
 thread_local bool g_inObserver{};
+SRWLOCK g_channelNameReportLock = SRWLOCK_INIT;
+ChannelNameRepetition g_channelNameReports{};
 /** Tick at which the next re-assert is due. Zero makes the first call assert. */
 volatile LONG64 g_nextAssertTick{};
 volatile LONG g_schemaScanDone{};
@@ -1074,8 +1077,27 @@ void capture_line(std::int32_t siteId, const char* text) noexcept {
     }
     std::array<char, kNativeTextSize> sanitized{};
     const std::size_t textLength = sanitize(text, sanitized);
+    const std::string_view nativeText{sanitized.data(), textLength};
+    // Observation side effects still see every line. Only the mirrored text is summarized.
+    capture_activity_stack(siteId, nativeText);
+    AcquireSRWLockExclusive(&g_channelNameReportLock);
+    const auto repetition = g_channelNameReports.observe(siteId, nativeText, GetTickCount64());
+    ReleaseSRWLockExclusive(&g_channelNameReportLock);
+    if (!repetition.emit) {
+        return;
+    }
     std::array<char, kEventCapacity> line{};
-    const int written = std::snprintf(line.data(),
+    const int written = repetition.suppressed != 0
+                            ? std::snprintf(line.data(),
+                                            line.size(),
+                                            "ev=retail site=%d repetition=placeholder_name "
+                                            "suppressed=%llu window_ms=%llu text=%.*s",
+                                            siteId,
+                                            static_cast<unsigned long long>(repetition.suppressed),
+                                            static_cast<unsigned long long>(repetition.windowMs),
+                                            static_cast<int>(textLength),
+                                            sanitized.data())
+                            : std::snprintf(line.data(),
                                       line.size(),
                                       "ev=retail site=%d text=%.*s",
                                       siteId,
@@ -1088,7 +1110,6 @@ void capture_line(std::int32_t siteId, const char* text) noexcept {
                             ? static_cast<std::size_t>(written)
                             : line.size() - 1;
     core::log::write(core::log::Channel::client, core::log::Level::info, {line.data(), length});
-    capture_activity_stack(siteId, {sanitized.data(), textLength});
 }
 
 /**

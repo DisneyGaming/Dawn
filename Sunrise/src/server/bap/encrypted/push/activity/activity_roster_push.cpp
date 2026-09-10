@@ -13,6 +13,7 @@
 #include "../../../../../middleware/bap/activity_message/activity_clock_state_encoder.h"
 #include "../../../../../state/activity/beyond_infinity/runtime.h"
 #include "../../../../../state/activity/deep_storage/runtime.h"
+#include "../../../../../state/activity/hijacked/runtime.h"
 #include "../../../../../state/activity/runtime.h"
 #include "../../../../../middleware/secure_channel/runtime.h"
 #include "../../../../../state/activity/bubble_authority/runtime.h"
@@ -30,6 +31,20 @@ namespace message = middleware::bap::activity_message::sensor_auth_update;
 constexpr std::int32_t kNoGrant = -1;
 /** The destination name a refusal reports. The selection field is 40 bytes wide. */
 constexpr std::size_t kDestinationCapacity = 40;
+
+// Optional protocol prerequisite for source-owned shared clocks. It is staged
+// immediately before its matching type5 synchronization; caller rollback covers
+// both frames and both nonces. Delivery is never a native readiness receipt.
+[[nodiscard]] bool append_clock_configuration(Scratch& scratch,std::uint64_t sessionId,
+    const message::Snapshot& snapshot,std::span<const std::byte,state::kAesKeySize> key,
+    std::array<std::byte,state::kBapNonceSize>& nonce,std::span<std::byte> response,std::size_t& written) noexcept {
+    if(!snapshot.activityClock)return true;
+    namespace clock=middleware::bap::activity_message::native::activity_clock;
+    std::array<std::byte,5> body{};middleware::encoding::bits::Writer writer(body);std::size_t bytes{};
+    if(!clock::write(writer,*snapshot.activityClock) || !writer.finish(bytes) || bytes!=body.size()
+        || !append_notification_frame(scratch,sessionId,clock::kMessageType,body,key,nonce,response,written))return false;
+    middleware::secure_channel::advance_nonce(nonce);return true;
+}
 
 std::atomic_uint32_t g_towerfallDeliveryReports{};
 
@@ -52,19 +67,21 @@ std::atomic_uint32_t g_towerfallDeliveryReports{};
     std::span<const std::byte,state::kAesKeySize> key,
     std::array<std::byte,state::kBapNonceSize>& nonce,
     std::span<std::byte> response,std::size_t& written) noexcept {
+    const bool hijacked=name=="adventure_rumba" && snapshot.hijacked.enabled;
     const bool deep=name=="adventure_whisk" && snapshot.deep_storage.enabled;
     const bool strike=name=="strike_pact" && snapshot.strike_pact.enabled;
-    if(!deep && !strike && (name!="adventure_vod" || !snapshot.beyond_infinity.enabled)) { return true; }
+    if(!hijacked && !deep && !strike && (name!="adventure_vod" || !snapshot.beyond_infinity.enabled)) { return true; }
     namespace beyond=state::activity::beyond_infinity;
     namespace clock=middleware::bap::activity_message::clock_state;
     const auto current=beyond::request();
     const auto deepCurrent=state::activity::deep_storage::request();
-    const auto owner=strike?snapshot.strike_pact.completion.owner:deep?deepCurrent.owner:current.owner;
-    const bool enabled=strike?snapshot.strike_pact.enabled:deep?deepCurrent.frame.enabled:current.frame.enabled;
-    const auto generation=strike?owner.value:deep?deepCurrent.frame.spawnGeneration:current.frame.spawnGeneration;
-    const auto expected=strike?snapshot.strike_pact.spawnGeneration:deep?snapshot.deep_storage.spawnGeneration:snapshot.beyond_infinity.spawnGeneration;
+    const auto hijackedCurrent=state::activity::hijacked::request();
+    const auto owner=hijacked?hijackedCurrent.owner:strike?snapshot.strike_pact.completion.owner:deep?deepCurrent.owner:current.owner;
+    const bool enabled=hijacked?hijackedCurrent.frame.enabled:strike?snapshot.strike_pact.enabled:deep?deepCurrent.frame.enabled:current.frame.enabled;
+    const auto generation=hijacked?hijackedCurrent.frame.spawnGeneration:strike?owner.value:deep?deepCurrent.frame.spawnGeneration:current.frame.spawnGeneration;
+    const auto expected=hijacked?snapshot.hijacked.spawnGeneration:strike?snapshot.strike_pact.spawnGeneration:deep?snapshot.deep_storage.spawnGeneration:snapshot.beyond_infinity.spawnGeneration;
     if(session.activity.joinedForeignSession || !lifecycle::activity_binding_is_current(session)
-        || session.activity.instance!=state::activity::newest_joined_activity()
+        || !session.activity.lineage.owns(session.activity.instance)
         || state::activity::world_phase()!=state::activity::WorldPhase::arrived
         || !owner.valid() || owner.run!=state::activity::mission_run_generation()
         || !enabled || generation!=expected) { return false; }
@@ -97,6 +114,7 @@ bool append_roster_notification(Session& session,
     const std::uint32_t initialRosterGroups = session.activity.rosterGroups;
     const std::uint8_t initialRosterSends = session.activity.rosterSends;
     const std::uint8_t initialRosterState = session.activity.rosterState;
+    const auto initialLifetimes = session.activity.rosterLifetimes;
     const std::uint8_t initialOmegaOpeningStage = session.activity.omegaOpeningStage;
     const std::uint16_t initialDirectorSends = session.activity.directorSends;
     const bool initialMissionDirectorActive = session.activity.missionDirectorActive;
@@ -113,6 +131,7 @@ bool append_roster_notification(Session& session,
         session.activity.rosterGroups = initialRosterGroups;
         session.activity.rosterSends = initialRosterSends;
         session.activity.rosterState = initialRosterState;
+        session.activity.rosterLifetimes = initialLifetimes;
         session.activity.omegaOpeningStage = initialOmegaOpeningStage;
         session.activity.directorSends = initialDirectorSends;
         session.activity.missionDirectorActive = initialMissionDirectorActive;
@@ -139,6 +158,7 @@ bool append_roster_notification(Session& session,
     auto initialNonce = nonce;
     std::size_t messageSize = 0;
     bool encoded = append_beyond_clock(session,scratch,snapshot,name,key,nonce,response,written)
+        && append_clock_configuration(scratch,session.activity.instance.sessionId,snapshot,key,nonce,response,written)
                    && message::encode_sensor_auth_update(snapshot, scratch.responseBody, messageSize)
                    && append_notification_frame(scratch,
                                                 session.activity.instance.sessionId,
@@ -160,6 +180,7 @@ bool append_roster_notification(Session& session,
         session.activity.rosterStaged.priorGroups = initialRosterGroups;
         session.activity.rosterStaged.priorSends = initialRosterSends;
         session.activity.rosterStaged.priorState = initialRosterState;
+        session.activity.rosterStaged.priorLifetimes = initialLifetimes;
         session.activity.rosterStaged.priorOmegaOpeningStage = initialOmegaOpeningStage;
         session.activity.rosterStaged.priorDirectorSends = initialDirectorSends;
         session.activity.rosterStaged.priorMissionDirectorActive =
@@ -216,6 +237,7 @@ bool append_roster_notification(Session& session,
         session.activity.rosterGroups = initialRosterGroups;
         session.activity.rosterSends = initialRosterSends;
         session.activity.rosterState = initialRosterState;
+        session.activity.rosterLifetimes = initialLifetimes;
         session.activity.omegaOpeningStage = initialOmegaOpeningStage;
         session.activity.directorSends = initialDirectorSends;
         session.activity.missionDirectorActive = initialMissionDirectorActive;
@@ -270,12 +292,11 @@ bool append_roster_notification(
     const std::size_t initialWritten = written;
     const auto initialNonce = nonce;
     std::size_t messageSize = 0;
-    const bool encoded = append_beyond_clock(session,scratch,transition.rosterWire,destination,key,nonce,response,written)
-                         && message::encode_sensor_auth_update(
-                             transition.rosterWire,
-                             scratch.responseBody,
-                             messageSize)
-                         && append_notification_frame(
+    const bool clockEncoded = append_beyond_clock(session,scratch,transition.rosterWire,destination,key,nonce,response,written)
+        && append_clock_configuration(scratch,transition.activity.sessionId,transition.rosterWire,key,nonce,response,written);
+    const bool sensorEncoded = clockEncoded && message::encode_sensor_auth_update(
+        transition.rosterWire,scratch.responseBody,messageSize);
+    const bool encoded = sensorEncoded && append_notification_frame(
                              scratch,
                              transition.activity.sessionId,
                              message::kMessageType,
@@ -296,12 +317,14 @@ bool append_roster_notification(
         staged.priorGroups = transition.before.groups;
         staged.priorSends = transition.before.sends;
         staged.priorState = transition.before.state;
+        staged.priorLifetimes = transition.before.lifetimes;
         staged.priorOmegaOpeningStage = transition.before.omegaOpeningStage;
         staged.priorDirectorSends = transition.before.directorSends;
         staged.priorMissionDirectorActive = transition.before.missionDirectorActive;
         staged.afterGroups = transition.after.groups;
         staged.afterSends = transition.after.sends;
         staged.afterState = transition.after.state;
+        staged.afterLifetimes = transition.after.lifetimes;
         staged.afterOmegaOpeningStage = transition.after.omegaOpeningStage;
         staged.afterDirectorSends = transition.after.directorSends;
         staged.afterMissionDirectorActive = transition.after.missionDirectorActive;
@@ -322,6 +345,21 @@ bool append_roster_notification(
         }
         written = initialWritten;
         nonce = initialNonce;
+    }
+    if (destination == "adventure_rumba" && transition.rosterWire.hijacked.enabled) {
+        static std::atomic_uint64_t lastReport{};
+        const auto status = encoded ? 1U : !clockEncoded ? 2U : !sensorEncoded ? 3U : 4U;
+        const auto signature = (static_cast<std::uint64_t>(transition.rosterWire.hijacked.spawnGeneration) << 8U) | status;
+        if (lastReport.exchange(signature) != signature) {
+            std::array<char, 320> line{};
+            std::snprintf(line.data(),line.size(),
+                "ev=hijacked stage=publication result=%s clock=%u sensor=%u groups=%zu bytes=%zu activity=%016llX generation=%u",
+                encoded ? "staged" : "blocked",clockEncoded?1U:0U,sensorEncoded?1U:0U,
+                transition.rosterWire.roster.groupCount,messageSize,
+                static_cast<unsigned long long>(session.activity.instance.sessionId),
+                transition.rosterWire.hijacked.spawnGeneration);
+            core::log::write(core::log::Channel::server,encoded?core::log::Level::info:core::log::Level::warn,line.data());
+        }
     }
     if (towerfall && take_towerfall_delivery_report()) {
         std::array<char, 320> line{};
@@ -461,6 +499,7 @@ void commit_staged_roster(Session& session) noexcept {
         session.activity.rosterGroups = session.activity.rosterStaged.afterGroups;
         session.activity.rosterSends = session.activity.rosterStaged.afterSends;
         session.activity.rosterState = session.activity.rosterStaged.afterState;
+        session.activity.rosterLifetimes = session.activity.rosterStaged.afterLifetimes;
         session.activity.omegaOpeningStage =
             session.activity.rosterStaged.afterOmegaOpeningStage;
         session.activity.directorSends = session.activity.rosterStaged.afterDirectorSends;
@@ -505,6 +544,7 @@ void discard_staged_roster(Session& session) noexcept {
     session.activity.rosterGroups = session.activity.rosterStaged.priorGroups;
     session.activity.rosterSends = session.activity.rosterStaged.priorSends;
     session.activity.rosterState = session.activity.rosterStaged.priorState;
+    session.activity.rosterLifetimes = session.activity.rosterStaged.priorLifetimes;
     session.activity.omegaOpeningStage =
         session.activity.rosterStaged.priorOmegaOpeningStage;
     session.activity.directorSends = session.activity.rosterStaged.priorDirectorSends;

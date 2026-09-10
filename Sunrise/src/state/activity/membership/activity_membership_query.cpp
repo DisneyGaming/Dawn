@@ -141,6 +141,7 @@ bool snapshot_region_inputs(ActivityInstanceKey bound,
             selected.source = source;
             selected.sourceHostRegion = sourceHost;
             selected.destination = boundRecord.destination;
+            selected.sourceDestination = sourceRecord.destination;
             selected.grantBefore = boundRecord.bubbleAuthority;
             selected.sourceMembership = sourceRecord.membership;
             selected.defaults = state.defaults;
@@ -151,7 +152,8 @@ bool snapshot_region_inputs(ActivityInstanceKey bound,
         }
     }
     ReleaseSRWLockShared(&runtime::storage::g_stateLock);
-    if (!found || !destination::valid(selected.destination)) {
+    if (!found || !destination::valid(selected.destination)
+        || !destination::valid(selected.sourceDestination)) {
         return false;
     }
     output = selected;

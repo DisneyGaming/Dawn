@@ -9,8 +9,8 @@
 namespace sunrise::middleware::web_service::messages::opcode205 {
 namespace {
 
-/** 897 bytes hold the largest bounded family-5 response. */
-constexpr std::size_t kMaximumResponseSize = 897;
+/** 905 bytes include the optional64-bit investment time at maximum overrides. */
+constexpr std::size_t kMaximumResponseSize = 905;
 
 } // namespace
 

@@ -14,6 +14,7 @@
 #include "../../../../state/activity/forced/activity_forced_destination.h"
 #include "../../../../state/activity/runtime.h"
 #include "../../../../state/build_data/runtime.h"
+#include "../../../runtime/activity/haunted_forest_launch_profile.h"
 
 namespace sunrise::server::bap::encrypted::activity_host_manager {
 namespace {
@@ -170,6 +171,16 @@ prepare_allocation(const request_selection::ActivityManagerSelectionResult& pars
     state::activity::defaults::ActivityDefaults defaults{};
     state::activity::defaults::snapshot(defaults);
     state::activity::defaults::apply_arrival_override(defaults, destination);
+    // Resolve the exact activity's missing initial policy once, before allocation. Applying
+    // after configured defaults lets an explicit setting opt out of the whole initial profile.
+    const auto hauntedArrival =
+        ::sunrise::server::runtime::activity::haunted_forest::apply_initial_arrival(destination);
+    if (hauntedArrival == ::sunrise::server::runtime::activity::initial_arrival::Result::applied) {
+        core::log::write(core::log::Channel::server, core::log::Level::info,
+                         "ev=activity stage=trusted_initial_arrival result=applied "
+                         "profile=haunted_forest_78 public_hash=0x56B7B6A5 "
+                         "scenario=0x81550015 bubble=13 region=104");
+    }
     // Forced lands last and renames the captured descriptor in place.
     if (state::activity::forced::apply(destination)) {
         report_forced(destination);

@@ -29,6 +29,10 @@ struct Family5State {
     std::array<UnlockValueOverride, kUnlockOverrideCapacity> values{};
     std::size_t valueCount{};
     bool contentGateArm{};
+    // Optional native80807C72 field1. State samples this process-global clock
+    // for each publication; settings do not author its value or presence.
+    std::int64_t timeSeconds{};
+    bool hasTime{};
 };
 
 /** Account-wide evaluated content state. */

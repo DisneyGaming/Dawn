@@ -1,0 +1,309 @@
+{
+  "format_version": 2,
+  "mission": "infinite_abyss",
+  "profile": "haunted_forest.native.v1",
+  "authority_schema": "nativeOtherActivities",
+  "assets": {
+    "persistent_module": {
+      "registry": "0x81550015",
+      "definition": "0x81550015",
+      "type": 0,
+      "slot": 0
+    },
+    "forest.generator": {
+      "registry": "0x34D23982",
+      "definition": "0x8155015B",
+      "type": 37,
+      "slot": 98
+    },
+    "entry.main": {
+      "registry": "0x34D23982",
+      "definition": "0x815500A3",
+      "type": 4,
+      "slot": 30
+    },
+    "entry.approach": {
+      "registry": "0x34D23982",
+      "definition": "0x815500A6",
+      "type": 4,
+      "slot": 31
+    },
+    "entry.plate": {
+      "registry": "0x34D23982",
+      "definition": "0x815500A9",
+      "type": 4,
+      "slot": 32
+    },
+    "entry.occupied": {
+      "registry": "0x34D23982",
+      "definition": "0x81550170",
+      "type": 30,
+      "slot": 109
+    },
+    "next.main": {
+      "registry": "0x34D23982",
+      "definition": "0x8155006D",
+      "type": 4,
+      "slot": 10
+    },
+    "next.approach": {
+      "registry": "0x34D23982",
+      "definition": "0x81550070",
+      "type": 4,
+      "slot": 11
+    },
+    "next.plate": {
+      "registry": "0x34D23982",
+      "definition": "0x81550073",
+      "type": 4,
+      "slot": 12
+    },
+    "forest.directive": {
+      "registry": "0x1EB557AD",
+      "definition": "0x8155035A",
+      "type": 68,
+      "slot": 0
+    },
+    "entry.device": {
+      "registry": "0x34D23982",
+      "definition": "0x815500AC",
+      "type": 23,
+      "slot": 33
+    }
+  },
+  "bindings": {
+    "forest.start": {
+      "capability": "forest.start",
+      "operation": "mechanic",
+      "asset": "forest.generator",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "start_services": {
+      "capability": "persistent.start",
+      "operation": "mechanic",
+      "asset": "persistent_module",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "entry.main": {
+      "capability": "entry.main",
+      "operation": "device",
+      "asset": "entry.main",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "entry.approach": {
+      "capability": "entry.approach",
+      "operation": "device",
+      "asset": "entry.approach",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "entry.plate": {
+      "capability": "entry.plate",
+      "operation": "device",
+      "asset": "entry.plate",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "entry.occupied": {
+      "capability": "entry.occupied",
+      "operation": "observation",
+      "asset": "entry.occupied",
+      "argument": 1,
+      "wait": "observed"
+    },
+    "next.main": {
+      "capability": "next.main",
+      "operation": "device",
+      "asset": "next.main",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "next.approach": {
+      "capability": "next.approach",
+      "operation": "device",
+      "asset": "next.approach",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "next.plate": {
+      "capability": "next.plate",
+      "operation": "device",
+      "asset": "next.plate",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "entry.capture": {
+      "capability": "entry.capture",
+      "operation": "mechanic",
+      "asset": "entry.plate",
+      "argument": 1,
+      "wait": "completed"
+    },
+    "hud.enter": {
+      "capability": "hud.enter",
+      "operation": "objective",
+      "asset": "forest.directive",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "hud.branch_one": {
+      "capability": "hud.branch_one",
+      "operation": "objective",
+      "asset": "forest.directive",
+      "argument": 2,
+      "wait": "requested"
+    },
+    "entry.red": {
+      "capability": "entry.red",
+      "operation": "device",
+      "asset": "entry.device",
+      "argument": 1,
+      "wait": "requested"
+    },
+    "entry.capturing": {
+      "capability": "entry.capturing",
+      "operation": "device",
+      "asset": "entry.device",
+      "argument": 2,
+      "wait": "requested"
+    }
+  },
+  "graphs": {
+    "entry": {
+      "name": "Start persistent Haunted Forest services",
+      "domain": "composition",
+      "steps": [
+        {
+          "id": "activate",
+          "after": [],
+          "commands": [
+            {
+              "id": "services",
+              "binding": "start_services"
+            }
+          ]
+        }
+      ],
+      "receipts": {}
+    },
+    "start": {
+      "name": "Haunted Forest native entry",
+      "domain": "nativeActivity",
+      "steps": [
+        {
+          "id": "entry",
+          "after": [],
+          "commands": [
+            {
+              "id": "entry.main",
+              "binding": "entry.main"
+            },
+            {
+              "id": "entry.approach",
+              "binding": "entry.approach"
+            },
+            {
+              "id": "entry.plate",
+              "binding": "entry.plate"
+            },
+            {
+              "id": "hud.enter",
+              "binding": "hud.enter"
+            },
+            {
+              "id": "entry.red",
+              "binding": "entry.red"
+            }
+          ]
+        },
+        {
+          "id": "plate",
+          "after": [
+            "entry"
+          ],
+          "commands": [
+            {
+              "id": "entry.occupied",
+              "binding": "entry.occupied"
+            }
+          ]
+        },
+        {
+          "id": "capture",
+          "after": [
+            "plate"
+          ],
+          "commands": [
+            {
+              "id": "entry.capture",
+              "binding": "entry.capture"
+            }
+          ]
+        },
+        {
+          "id": "forest",
+          "after": [
+            "capture"
+          ],
+          "commands": [
+            {
+              "id": "entry.capturing",
+              "binding": "entry.capturing"
+            },
+            {
+              "id": "forest.start",
+              "binding": "forest.start"
+            }
+          ]
+        },
+        {
+          "id": "branch_hud",
+          "after": [
+            "forest"
+          ],
+          "commands": [
+            {
+              "id": "hud.branch_one",
+              "binding": "hud.branch_one"
+            }
+          ]
+        }
+      ],
+      "receipts": {
+        "entry.occupied": "entry.occupied",
+        "entry.capture": "entry.capture"
+      }
+    }
+  },
+  "roles": {
+    "persistent": "start"
+  },
+  "entry": "entry",
+  "modules": [
+    "persistent"
+  ],
+  "observations": [],
+  "parameters": {
+    "host.tick_hz": 30,
+    "capture.duration_ms": 8000,
+    "forest.seed": 0,
+    "forest.entry_column": 2,
+    "forest.entry_height": 2,
+    "forest.duration_ms": 900000
+  },
+  "presentation": {
+    "dialogue": {
+      "bank": "0x00000000",
+      "rows": [],
+      "objective_cues": [],
+      "dispatch_timeout_ms": 100,
+      "spacing_ms": 0
+    },
+    "cue_sets": {},
+    "action_sets": {},
+    "binding_tables": {}
+  }
+}

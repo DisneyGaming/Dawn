@@ -1,10 +1,13 @@
 #include "../../../state/activity/gateway/runtime.h"
 #include "../../../state/activity/beyond_infinity/runtime.h"
 #include "../../../state/activity/deep_storage/runtime.h"
+#include "../../../state/activity/hijacked/runtime.h"
 #include "../../../state/activity/deadly_trial/runtime.h"
 #include "../../../state/activity/strike_pact/runtime.h"
 #include <Windows.h>
 #include "deadly_trial_presentation.h"
+#include "hijacked_presentation.h"
+#include "../graphics/hijacked_frame_timing.h"
 #include <intrin.h>
 
 #include <array>
@@ -23,8 +26,11 @@
 #include "omega_forest_recipe.h"
 #include "beyond_infinity_forest_recipe.h"
 #include "../../../state/activity/beyond_infinity/forest_selection.h"
+#include "omega_forest_scope.h"
 #include "omega_enemy_forest_receipts_runtime.h"
 #include "omega_dialogue_bank.h"
+#include "adventure_cue_observer.h"
+#include "adventure_dialogue_observer.h"
 #include "omega_teardown_native.h"
 #include "../../../middleware/crypto/random_bytes.h"
 #include "../../../state/activity/destination/activity_destination_snapshot.h"
@@ -357,8 +363,8 @@ constexpr std::array<std::byte, 16> kRecordProcessorPrefix{
     std::byte{0xB8}, std::byte{0x98}, std::byte{0x78}, std::byte{0x00},
     std::byte{0x00}, std::byte{0xE8}, std::byte{0xAE}, std::byte{0x56}};
 using RecordProcessorFn = std::uint64_t(__fastcall*)(void*, void*) noexcept;
-/** AllRecordsInBubbleSeeded (+0x4D6530, on container+0x28): the commit tick's veto. Our own
- * empty forest-group records are the only unseeded ones in the forest bubbles, so when the
+/** AllRecordsInBubbleSeeded (+0x4D6530, on container+0x28): the commit tick's veto. In the
+ * committed Omega context, our own empty forest-group records are unseeded, so when the
  * pending set is exclusively forest bubbles (8..14), force the verdict TRUE: the sweep that
  * follows (Bubble_InstantiateReplicatedContent) is exactly the native path that constructs
  * the replicated map-generator worker. Lighthouse (15) and every non-Omega state keep the
@@ -371,7 +377,6 @@ constexpr std::array<std::byte, 16> kSeedCheckPrefix{
     std::byte{0x8B}, std::byte{0xEC}, std::byte{0x48}, std::byte{0x83}};
 constexpr std::size_t kSeedCheckPoolOffset = 0x28U;
 constexpr std::size_t kMaskBOffset = 0x10EC4U;
-constexpr std::uint32_t kForestBubbleMask = 0x7F00U;
 using SeedCheckFn = std::uint64_t(__fastcall*)(void*) noexcept;
 hooking::detour::Handle g_seedCheckHandle{};
 std::atomic<SeedCheckFn> g_seedCheckOriginal{nullptr};
@@ -1160,11 +1165,14 @@ __declspec(noinline) void __fastcall dialogue_scan(std::byte* component) noexcep
             log_record_zero("scan", component, count);
         }
     }
+    hijacked_presentation::update_dialogue(component);
     deadly_trial_presentation::update_dialogue(component);
     const DialogueScan original = g_scanOriginal.load(std::memory_order_acquire);
+    const auto adventureBefore=adventure_dialogue_observer::begin(component);
     if (original != nullptr) {
         original(component);
     }
+    (void)adventure_dialogue_observer::finish(component,adventureBefore,original!=nullptr);
     if (component != nullptr && tower_watch_forced()) {
         const std::uint64_t time =
             read_value<std::uint64_t>(component + kRecordTimeOffset);
@@ -1231,6 +1239,11 @@ __declspec(noinline) void __fastcall dialogue_dispatch(std::byte* component,
                 beyondDispatch=true;
                 const auto generation=read_value<std::uint32_t>(component+kRecordGenerationOffset+static_cast<std::size_t>(index)*0x20U);
                 state::activity::deep_storage::observe_submission(gatewayDispatchRun,self,offset,bank,static_cast<std::uint8_t>(index),generation);
+            }
+            if(bank==state::activity::hijacked::kBank) {
+                beyondDispatch=true;
+                const auto generation=read_value<std::uint32_t>(component+kRecordGenerationOffset+static_cast<std::size_t>(index)*0x20U);
+                state::activity::hijacked::observe_submission(gatewayDispatchRun,self,offset,bank,static_cast<std::uint8_t>(index),generation);
             }
         }
         if (component != nullptr && index >= 0 && index < 34) {
@@ -1543,8 +1556,10 @@ __declspec(noinline) void __fastcall directive_apply(std::byte* component,
                                                         ? capture_tower_watch_slots()
                                                         : TowerWatchSnapshotSet{};
     const DialogueApply original = hooking::await_original(g_directiveOriginal);
+    const auto adventureBefore=adventure_cue_observer::begin(component,packet);
     if (original != nullptr) {
         original(component, packet);
+        static_cast<void>(adventure_cue_observer::finish(component,adventureBefore));
     }
     const std::uint32_t cueAfter = inspectTowerWatch
                                        ? read_value<std::uint32_t>(component + 0x190U)
@@ -1820,25 +1835,28 @@ void apply_forest_tuner(std::byte* record) noexcept {
 
 #include "beyond_infinity_forest_runtime.inl"
 
-/** Select by committed mission and worker configuration, not the last cached sensor pointer. */
-[[nodiscard]] bool omega_forest_worker(void* instance) noexcept {
-    const auto* bytes = static_cast<const std::byte*>(instance);
-    if (bytes == nullptr || !readable(bytes, omega_forest::kWorkerPrefixSize)
-        || !omega_forest::matches({bytes, omega_forest::kWorkerPrefixSize}, "mission_scot")
-        || state::activity::world_phase() == state::activity::WorldPhase::idle) {
+/** A cached sensor or configured Omega default does not identify the current world. */
+[[nodiscard]] bool omega_forest_context() noexcept {
+    const bool worldActive = state::activity::world_phase() != state::activity::WorldPhase::idle;
+    if (!worldActive) {
         return false;
     }
     const auto activity = state::activity::newest_joined_activity();
-    if (static_cast<bool>(activity)) {
-        state::activity::destination::DestinationSelection selected{};
-        return state::activity::destination::snapshot(activity, selected)
-               && std::string_view(reinterpret_cast<const char*>(selected.packageName.data()),
-                                   selected.packageNameLength) == "mission_scot";
+    state::activity::destination::DestinationSelection selected{};
+    if (!static_cast<bool>(activity) || !state::activity::destination::snapshot(activity, selected)
+        || selected.packageNameLength > selected.packageName.size()) {
+        return false;
     }
-    // Construction can precede the first join. The effective selection includes built-in Omega.
-    state::activity::forced::ForcedDestination selected{};
-    state::activity::forced::snapshot(selected);
-    return std::string_view(selected.packageName.data(), selected.packageNameLength) == "mission_scot";
+    return omega_forest::legacy_mutation_allowed(worldActive, true,
+        {reinterpret_cast<const char*>(selected.packageName.data()), selected.packageNameLength});
+}
+
+/** Recipe, solver and owner-authority interventions also require the proven worker family. */
+[[nodiscard]] bool omega_forest_worker(void* instance) noexcept {
+    const auto* bytes = static_cast<const std::byte*>(instance);
+    return omega_forest_context() && bytes != nullptr
+           && readable(bytes, omega_forest::kWorkerPrefixSize)
+           && omega_forest::matches({bytes, omega_forest::kWorkerPrefixSize}, "mission_scot");
 }
 
 [[nodiscard]] std::uint32_t omega_forest_run_seed() noexcept {
@@ -1937,14 +1955,16 @@ __declspec(noinline) std::uint64_t __fastcall forest_worker_tick_hook(void* inst
     prepare_omega_forest(instance);
     const bool beyondForest=beyond_forest_runtime::selected();
     if(beyondForest) { beyond_forest_runtime::prepare(instance); }
-    // TUNER IGNITION: the worker reads the sensor authority record at instance+0x180 through
+    const bool legacyMutation = omega_forest_context();
+    // Omega-only diagnostic ignition; generic native forest workers keep their authority input.
+    // The worker reads the sensor authority record at instance+0x180 through
     // presence-gated accessors (+0x2C mask: bit0 seed@+0x00, bit1 mode@+0x04, bit2 the 4-group
     // anchor block @+0x08 (see forest_tuner_record.h), bit3 enable@+0x2D, bits 4..6 ints
     // @+0x40/44/48; f32s @+0x30/34 and ints @+0x38/3C use -1 sentinels). Values come from
     // the Forest menu's shared diagnostic dial, applied before every tick; any change makes the worker's
     // change-detect rebuild the whole layout in-place â€” a live combination dial.
     void* const sensor = g_forestSensorPtr.load(std::memory_order_acquire);
-    if (sensor != nullptr && !beyondForest) {
+    if (legacyMutation && sensor != nullptr && !beyondForest) {
         auto* const record = static_cast<std::byte*>(sensor) + kForestAuthorityOffset;
         if (readable(record, 0x60U)) {
             const std::uint8_t mask = read_value<std::uint8_t>(record + 0x2CU);
@@ -1965,7 +1985,7 @@ __declspec(noinline) std::uint64_t __fastcall forest_worker_tick_hook(void* inst
     // Entry force-toggle: the dial hands an entry index; call the worker's own per-entry
     // activate (+0x10020A0, the host-sync branch's toggle) on the tick thread to learn which
     // entry is the stairs anchor piece.
-    {
+    if (legacyMutation) {
         static std::array<std::atomic<void*>, forest_tuner::State::kWorkerSlots> s_workers{};
         int workerSlot = -1;
         for (std::size_t slot = 0; slot < s_workers.size() && workerSlot < 0; ++slot) {
@@ -2107,7 +2127,8 @@ __declspec(noinline) std::uint64_t __fastcall forest_worker_tick_hook(void* inst
 __declspec(noinline) std::uint64_t __fastcall seed_check_hook(void* poolRoot) noexcept {
     const SeedCheckFn original = g_seedCheckOriginal.load(std::memory_order_acquire);
     const std::uint64_t verdict = original != nullptr ? original(poolRoot) : 0;
-    if (static_cast<std::uint8_t>(verdict) != 0U || poolRoot == nullptr) {
+    if (static_cast<std::uint8_t>(verdict) != 0U || poolRoot == nullptr
+        || !omega_forest_context()) {
         return verdict;
     }
     std::uint32_t maskB = 0;
@@ -2121,7 +2142,8 @@ __declspec(noinline) std::uint64_t __fastcall seed_check_hook(void* poolRoot) no
     } __except (EXCEPTION_EXECUTE_HANDLER) {
         return verdict;
     }
-    if (maskB == 0U || (maskB & ~kForestBubbleMask) != 0U) {
+    const auto scopedVerdict = omega_forest::legacy_seed_verdict(true, verdict, maskB);
+    if (scopedVerdict == verdict) {
         return verdict;
     }
     const std::uint32_t count = g_seedForceCount.fetch_add(1, std::memory_order_relaxed) + 1U;
@@ -2135,7 +2157,7 @@ __declspec(noinline) std::uint64_t __fastcall seed_check_hook(void* poolRoot) no
                              {line.data(), static_cast<std::size_t>(written)});
         }
     }
-    return 1;
+    return scopedVerdict;
 }
 
 __declspec(noinline) std::uint64_t __fastcall record_processor_hook(void* container,
@@ -2198,7 +2220,10 @@ __declspec(noinline) void __fastcall roster_apply_hook(void* context,const void*
             if(!lease.valid()) { retirement_log("before_guard",token,UINT32_MAX,false); }
         }
     }
-    original(context,delta);
+    {
+        const graphics::hijacked_frame_timing::PostSpan timing(graphics::hijacked_frame_timing::Kind::roster_apply);
+        original(context,delta);
+    }
     if(!scope.accepts_side_effects() || !lease.valid()) { return; }
     if(state::activity::mission_run_generation()!=token.run
         || ending::retirement_request(token.run)!=token

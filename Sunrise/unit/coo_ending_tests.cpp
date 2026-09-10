@@ -6,6 +6,9 @@
 #include "state/activity/coo/omega_projection.h"
 #include "middleware/encoding/bit_writer.h"
 #include "fixtures/coo_ending_legacy.h"
+#ifdef OMEGA_PORT_LOCAL
+#include "fixtures/hijacked_full_roster.h"
+#endif
 
 namespace coo=sunrise::state::activity::coo;
 namespace ending=sunrise::state::activity::omega_ending;
@@ -143,7 +146,46 @@ void delayed_receipts() {
     c.advance(400,false);CHECK(c.authority().failed);CHECK(c.diagnostics().failure==coo::Failure::queueOverflow);
     c.reset();CHECK(c.request_preview(2,500));CHECK(!c.selected());CHECK(c.authority().bookendState);
 }
+
+#ifdef OMEGA_PORT_LOCAL
+void hijacked_full_packet() {
+    hijacked_fixture::Startup fixture;auto& snapshot=fixture.snapshot;
+    CHECK(snapshot.roster.groupCount==16 && snapshot.roster.topLevelGroupCount==3);
+    CHECK(snapshot.roster.bubbleSubBlocks.size()==9 && !snapshot.archiveOmega);
+    std::array<std::byte,8192> packet{};std::size_t size{};
+    CHECK(wire::encode_sensor_auth_update(snapshot,packet,size) && size==2736);
+    // Exact frame emitted by the shipped opening graph after landing: row0 and
+    // objective0 publish before any combatant or object source becomes managed.
+    auto& frame=snapshot.hijacked;frame.enabled=true;frame.spawnGeneration=385;
+    frame.activeRow=0;frame.generations[0]=385;
+    frame.presentation={0xAC66AAD0U,0U,1,{{0xF5737F85U,0x80B42335U,31,2},{}},true,true};
+    for(const auto ticks:{std::uint64_t{0},std::uint64_t{4712400}}) {
+        snapshot.gameplayClockTicks=ticks;
+        CHECK(wire::encode_sensor_auth_update(snapshot,packet,size) && size==5868);
+        for(const auto& group:std::span(snapshot.roster.groups).first(snapshot.roster.groupCount)) {
+            for(std::size_t slot=0;slot<group.slotTypes.size();++slot) {
+                auto measure=bits::Writer::measuring();
+                CHECK(wire::legacy_write_object_block(measure,snapshot,group.key,group.slotTypes[slot],
+                    group.slotIndices[slot],group.slotFlags[slot],
+                    group.key==snapshot.roster.playerKeyGroup && group.slotTypes[slot]==13));
+            }
+        }
+    }
+    packet.fill(std::byte{0x5A});const auto before=packet;
+    CHECK(!wire::encode_sensor_auth_update(snapshot,std::span(packet).first(5867),size));
+    CHECK(size==0 && packet==before); // Measurement must reject before mutating output.
+    frame.generations[0]=0;
+    CHECK(!wire::encode_sensor_auth_update(snapshot,packet,size));
+    CHECK(size==0 && packet==before); // Invalid queued dialogue cannot partially publish a roster.
+    frame.generations[0]=385;
+    CHECK(wire::encode_sensor_auth_update(snapshot,packet,size) && size==5868);
+}
+#endif
+
 int main() {
+#ifdef OMEGA_PORT_LOCAL
+    hijacked_full_packet();
+#endif
     CHECK(coo::Executor::valid(coo::ending::kDefinition));CHECK(coo::Executor::valid(coo::ending::kRetry));
     accepted_timeline();paths();delayed_receipts();
     std::printf("PASS: %u checks; %u frozen ending comparisons; %u wire bodies; skip/retry/deadline/retirement/handoff/FIFO/reset parity\n",checks,comparisons,bodies);

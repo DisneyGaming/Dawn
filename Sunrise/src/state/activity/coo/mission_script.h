@@ -12,6 +12,11 @@ struct ModuleCapability final { std::string_view id; ModuleBinding binding{}; };
 struct FactCapability final { std::string_view id; std::uint8_t fact{}; };
 struct EventCapability final { std::string_view set,id; std::uint32_t event{}; std::uint8_t allowedCycles{}; };
 struct MarkerCapability final { std::string_view id;MarkerTarget target; };
+struct ParameterCapability final {
+    std::string_view id;
+    std::uint32_t minimum{}, maximum{}, defaultValue{};
+    bool liveEditable{};
+};
 struct Profile final {
     std::string_view id,schemaName;
     Schema schema{};
@@ -23,6 +28,7 @@ struct Profile final {
     std::span<const EventCapability> events;
     std::span<const PresentationTable> tables;
     std::span<const MarkerCapability> markers{};
+    std::span<const ParameterCapability> parameters{};
 };
 // Validate every executable specification against trusted native authority,
 // independent of authored graph names, counts, or command order.
@@ -34,11 +40,17 @@ public:
     ~MissionDocument();
     MissionDocument(const MissionDocument&)=delete;
     MissionDocument& operator=(const MissionDocument&)=delete;
+    // Explicit JSON policy compatibility for registered native activity profiles.
+    [[nodiscard]] static std::unique_ptr<MissionDocument> parse(std::string_view text,const Profile& profile,std::string& error) noexcept;
+    [[nodiscard]] static std::unique_ptr<MissionDocument> read_native_policy(const std::filesystem::path& path,const Profile& profile,std::string& error) noexcept;
     [[nodiscard]] static std::unique_ptr<MissionDocument> parse_lua(std::string_view text,const Profile& profile,std::string& error,std::string_view sourceName="mission.lua") noexcept;
     // Only .lua files are accepted; extension matching ignores ASCII case.
     [[nodiscard]] static std::unique_ptr<MissionDocument> read(const std::filesystem::path& path,const Profile& profile,std::string& error) noexcept;
     [[nodiscard]] const Views& views() const noexcept;
     [[nodiscard]] std::uint64_t fingerprint() const noexcept;
+    // Exact semantic comparison, ignoring object-key order and root policy values.
+    // Hashes identify revisions for diagnostics; they do not authorize a live change.
+    [[nodiscard]] bool same_structure(const MissionDocument& other) const noexcept;
 private:
     MissionDocument();
     struct Storage;

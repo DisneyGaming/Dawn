@@ -11,10 +11,12 @@ struct Identity { std::uint32_t key{};std::uint8_t type{},pad{};std::int16_t slo
 // and sync record. Reconnect those existing objects before native packet decode.
 // Never write the lifetime body: the host's real state-6 packet must apply it.
 template<class Read,class Native>
-Result repair(Read& read,Native& native,std::uintptr_t roster) noexcept {
+Result repair(Read& read,Native& native,std::uintptr_t roster,std::uint32_t expectedScenario=0x80B2E043U) noexcept {
+    // Only the two missions with verified global lifetime ownership use this repair.
+    if(expectedScenario!=0x80B2E043U && expectedScenario!=0x80B4206AU) {return Result::unavailable;}
     std::uint32_t owner{},scenario{};std::uintptr_t activity{},context{};
     if(!roster || !read.value(roster+0x820,owner) || !read.resolve(owner,activity)
-        || activity+0x28!=roster || !read.value(activity+0x24,scenario) || scenario!=0x80B2E043U
+        || activity+0x28!=roster || !read.value(activity+0x24,scenario) || scenario!=expectedScenario
         || !(context=native.context())) { return Result::unavailable; }
     std::uint32_t count{};
     if(!read.value(context+8,count) || count>128) { return Result::unavailable; }

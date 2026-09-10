@@ -8,6 +8,7 @@
 #include "../../client/hooks/retail_log/retail_log_enqueue_observer.h"
 #include "../../state/activity/definition.h"
 #include "../../state/activity/runtime.h"
+#include "../../state/gameplay/replication_roles.h"
 #include "endpoint/gameplay_endpoint.h"
 #include "gameplay_log.h"
 #include "group/group_host.h"
@@ -200,6 +201,9 @@ template <class SourceActivity>
     candidate.regionIndex = regionIndex;
     candidate.ambassadorSlot = ambassador_slot(localMemberSlot);
     candidate.present = true;
+    state::gameplay::replication::Address roleAddress{};
+    for(std::size_t i=0;i<roleAddress.size();++i)roleAddress[i]=std::to_integer<unsigned char>(candidate.address[i]);
+    (void)state::gameplay::replication::publish_control_host(join.machineId,roleAddress);
     return Skip::none;
 }
 
@@ -265,6 +269,9 @@ bool acquire_advertisement_snapshot(state::activity::ActivityInstanceKey source,
     citizen.regionIndex = region;
     citizen.ambassadorSlot = ambassador_slot(kQueriedMemberSlot);
     citizen.present = true;
+    state::gameplay::replication::Address roleAddress{};
+    for(std::size_t i=0;i<roleAddress.size();++i)roleAddress[i]=std::to_integer<unsigned char>(citizen.address[i]);
+    (void)state::gameplay::replication::publish_control_host(join.machineId,roleAddress);
     client::hooks::retail_log::register_gameplay_join_descriptor(citizen.descriptor.data(),
                                                                  citizen.descriptor.size(),
                                                                  region,

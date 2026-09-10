@@ -1,3 +1,4 @@
+#include "hijacked_placements.h"
 #include "bootflow_hook_lifecycle.h"
 
 #include <Windows.h>
@@ -15,6 +16,11 @@
 #include "prologue_filler_ready_lifecycle.h"
 #include "omega_vex_lattice_probe.h"
 #include "omega_arc_charge_receipts.h"
+#include "public_event_participant_observer.h"
+#include "native_replication_observer.h"
+#include "ambient_population_named_observer.h"
+#include "native_capture_observer.h"
+#include "vance_contact_observer.h"
 #include "omega_rescue_scene_receipts.h"
 #include "deadly_trial_revival.h"
 #include "deadly_trial_lifetime.h"
@@ -243,11 +249,17 @@ bool install() noexcept {
     const bool omegaNavigation = install_omega_navigation();
     const bool omegaLairCinematic = install_omega_lair_cinematic();
     const bool omegaLairReceipts = install_omega_enemy_lair_receipts();
+    const bool vanceContact = install_vance_contact_observer();
+    const bool ambientNamedPoints = install_ambient_population_named_observer();
+    const bool nativeCapture = install_native_capture_observer();
+    const bool replicationObserver = native_replication_observer::install();
     const bool omegaCannonReceipt = install_omega_first_cannon_receipt();
     const bool omegaArcCharge = install_omega_arc_charge_receipts();
+    const bool publicEventParticipant = public_event_participant_observer::install();
     const bool omegaRescueScenes = install_omega_rescue_scene_receipts();
     const bool trialRevival = deadly_trial_revival::install();
     const bool trialLifetime = deadly_trial_lifetime::install();
+    const bool hijackedPlacements = hijacked_placements::install();
     const bool omegaLatticeProbe = omega_vex_lattice_probe::install();
     const bool prologueFiller = install_prologue_filler_ready();
     const bool regionPrivate = install_region_private();
@@ -262,7 +274,7 @@ bool install() noexcept {
                         || omegaDirectivePresentationInstalled
                         || omegaSceneRetirementInstalled
                         || type31CaptureInstalled || dialogueDispatchProbe || omegaNavigation || omegaLairCinematic
-                        || omegaLairReceipts || omegaCannonReceipt || omegaArcCharge || omegaRescueScenes || trialRevival || trialLifetime
+                        || omegaLairReceipts || vanceContact || ambientNamedPoints || nativeCapture || replicationObserver || omegaCannonReceipt || omegaArcCharge || publicEventParticipant || omegaRescueScenes || trialRevival || trialLifetime || hijackedPlacements
                         || omegaLatticeProbe
                         || featureFlagInstalled
                         || prologueFiller || regionPrivate
@@ -277,7 +289,7 @@ bool install() noexcept {
                               && omegaIkoraOrigin && omegaDirectivePresentation
                               && omegaSceneRetirement && type31Capture && dialogueDispatchProbe
                               && omegaNavigation && omegaLairCinematic
-                              && omegaLairReceipts && omegaCannonReceipt && omegaArcCharge && omegaRescueScenes && trialRevival && trialLifetime
+                              && omegaLairReceipts && vanceContact && ambientNamedPoints && nativeCapture && omegaCannonReceipt && omegaArcCharge && publicEventParticipant && omegaRescueScenes && trialRevival && trialLifetime && hijackedPlacements
                               && featureFlag && prologueFiller && regionPrivate
                               && worldStep && spawn && towerfallExecutor && fade;
     // Admission opens only for this fresh lifecycle and before its installed publication. The
@@ -296,13 +308,19 @@ void quiesce() noexcept {
     g_acceptLateInstalls.store(false, std::memory_order_release);
     ReleaseSRWLockExclusive(&g_lateInstallLock);
 
+    hijacked_placements::quiesce();
     quiesce_spawn_hold();
     quiesce_towerfall_executor_bootstrap();
     quiesce_omega_navigation();
     quiesce_omega_lair_cinematic();
     quiesce_omega_enemy_lair_receipts();
+    quiesce_vance_contact_observer();
+    quiesce_ambient_population_named_observer();
+    quiesce_native_capture_observer();
+    native_replication_observer::quiesce();
     quiesce_omega_first_cannon_receipt();
     quiesce_omega_arc_charge_receipts();
+    public_event_participant_observer::quiesce();
     quiesce_omega_rescue_scene_receipts();
     deadly_trial_revival::quiesce();
     deadly_trial_lifetime::quiesce();
@@ -353,6 +371,7 @@ bool uninstall() noexcept {
         return false;
     }
     uninstall_world_step();
+    if (!hijacked_placements::uninstall()) { return false; }
     uninstall_fade_release();
 
     uninstall_secure_channel_predicate_probe();
@@ -369,8 +388,13 @@ bool uninstall() noexcept {
     if (!uninstall_omega_navigation()) { return false; }
     if (!uninstall_omega_lair_cinematic()) { return false; }
     if (!uninstall_omega_enemy_lair_receipts()) { return false; }
+    if (!uninstall_vance_contact_observer()) { return false; }
+    if (!uninstall_ambient_population_named_observer()) { return false; }
+    if (!uninstall_native_capture_observer()) { return false; }
+    if (!native_replication_observer::uninstall()) { return false; }
     if (!uninstall_omega_first_cannon_receipt()) { return false; }
     if (!uninstall_omega_arc_charge_receipts()) { return false; }
+    if (!public_event_participant_observer::uninstall()) { return false; }
     if (!uninstall_omega_rescue_scene_receipts()) { return false; }
     if (!deadly_trial_revival::uninstall()) { return false; }
     if (!deadly_trial_lifetime::uninstall()) { return false; }

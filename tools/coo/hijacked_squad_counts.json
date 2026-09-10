@@ -1,0 +1,809 @@
+{
+  "version": 1,
+  "policy": "Explicit per-source native category request counts. Three-actor infantry/composite squads; individual Harpies, snipers, elites, explicit members and boss stay single; mixed groups request one elite plus two escorts. Mists composite reinforcement sources7/8/9/10/12/19/23/24/25 request two; standing infantry remains three.",
+  "provenance": {
+    "nativeEvidence": "build/coo/hijacked-research/native-bindings.json and placement_catalog.h; category/template/producer identity is recovered, original script multiplicity is not.",
+    "userEvidence": "User reports typical groups of three and asks to preserve real single enemies; parent approved selective infantry/composite correction. Latest request reduces only Mists reinforcement groups from three to two.",
+    "reference": "https://www.youtube.com/watch?v=KYQLhatconk",
+    "referenceStatus": "Web fetch failed; no gameplay-frame counts asserted.",
+    "excludedCountEvidence": [
+      "Six variant-choice arrays",
+      "Alternative placement-point cardinality",
+      "Number of visible spawn effects"
+    ]
+  },
+  "sources": [
+    {
+      "registry": "153E22CD",
+      "source": 1,
+      "definition": "80B42188",
+      "name": "intro_harpy01_squad",
+      "categories": [
+        "6116E417"
+      ],
+      "requested": [
+        1
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "Preserve individually placed simple-point Harpy or sniper/elite; no evidence supports multiplying this individual producer."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 2,
+      "definition": "80B4218E",
+      "name": "intro_goblin01_squad",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor infantry squad using the original category, template, and placement rule."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 4,
+      "definition": "80B421A8",
+      "name": "sml_arena_harpy01_squad",
+      "categories": [
+        "6116E417"
+      ],
+      "requested": [
+        1
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "Preserve individually placed simple-point Harpy or sniper/elite; no evidence supports multiplying this individual producer."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 5,
+      "definition": "80B421C4",
+      "name": "sml_arena_harpy02_squad",
+      "categories": [
+        "6116E417"
+      ],
+      "requested": [
+        1
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "Preserve individually placed simple-point Harpy or sniper/elite; no evidence supports multiplying this individual producer."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 6,
+      "definition": "80B421C7",
+      "name": "sml_arena_harpy03_squad",
+      "categories": [
+        "6116E417"
+      ],
+      "requested": [
+        1
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "Preserve individually placed simple-point Harpy or sniper/elite; no evidence supports multiplying this individual producer."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 7,
+      "definition": "80B421CB",
+      "name": "sml_arena_goblin01_squad",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        2
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed two-actor Mists reinforcement squad; preserve native composite producer, category, template and placement rule."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 8,
+      "definition": "80B421CE",
+      "name": "sml_arena_goblin02_squad",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        2
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed two-actor Mists reinforcement squad; preserve native composite producer, category, template and placement rule."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 9,
+      "definition": "80B421D4",
+      "name": "sml_arena_exit01_squad",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        2
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed two-actor Mists reinforcement squad; preserve native composite producer, category, template and placement rule."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 10,
+      "definition": "80B421D7",
+      "name": "sml_arena_exit02_squad",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        2
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed two-actor Mists reinforcement squad; preserve native composite producer, category, template and placement rule."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 12,
+      "definition": "80B421DE",
+      "name": "lrg_arena_front01_squad",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        2
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed two-actor Mists reinforcement squad; preserve native composite producer, category, template and placement rule."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 13,
+      "definition": "80B421E1",
+      "name": "lrg_arena_mid01_squad",
+      "categories": [
+        "A21827B6"
+      ],
+      "requested": [
+        1
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "Preserve individually placed simple-point Harpy or sniper/elite; no evidence supports multiplying this individual producer."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 14,
+      "definition": "80B421E4",
+      "name": "lrg_arena_back_left01_squad",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor infantry squad using the original category, template, and placement rule."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 15,
+      "definition": "80B421E7",
+      "name": "lrg_arena_back_right01_squad",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor infantry squad using the original category, template, and placement rule."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 16,
+      "definition": "80B421EA",
+      "name": "lrg_arena_back_sniper_left01_squad",
+      "categories": [
+        "B4009D19"
+      ],
+      "requested": [
+        1
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "Preserve individually placed simple-point Harpy or sniper/elite; no evidence supports multiplying this individual producer."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 17,
+      "definition": "80B421F0",
+      "name": "lrg_arena_back_sniper_right01_squad",
+      "categories": [
+        "B4009D19"
+      ],
+      "requested": [
+        1
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "Preserve individually placed simple-point Harpy or sniper/elite; no evidence supports multiplying this individual producer."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 18,
+      "definition": "80B421F3",
+      "name": "lrg_arena_harpy01_squad",
+      "categories": [
+        "6116E417"
+      ],
+      "requested": [
+        1
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "Preserve individually placed simple-point Harpy or sniper/elite; no evidence supports multiplying this individual producer."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 19,
+      "definition": "80B421F6",
+      "name": "lrg_arena_exit01_squad",
+      "categories": [
+        "6116E417"
+      ],
+      "requested": [
+        2
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed two-actor Mists reinforcement squad; preserve native composite producer, category, template and placement rule."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 21,
+      "definition": "80B421FA",
+      "name": "hydra_hydra_squad",
+      "categories": [
+        "E7FA1537"
+      ],
+      "requested": [
+        1
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "Preserve the individual producer with an explicit authored member (Hydra, dropship pilot, or final Minotaur)."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 23,
+      "definition": "80B421FE",
+      "name": "hydra_goblin01_squad",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        2
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed two-actor Mists reinforcement squad; preserve native composite producer, category, template and placement rule."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 24,
+      "definition": "80B42201",
+      "name": "hydra_goblin02_squad",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        2
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed two-actor Mists reinforcement squad; preserve native composite producer, category, template and placement rule."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 25,
+      "definition": "80B42204",
+      "name": "hydra_goblin03_squad",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        2
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed two-actor Mists reinforcement squad; preserve native composite producer, category, template and placement rule."
+    },
+    {
+      "registry": "153E22CD",
+      "source": 26,
+      "definition": "80B42214",
+      "name": "hydra_minotaur01_squad",
+      "categories": [
+        "A21827B6"
+      ],
+      "requested": [
+        1
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "Preserve individually placed simple-point Harpy or sniper/elite; no evidence supports multiplying this individual producer."
+    },
+    {
+      "registry": "3E9B74F3",
+      "source": 1,
+      "definition": "80B422C8",
+      "name": "mists_harpy01_squad",
+      "categories": [
+        "6116E417"
+      ],
+      "requested": [
+        1
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "Preserve individually placed simple-point Harpy or sniper/elite; no evidence supports multiplying this individual producer."
+    },
+    {
+      "registry": "3E9B74F3",
+      "source": 2,
+      "definition": "80B422CB",
+      "name": "mists_harpy02_squad",
+      "categories": [
+        "6116E417"
+      ],
+      "requested": [
+        1
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "Preserve individually placed simple-point Harpy or sniper/elite; no evidence supports multiplying this individual producer."
+    },
+    {
+      "registry": "3E9B74F3",
+      "source": 3,
+      "definition": "80B422CE",
+      "name": "mists_goblin01_squad",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor infantry squad using the original category, template, and placement rule."
+    },
+    {
+      "registry": "3E9B74F3",
+      "source": 4,
+      "definition": "80B422D1",
+      "name": "mists_goblin02_squad",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor infantry squad using the original category, template, and placement rule."
+    },
+    {
+      "registry": "3E9B74F3",
+      "source": 5,
+      "definition": "80B422D4",
+      "name": "mists_hobgoblin01_squad",
+      "categories": [
+        "B4009D19"
+      ],
+      "requested": [
+        2
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User requested two Hobgoblins in the opening ledge reinforcement."
+    },
+    {
+      "registry": "3E9B74F3",
+      "source": 6,
+      "definition": "80B422D7",
+      "name": "mists_harpy03_squad",
+      "categories": [
+        "6116E417"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor squad on its authored composite producer; point alternatives do not determine count."
+    },
+    {
+      "registry": "3E9B74F3",
+      "source": 7,
+      "definition": "80B422DC",
+      "name": "mists_goblin03_squad",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor infantry squad using the original category, template, and placement rule."
+    },
+    {
+      "registry": "3E9B74F3",
+      "source": 9,
+      "definition": "80B422E2",
+      "name": "echoes_harpy01_squad",
+      "categories": [
+        "6116E417"
+      ],
+      "requested": [
+        1
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "Preserve individually placed simple-point Harpy or sniper/elite; no evidence supports multiplying this individual producer."
+    },
+    {
+      "registry": "3E9B74F3",
+      "source": 10,
+      "definition": "80B422E5",
+      "name": "echoes_goblin01_squad",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor infantry squad using the original category, template, and placement rule."
+    },
+    {
+      "registry": "3E9B74F3",
+      "source": 11,
+      "definition": "80B422E8",
+      "name": "echoes_intro_harpy_squad",
+      "categories": [
+        "6116E417"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor squad on its authored composite producer; point alternatives do not determine count."
+    },
+    {
+      "registry": "3E9B74F3",
+      "source": 12,
+      "definition": "80B422EB",
+      "name": "echoes_intro_goblin_squad",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor infantry squad using the original category, template, and placement rule."
+    },
+    {
+      "registry": "3E9B74F3",
+      "source": 13,
+      "definition": "80B422EE",
+      "name": "echoes_minotaur01_squad",
+      "categories": [
+        "A21827B6",
+        "B284C948"
+      ],
+      "requested": [
+        1,
+        2
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "One native elite category plus two actors from the authored escort category."
+    },
+    {
+      "registry": "3E9B74F3",
+      "source": 14,
+      "definition": "80B422F1",
+      "name": "echoes_hobgoblin02_squad",
+      "categories": [
+        "B4009D19"
+      ],
+      "requested": [
+        1
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "Preserve individually placed simple-point Harpy or sniper/elite; no evidence supports multiplying this individual producer."
+    },
+    {
+      "registry": "3E9B74F3",
+      "source": 15,
+      "definition": "80B422F4",
+      "name": "echoes_minotaur02_squad",
+      "categories": [
+        "A21827B6"
+      ],
+      "requested": [
+        1
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "Preserve individually placed simple-point Harpy or sniper/elite; no evidence supports multiplying this individual producer."
+    },
+    {
+      "registry": "3E9B74F3",
+      "source": 16,
+      "definition": "80B422F8",
+      "name": "echoes_minotaur03_squad",
+      "categories": [
+        "A21827B6",
+        "B284C948"
+      ],
+      "requested": [
+        1,
+        2
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "One native elite category plus two actors from the authored escort category."
+    },
+    {
+      "registry": "3E9B74F3",
+      "source": 17,
+      "definition": "80B422FC",
+      "name": "echoes_harpy02_squad",
+      "categories": [
+        "6116E417"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor squad on its authored composite producer; point alternatives do not determine count."
+    },
+    {
+      "registry": "3E9B74F3",
+      "source": 18,
+      "definition": "80B422FF",
+      "name": "echoes_dropship_fallen01_squad",
+      "categories": [
+        "6DCFB1B9"
+      ],
+      "requested": [
+        1
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "Preserve the individual producer with an explicit authored member (Hydra, dropship pilot, or final Minotaur)."
+    },
+    {
+      "registry": "3E9B74F3",
+      "source": 20,
+      "definition": "80B42302",
+      "name": "echoes_dropship_fallen01_servitor_squad",
+      "categories": [
+        "02FA1E45",
+        "7C5D6B8A"
+      ],
+      "requested": [
+        1,
+        2
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "One native elite category plus two actors from the authored escort category."
+    },
+    {
+      "registry": "3E9B74F3",
+      "source": 21,
+      "definition": "80B42307",
+      "name": "echoes_dropship_fallen01_captain_squad",
+      "categories": [
+        "4DC4AACB",
+        "7C5D6B8A"
+      ],
+      "requested": [
+        1,
+        2
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "One native elite category plus two actors from the authored escort category."
+    },
+    {
+      "registry": "D997395E",
+      "source": 1,
+      "definition": "80B42392",
+      "name": "sq_intro_goblin01",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor infantry squad using the original category, template, and placement rule."
+    },
+    {
+      "registry": "D997395E",
+      "source": 2,
+      "definition": "80B42395",
+      "name": "sq_intro_fanatic01",
+      "categories": [
+        "7899B7A7"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor infantry squad using the original category, template, and placement rule."
+    },
+    {
+      "registry": "D997395E",
+      "source": 3,
+      "definition": "80B423A5",
+      "name": "sq_intro_hobgoblin01",
+      "categories": [
+        "B4009D19"
+      ],
+      "requested": [
+        1
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "Preserve individually placed simple-point Harpy or sniper/elite; no evidence supports multiplying this individual producer."
+    },
+    {
+      "registry": "D997395E",
+      "source": 5,
+      "definition": "80B423A8",
+      "name": "sq_mid_goblin01",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor infantry squad using the original category, template, and placement rule."
+    },
+    {
+      "registry": "D997395E",
+      "source": 6,
+      "definition": "80B423AC",
+      "name": "sq_mid_goblin02",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor infantry squad using the original category, template, and placement rule."
+    },
+    {
+      "registry": "D997395E",
+      "source": 27,
+      "definition": "80B423B8",
+      "name": "sq_final_plat_goblin01",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor infantry squad using the original category, template, and placement rule."
+    },
+    {
+      "registry": "D997395E",
+      "source": 28,
+      "definition": "80B423BB",
+      "name": "sq_final_plat_goblin02",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor infantry squad using the original category, template, and placement rule."
+    },
+    {
+      "registry": "D997395E",
+      "source": 29,
+      "definition": "80B423C1",
+      "name": "sq_final_harpy01",
+      "categories": [
+        "6116E417"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor squad on its authored composite producer; point alternatives do not determine count."
+    },
+    {
+      "registry": "D997395E",
+      "source": 30,
+      "definition": "80B423C7",
+      "name": "sq_final_harpy02",
+      "categories": [
+        "6116E417"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor squad on its authored composite producer; point alternatives do not determine count."
+    },
+    {
+      "registry": "D997395E",
+      "source": 31,
+      "definition": "80B423CA",
+      "name": "sq_final_harpy03",
+      "categories": [
+        "6116E417"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor squad on its authored composite producer; point alternatives do not determine count."
+    },
+    {
+      "registry": "D997395E",
+      "source": 32,
+      "definition": "80B423CD",
+      "name": "sq_final_harpy04",
+      "categories": [
+        "6116E417"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor squad on its authored composite producer; point alternatives do not determine count."
+    },
+    {
+      "registry": "D997395E",
+      "source": 33,
+      "definition": "80B423D2",
+      "name": "sq_final_goblin00",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor infantry squad using the original category, template, and placement rule."
+    },
+    {
+      "registry": "D997395E",
+      "source": 34,
+      "definition": "80B423D5",
+      "name": "sq_final_goblin01",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor infantry squad using the original category, template, and placement rule."
+    },
+    {
+      "registry": "D997395E",
+      "source": 35,
+      "definition": "80B423D8",
+      "name": "sq_final_minotaur",
+      "categories": [
+        "A21827B6"
+      ],
+      "requested": [
+        1
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "Preserve the individual producer with an explicit authored member (Hydra, dropship pilot, or final Minotaur)."
+    },
+    {
+      "registry": "D997395E",
+      "source": 37,
+      "definition": "80B423DB",
+      "name": "sq_final_goblin02",
+      "categories": [
+        "B284C948"
+      ],
+      "requested": [
+        3
+      ],
+      "basis": "user-directed reconstruction; not recovered retail count",
+      "reason": "User-directed three-actor infantry squad using the original category, template, and placement rule."
+    }
+  ]
+}

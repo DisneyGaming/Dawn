@@ -12,6 +12,10 @@
 
 #include "internal.h"
 #include "omega_boss_health.h"
+#include "gateway_native_read.h"
+#include "coo_enemy_readiness.h"
+#include "../../../state/activity/hijacked/runtime.h"
+#include "../../../state/activity/hijacked/boss_motion.h"
 #include "omega_boss_health_identity.h"
 #include "omega_boss_vfx_start.h"
 #include "../../hooking/call_gate.h"
@@ -1617,11 +1621,13 @@ __declspec(noinline) void observe_lift(void* instance) noexcept {
     }
     ReleaseSRWLockExclusive(&g_liftLock);
 }
+#include "hijacked_boss_native.inl"
+
 __declspec(noinline) std::uint64_t __fastcall full_body_update_hook(void* instance,void* requests,
     float dt,std::uint8_t lod,void* timing,void* selectors) noexcept {
     const hooking::CallGate::Scope call(g_gate);
     const auto result=hooking::await_original(g_updateFullBody)(instance,requests,dt,lod,timing,selectors);
-    if(call.accepts_side_effects()) { observe_lift(instance); }
+    if(call.accepts_side_effects()) { observe_lift(instance);hijacked_boss_native::observe(instance); }
     return result;
 }
 
@@ -1958,6 +1964,10 @@ void* target(std::uintptr_t rva,const std::array<std::uint8_t,16>& prefix) noexc
 bool idle() noexcept { return g_gate.idle(); }
 } // namespace
 
+void dispatch_hijacked_boss_teleport() noexcept {
+    const hooking::CallGate::Scope call(g_gate);
+    if(call.accepts_side_effects()) {hijacked_boss_native::dispatch_pending();}
+}
 bool install_omega_lair_cinematic() noexcept {
     if(g_handles[0].attached) { return g_gate.accepting(); }
     g_image=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
@@ -2028,7 +2038,10 @@ void quiesce_omega_lair_cinematic() noexcept { g_gate.quiesce(); }
 bool uninstall_omega_lair_cinematic() noexcept {
     quiesce_omega_lair_cinematic();
     if(!g_handles[0].attached) { return true; }
-    const std::array<hooking::detour::ProtectedCodeEntry,18> protectedCode{{
+    const std::array<hooking::detour::ProtectedCodeEntry,21> protectedCode{{
+        {reinterpret_cast<void*>(&dispatch_hijacked_boss_teleport)},
+        {reinterpret_cast<void*>(&hijacked_boss_native::dispatch_pending)},
+        {reinterpret_cast<void*>(&hijacked_boss_native::observe)},
         {reinterpret_cast<void*>(&tick_hook)},{reinterpret_cast<void*>(&apply_hook)},
         {reinterpret_cast<void*>(&resource_hook)},{reinterpret_cast<void*>(&observe)},
         {reinterpret_cast<void*>(&member_tick_hook)},{reinterpret_cast<void*>(&observe_boss_member)},

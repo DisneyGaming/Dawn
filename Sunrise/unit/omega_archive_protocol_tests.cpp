@@ -11,8 +11,14 @@ namespace bits = sunrise::middleware::encoding::bits;
 
 std::uint64_t digest = 1469598103934665603ULL;
 void mix(std::uint64_t value) { digest = (digest ^ value) * 1099511628211ULL; }
+#ifdef OMEGA_PORT_LOCAL
+#include "population_packet_cases.h"
+#endif
 
 int main() {
+#ifdef OMEGA_PORT_LOCAL
+    population_packet_cases();
+#endif
     // Exercise the native bodies over opening, Forest, Lair, Crown and ending
     // snapshots. Build this same fixture against the untouched archive as well.
     constexpr std::array<std::uint32_t, 15> registries{

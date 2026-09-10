@@ -9,7 +9,7 @@
 #include <vector>
 
 namespace sunrise::state::activity::coo::script::value {
-// Neutral, bounded mission definition tree produced by the Lua front end.
+// Neutral, bounded definition tree produced by Lua or the explicit native JSON policy front end.
 // It owns strings and source locations; no source parser or executable state survives.
 struct Value final {
     enum class Kind { object,array,string,number,boolean } kind{};
@@ -19,13 +19,18 @@ struct Value final {
     std::uint32_t number{};
     bool boolean{};
     std::size_t line{};
+    std::size_t offset{};
     [[noreturn]] void fail(std::string_view reason) const {
-        throw std::runtime_error((line ? "line " + std::to_string(line) : "definition") + ": " + std::string(reason));
+        throw std::runtime_error((line ? "line " + std::to_string(line) : "byte " + std::to_string(offset)) + ": " + std::string(reason));
     }
     const Value& at(std::string_view key) const {
         if(kind!=Kind::object) { fail("expected object"); }
         for(const auto& item:members) { if(item.first==key) { return item.second; } }
         fail("missing field '" + std::string(key) + "'");
+    }
+    const Value* find(std::string_view key) const {
+        if(kind!=Kind::object) { fail("expected object"); }
+        for(const auto& item:members) { if(item.first==key) { return &item.second; } }return nullptr;
     }
     void fields(std::initializer_list<std::string_view> keys) const {
         if(kind!=Kind::object) { fail("expected object"); }

@@ -109,6 +109,7 @@ bool prepare_periodic_region_refresh(ActivityInstanceKey key,
         selected.inputs.source = key;
         selected.inputs.sourceHostRegion = prepared.expectedHostRegion;
         selected.inputs.destination = record->destination;
+        selected.inputs.sourceDestination = record->destination;
         selected.inputs.grantBefore = record->bubbleAuthority;
         selected.inputs.sourceMembership = record->membership;
         selected.inputs.defaults = root.activity.defaults;

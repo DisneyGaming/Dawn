@@ -1,6 +1,7 @@
 #include "mission_script.h"
 #include "script_value.h"
 #include "script_lua.h"
+#include "script_json.h"
 #include <algorithm>
 #include <charconv>
 #include <fstream>
@@ -53,7 +54,13 @@ bool objective(const Profile& profile,std::uint32_t value) {
 void validate_profile(const Profile& p,const Value& root) {
     name(p.id,root);name(p.schemaName,root);
     if(p.schema==Schema::unspecified || p.capabilities.empty() || p.capabilities.size()>4096 || p.modules.size()>8
-        || p.facts.size()>32 || p.dialogue.rows.size()>64 || p.objectives.size()>256 || p.events.size()>1024 || p.tables.size()>32) { root.fail("invalid native profile limits"); }
+        || p.facts.size()>32 || p.dialogue.rows.size()>64 || p.objectives.size()>256 || p.events.size()>1024 || p.tables.size()>32
+        || p.parameters.size()>64) { root.fail("invalid native profile limits"); }
+    for(std::size_t i=0;i<p.parameters.size();++i) {
+        const auto& item=p.parameters[i];name(item.id,root);
+        if(item.minimum>item.maximum || item.defaultValue<item.minimum || item.defaultValue>item.maximum) { root.fail("invalid native parameter bounds"); }
+        for(std::size_t j=0;j<i;++j) { if(item.id==p.parameters[j].id) { root.fail("duplicate native parameter"); } }
+    }
     for(std::size_t i=0;i<p.capabilities.size();++i) {
         const auto& cap=p.capabilities[i];name(cap.id,root);name(cap.domain,root);
         if(cap.spec.asset==kConditionAsset) { root.fail("native capability uses reserved condition identity"); }
@@ -83,6 +90,30 @@ void validate_profile(const Profile& p,const Value& root) {
         name(p.tables[i].id,root);if(p.tables[i].bindings.schema!=p.schema) { root.fail("native presentation schema mismatch"); }
         for(std::size_t j=0;j<i;++j) { if(p.tables[i].id==p.tables[j].id) { root.fail("duplicate native presentation table"); } }
     }
+}
+bool equal_json(const Value& a,const Value& b,bool root=false) noexcept {
+    if(a.kind!=b.kind) { return false; }
+    switch(a.kind) {
+    case Value::Kind::object: {
+        std::size_t left{},right{};
+        for(const auto& item:a.members) { if(!root || item.first!="parameters") { ++left; } }
+        for(const auto& item:b.members) { if(!root || item.first!="parameters") { ++right; } }
+        if(left!=right) { return false; }
+        for(const auto& item:a.members) {
+            if(root && item.first=="parameters") { continue; }
+            const auto* other=b.find(item.first);
+            if(!other || !equal_json(item.second,*other)) { return false; }
+        }
+        return true;
+    }
+    case Value::Kind::array:
+        if(a.items.size()!=b.items.size()) { return false; }
+        for(std::size_t i=0;i<a.items.size();++i) { if(!equal_json(a.items[i],b.items[i])) { return false; } }return true;
+    case Value::Kind::string:return a.text==b.text;
+    case Value::Kind::number:return a.number==b.number;
+    case Value::Kind::boolean:return a.boolean==b.boolean;
+    }
+    return false;
 }
 }
 struct MissionDocument::Storage final {
@@ -126,6 +157,8 @@ struct MissionDocument::Storage final {
     std::vector<ActionSet> actionSets;
     std::vector<Table> tables;
     std::vector<PresentationTable> tableViews;
+    std::vector<std::string> parameterNames;
+    std::vector<PolicyValue> parameterValues;
     Views views;
     std::uint64_t fingerprint{};
     Asset named_asset(const Value& value) const { return lookup(std::span<const AssetItem>(assets),name(value),value).value; }
@@ -333,10 +366,23 @@ struct MissionDocument::Storage final {
         views.conditions=conditionViews;
     }
     void load(const Profile& profile) {
-        extended_fields(root,{"format_version","mission","profile","authority_schema","assets","bindings","graphs","roles","entry","modules","observations","presentation"},{"phases","conditions","observation_start"});
+        extended_fields(root,{"format_version","mission","profile","authority_schema","assets","bindings","graphs","roles","entry","modules","observations","presentation"},{"phases","conditions","observation_start","parameters"});
         if(root.at("format_version").integer()!=2) { root.fail("unsupported mission format; expected version 2"); }
         validate_profile(profile,root);views.missionId=name(root.at("mission"));views.profileId=name(root.at("profile"));
         if(views.profileId!=profile.id || name(root.at("authority_schema"))!=profile.schemaName) { root.fail("native profile or schema mismatch"); }
+        const auto* supplied=root.find("parameters");
+        if(supplied) {
+            for(const auto& item:object(*supplied,64)) { static_cast<void>(lookup(profile.parameters,item.first,item.second)); }
+        }
+        parameterNames.reserve(profile.parameters.size());parameterValues.reserve(profile.parameters.size());
+        for(const auto& cap:profile.parameters) {
+            const auto* input=supplied?supplied->find(cap.id):nullptr;
+            const auto value=input?input->integer(cap.maximum):cap.defaultValue;
+            if(value<cap.minimum) { input->fail("parameter below native minimum"); }
+            parameterNames.emplace_back(cap.id);
+            parameterValues.push_back({parameterNames.back(),value,cap.liveEditable});
+        }
+        views.parameters=parameterValues;
         for(const auto& [id,value]:object(root.at("assets"),2048)) {
             name(id,value);const auto key=asset(value);bool allowed{};
             for(const auto& cap:profile.capabilities) { allowed|=cap.spec.asset==key; }
@@ -437,6 +483,9 @@ MissionDocument::MissionDocument():storage_(std::make_unique<Storage>()) {}
 MissionDocument::~MissionDocument()=default;
 const Views& MissionDocument::views() const noexcept { return storage_->views; }
 std::uint64_t MissionDocument::fingerprint() const noexcept { return storage_->fingerprint; }
+bool MissionDocument::same_structure(const MissionDocument& other) const noexcept {
+    return equal_json(storage_->root,other.storage_->root,true);
+}
 std::unique_ptr<MissionDocument> MissionDocument::parse_lua(std::string_view text,const Profile& profile,std::string& error,std::string_view sourceName) noexcept {
     try {
         error.clear();auto document=std::unique_ptr<MissionDocument>(new MissionDocument);
@@ -447,6 +496,14 @@ std::unique_ptr<MissionDocument> MissionDocument::parse_lua(std::string_view tex
         return document;
     } catch(const std::exception& exception) { error=std::string(sourceName)+": "+exception.what();return {}; }
 }
+std::unique_ptr<MissionDocument> MissionDocument::parse(std::string_view text,const Profile& profile,std::string& error) noexcept {
+    try {
+        error.clear();auto document=std::unique_ptr<MissionDocument>(new MissionDocument);
+        document->storage_->root=json::Reader(text).parse();document->storage_->load(profile);
+        auto hash=UINT64_C(14695981039346656037);for(const unsigned char c:text) { hash^=c;hash*=UINT64_C(1099511628211); }document->storage_->fingerprint=hash;
+        return document;
+    } catch(const std::exception& exception) { error=exception.what();return {}; }
+}
 std::unique_ptr<MissionDocument> MissionDocument::read(const std::filesystem::path& path,const Profile& profile,std::string& error) noexcept {
     try {
         auto extension=path.extension().wstring();
@@ -456,6 +513,18 @@ std::unique_ptr<MissionDocument> MissionDocument::read(const std::filesystem::pa
         std::string text(1048577,'\0');stream.read(text.data(),static_cast<std::streamsize>(text.size()));text.resize(static_cast<std::size_t>(stream.gcount()));
         if(stream.bad()) { error=path.string()+": cannot read mission script";return {}; }
         return parse_lua(text,profile,error,path.string());
+    } catch(const std::exception& exception) { error=exception.what();return {}; }
+}
+std::unique_ptr<MissionDocument> MissionDocument::read_native_policy(const std::filesystem::path& path,const Profile& profile,std::string& error) noexcept {
+    try {
+        auto extension=path.extension().wstring();
+        for(auto& character:extension) { if(character>=L'A' && character<=L'Z') { character+=L'a'-L'A'; } }
+        if(extension!=L".json") { error=path.string()+": native policies must use the .json extension";return {}; }
+        std::ifstream stream(path,std::ios::binary);if(!stream) { error=path.string()+": cannot open mission script";return {}; }
+        std::string text(1048577,'\0');stream.read(text.data(),static_cast<std::streamsize>(text.size()));text.resize(static_cast<std::size_t>(stream.gcount()));
+        if(stream.bad()) { error=path.string()+": cannot read mission script";return {}; }
+        auto result=parse(text,profile,error);
+        if(!result) { error=path.string()+": "+error; }return result;
     } catch(const std::exception& exception) { error=exception.what();return {}; }
 }
 } // namespace sunrise::state::activity::coo::script

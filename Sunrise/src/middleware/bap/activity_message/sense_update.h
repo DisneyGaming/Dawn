@@ -10,6 +10,7 @@
 #include "squad_sense.h"
 #include "monitor_sense.h"
 #include "combatant_sense.h"
+#include "native_sense.h"
 
 namespace sunrise::middleware::bap::activity_message::sense_update {
 
@@ -72,12 +73,17 @@ struct SenseObject final {
     std::uint32_t nativeRevision{};
     bool hasNativeSchema{};
     bool hasRootDelta{};
+    native_sense::SourceDelta sourceDelta{};
     /** Native type-37 activation mirror, scoped by this object's registry and slot. */
     std::uint32_t forestActive32{};
     std::uint64_t forestActive64{};
     std::uint32_t forestRevision{};
     std::uint32_t forestSeed{};
     bool hasForestGeneratorState{};
+    /** Typed native type37 facts; separate from the legacy Omega flag decoder. */
+    native::forest_generator_sense::Progress generatorProgress{};
+    native::engagement_sense::Output engagement{};
+    bool hasGeneratorProgress{};
     /** Complete reflected Scene output, including events beyond the diagnostic 256-bit prefix. */
     scene_sense::Output sceneOutput{};
     bool hasSceneOutput{};
@@ -111,7 +117,7 @@ struct SenseUpdate final {
 
 /**
  * Parses the recovered Omega type-6 subset: its roster mirror and object schemas 1, 2, 23, 30, 43,
- * and 70 using their reflected optional fields and bounded arrays. Body widths exclude
+ * 37 and 70 using their reflected optional fields and bounded arrays. Body widths exclude
  * the group object-list terminator. Unknown schemas, truncation, nonzero terminal/padding
  * bits, invalid array counts, or capacity overflow fail the whole parse.
  */

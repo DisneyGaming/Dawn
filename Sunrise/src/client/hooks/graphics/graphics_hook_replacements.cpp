@@ -4,6 +4,7 @@
 
 #include "../../../core/ui/busy/busy.h"
 #include "graphics_hook_lifecycle.h"
+#include "hijacked_frame_timing.h"
 
 namespace sunrise::client::hooks::graphics::replacement {
 namespace {
@@ -44,19 +45,26 @@ __declspec(noinline) HRESULT STDMETHODCALLTYPE present_body(IDXGISwapChain* swap
                                                             UINT flags) noexcept {
     HRESULT result = DXGI_ERROR_INVALID_CALL;
     const bool rendererEnabled = enter_hook_call();
+    hijacked_frame_timing::PresentSample timing(flags);
+    bool timingSelected{};
     const auto call = original<Present>(HookSlot::present);
     if (call != nullptr) {
         if (rendererEnabled && (flags & DXGI_PRESENT_TEST) == 0) {
             // TEST probes presentation status and must not submit overlay draw work.
             renderer::present(swapChain);
         }
+        if (rendererEnabled && timing.active()) timingSelected = renderer::selected(swapChain);
+        timing.before_native();
         result = call(swapChain, syncInterval, flags);
+        timing.after_native(result);
         if (rendererEnabled) {
+            const hijacked_frame_timing::PostSpan postTiming(hijacked_frame_timing::Kind::post_present);
             renderer::present_result(swapChain, result);
             // Work that stalls the game waits here for its overlay to reach the screen.
             core::ui::busy::confirm_presented();
         }
     }
+    timing.finish(swapChain, timingSelected, syncInterval);
     leave_hook_call();
     // Thread-affine capture release runs only after the hook lifetime lock is gone.
     renderer::dispatch_pending_input_release();

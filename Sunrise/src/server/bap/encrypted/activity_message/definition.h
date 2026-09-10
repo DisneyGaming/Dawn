@@ -5,6 +5,7 @@
 #include "../../../../middleware/bap/activity_message/activity_patch_epoch_parser.h"
 #include "../../../../state/activity/membership/activity_membership_query.h"
 #include "../../../../state/activity/runtime.h"
+#include "../../../../state/activity/adventure_destination_transition.h"
 
 namespace sunrise::server::bap::encrypted::activity_message {
 
@@ -14,6 +15,8 @@ enum class Delivery : std::uint8_t {
     joinNotifications,
     entitySlotNotification,
     membershipNotification,
+    /** Same-host selection response, without membership or roster mutation. */
+    globalStateNotification,
     /**
      * The client's own state-refresh request. It asks for the host snapshot, not one message, so
      * the answer is the global state, the membership and the roster in that order -- the same three
@@ -32,6 +35,7 @@ enum class MutationDomain : std::uint8_t {
     none,
     entitySlots,
     membership,
+    destination,
     /** The patch epoch is kept on the connection and changes no State. */
     patchEpoch,
 };
@@ -44,6 +48,7 @@ struct ActivityPlan final {
     std::uint64_t sessionId{};
     state::activity::entity_slots::PendingMutation entitySlotMutation{};
     state::activity::membership::PendingMutation membershipMutation{};
+    state::activity::adventure_destination::Pending destinationMutation{};
     middleware::bap::activity_message::patch_epoch::PatchEpoch patchEpoch{};
     /** The character the join request named, or zero when it carried none. */
     std::uint64_t joinCharacterSoid{};

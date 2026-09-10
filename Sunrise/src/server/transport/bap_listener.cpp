@@ -112,7 +112,7 @@ void receive_peer(std::size_t slot) noexcept {
 }
 
 /**
- * Services one peer with one read, frame, write and due-poll budget.
+ * Services one peer with one read, a bounded frame batch, one write and a due poll.
  * @param readable Ready-read set from select.
  * @param writable Ready-write set from select.
  * @param wasPending True when select saw output.

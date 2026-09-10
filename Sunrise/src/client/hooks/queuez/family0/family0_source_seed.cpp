@@ -10,6 +10,7 @@
 #include <cstring>
 
 #include "../../../../core/logging/log.h"
+#include "../../../../core/logging/repetition.h"
 
 namespace sunrise::client::hooks::queuez::family0 {
 namespace {
@@ -50,10 +51,8 @@ constexpr std::uint64_t kSeededCount = 1;
 /** Bytes of the source list the producer owns, rebuilt whole so no stale entry survives. */
 constexpr std::size_t kSourceListBytes = 0x210;
 
-/** Shortest gap between two seed reports. The sweep runs per frame, so this bounds the volume. */
-constexpr std::uint64_t kReportIntervalMs = 1'000;
 /** One line carries the replaced key and the rewrite count. */
-constexpr std::size_t kReportLimit = 128;
+constexpr std::size_t kReportLimit = 256;
 /** One line carries both counters and the first two entries. */
 constexpr std::size_t kListReportLimit = 192;
 
@@ -79,7 +78,9 @@ std::atomic<SourceList> g_sourceList{nullptr};
 std::atomic<std::uint64_t> g_accountKey{0};
 /** Total rewrites. A rewrite means something else put its own list back. */
 std::atomic<std::uint64_t> g_rewrites{0};
-std::atomic<std::uint64_t> g_reportDueTick{0};
+core::log::RepetitionCounter g_seedReports{};
+ListHead g_lastSeedHead{};
+bool g_hasLastSeedHead{};
 /** The last head reported, so the producer's output is logged on change rather than per frame. */
 ListHead g_lastHead{};
 bool g_hasLastHead{false};
@@ -131,22 +132,29 @@ void report_list(const ListHead& head) noexcept {
 /**
  * Reports how often the seed is having to put the account key back.
  * A steady rewrite rate means the game's own producer is rebuilding the list underneath.
- * @param replaced Key that was in the list before this rewrite.
+ * @param head Producer output before this rewrite. A changed reason remains immediately visible.
  */
-void report_seed(std::uint64_t replaced) noexcept {
+void report_seed(const ListHead& head) noexcept {
     const std::uint64_t count = g_rewrites.fetch_add(1, std::memory_order_relaxed) + 1;
-    const std::uint64_t now = GetTickCount64();
-    if (now < g_reportDueTick.load(std::memory_order_relaxed)) {
+    const bool sameHead = g_hasLastSeedHead && equal(head, g_lastSeedHead);
+    g_lastSeedHead = head;
+    g_hasLastSeedHead = true;
+    const auto repetition = g_seedReports.observe(GetTickCount64(), sameHead);
+    if (!repetition.emit) {
         return;
     }
-    g_reportDueTick.store(now + kReportIntervalMs, std::memory_order_relaxed);
     std::array<char, kReportLimit> line{};
     const int written = std::snprintf(line.data(),
                                       line.size(),
                                       "ev=queuez stage=family0 result=seeded replaced=0x%016llX "
-                                      "rewrites=%llu",
-                                      static_cast<unsigned long long>(replaced),
-                                      static_cast<unsigned long long>(count));
+                                      "rewrites=%llu countA=%llu countB=%llu "
+                                      "suppressed=%llu window_ms=%llu",
+                                      static_cast<unsigned long long>(head.firstKey),
+                                      static_cast<unsigned long long>(count),
+                                      static_cast<unsigned long long>(head.countA),
+                                      static_cast<unsigned long long>(head.countB),
+                                      static_cast<unsigned long long>(repetition.suppressed),
+                                      static_cast<unsigned long long>(repetition.windowMs));
     if (written > 0) {
         core::log::write(core::log::Channel::client,
                          core::log::Level::info,
@@ -193,7 +201,6 @@ void seed_source_list() noexcept {
         && head.secondKey == 0) {
         return; // Already exactly ours. Rewriting the same bytes would only churn the subscribe.
     }
-    const std::uint64_t existing = head.firstKey;
     // The whole buffer is rebuilt, so an entry the producer left past the first cannot survive
     // as a key the sweep would go on to subscribe.
     std::array<std::byte, kSourceListBytes> seeded{};
@@ -202,7 +209,7 @@ void seed_source_list() noexcept {
     std::memcpy(seeded.data() + SourceListLayout::firstKey, &key, sizeof key);
     std::memcpy(seeded.data() + SourceListLayout::firstMask, &kEntryMask, sizeof kEntryMask);
     std::memcpy(list, seeded.data(), seeded.size());
-    report_seed(existing);
+    report_seed(head);
 }
 
 /** Clears the captured key, the published getter, and the report state. */
@@ -210,7 +217,9 @@ void reset() noexcept {
     g_sourceList.store(nullptr, std::memory_order_release);
     g_accountKey.store(0, std::memory_order_release);
     g_rewrites.store(0, std::memory_order_release);
-    g_reportDueTick.store(0, std::memory_order_release);
+    g_seedReports = {};
+    g_lastSeedHead = {};
+    g_hasLastSeedHead = false;
     g_lastHead = {};
     g_hasLastHead = false;
 }

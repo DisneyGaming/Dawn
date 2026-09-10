@@ -3,6 +3,7 @@
 #include "../../hooking/call_gate.h"
 #include "../../hooking/detour.h"
 #include "../../../state/activity/deadly_trial/runtime.h"
+#include "../../../state/activity/hijacked/runtime.h"
 #include "../../../core/logging/log.h"
 #include <atomic>
 #include <cstdio>
@@ -32,13 +33,15 @@ struct Native {
     }
 };
 void reconnect(std::uintptr_t roster) noexcept {
-    const auto run=state::activity::deadly_trial::native_run();
+    const auto hijackedRun=state::activity::hijacked::native_run();
+    const auto run=hijackedRun?hijackedRun:state::activity::deadly_trial::native_run();
     if(!run) { return; }
+    const auto expectedScenario=hijackedRun?state::activity::hijacked::kScenario:0x80B2E043U;
     gateway_native::Read read{image};Native native;
-    if(repair(read,native,roster)==Result::repaired) {
+    if(repair(read,native,roster,expectedScenario)==Result::repaired) {
         std::array<char,192> line{};
-        const auto n=std::snprintf(line.data(),line.size(),"ev=deadly_trial stage=lifetime_rebound run=%llu boundary=4D7380 authority=native_packet",
-            static_cast<unsigned long long>(run));
+        const auto n=std::snprintf(line.data(),line.size(),"ev=%s stage=lifetime_rebound run=%llu boundary=4D7380 authority=native_packet",
+            hijackedRun?"hijacked":"deadly_trial",static_cast<unsigned long long>(run));
         if(n>0 && static_cast<std::size_t>(n)<line.size()) {
             core::log::write(core::log::Channel::client,core::log::Level::info,{line.data(),static_cast<std::size_t>(n)});
         }
@@ -70,7 +73,7 @@ bool install() noexcept {
     }
     if(!hooking::detour::install({reinterpret_cast<void*>(image+0x4D7380),reinterpret_cast<void*>(&decode)},hook)) { return false; }
     hooking::publish_original(original,reinterpret_cast<Decode>(hook.original));gate.accept();
-    core::log::write(core::log::Channel::client,core::log::Level::info,"ev=deadly_trial stage=lifetime_binding_install result=ok");return true;
+    core::log::write(core::log::Channel::client,core::log::Level::info,"ev=coo_lifetime stage=binding_install result=ok missions=deadly_trial,hijacked");return true;
 }
 void quiesce() noexcept { gate.quiesce(); }
 bool uninstall() noexcept {

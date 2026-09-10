@@ -20,6 +20,8 @@ struct RosterSnapshotInputs final {
     state::activity::bubble_authority::AuthorityState grantBefore{};
     std::int32_t regionIndex{-1};
     std::uint16_t destinationArrival{};
+    // Creator selection belongs to lineage.source; destination/grants belong to the bound child.
+    state::activity::destination::DestinationSelection sourceDestination{};
 };
 
 /**

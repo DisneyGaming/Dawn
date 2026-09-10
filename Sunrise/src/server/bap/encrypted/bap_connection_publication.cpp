@@ -126,6 +126,11 @@ bool publish_connection_fields(Session& session,
             || session.activityPatchEpoch.second != fields.patchEpoch.second;
         if (epochChanged) {
             session.activity.sensorObservation = {};
+            if (session.activity.rosterLifetimes.identity.owner) {
+                session.activity.rosterLifetimes = {};
+                session.activity.rosterSends = 0;
+                session.activity.rosterGroups = 0;
+            }
         }
         session.activityPatchEpoch = fields.patchEpoch;
         session.activityPatchEpochSeen = true;

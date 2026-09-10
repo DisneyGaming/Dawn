@@ -46,6 +46,11 @@ bool find_roster_group(std::size_t index, scenarios::RosterGroup& group) noexcep
     return scenario_layouts_ready() && scenarios::group(index, group);
 }
 
+bool find_roster_group_by_key(std::uint32_t key, scenarios::RosterGroup& group) noexcept {
+    group = {};
+    return scenario_layouts_ready() && scenarios::group_by_key(key, group);
+}
+
 /** Publishes Omega's generator by stable key; catalog indices change after extraction. */
 void amend_omega_forest_generator(scenarios::Definition& definition) noexcept {
     constexpr std::uint32_t kForestGeneratorKey = 0x2763EC97U;

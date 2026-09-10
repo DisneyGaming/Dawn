@@ -2,6 +2,7 @@
 #include "../../state/activity/deadly_trial/runtime.h"
 #include "../../state/activity/beyond_infinity/runtime.h"
 #include "../../state/activity/deep_storage/runtime.h"
+#include "../../state/activity/hijacked/runtime.h"
 /**
  * The local player's published world position.
  * The game threads write it and the interface reads it, so a seqlock guards the vector.
@@ -13,6 +14,7 @@
 #include "../../state/activity/omega_crown_transit_geometry.h"
 #include "../../state/activity/runtime.h"
 #include "../../core/logging/log.h"
+#include "../hooks/bootflow/public_event_participant_observer.h"
 
 #include <atomic>
 #include <cmath>
@@ -140,11 +142,13 @@ void observe_crown_route(void* component,const teleport::Vector& position) noexc
     g_position = position;
     g_sequence.fetch_add(1, std::memory_order_release);
     g_present.store(true, std::memory_order_release);
+    hooks::bootflow::public_event_participant_observer::poll_local_identity();
     state::activity::omega_presentation::observe_position({position[0], position[1], position[2]});
     state::activity::gateway::observe_position(position[0],position[1],position[2]);
     state::activity::deadly_trial::observe_position(position[0],position[1],position[2]);
     state::activity::beyond_infinity::observe_position(position[0],position[1],position[2]);
     state::activity::deep_storage::observe_position(position[0],position[1],position[2]);
+    state::activity::hijacked::observe_position(position[0],position[1],position[2]);
     observe_crown_route(component,position);
     return true;
 }
@@ -161,11 +165,13 @@ void observe(void* component) noexcept {
         if(teleport::owns_local_player(known)) { return; }
         g_component.compare_exchange_strong(known,nullptr,std::memory_order_relaxed);
         g_present.store(false,std::memory_order_release);
+        server::runtime::activity::public_event::participant_bridge::invalidate_local_identity();
     }
     if(!publish_from(component)) {
         void* expected=component;
         if(g_component.compare_exchange_strong(expected,nullptr,std::memory_order_relaxed)) {
             g_present.store(false,std::memory_order_release);
+            server::runtime::activity::public_event::participant_bridge::invalidate_local_identity();
         }
         return;
     }
@@ -185,6 +191,7 @@ void poll() noexcept {
     if (!publish_from(component)) {
         g_component.store(nullptr, std::memory_order_relaxed);
         g_present.store(false, std::memory_order_release);
+        server::runtime::activity::public_event::participant_bridge::invalidate_local_identity();
         return;
     }
     g_component.store(component, std::memory_order_relaxed);
@@ -194,6 +201,7 @@ void poll() noexcept {
 void reset() noexcept {
     g_component.store(nullptr, std::memory_order_relaxed);
     g_present.store(false, std::memory_order_release);
+    server::runtime::activity::public_event::participant_bridge::invalidate_local_identity();
 }
 
 /** @return The last published position. */

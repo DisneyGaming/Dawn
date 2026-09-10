@@ -1,8 +1,10 @@
 #include "activity_message_route.h"
+#include "adventure_start_route.h"
 #include "omega_roster_readiness.h"
 #include "omega_monitor_edges.h"
 #include "omega_opening_intake.h"
 #include "../../../../state/activity/coo/omega_adapter.h"
+#include "../../../runtime/activity/native_activity_runtime.h"
 
 #include <algorithm>
 #include <array>
@@ -83,9 +85,8 @@ struct AcceptedMessage {
  * The Client senders that carry no work for this host. Each is one-way, so accepting is the whole
  * contract. The names are the binary's own, so a log line says what arrived.
  */
-constexpr std::array<AcceptedMessage, 13> kAcceptedMessages{{
+constexpr std::array<AcceptedMessage, 12> kAcceptedMessages{{
     {8, "request_activity_host"},
-    {11, "start_new_activity"},
     {13, "request_peer_reservation"},
     {14, "release_peer_reservation"},
     {15, "peer_leave_request"},
@@ -636,6 +637,13 @@ void report_sense_update(Session& session, const service::Request& request) noex
         }
     }
     const bool destinationBound = parsed && epochBound && omegaSelected;
+    if(parsed && handleBound && epochBound && session.activity.lineage
+        && session.activity.lineage.bound==session.activity.instance
+        && session.activity.advertisedRegion>=0 && session.activity.advertisedRegion%8==0) {
+        ::sunrise::server::runtime::activity::native_activity::observe(
+            session.activity.lineage.source,
+            static_cast<std::uint32_t>(session.activity.advertisedRegion/8),update);
+    }
     const char* validation = !parsed                 ? "decode"
                              : !handleBound          ? "session"
                              : !session.activityPatchEpochSeen ? "no_epoch"
@@ -1347,6 +1355,7 @@ bool process(Session& session,
         return false;
     }
     const bool requiresLiveBinding = request.messageType == epoch_message::kMessageType
+        || request.messageType == service::adventure_start::kMessageType
         || request.messageType == service::sense_update::kMessageType
         || request.messageType == service::entity_slot_request::kMessageType
         || request.messageType == service::entity_slots::kRequestMessageType
@@ -1370,7 +1379,9 @@ bool process(Session& session,
     // nothing has to be bound first. The join request carries the session in the first place, and
     // it arrives on a link that has allocated nothing.
     bool prepared = false;
-    if (request.messageType == epoch_message::kMessageType) {
+    if (request.messageType == service::adventure_start::kMessageType) {
+        prepared = adventure_start::prepare(session.activity.instance,request,plan);
+    } else if (request.messageType == epoch_message::kMessageType) {
         // Type 52 alone carries a zero handle, so its session is the one this link allocated.
         prepared = patch_epoch::prepare(session.activity.instance, request, plan);
     } else if (request.messageType == service::sense_update::kMessageType) {

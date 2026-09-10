@@ -37,13 +37,14 @@ struct RegionView final {
 
 /**
  * Bound-destination and creator-source inputs used to finalize one BAP region snapshot.
- * The bound record supplies destination/grants while the source supplies player membership.
+ * The bound record supplies destination/grants while the source supplies player membership and the selected activity for its runtime.
  */
 struct RegionSnapshotInputs final {
     ActivityInstanceKey bound{};
     ActivityInstanceKey source{};
     HostRegionKey sourceHostRegion{};
     destination::DestinationSelection destination{};
+    destination::DestinationSelection sourceDestination{};
     bubble_authority::AuthorityState grantBefore{};
     MembershipState sourceMembership{};
     defaults::ActivityDefaults defaults{};

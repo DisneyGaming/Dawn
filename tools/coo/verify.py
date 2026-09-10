@@ -15,7 +15,7 @@ def digest(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
-def build(project, configuration, variant='local', source=None):
+def build(project, configuration, variant='local', source=None, *, compile_only=False):
     name = project.stem
     directory = OUT / f'{name}-{variant}' / configuration
     directory.mkdir(parents=True, exist_ok=True)
@@ -38,17 +38,25 @@ def build(project, configuration, variant='local', source=None):
                 'dll': str(directory / 'steam_api64.dll'), 'sha256': digest(directory / 'steam_api64.dll'),
                 'pdbSha256': digest(directory / 'steam_api64.pdb')}
     binary = directory / f'{name}.exe'
-    result = subprocess.run([str(binary)], cwd=ROOT, text=True, capture_output=True, timeout=60)
+    if compile_only:
+        print(f'{name} {configuration} {variant}: compiled only; test not executed', flush=True)
+        return {'project': name, 'configuration': configuration, 'variant': variant,
+                'validation': 'compiled-only', 'binarySha256': digest(binary)}
+    import native_test_inputs
+    test_args = native_test_inputs.arguments(name, directory / 'test-output')
+    result = subprocess.run([str(binary), *test_args], cwd=ROOT, text=True, capture_output=True, timeout=60)
     (directory / 'test.log').write_text(result.stdout + result.stderr)
     if result.returncode:
-        raise RuntimeError(f'{binary}\n{result.stdout}\n{result.stderr}')
+        raise RuntimeError(f'{binary} exited {result.returncode}\n{result.stdout}\n{result.stderr}')
     if name == 'coo_script_tests':
         rejected = subprocess.run([str(binary), '--invalid-admission'], cwd=ROOT, text=True, capture_output=True, timeout=60)
         (directory / 'invalid-admission.log').write_text(rejected.stdout + rejected.stderr)
         assert rejected.returncode == 0, rejected.stdout + rejected.stderr
     print(f'{name} {configuration} {variant}: {result.stdout.strip()}', flush=True)
     return {'project': name, 'configuration': configuration, 'variant': variant,
-            'output': result.stdout, 'binarySha256': digest(binary)}
+            'output': result.stdout, 'binarySha256': digest(binary),
+            'arguments': test_args,
+            'optionalEvidenceUnavailable': native_test_inputs.OPTIONAL_EVIDENCE.get(name)}
 
 
 if __name__ == '__main__':

@@ -11,6 +11,7 @@
 #include "../input/input.h"
 #include "graphics_renderer_report.h"
 #include "state.h"
+#include "../../../ui/mission_launch/mission_launch_art.h"
 
 namespace sunrise::client::hooks::graphics::renderer {
 namespace {
@@ -247,6 +248,7 @@ void release_render_target(Resources& resources) noexcept {
 
 /** @param resources SDK resources freed in an order that respects their dependencies. */
 void release_resources(Resources& resources) noexcept {
+    client::ui::mission_launch::art::release();
     release_render_target(resources);
     textures::release_logo_sheet(resources.logoSheet);
     release_com(resources.context);
@@ -281,6 +283,13 @@ bool shutdown() noexcept {
 }
 
 /** Reads renderer readiness under the shared state lock. */
+bool selected(IDXGISwapChain* swapChain) noexcept {
+    if(!TryAcquireSRWLockShared(&g_rendererLock))return false;
+    const bool match=g_resources.swapChain==swapChain && fully_active_locked();
+    ReleaseSRWLockShared(&g_rendererLock);
+    return match;
+}
+
 bool active() noexcept {
     AcquireSRWLockShared(&g_rendererLock);
     const bool initialized = fully_active_locked();

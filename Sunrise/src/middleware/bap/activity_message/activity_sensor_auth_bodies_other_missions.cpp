@@ -3,6 +3,7 @@
 #include "../../../state/activity/gateway/authority.h"
 #include "../../../state/activity/beyond_infinity/authority.h"
 #include "../../../state/activity/deep_storage/authority.h"
+#include "../../../state/activity/hijacked/authority.h"
 #include "../../../state/activity/beyond_infinity/forest_selection.h"
 #include "../../../state/activity/deadly_trial/authority.h"
 #include "../../../state/activity/strike_pact/authority.h"
@@ -194,12 +195,10 @@ constexpr std::size_t kSpawnKeyCount = 32;
            && writer.write(0, kPresenceWidth) && writer.write(0, 3)
            && writer.write(1, kPresenceWidth) && writer.write(snapshot.playerKey, 64)
            && writer.write(0, 5) && writer.write(3, 6);
-    // Schema 80804F30 +48 embeds 808094DD. Its +0C member is 808094E1:
-    // a six-bit count followed by 32-bit hashes (capacity 32). This previously
-    // always sent zero, so the authored wall predicate could never find its hash.
-    encoded = encoded && writer.write(snapshot.omegaPortalPlayerHash ? 1U : 0U, 6);
-    if (encoded && snapshot.omegaPortalPlayerHash)
-        encoded = writer.write(state::activity::omega::portal_entry::kRequiredPlayerHash, 32);
+    // 80804F30+48 ->808094DD+0C ->808094E1: authored predicate names.
+    const auto names=native::player_predicates::compose(snapshot.playerPredicates,snapshot.omegaPortalPlayerHash,
+        state::activity::omega::portal_entry::kRequiredPlayerHash);
+    encoded=encoded && names && native::player_predicates::write(writer,*names);
     return encoded && writer.write(0, 6)
            // Byte 736 skips the respawn delay, whose countdown never expires when the content
            // delay is negative. Byte 737 holds the spawn while the client loads.
@@ -216,13 +215,16 @@ constexpr std::size_t kSpawnKeyCount = 32;
  * @return True when the body fits.
  */
 [[nodiscard]] bool write_lifetime(bits::Writer& writer, const Snapshot& snapshot,
-                                  std::uint32_t restrictionOrdinal) noexcept {
+                                  std::uint32_t restrictionOrdinal,
+                                  std::optional<std::uint32_t> scenarioOrdinal) noexcept {
+    if (scenarioOrdinal && *scenarioOrdinal > kMaximumGrantBubble) { return false; }
+    const auto ordinal=restrictionOrdinal?restrictionOrdinal:scenarioOrdinal.value_or(0U);
     // Shared terminal publication: native mission-complete phase 6 / success 1.
     const bool completed=snapshot.missionCompletion.valid();
     const auto lifetime=completed?std::uint32_t{snapshot.missionCompletion.state}:std::uint32_t{snapshot.lifetime};
     bool encoded = writer.write(lifetime + 1, 4) && writer.write(completed?2U:1U, 3)
                    && writer.write(0, kPresenceWidth) && writer.write(kSignedZero, 32)
-                   && writer.write(0, 32) && writer.write(kSignedZero+restrictionOrdinal, 32)
+                   && writer.write(0, 32) && writer.write(kSignedZero+ordinal, 32)
                    && writer.write(state::activity::beyond_infinity::forest::selected(snapshot.beyond_infinity) ? 3U : 1U + forest_switch_count(snapshot), 6)
                    && writer.write(kWaitingSwitchKey, 32) && writer.write(1, kPresenceWidth)
                    && writer.write(kWaitingSwitchClass, 32) && writer.write(kSignedZero, 32);
@@ -282,7 +284,7 @@ write_shared_mission_state(bits::Writer& writer, bool active) noexcept {
     if(missionOwned) {
         // Constructed 808099BF state: no countdown, with an explicit on/off
         // level. The lifetime filter uses each mission's scenario bubble ordinal.
-        return writer.write((snapshot.deep_storage.enabled?snapshot.deep_storage.restricted:snapshot.omegaMission.restriction)?1U:0U,1) && writer.write(0,1)
+        return writer.write((snapshot.hijacked.enabled?snapshot.hijacked.restricted:snapshot.deep_storage.enabled?snapshot.deep_storage.restricted:snapshot.omegaMission.restriction)?1U:0U,1) && writer.write(0,1)
             && writer.write(1,2) && writer.write(0,2) && writer.write(0,1)
             && writer.write(0,64) && writer.write(0x134F00C00000ULL,64)
             && writer.write(0,64) && writer.write(0,64) && writer.write(UINT64_MAX,64)
@@ -366,13 +368,7 @@ write_shared_mission_state(bits::Writer& writer, bool active) noexcept {
  * The canonical absent reference deliberately selects the component's authored local transform.
  */
 [[nodiscard]] bool write_active_omega_portal_component(bits::Writer& writer) noexcept {
-    return writer.write(0, 32) && writer.write(1, 32)
-           && writer.write(1, 1) && writer.write(1, 1) && writer.write(0, 32)
-           && writer.write(kAbsentSpawnSetHash, 32) && writer.write(0, kSlotTypeWidth)
-           && writer.write(kSlotIndexBias - 1U, kSlotIndexWidth)
-           && writer.write(0, 32) && writer.write(0, 32) && writer.write(0, 32)
-           && writer.write(0, 1) && writer.write(1, 2)
-           && writer.write(0, kPresenceWidth);
+    return native::placement::write_active(writer);
 }
 
 /**
@@ -759,6 +755,19 @@ legacy_auth_body_bits(const Snapshot& snapshot,
     if(const auto count=state::activity::beyond_infinity::body_bits(snapshot.beyond_infinity,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::deep_storage::body_bits(snapshot.deep_storage,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::strike_pact::body_bits(snapshot.strike_pact,key,slotType,slotIndex)) { return count; }
+    if(const auto count=state::activity::hijacked::body_bits(snapshot.hijacked,key,slotType,slotIndex)) { return count; }
+    if(const auto* request=native::engagement::find(snapshot.engagements,key,slotType,slotIndex)) return native::engagement::body_bits(*request);
+    if(const auto* request=native::world_device::find(snapshot.devices,key,slotType,slotIndex)) return native::world_device::valid(request->state)?native::world_device::kPayloadBits:0;
+    if(const auto* request=native::forest_generator::find(snapshot.generators,key,slotType,slotIndex)) return native::forest_generator::body_bits(request->state);
+    if(native::npc_animation::find(snapshot.animations,key,slotType,slotIndex)) return native::npc_animation::kBodyBits;
+    if(native::cue::find(snapshot.cues,key,slotType,slotIndex)) return native::cue::kBits;
+    if(const auto* request=native::dialogue::find(snapshot.dialogues,key,slotType,slotIndex)) return native::dialogue::body_bits(*request);
+    if(const auto* request=native::world_sequence::find(snapshot.sequences,key,slotType,slotIndex)) return native::world_sequence::valid(*request)?native::world_sequence::kPayloadBits:0;
+    if(const auto* request=native::event_participant::find(snapshot.eventParticipants,key,slotType,slotIndex)) return native::event_participant::body_bits(*request);
+    if(const auto* request=native::music::find(snapshot.music,key,slotType,slotIndex)) return native::music::valid(*request)?native::music::kBits:0;
+    if(const auto* request=native::placement::find(snapshot.placements,key,slotType,slotIndex)) return native::placement::body_bits(*request);
+    if(const auto* request=native::population::find(snapshot.populations,key,slotType,slotIndex))
+        return native::population::bits(*request);
     if(snapshot.omegaEndingSelected && state::activity::omega::ending::slot(key,slotType,slotIndex)) return 263;
     if (snapshot.omegaBossAuthority && boss::parent_slot(key, slotType, slotIndex)) return boss::kParentBits;
     if (snapshot.omegaBossAuthority && boss::member_slot(key, slotType, slotIndex)) return boss::kMemberBits;
@@ -818,10 +827,13 @@ legacy_auth_body_bits(const Snapshot& snapshot,
             || authored_directive(snapshot, key, slotType, slotIndex))) {
         return kOmegaDirectiveBits;
     }
+    if(slotType==13 && !native::player_predicates::compose(snapshot.playerPredicates,snapshot.omegaPortalPlayerHash,
+        state::activity::omega::portal_entry::kRequiredPlayerHash))return 0;
     if (slotType == kSlotTypeParticipation) {
         return carriesPlayerKey
                    ? kParticipationBits + (snapshot.hasRegion ? kParticipationRegionBits : 0)
-                         + (snapshot.omegaPortalPlayerHash ? 32U : 0U)
+                         + 32U*native::player_predicates::compose(snapshot.playerPredicates,snapshot.omegaPortalPlayerHash,
+                             state::activity::omega::portal_entry::kRequiredPlayerHash).value().count
                    : 0;
     }
     if (slotType == kSlotTypeLifetime) {
@@ -838,7 +850,7 @@ legacy_auth_body_bits(const Snapshot& snapshot,
     }
     if (slotType == kSlotTypeMissionDirector && kInitializeMissionDirector
         && (snapshot.initializeMissionAuthorityRuntime
-            || ((snapshot.omegaMission.generation || snapshot.deep_storage.enabled) && key==0x4786C0E0U && slotIndex==1)
+            || ((snapshot.omegaMission.generation || snapshot.deep_storage.enabled || snapshot.hijacked.enabled) && key==0x4786C0E0U && slotIndex==1)
             || snapshot.publishOmegaOpeningTransition
             || snapshot.publishAuthoredCueTransition)) {
         return kMissionDirectorBits;
@@ -880,12 +892,28 @@ bool legacy_write_auth_body(bits::Writer& writer,
     if(state::activity::deep_storage::body_bits(snapshot.deep_storage,key,slotType,slotIndex)) {
         return state::activity::deep_storage::write_body(writer,snapshot.deep_storage,key,slotType,slotIndex);
     }
+    if(state::activity::hijacked::body_bits(snapshot.hijacked,key,slotType,slotIndex)) {
+        return state::activity::hijacked::write_body(writer,snapshot.hijacked,key,slotType,slotIndex);
+    }
     if(state::activity::gateway::body_bits(snapshot.gateway,key,slotType,slotIndex)) {
         return state::activity::gateway::write_body(writer,snapshot.gateway,key,slotType,slotIndex);
     }
     if(state::activity::strike_pact::body_bits(snapshot.strike_pact,key,slotType,slotIndex)) {
         return state::activity::strike_pact::write_body(writer,snapshot.strike_pact,key,slotType,slotIndex);
     }
+    if(const auto* request=native::engagement::find(snapshot.engagements,key,slotType,slotIndex)) return native::engagement::write(writer,*request);
+    if(const auto* request=native::world_device::find(snapshot.devices,key,slotType,slotIndex)) return native::world_device::write_payload(writer,request->state);
+    if(const auto* request=native::forest_generator::find(snapshot.generators,key,slotType,slotIndex)) return native::forest_generator::write_payload(writer,request->state);
+    if(const auto* request=native::npc_animation::find(snapshot.animations,key,slotType,slotIndex))
+        return native::npc_animation::write(writer,request->control);
+    if(const auto* request=native::cue::find(snapshot.cues,key,slotType,slotIndex)) return native::cue::write(writer,*request);
+    if(const auto* request=native::dialogue::find(snapshot.dialogues,key,slotType,slotIndex)) return native::dialogue::write(writer,*request);
+    if(const auto* request=native::world_sequence::find(snapshot.sequences,key,slotType,slotIndex)) return native::world_sequence::write(writer,*request);
+    if(const auto* request=native::event_participant::find(snapshot.eventParticipants,key,slotType,slotIndex)) return native::event_participant::write(writer,*request);
+    if(const auto* request=native::music::find(snapshot.music,key,slotType,slotIndex)) return native::music::write(writer,*request);
+    if(const auto* request=native::placement::find(snapshot.placements,key,slotType,slotIndex)) return native::placement::write(writer,*request);
+    if(const auto* request=native::population::find(snapshot.populations,key,slotType,slotIndex))
+        return native::combatant_source::write_source(writer,request->source);
     const std::size_t start = writer.bit_count();
     const std::size_t expected =
         legacy_auth_body_bits(snapshot, key, slotType, slotIndex, carriesPlayerKey);
@@ -950,8 +978,9 @@ bool legacy_write_auth_body(bits::Writer& writer,
         encoded = write_participation(writer, snapshot);
     } else if (slotType == kSlotTypeLifetime) {
         encoded = write_lifetime(writer, snapshot,key==0x4786C0E0U && slotIndex==3
-            ?(snapshot.deep_storage.enabled && snapshot.deep_storage.restricted?19U:
-              snapshot.omegaMission.generation && snapshot.omegaMission.restriction?14U:0U):0U);
+            ?(snapshot.hijacked.enabled && snapshot.hijacked.restricted?40U:snapshot.deep_storage.enabled && snapshot.deep_storage.restricted?19U:
+              snapshot.omegaMission.generation && snapshot.omegaMission.restriction?14U:0U):0U,
+            key==0x4786C0E0U && slotIndex==3 ? snapshot.lifetimeScenarioOrdinal : std::nullopt);
     } else if (slotType == kSlotTypeActivityScript && kInitializeActivityScript
                && (snapshot.initializeMissionAuthorityRuntime
                    || snapshot.publishOmegaOpeningTransition
@@ -959,10 +988,10 @@ bool legacy_write_auth_body(bits::Writer& writer,
         encoded = write_activity_script(writer, snapshot);
     } else if (slotType == kSlotTypeMissionDirector && kInitializeMissionDirector
                && (snapshot.initializeMissionAuthorityRuntime
-                   || ((snapshot.omegaMission.generation || snapshot.deep_storage.enabled) && key==0x4786C0E0U && slotIndex==1)
+                   || ((snapshot.omegaMission.generation || snapshot.deep_storage.enabled || snapshot.hijacked.enabled) && key==0x4786C0E0U && slotIndex==1)
                    || snapshot.publishOmegaOpeningTransition
                    || snapshot.publishAuthoredCueTransition)) {
-        encoded = write_mission_director(writer, snapshot,(snapshot.omegaMission.generation || snapshot.deep_storage.enabled)
+        encoded = write_mission_director(writer, snapshot,(snapshot.omegaMission.generation || snapshot.deep_storage.enabled || snapshot.hijacked.enabled)
             && key==0x4786C0E0U && slotIndex==1);
     } else if (slotType == kSlotTypeConfiguration) {
         // Both optional arrays absent and the terminal tag clear is the constructed state.

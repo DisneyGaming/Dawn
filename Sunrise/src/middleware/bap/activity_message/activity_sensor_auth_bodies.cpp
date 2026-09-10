@@ -364,12 +364,11 @@ constexpr std::size_t kSpawnKeyCount = 32;
            && writer.write(0, 3) && writer.write(0, 32) && writer.write(1, 5)
            && writer.write(0, kPresenceWidth) && writer.write(0, 3)
            && writer.write(1, kPresenceWidth) && writer.write(snapshot.playerKey, 64)
-           && writer.write(0, 5) && writer.write(3, 6)
-           // 80804F30+48 ->808094DD+0C ->808094E1: native player predicate hashes.
-           && writer.write(snapshot.omegaPortalPlayerHash ? 1U : 0U, 6);
-    if (encoded && snapshot.omegaPortalPlayerHash) {
-        encoded = writer.write(state::activity::omega_portal_entry::kRequiredPlayerHash, 32);
-    }
+           && writer.write(0, 5) && writer.write(3, 6);
+    // 80804F30+48 ->808094DD+0C ->808094E1: authored predicate names.
+    const auto names=native::player_predicates::compose(snapshot.playerPredicates,snapshot.omegaPortalPlayerHash,
+        state::activity::omega_portal_entry::kRequiredPlayerHash);
+    encoded=encoded && names && native::player_predicates::write(writer,*names);
     return encoded && writer.write(0, 6)
            // Byte 736 skips the respawn delay, whose countdown never expires when the content
            // delay is negative. Byte 737 holds the spawn while the client loads.
@@ -553,13 +552,7 @@ write_shared_mission_state(bits::Writer& writer, bool active) noexcept {
  * The canonical absent reference deliberately selects the component's authored local transform.
  */
 [[nodiscard]] bool write_active_omega_portal_component(bits::Writer& writer) noexcept {
-    return writer.write(0, 32) && writer.write(1, 32)
-           && writer.write(1, 1) && writer.write(1, 1) && writer.write(0, 32)
-           && writer.write(kAbsentSpawnSetHash, 32) && writer.write(0, kSlotTypeWidth)
-           && writer.write(kSlotIndexBias - 1U, kSlotIndexWidth)
-           && writer.write(0, 32) && writer.write(0, 32) && writer.write(0, 32)
-           && writer.write(0, 1) && writer.write(1, 2)
-           && writer.write(0, kPresenceWidth);
+    return native::placement::write_active(writer);
 }
 
 /**
@@ -910,6 +903,17 @@ auth_body_bits(const Snapshot& snapshot,
                std::uint8_t slotType,
                std::uint16_t slotIndex,
                bool carriesPlayerKey) noexcept {
+    if(const auto* request=native::engagement::find(snapshot.engagements,key,slotType,slotIndex)) return native::engagement::body_bits(*request);
+    if(const auto* request=native::world_device::find(snapshot.devices,key,slotType,slotIndex)) return native::world_device::valid(request->state)?native::world_device::kPayloadBits:0;
+    if(const auto* request=native::forest_generator::find(snapshot.generators,key,slotType,slotIndex)) return native::forest_generator::body_bits(request->state);
+    if(native::npc_animation::find(snapshot.animations,key,slotType,slotIndex)) return native::npc_animation::kBodyBits;
+    if(const auto* request=native::dialogue::find(snapshot.dialogues,key,slotType,slotIndex)) return native::dialogue::body_bits(*request);
+    if(const auto* request=native::world_sequence::find(snapshot.sequences,key,slotType,slotIndex)) return native::world_sequence::valid(*request)?native::world_sequence::kPayloadBits:0;
+    if(const auto* request=native::event_participant::find(snapshot.eventParticipants,key,slotType,slotIndex)) return native::event_participant::body_bits(*request);
+    if(const auto* request=native::music::find(snapshot.music,key,slotType,slotIndex)) return native::music::valid(*request)?native::music::kBits:0;
+    if(const auto* request=native::placement::find(snapshot.placements,key,slotType,slotIndex)) return native::placement::body_bits(*request);
+    if(const auto* request=native::population::find(snapshot.populations,key,slotType,slotIndex))
+        return native::population::bits(*request);
     if (!snapshot.archiveOmega) { return legacy_auth_body_bits(snapshot, key, slotType, slotIndex, carriesPlayerKey); }
 
     if(const auto* status=omega_eye_status_source(snapshot,key,slotType,slotIndex)) {
@@ -977,10 +981,13 @@ auth_body_bits(const Snapshot& snapshot,
         && snapshot.omegaDialogueArm && omega_directive(key, slotType, slotIndex)) {
         return kOmegaDirectiveBits;
     }
+    if(slotType==13 && !native::player_predicates::compose(snapshot.playerPredicates,snapshot.omegaPortalPlayerHash,
+        state::activity::omega_portal_entry::kRequiredPlayerHash))return 0;
     if (slotType == kSlotTypeParticipation) {
         return carriesPlayerKey
                    ? kParticipationBits + (snapshot.hasRegion ? kParticipationRegionBits : 0)
-                         + (snapshot.omegaPortalPlayerHash ? 32U : 0U)
+                         + 32U*native::player_predicates::compose(snapshot.playerPredicates,snapshot.omegaPortalPlayerHash,
+                             state::activity::omega_portal_entry::kRequiredPlayerHash).value().count
                    : 0;
     }
     if (slotType == kSlotTypeLifetime) {
@@ -1027,6 +1034,18 @@ bool write_auth_body(bits::Writer& writer,
                      std::uint8_t slotType,
                      std::uint16_t slotIndex,
                      bool carriesPlayerKey) noexcept {
+    if(const auto* request=native::engagement::find(snapshot.engagements,key,slotType,slotIndex)) return native::engagement::write(writer,*request);
+    if(const auto* request=native::world_device::find(snapshot.devices,key,slotType,slotIndex)) return native::world_device::write_payload(writer,request->state);
+    if(const auto* request=native::forest_generator::find(snapshot.generators,key,slotType,slotIndex)) return native::forest_generator::write_payload(writer,request->state);
+    if(const auto* request=native::npc_animation::find(snapshot.animations,key,slotType,slotIndex))
+        return native::npc_animation::write(writer,request->control);
+    if(const auto* request=native::dialogue::find(snapshot.dialogues,key,slotType,slotIndex)) return native::dialogue::write(writer,*request);
+    if(const auto* request=native::world_sequence::find(snapshot.sequences,key,slotType,slotIndex)) return native::world_sequence::write(writer,*request);
+    if(const auto* request=native::event_participant::find(snapshot.eventParticipants,key,slotType,slotIndex)) return native::event_participant::write(writer,*request);
+    if(const auto* request=native::music::find(snapshot.music,key,slotType,slotIndex)) return native::music::write(writer,*request);
+    if(const auto* request=native::placement::find(snapshot.placements,key,slotType,slotIndex)) return native::placement::write(writer,*request);
+    if(const auto* request=native::population::find(snapshot.populations,key,slotType,slotIndex))
+        return native::combatant_source::write_source(writer,request->source);
     if (!snapshot.archiveOmega) { return legacy_write_auth_body(writer, snapshot, key, slotType, slotIndex, carriesPlayerKey); }
 
     const std::size_t start = writer.bit_count();

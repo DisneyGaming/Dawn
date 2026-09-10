@@ -31,6 +31,9 @@
 #include "legacy_owner_sentinel.h"
 #include "type31_objective_capture.h"
 #include "type31_objective_capture_lifecycle.h"
+#include "public_event_placement_observer.h"
+#include "public_event_deferred_placement_observer.h"
+#include "public_event_engagement_observer.h"
 
 #pragma comment(lib, "bcrypt.lib")
 
@@ -314,6 +317,7 @@ hooking::detour::Handle g_omegaVisualUpdateHandle{};
 hooking::detour::Handle g_omegaVisualSelectHandle{};
 hooking::detour::Handle g_omegaGateApplyHandle{};
 hooking::detour::Handle g_omegaEngagementApplyHandle{};
+bool g_omegaEngagementReceiptOwned{};
 hooking::detour::Handle g_omegaPointApplyHandle{};
 hooking::detour::Handle g_omegaMonitorApplyHandle{};
 std::atomic<BitReader> g_original{nullptr};
@@ -2781,10 +2785,15 @@ __declspec(noinline) void __fastcall omega_visual_apply(void* component,
                                   : nullptr;
     const std::uint64_t previousHash = trace ? safe_omega_visual_state_hash(state) : 0U;
     if (trace) { ++g_omegaVisualTraceDepth; }
+    const auto publicEvent = call.accepts_side_effects()
+        ? public_event_placement_observer::begin(component)
+        : public_event_placement_observer::Context{};
     hooking::await_original(g_omegaVisualApplyOriginal)(component, stateKey);
     if (trace) { --g_omegaVisualTraceDepth; }
     if (!call.accepts_side_effects()) { return; }
     if (gatewayRun!=0) { observe_gateway_preparation(component,gatewayRun); }
+    static_cast<void>(public_event_placement_observer::finish(component,publicEvent));
+    public_event_deferred_placement_observer::refresh(component);
     if (nav.enabled) { observe_first_cannon_preparation(component, nav.run); }
     if (nav.enabled) { observe_omega_arc_charge_carrier(component,nav.run); }
     if (!trace) { return; }
@@ -2923,15 +2932,12 @@ __declspec(noinline) void __fastcall omega_gate_apply(void* component,
     report_omega_post_scene_apply("gate_after", component, stateKey, 0x1C0U, 0x18U);
 }
 
-__declspec(noinline) void __fastcall omega_engagement_apply(void* component,
-                                                             void* stateKey) noexcept {
-    const OmegaPostSceneApply original =
-        g_omegaEngagementApplyOriginal.load(std::memory_order_acquire);
-    if (original == nullptr) {
-        return;
-    }
-    original(component, stateKey);
-    report_omega_post_scene_apply("engagement", component, stateKey, 0x180U, 0xD0U);
+__declspec(noinline) void __fastcall omega_engagement_apply(void* component,void* stateKey) noexcept {
+    const hooking::CallGate::Scope call(g_omegaCannonReceiptGate);
+    const auto captured=call.accepts_side_effects()?public_event_engagement_observer::begin(component,stateKey):public_event_engagement_observer::Context{};
+    hooking::await_original(g_omegaEngagementApplyOriginal)(component,stateKey);
+    if(call.accepts_side_effects())static_cast<void>(public_event_engagement_observer::finish(component,captured));
+    report_omega_post_scene_apply("engagement",component,stateKey,0x180U,0xD0U);
 }
 
 __declspec(noinline) void __fastcall omega_point_apply(
@@ -4549,8 +4555,8 @@ activity_schema_decode_legacy_bundle_hook_ownership() noexcept {
               g_omegaVisualSelectOriginal.load(std::memory_order_acquire) != nullptr},
              {g_omegaGateApplyHandle.attached,
               g_omegaGateApplyOriginal.load(std::memory_order_acquire) != nullptr},
-             {g_omegaEngagementApplyHandle.attached,
-              g_omegaEngagementApplyOriginal.load(std::memory_order_acquire) != nullptr},
+             {!g_omegaEngagementReceiptOwned && g_omegaEngagementApplyHandle.attached,
+              !g_omegaEngagementReceiptOwned && g_omegaEngagementApplyOriginal.load(std::memory_order_acquire) != nullptr},
              {g_omegaMonitorApplyHandle.attached,
               g_omegaMonitorApplyOriginal.load(std::memory_order_acquire) != nullptr}}};
     // LEGACY_OWNER_SENTINEL_END(activity_schema_decode_legacy_bundle)
@@ -4699,22 +4705,30 @@ private:
 } // namespace
 
 bool install_omega_first_cannon_receipt() noexcept {
-    if (g_omegaVisualApplyHandle.attached) { return g_omegaCannonReceiptGate.accepting(); }
-    std::byte* target{};
-    __try {
-        target = object_target(kOmegaVisualApplyRva, kOmegaVisualApplyPrefix);
-    } __except (EXCEPTION_EXECUTE_HANDLER) {
-        target = nullptr;
+    if (g_omegaVisualApplyHandle.attached && g_omegaEngagementReceiptOwned) { return g_omegaCannonReceiptGate.accepting(); }
+    if(!g_omegaVisualApplyHandle.attached) {
+        std::byte* target{};
+        __try {
+            target = object_target(kOmegaVisualApplyRva, kOmegaVisualApplyPrefix);
+        } __except (EXCEPTION_EXECUTE_HANDLER) {
+            target = nullptr;
+        }
+        if (target == nullptr
+            || !hooking::detour::install({target, reinterpret_cast<void*>(&omega_visual_apply)},
+                                         g_omegaVisualApplyHandle)) {
+            core::log::write(core::log::Channel::client, core::log::Level::warn,
+                            "ev=omega_first_cannon stage=install result=fail");
+            return false;
+        }
+        hooking::publish_original(g_omegaVisualApplyOriginal,
+            reinterpret_cast<OmegaVisualApply>(g_omegaVisualApplyHandle.original));
     }
-    if (target == nullptr
-        || !hooking::detour::install({target, reinterpret_cast<void*>(&omega_visual_apply)},
-                                     g_omegaVisualApplyHandle)) {
-        core::log::write(core::log::Channel::client, core::log::Level::warn,
-                        "ev=omega_first_cannon stage=install result=fail");
-        return false;
+    if(!g_omegaEngagementApplyHandle.attached) {
+        const auto engagementTarget=object_target(kOmegaEngagementApplyRva,kOmegaPostSceneApplyPrefix);
+        if(!engagementTarget || !hooking::detour::install({engagementTarget,reinterpret_cast<void*>(&omega_engagement_apply)},g_omegaEngagementApplyHandle))return false;
+        hooking::publish_original(g_omegaEngagementApplyOriginal,reinterpret_cast<OmegaPostSceneApply>(g_omegaEngagementApplyHandle.original));
     }
-    hooking::publish_original(g_omegaVisualApplyOriginal,
-        reinterpret_cast<OmegaVisualApply>(g_omegaVisualApplyHandle.original));
+    g_omegaEngagementReceiptOwned=true;
     for (auto& logged : g_omegaCannonReceiptLoggedRuns) {
         logged.store(0U, std::memory_order_release);
     }
@@ -4723,7 +4737,7 @@ bool install_omega_first_cannon_receipt() noexcept {
     }
     g_omegaCannonReceiptGate.accept();
     core::log::write(core::log::Channel::client, core::log::Level::info,
-        "ev=omega_first_cannon stage=install result=ok target=9F19F0 sources=95FB2E01/4/10,11,12,13 mutation=observe_only");
+        "ev=omega_first_cannon stage=install result=ok target=9F19F0 engagement=9F1820 sources=95FB2E01/4/10,11,12,13 mutation=observe_only");
     return true;
 }
 
@@ -4733,19 +4747,24 @@ void quiesce_omega_first_cannon_receipt() noexcept {
 
 bool uninstall_omega_first_cannon_receipt() noexcept {
     quiesce_omega_first_cannon_receipt();
-    if (!g_omegaVisualApplyHandle.attached) { return true; }
-    const std::array<hooking::detour::ProtectedCodeEntry, 6> protectedCode{{
+    if (!g_omegaVisualApplyHandle.attached && !g_omegaEngagementReceiptOwned) { return true; }
+    const std::array<hooking::detour::ProtectedCodeEntry, 7> protectedCode{{
         {reinterpret_cast<void*>(&omega_visual_apply)},
+        {reinterpret_cast<void*>(&omega_engagement_apply)},
         {reinterpret_cast<void*>(&observe_first_cannon_preparation)},
         {reinterpret_cast<void*>(&observe_gateway_preparation)},
         {reinterpret_cast<void*>(&first_cannon_preparation)},
         {reinterpret_cast<void*>(&hooking::call_gate_detail::enter)},
         {reinterpret_cast<void*>(&hooking::call_gate_detail::leave)},
     }};
-    if (hooking::detour::uninstall(g_omegaVisualApplyHandle, protectedCode,
+    if (g_omegaVisualApplyHandle.attached && hooking::detour::uninstall(g_omegaVisualApplyHandle, protectedCode,
                                    first_cannon_receipt_idle)
         != hooking::detour::UninstallResult::removed) { return false; }
     g_omegaVisualApplyOriginal.store(nullptr, std::memory_order_release);
+    if(g_omegaEngagementReceiptOwned) {
+        if(hooking::detour::uninstall(g_omegaEngagementApplyHandle,protectedCode,first_cannon_receipt_idle)!=hooking::detour::UninstallResult::removed)return false;
+        g_omegaEngagementApplyOriginal.store(nullptr,std::memory_order_release);g_omegaEngagementReceiptOwned=false;
+    }
     for (auto& logged : g_omegaCannonReceiptLoggedRuns) {
         logged.store(0U, std::memory_order_release);
     }
@@ -4977,14 +4996,14 @@ void uninstall_omega_post_scene_trace() noexcept {
     if (g_omegaMonitorApplyHandle.attached) {
         (void)hooking::detour::uninstall(g_omegaMonitorApplyHandle);
     }
-    if (g_omegaEngagementApplyHandle.attached) {
+    if (!g_omegaEngagementReceiptOwned && g_omegaEngagementApplyHandle.attached) {
         (void)hooking::detour::uninstall(g_omegaEngagementApplyHandle);
     }
     if (g_omegaGateApplyHandle.attached) {
         (void)hooking::detour::uninstall(g_omegaGateApplyHandle);
     }
     g_omegaGateApplyOriginal.store(nullptr, std::memory_order_release);
-    g_omegaEngagementApplyOriginal.store(nullptr, std::memory_order_release);
+    if(!g_omegaEngagementReceiptOwned)g_omegaEngagementApplyOriginal.store(nullptr, std::memory_order_release);
     g_omegaMonitorApplyOriginal.store(nullptr, std::memory_order_release);
     g_omegaPostSceneApplyObserved.store(0U, std::memory_order_release);
 }

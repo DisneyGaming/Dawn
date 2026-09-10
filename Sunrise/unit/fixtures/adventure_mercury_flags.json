@@ -1,0 +1,30 @@
+{
+  "format_version": 2,
+  "mission": "mercury_freeroam",
+  "profile": "adventure.fixture",
+  "authority_schema": "nativeOtherActivities",
+  "assets": {
+    "module": {"registry":"0x80F4696A","definition":"0x80F4696A","type":0,"slot":0},
+    "ascend": {"registry":"0x2749BAAE","definition":"0x80F5B960","type":4,"slot":0},
+    "horde": {"registry":"0x2749BAAE","definition":"0x80F5B956","type":4,"slot":1},
+    "intercept": {"registry":"0x2749BAAE","definition":"0x80F5B959","type":4,"slot":2}
+  },
+  "bindings": {
+    "start": {"capability":"persistent.start","operation":"mechanic","asset":"module","argument":1,"wait":"requested"},
+    "ascend": {"capability":"adventure.ascend.beacon","operation":"device","asset":"ascend","argument":1,"wait":"requested"},
+    "horde": {"capability":"adventure.horde.beacon","operation":"device","asset":"horde","argument":1,"wait":"requested"},
+    "intercept": {"capability":"adventure.intercept.beacon","operation":"device","asset":"intercept","argument":1,"wait":"requested"}
+  },
+  "graphs": {
+    "entry": {"name":"Adventure capability fixture","domain":"composition","steps":[{"id":"begin","after":[],"commands":[{"id":"begin","binding":"start"}]}],"receipts":{}},
+    "flags": {"name":"Native flag startup","domain":"nativeActivity","steps":[{"id":"place","after":[],"commands":[{"id":"a","binding":"ascend"},{"id":"b","binding":"horde"},{"id":"c","binding":"intercept"}]}],"receipts":{}}
+  },
+  "roles": {"persistent":"flags"},
+  "entry":"entry",
+  "modules":["persistent"],
+  "observations":[],
+  "presentation": {
+    "dialogue":{"bank":"0x00000000","rows":[],"objective_cues":[],"dispatch_timeout_ms":100,"spacing_ms":0},
+    "cue_sets":{},"action_sets":{},"binding_tables":{}
+  }
+}

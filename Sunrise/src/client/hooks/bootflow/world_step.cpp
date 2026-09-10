@@ -10,6 +10,10 @@
 #include "../../hooking/detour.h"
 #include "bootflow_hook_lifecycle.h"
 #include "internal.h"
+#include "hijacked_placements.h"
+#include "../graphics/hijacked_frame_timing.h"
+#include "omega_enemy_lair_receipts.h"
+#include "../../activity/mission_launch.h"
 #include "omega_activity_handoff.inl"
 
 namespace sunrise::client::hooks::bootflow {
@@ -113,6 +117,7 @@ std::atomic_uint64_t g_publishedTick{0};
 
 /** Publishes the client's own boot-flow step. */
 void poll_world_step() noexcept {
+    const graphics::hijacked_frame_timing::PostSpan timing(graphics::hijacked_frame_timing::Kind::world_step);
     // Spawning can finish before step 38, after which Destiny no longer calls the spawn gate.
     // Keep arrival observation and its pending fade completion alive on the camera frame.
     poll_spawn_arrival();
@@ -128,6 +133,9 @@ void poll_world_step() noexcept {
     // the embedded server's worker (the vex_wall device push froze from that context).
     sample_omega_portal_transport();
     omega_activity_handoff::poll();
+    hijacked_placements::poll();
+    poll_native_population_admissions();
+    client::activity::mission_launch::poll();
 }
 
 /** Reports whether the player is in a loaded destination. */

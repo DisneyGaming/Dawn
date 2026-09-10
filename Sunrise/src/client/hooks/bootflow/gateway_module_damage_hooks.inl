@@ -1,4 +1,5 @@
 // Included in the installed object-source owner, under the same CallGate.
+#include "hijacked_boss_damage.inl"
 using ModuleDamage=void(__fastcall*)(const void*,const void*,std::byte*,bool,bool,const void*,std::int32_t) noexcept;
 using ModuleDamageGate=bool(__fastcall*)(const void*) noexcept;
 using ModuleDamageSummary=void(__fastcall*)(const void*,std::uint32_t,std::uint32_t,bool,bool,const void*,float) noexcept;
@@ -39,6 +40,7 @@ __declspec(noinline) bool __fastcall gateway_damage_gate_hook(const void* contex
     const hooking::CallGate::Scope gate{g_gate};
     const bool result=hooking::await_original(g_moduleDamageGate)(context);
     if(!gate.accepts_side_effects()) { return result; }
+    if(hijacked_damage::immune(context)) {return false;}
     gateway_native::Read read{g_image};native_box_identity::Sample sample{};
     if(!native_box_identity::sample(read,reinterpret_cast<std::uintptr_t>(context),sample)) { return result; }
     const auto request=state::activity::gateway::ending_request();
@@ -57,9 +59,9 @@ __declspec(noinline) bool __fastcall gateway_damage_gate_hook(const void* contex
 __declspec(noinline) void __fastcall gateway_damage_hook(const void* context,const void* damage,std::byte* packet,
     bool mode,bool secondary,const void* extra,std::int32_t index) noexcept {
     const hooking::CallGate::Scope gate{g_gate};
-    if(gate.accepts_side_effects() && gateway_damage_blocked(context)) { return; }
+    if(gate.accepts_side_effects() && (gateway_damage_blocked(context) || !hijacked_damage::before(context,packet))) { return; }
     hooking::await_original(g_moduleDamage)(context,damage,packet,mode,secondary,extra,index);
-    if(gate.accepts_side_effects()) { gateway_damage_receipt(context); }
+    if(gate.accepts_side_effects()) { hijacked_damage::after(context);gateway_damage_receipt(context); }
 }
 __declspec(noinline) void __fastcall gateway_damage_summary_hook(const void* context,std::uint32_t attacker,std::uint32_t target,
     bool killed,bool mode,const void* regions,float amount) noexcept {

@@ -68,12 +68,14 @@ struct RosterPublication {
     std::uint8_t priorOmegaOpeningStage{};
     std::uint16_t priorDirectorSends{};
     bool priorMissionDirectorActive{};
+    encrypted::push::activity::roster_lifetime::State priorLifetimes{};
     std::uint32_t afterGroups{};
     std::uint8_t afterSends{};
     std::uint8_t afterState{};
     std::uint8_t afterOmegaOpeningStage{};
     std::uint16_t afterDirectorSends{};
     bool afterMissionDirectorActive{};
+    encrypted::push::activity::roster_lifetime::State afterLifetimes{};
     /** Opening stage carried by this body; zero is the baseline full-seed packet. */
     std::uint8_t omegaOpeningStage{};
     /** Omega script state carried by this staged body: zero when it carries no runtime edge. */
@@ -177,6 +179,7 @@ struct ActivityBindingState {
     std::uint32_t rosterGroups{};
     std::uint8_t rosterSends{};
     std::uint8_t rosterState{};
+    encrypted::push::activity::roster_lifetime::State rosterLifetimes{};
     /** Temporary delivery-local home; the host-durable Omega move remains a later slice. */
     std::uint8_t omegaOpeningStage{};
     std::uint16_t directorSends{};

@@ -164,6 +164,7 @@ void uninstall_activity_notification_type1_apply_probe() noexcept;
 void* omega_native_device_channel0() noexcept;
 void uninstall_omega_dialogue_dispatch_probe() noexcept;
 [[nodiscard]] bool install_omega_navigation() noexcept;
+void dispatch_hijacked_boss_teleport() noexcept;
 [[nodiscard]] bool install_omega_lair_cinematic() noexcept;
 void quiesce_omega_lair_cinematic() noexcept;
 [[nodiscard]] bool uninstall_omega_lair_cinematic() noexcept;

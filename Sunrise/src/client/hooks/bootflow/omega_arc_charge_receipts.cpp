@@ -13,18 +13,25 @@
 #include <span>
 
 #include "omega_arc_charge_receipts.h"
+#include "native_hook_ownership.h"
+#include "native_capture_observer.h"
+#include "public_event_deferred_placement_observer.h"
 #include "omega_arc_charge_native.h"
 #include "gateway_native_read.h"
 #include "gateway_module_native_path.h"
 #include "beyond_infinity_native_receipts.h"
 #include "../../../state/activity/beyond_infinity/runtime.h"
 #include "../../../state/activity/deep_storage/runtime.h"
+#include "../../../state/activity/hijacked/runtime.h"
+#include "../../../state/activity/hijacked/controller.h"
+#include "../../../state/activity/hijacked/plate_presentation.h"
 #include "../../../state/activity/deep_storage/controller.h"
 #include "../../../state/activity/deep_storage/plate_presentation.h"
 #include "../../../state/activity/deep_storage/hologram_owner.h"
 #include "gateway_module_damage.h"
 #include "beyond_infinity_lens_damage.h"
 #include "deep_storage_lens_damage.h"
+#include "hijacked_boss_damage.h"
 #include "../../../state/activity/gateway/runtime.h"
 #include "../../../state/activity/deadly_trial/runtime.h"
 #include "../../hooking/call_gate.h"
@@ -35,6 +42,8 @@
 #include "../../../state/activity/omega_first_lair_runtime.h"
 #include "../../../state/activity/omega_rescue_marker_authority.h"
 #include "../../../state/activity/omega_presentation.h"
+#include "../../../server/runtime/activity/public_event_native_bridge.h"
+#include "../../../server/runtime/activity/public_event_key_bridge.h"
 
 namespace sunrise::client::hooks::bootflow {
 namespace {
@@ -43,6 +52,7 @@ namespace catalog = state::activity::omega_arc_charge;
 namespace lair = state::activity::omega_first_lair;
 namespace transit = state::activity::omega_crown_transit;
 namespace rescueMarkers = state::activity::omega_rescue_markers;
+namespace eventKeys=server::runtime::activity::public_event::keys;
 using Carry = void(__fastcall*)(void*, std::uint8_t, const void*) noexcept;
 using Dunk = void(__fastcall*)(void*) noexcept;
 /** Original 9EFFC0: creates a source's world entity, stores the weak pair at
@@ -784,29 +794,110 @@ void after_trial_use(void* component,const TrialUse& before) noexcept {
 #include "beyond_infinity_plate_hooks.inl"
 #include "beyond_infinity_object_receipts.inl"
 #include "deep_storage_object_receipts.inl"
+#include "hijacked_object_receipts.inl"
 #include "gateway_module_receipts.inl"
 #include "gateway_module_damage_hooks.inl"
 
 __declspec(noinline) void __fastcall carry_hook(void* component, std::uint8_t state, const void* holder) noexcept {
     const hooking::CallGate::Scope scope{g_gate};
     const auto nav = state::activity::omega_presentation::navigation();
+    std::array<std::byte,0x480> before{};
+    eventKeys::State key{};
+    if(scope.accepts_side_effects() && !g_dunkInFlight && copy(component,before)
+        && prefix(before.data(),at<std::uint32_t>(before.data()),0x80804221,0x598))
+        key=eventKeys::bridge::carrier(at<std::uint32_t>(before.data()),at<std::uint32_t>(before.data()+0x2C));
     hooking::await_original(g_carry)(component, state, holder);
     if (scope.accepts_side_effects() && nav.enabled) { observe_carry(component, nav.run); }
+    if(scope.accepts_side_effects() && key.epoch) {
+        std::array<std::byte,0x480> after{};
+        if(!copy(component,after) || std::memcmp(before.data(),after.data(),16)!=0
+            || at<std::uint32_t>(before.data()+0x24)!=at<std::uint32_t>(after.data()+0x24)
+            || at<std::uint32_t>(after.data()+0x2C)!=key.keyEntity
+            || !public_event_deferred_placement_observer::live_entity(key.keyEntity))return;
+        const auto mode=at<std::uint8_t>(after.data()+0x470);
+        const bool held=mode==1 || mode==3;
+        std::uint32_t owner=UINT32_MAX;
+        if(held) {
+            owner=public_event_deferred_placement_observer::holder_context(holder);
+            if(owner==UINT32_MAX && g_holder)g_holder(component,&owner);
+            if(!public_event_deferred_placement_observer::live_entity(owner))return;
+        }
+        const bool accepted=eventKeys::bridge::carry(key,at<std::uint32_t>(after.data()+0x24),owner,held);
+        report("ev=public_event_key stage=native_carry item=%08X holder=%08X state=%u accepted=%u mutation=observe_only",key.keyEntity,owner,mode,accepted?1U:0U);
+    }
+}
+namespace rallyBridge=server::runtime::activity::public_event::native_bridge;
+namespace rallyUse=server::runtime::activity::public_event::rally_use;
+struct PendingRally final {
+    rallyUse::Binding binding{};
+    std::array<std::byte,rallyUse::kBytes> before{};
+    Requester requester{};
+};
+PendingRally before_rally(void* component) noexcept {
+    PendingRally pending{};
+    if(!copy(component,pending.before))return {};
+    const auto* bytes=pending.before.data();
+    if(at<std::uint32_t>(bytes+4)!=0x80804FB2)return {};
+    pending.binding=rallyBridge::lookup_use(at<std::uint32_t>(bytes),at<std::uint32_t>(bytes+0x2C));
+    if(!pending.binding.epoch)return {};
+    pending.requester=resolve_requester(static_cast<const std::byte*>(component)+0x2E0,UINT32_MAX);
+    // This local testing receipt must name the exact local player, including its
+    // salt, and its currently controlled entity. A shared table kind is insufficient.
+    if(pending.requester.raw==UINT32_MAX || pending.requester.raw!=pending.requester.local
+        || pending.requester.entity==UINT32_MAX || pending.requester.entity!=pending.requester.localEntity)return {};
+    return pending;
+}
+void after_rally(void* component,const PendingRally& pending) noexcept {
+    if(!pending.binding.epoch)return;
+    std::array<std::byte,rallyUse::kBytes> after{};rallyUse::Receipt receipt{};
+    const bool qualified=copy(component,after) && rallyUse::qualify(pending.binding,pending.before,after,
+        pending.requester.raw,pending.requester.entity,rallyUse::kProducerRva,receipt);
+    const bool accepted=qualified && rallyBridge::submit_use(receipt);
+    report("ev=public_event_rally stage=native_use owner=%016llX entity=%08X controller=%08X requested=%d consumed=%d qualified=%u accepted=%u mutation=observe_only",
+        static_cast<unsigned long long>(pending.binding.ticket.lease.owner.sessionId),pending.binding.entity,
+        at<std::uint32_t>(pending.before.data()+0x24),at<std::int32_t>(pending.before.data()+0x2DC),
+        at<std::int32_t>(after.data()+0x2D8),qualified?1U:0U,accepted?1U:0U);
+}
+struct PendingEventKey final {eventKeys::Use use{};std::array<std::byte,eventKeys::kUseBytes> before{};};
+PendingEventKey before_event_key(void* component) noexcept {
+    PendingEventKey pending{};
+    if(!copy(component,pending.before))return {};
+    const auto sink=eventKeys::bridge::sink(at<std::uint32_t>(pending.before.data()),at<std::uint32_t>(pending.before.data()+0x2C));
+    if(!sink.epoch || !public_event_deferred_placement_observer::live_entity(sink.sinkEntity))return {};
+    const auto requester=resolve_requester(static_cast<const std::byte*>(component)+0x2E0,UINT32_MAX);
+    const auto key=eventKeys::bridge::held(sink,requester.entity);
+    if(requester.raw==UINT32_MAX || requester.entity==UINT32_MAX
+        || !key.epoch || !public_event_deferred_placement_observer::live_entity(key.keyEntity)
+        || !public_event_deferred_placement_observer::live_entity(requester.entity)
+        || !eventKeys::before_use(key,sink,pending.before,requester.raw,requester.entity,pending.use))return {};
+    return pending;
+}
+void after_event_key(void* component,const PendingEventKey& pending) noexcept {
+    if(!pending.use.state.epoch)return;
+    std::array<std::byte,eventKeys::kUseBytes> after{};
+    const bool qualified=copy(component,after) && eventKeys::after_use(pending.use,pending.before,after);
+    const bool accepted=qualified && eventKeys::bridge::deposit(pending.use);
+    report("ev=public_event_key stage=native_deposit item=%08X sink=%08X holder=%08X requested=%d qualified=%u accepted=%u mutation=observe_only",
+        pending.use.state.keyEntity,pending.use.sink.sinkEntity,pending.use.playerEntity,pending.use.requested,qualified?1U:0U,accepted?1U:0U);
 }
 __declspec(noinline) void __fastcall dunk_hook(void* component) noexcept {
     const hooking::CallGate::Scope scope{g_gate};
     const auto nav = state::activity::omega_presentation::navigation();
     const auto pending = scope.accepts_side_effects() && nav.enabled ? before_dunk(component, nav.run) : PendingDunk{};
     const auto trialUse=scope.accepts_side_effects()?before_trial_use(component):TrialUse{};
+    const auto rally=scope.accepts_side_effects()?before_rally(component):PendingRally{};
+    const auto key=scope.accepts_side_effects()?before_event_key(component):PendingEventKey{};
     const bool previous = g_dunkInFlight;
-    g_dunkInFlight = pending.proof.held.valid();
+    g_dunkInFlight = pending.proof.held.valid() || key.use.state.epoch!=0;
     hooking::await_original(g_dunk)(component);
     g_dunkInFlight = previous;
-    if (scope.accepts_side_effects()) { after_dunk(component, pending);after_trial_use(component,trialUse); }
+    if (scope.accepts_side_effects()) { after_dunk(component, pending);after_trial_use(component,trialUse);after_rally(component,rally);after_event_key(component,key); }
 }
 __declspec(noinline) bool __fastcall create_hook(void* component) noexcept {
     const hooking::CallGate::Scope scope{g_gate};
+    const auto publicEvent=scope.accepts_side_effects()?public_event_deferred_placement_observer::begin(component):public_event_deferred_placement_observer::Context{};
     const bool created = hooking::await_original(g_create)(component);
+    if(scope.accepts_side_effects())static_cast<void>(public_event_deferred_placement_observer::finish(component,publicEvent,created));
     if (created && scope.accepts_side_effects()) {
         observe_gateway_module(component);
         const auto nav = state::activity::omega_presentation::navigation();
@@ -884,16 +975,17 @@ bool install_omega_arc_charge_receipts() noexcept {
     if (g_handles[0].attached) { return g_gate.accepting(); }
     g_image = reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
     if (g_image == 0) { return false; }
+    static_assert(native_hook_ownership::kArcCharge[8]==plate_native::kTick.rva);
     const std::array<hooking::detour::Spec, 9> specs{{
-        {target(0xD99620U, {0x48,0x89,0x6C,0x24,0x10,0x48,0x89,0x74,0x24,0x18,0x57,0x48,0x83,0xEC,0x50,0x49}), reinterpret_cast<void*>(&carry_hook)},
-        {target(0xF36640U, {0x48,0x89,0x5C,0x24,0x18,0x57,0x48,0x83,0xEC,0x20,0x44,0x8B,0x01,0x48,0x8B,0xD9}), reinterpret_cast<void*>(&dunk_hook)},
-        {target(0x9EFFC0U, {0x48,0x89,0x74,0x24,0x18,0x48,0x89,0x7C,0x24,0x20,0x41,0x56,0x48,0x83,0xEC,0x20}), reinterpret_cast<void*>(&create_hook)},
-        {target(0xF32CD0U, {0x48,0x89,0x5C,0x24,0x10,0x55,0x56,0x57,0x41,0x54,0x41,0x55,0x41,0x56,0x41,0x57}), reinterpret_cast<void*>(&interaction_hook)},
-        {target(0x9F0750U, {0x40,0x55,0x56,0x41,0x54,0x48,0x8D,0xAC,0x24,0x60,0xF4,0xFF,0xFF,0x48,0x81,0xEC}), reinterpret_cast<void*>(&gateway_sense_hook)},
-        {target(0xB804E0U, {0xE9,0xA5,0xC5,0xAB,0x04,0x53,0x52,0x41,0x54,0x41,0x53,0x41,0x55,0x57,0x41,0x51}), reinterpret_cast<void*>(&gateway_damage_hook)},
-        {target(0xCDCB60U, {0x48,0x8B,0x41,0x08,0x0F,0xB6,0x80,0x38,0x03,0x00,0x00,0xD0,0xE8,0xF6,0xD0,0x24}), reinterpret_cast<void*>(&gateway_damage_gate_hook)},
-        {target(0xB7E3C0U, {0x48,0x8B,0xC4,0x48,0x89,0x58,0x18,0x48,0x89,0x70,0x20,0x55,0x57,0x41,0x56,0x48}), reinterpret_cast<void*>(&gateway_damage_summary_hook)},
-        {target(plate_native::kTick.rva,plate_native::kTick.signature),reinterpret_cast<void*>(&beyond_plate_tick_hook)},
+        {target(native_hook_ownership::kArcCharge[0], {0x48,0x89,0x6C,0x24,0x10,0x48,0x89,0x74,0x24,0x18,0x57,0x48,0x83,0xEC,0x50,0x49}), reinterpret_cast<void*>(&carry_hook)},
+        {target(native_hook_ownership::kArcCharge[1], {0x48,0x89,0x5C,0x24,0x18,0x57,0x48,0x83,0xEC,0x20,0x44,0x8B,0x01,0x48,0x8B,0xD9}), reinterpret_cast<void*>(&dunk_hook)},
+        {target(native_hook_ownership::kArcCharge[2], {0x48,0x89,0x74,0x24,0x18,0x48,0x89,0x7C,0x24,0x20,0x41,0x56,0x48,0x83,0xEC,0x20}), reinterpret_cast<void*>(&create_hook)},
+        {target(native_hook_ownership::kArcCharge[3], {0x48,0x89,0x5C,0x24,0x10,0x55,0x56,0x57,0x41,0x54,0x41,0x55,0x41,0x56,0x41,0x57}), reinterpret_cast<void*>(&interaction_hook)},
+        {target(native_hook_ownership::kArcCharge[4], {0x40,0x55,0x56,0x41,0x54,0x48,0x8D,0xAC,0x24,0x60,0xF4,0xFF,0xFF,0x48,0x81,0xEC}), reinterpret_cast<void*>(&gateway_sense_hook)},
+        {target(native_hook_ownership::kArcCharge[5], {0xE9,0xA5,0xC5,0xAB,0x04,0x53,0x52,0x41,0x54,0x41,0x53,0x41,0x55,0x57,0x41,0x51}), reinterpret_cast<void*>(&gateway_damage_hook)},
+        {target(native_hook_ownership::kArcCharge[6], {0x48,0x8B,0x41,0x08,0x0F,0xB6,0x80,0x38,0x03,0x00,0x00,0xD0,0xE8,0xF6,0xD0,0x24}), reinterpret_cast<void*>(&gateway_damage_gate_hook)},
+        {target(native_hook_ownership::kArcCharge[7], {0x48,0x8B,0xC4,0x48,0x89,0x58,0x18,0x48,0x89,0x70,0x20,0x55,0x57,0x41,0x56,0x48}), reinterpret_cast<void*>(&gateway_damage_summary_hook)},
+        {target(native_hook_ownership::kArcCharge[8],plate_native::kTick.signature),reinterpret_cast<void*>(&beyond_plate_tick_hook)},
     }};
     g_plateApply=reinterpret_cast<PlateApply>(target(plate_native::kApply.rva,plate_native::kApply.signature));
     g_plateClock=reinterpret_cast<PlateClock>(target(plate_native::kClock.rva,plate_native::kClock.signature));
@@ -942,10 +1034,13 @@ void quiesce_omega_arc_charge_receipts() noexcept { g_gate.quiesce(); }
 bool uninstall_omega_arc_charge_receipts() noexcept {
     quiesce_omega_arc_charge_receipts();
     if (!g_handles[0].attached) { return true; }
-    const std::array<hooking::detour::ProtectedCodeEntry, 30> protectedCode{{
+    const std::array<hooking::detour::ProtectedCodeEntry, 35> protectedCode{{
         {reinterpret_cast<void*>(&gateway_damage_hook)}, {reinterpret_cast<void*>(&gateway_damage_gate_hook)},
         {reinterpret_cast<void*>(&gateway_damage_summary_hook)}, {reinterpret_cast<void*>(&gateway_damage_receipt)},
         {reinterpret_cast<void*>(&gateway_damage_blocked)},
+        {reinterpret_cast<void*>(&hijacked_damage::current)}, {reinterpret_cast<void*>(&hijacked_damage::query)},
+        {reinterpret_cast<void*>(&hijacked_damage::immune)}, {reinterpret_cast<void*>(&hijacked_damage::before)},
+        {reinterpret_cast<void*>(&hijacked_damage::after)},
         {reinterpret_cast<void*>(&gateway_sense_hook)}, {reinterpret_cast<void*>(&observe_gateway_module)},
         {reinterpret_cast<void*>(&observe_beyond_object)},
         {reinterpret_cast<void*>(&beyond_plate_tick_hook)}, {reinterpret_cast<void*>(&drive_plate)},

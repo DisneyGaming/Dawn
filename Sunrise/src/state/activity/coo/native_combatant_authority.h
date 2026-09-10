@@ -39,6 +39,9 @@ struct Source final {
     // Members own their actor requests. Preserve the native parent defaults
     // observed in 80807EC9 instead of the loose-spawn override fields.
     bool memberOwned{};
+    // On a changed +7C generation, native4E9550 uses BC=0 to remove the old
+    // source-owned entities. Normal loose sources retain BC=1.
+    bool retireOwned{};
     /** Reserve population for a native scene or vehicle delivery request (logical mode 1). */
     bool sceneRequested{};
 };
@@ -102,6 +105,7 @@ template<class Writer>
         || source.secondRequested>63
         || (!source.hasSecondCategory && source.secondRequested!=0)
         || static_cast<unsigned>(source.looseRequested)+source.secondRequested>63) { return false; }
+    if(source.retireOwned && (source.looseRequested || source.secondRequested || source.memberOwned)) {return false;}
     const auto& tactical=source.tactical;
     const bool objective=tactical.registry!=0;
     if(objective ? (tactical.registry==0x811C9DC5U || tactical.slot>0x7FFFU
@@ -141,7 +145,7 @@ template<class Writer>
         && writer.write(1,1) && writer.write(source.memberOwned?1U
             :static_cast<std::uint32_t>(static_cast<std::int32_t>(tactical.row)+1),5)
         && writer.write(1,1) && writer.write(source.generation,31)
-        && writer.write(source.memberOwned?1U:2U,2) && writer.write(source.sceneRequested?2U:1U,3)
+        && writer.write(source.memberOwned || source.retireOwned?1U:2U,2) && writer.write(source.sceneRequested?2U:1U,3)
         && writer.write(1,1) && writer.write(0x811C9DC5U,32);
     return ok && writer.bit_count()-begin==(source.hasSecondCategory?kTwoCategorySourceBits:kSourceBits);
 }

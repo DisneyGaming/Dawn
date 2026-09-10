@@ -1,4 +1,5 @@
 #include "sensor_auth_update.h"
+#include "native/roster_lifetime_wire.h"
 
 namespace sunrise::middleware::bap::activity_message::sensor_auth_update {
 namespace {
@@ -46,13 +47,10 @@ bool legacy_write_bubble_block(bits::Writer& writer, const Grant& grant) noexcep
 
 namespace {
 
-[[nodiscard]] bool write_key_mask(bits::Writer& writer, std::size_t keyCount) noexcept {
+[[nodiscard]] bool write_key_mask(bits::Writer& writer, const BubbleSubBlock& block) noexcept {
     bool encoded = true;
     for (std::size_t word = 0; encoded && word < kBubbleMaskWords; ++word) {
-        const std::size_t low = word * kChunkWidth;
-        const std::size_t set = keyCount > low ? keyCount - low : 0;
-        const std::size_t bits = set > kChunkWidth ? kChunkWidth : set;
-        encoded = writer.write((std::uint64_t{1} << bits) - 1, kChunkWidth);
+        encoded = writer.write(lifetime_wire::mask(block.keys.size(), block.presence, word), kChunkWidth);
     }
     return encoded;
 }
@@ -61,6 +59,7 @@ namespace {
                                           const BubbleSubBlock& block,
                                           std::uint8_t stateSequence) noexcept {
     const std::size_t keyCount = block.keys.size();
+    if (!lifetime_wire::valid_fields(keyCount, block.presence, block.states)) return false;
     const auto count = static_cast<std::uint32_t>(keyCount);
     bool encoded = writer.write(1, kPresenceWidth)
                    && writer.write(kBubbleKeyBias + block.bubble, kKeyWidth)
@@ -69,10 +68,10 @@ namespace {
     for (std::size_t index = 0; encoded && index < keyCount; ++index) {
         encoded = writer.write(block.keys[index], kKeyWidth);
     }
-    encoded = encoded && writer.write(1, kPresenceWidth) && write_key_mask(writer, keyCount)
+    encoded = encoded && writer.write(1, kPresenceWidth) && write_key_mask(writer, block)
               && writer.write(1, kPresenceWidth) && writer.write(count, kBubbleCountWidth);
     for (std::size_t index = 0; encoded && index < keyCount; ++index) {
-        encoded = writer.write(kStateByteBias + stateSequence, 8);
+        encoded = writer.write(lifetime_wire::state(block.states, index, stateSequence), 8);
     }
     return encoded;
 }
@@ -94,27 +93,27 @@ bool legacy_write_roster_delta(bits::Writer& writer,
                         const Roster& roster,
                         std::uint8_t stateSequence) noexcept {
     const std::size_t root = writer.bit_count();
-    const std::size_t keyCount = roster.topLevelGroupCount;
+    if (!lifetime_wire::valid(roster)) return false;
+    const std::size_t keyCount = top_level_key_count(roster);
     // Clearing the root presence bit means nothing below it is read.
     bool encoded = writer.write(1, kPresenceWidth) && writer.write(1, kPresenceWidth)
                    && writer.write(1, kPresenceWidth)
                    && writer.write(static_cast<std::uint32_t>(keyCount), kDeltaCountWidth)
                    && writer.bit_count() == root + kDeltaKeysBit;
     for (std::size_t group = 0; encoded && group < keyCount; ++group) {
-        encoded = writer.write(roster.groups[group].key, kKeyWidth);
+        encoded = writer.write(roster.topLevelKeys.empty() ? roster.groups[group].key
+                                                        : roster.topLevelKeys[group], kKeyWidth);
     }
     encoded = encoded && writer.write(1, kPresenceWidth)
               && writer.bit_count() == root + delta_mask_bit(keyCount);
-    // A key whose mask bit is clear is dropped in silence, so the mask must match the key count.
-    const std::uint32_t mask =
-        keyCount == 0 ? 0U : static_cast<std::uint32_t>((std::uint64_t{1} << keyCount) - 1);
-    encoded = encoded && writer.write(mask, kChunkWidth)
-              && legacy_pad_bits(writer, kChunkWidth * (kDeltaMaskWords - 1))
-              && writer.write(1, kPresenceWidth)
+    // Retained ordinal tombstones unregister only their own native key.
+    for (std::size_t word = 0; encoded && word < kDeltaMaskWords; ++word)
+        encoded = writer.write(lifetime_wire::mask(keyCount, roster.topLevelPresence, word), kChunkWidth);
+    encoded = encoded && writer.write(1, kPresenceWidth)
               && writer.bit_count() == root + delta_state_count_bit(keyCount)
               && writer.write(static_cast<std::uint32_t>(keyCount), kDeltaCountWidth);
     for (std::size_t group = 0; encoded && group < keyCount; ++group) {
-        encoded = writer.write(kStateByteBias + stateSequence, 8);
+        encoded = writer.write(lifetime_wire::state(roster.topLevelStates, group, stateSequence), 8);
     }
     const std::span<const BubbleSubBlock> subBlocks = roster.bubbleSubBlocks;
     encoded = encoded && writer.write(subBlocks.empty() ? 0U : 1U, kPresenceWidth);

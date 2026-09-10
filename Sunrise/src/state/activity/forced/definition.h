@@ -147,6 +147,16 @@ constexpr ForcedDestination strike_pact_opening() noexcept {
 }
 inline constexpr ForcedDestination kStrikePactOpening=strike_pact_opening();
 static_assert(active(kStrikePactOpening));
+// Spatial reconstruction: the three native map points in this set lie inside
+// Hijacked's Artifacts Edge briefing volume. The retail launch selection is unknown.
+constexpr ForcedDestination hijacked_opening() noexcept {
+    ForcedDestination v{};constexpr char name[]="adventure_rumba";
+    for(std::size_t i=0;i<sizeof(name)-1;++i) {v.packageName[i]=name[i];}
+    v.packageNameLength=sizeof(name)-1;v.bubble=13;v.sliceSet=104;v.spawnSetHash=0x1BD69720U;
+    v.hasBubble=v.hasSliceSet=v.hasSpawnSetHash=v.enabled=true;return v;
+}
+inline constexpr ForcedDestination kHijackedOpening=hijacked_opening();
+static_assert(active(kHijackedOpening));
 } // namespace profiles
 
 static_assert(active(profiles::kTowerfallOpening));

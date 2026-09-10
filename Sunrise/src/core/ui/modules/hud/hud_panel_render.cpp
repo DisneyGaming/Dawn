@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <imgui.h>
 
+#include "../../../../client/diagnostics/native_overlays.h"
 #include "../../components/section/ui_section_component.h"
 #include "../../components/toggle/ui_toggle_component.h"
 #include "../../hud/overlay.h"
@@ -37,6 +38,33 @@ void draw() noexcept {
         if (components::toggle::control(ui::hud::display_name(line), on)) {
             ui::hud::set_enabled(line, on);
         }
+    }
+
+    ImGui::Spacing();
+    components::section::header("Native overlays",
+                                "Session-only switches for the game's own diagnostic displays. "
+                                "Each switch shows its current native state.");
+    ImGui::Spacing();
+    namespace native = client::diagnostics::native_overlays;
+    for (std::size_t index = 0; index < static_cast<std::size_t>(native::Overlay::count); ++index) {
+        const auto overlay = static_cast<native::Overlay>(index);
+        const auto state = native::snapshot(overlay);
+        bool on = state.value != 0;
+        ImGui::PushID(static_cast<int>(index));
+        ImGui::BeginDisabled(!state.available);
+        const bool changed = components::toggle::control(native::display_name(overlay), on);
+        ImGui::EndDisabled();
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+            ImGui::SetTooltip("%s", state.available ? native::description(overlay) : state.reason);
+        }
+        if (!state.available) {
+            ImGui::TextDisabled("%s", state.reason);
+        } else if (changed) {
+            (void)native::set_enabled(overlay, state.value, on);
+        } else if (state.lastError != nullptr) {
+            ImGui::TextDisabled("%s", state.lastError);
+        }
+        ImGui::PopID();
     }
 }
 

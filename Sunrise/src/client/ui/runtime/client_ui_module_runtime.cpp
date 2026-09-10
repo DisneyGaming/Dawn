@@ -5,6 +5,7 @@
 #include "../../../core/ui/modules/registry/ui_module_registry.h"
 #include "../../../core/ui/modules/ui_module_descriptor.h"
 #include "../forest/forest_panel.h"
+#include "../mission_launch/mission_launch_panel.h"
 #include "../movement/movement_panel.h"
 #include "../player/player_panel.h"
 
@@ -25,6 +26,7 @@ constexpr std::string_view kForestDisplayName = "Forest";
 core::ui::modules::registry::PageRegistration g_movementPage;
 core::ui::modules::registry::PageRegistration g_playerPage;
 core::ui::modules::registry::PageRegistration g_forestPage;
+core::ui::modules::registry::PageRegistration g_missionLaunchPage;
 
 } // namespace
 
@@ -37,11 +39,14 @@ bool initialize() noexcept {
         core::ui::modules::Owner::client, kPlayerStableId, kPlayerDisplayName, &player::draw);
     const bool forestOwned = g_forestPage.acquire(
         core::ui::modules::Owner::client, kForestStableId, kForestDisplayName, &forest::draw);
-    return movementOwned && playerOwned && forestOwned;
+    const bool missionLaunchOwned = g_missionLaunchPage.acquire(
+        core::ui::modules::Owner::client, "client.mission_launch", "Activity Launcher", &mission_launch::draw);
+    return movementOwned && playerOwned && forestOwned && missionLaunchOwned;
 }
 
 /** Removes the Client modules from the Core UI registry. */
 void shutdown() noexcept {
+    g_missionLaunchPage.release();
     g_forestPage.release();
     g_playerPage.release();
     g_movementPage.release();

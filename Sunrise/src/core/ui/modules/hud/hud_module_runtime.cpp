@@ -1,5 +1,6 @@
 #include <string_view>
 
+#include "../../../../client/diagnostics/native_overlays.h"
 #include "../../hud/overlay.h"
 #include "../registry/ui_module_registry.h"
 #include "../ui_module_descriptor.h"
@@ -28,6 +29,7 @@ bool initialize(void* module) noexcept {
 /** Removes the Core HUD page and drops the switch file path. */
 void shutdown() noexcept {
     g_page.release();
+    client::diagnostics::native_overlays::shutdown();
     ui::hud::shutdown();
 }
 

@@ -19,6 +19,8 @@
 #include "../../../memory/current_process_memory.h"
 #include "../../../targets/game.h"
 #include "../../activity/source.h"
+#include "../../activity/activity_catalog_build.h"
+#include "../../../../state/build_data/activities/activity_catalog.h"
 #include "../../hash_names/hash_name_build.h"
 #include "../../scenarios/scenario_build.h"
 #include "../../spawn_sets/spawn_set_build.h"
@@ -65,7 +67,8 @@ bool build() noexcept {
     static bool homecomingDumped = false;
     static bool omegaPropertyScanAttempted = false;
     const bool domainsReady = package_domains_ready();
-    if (domainsReady && homecomingDumped && omegaPropertyScanAttempted) {
+    if (domainsReady && homecomingDumped && omegaPropertyScanAttempted
+        && state::build_data::activities::ready()) {
         return true;
     }
     static Storage storage{};
@@ -86,6 +89,7 @@ bool build() noexcept {
     // storage. Both are independent of the item table, so a failure here leaves it alone.
     {
         const reader::Source packageSource{directory.chars.data(), &keys};
+        (void)content::activity::build_catalog(packageSource, storage.scratch);
         if (!homecomingDumped) {
             homecomingDumped = content::activity::dump_homecoming(packageSource, storage.scratch);
         }

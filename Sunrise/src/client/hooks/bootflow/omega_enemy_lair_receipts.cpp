@@ -7,12 +7,18 @@
 #include <cstdio>
 #include <cstring>
 #include <span>
+#include <mutex>
 
 #include "omega_enemy_lair_receipts.h"
+#include "hijacked_placements.h"
 #include "../../../state/activity/gateway/runtime.h"
 #include "../../../state/activity/deadly_trial/runtime.h"
 #include "../../../state/activity/deep_storage/runtime.h"
 #include "../../../state/activity/strike_pact/runtime.h"
+#include "../../../state/activity/hijacked/runtime.h"
+#include "native_population_pending.h"
+#include "native_population_retirement.h"
+#include "vance_contact_observer.h"
 #include "omega_enemy_native_reference.h"
 #include "omega_enemy_native_admission.h"
 #include "omega_enemy_native_health.h"
@@ -26,6 +32,7 @@
 #include "../../../state/activity/omega_enemy_crown_catalog.h"
 #include "../../../state/activity/omega_first_lair_runtime.h"
 #include "../../../state/activity/omega_presentation.h"
+#include "../../../state/activity/native_population_events.h"
 
 namespace sunrise::client::hooks::bootflow {
 namespace {
@@ -33,10 +40,12 @@ namespace catalog=state::activity::omega_enemy_lair;
 namespace crownCatalog=state::activity::omega_enemy_crown;
 namespace gateway=state::activity::gateway;
 namespace trial=state::activity::deadly_trial;
+namespace hijacked=state::activity::hijacked;
 namespace deep=state::activity::deep_storage;
 namespace strike=state::activity::strike_pact;
-struct Context final { bool enabled;std::uint64_t run;bool gateway;bool trial{};bool deep{};bool strike{}; };
+struct Context final { bool enabled;std::uint64_t run;bool gateway;bool trial{};bool deep{};bool strike{};bool hijacked{}; };
 Context selected_context() noexcept {
+    const auto hijackedRun=hijacked::native_run();if(hijackedRun) {return {true,hijackedRun,false,false,false,false,true};}
     const auto deepRun=deep::native_run();if(deepRun) {return {true,deepRun,false,false,true};}
     const auto strikeRun=strike::native_run();if(strikeRun) {return {true,strikeRun,false,false,false,true};}
     const auto trialRun=trial::native_run();if(trialRun) { return {true,trialRun,false,true}; }
@@ -46,10 +55,12 @@ Context selected_context() noexcept {
 
 using Admission=std::uint64_t(__fastcall*)(void*,const void*) noexcept;
 using CandidateEvent=std::uint64_t(__fastcall*)(void*,std::uint32_t) noexcept;
+using Retirement=void(__fastcall*)(std::uint32_t,std::uint8_t) noexcept;
 hooking::CallGate g_gate;
-std::array<hooking::detour::Handle,2> g_handles{};
+std::array<hooking::detour::Handle,3> g_handles{};
 std::atomic<Admission> g_admission{};
 std::atomic<CandidateEvent> g_candidate{};
+std::atomic<Retirement> g_retirement{};
 std::uintptr_t g_image{};
 SRWLOCK g_lock=SRWLOCK_INIT;
 std::uint64_t g_run{UINT64_MAX};
@@ -183,11 +194,11 @@ enum : std::uint8_t {
     kSourceDefinitionRef=1,kSourceUnknownResource,kSourceResolve,kSourceRegistry,
     kSourceType,kSourceSlot,kSourceGenerationRead
 };
-bool source(Read& read,std::uintptr_t instance,Source& source,bool gatewayContext,bool trialContext,bool deepContext,bool strikeContext) noexcept {
+bool source(Read& read,std::uintptr_t instance,Source& source,bool gatewayContext,bool trialContext,bool deepContext,bool strikeContext,bool hijackedContext) noexcept {
     source.reason=0;source.nativeRegistry=0;source.nativeType=0;source.nativeSlot=-1;
     source.expectedRegistry=0;source.expectedSlot=0;
     Ref definition{};
-    if(!read.value(instance,definition) || definition.kind!=0x8080948FU || (!gatewayContext && !trialContext && !deepContext && !strikeContext && definition.offset!=0x728)) {
+    if(!read.value(instance,definition) || definition.kind!=0x8080948FU || (!gatewayContext && !trialContext && !deepContext && !strikeContext && !hijackedContext && definition.offset!=0x728)) {
         source.resource=definition.handle;source.kind=definition.kind;source.reason=kSourceDefinitionRef;return false;
     }
     source.resource=definition.handle;source.kind=definition.kind;
@@ -212,6 +223,12 @@ bool source(Read& read,std::uintptr_t instance,Source& source,bool gatewayContex
         if(!row) {source.nativeRegistry=registry;source.nativeType=type;source.nativeSlot=slot;source.reason=kSourceUnknownResource;return false;}
         expectedRegistry=row->registry;expectedSlot=row->source;
     }
+    if(hijackedContext) {
+        for(const auto& row:hijacked::kSpawns) {
+            if(row.definition==definition.handle && row.offset==definition.offset) {expectedRegistry=row.registry;expectedSlot=row.source;break;}
+        }
+        if(!expectedRegistry) {source.reason=kSourceUnknownResource;return false;}
+    }
     if(trialContext) {
         for(const auto& row:trial::kSpawns) {
             if(row.definition==definition.handle && row.offset==definition.offset) { expectedRegistry=row.registry;expectedSlot=row.source;break; }
@@ -225,7 +242,7 @@ bool source(Read& read,std::uintptr_t instance,Source& source,bool gatewayContex
         if(expectedRegistry==0) { source.reason=kSourceUnknownResource;return false; }
     }
     for(const auto& row:catalog::kSpawners) {
-        if(!gatewayContext && !trialContext && !deepContext && !strikeContext && catalog::supported_by_encounter(row) && row.resource==definition.handle) {
+        if(!gatewayContext && !trialContext && !deepContext && !strikeContext && !hijackedContext && catalog::supported_by_encounter(row) && row.resource==definition.handle) {
             expectedRegistry=catalog::kRegistry;expectedSlot=row.slot;break;
         }
     }
@@ -254,6 +271,8 @@ bool source(Read& read,std::uintptr_t instance,Source& source,bool gatewayContex
     source.registry=expectedRegistry;source.slot=expectedSlot;source.address=instance;
     return true;
 }
+#include "hijacked_population_logging.inl"
+
 template<class... Args> void report(const char* format,Args... args) noexcept {
     if(g_lines>=kLineLimit) {return;}
     std::array<char,768> message{};const int count=std::snprintf(message.data(),message.size(),format,args...);
@@ -313,15 +332,23 @@ __declspec(noinline) void observe_admission(std::uint32_t parent,std::uint64_t c
         handle,actorState.handle,actorState.parent)
         || !read.resolve({actorState.parent,0,0},parentAgain) || parentAgain!=currentParent) {rejection=5;}
     else if(!read.resolve(actorState.source,linked)) {rejection=6;}
-    else if(!read.value(linked,definition) || !source(read,linked,sourceState,nav.gateway,nav.trial,nav.deep,nav.strike)) {rejection=7;}
+    else if(!read.value(linked,definition) || !source(read,linked,sourceState,nav.gateway,nav.trial,nav.deep,nav.strike,nav.hijacked)) {rejection=7;}
     else if(sourceState.generation==0 || sourceState.generation!=sourceState.senseGeneration) {rejection=8;}
 
+    // Retain the authentic actor/AI-parent origin before progression can detach
+    // its source. Entity readiness may arrive later on the placement poll.
+    // A generation mismatch still has a verified source; detached unknown actors do not.
+    if(nav.hijacked && (rejection==0 || rejection==8) && sourceState.registry==0x3E9B74F3U) {
+        hijacked_placements::retain_enemy(nav.run,sourceState.slot,actorState.source.handle,handle);
+    }
     // Progression delivery must never depend on the best-effort diagnostic lock.
     // The state observer guarantees serialization, validates the current run,
     // deduplicates full actor IDs, and fails closed on unexpected population.
     bool accepted=false;
     if(rejection==0) {
-        accepted=nav.deep?deep::observe_admission(
+        accepted=nav.hijacked?hijacked::observe_admission(
+            {nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
+            :nav.deep?deep::observe_admission(
             {nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
             :nav.strike?strike::observe_admission(
             {nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
@@ -336,6 +363,11 @@ __declspec(noinline) void observe_admission(std::uint32_t parent,std::uint64_t c
         gateway_native::Read probe{g_image};
         const deep::EnemyReceipt receipt{nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry};
         deep::observe_readiness(receipt,coo_native::enemy(probe,g_image,receipt));
+    }
+    if(nav.hijacked && rejection==0) {
+        gateway_native::Read probe{g_image};
+        const hijacked::EnemyReceipt receipt{nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry};
+        hijacked::observe_readiness(receipt,coo_native::enemy(probe,g_image,receipt));
     }
     if(nav.trial && rejection==0) {
         gateway_native::Read probe{g_image};
@@ -354,6 +386,8 @@ __declspec(noinline) void observe_admission(std::uint32_t parent,std::uint64_t c
     }
     if(!TryAcquireSRWLockExclusive(&g_lock)) {return;}
     run(nav.run);
+    if(nav.hijacked && (rejection==0 || rejection>=6))
+        trace_hijacked_birth(nav.run,actorState,sourceState,at<std::uint32_t>(parentHeader.data()),rejection,accepted);
     if(rejection==0) {
         bool seen=false;
         for(unsigned i=0;i<g_seenCount;++i) {
@@ -432,7 +466,7 @@ __declspec(noinline) void observe_candidate(void* instance,std::uint32_t event,
     else if(!read.resolve({at<std::uint32_t>(character.data()+0x24),0,0},characterAddress)) {rejection=4;}
     else if(characterAddress!=address) {rejection=5;}
     else if(!read.resolve(actorState.source,linked)) {rejection=6;}
-    else if(!source(read,linked,sourceState,nav.gateway,nav.trial,nav.deep,nav.strike)) {rejection=7;}
+    else if(!source(read,linked,sourceState,nav.gateway,nav.trial,nav.deep,nav.strike,nav.hijacked)) {rejection=7;}
     std::array<std::byte,0x3C> eventHeader{};std::array<std::byte,0x38> payload{};
     std::uint32_t eventDefinition{};bool eventValid=false,healthValid=false,deathAccepted=false;
     Ref healthRef{};std::uintptr_t healthAddress{},memberAddress{};
@@ -458,8 +492,10 @@ __declspec(noinline) void observe_candidate(void* instance,std::uint32_t event,
         const bool qualified=omega_enemy_native_health::death(eventValid,eventDefinition,healthValid,
             healthFlags,sourceState.generation,sourceState.senseGeneration);
         if(qualified && call.accepts_side_effects()) {
-            deathAccepted=nav.deep?deep::observe_death(
-            {nav.run,actorState.handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
+            deathAccepted=nav.hijacked?hijacked::observe_death(
+                {nav.run,actorState.handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
+            :nav.deep?deep::observe_death(
+                {nav.run,actorState.handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
             :nav.strike?strike::observe_death(
                 {nav.run,actorState.handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
                 :nav.trial?trial::observe_death(
@@ -543,11 +579,160 @@ __declspec(noinline) void observe_candidate(void* instance,std::uint32_t event,
     }
     ReleaseSRWLockExclusive(&g_lock);
 }
+namespace nativeEvents=state::activity::native_population;
+namespace pending=native_population_pending;
+std::mutex g_pendingMutex;
+pending::Queue<128> g_pendingBirths;
+pending::Queue<128> g_admittedActors;
+std::atomic_uint g_nativeLines{};
+template<class... Args> void native_report(const char* format,Args... args) noexcept {
+    if(g_nativeLines.fetch_add(1,std::memory_order_relaxed)>=128) return;
+    std::array<char,512> line{};const auto count=std::snprintf(line.data(),line.size(),format,args...);
+    if(count>0 && static_cast<std::size_t>(count)<line.size())
+        core::log::write(core::log::Channel::client,core::log::Level::info,{line.data(),static_cast<std::size_t>(count)});
+}
+// Shared observer for explicitly registered activity sources. Package definitions,
+// salted actor backlinks, typed health interfaces and source generations are
+// qualified before copying an event into the state mailbox. No spawn or AI call.
+bool registered_source(Read& read,const Actor& actorState,nativeEvents::Lease& lease) noexcept {
+    std::uintptr_t address{},definitionAddress{};Ref definition{};std::uint32_t marker{};
+    if(actorState.source.kind!=0x80809A3BU || actorState.source.offset!=0
+        || !read.resolve(actorState.source,address) || !read.value(address,definition)
+        || definition.kind!=0x8080948FU || definition.offset<4 || definition.offset>0x100000
+        || !read.resolve(definition,definitionAddress) || definitionAddress>UINTPTR_MAX-0x30
+        || !read.value(definitionAddress-4,marker) || !pending::definition(definition.kind,definition.offset,marker)
+        || address>UINTPTR_MAX-0x244) return false;
+    std::array<std::byte,8> identity{};std::uint32_t generation{},sense{};
+    if(!read.copy(definitionAddress+0x30,identity) || at<std::uint8_t>(identity.data()+4)!=1
+        || !read.value(address+0x1FC,generation) || !read.value(address+0x244,sense)
+        || !generation || generation!=sense) return false;
+    const auto slot=at<std::int16_t>(identity.data()+6);if(slot<0) return false;
+    lease=nativeEvents::lookup(definition.handle,at<std::uint32_t>(identity.data()),static_cast<std::uint16_t>(slot),generation);
+    return lease.activity && lease.source.valid();
+}
+void observe_native_admission(std::uint32_t parent,std::uint64_t epochValue) noexcept {
+    if(!epochValue || parent==UINT32_MAX) return;
+    Read read;std::uintptr_t address{},again{};std::array<std::byte,0x28> header{};
+    std::uint32_t handle{UINT32_MAX};Actor actorState;nativeEvents::Lease lease;
+    if(!read.resolve({parent,0,0},address) || address>UINTPTR_MAX-0x1470
+        || !read.copy(address,header) || at<std::uint32_t>(header.data()+4)!=0x808082ECU
+        || at<std::uint32_t>(header.data()+0x24)!=parent || !read.value(address+0x1470,handle)
+        || !actor(read,handle,actorState) || actorState.parent!=parent
+        || !read.resolve({actorState.parent,0,0},again) || again!=address) {
+        native_report("ev=native_population_capture stage=created result=identity_rejected parent=%08X actor=%08X",parent,handle);
+        return;
+    }
+    if(!registered_source(read,actorState,lease)) {
+        native_report("ev=native_population_capture stage=created result=source_rejected parent=%08X actor=%08X source=%08X entity=%08X",
+            parent,handle,actorState.source.handle,actorState.entity);
+        // A streamed copy can finish construction without any source link. Keep
+        // a bounded native call path so restoration is distinguishable from a
+        // new population request; observation never changes construction.
+        static std::atomic_uint sourceLessTraces{};
+        if(actorState.source.handle==UINT32_MAX
+            && sourceLessTraces.fetch_add(1,std::memory_order_relaxed)<12) {
+            std::array<void*,24> frames{};
+            const auto depth=RtlCaptureStackBackTrace(0,static_cast<ULONG>(frames.size()),frames.data(),nullptr);
+            std::array<char,256> path{};std::size_t used{};
+            for(USHORT i=0;i<depth;++i) {
+                const auto frame=reinterpret_cast<std::uintptr_t>(frames[i]);
+                if(frame<g_image || frame-g_image>=0x1C00000U)continue;
+                const auto written=std::snprintf(path.data()+used,path.size()-used,"%s%llX",
+                    used?",":"",static_cast<unsigned long long>(frame-g_image));
+                if(written<=0 || static_cast<std::size_t>(written)>=path.size()-used)break;
+                used+=static_cast<std::size_t>(written);
+            }
+            native_report("ev=native_population_capture stage=source_less_path parent=%08X definition=%08X actor=%08X flags=%04X native_rvas=%s",
+                parent,at<std::uint32_t>(header.data()),handle,actorState.flags,path.data());
+        }
+        return;
+    }
+    std::lock_guard lock(g_pendingMutex);
+    if(epochValue!=nativeEvents::epoch()) {nativeEvents::observation_lost();return;}
+    const auto result=g_pendingBirths.add({{lease,{lease.source,actorState.handle,actorState.entity},
+        actorState.source.handle,nativeEvents::Kind::admitted},parent});
+    if(result!=pending::Intake::accepted && result!=pending::Intake::duplicate) nativeEvents::observation_lost();
+    native_report("ev=native_population_capture stage=created registry=%08X slot=%u actor=%08X entity=%08X parent=%08X result=%u",
+        lease.source.source.registry,lease.source.source.slot,actorState.handle,actorState.entity,parent,static_cast<unsigned>(result));
+}
+// Caller owns g_pendingMutex. This only completes previously witnessed births;
+// it never discovers actors by scanning the world or invents a creation event.
+void finish_native_admissions(std::uint32_t onlyActor=UINT32_MAX) noexcept {
+    for(std::size_t i=0;i<g_pendingBirths.size();) {
+        const auto birth=g_pendingBirths[i];const auto& expected=birth.event;
+        if(onlyActor!=UINT32_MAX && expected.actor.actor!=onlyActor) {++i;continue;}
+        const auto& source=expected.lease.source;
+        const auto epochValue=nativeEvents::epoch();
+        if(nativeEvents::lookup(source.source.definition,source.source.registry,source.source.slot,source.generation)!=expected.lease) {
+            g_pendingBirths.erase(i);continue; // Authoritative owner/lease was released.
+        }
+        Read read;Actor current;nativeEvents::Lease lease;std::uintptr_t address{};
+        std::array<std::byte,0x30> header{};std::uint32_t parentActor{UINT32_MAX};
+        if(!actor(read,expected.actor.actor,current) || current.parent!=birth.parent
+            || current.source.handle!=expected.sourceHandle || !read.resolve({birth.parent,0,0},address)
+            || address>UINTPTR_MAX-0x1470 || !read.copy(address,header)
+            || !read.value(address+0x1470,parentActor)
+            || !omega_enemy_native_admission::identity(birth.parent,at<std::uint32_t>(header.data()+4),
+                at<std::uint32_t>(header.data()+0x24),parentActor,current.handle,current.parent)
+            || !registered_source(read,current,lease) || lease!=expected.lease) {
+            nativeEvents::observation_lost();g_pendingBirths.erase(i);
+            native_report("ev=native_population_capture stage=attachment result=identity_lost actor=%08X",expected.actor.actor);
+            continue;
+        }
+        if(current.entity==UINT32_MAX || at<std::uint32_t>(header.data()+0x2C)==UINT32_MAX) {++i;continue;}
+        if(current.entity!=at<std::uint32_t>(header.data()+0x2C)) {
+            nativeEvents::observation_lost();g_pendingBirths.erase(i);
+            native_report("ev=native_population_capture stage=attachment result=entity_mismatch actor=%08X",current.handle);
+            continue;
+        }
+        const nativeEvents::Event complete{lease,{lease.source,current.handle,current.entity},
+            current.source.handle,nativeEvents::Kind::admitted};
+        const bool accepted=nativeEvents::submit(complete,epochValue);
+        if(!accepted) nativeEvents::observation_lost();
+        else {
+            const auto retained=g_admittedActors.add({complete,birth.parent});
+            if(retained!=pending::Intake::accepted && retained!=pending::Intake::duplicate) nativeEvents::observation_lost();
+            observe_vance_contact_admission(complete,birth.parent);
+        }
+        native_report("ev=native_population_capture stage=attachment actor=%08X entity=%08X accepted=%u",
+            current.handle,current.entity,accepted?1U:0U);
+        g_pendingBirths.erase(i);
+    }
+}
+void observe_native_candidate(void* instance,std::uint32_t event,std::uint64_t epochValue) noexcept {
+    if(!epochValue) return;
+    Read read;std::array<std::byte,0x3C> eventHeader{};std::array<std::byte,0x38> payload{};
+    std::uint32_t eventDefinition{};
+    if(!event_payload(read,event,eventHeader,payload,eventDefinition) || eventDefinition!=0x80804C54U) return;
+    const auto address=reinterpret_cast<std::uintptr_t>(instance);std::uintptr_t resolved{},healthAddress{};
+    std::array<std::byte,0xC4> character{};Actor actorState;nativeEvents::Lease lease;
+    if(address>UINTPTR_MAX-0x2E8 || !read.copy(address,character)
+        || at<std::uint32_t>(character.data()+4)!=0x80806832U
+        || !actor(read,at<std::uint32_t>(character.data()+0xC0),actorState)
+        || !read.resolve({at<std::uint32_t>(character.data()+0x24),0,0},resolved) || resolved!=address
+        || !registered_source(read,actorState,lease)) return;
+    Ref healthRef{};std::array<std::byte,0x340> health{};
+    if(!omega_enemy_native_health::owner(actorState.entity,at<std::uint32_t>(character.data()+0x2C))
+        || !read.value(address+0x2E8,healthRef) || healthRef.kind!=0x80804BEEU || healthRef.offset!=0
+        || !read.resolve(healthRef,healthAddress) || !read.copy(healthAddress,health)
+        || !omega_enemy_native_health::identity(healthRef.handle,healthRef.kind,healthRef.offset,
+            at<std::uint32_t>(health.data()+4),at<std::uint32_t>(health.data()+0x24),
+            actorState.entity,at<std::uint32_t>(health.data()+0x2C))
+        || !omega_enemy_native_health::death(true,eventDefinition,true,at<std::uint8_t>(health.data()+0x338),
+            lease.source.generation,lease.source.generation)) return;
+    // A death can beat the next frame poll. Deliver that actor's captured birth
+    // first under the same lock, then its independently qualified native death.
+    std::lock_guard lock(g_pendingMutex);
+    finish_native_admissions(actorState.handle);
+    if(!nativeEvents::submit({lease,{lease.source,actorState.handle,actorState.entity},
+        actorState.source.handle,nativeEvents::Kind::died},epochValue)) nativeEvents::observation_lost();
+}
 __declspec(noinline) std::uint64_t __fastcall admission_hook(void* instance,const void* context) noexcept {
     const hooking::CallGate::Scope scope{g_gate};
     const auto nav=selected_context();
+    const auto nativeEpoch=scope.accepts_side_effects()?nativeEvents::epoch():0;
     std::uint32_t parent=UINT32_MAX;
-    if(scope.accepts_side_effects() && nav.enabled && nav.run!=0) {
+    if(scope.accepts_side_effects() && ((nav.enabled && nav.run!=0) || nativeEpoch)) {
         Read read;std::array<std::byte,0x28> header{};
         if(read.copy(reinterpret_cast<std::uintptr_t>(instance),header)
             && at<std::uint32_t>(header.data()+4)==0x808082ECU) {
@@ -556,18 +741,81 @@ __declspec(noinline) std::uint64_t __fastcall admission_hook(void* instance,cons
     }
     return omega_enemy_native_admission::forward(hooking::await_original(g_admission),
         [&scope]() noexcept {return scope.accepts_side_effects();},
-        [callRun=nav.run](std::uint32_t identity) noexcept {
-            if(identity!=UINT32_MAX) {observe_admission(identity,callRun);}
+        [callRun=nav.run,nativeEpoch](std::uint32_t identity) noexcept {
+            if(identity!=UINT32_MAX) {observe_admission(identity,callRun);observe_native_admission(identity,nativeEpoch);}
+            else if(nativeEpoch) native_report("ev=native_population_capture stage=created result=pre_identity_rejected");
         },instance,context,parent);
 }
 __declspec(noinline) std::uint64_t __fastcall candidate_hook(void* instance,std::uint32_t event) noexcept {
     const hooking::CallGate::Scope scope{g_gate};
     const auto original=hooking::await_original(g_candidate);
     if(scope.accepts_side_effects()) {omega_boss_health::observe_native_death(instance,event,scope);}
-    if(scope.accepts_side_effects()) {observe_candidate(instance,event,scope);}
+    if(scope.accepts_side_effects()) {observe_candidate(instance,event,scope);
+        observe_native_candidate(instance,event,nativeEvents::epoch());}
     return original(instance,event);
 }
 bool idle() noexcept {return g_gate.idle();}
+bool retirement_slot(Read& read,std::uint32_t handle,native_population_retirement::Slot& slot) noexcept {
+    std::array<std::byte,0x28> descriptor{};
+    if(!read.copy(g_image+0x1F9D7F0,descriptor)) return false;
+    slot.base=at<std::uintptr_t>(descriptor.data()+8);
+    slot.stride=at<std::uint32_t>(descriptor.data()+0x20);
+    slot.generationOffset=at<std::uint32_t>(descriptor.data()+0x1C);
+    slot.mask=at<std::uint32_t>(descriptor.data()+0x24);
+    std::uintptr_t cell{};
+    return native_population_retirement::valid(slot)
+        && add(slot.base,static_cast<std::int64_t>(handle&0x1FFFU)*slot.stride+slot.generationOffset,cell)
+        && read.value(cell,slot.generation);
+}
+__declspec(noinline) void __fastcall retirement_hook(std::uint32_t handle,std::uint8_t mode) noexcept {
+    const hooking::CallGate::Scope scope{g_gate};
+    const auto original=hooking::await_original(g_retirement);
+    const auto hijackedRun=scope.accepts_side_effects()?hijacked::native_run():0;
+    if(hijackedRun && TryAcquireSRWLockExclusive(&g_lock)) {
+        trace_hijacked_retirement(hijackedRun,handle);
+        ReleaseSRWLockExclusive(&g_lock);
+    }
+    const auto epochValue=scope.accepts_side_effects()?nativeEvents::epoch():0;
+    pending::Birth captured;native_population_retirement::Slot before;
+    bool qualified{};
+    if(epochValue) {
+        std::lock_guard lock(g_pendingMutex);
+        finish_native_admissions(handle);
+        for(std::size_t i=0;i<g_admittedActors.size();++i) {
+            const auto& birth=g_admittedActors[i];if(birth.event.actor.actor!=handle) continue;
+            const auto& source=birth.event.lease.source;Read read;Actor current;
+            qualified=nativeEvents::lookup(source.source.definition,source.source.registry,source.source.slot,source.generation)==birth.event.lease
+                && actor(read,handle,current)
+                && native_population_retirement::identity(birth.event.actor.actor,birth.event.actor.entity,birth.parent,
+                    birth.event.sourceHandle,current.handle,current.entity,current.parent,current.source.handle)
+                && retirement_slot(read,handle,before);
+            if(qualified) captured=birth;
+            else {
+                nativeEvents::observation_lost();
+                native_report("ev=native_population_capture stage=retirement_begin result=identity_rejected actor=%08X entity=%08X parent=%08X source=%08X",
+                    handle,current.entity,current.parent,current.source.handle);
+            }
+            break;
+        }
+    }
+    // Never hold the pending/mailbox lock across native teardown. Native
+    // callbacks may run inside it, and their original order must be retained.
+    native_population_retirement::forward(original,[&]() noexcept {
+        if(!qualified || !scope.accepts_side_effects()) return;
+        Read read;native_population_retirement::Slot after;
+        const bool released=retirement_slot(read,handle,after) && native_population_retirement::released(before,after);
+        auto event=captured.event;event.kind=nativeEvents::Kind::retired;
+        std::lock_guard lock(g_pendingMutex);
+        const bool accepted=released && nativeEvents::submit(event,epochValue);
+        if(!accepted) nativeEvents::observation_lost();
+        if(released) observe_vance_contact_retirement(event);
+        for(std::size_t i=0;i<g_admittedActors.size();++i) {
+            if(g_admittedActors[i].event.actor==event.actor) {g_admittedActors.erase(i);break;}
+        }
+        native_report("ev=native_population_capture stage=retired actor=%08X entity=%08X generation_before=%u generation_after=%u released=%u accepted=%u",
+            handle,captured.event.actor.entity,before.generation,after.generation,released?1U:0U,accepted?1U:0U);
+    },handle,mode);
+}
 void* target(std::uintptr_t rva,const std::array<std::uint8_t,16>& expected) noexcept {
     Read read;std::array<std::byte,16> actual{};
     if(!read.copy(g_image+rva,actual) || std::memcmp(actual.data(),expected.data(),expected.size())!=0) {return nullptr;}
@@ -575,35 +823,60 @@ void* target(std::uintptr_t rva,const std::array<std::uint8_t,16>& expected) noe
 }
 } // namespace
 
+__declspec(noinline) void poll_native_population_admissions() noexcept {
+    const hooking::CallGate::Scope scope{g_gate};
+    if(!scope.accepts_side_effects()) return;
+    const auto hijackedRun=hijacked::native_run();
+    if(hijackedRun && TryAcquireSRWLockExclusive(&g_lock)) {
+        trace_hijacked_attachments(hijackedRun);
+        ReleaseSRWLockExclusive(&g_lock);
+    }
+    std::lock_guard lock(g_pendingMutex);
+    finish_native_admissions();
+    for(std::size_t i=0;i<g_admittedActors.size();) {
+        const auto& birth=g_admittedActors[i];const auto& source=birth.event.lease.source;
+        if(nativeEvents::lookup(source.source.definition,source.source.registry,source.source.slot,source.generation)!=birth.event.lease)
+            g_admittedActors.erase(i);
+        else ++i;
+    }
+}
+
 bool install_omega_enemy_lair_receipts() noexcept {
     if(g_handles[0].attached) {return g_gate.accepting();}
     g_image=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
     if(g_image==0) {return false;}
-    const std::array<hooking::detour::Spec,2> specs{{
+    const std::array<hooking::detour::Spec,3> specs{{
         {target(0xA0D510,{0x48,0x89,0x5C,0x24,0x20,0x56,0x48,0x83,0xEC,0x30,0x48,0x8B,0xD9,0x48,0x8B,0xF2}),reinterpret_cast<void*>(&admission_hook)},
-        {target(0xC72390,{0x48,0x89,0x5C,0x24,0x10,0x55,0x56,0x57,0x48,0x83,0xEC,0x20,0x48,0x8B,0xE9,0x8B}),reinterpret_cast<void*>(&candidate_hook)}
+        {target(0xC72390,{0x48,0x89,0x5C,0x24,0x10,0x55,0x56,0x57,0x48,0x83,0xEC,0x20,0x48,0x8B,0xE9,0x8B}),reinterpret_cast<void*>(&candidate_hook)},
+        {target(0xA85540,{0x48,0x89,0x5C,0x24,0x08,0x48,0x89,0x74,0x24,0x10,0x57,0x48,0x83,0xEC,0x70,0x8B}),reinterpret_cast<void*>(&retirement_hook)}
     }};
-    if(specs[0].target==nullptr || specs[1].target==nullptr || !hooking::detour::install(specs,g_handles)) {return false;}
+    if(specs[0].target==nullptr || specs[1].target==nullptr || specs[2].target==nullptr || !hooking::detour::install(specs,g_handles)) {return false;}
     hooking::publish_original(g_admission,reinterpret_cast<Admission>(g_handles[0].original));
     hooking::publish_original(g_candidate,reinterpret_cast<CandidateEvent>(g_handles[1].original));
+    hooking::publish_original(g_retirement,reinterpret_cast<Retirement>(g_handles[2].original));
     g_gate.accept();
     core::log::write(core::log::Channel::client,core::log::Level::info,
-        "ev=omega_enemy_lair stage=install result=ok admission=A0D510 health_death=C72390 event=80804C54");
+        "ev=omega_enemy_lair stage=install result=ok admission=A0D510 health_death=C72390 event=80804C54 retirement=A85540");
     return true;
 }
 void quiesce_omega_enemy_lair_receipts() noexcept {g_gate.quiesce();}
 bool uninstall_omega_enemy_lair_receipts() noexcept {
     quiesce_omega_enemy_lair_receipts();if(!g_handles[0].attached) {return true;}
-    const std::array<hooking::detour::ProtectedCodeEntry,7> protectedCode{{
+    const std::array<hooking::detour::ProtectedCodeEntry,9> protectedCode{{
         {reinterpret_cast<void*>(&admission_hook)},{reinterpret_cast<void*>(&candidate_hook)},
         {reinterpret_cast<void*>(&observe_admission)},{reinterpret_cast<void*>(&observe_candidate)},
         {reinterpret_cast<void*>(&omega_boss_health::observe_native_death)},
+        {reinterpret_cast<void*>(&poll_native_population_admissions)},
+        {reinterpret_cast<void*>(&retirement_hook)},
         {reinterpret_cast<void*>(&hooking::call_gate_detail::enter)},
         {reinterpret_cast<void*>(&hooking::call_gate_detail::leave)}
     }};
     if(hooking::detour::uninstall(g_handles,protectedCode,idle)!=hooking::detour::UninstallResult::removed) {return false;}
     g_admission.store(nullptr,std::memory_order_release);g_candidate.store(nullptr,std::memory_order_release);
+    g_retirement.store(nullptr,std::memory_order_release);
     g_image=0;g_run=UINT64_MAX;g_lines=0;g_seenCount=0;g_seen={};
+    hijacked_trace_run(0);
+    g_pendingBirths={};g_admittedActors={};g_nativeLines.store(0,std::memory_order_relaxed);
     g_candidateRejected=0;g_parentRejected=0;g_rejects={};g_rejectCount=0;g_rejectOverflow=false;return true;
 }
 } // namespace sunrise::client::hooks::bootflow

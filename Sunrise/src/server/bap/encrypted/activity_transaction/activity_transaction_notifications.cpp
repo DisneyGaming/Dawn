@@ -127,6 +127,12 @@ NotificationStageResult stage_notifications(
     } else if (activity.delivery == activity_message::Delivery::membershipNotification) {
         complete = push::activity::append_membership_notification(
             scratch, activity, key, nonce, response, written);
+    } else if (activity.delivery == activity_message::Delivery::globalStateNotification) {
+        complete = activity.mutationDomain == activity_message::MutationDomain::destination
+            && activity.destinationMutation.prepared
+            && activity.destinationMutation.before.owner == activity.instanceKey
+            && push::activity::append_global_state_notification(scratch,activity.instanceKey,
+                activity.destinationMutation.after,key,nonce,response,written);
     } else if (activity.delivery == activity_message::Delivery::refreshNotifications
                || activity.delivery
                       == activity_message::Delivery::authoritativeNotifications) {

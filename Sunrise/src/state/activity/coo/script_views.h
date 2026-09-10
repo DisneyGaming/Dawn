@@ -55,6 +55,13 @@ struct ConditionView final {
     return expected.operation==command.spec.operation && expected.asset==command.spec.asset
         && expected.argument==command.spec.argument && expected.wait==command.spec.wait;
 }
+// Native profiles choose the bounds and whether a value may change for future requests.
+// This is policy data; it cannot replace an asset, wire schema, or native capability.
+struct PolicyValue final {
+    std::string_view id;
+    std::uint32_t value{};
+    bool liveEditable{};
+};
 struct Views final {
     bool valid{};
     std::string_view missionId, profileId;
@@ -77,6 +84,10 @@ struct Views final {
         if(!valid) { return false; }
         if(const auto* value=condition(spec)) { return value->evaluate(observe); }
         return spec.asset!=kConditionAsset && is_observation(spec.operation) && spec.wait==Wait::observed && observe(spec);
+    }
+    std::span<const PolicyValue> parameters;
+    [[nodiscard]] const PolicyValue* parameter(std::string_view id) const noexcept {
+        for(const auto& item:parameters) { if(item.id==id) { return &item; } }return nullptr;
     }
     [[nodiscard]] const GraphView* graph(std::string_view id) const noexcept {
         for(const auto& item:graphs) { if(item.id==id) { return &item; } }return nullptr;

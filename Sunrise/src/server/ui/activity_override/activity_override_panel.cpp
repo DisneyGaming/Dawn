@@ -373,6 +373,9 @@ void draw() noexcept {
     if (ImGui::Button("Deep Storage opening")) {
         changed = apply_opening_profile(value, rows, forced::profiles::kDeepStorageOpening) || changed;
     }
+    if (ImGui::Button("Hijacked opening")) {
+        changed = apply_opening_profile(value, rows, forced::profiles::kHijackedOpening) || changed;
+    }
     if (ImGui::Button("Beyond Infinity opening")) {
         changed = apply_opening_profile(value, rows, forced::profiles::kBeyondInfinityOpening) || changed;
     }

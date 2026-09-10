@@ -1,8 +1,15 @@
 #pragma once
+#include "native/forest_generator_authority.h"
+#include "native/world_device_authority.h"
+#include "native/world_sequence_authority.h"
+#include "native/public_event_engagement_authority.h"
+#include "native/public_event_participant_authority.h"
+#include "native/music_authority.h"
 
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 
 #include "../../encoding/bit_writer.h"
@@ -10,8 +17,15 @@
 #include "../../../state/activity/gateway/frame.h"
 #include "../../../state/activity/beyond_infinity/frame.h"
 #include "../../../state/activity/deep_storage/frame.h"
+#include "../../../state/activity/hijacked/frame.h"
 #include "../../../state/activity/deadly_trial/frame.h"
 #include "../../../state/activity/strike_pact/frame.h"
+#include "native/population_authority.h"
+#include "native/placement_authority.h"
+#include "native/native_npc_animation_authority.h"
+#include "native/adventure_cue_authority.h"
+#include "native/adventure_dialogue_authority.h"
+#include "native/adventure_player_predicates.h"
 #include "../../../state/activity/omega/omega_mission_state.h"
 #include "../../../state/activity/omega_crown_respawn_authority.h"
 #include "../../../state/activity/omega_rescue_scene_authority.h"
@@ -108,6 +122,8 @@ struct BubbleSubBlock final {
      * Native removal requires the old key at the same index with presence zero;
      * omitting the key or sending count zero does not unregister it. */
     std::span<const std::uint8_t> presence{};
+    /** Optional full wire state bytes per ordinal; empty uses Snapshot::stateSequence. */
+    std::span<const std::uint8_t> states{};
 };
 
 /** Which groups one destination publishes and which of them binds the player. */
@@ -119,18 +135,46 @@ struct Roster final {
     /** Group whose first type-13 block carries the player key. It must be one that registers. */
     std::uint32_t playerKeyGroup{};
     std::span<const BubbleSubBlock> bubbleSubBlocks{};
+    /** Optional retained wire ordinals, independent of the active authority-body groups.
+     * Removed entries retain their key with presence zero until this binding ends. */
+    std::span<const std::uint32_t> topLevelKeys{};
+    std::span<const std::uint8_t> topLevelPresence{};
+    std::span<const std::uint8_t> topLevelStates{};
 };
+
+[[nodiscard]] inline std::size_t top_level_key_count(const Roster& roster) noexcept {
+    return roster.topLevelKeys.empty() ? roster.topLevelGroupCount : roster.topLevelKeys.size();
+}
 
 /** Everything one `sensor_auth_update` carries. */
 struct Snapshot final {
+    /** Native source authority prepared by a server population service. */
+    native::population::Batch populations{};
+    native::placement::Batch placements{};
+    native::forest_generator::Batch generators{};
+    native::world_device::Batch devices{};
+    native::engagement::Batch engagements{};
+    native::npc_animation::Batch animations{};
+    /** Target-free native objectives prepared by an owning server service. */
+    native::cue::Batch cues{};
+    native::dialogue::Batch dialogues{};
+    native::world_sequence::Batch sequences{};
+    native::event_participant::Batch eventParticipants{};
+    native::music::Batch music{};
+    native::player_predicates::Set playerPredicates{};
     /** Selects the archive protocol only for mission_scot. */
     bool archiveOmega{};
     state::activity::gateway::Frame gateway{};
     state::activity::beyond_infinity::Frame beyond_infinity{};
     state::activity::deep_storage::Frame deep_storage{};
+    state::activity::hijacked::Frame hijacked{};
     state::activity::deadly_trial::Frame deadly_trial{};
     state::activity::strike_pact::Frame strike_pact{};
     state::activity::coo::CompletionPublication missionCompletion{};
+    /** Optional native type2 configuration, serialized before this type5 snapshot. */
+    std::optional<native::activity_clock::Configuration> activityClock{};
+    /** Original3C9FC0 consumes this64-bit header as native673200-unit elapsed time. */
+    std::uint64_t activityElapsedTicks{};
     /** Message 52's payload, echoed exactly. A wrong epoch skips phase 2 and reports nothing. */
     patch_epoch::PatchEpoch patchEpoch{};
     Roster roster{};
@@ -148,6 +192,9 @@ struct Snapshot final {
     std::uint32_t spawnSetHash{};
     std::uint32_t spawnSliceSet{};
     std::uint8_t lifetime{};
+    /** Admitted global4786C0E0/17/3 authority+C scenario ordinal (0..63).
+     * Absent preserves existing policy; this is not a packed region or spawn override. */
+    std::optional<std::uint32_t> lifetimeScenarioOrdinal{};
     /** Diagnostic slot-35 startup flags. Only the low two bits are encoded. */
     std::uint8_t missionDirectorVariant{};
     /** Shared schema-0x808099C4 activation latch carried by slot 35. */

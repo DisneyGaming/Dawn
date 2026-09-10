@@ -43,6 +43,8 @@ void clear() noexcept;
 
 /** Finds a registry key across the published roster table, independent of extraction order. */
 [[nodiscard]] bool find_group_index(std::uint32_t registryKey, std::uint16_t& index) noexcept;
+/** Copies one identity-matched row while holding the published catalog stable. */
+[[nodiscard]] bool group_by_key(std::uint32_t registryKey, RosterGroup& output) noexcept;
 
 /** Finds descriptor metadata in the currently published mission-independent catalog. */
 [[nodiscard]] DescriptorLookup

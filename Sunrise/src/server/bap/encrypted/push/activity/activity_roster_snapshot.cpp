@@ -6,6 +6,10 @@
 #include <cstdio>
 #include <cstring>
 #include <string_view>
+#include <memory>
+#include <new>
+#include "native_roster_lifetime_projection.h"
+#include "native_activity_publisher.h"
 
 #include "../../../../../core/logging/log.h"
 #include "../../../../../core/settings/settings.h"
@@ -25,6 +29,7 @@
 #include "../../../../../state/activity/omega_first_lair_runtime.h"
 #include "../../../../../state/activity/omega_ending.h"
 #include "../../../../../state/build_data/runtime.h"
+#include "../../../../../state/build_data/scenarios/scenario_catalog.h"
 #include "../../../../../state/runtime/runtime.h"
 #include "activity_arrival.h"
 #include "activity_region_snapshot.h"
@@ -34,13 +39,19 @@
 #include "deadly_trial_roster.h"
 #include "beyond_infinity_roster.h"
 #include "deep_storage_roster.h"
+#include "hijacked_roster.h"
 #include "../../../../../state/activity/beyond_infinity/runtime.h"
 #include "../../../../../state/activity/deep_storage/runtime.h"
+#include "../../../../../state/activity/hijacked/runtime.h"
 #include "../../../../../state/activity/beyond_infinity/transit.h"
 #include "../../../../../state/activity/deadly_trial/runtime.h"
 #include "../../../../../state/activity/gateway/runtime.h"
 #include "../../../../../state/activity/strike_pact/runtime.h"
 #include "strike_pact_roster.h"
+#include "../../../../runtime/activity/native_activity_profiles.h"
+#include "../../../../runtime/activity/native_activity_runtime.h"
+#include "../../../../runtime/activity/haunted_forest_lifetime_profile.h"
+#include "../../../../runtime/activity/adventure_opening_publication.h"
 #include "../../../../../middleware/bap/activity_message/tower_watch_cue_manifest.h"
 
 namespace sunrise::server::bap::encrypted::push::activity {
@@ -194,6 +205,7 @@ enum class OrdinaryCoverage : std::uint8_t { absent, active, inactiveBubble };
         scratch.rosterSubBlocks[published].keys = std::span<const std::uint32_t>(
             scratch.rosterSubBlockKeys[published].data(), keyCount);
         scratch.rosterSubBlocks[published].presence = {};
+        scratch.rosterSubBlocks[published].states = {};
         ++published;
     }
     return std::span(scratch.rosterSubBlocks).first(published);
@@ -460,6 +472,7 @@ RosterOutcome build_roster_snapshot(Session& session,
         copied.grantBefore,
         region.index,
         region.arrival,
+        copied.sourceDestination,
     };
     return build_roster_snapshot(
         session, scratch, inputs, snapshot, destination, destinationLength, burst);
@@ -502,6 +515,9 @@ RosterOutcome build_roster_snapshot(Session& session,
     const bool strikeDestination=name=="strike_pact" && !session.activity.joinedForeignSession;
     const bool strikePrepared=!session.activity.joinedForeignSession && state::activity::strike_pact::prepare(state::activity::mission_run_generation(),strikeDestination);
     if(strikeDestination && !strikePrepared) { return RosterOutcome::noGroups; }
+    const bool hijackedDestination=name=="adventure_rumba" && !session.activity.joinedForeignSession;
+    const bool hijackedPrepared=!session.activity.joinedForeignSession && state::activity::hijacked::prepare(state::activity::mission_run_generation(),hijackedDestination);
+    if(hijackedDestination && !hijackedPrepared) { return RosterOutcome::noGroups; }
     const auto& omegaExperiments = core::settings::get().omegaExperiments;
     const bool syntheticOmega = omegaDestination;
     // Forest-D's native encounter classifier requires the selected race global
@@ -616,6 +632,9 @@ RosterOutcome build_roster_snapshot(Session& session,
     if(beyondPrepared && !beyond_infinity_roster::prepare_layout(layout,
         [](std::size_t index,layouts::RosterGroup& group) noexcept { return state::build_data::find_roster_group(index,group); })) { return RosterOutcome::noGroups; }
     if(deepPrepared && !deep_storage_roster::prepare_layout(layout,
+        [](std::size_t index,layouts::RosterGroup& group) noexcept { return state::build_data::find_roster_group(index,group); })) { return RosterOutcome::noGroups; }
+    if(hijackedPrepared && !hijacked_roster::prepare_layout(layout,
+        [](std::uint32_t key,std::uint16_t& index) noexcept { return layouts::find_group_index(key,index); },
         [](std::size_t index,layouts::RosterGroup& group) noexcept { return state::build_data::find_roster_group(index,group); })) { return RosterOutcome::noGroups; }
     if(trialPrepared && !deadly_trial_roster::prepare_layout(layout,
         [](std::size_t index,layouts::RosterGroup& group) noexcept {
@@ -820,6 +839,155 @@ RosterOutcome build_roster_snapshot(Session& session,
             snapshot.gameplayClockTicks=snapshot.strike_pact.activityTime;
         }
     }
+    if(hijackedPrepared) {
+        std::uint32_t failedKey{};
+        const bool admitted=hijacked_roster::admit(layout,scratch,snapshot.roster,
+            [](std::uint32_t key,layouts::RosterGroup& group) noexcept { return state::build_data::find_roster_group_by_key(key,group); },&failedKey);
+        if(!admitted) {
+            std::array<char,160> line{};std::snprintf(line.data(),line.size(),"ev=hijacked stage=roster result=failed registry=%08X",failedKey);
+            core::log::write(core::log::Channel::server,core::log::Level::error,line.data());return RosterOutcome::noGroups;
+        }
+        snapshot.hijacked=state::activity::hijacked::snapshot(state::activity::mission_run_generation(),GetTickCount64(),state::activity::mission_seed_armed());
+        if(snapshot.hijacked.enabled) {
+            snapshot.missionCompletion=snapshot.hijacked.completion;
+            snapshot.gameplayClockTicks=snapshot.hijacked.gameplayClockTicks;
+        }
+    }
+    const auto* nativeProfile=server::runtime::activity::native_activity_profile(name,selection.activityIndex);
+    native_publisher::Role nativePublisher{native_publisher::Role::invalid};
+    if(nativeProfile) {
+        nativePublisher=native_publisher::prepare(*nativeProfile,session.activity.instance,
+            session.activity.lineage,session.activity.rosterLifetimes,scratch,snapshot.roster);
+        if(nativePublisher==native_publisher::Role::invalid)return RosterOutcome::noGroups;
+    }
+    if(nativePublisher==native_publisher::Role::creator) {
+        namespace admission=server::runtime::activity::registry;
+        const auto admitProfileRegistry=[&](const auto& definition) noexcept {
+            const auto result=admission::admit(layout,scratch,snapshot.roster,definition,
+                [](std::uint32_t key,layouts::RosterGroup& row) noexcept {
+                    return state::build_data::find_roster_group_by_key(key,row);
+                });
+            // Descriptor admission alone does not activate these sources. Native
+            // authority is supplied separately by the owning activity service.
+            // Never partially publish this set or fall back to invented slots.
+            if(result!=admission::Admission::added && result!=admission::Admission::present) {
+                static std::atomic<std::uint64_t> lastFailure{UINT64_MAX};
+                const auto failure=(static_cast<std::uint64_t>(definition.key)<<8)|static_cast<unsigned>(result);
+                if(lastFailure.exchange(failure)!=failure) {
+                    std::array<char,192> line{};
+                    const auto written=std::snprintf(line.data(),line.size(),
+                        "ev=activity_registry activity_profile_registry key=%08X result=%u phase=admission",
+                        definition.key,static_cast<unsigned>(result));
+                    if(written>0 && static_cast<std::size_t>(written)<line.size()) {
+                        core::log::write(core::log::Channel::server,core::log::Level::error,
+                            {line.data(),static_cast<std::size_t>(written)});
+                    }
+                }
+                return false;
+            }
+            return true;
+        };
+        for(const auto& definition:nativeProfile->registries) {
+            if(!admitProfileRegistry(definition))return RosterOutcome::noGroups;
+        }
+        server::runtime::activity::ambient_population::RegistryBatch optional{};
+        if(!server::runtime::activity::native_activity::optional_registries(*nativeProfile,optional))
+            return RosterOutcome::noGroups;
+        // The update below binds native creation observation before this roster
+        // can be published. An unscoped snapshot cannot publish the dependency.
+        if(inputs.regionIndex>=0 && inputs.regionIndex%8==0) {
+            for(std::size_t i=0;i<optional.count;++i)
+                if(!admitProfileRegistry(*optional.entries[i]))return RosterOutcome::noGroups;
+        }
+    }
+    bool adventureAdditive{};
+    if(nativePublisher==native_publisher::Role::creator && inputs.regionIndex>=0 && inputs.regionIndex%8==0) {
+        namespace overlay=server::runtime::activity::authored_overlay;
+        server::runtime::activity::adventure_start::wire::Request selected{};
+        // Only the creator publishes its persistent policy. Derived activities
+        // retain their generic roster without a second copy of these sources.
+        const auto& committed=inputs.sourceDestination;
+        if(committed.descriptorBitLength && committed.descriptorBitLength<=committed.descriptorBits.size()*8) {
+            const auto bytes=(static_cast<std::size_t>(committed.descriptorBitLength)+7)/8;
+            if(!server::runtime::activity::adventure_start::wire::parse(std::span(committed.descriptorBits).first(bytes),selected)
+                || selected.selection.descriptorBitLength!=committed.descriptorBitLength)selected={};
+        }
+        const auto frame=server::runtime::activity::native_activity::update(
+            session.activity.lineage.source,static_cast<std::uint32_t>(inputs.regionIndex/8),
+            state::activity::world_phase()==state::activity::WorldPhase::arrived,*nativeProfile,selected,
+            session.activity.rosterSends>=kWarmupSends);
+        snapshot.populations=frame.populations;snapshot.placements=frame.placements;
+        snapshot.animations=frame.animations;
+        snapshot.generators=frame.generators;
+        snapshot.devices=frame.devices;
+        snapshot.engagements=frame.engagements;
+        snapshot.cues=frame.cues;
+        snapshot.dialogues=frame.dialogues;
+        snapshot.sequences=frame.sequences;
+        snapshot.eventParticipants=frame.eventParticipants;
+        snapshot.music=frame.music;
+        if(frame.clock) {
+            snapshot.activityClock=frame.clock.configuration;
+            snapshot.activityElapsedTicks=frame.clock.elapsedTicks;
+        }
+        if(frame.opening.requested && frame.opening.binding) {
+            const auto& binding=*frame.opening.binding->overlay;
+            layouts::Definition selectedLayout{};
+            // The two descriptor records are large; avoid multiplying the
+            // production roster builder's stack usage on every publication.
+            std::unique_ptr<overlay::Plan> plan(new(std::nothrow) overlay::Plan{});
+            if(!plan || !state::build_data::find_scenario_layout(binding.selectedPackage,selectedLayout)
+                || !overlay::prepare(layout,selectedLayout,binding,
+                    [](std::size_t index,layouts::RosterGroup& group) noexcept {
+                        return state::build_data::find_roster_group(index,group);
+                    },*plan))return RosterOutcome::noGroups;
+            const auto before=fold_groups(snapshot.roster);
+            const auto admitted=overlay::append(*plan,scratch,snapshot.roster);
+            if(admitted!=overlay::Result::added && admitted!=overlay::Result::present)return RosterOutcome::noGroups;
+            namespace adventure=server::runtime::activity::adventure;
+            const auto* gate=frame.opening.binding->gateway;
+            std::unique_ptr<overlay::Plan> regionalPlan;
+            const auto prepareRegion=[&]() noexcept {
+                if(regionalPlan)return regionalPlan->prepared;
+                if(!gate || !gate->region || !adventure::gateway::valid(*gate,binding))return false;
+                regionalPlan.reset(new(std::nothrow) overlay::Plan{});
+                return regionalPlan && overlay::prepare(layout,selectedLayout,*gate->region,
+                    [](std::size_t index,layouts::RosterGroup& group) noexcept {
+                        return state::build_data::find_roster_group(index,group);
+                    },*regionalPlan);
+            };
+            auto ordinal=adventure::opening_lifetime_scenario(
+                binding,*plan,snapshot.roster,inputs.regionIndex,inputs.destinationArrival);
+            if(!ordinal && frame.opening.gatewayRequested && prepareRegion()) {
+                const auto regionalAdmission=overlay::append_region(*regionalPlan,scratch,snapshot.roster);
+                if(regionalAdmission!=overlay::Result::added && regionalAdmission!=overlay::Result::present)
+                    return RosterOutcome::noGroups;
+                ordinal=adventure::regional_lifetime_scenario(frame.opening,*regionalPlan,snapshot.roster,
+                    inputs.regionIndex,inputs.sourceMembership.region.index,inputs.destinationArrival);
+            }
+            // Initial arrival remains strict. Later native movement is qualified
+            // against the retained accepted lease and exact reported region index;
+            // the original destination arrival and spawn fields remain intact.
+            if(!ordinal)return RosterOutcome::noGroups;
+            snapshot.lifetimeScenarioOrdinal=ordinal;
+            if(frame.opening.gatewayRequested && !frame.opening.conflictingSelection && prepareRegion()) {
+                // Preflight the authored destination before giving its source the
+                // predicate. Projection retains every other service's full request.
+                if(!adventure::gateway::project(*gate,static_cast<std::uint32_t>(inputs.regionIndex/8),
+                    snapshot.placements,snapshot.playerPredicates))return RosterOutcome::noGroups;
+            }
+            adventureAdditive=admitted==overlay::Result::added && session.activity.rosterSends>=kWarmupSends
+                && session.activity.rosterGroups==before;
+            if(!adventure::append_opening_cue(snapshot.cues,frame.opening.cue))return RosterOutcome::noGroups;
+            if(frame.opening.dialogueRequested) {
+                if(snapshot.dialogues.count>=snapshot.dialogues.entries.size())return RosterOutcome::noGroups;
+                for(std::size_t i=0;i<snapshot.dialogues.count;++i)
+                    if(snapshot.dialogues.entries[i].registry==frame.opening.dialogue.registry
+                        && snapshot.dialogues.entries[i].slot==frame.opening.dialogue.slot)return RosterOutcome::noGroups;
+                snapshot.dialogues.entries[snapshot.dialogues.count++]=frame.opening.dialogue;
+            }
+        }
+    }
     if(snapshot.omegaEndingRetire) {
         if(!omega_lair::terminal_roster(scratch,snapshot.roster,
             state::activity::omega_ending::kState)) {
@@ -853,6 +1021,14 @@ RosterOutcome build_roster_snapshot(Session& session,
     // The participation record's `+0` latches only when the region index is known.
     snapshot.region = static_cast<std::uint32_t>(inputs.regionIndex);
     snapshot.hasRegion = true;
+    if (selection.activityIndex == 78 && name == "infinite_abyss") {
+        const auto catalog = state::build_data::activities::entries();
+        if (catalog.size() > 78U) {
+            snapshot.lifetimeScenarioOrdinal =
+                server::runtime::activity::haunted_forest::initial_lifetime_scenario(
+                    selection, catalog[78], layout, inputs.destinationArrival);
+        }
+    }
     // The spawn override always names the destination's own arrival, never the player's position.
     snapshot.spawnSliceSet = inputs.destinationArrival;
     snapshot.spawnSetHash =
@@ -1131,7 +1307,45 @@ RosterOutcome build_roster_snapshot(Session& session,
         // permits the teleport. Keep the globals' generation stable throughout.
         session.activity.rosterGroups=fold_groups(snapshot.roster);
     }
-    snapshot.stateSequence = next_state_sequence(session, fold_groups(snapshot.roster), burst);
+    // A verified addition does not change the lifetimes of the existing base
+    // objects. Only preserve generation when that exact base set is unchanged;
+    // unrelated roster changes still use the normal state transition below.
+    if(adventureAdditive)session.activity.rosterGroups=fold_groups(snapshot.roster);
+    const auto folded = fold_groups(snapshot.roster);
+    const bool retainOrdinals = nativeProfile && nativeProfile->retainRosterOrdinals;
+    const bool warmup = session.activity.rosterSends < kWarmupSends;
+    if (retainOrdinals && !warmup) session.activity.rosterGroups = folded;
+    snapshot.stateSequence = next_state_sequence(session, folded, burst);
+    if (retainOrdinals) {
+        const roster_lifetime::Identity identity{session.activity.instance.sessionId,
+            session.activity.instance.incarnation.value, session.activityPatchEpoch.first,
+            session.activityPatchEpoch.second, layout.tag};
+        const auto result = roster_lifetime::prepare(session.activity.rosterLifetimes, identity,
+            static_cast<std::uint32_t>(inputs.regionIndex / 8),
+            static_cast<std::uint8_t>(message::kStateByteBias + snapshot.stateSequence), warmup,
+            snapshot.roster, session.activity.rosterLifetimes);
+        const bool projected = result == roster_lifetime::Result::ready
+            && roster_lifetime::project(session.activity.rosterLifetimes, snapshot.roster,
+                scratch.rosterSubBlocks);
+        if (!projected) {
+            static std::atomic_uint failures{0};
+            if (failures.fetch_add(1, std::memory_order_relaxed) < 12) {
+                std::array<char, 240> line{};
+                const int written = std::snprintf(line.data(), line.size(),
+                    "ev=roster_lifetime stage=plan result=rejected reason=%u owner=%016llX incarnation=%llu region=%d warmup=%u",
+                    static_cast<unsigned>(result),
+                    static_cast<unsigned long long>(identity.owner),
+                    static_cast<unsigned long long>(identity.incarnation), inputs.regionIndex,
+                    static_cast<unsigned>(warmup));
+                if (written > 0 && static_cast<std::size_t>(written) < line.size())
+                    core::log::write(core::log::Channel::server, core::log::Level::warn,
+                        {line.data(), static_cast<std::size_t>(written)});
+            }
+            return RosterOutcome::noGroups;
+        }
+    } else if (session.activity.rosterLifetimes.identity.owner) {
+        session.activity.rosterLifetimes = {};
+    }
     return RosterOutcome::published;
 }
 
@@ -1146,6 +1360,7 @@ namespace {
         binding.omegaOpeningStage,
         binding.directorSends,
         binding.missionDirectorActive,
+        binding.rosterLifetimes,
     };
 }
 
@@ -1222,7 +1437,11 @@ namespace {
     if (!session.activityPatchEpochSeen) {
         return false;
     }
-    Session candidate = session;
+    // The retained native ordinal mirror is value-owned for atomic rollback.
+    // Keep this detached Session copy off the game's callback stack.
+    std::unique_ptr<Session> candidateStorage(new (std::nothrow) Session(session));
+    if (!candidateStorage) return false;
+    Session& candidate = *candidateStorage;
     if (rearmMissionDirector
         && snapshot.advertisement.readiness == gameplay::AdvertisementReadiness::ready) {
         candidate.activity.missionDirectorActive = false;
@@ -1263,6 +1482,9 @@ namespace {
     }
     snapshot.before = delivery_of(session.activity);
     snapshot.after = delivery_of(candidate.activity);
+    if (snapshot.after.lifetimes.identity.owner
+        && !roster_lifetime::project(snapshot.after.lifetimes, snapshot.rosterWire.roster,
+            scratch.rosterSubBlocks)) return false;
     if (!lifecycle::stage_roster_publication_generation(session.activity,
                                                         snapshot.rosterPublication)) {
         return false;
@@ -1374,6 +1596,7 @@ namespace {
         copied.grantBefore,
         region.index,
         region.arrival,
+        copied.sourceDestination,
     };
     if (!finalize_roster(
             session, scratch, rosterInputs, rearmMissionDirector, output)) {
@@ -1444,6 +1667,7 @@ RegionSnapshotBuildResult build_region_transition_snapshot(
         copied.source = transition.activity;
         copied.sourceHostRegion = transition.nextHostRegion;
         copied.destination = transition.destination;
+        copied.sourceDestination = transition.destination;
         copied.grantBefore = transition.grantBefore;
         copied.sourceMembership = transition.after;
         state::activity::defaults::snapshot(copied.defaults);

@@ -48,18 +48,15 @@ void copy_name(const state::activity::destination::DestinationSelection& selecti
 
 /** Builds the whole message body input for one session. */
 [[nodiscard]] bool
-resolve_state(state::activity::ActivityInstanceKey activity,
+resolve_state_for_selection(state::activity::ActivityInstanceKey activity,
               message::GlobalActivityState& output,
-              state::activity::destination::DestinationSelection& selection) noexcept {
+              const state::activity::destination::DestinationSelection& selection) noexcept {
     output = {};
     state::activity::defaults::ActivityDefaults defaults{};
     state::activity::defaults::snapshot(defaults);
     const state::activity::defaults::FallbackPolicy& fallback =
         defaults.defaultDestination.fallback;
 
-    if (!state::activity::destination::snapshot(activity, selection)) {
-        return false;
-    }
     copy_name(selection, output);
     // The descriptor view points into caller storage that outlives the encode.
     output.descriptorBits = std::span<const std::byte>(selection.descriptorBits);
@@ -111,14 +108,14 @@ resolve_state(state::activity::ActivityInstanceKey activity,
 /** Appends one global-activity-state svc9 notification and advances its local nonce. */
 bool append_global_state_notification(Scratch& scratch,
                                       state::activity::ActivityInstanceKey activity,
+                                      const state::activity::destination::DestinationSelection& selection,
                                       std::span<const std::byte, state::kAesKeySize> key,
                                       std::array<std::byte, state::kBapNonceSize>& nonce,
                                       std::span<std::byte> response,
                                       std::size_t& written) noexcept {
     message::GlobalActivityState body{};
-    state::activity::destination::DestinationSelection selection{};
     if (!static_cast<bool>(activity) || written > response.size()
-        || !resolve_state(activity, body, selection)) {
+        || !resolve_state_for_selection(activity, body, selection)) {
         return false;
     }
 
@@ -150,6 +147,24 @@ bool append_global_state_notification(Scratch& scratch,
     SecureZeroMemory(&initialNonce, sizeof initialNonce);
     SecureZeroMemory(&body, sizeof body);
     return encoded;
+}
+
+bool resolve_state(state::activity::ActivityInstanceKey activity,
+                   message::GlobalActivityState& output,
+                   state::activity::destination::DestinationSelection& selection) noexcept {
+    output={};
+    return state::activity::destination::snapshot(activity,selection)
+        && resolve_state_for_selection(activity,output,selection);
+}
+
+bool append_global_state_notification(Scratch& scratch,
+                                      state::activity::ActivityInstanceKey activity,
+                                      std::span<const std::byte,state::kAesKeySize> key,
+                                      std::array<std::byte,state::kBapNonceSize>& nonce,
+                                      std::span<std::byte> response,std::size_t& written) noexcept {
+    state::activity::destination::DestinationSelection selection{};
+    return state::activity::destination::snapshot(activity,selection)
+        && append_global_state_notification(scratch,activity,selection,key,nonce,response,written);
 }
 
 } // namespace sunrise::server::bap::encrypted::push::activity

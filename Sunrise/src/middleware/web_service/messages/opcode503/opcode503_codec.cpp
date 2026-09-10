@@ -21,8 +21,8 @@ constexpr std::uint8_t kTopLevelIntegerWidth = 32;
 constexpr std::uint32_t kUnusedIntegerValue = 0;
 /** Account object ids are 64 wire bits. */
 constexpr std::uint8_t kSoidWidth = 64;
-/** 917 bytes hold the largest bounded account bootstrap response. */
-constexpr std::size_t kMaximumResponseSize = 917;
+/** 925 bytes include the optional64-bit investment time at maximum overrides. */
+constexpr std::size_t kMaximumResponseSize = 925;
 
 } // namespace
 

@@ -16,9 +16,33 @@ $receiptPath = Join-Path $validation 'installation.json'
 if (Test-Path -LiteralPath $receiptPath) { throw 'This candidate has an installation receipt; preserve that evidence.' }
 $manifest = Get-Content -Raw -LiteralPath (Join-Path $validation 'package.json') | ConvertFrom-Json
 $names = @('steam_api64.dll', 'steam_api64.pdb', 'Lua_LICENSE.txt',
-    'Sunrise/scripts/omega.lua', 'Sunrise/scripts/deadly_trial.lua', 'Sunrise/scripts/gateway.lua', 'Sunrise/scripts/beyond_infinity.lua', 'Sunrise/scripts/deep_storage.lua', 'Sunrise/scripts/strike_pact.lua')
-if ($manifest.format -ne 1 -or @($manifest.files.PSObject.Properties).Count -ne $names.Count -or $manifest.buildsAndTests -ne 42) {
-    throw 'Expected a complete Lua mission package.'
+    'Sunrise/scripts/omega.lua', 'Sunrise/scripts/deadly_trial.lua', 'Sunrise/scripts/gateway.lua', 'Sunrise/scripts/beyond_infinity.lua', 'Sunrise/scripts/deep_storage.lua', 'Sunrise/scripts/hijacked.lua', 'Sunrise/scripts/strike_pact.lua', 'Sunrise/scripts/mercury_freeroam.json', 'Sunrise/scripts/infinite_abyss.json')
+$scopeProperty = $manifest.PSObject.Properties['validationScope']
+$validationScope = if ($scopeProperty) { [string]$scopeProperty.Value } else { 'full-lua' }
+$expectedCount = switch ($validationScope) {
+    'full-lua' { 105 }
+    'hijacked-release' { 3 }
+    'deep-storage-release' { 2 }
+    'mercury-reentry-release' { 2 }
+    default { throw 'Unknown validation scope.' }
+}
+if ($manifest.format -ne 1 -or @($manifest.files.PSObject.Properties).Count -ne $names.Count -or $manifest.buildsAndTests -ne $expectedCount) {
+    throw 'Package does not match its declared validation scope.'
+}
+if ($validationScope -in @('hijacked-release', 'deep-storage-release', 'mercury-reentry-release')) {
+    $missionProjects = switch ($validationScope) {
+        'hijacked-release' { @('hijacked_tests', 'hijacked_catalog_tests', 'Sunrise') }
+        'deep-storage-release' { @('deep_storage_tests', 'Sunrise') }
+        'mercury-reentry-release' { @('retained_authority_scope_tests', 'Sunrise') }
+    }
+    $results = @(Get-Content -Raw -LiteralPath (Join-Path $validation 'results.json') | ConvertFrom-Json)
+    $failures = @(Get-Content -Raw -LiteralPath (Join-Path $validation 'failures.json') | ConvertFrom-Json)
+    if ($results.Count -ne $expectedCount -or $failures.Count -ne 0) { throw 'Mission validation is incomplete or failed.' }
+    foreach ($project in $missionProjects) {
+        if (@($results | Where-Object { $_.project -eq $project -and $_.configuration -eq 'Release' }).Count -ne 1) {
+            throw "Missing or duplicate mission Release result: $project"
+        }
+    }
 }
 if ((Get-FileHash -LiteralPath (Join-Path $validation 'source-manifest.json')).Hash -ne $manifest.sourceManifestSha256) {
     throw 'Source manifest changed after packaging.'
@@ -66,7 +90,7 @@ try {
     }
     if (Get-Process -Name destiny2 -ErrorAction SilentlyContinue) { throw 'Destiny 2 started before installation completed.' }
 [ordered]@{status='installed';utc=[DateTime]::UtcNow.ToString('o');files=$manifest.files;
-    previousFiles=$before;backup=$backup;buildsAndTests=$manifest.buildsAndTests;compilerWarnings=0;
+    previousFiles=$before;backup=$backup;buildsAndTests=$manifest.buildsAndTests;compilerWarnings=0;validationScope=$validationScope;
     nativePlaythrough='not_yet_verified';gameLaunched=$false
 } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $receiptPath -Encoding utf8
 } catch {

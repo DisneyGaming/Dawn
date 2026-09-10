@@ -8,5 +8,6 @@ namespace sunrise::client::hooks::bootflow {
  * deaths. The event's enum and instigator do not limit accepted causes. */
 [[nodiscard]] bool install_omega_enemy_lair_receipts() noexcept;
 void quiesce_omega_enemy_lair_receipts() noexcept;
+void poll_native_population_admissions() noexcept;
 [[nodiscard]] bool uninstall_omega_enemy_lair_receipts() noexcept;
 } // namespace sunrise::client::hooks::bootflow

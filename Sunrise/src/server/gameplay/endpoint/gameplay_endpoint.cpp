@@ -6,6 +6,7 @@
 #include <atomic>
 
 #include "../../../core/settings/settings.h"
+#include "../../../state/gameplay/replication_roles.h"
 #include "../../../middleware/crypto/random_bytes.h"
 #include "../../../middleware/gameplay/nat/introduction.h"
 #include "../association/association_host.h"
@@ -88,6 +89,7 @@ host_address(const std::array<unsigned char, settings::kAddressOctets>& octets) 
 
 /** Closes the socket and drops the Winsock reference. Callers already hold the lock. */
 void close_locked() noexcept {
+    state::gameplay::replication::begin_control_host_epoch(0);
     if (g_endpoint.socket != INVALID_SOCKET) {
         closesocket(g_endpoint.socket);
         g_endpoint.socket = INVALID_SOCKET;
@@ -200,6 +202,7 @@ bool initialize() noexcept {
     g_endpoint.advertised.port = configured.port;
     g_endpoint.ready = true;
     const bool embedded = configured.topology == settings::Topology::embedded;
+    state::gameplay::replication::begin_control_host_epoch(embedded?g_endpoint.identity.machineId:0);
     ReleaseSRWLockExclusive(&g_lock);
     report(core::log::Level::info,
            "ev=gameplay stage=endpoint result=ok mode=%s bind=0x%08X advertised=0x%08X "

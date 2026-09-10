@@ -16,7 +16,8 @@ unsigned checks{};
 struct Body { std::uint32_t owner; t::Vector position;bool readable{true},replaceDuringRead{}; };
 std::uint32_t controlled=0x08FAA000U;
 void* fallback{};
-unsigned publications{},trialPublications{},deepPublications{};t::Vector trialPosition{},deepPosition{};
+unsigned identitySamples{},identityInvalidations{};bool identityPresent{};
+unsigned publications{},trialPublications{},deepPublications{},hijackedPublications{};t::Vector trialPosition{},deepPosition{},hijackedPosition{};
 g::Controller* mission{};
 namespace sunrise::client::hooks::teleport {
 bool read_local_player_entity(void* component,std::uint32_t& entity) noexcept {
@@ -32,9 +33,16 @@ bool read_position(void* component,Vector& position) noexcept {
     position=b.position;if(b.replaceDuringRead) { controlled+=0x2000U;b.owner=controlled; }return true;
 }
 }
+namespace sunrise::client::hooks::bootflow::public_event_participant_observer {
+void poll_local_identity() noexcept { ++identitySamples;identityPresent=true; }
+}
+namespace sunrise::server::runtime::activity::public_event::participant_bridge {
+void invalidate_local_identity() noexcept { ++identityInvalidations;identityPresent=false; }
+}
 namespace sunrise::state::activity {
 std::uint64_t mission_run_generation() noexcept { return 1; }
 namespace deep_storage { void observe_position(float x,float y,float z) noexcept {++deepPublications;deepPosition={x,y,z};} }
+namespace hijacked { void observe_position(float x,float y,float z) noexcept {++hijackedPublications;hijackedPosition={x,y,z};} }
 namespace beyond_infinity { void observe_position(float,float,float) noexcept {} }
 namespace deadly_trial { void observe_position(float x,float y,float z) noexcept { ++trialPublications;trialPosition={x,y,z}; } }
 namespace gateway { void observe_position(float x,float y,float z) noexcept { ++publications;if(mission) { mission->position(1,{x,y,z}); } } }
@@ -52,12 +60,12 @@ int main() {
     Body a{controlled,{-772.25F,-130.75F,-7.5F}},b{controlled,{-681.F,50.F,5.F}},foreign{0,{500,500,500}};
     std::string error;auto document=c::script::MissionDocument::read("Sunrise/scripts/gateway.lua",g::kProfile,error);CHECK(document);
     g::Controller controller;mission=&controller;CHECK(controller.select(document->views(),1));
-    p::reset();p::observe(&a);CHECK(p::snapshot().present);CHECK(p::snapshot().position==a.position);
+    p::reset();CHECK(!identityPresent);p::observe(&a);CHECK(identityPresent);CHECK(p::snapshot().present);CHECK(p::snapshot().position==a.position);
     auto frame=controller.update(1,100,true);CHECK(frame.activeRow==1);
     CHECK(controller.submitted(1,g::kBank,1,frame.generations[1],101));frame=controller.update(1,102,true);CHECK(frame.marchers);CHECK(frame.cohorts==1);
     p::observe(&foreign);CHECK(p::snapshot().position==a.position);
     // Retired storage still has index0: it must not keep the cache or reject the new player.
-    a.owner=0;a.readable=false;fallback=&a;p::poll();CHECK(!p::snapshot().present);
+    a.owner=0;a.readable=false;fallback=&a;p::poll();CHECK(!p::snapshot().present);CHECK(!identityPresent);
     p::observe(&foreign);CHECK(!p::snapshot().present);
     p::observe(&b);CHECK(p::snapshot().present);CHECK(p::snapshot().position==b.position);
     for(unsigned i=0;i<4;++i) { frame=controller.update(1,103+i,true); }
@@ -77,7 +85,12 @@ int main() {
     b.position[0]+=1.F;const auto beforeCached=publications;p::poll();CHECK(p::snapshot().position==b.position);
     CHECK(publications==beforeCached+1);
     CHECK(deepPublications==publications);CHECK(deepPosition==b.position);
+    CHECK(hijackedPublications==publications);CHECK(hijackedPosition==b.position);
     CHECK(trialPublications==publications);CHECK(trialPosition==b.position);
-    p::reset();CHECK(!p::snapshot().present);
+    CHECK(identitySamples==publications);
+    // An observed body loss retires the participant identity immediately.
+    b.readable=false;p::observe(&b);CHECK(!p::snapshot().present);CHECK(!identityPresent);
+    b.readable=true;p::observe(&b);CHECK(identityPresent);
+    p::reset();CHECK(!p::snapshot().present);CHECK(!identityPresent);CHECK(identityInvalidations>0);
     std::printf("Player position: %u checks; live stale-slot fixture, cache reacquisition, body loss, salt changes and Gateway traversal entry passed\n",checks);
 }

@@ -1,4 +1,5 @@
 #include <array>
+#include <algorithm>
 #include <cstdio>
 
 #include "../../../core/logging/log.h"
@@ -7,6 +8,9 @@
 #include "../../../middleware/content/packages/tables/scenario_reader.h"
 #include "../../../middleware/content/packages/tables/slot_descriptor_reader.h"
 #include "../../../state/build_data/scenarios/omega_schema_catalog.h"
+#include "../../../state/activity/coo/mercury_registries.h"
+#include "../../../state/activity/coo/mercury_ambient_primary_owner.h"
+#include "../../../state/activity/coo/mercury_public_event_registries.h"
 #include "internal.h"
 
 namespace sunrise::client::content::scenarios {
@@ -348,6 +352,18 @@ bool resolve_object(const reader::Source& source,
     classify(memo, objectTag, context, scenarioRoot, selectedLocal);
     output.scenarioRoot = scenarioRoot;
     output.selectedLocal = selectedLocal;
+    const bool requiredCatalog=std::any_of(
+        state::activity::coo::mercury::kRegistries.begin(),
+        state::activity::coo::mercury::kRegistries.end(),[&](const auto& definition) noexcept {
+            return state::activity::coo::registry::required(definition,context.scenarioTag,
+                objectTag,memo.registryKey,memo.explicitSliceMask);
+        }) || state::activity::coo::mercury::ambient::primary_owner::required(
+            context.scenarioTag,objectTag,memo.registryKey,memo.explicitSliceMask)
+        // The optional Crossroads profile needs its complete package catalog even
+        // when this encounter is discovered outside a selected local registry.
+        // Server admission still owns whether that catalog enters the wire roster.
+        || state::activity::coo::mercury::public_events::required(
+            context.scenarioTag,objectTag,memo.registryKey,memo.explicitSliceMask);
     if (memo.group != kNotARosterGroup) {
         output.group = memo.group;
         output.ordinary = memo.carriesRosterSlot && memo.completeLayout;
@@ -355,7 +371,7 @@ bool resolve_object(const reader::Source& source,
         trace_towerfall_resolution(context, output);
         return true;
     }
-    if (!memo.carriesRosterSlot && !scenarioRoot && !selectedLocal) {
+    if (!memo.carriesRosterSlot && !scenarioRoot && !selectedLocal && !requiredCatalog) {
         output.disposition = ResolveDisposition::notRelevant;
         trace_towerfall_resolution(context, output);
         return true;
@@ -398,7 +414,7 @@ bool resolve_object(const reader::Source& source,
     output.collectedSlotCount = storage.slotCount;
     output.slotsOverflowed = storage.slotsOverflowed;
     const bool allowPartial =
-        scenarioRoot || selectedLocal || forced_authored_key(memo.registryKey);
+        scenarioRoot || selectedLocal || requiredCatalog || forced_authored_key(memo.registryKey);
     if (!descriptorsComplete) {
         ++storage.unresolvedGroups;
         if (allowPartial) {

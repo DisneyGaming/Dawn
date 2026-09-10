@@ -186,8 +186,13 @@ function Build-FrozenRoot {
         [IO.Directory]::CreateDirectory($outputRoot) | Out-Null
         if ($BuildSystem -eq 'MSBuild') {
             $binaryLogRelative = "evidence\build-MSBuild-$label.binlog"
+            $projectRelative = if (Test-Path -LiteralPath (Join-Path $Root 'source\Sunrise.sln')) {
+                'source\Sunrise.sln'
+            } else {
+                'source\Sunrise\Sunrise.vcxproj'
+            }
             Invoke-Logged -FilePath $Msbuild -WorkingDirectory $Root -LogPath $logPath -Arguments @(
-                'source\Sunrise.sln', '/m', '/nologo', '/v:minimal', '/t:Rebuild',
+                $projectRelative, '/m', '/nologo', '/v:minimal', '/t:Rebuild',
                 "/bl:$binaryLogRelative", "/p:Configuration=$Configuration", "/p:Platform=$Platform",
                 '/p:SunriseGeneratedIncludeDir=..\..\generated',
                 '/p:SunriseReproRoot=..\..',

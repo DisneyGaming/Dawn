@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <bcrypt.h>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -12,6 +13,7 @@
 #include "../../core/logging/log.h"
 #include "../../core/settings/settings.h"
 #include "../activity/defaults/activity_defaults_validation.h"
+#include "../investment/investment_clock.h"
 #include "../build_data/runtime.h"
 #include "equipment/configured_equipment_identity.h"
 #include "runtime.h"
@@ -27,6 +29,10 @@ SRWLOCK g_stateLock{SRWLOCK_INIT};
 } // namespace runtime::storage
 
 namespace {
+
+// Guarded by the root State lock. This is the global investment/Director clock,
+// separate from an activity's scenario clock and retired only with root State.
+investment_clock::Clock investmentClock;
 
 /** Network-order IPv4 loopback returned by the in-process SignOn route. */
 constexpr std::uint32_t kLoopbackAddress = 0x7F000001;
@@ -251,9 +257,18 @@ bool initialize(void* module,
         }
     }
 
-    // Publish one complete State only after every generated secret is valid.
+    investment_clock::Clock clock;
+    const auto utcSeconds = std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    if (!clock.begin(utcSeconds, GetTickCount64())) {
+        SecureZeroMemory(&initialized, sizeof initialized);
+        build_data::shutdown();
+        return false;
+    }
+    // Publish one complete State and its clock only after every generated secret is valid.
     AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
     runtime::storage::g_state = initialized;
+    investmentClock = clock;
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
     SecureZeroMemory(&initialized, sizeof initialized);
     return true;
@@ -263,6 +278,7 @@ bool initialize(void* module,
 void shutdown() noexcept {
     AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
     SecureZeroMemory(&runtime::storage::g_state, sizeof runtime::storage::g_state);
+    investmentClock = {};
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
     build_data::shutdown();
 }
@@ -307,7 +323,9 @@ const BapState& bap() noexcept {
 /** @return A copy of the evaluated content state, read under the lock. */
 InvestmentState investment_snapshot() noexcept {
     AcquireSRWLockShared(&runtime::storage::g_stateLock);
-    const InvestmentState snapshot = runtime::storage::g_state.investment;
+    InvestmentState snapshot = runtime::storage::g_state.investment;
+    snapshot.family5.hasTime =
+        investmentClock.sample(GetTickCount64(), snapshot.family5.timeSeconds);
     ReleaseSRWLockShared(&runtime::storage::g_stateLock);
     return snapshot;
 }

@@ -1,9 +1,47 @@
 #pragma once
 
+#include <string_view>
+#include "../../../../../middleware/bap/activity_message/client_authoritative_data.h"
+
 #include "../../../../../middleware/bap/activity_message/definition.h"
 #include "../definition.h"
 
 namespace sunrise::server::bap::encrypted::activity_message::membership {
+
+[[nodiscard]] constexpr bool retains_held_region(std::string_view destination) noexcept {
+    return destination == "strike_pact" || destination == "mercury_freeroam"
+        || destination == "adventure_rumba";
+}
+
+/** Maps parsed membership fields without changing legacy destination routing. */
+[[nodiscard]] inline state::activity::membership::AuthoritativeUpdate make_authoritative(
+    const middleware::bap::activity_message::client_authoritative_data::ClientAuthoritativeData& parsed,
+    std::string_view destination) noexcept {
+    state::activity::membership::AuthoritativeUpdate update{};
+    update.transitionToken = parsed.transitionToken;
+    update.hasTransitionToken = parsed.hasTransitionToken;
+    update.synchronizationToken = parsed.synchronizationToken;
+    update.hasSynchronizationToken = parsed.hasSynchronizationToken;
+    update.spawn.state = parsed.spawn.state;
+    update.spawn.opaqueByte = parsed.spawn.opaqueByte;
+    update.spawn.opaqueValue = parsed.spawn.opaqueValue;
+    update.hasSpawn = parsed.hasSpawn;
+    update.teleport.state = parsed.teleport.state;
+    update.teleport.token = parsed.teleport.token;
+    update.teleport.sliceSetIndex = parsed.teleport.sliceSetIndex;
+    update.teleport.sliceSetHash = parsed.teleport.sliceSetHash;
+    update.hasTeleport = parsed.hasTeleport;
+    // Keep the second leg for prefetch. These destinations also retain the first
+    // (held) leg so a post-swap outgoing region cannot undo the actual arrival.
+    update.region.index = parsed.region.index;
+    update.region.hash = parsed.region.hash;
+    update.hasRegion = parsed.hasRegion;
+    if(retains_held_region(destination)) {
+        update.currentRegion={parsed.currentRegion.index,parsed.currentRegion.hash};
+        update.hasCurrentRegion=parsed.hasCurrentRegion;
+    }
+    return update;
+}
 
 /**
  * Stages a changed identity push or an unchanged transactional no-op.

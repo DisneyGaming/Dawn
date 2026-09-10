@@ -47,41 +47,43 @@ bool offer(std::size_t slot,
     return true;
 }
 
-/** Removes and offers at most one complete frame from one peer's stream. */
+/** Drains buffered ingress fairly, preserving reply order and incomplete frame bytes. */
 bool drain_stream(std::size_t slot) noexcept {
     Peer& peer = g_listener.peers[slot];
-    if (peer.outputSize != 0) {
-        return true;
-    }
-    const auto pending = std::span(peer.stream).first(peer.streamSize);
-    const std::size_t total = frame_size(pending);
-    if (total == 0) {
-        return peer.streamSize != kStreamCapacity;
-    }
-    if (pending.size() < total) {
-        return true;
-    }
-    // Every inbound frame is named here, so a frame the Server drops is still accounted for.
-    std::array<char, core::log::kLineCapacity> line{};
-    const int count = std::snprintf(line.data(),
-                                    line.size(),
-                                    "ev=transport stage=frame conn=%u type=%u bytes=%zu",
-                                    connection_id(slot),
-                                    static_cast<unsigned>(pending[1]),
-                                    total);
-    if (count > 0) {
-        const std::size_t length = static_cast<std::size_t>(count) < line.size()
-                                       ? static_cast<std::size_t>(count)
-                                       : line.size() - 1;
-        core::log::write(
-            core::log::Channel::server, core::log::Level::debug, {line.data(), length});
-    }
-    if (!offer(slot, client::network::BapEvent::frame, pending.first(total))) {
-        return false;
-    }
-    peer.streamSize -= total;
-    if (peer.streamSize != 0) {
-        std::memmove(peer.stream.data(), peer.stream.data() + total, peer.streamSize);
+    for (std::size_t frames = 0; frames < kInboundFramesPerSlice; ++frames) {
+        if (peer.outputSize != 0 || peer.streamSize == 0) {
+            return true;
+        }
+        const auto pending = std::span(peer.stream).first(peer.streamSize);
+        const std::size_t total = frame_size(pending);
+        if (total == 0) {
+            return peer.streamSize != kStreamCapacity;
+        }
+        if (pending.size() < total) {
+            return true;
+        }
+        // Every inbound frame is named here, so a frame the Server drops is still accounted for.
+        std::array<char, core::log::kLineCapacity> line{};
+        const int count = std::snprintf(line.data(),
+                                        line.size(),
+                                        "ev=transport stage=frame conn=%u type=%u bytes=%zu",
+                                        connection_id(slot),
+                                        static_cast<unsigned>(pending[1]),
+                                        total);
+        if (count > 0) {
+            const std::size_t length = static_cast<std::size_t>(count) < line.size()
+                                           ? static_cast<std::size_t>(count)
+                                           : line.size() - 1;
+            core::log::write(
+                core::log::Channel::server, core::log::Level::debug, {line.data(), length});
+        }
+        if (!offer(slot, client::network::BapEvent::frame, pending.first(total))) {
+            return false;
+        }
+        peer.streamSize -= total;
+        if (peer.streamSize != 0) {
+            std::memmove(peer.stream.data(), peer.stream.data() + total, peer.streamSize);
+        }
     }
     return true;
 }

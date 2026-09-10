@@ -1,4 +1,5 @@
 #include "service_outcome_commit.h"
+#include <cstdio>
 
 #include "../../../../core/logging/log.h"
 #include "../../../../state/activity/bubble_authority/runtime.h"
@@ -37,6 +38,12 @@ bool prepare_publication(const ServiceOutcome& outcome, Publication& publication
     }
     if (plan->mutationDomain == activity_message::MutationDomain::membership
         && plan->instanceKey != plan->membershipMutation.instanceKey) {
+        return false;
+    }
+    if (plan->mutationDomain == activity_message::MutationDomain::destination
+        && (!plan->destinationMutation.prepared
+            || plan->instanceKey != plan->destinationMutation.before.owner
+            || plan->delivery != activity_message::Delivery::globalStateNotification)) {
         return false;
     }
     if (plan->delivery == activity_message::Delivery::joinNotifications) {
@@ -97,6 +104,17 @@ bool commit(ServiceOutcome& outcome, Publication& publication) noexcept {
         }
         if (plan->mutationDomain == activity_message::MutationDomain::membership) {
             return state::activity::membership::commit(plan->membershipMutation);
+        }
+        if (plan->mutationDomain == activity_message::MutationDomain::destination) {
+            const auto target=plan->destinationMutation.after.activityIndex;
+            const bool committed=state::activity::adventure_destination::commit(plan->destinationMutation);
+            std::array<char,256> line{};
+            const auto size=std::snprintf(line.data(),line.size(),
+                "ev=adventure_start stage=commit result=%s owner=%016llX incarnation=%llu target=%d region_mutated=0 session_allocated=0",
+                committed?"ok":"stale",plan->instanceKey.sessionId,plan->instanceKey.incarnation.value,static_cast<int>(target));
+            if(size>0 && static_cast<std::size_t>(size)<line.size())
+                core::log::write(core::log::Channel::server,core::log::Level::info,{line.data(),static_cast<std::size_t>(size)});
+            return committed;
         }
         // The retained patch epoch is connection state, so it commits nothing here.
         return plan->mutationDomain == activity_message::MutationDomain::patchEpoch;

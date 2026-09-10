@@ -6,6 +6,8 @@ The intended result is a playable mission whose story decisions are authored in 
 
 For a fill-in mission brief, per-mechanic records, and the lessons from Beyond Infinity's live reconstruction, copy [Mission implementation template](MISSION-IMPLEMENTATION-TEMPLATE.md). Its 9 September update includes scene/dialogue separation, native portal contact, both Forest endpoints, native clocks, and fresh-build acceptance.
 
+The additional 9 September Deep Storage update is now in the [implementation template](MISSION-IMPLEMENTATION-TEMPLATE.md) and [Lua authoring lessons](LUA-MISSION-AUTHORING.md#authoring-the-next-mission-lessons-from-deep-storage). It adds separate preload/arming/request/readiness/kill/retirement contracts, independent plate waves, scan duration overrides, native device modes, retained-object ownership and survivor-safe ending behavior. The earlier reconstruction guidance below remains applicable.
+
 ## 1. What the requester should provide
 
 **Minimum to start:** the mission name and scope, a complete reference walkthrough, and access to the working repository and relevant game packages. You do not need to write a Lua script or a C++ profile before requesting a new mission.
@@ -257,3 +259,21 @@ Deliver clear launch instructions, an evidence-backed status, and remaining
 unknowns. If an early playable candidate is requested, make that candidate
 available before continuing broader cleanup or optional work.
 ```
+
+
+## Deep Storage addendum for the next mission
+
+Start by copying [MISSION-IMPLEMENTATION-TEMPLATE.md](MISSION-IMPLEMENTATION-TEMPLATE.md) into the new mission's implementation record. Preserve its existing Gateway/Omega/Beyond Infinity lessons and fill in the added Deep Storage records from the new mission's own evidence. Read the [authoring guide](LUA-MISSION-AUTHORING.md) for the detailed receipt and phase-completion contracts.
+
+- Separate when scenery loads from when gameplay arms. Early occupied plates must not charge while unarmed, and arming must still be observed when occupancy is unchanged.
+- Request the sources named by the actual cue. Deep Storage explicitly requests its descent encounter when the door opens; that is a scoped schedule, not blanket activation of all inventoried enemies. Native streaming readiness and required deaths remain separate facts.
+- Give independent plates their own entry and wave-clear branches. Keep traversal and the ending free of unrelated death waits, including waits elsewhere in the same graph.
+- Verify source overrides and effective native scan duration. Preserve the actual participating start and accept valid completion overshoot; do not use a fixed default duration or force observer flags as the implementation.
+- Recover exact device mode direction and model/collision behavior. Logical off may be nonzero. A changed semantic state can need a new native revision even when logical active does not change.
+- Track each rod, catch, beam, shield, cover, conflux and hologram separately. Inspect later script commands and pending native targets before adding a persistence correction.
+- Resolve retained creation versus applied generations before respawning an object or weakening ownership. Keep a proved exception scoped to its source, lease and component.
+- Reuse shared population/object/destructible services and existing hook boundaries. Scan/plate logic still partly lives in Deep Storage-specific adapters; extract reusable contracts when needed rather than assuming a universal refactor already exists.
+- Validate both plate orders, delayed admissions, surviving optional enemies, full dialogue, source lifetime and reset. Record same-room checkpoint recovery independently from a fresh activity run.
+- Freeze source and documentation for each full build. Preserve exact pre-install files and the previous coherent validated DLL/script set, then distinguish installation, targeted live repairs and a complete native playthrough.
+
+The recorded post-Deep Storage validation baseline is 20 suites in two configurations plus both DLL builds: 42 results, with five mission scripts packaged. Read the current tools before adding another mission. See [Deep Storage's implementation record](DEEP-STORAGE-IMPLEMENTATION.md) and [combined candidate acceptance](../../build/coo/deep-storage-door-waves-beam-20260909/acceptance.md) for evidence and remaining limits, not as a promise that a new mission needs no native investigation.

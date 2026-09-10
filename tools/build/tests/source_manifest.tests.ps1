@@ -144,8 +144,13 @@ try {
         Assert-Throws {
             New-CanonicalSourceManifest -SourceRoot $rootA -Paths @('source-link.cpp')
         } 'reparse-point source files are rejected rather than followed'
-    } catch [System.UnauthorizedAccessException] {
-        Write-Warning 'reparse-point regression skipped because symlink creation is not permitted'
+    } catch {
+        # PowerShell wraps .NET IO failures; Windows reports missing symlink
+        # privilege as ERROR_PRIVILEGE_NOT_HELD, not UnauthorizedAccessException.
+        $cause = $_.Exception.GetBaseException()
+        if ($cause -is [System.UnauthorizedAccessException] -or ($cause.HResult -band 0xFFFF) -eq 1314) {
+            Write-Warning 'reparse-point regression skipped because symlink creation is not permitted'
+        } else { throw }
     } finally {
         if ([IO.File]::Exists($linkPath)) { [IO.File]::Delete($linkPath) }
     }

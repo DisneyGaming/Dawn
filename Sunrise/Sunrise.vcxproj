@@ -49,7 +49,7 @@
       <ConformanceMode>true</ConformanceMode>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)vendor\detours;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SunriseGeneratedIncludeDir);$(ProjectDir)src;$(ProjectDir)vendor\detours;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_USRDLL;WIN32_LEAN_AND_MEAN;NOMINMAX;IMGUI_USER_CONFIG=&quot;core/ui/imgui_user_config.h&quot;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -83,6 +83,22 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
+  <!-- Candidate packaging supplies build identity and removes local build paths. -->
+  <PropertyGroup Condition="'$(SunriseGeneratedIncludeDir)'!=''">
+    <SunriseResolvedReproRoot>$([MSBuild]::NormalizePath('$(ProjectDir)', '$(SunriseReproRoot)'))</SunriseResolvedReproRoot>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release' and '$(SunriseGeneratedIncludeDir)'!=''">
+    <ClCompile>
+      <AdditionalOptions>/Brepro /experimental:deterministic /pathmap:&quot;$(SunriseResolvedReproRoot)=SUNRISE_CANDIDATE&quot; %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>/Brepro /PDBALTPATH:%_PDB% %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <Target Name="ValidateSunriseCandidateIdentity" BeforeTargets="ClCompile" Condition="'$(SunriseGeneratedIncludeDir)'!=''">
+    <Error Condition="!Exists('$(SunriseGeneratedIncludeDir)\sunrise_build_identity.generated.h')" Text="Missing generated Sunrise candidate identity header." />
+    <Error Condition="'$(SunriseReproRoot)'==''" Text="SunriseReproRoot is required for a candidate build." />
+  </Target>
   <ItemGroup>
     <ResourceCompile Include="resources\sunrise.rc" />
   </ItemGroup>
@@ -101,8 +117,11 @@
     <ClCompile Include="src\state\activity\gateway\runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\state\activity\gateway\controller.cpp" />
     <ClCompile Include="src\state\activity\deep_storage\runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling><ObjectFileName>$(IntDir)deep_storage_runtime.obj</ObjectFileName></ClCompile>
+    <ClCompile Include="src\state\activity\hijacked\runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling><ObjectFileName>$(IntDir)hijacked_runtime.obj</ObjectFileName></ClCompile>
     <ClCompile Include="src\state\activity\deep_storage\controller.cpp"><ExceptionHandling>Sync</ExceptionHandling><ObjectFileName>$(IntDir)deep_storage_controller.obj</ObjectFileName></ClCompile>
+    <ClCompile Include="src\state\activity\hijacked\controller.cpp"><ExceptionHandling>Sync</ExceptionHandling><ObjectFileName>$(IntDir)hijacked_controller.obj</ObjectFileName></ClCompile>
     <ClCompile Include="src\state\activity\deep_storage\mechanism_bindings.cpp"><ExceptionHandling>Sync</ExceptionHandling><ObjectFileName>$(IntDir)deep_storage_mechanism_bindings.obj</ObjectFileName></ClCompile>
+    <ClCompile Include="src\state\activity\hijacked\mechanism_bindings.cpp"><ExceptionHandling>Sync</ExceptionHandling><ObjectFileName>$(IntDir)hijacked_mechanism_bindings.obj</ObjectFileName></ClCompile>
     <ClCompile Include="src\state\activity\beyond_infinity\runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling><ObjectFileName>$(IntDir)beyond_infinity_runtime.obj</ObjectFileName></ClCompile>
     <ClCompile Include="src\state\activity\beyond_infinity\controller.cpp"><ObjectFileName>$(IntDir)beyond_infinity_controller.obj</ObjectFileName></ClCompile>
     <ClCompile Include="src\state\activity\strike_pact\strike_pact_runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
@@ -174,6 +193,7 @@
     <ClCompile Include="src\core\ui\textures\ui_texture_slots.cpp" />
     <ClCompile Include="src\core\ui\modules\hud\hud_module_runtime.cpp" />
     <ClCompile Include="src\core\ui\modules\hud\hud_panel_render.cpp" />
+    <ClCompile Include="src\client\diagnostics\native_overlays.cpp" />
     <ClCompile Include="src\core\ui\modules\logs\logs_panel_render.cpp" />
     <ClCompile Include="src\core\ui\modules\logs\filters\logs_filter_controls.cpp" />
     <ClCompile Include="src\core\ui\runtime\ui_visibility_runtime.cpp" />
@@ -233,6 +253,13 @@
     <ClCompile Include="src\client\hooks\egress\winsock\transmission\egress_datagram_transmission.cpp" />
     <ClCompile Include="src\client\hooks\egress\winsock\transmission\egress_message_transmission.cpp" />
     <ClCompile Include="src\client\ui\runtime\client_ui_module_runtime.cpp" />
+    <ClCompile Include="src\client\ui\mission_launch\mission_launch_panel.cpp" />
+    <ClCompile Include="src\client\ui\mission_launch\mission_launch_art.cpp" />
+    <ClCompile Include="src\client\activity\mission_launch.cpp" />
+    <ClCompile Include="src\client\hooks\bootflow\native_replication_observer.cpp" />
+    <ClCompile Include="src\state\gameplay\replication_roles.cpp" />
+    <ClCompile Include="src\client\content\activity\activity_catalog_build.cpp" />
+    <ClCompile Include="src\state\build_data\activities\activity_catalog.cpp" />
     <ClCompile Include="src\client\ui\forest\forest_panel.cpp" />
     <ClCompile Include="src\client\ui\movement\movement_panel.cpp" />
     <ClCompile Include="src\client\movement\movement_settings_store.cpp" />
@@ -281,9 +308,12 @@
     <ClCompile Include="src\client\hooks\bootflow\omega_arc_charge_receipts.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\omega_boss_health.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\omega_enemy_lair_receipts.cpp" />
+    <ClCompile Include="src\client\hooks\bootflow\vance_contact_observer.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\omega_lair_cinematic.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\omega_navigation.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\deadly_trial_presentation.cpp" />
+    <ClCompile Include="src\client\hooks\bootflow\hijacked_presentation.cpp" />
+    <ClCompile Include="src\client\hooks\bootflow\hijacked_placements.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\deadly_trial_revival.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\deadly_trial_lifetime.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\omega_rescue_scene_receipts.cpp" />
@@ -304,6 +334,19 @@
     <ClCompile Include="src\client\hooks\bootflow\activity_feature_flag_probe.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\secure_channel_predicate_probe.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\activity_schema_decode_probe.cpp" />
+    <ClCompile Include="src\client\hooks\bootflow\public_event_placement_observer.cpp" />
+    <ClCompile Include="src\client\hooks\bootflow\public_event_deferred_placement_observer.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="src\client\hooks\bootflow\public_event_engagement_observer.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="src\client\hooks\bootflow\public_event_participant_observer.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="src\server\runtime\activity\public_event_participant_bridge.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="src\server\runtime\activity\public_event_deferred_placement_bridge.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="src\server\runtime\activity\public_event_key_bridge.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="src\server\runtime\activity\public_event_engagement_bridge.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+
+    <ClCompile Include="src\client\hooks\bootflow\ambient_population_named_observer.cpp" />
+    <ClCompile Include="src\client\hooks\bootflow\native_capture_observer.cpp" />
+    <ClCompile Include="src\client\hooks\bootflow\adventure_cue_observer.cpp" />
+    <ClCompile Include="src\client\hooks\bootflow\adventure_dialogue_observer.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\group_initial_update_decode_probe.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\prologue_filler_ready.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\orbit_slice_set.cpp" />
@@ -447,6 +490,7 @@
     <ClCompile Include="src\state\activity\destination\activity_destination_snapshot.cpp" />
     <ClCompile Include="src\state\activity\destination\activity_destination_spawn_binding.cpp" />
     <ClCompile Include="src\state\activity\destination\activity_destination_validation.cpp" />
+    <ClCompile Include="src\state\activity\adventure_destination_transition.cpp" />
     <ClCompile Include="src\state\activity\transactions\activity_session_prepare.cpp" />
     <ClCompile Include="src\state\activity\transactions\activity_session_commit.cpp" />
     <ClCompile Include="src\state\activity\transactions\activity_session_release.cpp" />
@@ -587,6 +631,7 @@
     <ClCompile Include="src\server\bap\encrypted\push\queuez\queuez_select_character.cpp" />
     <ClCompile Include="src\server\bap\encrypted\push\activity\activity_message_push.cpp" />
     <ClCompile Include="src\server\bap\encrypted\push\activity\activity_roster_push.cpp" />
+    <ClCompile Include="src\server\bap\encrypted\push\activity\activity_clock_push.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\server\bap\encrypted\push\activity\activity_roster_snapshot.cpp" />
     <ClCompile Include="src\server\bap\encrypted\push\activity\activity_roster_report.cpp" />
     <ClCompile Include="src\server\bap\encrypted\push\activity\activity_keepalive_seed.cpp" />
@@ -1096,6 +1141,8 @@
     <ClInclude Include="src\server\bap\encrypted\push\queuez\queuez_update_frame.h" />
     <ClInclude Include="src\server\bap\encrypted\push\activity\activity_message_push.h" />
     <ClInclude Include="src\server\bap\encrypted\push\activity\activity_roster_push.h" />
+    <ClInclude Include="src\server\bap\encrypted\push\activity\native_roster_lifetime.h" />
+    <ClInclude Include="src\server\bap\encrypted\push\activity\native_roster_lifetime_projection.h" />
     <ClInclude Include="src\server\bap\encrypted\push\activity\activity_global_state_push.h" />
     <ClInclude Include="src\server\bap\encrypted\push\activity\activity_keepalive_push.h" />
     <ClInclude Include="src\server\bap\encrypted\bap_connection_publication.h" />
@@ -1290,6 +1337,8 @@
     <ClInclude Include="src\middleware\content\packages\reader\locator_cache.h" />
     <ClInclude Include="src\server\bap\encrypted\push\queuez\queuez_push_reporting.h" />
     <ClInclude Include="src\client\diagnostics\module_range.h" />
+    <ClInclude Include="src\client\diagnostics\native_overlays.h" />
+    <ClInclude Include="src\client\diagnostics\native_overlay_ownership.h" />
     <ClInclude Include="src\client\process\freeze\client_process_freeze.h" />
     <ClInclude Include="src\core\settings\address_text.h" />
     <ClInclude Include="src\core\settings\server\gameplay\definition.h" />
@@ -1373,6 +1422,7 @@
     <ClInclude Include="src\state\activity\coo\omega_adapter.h" />
     <ClInclude Include="src\state\activity\coo\omega_script.h" />
     <ClInclude Include="src\state\activity\coo\script_views.h" />
+    <ClInclude Include="src\state\activity\coo\script_json.h" />
     <ClInclude Include="src\state\activity\coo\mission_script.h" />
     <ClInclude Include="src\state\activity\coo\omega_script_views.h" />
     <ClInclude Include="src\state\activity\coo\script_value.h" />
@@ -1410,7 +1460,28 @@
     <ClInclude Include="src\client\hooks\bootflow\forest_tuner_state.h" />
     <ClInclude Include="src\client\hooks\bootflow\omega_activity_handoff.inl" />
     <ClInclude Include="src\client\hooks\bootflow\omega_arc_charge_native.h" />
+    <ClInclude Include="src\server\runtime\activity\public_event_rally_use.h" />
+    <ClInclude Include="src\server\runtime\activity\public_event_cue_pending.h" />
     <ClInclude Include="src\client\hooks\bootflow\omega_arc_charge_receipts.h" />
+    <ClInclude Include="src\server\runtime\activity\live_definitions.h" />
+    <ClInclude Include="src\server\runtime\activity\registry_admission.h" />
+    <ClInclude Include="src\server\runtime\activity\mercury_registries.h" />
+    <ClInclude Include="src\server\runtime\activity\population_service.h" />
+    <ClInclude Include="src\server\runtime\activity\native_activity_runtime.h" />
+    <ClInclude Include="src\server\runtime\activity\mercury_populations.h" />
+    <ClCompile Include="src\state\activity\native_population_events.cpp" />
+    <ClCompile Include="src\server\runtime\activity\native_activity_runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="src\server\runtime\activity\public_event_native_bridge.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="src\server\runtime\activity\ambient_population_named_points.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="src\server\runtime\activity\adventure_native_bridge.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="src\server\runtime\activity\adventure_dialogue_bridge.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClInclude Include="src\state\activity\coo\authored_registry.h" />
+    <ClInclude Include="src\state\activity\coo\mercury_registries.h" />
+    <ClInclude Include="src\state\activity\coo\native_population_ledger.h" />
+    <ClInclude Include="src\middleware\bap\activity_message\native\combatant_source.h" />
+    <ClInclude Include="src\middleware\bap\activity_message\native\population_authority.h" />
+    <ClInclude Include="src\middleware\bap\activity_message\native\roster_lifetime_wire.h" />
+    <ClInclude Include="src\middleware\bap\activity_message\native\retained_authority_scope.h" />
     <ClInclude Include="src\client\hooks\bootflow\omega_boss_health.h" />
     <ClInclude Include="src\client\hooks\bootflow\omega_boss_health_identity.h" />
     <ClInclude Include="src\client\hooks\bootflow\omega_boss_vfx_start.h" />
@@ -1419,6 +1490,8 @@
     <ClInclude Include="src\client\hooks\bootflow\omega_enemy_forest_receipts.h" />
     <ClInclude Include="src\client\hooks\bootflow\omega_enemy_forest_receipts_runtime.h" />
     <ClInclude Include="src\client\hooks\bootflow\omega_enemy_lair_receipts.h" />
+    <ClInclude Include="src\client\hooks\bootflow\vance_contact_observer.h" />
+    <ClInclude Include="src\client\hooks\bootflow\vance_contact_contract.h" />
     <ClInclude Include="src\client\hooks\bootflow\omega_enemy_native_admission.h" />
     <ClInclude Include="src\client\hooks\bootflow\omega_enemy_native_health.h" />
     <ClInclude Include="src\client\hooks\bootflow\omega_enemy_native_reference.h" />
@@ -1436,16 +1509,27 @@
     <None Include="scripts\deadly_trial.lua" />
     <None Include="scripts\gateway.lua" />
     <None Include="scripts\deep_storage.lua" />
+    <None Include="scripts\hijacked.lua" />
     <ClInclude Include="src\state\activity\deep_storage\runtime.h" />
+    <ClInclude Include="src\state\activity\hijacked\runtime.h" />
     <ClInclude Include="src\state\activity\deep_storage\controller.h" />
+    <ClInclude Include="src\state\activity\hijacked\controller.h" />
     <ClInclude Include="src\state\activity\deep_storage\frame.h" />
+    <ClInclude Include="src\state\activity\hijacked\frame.h" />
     <ClInclude Include="src\state\activity\deep_storage\bindings.h" />
+    <ClInclude Include="src\state\activity\hijacked\bindings.h" />
     <ClInclude Include="src\state\activity\deep_storage\mechanism_bindings.h" />
+    <ClInclude Include="src\state\activity\hijacked\mechanism_bindings.h" />
     <ClInclude Include="src\state\activity\deep_storage\authority.h" />
+    <ClInclude Include="src\state\activity\hijacked\authority.h" />
     <ClInclude Include="src\state\activity\deep_storage\catalog.h" />
+    <ClInclude Include="src\state\activity\hijacked\catalog.h" />
     <ClInclude Include="src\state\activity\deep_storage\native_catalog.h" />
+    <ClInclude Include="src\state\activity\hijacked\native_catalog.h" />
     <ClInclude Include="src\state\activity\deep_storage\ai_bindings.h" />
+    <ClInclude Include="src\state\activity\hijacked\ai_bindings.h" />
     <ClInclude Include="src\server\bap\encrypted\push\activity\deep_storage_roster.h" />
+    <ClInclude Include="src\server\bap\encrypted\push\activity\hijacked_roster.h" />
     <None Include="scripts\beyond_infinity.lua" />
     <ClInclude Include="src\state\activity\beyond_infinity\catalog.h" />
     <ClInclude Include="src\state\activity\beyond_infinity\native_catalog.h" />
@@ -1459,14 +1543,31 @@
     <ClInclude Include="src\client\hooks\bootflow\beyond_infinity_native_receipts.h" />
     <ClInclude Include="src\client\hooks\bootflow\beyond_infinity_scene_receipts.inl" />
     <ClInclude Include="src\client\hooks\bootflow\beyond_infinity_object_receipts.inl" />
+    <ClInclude Include="src\middleware\bap\activity_message\native\forest_generator_authority.h" />
+    <ClInclude Include="src\server\runtime\activity\forest_generator_service.h" />
+    <ClInclude Include="src\server\runtime\activity\world_device_service.h" />
+    <ClInclude Include="src\middleware\bap\activity_message\native\world_device_authority.h" />
+    <ClInclude Include="src\server\runtime\activity\cue_presentation_service.h" />
+    <ClInclude Include="src\server\runtime\activity\haunted_forest_hud.h" />
   </ItemGroup>
   <Import Project="lua-items.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemGroup>
     <ClInclude Include="src\state\activity\deep_storage\scan_playback.h" />
+    <ClInclude Include="src\state\activity\hijacked\scan_playback.h" />
     <ClInclude Include="src\state\activity\deep_storage\mechanism_catalog.h" />
     <ClInclude Include="src\client\hooks\bootflow\deep_storage_scan_receipts.inl" />
+    <ClInclude Include="src\client\hooks\bootflow\hijacked_scan_receipts.inl" />
     <ClInclude Include="src\client\hooks\bootflow\deep_storage_object_receipts.inl" />
+    <ClInclude Include="src\client\hooks\bootflow\hijacked_object_receipts.inl" />
     <ClInclude Include="src\client\hooks\bootflow\deep_storage_plate_hooks.inl" />
+    <ClInclude Include="src\client\hooks\bootflow\hijacked_plate_hooks.inl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\state\activity\hijacked\boss_motion.h" />
+    <ClInclude Include="src\client\hooks\bootflow\hijacked_boss_native.inl" />
+    <ClInclude Include="src\state\activity\coo\scan_playback.h" />
+    <ClInclude Include="src\state\activity\coo\plate_presentation.h" />
+    <ClInclude Include="src\state\activity\hijacked\plate_presentation.h" />
   </ItemGroup>
 </Project>

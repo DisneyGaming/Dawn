@@ -10794,7 +10794,8 @@ __declspec(noinline) std::int32_t* __fastcall scene_visual_object_create(
     const bool inspect = g_sceneVisualCreateDepth == 0U && omega_forced()
                          && (sceneObject != kInvalidHandle || visualEntryActive);
     if (!inspect) {
-        return original(result, descriptor, table, record);
+        auto* returned=original(result, descriptor, table, record);
+        return returned;
     }
 
     ++g_sceneVisualCreateDepth;

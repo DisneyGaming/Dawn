@@ -16,6 +16,7 @@
 #include "../input/input.h"
 #include "graphics_renderer_report.h"
 #include "state.h"
+#include "../../../ui/mission_launch/mission_launch_art.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND window,
                                                              UINT message,
@@ -137,6 +138,7 @@ void render_frame_locked() noexcept {
     }
     const core::ui::runtime::VisibilitySnapshot visibility = core::ui::runtime::snapshot();
     transition_input_visibility_locked(visibility.visible);
+    client::ui::mission_launch::art::prepare(g_resources.device);
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();

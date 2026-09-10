@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import verify
+import native_test_inputs
 
 ROOT = verify.ROOT
 DEFAULT_OUT = ROOT / ("build/coo/validation-lua-" + datetime.now().strftime("%Y%m%d-%H%M%S"))
@@ -17,31 +18,112 @@ TESTS = (
     "coo_combat_tests", "coo_combat_runtime_tests", "coo_ending_tests",
     "coo_ending_runtime_tests", "beyond_infinity_catalog_tests", "beyond_infinity_tests",
     "deep_storage_catalog_tests", "deep_storage_tests",
+    "hijacked_catalog_tests", "hijacked_tests",
 )
+
+NATIVE_TESTS = (
+    "native_activity_policy_tests",
+    'activity_clock_push_tests',
+    'adventure_arrival_tests',
+    'adventure_cancel_tests',
+    'adventure_cue_identity_tests',
+    'adventure_cue_tests',
+    'adventure_dialogue_tests',
+    'adventure_gateway_tests',
+    'adventure_navigation_tests',
+    'adventure_overlay_tests',
+    'adventure_source_selection_tests',
+    'adventure_start_tests',
+    'adventure_tests',
+    'ambient_cabal_probe_tests',
+    'ambient_population_tests',
+    'bap_transport_tests',
+    'faction_battle_tests',
+    'forest_generator_progress_tests',
+    'forest_generator_service_tests',
+    'haunted_forest_launch_tests',
+    'haunted_forest_lifetime_tests',
+    'haunted_forest_mode_tests',
+    'haunted_forest_scope_tests',
+    'log_repetition_tests',
+    'mission_launch_arguments_tests',
+    'mission_launch_metadata_tests',
+    'mission_launch_tests',
+    'mission_launch_ui_tests',
+    'mission_launch_visual_tests',
+    'native_capture_authority_tests',
+    'native_capture_feedback_tests',
+    'native_clock_protocol_tests',
+    'native_npc_animation_tests',
+    'native_roster_lifetime_tests',
+    'native_roster_lifetime_wire_tests',
+    'public_event_cue_pending_tests',
+    'public_event_cue_progress_tests',
+    'public_event_cue_tests',
+    'public_event_deferred_placement_tests',
+    'public_event_dialogue_tests',
+    'public_event_engagement_runtime_tests',
+    'public_event_engagement_tests',
+    'public_event_incoming_tests',
+    'public_event_initial_lifetime_tests',
+    'public_event_initial_tests',
+    'public_event_initial_wire_tests',
+    'public_event_interaction_tests',
+    'public_event_key_tests',
+    'public_event_music_tests',
+    'public_event_opening_progress_tests',
+    'public_event_participant_tests',
+    'public_event_rally_use_tests',
+    'public_event_runtime_tests',
+    'public_event_sequence_tests',
+    'public_event_tests',
+    'public_event_world_tests',
+    'retained_authority_scope_tests',
+    'world_device_service_tests',
+    'activity_sense_update_parser_tests',
+    'omega_archive_protocol_tests',
+    'omega_forest_roster_tests',
+    'other_mission_protocol_tests',
+)
+ALL_TESTS = TESTS + NATIVE_TESTS
+TESTS = tuple(name for name in ALL_TESTS if name not in native_test_inputs.CAPTURE_ONLY)
+
+def validation_jobs(names=None, configurations=None):
+    """Only request configurations declared by each project; native suites may be Release-only."""
+    jobs = []
+    for name in names if names is not None else (*TESTS, "Sunrise"):
+        project = ROOT / ("Sunrise/Sunrise.vcxproj" if name == "Sunrise" else f"Sunrise/unit/{name}.vcxproj")
+        text = project.read_text(encoding="utf-8")
+        for configuration in configurations if configurations is not None else ("Debug", "Release"):
+            if f'Include="{configuration}|x64"' in text:
+                jobs.append((name, configuration))
+    return jobs
+
 
 def source_manifest():
     """Files that define the DLL, Lua missions, regression tests, and delivery tools."""
     paths = set()
-    for folder in ('Sunrise/src', 'Sunrise/scripts', 'Sunrise/unit', 'Sunrise/vendor', 'Sunrise/resources', 'Sunrise/docs', 'tools/coo'):
+    for folder in ('Sunrise/src', 'Sunrise/scripts', 'Sunrise/unit', 'Sunrise/vendor', 'Sunrise/resources', 'Sunrise/docs', 'Sunrise/analysis', 'tools/coo', 'tools/testing', 'tools/build'):
         for path in (ROOT / folder).rglob('*'):
             complete_tree = folder in ('Sunrise/src', 'Sunrise/scripts', 'Sunrise/vendor', 'Sunrise/resources') or path.is_relative_to(ROOT / 'Sunrise/unit/fixtures')
-            if path.is_file() and (complete_tree or path.suffix.lower() in ('.cpp', '.h', '.c', '.hpp', '.inl', '.vcxproj', '.props', '.lua', '.py', '.ps1', '.md', '.txt', '.rc', '.ico')):
+            if path.is_file() and (complete_tree or path.suffix.lower() in ('.cpp', '.h', '.c', '.hpp', '.inl', '.vcxproj', '.props', '.lua', '.py', '.ps1', '.md', '.txt', '.rc', '.ico', '.json', '.mjs', '.cmake')):
                 paths.add(path)
-    paths.update((ROOT / 'Sunrise/Sunrise.vcxproj', ROOT / 'Sunrise/lua-items.props'))
+    paths.update((ROOT / 'Sunrise/Sunrise.vcxproj', ROOT / 'Sunrise/lua-items.props', ROOT / 'tools/coo/hijacked_squad_counts.json'))
     return {p.relative_to(ROOT).as_posix(): verify.digest(p) for p in sorted(paths)}
 
 
-def check(name, configuration):
+def check(name, configuration, compile_only=False):
     project = ROOT / ("Sunrise/Sunrise.vcxproj" if name == "Sunrise" else f"Sunrise/unit/{name}.vcxproj")
-    result = verify.build(project, configuration)
+    result = verify.build(project, configuration, compile_only=compile_only)
     return result
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
-    parser.add_argument("--project", action="append", choices=(*TESTS, "Sunrise"))
+    parser.add_argument("--project", action="append", choices=(*ALL_TESTS, "Sunrise"))
     parser.add_argument("--configuration", action="append", choices=("Debug", "Release"))
     parser.add_argument("--tests-only", action="store_true")
+    parser.add_argument("--compile-only", action="store_true", help="Compile selected tests without claiming execution or validation.")
     args = parser.parse_args()
     # Large native data tables exceed the 32-bit compiler process heap in Debug.
     os.environ["PreferredToolArchitecture"] = "x64"
@@ -56,15 +138,16 @@ def main():
     verify.OUT.mkdir(parents=True, exist_ok=True)
     names = args.project or list(TESTS) + ([] if args.tests_only else ["Sunrise"])
     configurations = args.configuration or ("Debug", "Release")
-    jobs = [(name, conf) for name in names for conf in configurations
-            if f'Include="{conf}|x64"' in (ROOT / ("Sunrise/Sunrise.vcxproj" if name == "Sunrise" else f"Sunrise/unit/{name}.vcxproj")).read_text()]
-    full_run = not args.project and not args.configuration and not args.tests_only
-    before = source_manifest() if full_run else None
+    jobs = validation_jobs(names, configurations)
+    unavailable = {name: reason for name, reason in native_test_inputs.CAPTURE_ONLY.items()
+                   if name not in names}
+    (verify.OUT / 'unavailable-evidence.json').write_text(json.dumps(unavailable, indent=2))
+    before = source_manifest()
     if before is not None:
         (verify.OUT / 'source-manifest.json').write_text(json.dumps(before, indent=2))
     results = []; failures = []
     with ThreadPoolExecutor(max_workers=2) as pool:
-        pending = {pool.submit(check, *job): job for job in jobs}
+        pending = {pool.submit(check, *job, compile_only=args.compile_only): job for job in jobs}
         for future in as_completed(pending):
             job = pending[future]
             try:
@@ -84,7 +167,10 @@ def main():
         (verify.OUT / 'failures.json').write_text(json.dumps(failures, indent=2))
     if failures:
         raise SystemExit(1)
-    print(f"PASS: {len(results)} builds/tests; candidate only, no installation", flush=True)
+    label = "compiled projects; tests not executed" if args.compile_only else "builds/tests"
+    print(f"PASS: {len(results)} {label}; candidate only, no installation", flush=True)
+    if unavailable:
+        print(f"Unavailable historical evidence: {len(unavailable)} additional proof suites; see unavailable-evidence.json", flush=True)
 
 if __name__ == "__main__":
     main()

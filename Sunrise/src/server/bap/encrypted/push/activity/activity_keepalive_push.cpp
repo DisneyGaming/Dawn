@@ -3,10 +3,13 @@
 #include "../../../../../state/activity/deadly_trial/runtime.h"
 #include "../../../../../state/activity/beyond_infinity/runtime.h"
 #include "../../../../../state/activity/deep_storage/runtime.h"
+#include "../../../../../state/activity/hijacked/runtime.h"
 #include "../../../../../state/activity/beyond_infinity/transit.h"
 #include "../../../../../state/activity/strike_pact/runtime.h"
 #include "../../../../../state/activity/coo/omega_opening_projection.h"
 #include "../../../../../state/activity/runtime.h"
+#include "../../../../../state/activity/native_population_events.h"
+#include "../../../../runtime/activity/adventure_native_bridge.h"
 
 #include <Windows.h>
 
@@ -31,6 +34,7 @@
 #include "../../activity_transaction/activity_transaction_notifications.h"
 #include "activity_arrival.h"
 #include "activity_global_state_push.h"
+#include "activity_clock_push.h"
 #include "activity_membership_push.h"
 #include "activity_region_snapshot.h"
 #include "activity_roster_push.h"
@@ -47,8 +51,8 @@ namespace message = middleware::bap::activity_message::sensor_auth_update;
  */
 constexpr std::uint64_t kKeepaliveIntervalMs = 5'000;
 /**
- * Roster burst cadence, used only while the client is loading. Outside that window the roster
- * rides the keepalive.
+ * Roster burst cadence for loading and pending native observations. Idle
+ * sessions keep the ordinary keepalive cadence.
  */
 constexpr std::uint64_t kRosterBurstIntervalMs = 1'000;
 /** @return True while this implemented authored-mission override owns a host-ready launch. */
@@ -238,8 +242,12 @@ bool consume_activity_keepalive(Session& session,
                 && (cues.towerWatchBreachSeen
                     || state::activity::tower_watch_opening_dialogue_processed()))
             || (cues.towerWatchPublishedStage < 3U && cues.towerWatchEncounterChanged));
+    const bool nativePopulationDue = !session.activity.joinedForeignSession
+        && state::activity::native_population::pending(session.activity.instance);
+    const bool nativeCueDue = !session.activity.joinedForeignSession
+        && runtime::activity::adventure::native_bridge::pending(session.activity.instance);
     const bool burstDue = !session.activity.joinedForeignSession
-                          && (now < session.activity.transitionUntilTick || omegaOpeningDue || towerWatchDue)
+                          && (now < session.activity.transitionUntilTick || omegaOpeningDue || towerWatchDue || nativePopulationDue || nativeCueDue)
                           && now >= session.activity.rosterDueTick;
     const bool endingMembershipDue=!session.activity.joinedForeignSession
         && (state::activity::omega_ending::membership_due(session.activity.instance,
@@ -255,7 +263,8 @@ bool consume_activity_keepalive(Session& session,
                 || state::activity::deadly_trial::publication_due(now)
                 || state::activity::beyond_infinity::publication_due(now)
                 || state::activity::deep_storage::publication_due(now)
-                || state::activity::strike_pact::publication_due(now)));
+                || state::activity::strike_pact::publication_due(now)
+                || state::activity::hijacked::publication_due(now)));
     if (session.activity.joinedForeignSession) {
         // This link exists only so the client's second activity instance sees traffic. A roster or
         // membership push on it leaves the transition running with no world entered.
@@ -265,14 +274,20 @@ bool consume_activity_keepalive(Session& session,
         touchesScratch = true;
         auto nextSendNonce = session.sendNonce;
         std::size_t framedSize = 0;
+        BorrowedClockPublication clockPublication{};
         const bool staged = append_global_state_notification(scratch,
                                                               session.activity.instance,
                                                               state::bap().sessionKey,
                                                               nextSendNonce,
                                                               scratch.framed,
-                                                              framedSize);
+                                                              framedSize)
+            && append_borrowed_clock_notifications(session,scratch,state::bap().sessionKey,
+                nextSendNonce,scratch.framed,framedSize,clockPublication)
+            && borrowed_clock_publication_is_current(session,clockPublication);
         const bool delivered = publish_frame(
             session, scratch, response, written, framedSize, nextSendNonce, staged);
+        release_borrowed_clock_publication(clockPublication);
+        if(!delivered && framedSize)SecureZeroMemory(scratch.framed.data(),framedSize);
         if (delivered) {
             session.activity.keepaliveDueTick = now + kKeepaliveIntervalMs;
         }

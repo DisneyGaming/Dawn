@@ -31,12 +31,16 @@ inline constexpr Profile kBeyondInfinity{"adventure_vod",294,0x3E9433BDU,
 inline constexpr Profile kDeepStorage{"adventure_whisk",295,0x550500EEU,
     0xE6E910D2U,0x80B56019U,0x80F9F35EU,"deep_storage_direct"};
 
+inline constexpr Profile kHijacked{"adventure_rumba",297,0x83211FEDU,
+    0x77852DB9U,0x80B4200FU,0x80FB5018U,"hijacked_direct"};
+
 [[nodiscard]] constexpr const Profile* find(std::string_view package) noexcept {
     if (package == kTowerfall.package) { return &kTowerfall; }
     if (package == kGateway.package) { return &kGateway; }
     if (package == kDeadlyTrial.package) { return &kDeadlyTrial; }
     if (package == kBeyondInfinity.package) { return &kBeyondInfinity; }
     if(package==kDeepStorage.package) {return &kDeepStorage;}
+    if(package==kHijacked.package) {return &kHijacked;}
     return nullptr;
 }
 [[nodiscard]] constexpr const Profile* configured(const ForcedDestination& value) noexcept {

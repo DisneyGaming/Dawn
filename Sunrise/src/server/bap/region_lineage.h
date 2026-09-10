@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "encrypted/push/activity/native_roster_lifetime.h"
 
 #include "../../middleware/bap/activity_message/replicate_membership.h"
 #include "../../middleware/bap/activity_message/sensor_auth_update.h"
@@ -25,6 +26,13 @@ struct RegionLineage final {
     [[nodiscard]] explicit constexpr operator bool() const noexcept {
         return static_cast<bool>(bound) && static_cast<bool>(source)
                && kind != RegionLineageKind::none;
+    }
+
+    // Clock authority belongs to this exact creator lifetime. An auxiliary
+    // group host may join later without becoming the mission clock's owner.
+    [[nodiscard]] constexpr bool owns(state::activity::ActivityInstanceKey activity) const noexcept {
+        return static_cast<bool>(activity) && kind == RegionLineageKind::ownedActivity
+               && bound == activity && source == activity;
     }
 
     friend constexpr bool operator==(RegionLineage, RegionLineage) noexcept = default;
@@ -57,6 +65,7 @@ struct RosterDeliveryBefore final {
     std::uint8_t omegaOpeningStage{};
     std::uint16_t directorSends{};
     bool missionDirectorActive{};
+    encrypted::push::activity::roster_lifetime::State lifetimes{};
 };
 
 /** Roster/Omega delivery values published once after caller copy. */

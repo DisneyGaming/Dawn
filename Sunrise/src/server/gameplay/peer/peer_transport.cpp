@@ -1,4 +1,5 @@
 #include "peer_transport.h"
+#include "traffic_log_repetition.h"
 
 #include <Windows.h>
 
@@ -79,6 +80,26 @@ SRWLOCK g_lock{SRWLOCK_INIT};
 std::array<state::gameplay::PeerLink, state::gameplay::kAssociationCapacity> g_peers;
 /** Channel ids this host hands out. The peer refuses one that does not increase. */
 std::uint32_t g_channelId{0};
+/** Reporting state is independent of transport state and uses its own short-held lock. */
+SRWLOCK g_trafficReportLock{SRWLOCK_INIT};
+TrafficLogRepetition g_trafficReports{};
+
+[[nodiscard]] core::log::RepetitionReport observe_traffic(const TrafficLogKey& key,
+                                                         std::uint16_t sequence,
+                                                         bool routine,
+                                                         std::uint64_t now) noexcept {
+    AcquireSRWLockExclusive(&g_trafficReportLock);
+    const auto report = g_trafficReports.observe(key, sequence, routine, now);
+    ReleaseSRWLockExclusive(&g_trafficReportLock);
+    return report;
+}
+
+[[nodiscard]] TrafficLogKey traffic_log_key(const state::gameplay::PeerLink& peer,
+                                            bool outbound) noexcept {
+    return {peer.endpoint.address, peer.endpoint.port, peer.localConnectionSequence,
+            peer.remoteConnectionSequence, static_cast<unsigned>(peer.stage),
+            peer.applicationReady, outbound};
+}
 
 /**
  * Records the exact session-property publications before any parser advances its reader.
@@ -629,7 +650,7 @@ void consume_established(const state::gameplay::Endpoint& from,
                          std::uint64_t now) noexcept {
     wire::EstablishedPacket packet{};
     if (!wire::decode_established(payload, false, packet)) {
-        report(core::log::Level::debug, "ev=gameplay stage=packet result=drop reason=grammar");
+        report(core::log::Level::warn, "ev=gameplay stage=packet result=drop reason=grammar");
         return;
     }
     std::array<std::uint8_t, kMessageReportCapacity> delivered{};
@@ -639,6 +660,7 @@ void consume_established(const state::gameplay::Endpoint& from,
     std::size_t queueRemaining = 0;
     std::uint16_t clearedPacket = 0;
     std::uint64_t sessionId = 0;
+    TrafficLogKey logKey{};
     // The reliable window never resynchronises, so a stalled queue is only visible as a refused
     // record against the sequence it is still waiting for.
     std::size_t largeDropped = 0;
@@ -687,6 +709,7 @@ void consume_established(const state::gameplay::Endpoint& from,
             peer->applicationReady = true;
         }
         stage = static_cast<unsigned>(peer->stage);
+        logKey = traffic_log_key(*peer, false);
     }
     ReleaseSRWLockExclusive(&g_lock);
     if (peer == nullptr) {
@@ -723,9 +746,18 @@ void consume_established(const state::gameplay::Endpoint& from,
                static_cast<unsigned>(packet.ack.receiveHead),
                static_cast<unsigned>(packet.ack.reportedCount));
     }
-    report(core::log::Level::debug,
+    const bool routine = routine_inbound(
+        stage == static_cast<unsigned>(state::gameplay::PeerStage::connected),
+        packet.ack.outboundHeadPresent, packet.ack.headMinusCursor, packet.ack.reportedCount,
+        packet.large.count, packet.small.count, largeDropped, deliveredCount, queueRetired,
+        queueRemaining);
+    const auto repetition = observe_traffic(logKey, packet.ack.outboundHead, routine, now);
+    if (!repetition.emit) {
+        return;
+    }
+    report(largeDropped != 0 ? core::log::Level::warn : core::log::Level::debug,
            "ev=gameplay stage=packet result=ok seq=%u cursor=%u base=%u entries=%u large=%u "
-           "small=%u first=%u next=%u drop=%zu",
+           "small=%u first=%u next=%u drop=%zu routine=%u suppressed=%llu window_ms=%llu",
            static_cast<unsigned>(packet.ack.outboundHead),
            static_cast<unsigned>(packet.ack.headMinusCursor),
            static_cast<unsigned>(packet.ack.receiveHead),
@@ -734,7 +766,10 @@ void consume_established(const state::gameplay::Endpoint& from,
            static_cast<unsigned>(packet.small.count),
            static_cast<unsigned>(largeFirst),
            static_cast<unsigned>(largeNext),
-           largeDropped);
+           largeDropped,
+           routine ? 1U : 0U,
+           static_cast<unsigned long long>(repetition.suppressed),
+           static_cast<unsigned long long>(repetition.windowMs));
 }
 
 /**
@@ -776,16 +811,25 @@ void consume_established(const state::gameplay::Endpoint& from,
     const std::uint16_t last = fragmentCount == 0
                                    ? 0
                                    : peer.outbound.fragments[fragmentCount - 1].sequence;
-    report(core::log::Level::debug,
+    const bool routine = routine_outbound(sent, fragmentCount, peer.outbound.count, size);
+    const auto repetition = observe_traffic(traffic_log_key(peer, true), peer.outboundHead,
+                                            routine, GetTickCount64());
+    if (!repetition.emit) {
+        return sent;
+    }
+    report(sent ? core::log::Level::debug : core::log::Level::warn,
            "ev=gameplay stage=outbound result=%s head=%u cursor=%u "
-           "fragments=%zu first=%u last=%u bytes=%zu",
+           "fragments=%zu first=%u last=%u bytes=%zu routine=%u suppressed=%llu window_ms=%llu",
            sent ? "sent" : "fail",
            static_cast<unsigned>(peer.outboundHead),
            static_cast<unsigned>(ack.headMinusCursor),
            fragmentCount,
            static_cast<unsigned>(first),
            static_cast<unsigned>(last),
-           size);
+           size,
+           routine ? 1U : 0U,
+           static_cast<unsigned long long>(repetition.suppressed),
+           static_cast<unsigned long long>(repetition.windowMs));
     return sent;
 }
 
@@ -940,7 +984,7 @@ void service(std::uint64_t now) noexcept {
     ReleaseSRWLockExclusive(&g_lock);
     for (std::size_t index = 0; index < count; ++index) {
         if (!send_acknowledgement(owed[index])) {
-            report(core::log::Level::debug, "ev=gameplay stage=ack result=fail");
+            report(core::log::Level::warn, "ev=gameplay stage=ack result=fail");
         }
     }
 }
@@ -980,6 +1024,9 @@ void reset() noexcept {
         peer = {};
     }
     ReleaseSRWLockExclusive(&g_lock);
+    AcquireSRWLockExclusive(&g_trafficReportLock);
+    g_trafficReports.clear();
+    ReleaseSRWLockExclusive(&g_trafficReportLock);
 }
 
 } // namespace sunrise::server::gameplay::peer

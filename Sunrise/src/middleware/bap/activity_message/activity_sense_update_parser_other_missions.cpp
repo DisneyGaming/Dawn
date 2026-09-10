@@ -243,10 +243,6 @@ constexpr std::uint64_t kProjectFnvPrime = 1099511628211ULL;
         return native_sense::read(probe,slotType,output,bodyBits)
             && plausible_body_boundary(reader,bodyBits,groupBitsRemaining,groupKey);
     }
-    if (slotType==kSlotTypeForestGenerator
-        && plausible_body_boundary(reader,kForestGeneratorBodyBits,groupBitsRemaining,groupKey)) {
-        bodyBits=kForestGeneratorBodyBits; return true;
-    }
     inferred=true;
     return infer_body_bits(reader,groupBitsRemaining,groupKey,bodyBits);
 }
@@ -335,6 +331,14 @@ constexpr std::uint64_t kProjectFnvPrime = 1099511628211ULL;
         if (object.slotType==30 && output.root) {
             object.monitorOutput=output.monitor;
             object.hasMonitorOutput=true;
+        }
+        object.sourceDelta=output.source;
+        object.engagement=output.engagement;
+        object.revision=output.revision;
+        object.hasDelta=output.root;
+        if(object.slotType==kSlotTypeForestGenerator) {
+            object.generatorProgress=output.generator;
+            object.hasGeneratorProgress=output.root;
         }
         if (object.slotType==kSlotTypeScene) {
             object.sceneOutput=output.scene;

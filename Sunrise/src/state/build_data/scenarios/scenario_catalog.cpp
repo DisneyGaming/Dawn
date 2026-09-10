@@ -258,6 +258,15 @@ bool find_group_index(std::uint32_t registryKey, std::uint16_t& index) noexcept 
     return false;
 }
 
+bool group_by_key(std::uint32_t registryKey, RosterGroup& output) noexcept {
+    output = {};
+    const Lock::Shared guard(g_lock);
+    for (const auto& row : g_groups.rows()) {
+        if (row.registryKey == registryKey) { output = row; return true; }
+    }
+    return false;
+}
+
 DescriptorLookup find_published_descriptor(CueNodeId node,
                                            SlotDescriptorMetadata& output) noexcept {
     const Lock::Shared guard(g_lock);

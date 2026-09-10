@@ -24,6 +24,9 @@ void present_result(IDXGISwapChain* swapChain, HRESULT result) noexcept;
 /** @return True once a chosen swap chain has started all UI resources. */
 [[nodiscard]] bool active() noexcept;
 
+/** Best-effort identity check for diagnostics; never waits behind rendering. */
+[[nodiscard]] bool selected(IDXGISwapChain* swapChain) noexcept;
+
 /**
  * Feeds one window message into the live Dear ImGui context.
  * @param message Win32 message ID.

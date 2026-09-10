@@ -11,6 +11,19 @@
 
 namespace sunrise::server::bap::encrypted::push::activity {
 
+/** Builds from an immutable prepared destination, before its transaction commits. */
+[[nodiscard]] bool resolve_state_for_selection(state::activity::ActivityInstanceKey activity,
+    middleware::bap::activity_message::global_activity_state::GlobalActivityState& output,
+    const state::activity::destination::DestinationSelection& selection) noexcept;
+
+/** Encodes the prepared descriptor without reading an older committed destination. */
+[[nodiscard]] bool append_global_state_notification(Scratch& scratch,
+    state::activity::ActivityInstanceKey activity,
+    const state::activity::destination::DestinationSelection& selection,
+    std::span<const std::byte,state::kAesKeySize> key,
+    std::array<std::byte,state::kBapNonceSize>& nonce,
+    std::span<std::byte> response,std::size_t& written) noexcept;
+
 /**
  * Builds the whole message body input for one session.
  * @param sessionId Nonzero activity id.

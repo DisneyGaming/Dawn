@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include "sensor_auth_update.h"
+#include "native/roster_lifetime_wire.h"
 #include "../../../state/activity/omega_intro_rules.h"
 #include "../../../state/activity/omega_portal_entry.h"
 #include "../../../state/activity/omega_crown_respawn_authority.h"
@@ -86,6 +87,23 @@ constexpr std::uint32_t kMaximumRegion = 0x7FFFFFFF;
  * @return True when every scalar fits its field.
  */
 [[nodiscard]] bool valid(const Snapshot& snapshot) noexcept {
+    if (!lifetime_wire::valid(snapshot.roster)) return false;
+    if((snapshot.activityClock && !native::activity_clock::valid(*snapshot.activityClock))
+        || (!snapshot.activityClock && snapshot.activityElapsedTicks))return false;
+    if(snapshot.dialogues.count && (snapshot.archiveOmega || !native::dialogue::valid(snapshot.dialogues,snapshot.roster))) return false;
+    if(snapshot.sequences.count && (snapshot.archiveOmega || !native::world_sequence::valid(snapshot.sequences,snapshot.roster,snapshot.region))) return false;
+    if(snapshot.eventParticipants.count && (snapshot.archiveOmega || !native::event_participant::valid(snapshot.eventParticipants,snapshot.roster,snapshot.region))) return false;
+    if(snapshot.music.count && (snapshot.archiveOmega || !native::music::valid(snapshot.music,snapshot.roster,snapshot.region))) return false;
+    if(!native::player_predicates::compose(snapshot.playerPredicates,snapshot.omegaPortalPlayerHash,
+        state::activity::omega_portal_entry::kRequiredPlayerHash))return false;
+    if(!native::placement::valid(snapshot.placements,snapshot.roster,snapshot.region)) return false;
+    if(!native::engagement::valid(snapshot.engagements,snapshot.roster,snapshot.region)) return false;
+    if(!native::forest_generator::valid(snapshot.generators,snapshot.roster,snapshot.region)) return false;
+    if(!native::world_device::valid(snapshot.devices,snapshot.roster,snapshot.region)) return false;
+    if(!native::npc_animation::valid(snapshot.animations,snapshot.roster,snapshot.region)) return false;
+    // Existing archive presentation retains its own authority contract.
+    if(snapshot.cues.count) return false;
+    if(!native::population::valid(snapshot.populations,snapshot.roster,snapshot.region)) return false;
     if (publishes_music(snapshot) && !music::valid(snapshot.omegaMusic)) { return false; }
     if (std::find(kLifetimeStates.begin(), kLifetimeStates.end(), snapshot.lifetime)
         == kLifetimeStates.end()) {
@@ -661,14 +679,15 @@ constexpr std::uint32_t kMaximumRegion = 0x7FFFFFFF;
         encoded = write_bubble_block(writer, snapshot.grant);
     }
     const std::size_t latchBit = kLatchBitWithoutGrant + (snapshot.hasGrant ? kBubbleBlockBits : 0);
-    // The token at the activity object's element 10 is not checked.
-    encoded = encoded && writer.write(0, kActivityTokenWidth) && writer.bit_count() == latchBit;
+    // Native3C9FC0 synchronizes the source context clock from this header.
+    // No opt-in retains the exact legacy zero bytes.
+    encoded = encoded && native::activity_clock::write_elapsed(writer, snapshot.activityElapsedTicks) && writer.bit_count() == latchBit;
     // The enable latch is not sticky, so it goes on every message.
     encoded = encoded && writer.write(1, kPresenceWidth)
               && write_roster_delta(writer, snapshot.roster, snapshot.stateSequence)
               && writer.bit_count()
                      == latchBit + 1
-                            + delta_bits(snapshot.roster.topLevelGroupCount,
+                            + delta_bits(top_level_key_count(snapshot.roster),
                                          snapshot.roster.bubbleSubBlocks);
     // Once the client has acknowledged type 18, even reapplying unrelated authority objects is
     // destructive: the native publish pass copies their neutral route input over the live script

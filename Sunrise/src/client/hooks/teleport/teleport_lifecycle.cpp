@@ -16,6 +16,7 @@
 #include "../../hooking/detour.h"
 #include "../../player/player_position.h"
 #include "../bootflow/bootflow_hook_lifecycle.h"
+#include "../graphics/hijacked_frame_timing.h"
 #include "../fly/fly.h"
 #include "../polled_input/runtime.h"
 #include "../sword_skate/sword_skate.h"
@@ -86,6 +87,7 @@ __declspec(noinline) std::int64_t __fastcall camera_transform(std::uint32_t play
     if (!call.accepts_side_effects()) {
         return result;
     }
+    const graphics::hijacked_frame_timing::PostSpan timing(graphics::hijacked_frame_timing::Kind::camera_update);
     capture_forward(playerIndex);
     poll_request();
     force_pending();

@@ -1,6 +1,6 @@
 # Mission scripts
 
-The mission runtime loads `omega.lua`, `deadly_trial.lua`, `gateway.lua`, and `beyond_infinity.lua`. Each returns one definition through the shared Lua builders. C++ validates it and the universal executor runs the compiled graph. Beyond Infinity is an integrated reconstruction in progress; its native Forest traversal and full playthrough are not yet accepted. See [its implementation checkpoint](../docs/BEYOND-INFINITY-IMPLEMENTATION.md).
+The mission runtime loads `omega.lua`, `deadly_trial.lua`, `gateway.lua`, `beyond_infinity.lua`, `deep_storage.lua`, `hijacked.lua`, and `strike_pact.lua`. Each returns one definition through the shared Lua builders. C++ validates it and the universal executor runs the compiled graph. Beyond Infinity is an integrated reconstruction in progress; its native Forest traversal and full playthrough are not yet accepted. See [its implementation checkpoint](../docs/BEYOND-INFINITY-IMPLEMENTATION.md).
 
 Edit the script beside the installed DLL, validate it, and restart Destiny. Scripts load once per process; mission restarts and death keep the loaded definition. Logs in `Sunrise/logs/sunrise.log` identify the mission, `format=lua`, path, and source fingerprint. Missing or invalid files block executor selection.
 
@@ -14,7 +14,7 @@ python tools/coo/package_lua.py --validation build/coo/validation-my-change
 powershell -File tools/coo/install_candidate.ps1 -ValidationDirectory build/coo/validation-my-change
 ```
 
-The first command runs all 18 suites in Debug and Release and builds both DLL configurations. Packaging verifies the exact source and binary hashes. Installation requires Destiny to be closed and backs up the previous DLL, symbols, license, and scripts together. It does not change launch settings or start the game. Use the installer's `-ValidateOnly` switch for a read-only package check.
+The first command runs all 22 suites in Debug and Release and builds both DLL configurations. Packaging verifies the exact source and binary hashes. Installation requires Destiny to be closed and backs up the previous DLL, symbols, license, and scripts together. It does not change launch settings or start the game. Use the installer's `-ValidateOnly` switch for a read-only package check.
 
 For a focused Omega script check, use the validator from your validation directory:
 
@@ -23,3 +23,5 @@ For a focused Omega script check, use the validator from your validation directo
 ```
 
 Mission JSON and its loader have been removed. Settings, recovered package data, and validation receipts still use their existing formats. Historical rollback archives retain the files required by their older DLLs.
+
+Hijacked adds the Nessus Entangled Mind pursuit and Well of Echoes conflux route. Select **Activity override → Hijacked opening** before launching the normal Chosen donor route. See [implementation and fidelity record](../docs/HIJACKED-IMPLEMENTATION.md); its fresh native playthrough remains unverified.

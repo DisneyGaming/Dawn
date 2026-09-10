@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations"><ProjectConfiguration Include="Release|x64"><Configuration>Release</Configuration><Platform>x64</Platform></ProjectConfiguration></ItemGroup>
+  <PropertyGroup Label="Globals"><VCProjectVersion>17.0</VCProjectVersion><ProjectGuid>{8D110ACC-28B4-4A35-A746-17891753C666}</ProjectGuid><WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion></PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration"><ConfigurationType>Application</ConfigurationType><PlatformToolset>v145</PlatformToolset><UseDebugLibraries>false</UseDebugLibraries></PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup><OutDir>$(ProjectDir)..\..\build\unit\adventure_gateway\</OutDir><IntDir>$(OutDir)obj\</IntDir></PropertyGroup>
+  <ItemDefinitionGroup><ClCompile><LanguageStandard>stdcpp20</LanguageStandard><WarningLevel>Level4</WarningLevel><TreatWarningAsError>true</TreatWarningAsError><ConformanceMode>true</ConformanceMode><RuntimeLibrary>MultiThreaded</RuntimeLibrary><Optimization>MaxSpeed</Optimization><AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions><AdditionalIncludeDirectories>$(ProjectDir)..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories><PreprocessorDefinitions>WIN32;_WINDOWS;NOMINMAX;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile><Link><SubSystem>Console</SubSystem></Link></ItemDefinitionGroup>
+  <ItemGroup><ClCompile Include="adventure_gateway_tests.cpp" /><ClCompile Include="..\src\state\build_data\cache\records\cache_scenario_records.cpp" /></ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\middleware\bap\activity_message\activity_sensor_auth_bodies.cpp" />
+    <ClCompile Include="..\src\middleware\bap\activity_message\activity_sensor_auth_bodies_other_missions.cpp" />
+    <ClCompile Include="..\src\middleware\bap\activity_message\activity_sensor_auth_blocks.cpp" />
+    <ClCompile Include="..\src\middleware\bap\activity_message\activity_sensor_auth_blocks_other_missions.cpp" />
+    <ClCompile Include="..\src\middleware\bap\activity_message\activity_sensor_auth_encoder.cpp" />
+    <ClCompile Include="..\src\middleware\bap\activity_message\activity_sensor_auth_encoder_other_missions.cpp" />
+    <ClCompile Include="..\src\middleware\encoding\bit_writer.cpp" />
+    <ClCompile Include="..\src\middleware\encoding\bit_reader.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ItemGroup>
+    <ClCompile Include="..\src\state\activity\deep_storage\mechanism_bindings.cpp"><ObjectFileName>$(IntDir)deep_storage_mechanism_bindings.obj</ObjectFileName></ClCompile>
+    <ClCompile Include="..\src\state\activity\hijacked\mechanism_bindings.cpp"><ObjectFileName>$(IntDir)hijacked_mechanism_bindings.obj</ObjectFileName></ClCompile>
+  </ItemGroup>
+</Project>

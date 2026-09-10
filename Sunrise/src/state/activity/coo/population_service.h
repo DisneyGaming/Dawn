@@ -112,6 +112,20 @@ public:
         }
         return Admission::overflow;
     }
+    // A verified native streaming lifetime can acquire a new salted actor. Only
+    // its exact living predecessor may be replaced; genuine deaths remain terminal.
+    [[nodiscard]] bool rebind(const Receipt& previous,const Receipt& replacement) noexcept {
+        if(!previous.valid() || !replacement.valid() || previous==replacement
+            || previous.run!=replacement.run || previous.registry!=replacement.registry || previous.source!=replacement.source) {return false;}
+        for(std::size_t i=0;i<Groups;++i) for(std::uint8_t n=0;n<counts_[i];++n) {
+            if(actors_[i][n].receipt.actor==replacement.actor) {return false;}
+        }
+        for(std::size_t i=0;i<Groups;++i) for(std::uint8_t n=0;n<counts_[i];++n) {
+            auto& a=actors_[i][n];if(a.receipt!=previous || a.dead) {continue;}
+            a.receipt=replacement;a.ready=false;a.readiness={};return true;
+        }
+        return false;
+    }
     [[nodiscard]] bool died(const Receipt& receipt, std::uint64_t run, std::uint32_t generation) noexcept {
         if (!receipt.valid() || receipt.run != run || receipt.generation != generation) { return false; }
         for (std::size_t i = 0; i < Groups; ++i) for (std::uint8_t n = 0; n < counts_[i]; ++n) {

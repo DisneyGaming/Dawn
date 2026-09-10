@@ -1,5 +1,6 @@
 #include "activity_membership_route.h"
 
+#include <algorithm>
 #include <array>
 #include <cstdio>
 
@@ -20,22 +21,31 @@ namespace membership_state = state::activity::membership;
 
 void report_authoritative(
     const char* result,
+    state::activity::ActivityInstanceKey owner,
     std::size_t bytes,
     const service::client_authoritative_data::ClientAuthoritativeData& parsed,
-    const membership_state::PendingMutation* mutation) noexcept {
+    const membership_state::PendingMutation* mutation,
+    std::string_view destination = {}) noexcept {
     std::array<char, core::log::kLineCapacity> line{};
     const int written = std::snprintf(
         line.data(),
         line.size(),
-        "ev=activity stage=client_authoritative result=%s bytes=%zu "
+        "ev=activity stage=client_authoritative result=%s owner=0x%016llX incarnation=%llu bytes=%zu "
+        "destination=%.*s mission_run=%llu region_policy=%s "
         "transition_present=%u transition_token=%u sync_present=%u sync_token=%u "
         "spawn_present=%u spawn_state=%d "
         "teleport_present=%u teleport_state=%d teleport_token=%u teleport_slice=%d "
         "teleport_hash=0x%08X region_present=%u region=%d region_hash_present=%u "
         "region_hash=0x%08X changes=%u snapshot=%u region_moved=%u transition_started=%u "
-        "revision=%u held_present=%u held_region=%d publication_region=%d",
+        "revision=%u held_present=%u held_region=%d publication_region=%d before_region=%d before_revision=%u",
         result,
+        static_cast<unsigned long long>(owner.sessionId),
+        static_cast<unsigned long long>(owner.incarnation.value),
         bytes,
+        static_cast<int>(destination.empty() ? 7 : destination.size()),
+        destination.empty() ? "unknown" : destination.data(),
+        static_cast<unsigned long long>(state::activity::mission_run_generation()),
+        destination.empty() ? "unknown" : retains_held_region(destination) ? "held_prefetch" : "second_leg",
         parsed.hasTransitionToken ? 1U : 0U,
         static_cast<unsigned>(parsed.transitionToken),
         parsed.hasSynchronizationToken ? 1U : 0U,
@@ -57,11 +67,14 @@ void report_authoritative(
         mutation != nullptr && mutation->movesTransitionToken ? 1U : 0U,
         mutation != nullptr && mutation->hasSnapshot ? mutation->snapshot.revision : 0U,
         parsed.hasCurrentRegion?1U:0U,parsed.currentRegion.index,
-        mutation!=nullptr?mutation->regionTransition.after.region.index:-1);
+        mutation!=nullptr?mutation->regionTransition.after.region.index:-1,
+
+        mutation != nullptr ? mutation->regionTransition.before.region.index : -1,
+        mutation != nullptr ? mutation->regionTransition.before.revision : 0U);
     if (written > 0) {
         core::log::write(core::log::Channel::server,
                          result[0] == 'o' ? core::log::Level::info : core::log::Level::warn,
-                         {line.data(), static_cast<std::size_t>(written)});
+                         {line.data(), (std::min)(static_cast<std::size_t>(written), line.size() - 1)});
     }
 }
 
@@ -88,40 +101,6 @@ make_identity(const service::client_identity::ClientIdentity& parsed) noexcept {
                               : state::account::selected_character_soid(account);
     identity.secondaryOpaque = parsed.field6;
     return identity;
-}
-
-/**
- * Maps the kept Middleware fields into protocol-neutral sparse State values.
- * @param parsed Typed delta whose source bytes expire after routing.
- * @return Sparse State update with the same kept-field presence.
- */
-[[nodiscard]] membership_state::AuthoritativeUpdate make_authoritative(
-    const service::client_authoritative_data::ClientAuthoritativeData& parsed,
-    bool retainHeldRegion) noexcept {
-    membership_state::AuthoritativeUpdate update{};
-    update.transitionToken = parsed.transitionToken;
-    update.hasTransitionToken = parsed.hasTransitionToken;
-    update.synchronizationToken = parsed.synchronizationToken;
-    update.hasSynchronizationToken = parsed.hasSynchronizationToken;
-    update.spawn.state = parsed.spawn.state;
-    update.spawn.opaqueByte = parsed.spawn.opaqueByte;
-    update.spawn.opaqueValue = parsed.spawn.opaqueValue;
-    update.hasSpawn = parsed.hasSpawn;
-    update.teleport.state = parsed.teleport.state;
-    update.teleport.token = parsed.teleport.token;
-    update.teleport.sliceSetIndex = parsed.teleport.sliceSetIndex;
-    update.teleport.sliceSetHash = parsed.teleport.sliceSetHash;
-    update.hasTeleport = parsed.hasTeleport;
-    // The region is what names the player's bubble. Dropping it here leaves the host on the
-    // destination's arrival slice set for the whole run, and no bubble crossing grants authority.
-    update.region.index = parsed.region.index;
-    update.region.hash = parsed.region.hash;
-    update.hasRegion = parsed.hasRegion;
-    if(retainHeldRegion) {
-        update.currentRegion={parsed.currentRegion.index,parsed.currentRegion.hash};
-        update.hasCurrentRegion=parsed.hasCurrentRegion;
-    }
-    return update;
 }
 
 /**
@@ -185,7 +164,7 @@ bool prepare_authoritative(state::activity::ActivityInstanceKey key,
     if (!static_cast<bool>(key) || request.accountHandle != key.sessionId
         || !service::client_authoritative_data::parse_client_authoritative_data(request.payload,
                                                                                 parsed)) {
-        report_authoritative("parse_failed", request.payload.size(), parsed, nullptr);
+        report_authoritative("parse_failed", key, request.payload.size(), parsed, nullptr);
         return false;
     }
     membership_state::RegionSnapshotInputs inputs{};
@@ -194,8 +173,8 @@ bool prepare_authoritative(state::activity::ActivityInstanceKey key,
         reinterpret_cast<const char*>(inputs.destination.packageName.data()),
         inputs.destination.packageNameLength);
     if (!membership_state::prepare_authoritative(
-            key, make_authoritative(parsed,destination=="strike_pact"), plan.membershipMutation)) {
-        report_authoritative("state_refused", request.payload.size(), parsed, nullptr);
+            key, make_authoritative(parsed,destination), plan.membershipMutation)) {
+        report_authoritative("state_refused", key, request.payload.size(), parsed, nullptr, destination);
         return false;
     }
     plan.instanceKey = plan.membershipMutation.instanceKey;
@@ -208,7 +187,7 @@ bool prepare_authoritative(state::activity::ActivityInstanceKey key,
                         ? Delivery::authoritativeNotifications
                         : Delivery::none;
     plan.mutationDomain = MutationDomain::membership;
-    report_authoritative("ok", request.payload.size(), parsed, &plan.membershipMutation);
+    report_authoritative("ok", key, request.payload.size(), parsed, &plan.membershipMutation, destination);
     return true;
 }
 

@@ -11,6 +11,8 @@ constexpr std::uint8_t kPresenceWidth = 1;
 constexpr std::size_t kNestedFieldCount = 10;
 /** Family object ids are 64 wire bits. */
 constexpr std::uint8_t kSoidWidth = 64;
+/** Optional investment time uses the native signed 64-bit calendar-seconds domain. */
+constexpr std::uint8_t kTimeWidth = 64;
 /** Override list counts are unsigned 7-bit fields. */
 constexpr std::uint8_t kOverrideCountWidth = 7;
 /** Override slots use signed 16-bit descriptors biased into the wire range. */
@@ -41,6 +43,7 @@ constexpr std::uint32_t kContentGateArmValue = 1;
 /** Descriptor positions for the family-5 fields Sunrise can produce from State. */
 enum class NestedField : std::size_t {
     objectSoid = 0,
+    time = 1,
     flagOverrides = 4,
     valueOverrides = 5,
     contentGateArm = 7,
@@ -117,9 +120,10 @@ enum class NestedField : std::size_t {
 
 } // namespace
 
-/** Reports whether the override lists stay inside their own storage. */
+/** Reports whether override storage and the optional clock value are valid. */
 bool valid(const state::Family5State& family) noexcept {
-    return family.flagCount <= family.flags.size() && family.valueCount <= family.values.size();
+    return family.flagCount <= family.flags.size() && family.valueCount <= family.values.size()
+           && (!family.hasTime || family.timeSeconds >= 0);
 }
 
 /** Writes all 10 family-5 fields, each presence bit next to its own data. */
@@ -131,6 +135,9 @@ bool write(encoding::bits::Writer& writer, const state::Family5State& family) no
         if (field == NestedField::objectSoid) {
             encoded =
                 writer.write(1U, kPresenceWidth) && writer.write(family.objectSoid, kSoidWidth);
+        } else if (field == NestedField::time && family.hasTime) {
+            encoded = writer.write(1U, kPresenceWidth)
+                      && writer.write(static_cast<std::uint64_t>(family.timeSeconds), kTimeWidth);
         } else if (field == NestedField::flagOverrides && family.flagCount != 0) {
             // An empty list stays absent. A present zero count is a different wire shape.
             encoded = writer.write(1U, kPresenceWidth) && write_flags(writer, family);

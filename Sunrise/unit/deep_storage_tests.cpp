@@ -1,4 +1,5 @@
 #include "../src/state/activity/deep_storage/controller.h"
+#include "../src/client/hooks/bootflow/native_hook_ownership.h"
 #include "../src/state/activity/deep_storage/scan_playback.h"
 #include "../src/state/activity/deep_storage/plate_presentation.h"
 #include "fixtures/deep_storage/lens_damage_tests.h"
@@ -11,6 +12,31 @@
 namespace ds=sunrise::state::activity::deep_storage;
 namespace coo=sunrise::state::activity::coo;
 static void check(bool ok,const char* what) {if(!ok) {std::fprintf(stderr,"FAIL: %s\n",what);std::exit(1);}}
+// The production installer plans must not patch an entry that another owner
+// already changed before mission receipt hooks can finish installing.
+static void shared_hook_ownership_checks() {
+    namespace hooks=sunrise::client::hooks::bootflow::native_hook_ownership;
+    std::array<std::uintptr_t,16> sites{};
+    std::array<unsigned,16> owners{};std::size_t count{};
+    const auto add=[&](const auto& targets,unsigned owner) {
+        for(const auto target:targets) {
+            check(target!=0 && count<sites.size(),"physical hook plan fits and has valid targets");
+            check(std::find(sites.begin(),sites.begin()+count,target)==sites.begin()+count,
+                  "mission and native observers have one physical owner per hook target");
+            sites[count]=target;owners[count++]=owner;
+        }
+    };
+    add(hooks::kAmbientNamedPoints,1);add(hooks::kHijackedPlacements,2);
+    add(hooks::kArcCharge,3);add(hooks::kNativeCapture,4);
+    const auto owner_of=[&](std::uintptr_t target) {
+        for(std::size_t i=0;i<count;++i)if(sites[i]==target)return owners[i];
+        return 0U;
+    };
+    check(count==sites.size() && hooks::kNativeCapture.empty(),"capture sampler uses existing owner without a detour");
+    check(owner_of(0x575690)==2,"Hijacked owns shared object construction");
+    check(owner_of(0x4E25D0)==1,"ambient owns shared point interface");
+    check(owner_of(0x1006F20)==3,"arc-charge owns shared mission and capture timer");
+}
 static ds::Point point(const ds::Volume& v) {
     for(unsigned x=1;x<40;++x) for(unsigned y=1;y<40;++y) {
         ds::Point p{v.min.x+(v.max.x-v.min.x)*float(x)/40,v.min.y+(v.max.y-v.min.y)*float(y)/40,(v.min.z+v.max.z)/2};
@@ -473,7 +499,7 @@ check(c.select(views,run),"same activity can restart after reset");
     }
 };
 int main() {
-    playback_checks();plate_presentation_checks();deep_lens_damage_fixture::run(check);const auto text=shipped();auto doc=parse(text);check(doc!=nullptr,"shipped mission compiles");
+    shared_hook_ownership_checks();playback_checks();plate_presentation_checks();deep_lens_damage_fixture::run(check);const auto text=shipped();auto doc=parse(text);check(doc!=nullptr,"shipped mission compiles");
     check(doc->views().phases.size()==7,"seven authored mission sections");
     for(const auto* graph:doc->views().phases) for(const auto& step:graph->definition.steps) for(const auto& command:step.commands) {
         if(coo::is_observation(command.operation) && command.asset.type==1) {

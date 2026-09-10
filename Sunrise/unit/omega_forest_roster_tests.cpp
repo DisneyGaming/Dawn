@@ -1,3 +1,4 @@
+#include <memory>
 #include <algorithm>
 #include <array>
 #include <cstring>
@@ -107,6 +108,9 @@ void shifted_catalog_and_replacement() {
         CHECK(build::find_roster_group(layout.bubbleGroups[3], generator));
         CHECK(generator.registryKey == kGeneratorKey);
         CHECK(generator.slotTypes[0] == 37 && generator.slotIndices[0] == 1);
+        generator = {};
+        CHECK(build::find_roster_group_by_key(kGeneratorKey, generator));
+        CHECK(generator.registryKey == kGeneratorKey && generator.slotTypes[0] == 37);
     }
 }
 
@@ -121,6 +125,10 @@ void missing_group_and_full_layout() {
     std::uint16_t absent = 42;
     CHECK(!scenarios::find_group_index(kGeneratorKey, absent));
     CHECK(absent == 0U);
+    scenarios::RosterGroup absentRow{};
+    absentRow.registryKey = 42;
+    CHECK(!build::find_roster_group_by_key(kGeneratorKey, absentRow));
+    CHECK(absentRow.registryKey == 0 && absentRow.slotCount == 0);
 
     rows[1197].registryKey = kGeneratorKey;
     layout.bubbleGroupCount = 4;
@@ -150,13 +158,16 @@ void live_ikora_startup() {
         }
         return sense::parse_omega_sense_update(bytes, update, consumed);
     };
-    sense::SenseUpdate startup{};
+    // Keep the two retained decoded captures off the bounded thread stack.
+    auto startupStorage=std::make_unique<sense::SenseUpdate>();
+    auto& startup=*startupStorage;
     std::size_t consumed{};
     CHECK(decode(omega_ikora_startup_capture::kStartup, startup, consumed));
     CHECK(consumed == 2302U);
     CHECK(startup.rosterEntryCount == 13U && startup.bubbleBlockCount == 2U);
     CHECK(!readiness::exact_omega_initial_report(startup));
-    sense::SenseUpdate approach{};
+    auto approachStorage=std::make_unique<sense::SenseUpdate>();
+    auto& approach=*approachStorage;
     CHECK(decode(omega_ikora_startup_capture::kApproach, approach, consumed));
     CHECK(monitor::entered(approach, 20));
 

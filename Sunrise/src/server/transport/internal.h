@@ -18,6 +18,8 @@ inline constexpr std::size_t kOuterLengthOffset = 2;
 inline constexpr int kServiceIntervalMs = 50;
 /** One connection buffers at most this many streamed bytes before a frame must complete. */
 inline constexpr std::size_t kStreamCapacity = client::network::kBapFrameCapacity;
+/** Drain coalesced one-way traffic without tying throughput to one message per render tick. */
+inline constexpr std::size_t kInboundFramesPerSlice = 32;
 
 /** One accepted connection with bounded ingress and committed egress storage. */
 struct Peer {
@@ -54,7 +56,7 @@ extern Listener g_listener;
 offer(std::size_t slot, client::network::BapEvent event, std::span<const std::byte> frame) noexcept;
 
 /**
- * Removes and offers at most one whole frame from one peer's stream.
+ * Offers a bounded batch of complete frames, stopping when a reply needs sending.
  * @return True while the buffered prefix is valid.
  */
 [[nodiscard]] bool drain_stream(std::size_t slot) noexcept;
