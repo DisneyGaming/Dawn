@@ -53,15 +53,16 @@ std::atomic_uint32_t g_towerfallDeliveryReports{};
     std::array<std::byte,state::kBapNonceSize>& nonce,
     std::span<std::byte> response,std::size_t& written) noexcept {
     const bool deep=name=="adventure_whisk" && snapshot.deep_storage.enabled;
-    if(!deep && (name!="adventure_vod" || !snapshot.beyond_infinity.enabled)) { return true; }
+    const bool strike=name=="strike_pact" && snapshot.strike_pact.enabled;
+    if(!deep && !strike && (name!="adventure_vod" || !snapshot.beyond_infinity.enabled)) { return true; }
     namespace beyond=state::activity::beyond_infinity;
     namespace clock=middleware::bap::activity_message::clock_state;
     const auto current=beyond::request();
     const auto deepCurrent=state::activity::deep_storage::request();
-    const auto owner=deep?deepCurrent.owner:current.owner;
-    const bool enabled=deep?deepCurrent.frame.enabled:current.frame.enabled;
-    const auto generation=deep?deepCurrent.frame.spawnGeneration:current.frame.spawnGeneration;
-    const auto expected=deep?snapshot.deep_storage.spawnGeneration:snapshot.beyond_infinity.spawnGeneration;
+    const auto owner=strike?snapshot.strike_pact.completion.owner:deep?deepCurrent.owner:current.owner;
+    const bool enabled=strike?snapshot.strike_pact.enabled:deep?deepCurrent.frame.enabled:current.frame.enabled;
+    const auto generation=strike?owner.value:deep?deepCurrent.frame.spawnGeneration:current.frame.spawnGeneration;
+    const auto expected=strike?snapshot.strike_pact.spawnGeneration:deep?snapshot.deep_storage.spawnGeneration:snapshot.beyond_infinity.spawnGeneration;
     if(session.activity.joinedForeignSession || !lifecycle::activity_binding_is_current(session)
         || session.activity.instance!=state::activity::newest_joined_activity()
         || state::activity::world_phase()!=state::activity::WorldPhase::arrived

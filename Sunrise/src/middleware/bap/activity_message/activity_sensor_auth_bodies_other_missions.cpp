@@ -5,6 +5,7 @@
 #include "../../../state/activity/deep_storage/authority.h"
 #include "../../../state/activity/beyond_infinity/forest_selection.h"
 #include "../../../state/activity/deadly_trial/authority.h"
+#include "../../../state/activity/strike_pact/authority.h"
 
 #include "sensor_auth_update.h"
 #include "../../../state/activity/omega/omega_progression.h"
@@ -128,6 +129,12 @@ constexpr std::size_t kParticipationRegionBits = 32;
 constexpr std::size_t kLifetimeBits = 520;
 constexpr std::size_t kOmegaLifetimeBits = kLifetimeBits + encounters::kSwitchBits;
 static_assert(kOmegaLifetimeBits == 617);
+/** Select the mission's typed population inputs before its generator creates encounters. */
+[[nodiscard]] std::size_t forest_switch_count(const Snapshot& snapshot) noexcept {
+    return snapshot.strike_pact.services
+        ? state::activity::strike_pact::kForestHashSwitches.size()
+        : (snapshot.omegaForestVexEncounters ? 1U : 0U);
+}
 /** Schema 0x808099C4: one bool, five unsigned 64-bit fields, then one 32-bit scalar. */
 constexpr std::size_t kSharedMissionStateBits = 1 + 5 * 64 + 32;
 /** Schema 0x808099BF: two bools, two bias-1 two-bit enums, then shared state. */
@@ -212,14 +219,19 @@ constexpr std::size_t kSpawnKeyCount = 32;
                                   std::uint32_t restrictionOrdinal) noexcept {
     // Shared terminal publication: native mission-complete phase 6 / success 1.
     const bool completed=snapshot.missionCompletion.valid();
-    const auto lifetime=completed?6U:std::uint32_t{snapshot.lifetime};
+    const auto lifetime=completed?std::uint32_t{snapshot.missionCompletion.state}:std::uint32_t{snapshot.lifetime};
     bool encoded = writer.write(lifetime + 1, 4) && writer.write(completed?2U:1U, 3)
                    && writer.write(0, kPresenceWidth) && writer.write(kSignedZero, 32)
                    && writer.write(0, 32) && writer.write(kSignedZero+restrictionOrdinal, 32)
-                   && writer.write(state::activity::beyond_infinity::forest::selected(snapshot.beyond_infinity) ? 3U : snapshot.omegaForestVexEncounters ? 2U : 1U, 6)
+                   && writer.write(state::activity::beyond_infinity::forest::selected(snapshot.beyond_infinity) ? 3U : 1U + forest_switch_count(snapshot), 6)
                    && writer.write(kWaitingSwitchKey, 32) && writer.write(1, kPresenceWidth)
                    && writer.write(kWaitingSwitchClass, 32) && writer.write(kSignedZero, 32);
-    if (state::activity::beyond_infinity::forest::selected(snapshot.beyond_infinity)) {
+    if (snapshot.strike_pact.services) {
+        for (const auto& row : state::activity::strike_pact::kForestHashSwitches) {
+            encoded = encoded && writer.write(row.key,32) && writer.write(1,1)
+                && writer.write(encounters::kHashClass,32) && writer.write(row.value,32);
+        }
+    } else if (state::activity::beyond_infinity::forest::selected(snapshot.beyond_infinity)) {
         encoded = encoded && state::activity::beyond_infinity::forest::write(writer,snapshot.beyond_infinity.forestPass);
     } else if (snapshot.omegaForestVexEncounters) {
         // This value is a raw typed hash, not a biased integer or boolean.
@@ -746,6 +758,7 @@ legacy_auth_body_bits(const Snapshot& snapshot,
     if(const auto count=state::activity::gateway::body_bits(snapshot.gateway,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::beyond_infinity::body_bits(snapshot.beyond_infinity,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::deep_storage::body_bits(snapshot.deep_storage,key,slotType,slotIndex)) { return count; }
+    if(const auto count=state::activity::strike_pact::body_bits(snapshot.strike_pact,key,slotType,slotIndex)) { return count; }
     if(snapshot.omegaEndingSelected && state::activity::omega::ending::slot(key,slotType,slotIndex)) return 263;
     if (snapshot.omegaBossAuthority && boss::parent_slot(key, slotType, slotIndex)) return boss::kParentBits;
     if (snapshot.omegaBossAuthority && boss::member_slot(key, slotType, slotIndex)) return boss::kMemberBits;
@@ -812,6 +825,7 @@ legacy_auth_body_bits(const Snapshot& snapshot,
                    : 0;
     }
     if (slotType == kSlotTypeLifetime) {
+        if(snapshot.strike_pact.services) { return kLifetimeBits + forest_switch_count(snapshot) * encounters::kSwitchBits; }
         return state::activity::beyond_infinity::forest::selected(snapshot.beyond_infinity)
             ? kLifetimeBits+2*state::activity::beyond_infinity::forest::kSwitchBits
             : snapshot.omegaForestVexEncounters ? kOmegaLifetimeBits : kLifetimeBits;
@@ -868,6 +882,9 @@ bool legacy_write_auth_body(bits::Writer& writer,
     }
     if(state::activity::gateway::body_bits(snapshot.gateway,key,slotType,slotIndex)) {
         return state::activity::gateway::write_body(writer,snapshot.gateway,key,slotType,slotIndex);
+    }
+    if(state::activity::strike_pact::body_bits(snapshot.strike_pact,key,slotType,slotIndex)) {
+        return state::activity::strike_pact::write_body(writer,snapshot.strike_pact,key,slotType,slotIndex);
     }
     const std::size_t start = writer.bit_count();
     const std::size_t expected =

@@ -58,6 +58,9 @@ struct ClientAuthoritativeData final {
     /** D4 field3: native teleport acknowledgement, distinct from field2's transition token. */
     std::uint8_t synchronizationToken{};
     bool hasSynchronizationToken{};
+    /** D4 first leg is held; the second leg swaps to outgoing during travel. */
+    RegionState currentRegion{};
+    bool hasCurrentRegion{};
 };
 
 /** Client-authoritative deltas use activity message type 22. */

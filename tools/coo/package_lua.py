@@ -10,7 +10,7 @@ import verify
 import verify_lua
 
 ROOT = verify.ROOT
-SCRIPTS = ('omega.lua', 'deadly_trial.lua', 'gateway.lua', 'beyond_infinity.lua', 'deep_storage.lua')
+SCRIPTS = ('omega.lua', 'deadly_trial.lua', 'gateway.lua', 'beyond_infinity.lua', 'deep_storage.lua', 'strike_pact.lua')
 
 
 def require(condition, message):

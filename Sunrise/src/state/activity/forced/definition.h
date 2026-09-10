@@ -136,6 +136,17 @@ constexpr ForcedDestination deep_storage_opening() noexcept {
 }
 inline constexpr ForcedDestination kDeepStorageOpening=deep_storage_opening();
 static_assert(active(kDeepStorageOpening));
+
+// Tree of Probabilities: the Lighthouse opening of strike_pact, bubble 15, region 120, with
+// the spawn set the accepted Sunrise host build launched from.
+constexpr ForcedDestination strike_pact_opening() noexcept {
+    ForcedDestination v{};constexpr char name[]="strike_pact";
+    for(std::size_t i=0;i<sizeof(name)-1;++i) { v.packageName[i]=name[i]; }
+    v.packageNameLength=sizeof(name)-1;v.bubble=15;v.sliceSet=120;v.spawnSetHash=0x0E1523FEU;
+    v.hasBubble=v.hasSliceSet=v.hasSpawnSetHash=v.enabled=true;return v;
+}
+inline constexpr ForcedDestination kStrikePactOpening=strike_pact_opening();
+static_assert(active(kStrikePactOpening));
 } // namespace profiles
 
 static_assert(active(profiles::kTowerfallOpening));

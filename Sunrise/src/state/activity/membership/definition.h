@@ -88,6 +88,9 @@ struct AuthoritativeUpdate final {
     bool hasRegion{};
     std::uint8_t synchronizationToken{};
     bool hasSynchronizationToken{};
+    /** Opt-in held receipt; callers retaining only the second leg keep legacy semantics. */
+    RegionState currentRegion{};
+    bool hasCurrentRegion{};
 };
 
 /** Data read under one lock, enough to encode a full membership refresh. */
@@ -122,6 +125,8 @@ struct MembershipState final {
     /** Retained D4 field3 receipt; zero is valid and absent deltas leave it unchanged. */
     std::uint8_t synchronizationToken{};
     bool hasSynchronizationToken{};
+    /** Actual held region, distinct from region's roster prefetch destination. */
+    RegionState currentRegion{};
 };
 
 /** What one prepared membership transaction does. */

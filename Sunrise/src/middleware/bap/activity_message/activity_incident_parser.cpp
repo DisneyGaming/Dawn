@@ -107,6 +107,10 @@ Verdict validate(std::span<const std::byte> payload, Incident& parsed) noexcept 
     if (reader.remaining_bits() < static_cast<std::size_t>(parsed.payloadLength) * CHAR_BIT) {
         return Verdict::truncated;
     }
+    for(std::uint32_t index=0;index<parsed.payloadLength;++index) {
+        if(!reader.read(CHAR_BIT,field)) { return Verdict::truncated; }
+        parsed.payload[index]=static_cast<std::byte>(field);
+    }
     parsed.hasPayload = true;
     return Verdict::accepted;
 }

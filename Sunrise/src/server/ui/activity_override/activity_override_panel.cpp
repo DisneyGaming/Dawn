@@ -380,6 +380,10 @@ void draw() noexcept {
         changed = apply_opening_profile(value, rows, forced::profiles::kGatewayOpening) || changed;
     }
     ImGui::SameLine();
+    if (ImGui::Button("Tree of Probabilities opening")) {
+        changed = apply_opening_profile(value, rows, forced::profiles::kStrikePactOpening) || changed;
+    }
+    ImGui::SameLine();
     if (ImGui::Button("Clear")) {
         forced::clear();
         value = {};

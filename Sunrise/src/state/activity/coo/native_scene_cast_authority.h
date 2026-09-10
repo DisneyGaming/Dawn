@@ -7,8 +7,8 @@ namespace sunrise::state::activity::coo::native_scene {
 // The package's 80806268 array determines both order and scoped references.
 inline constexpr std::size_t cast_bits(std::size_t count,std::size_t events=0) noexcept { return 74U+55U*count+32U*events; }
 template<class Writer>
-bool cast_scene(Writer& writer,std::uint32_t generation,std::span<const Asset> cast,std::span<const std::uint32_t> events={}) noexcept {
-    if(generation>0x7FFFFFFFU || cast.size()>15 || events.size()>32 || (!generation && (!cast.empty() || !events.empty()))) { return false; }
+bool cast_scene(Writer& writer,std::uint32_t generation,std::span<const Asset> cast,std::span<const std::uint32_t> events={},std::uint32_t sourceRevision=1) noexcept {
+    if(generation>0x7FFFFFFFU || sourceRevision>0x7FFFFFFFU || cast.size()>15 || events.size()>32 || (!generation && (!cast.empty() || !events.empty()))) { return false; }
     for(const auto& target:cast) {
         if(!target.registry || target.registry==0x811C9DC5U || target.type>72 || target.slot>32767) { return false; }
     }
@@ -23,7 +23,7 @@ bool cast_scene(Writer& writer,std::uint32_t generation,std::span<const Asset> c
         if(!writer.write(target.registry,32) || !writer.write(target.type+1U,7)
             || !writer.write(target.slot+32768U,16)) { return false; }
     }
-    if(!writer.write(generation?1U:0U,31) || !writer.write(static_cast<std::uint32_t>(events.size()),6)) { return false; }
+    if(!writer.write(generation?sourceRevision:0U,31) || !writer.write(static_cast<std::uint32_t>(events.size()),6)) { return false; }
     for(const auto event:events) { if(!writer.write(event,32)) { return false; } }
     return writer.bit_count()-begin==cast_bits(cast.size(),events.size());
 }

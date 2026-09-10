@@ -47,8 +47,7 @@ constexpr std::int32_t kSignedFieldBias = 1;
 
 /**
  * Reads one complete D6 leg, keeping its region scalars only when asked. Both legs have the same
- * shape and only the second names the player's current region, so the first is walked and
- * nothing is kept.
+ * shape; the first is held and the second is pending (then outgoing during the swap).
  * @param reader Reader sitting at the first required D6 scalar.
  * @param region Receives the region when keepRegion is set.
  * @param keepRegion True for the leg that carries the player's region.
@@ -112,7 +111,7 @@ bool skip_opaque_root_branch(encoding::bits::Reader& reader) noexcept {
            && skip_large_array(reader) && reader.skip(1);
 }
 
-/** The second leg is the one whose first scalars name the player's current region. */
+/** The second leg carries the pending/outgoing region. */
 constexpr std::size_t kRegionLegIndex = 1;
 
 /** Keeps D4's separate transition and native synchronization tokens and current region. */
@@ -128,12 +127,15 @@ bool read_transition_branch(encoding::bits::Reader& reader,
         }
         RegionState region{};
         const bool keepRegion = leg == kRegionLegIndex;
-        if (!read_d6(reader, region, keepRegion)) {
+        if (!read_d6(reader, region, true)) {
             return false;
         }
         if (keepRegion) {
             update.region = region;
             update.hasRegion = true;
+        } else {
+            update.currentRegion = region;
+            update.hasCurrentRegion = true;
         }
     }
 

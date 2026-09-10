@@ -22,12 +22,12 @@ template<class Writer> bool dialogue(Writer& w,std::span<const std::uint32_t> ge
     }
     return w.bit_count()-start==kDialogueBits+(active==0xFF?0U:64U);
 }
-template<class Writer> bool directive_record(Writer& w,bool active,std::uint32_t event,MarkerTarget marker={}) noexcept {
+template<class Writer> bool directive_record(Writer& w,bool active,std::uint32_t event,MarkerTarget marker={},bool authored=false) noexcept {
     if(!w.write(active?event:0x811C9DC5U,32) || !w.write(0x80000000ULL,32)
         || !w.write(active?1U:0U,2) || !w.write(0,1)) { return false; }
-    for(unsigned i=0;i<5;++i) { if(!w.write(UINT64_MAX,64)) { return false; } }
+    for(unsigned i=0;i<5;++i) { if(!w.write(authored && i<4?0U:UINT64_MAX,64)) { return false; } }
     if(!w.write(0,32)) { return false; }
-    for(unsigned i=0;i<4;++i) { if(!w.write(0x7FFFFFFFULL,32)) { return false; } }
+    for(unsigned i=0;i<4;++i) { if(!w.write(authored?0x80000000ULL:0x7FFFFFFFULL,32)) { return false; } }
     if(!w.write(1,2) || !absent(w) || !w.write(1,3)) { return false; }
     for(unsigned i=0;i<4;++i) {
         const bool selected=active && i==0 && marker.valid();
@@ -35,7 +35,7 @@ template<class Writer> bool directive_record(Writer& w,bool active,std::uint32_t
             if(!w.write(marker.asset.registry,32) || !w.write(marker.asset.type+1U,7) || !w.write(marker.asset.slot+32768U,16)) { return false; }
         } else if(!absent(w)) { return false; }
         if(!absent(w)) { return false; }
-        for(unsigned j=0;j<4;++j) { if(!w.write(selected?marker.locator[j]:0U,32)) { return false; } }
+        for(unsigned j=0;j<4;++j) { if(!w.write(selected?marker.locator[j]:authored?0x811C9DC5U:0U,32)) { return false; } }
         if(!w.write(0,1)) { return false; }
     }
     return true;
@@ -49,11 +49,14 @@ template<class Writer> bool directive(Writer& w,std::uint32_t event) noexcept {
 }
 
 namespace sunrise::state::activity::coo::native_presentation {
-template<class Writer> bool objective(Writer& w,const ObjectiveState& state) noexcept {
+template<class Writer> bool objective(Writer& w,const ObjectiveState& state,Asset audience={},bool authored=false) noexcept {
     if(!state.published) { return false; }
     const auto begin=w.bit_count();
-    return absent(w) && absent(w) && directive_record(w,state.active,state.event,state.marker)
-        && directive_record(w,false,state.retiredEvent) && directive_record(w,false,0) && w.write(1,3)
+    const bool addressed=audience.registry!=0
+        ? w.write(audience.registry,32) && w.write(audience.type+1U,7) && w.write(audience.slot+32768U,16)
+        : absent(w);
+    return addressed && absent(w) && directive_record(w,state.active,state.event,state.marker,authored)
+        && directive_record(w,false,state.retiredEvent,{},authored) && directive_record(w,false,0,{},authored) && w.write(1,3)
         && w.bit_count()-begin==kDirectiveBits;
 }
 }

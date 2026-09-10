@@ -43,7 +43,7 @@ inline constexpr std::size_t kArrivalOverrideCapacity = 64;
 
 /**
  * One authored arrival for a named destination, applied over every derived source.
- * Neither field is needed. A row may move only the bubble, only the spawn set, or both.
+ * Fields are optional: a row may select the bubble, its exact slice set, or the spawn set.
  */
 struct ArrivalOverride final {
     std::array<char, destination::kPackageNameCapacity> name{};
@@ -52,6 +52,8 @@ struct ArrivalOverride final {
     bool hasBubble{};
     std::uint32_t spawnSetHash{};
     bool hasSpawnSetHash{};
+    std::uint16_t sliceSet{};
+    bool hasSliceSet{};
 };
 
 /** Immutable activity defaults supplied while the root State is initialized. */
