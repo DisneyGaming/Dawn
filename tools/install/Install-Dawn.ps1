@@ -132,13 +132,44 @@ Step "Game install: $root"
 
 if ($Restore) { Invoke-Restore $root }
 
-$state = Join-Path $root '.sunrise\install-state.json'
+# Dawn is a DLL replacement. It cannot supply the game: packages\ is thousands of files and tens
+# of gigabytes. Missing game data is fatal and silent at runtime, so stop here rather than let the
+# install look like it worked.
+$packages = Join-Path $root 'packages'
+$pkgCount = if (Test-Path $packages) { (Get-ChildItem $packages -File -ErrorAction SilentlyContinue).Count } else { 0 }
+if ($pkgCount -lt 100) {
+    Die @"
+No game data at $packages ($pkgCount files).
+Dawn replaces steam_api64.dll - it does not install Destiny 2. Point -GameRoot at a real
+build 86657 install, or install Sunrise first and confirm it boots.
+"@
+}
+Good "Game data: $pkgCount packages"
+
+# The pristine Steam DLL is the only route back to an unmodified game. Dawn's own backup only
+# returns you to whatever was installed before this run.
+$original = Join-Path $root '.sunrise\original\steam_api64.dll'
+$state    = Join-Path $root '.sunrise\install-state.json'
 if (Test-Path $state) {
     $s = Get-Content $state -Raw | ConvertFrom-Json
     Good "Sunrise $($s.releaseTag) installed $($s.installedAtUtc)"
+} elseif (Test-Path $original) {
+    Note 'No install-state.json, but the Sunrise installer left its original DLL - treating this as a Sunrise install.'
 } else {
-    Warn "No .sunrise\install-state.json - cannot confirm a Sunrise install is present."
-    Warn "Dawn needs a Sunrise install that already boots and has generated its caches."
+    Warn 'No Sunrise installer record here. Dawn needs a Sunrise install that has already booted'
+    Warn 'once, so its caches and activity SDK pack exist. A first boot without them takes several'
+    Warn 'minutes longer than usual and can look like a hang.'
+}
+if (-not (Test-Path $original)) {
+    Warn 'No .sunrise\original\steam_api64.dll - there is no pristine Steam DLL to roll back to.'
+    Warn 'This run still backs up whatever is installed now, so -Restore returns you to that.'
+}
+
+# First boot regenerates the build_data cache and the activity SDK pack, which is a few hundred MB.
+$free = (Get-PSDrive -Name (Split-Path -Qualifier $root).TrimEnd(':') -ErrorAction SilentlyContinue).Free
+if ($free -and $free -lt 2GB) {
+    Warn "Only $([math]::Round($free/1GB,1)) GB free on $(Split-Path -Qualifier $root). First boot"
+    Warn 'regenerates caches and a few hundred MB of activity SDK pack, and will fail if it runs out.'
 }
 
 if (-not (Test-Path $Project)) { Die "Not inside a Dawn checkout - expected $Project" }
@@ -206,7 +237,9 @@ function Backup-File ($absolute) {
 
 foreach ($dll in Get-DllTargets $root) { Backup-File $dll }
 foreach ($tree in Get-RuntimeTrees $root) {
-    Backup-File (Join-Path $tree 'settings.json')
+    foreach ($name in @('settings.json', 'hud.json', 'movement.json', 'player.json')) {
+        Backup-File (Join-Path $tree $name)
+    }
     $scriptDir = Join-Path $tree 'scripts'
     if (Test-Path $scriptDir) {
         Get-ChildItem $scriptDir -Filter *.lua -ErrorAction SilentlyContinue |
@@ -233,6 +266,18 @@ foreach ($tree in Get-RuntimeTrees $root) {
     if (-not (Test-Path $scriptDir)) { New-Item -ItemType Directory -Path $scriptDir -Force | Out-Null }
     Copy-Item (Join-Path $Scripts '*.lua') $scriptDir -Force
     Note "lua  -> $($scriptDir.Substring($root.Length).TrimStart('\'))  ($luaCount scripts)"
+
+    # hud/movement/player are optional at runtime - each store keeps its compiled defaults when the
+    # file is absent - but a tester who never gets them runs on those defaults instead of Dawn's
+    # tuning. Seed them only when missing, so an existing tester's own settings survive.
+    foreach ($name in @('hud.json', 'movement.json', 'player.json')) {
+        $src = Join-Path $RepoRoot "Sunrise\$name"
+        $dst = Join-Path $tree $name
+        if ((Test-Path $src) -and -not (Test-Path $dst)) {
+            Copy-Item $src $dst -Force
+            Note "cfg  -> $($dst.Substring($root.Length).TrimStart('\'))"
+        }
+    }
 }
 
 # ---------------------------------------------------------------- settings
