@@ -52,6 +52,8 @@
 #include "../../../../runtime/activity/native_activity_runtime.h"
 #include "../../../../runtime/activity/haunted_forest_lifetime_profile.h"
 #include "../../../../runtime/activity/adventure_opening_publication.h"
+#include "strike_bond_roster.h"
+#include "../../../../../state/activity/strike_bond/runtime.h"
 #include "../../../../../middleware/bap/activity_message/tower_watch_cue_manifest.h"
 
 namespace sunrise::server::bap::encrypted::push::activity {
@@ -512,6 +514,7 @@ RosterOutcome build_roster_snapshot(Session& session,
     const bool deepDestination=name=="adventure_whisk" && !session.activity.joinedForeignSession;
     const bool deepPrepared=state::activity::deep_storage::prepare(state::activity::mission_run_generation(),deepDestination);
     if(deepDestination && !deepPrepared) { return RosterOutcome::noGroups; }
+    const bool gardenPrepared=state::activity::strike_bond::prepare(state::activity::mission_run_generation(),name=="strike_bond" && !session.activity.joinedForeignSession);
     const bool strikeDestination=name=="strike_pact" && !session.activity.joinedForeignSession;
     const bool strikePrepared=!session.activity.joinedForeignSession && state::activity::strike_pact::prepare(state::activity::mission_run_generation(),strikeDestination);
     if(strikeDestination && !strikePrepared) { return RosterOutcome::noGroups; }
@@ -807,6 +810,91 @@ RosterOutcome build_roster_snapshot(Session& session,
             snapshot.gameplayClockTicks=snapshot.deep_storage.gameplayClockTicks;
         }
     }
+    if(gardenPrepared) {
+        strike_bond_roster::Report report{};
+        if(!strike_bond_roster::admit(layout,scratch,snapshot.roster,inputs.regionIndex,
+            [](std::size_t i,layouts::RosterGroup& g) noexcept {return state::build_data::find_roster_group(i,g);},report)) {
+            // Admission is all-or-nothing across twelve refusal points, and this call site used to
+            // return with no line at all: the log proved the stage failed but never which authored
+            // assumption was wrong. Name the refusal and dump what the layout actually resolved to.
+            // Diagnostic only - the refusal itself is unchanged.
+            static std::atomic_uint64_t lastGardenRoster{UINT64_MAX};
+            std::uint64_t stamp=static_cast<std::uint64_t>(report.detail)<<24;
+            for(const char c:report.stage) { stamp=stamp*131U+static_cast<unsigned char>(c); }
+            stamp^=static_cast<std::uint64_t>(report.lastMissing)<<32;
+            if(lastGardenRoster.exchange(stamp)!=stamp) {
+                std::array<char,512> line{};
+                int used=std::snprintf(line.data(),line.size(),
+                    "ev=strike_bond stage=roster result=failed refusal=%.*s detail=%08X detail2=%u "
+                    "walk=%u resolved=%zu roots=%zu present=%u missing=%u full=%u "
+                    "layout_roster=%zu layout_bubble=%zu layout_authored=%zu bubbles=%zu wire_capacity=%zu",
+                    static_cast<int>(report.stage.size()),report.stage.data(),report.detail,report.detail2,
+                    report.lastMissing<=4?static_cast<unsigned>(report.lastMissing):0U,
+                    report.resolved,report.roots,report.present,report.missing,report.full,
+                    report.layoutRosterGroups,report.layoutBubbleGroups,report.layoutAuthoredGroups,
+                    report.layoutBubbles,middleware::bap::activity_message::sensor_auth_update::kGroupCapacity);
+                if(used>0 && static_cast<std::size_t>(used)<line.size()) {
+                    core::log::write(core::log::Channel::server,core::log::Level::error,
+                        {line.data(),static_cast<std::size_t>(used)});
+                }
+                if(report.rowKey) {
+                    std::array<char,384> row{};
+                    const int n=std::snprintf(row.data(),row.size(),
+                        "ev=strike_bond stage=roster_row key=%08X expected_tag=%08X actual_tag=%08X "
+                        "key_found=%u tag_matched=%u slots_valid=%u expected_bubble=%u expected_root=%u "
+                        "actual_root=%u actual_owners=%016llX",
+                        report.rowKey,report.rowExpectedTag,report.rowActualTag,
+                        report.rowKeyFound?1U:0U,report.rowTagMatched?1U:0U,report.rowSlotsValid?1U:0U,
+                        static_cast<unsigned>(report.rowExpectedBubble),report.rowExpectedRoot?1U:0U,
+                        report.rowRoot?1U:0U,static_cast<unsigned long long>(report.rowOwners));
+                    if(n>0 && static_cast<std::size_t>(n)<row.size()) {
+                        core::log::write(core::log::Channel::server,core::log::Level::error,
+                            {row.data(),static_cast<std::size_t>(n)});
+                    }
+                }
+                for(std::size_t base=0;base<report.bubbleStates;base+=5) {
+                    std::array<char,512> bl{};
+                    int at=std::snprintf(bl.data(),bl.size(),"ev=strike_bond stage=roster_bubbles first=%zu of=%zu rows=",base,report.bubbleStates);
+                    for(std::size_t i=base;i<report.bubbleStates && i<base+5 && at>0
+                        && static_cast<std::size_t>(at)<bl.size()-72;++i) {
+                        const auto& b=report.bubbles[i];
+                        at+=std::snprintf(bl.data()+at,bl.size()-static_cast<std::size_t>(at),
+                            "b%u:state%u/of%u/authored%u/hash%08X ",static_cast<unsigned>(b.bubble),
+                            static_cast<unsigned>(b.state),static_cast<unsigned>(b.stateCount),
+                            static_cast<unsigned>(b.authored),b.hash);
+                    }
+                    if(at>0 && static_cast<std::size_t>(at)<bl.size()) {
+                        core::log::write(core::log::Channel::server,core::log::Level::error,
+                            {bl.data(),static_cast<std::size_t>(at)});
+                    }
+                }
+                for(std::size_t base=0;base<report.observedCount;base+=4) {
+                    std::array<char,512> dump{};
+                    int at=std::snprintf(dump.data(),dump.size(),
+                        "ev=strike_bond stage=roster_observed first=%zu of=%zu rows=",base,report.observedCount);
+                    for(std::size_t i=base;i<report.observedCount && i<base+4 && at>0
+                        && static_cast<std::size_t>(at)<dump.size()-96;++i) {
+                        const auto& o=report.observed[i];
+                        at+=std::snprintf(dump.data()+at,dump.size()-static_cast<std::size_t>(at),
+                            "[%zu]%08X/tag%08X/slots%u/%s/own%016llX ",i,o.key,o.tag,
+                            static_cast<unsigned>(o.slots),o.root?"root":"bub",
+                            static_cast<unsigned long long>(o.owners));
+                    }
+                    if(at>0 && static_cast<std::size_t>(at)<dump.size()) {
+                        core::log::write(core::log::Channel::server,core::log::Level::error,
+                            {dump.data(),static_cast<std::size_t>(at)});
+                    }
+                }
+            }
+            return RosterOutcome::noGroups;
+        }
+        snapshot.strike_bond=state::activity::strike_bond::snapshot(state::activity::mission_run_generation(),GetTickCount64(),state::activity::mission_seed_armed(),
+            inputs.sourceMembership.currentRegion.index>=0?inputs.sourceMembership.currentRegion.index:inputs.regionIndex);
+        if(snapshot.strike_bond.enabled) {
+            snapshot.missionCompletion=snapshot.strike_bond.completion;
+            snapshot.gameplayClockTicks=snapshot.strike_bond.gameplayClockTicks;
+        }
+    }
     if(strikePrepared) {
         // Keep each authored group's native bubble ownership stable across the whole run.
         strike_pact_roster::Report strikeReport{};
@@ -1038,6 +1126,11 @@ RosterOutcome build_roster_snapshot(Session& session,
     // The strike moves through four regions and each names its own respawn set. Its selected
     // checkpoint replaces the destination arrival, so a death after the Forest does not put the
     // player back at the Lighthouse. An unselected checkpoint leaves the destination's own set.
+    if (snapshot.strike_bond.enabled && snapshot.strike_bond.checkpointSpawnSet != 0
+        && snapshot.strike_bond.checkpointSliceSet >= 0) {
+        snapshot.spawnSliceSet = snapshot.strike_bond.checkpointSliceSet;
+        snapshot.spawnSetHash = snapshot.strike_bond.checkpointSpawnSet;
+    }
     if (snapshot.strike_pact.enabled && snapshot.strike_pact.checkpointSpawnSet != 0
         && snapshot.strike_pact.checkpointSpawnSet != message::kAbsentSpawnSetHash) {
         snapshot.spawnSliceSet = snapshot.strike_pact.checkpointSliceSet;

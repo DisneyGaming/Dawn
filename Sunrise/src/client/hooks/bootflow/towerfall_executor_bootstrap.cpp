@@ -18,6 +18,7 @@
 #include "../../hooking/detour.h"
 #include "../retail_log/retail_log_enqueue_observer.h"
 #include "internal.h"
+#include "mission_prelaunch.h"
 
 namespace sunrise::client::hooks::bootflow {
 namespace {
@@ -224,6 +225,7 @@ std::array<std::atomic_uint64_t, 8> g_lastManagerSignatures{};
 std::atomic<std::byte*> g_lastRouteManager{nullptr};
 std::atomic_bool g_prelaunchInstallInProgress{};
 std::atomic<const prelaunch::Profile*> g_prelaunchPublicationPending{};
+std::atomic<const prelaunch::Profile*> g_requestedPrelaunchProfile{};
 std::atomic_bool g_directContractPublished{};
 std::atomic_uint64_t g_nextPrelaunchInstallTick{};
 std::atomic_uint32_t g_prelaunchInstallAttempts{};
@@ -682,7 +684,8 @@ __declspec(noinline) bool __fastcall selection_launch_publisher(
 }
 
 void try_install_prelaunch_contract() noexcept {
-    const auto* profile = configured_prelaunch();
+    const auto* profile = g_requestedPrelaunchProfile.load(std::memory_order_acquire);
+    if (profile == nullptr) { profile = configured_prelaunch(); }
     if (g_handles[selectionLaunchStateAccessorIndex].attached || profile == nullptr) {
         return;
     }
@@ -2034,6 +2037,7 @@ void clear_runtime_state() noexcept {
     }
     g_lastRouteManager.store(nullptr, std::memory_order_release);
     g_prelaunchPublicationPending.store(nullptr, std::memory_order_release);
+    g_requestedPrelaunchProfile.store(nullptr, std::memory_order_release);
     g_directContractPublished.store(false, std::memory_order_release);
     g_identityBindingInProgress.store(false, std::memory_order_release);
     g_identityBindingPublished.store(false, std::memory_order_release);
@@ -2052,6 +2056,17 @@ void clear_runtime_state() noexcept {
 }
 
 } // namespace
+
+bool prepare_mission_prelaunch(
+    const state::activity::forced::ForcedDestination& destination) noexcept {
+    const auto* profile = prelaunch::configured(destination);
+    if (profile == nullptr) { return true; }
+    g_requestedPrelaunchProfile.store(profile, std::memory_order_release);
+    return g_callGate.accepting()
+        && g_selectionLaunchStateOriginal.load(std::memory_order_acquire) != nullptr
+        && g_selectionLaunchPublisherOriginal.load(std::memory_order_acquire) != nullptr
+        && g_selectionPublicationState0.load(std::memory_order_acquire) != nullptr;
+}
 
 bool install_towerfall_executor_bootstrap() noexcept {
     if (g_handles[managerUpdateIndex].attached) {

@@ -26,6 +26,7 @@
 #include "native/adventure_cue_authority.h"
 #include "native/adventure_dialogue_authority.h"
 #include "native/adventure_player_predicates.h"
+#include "../../../state/activity/strike_bond/frame.h"
 #include "../../../state/activity/omega/omega_mission_state.h"
 #include "../../../state/activity/omega_crown_respawn_authority.h"
 #include "../../../state/activity/omega_rescue_scene_authority.h"
@@ -170,6 +171,7 @@ struct Snapshot final {
     state::activity::hijacked::Frame hijacked{};
     state::activity::deadly_trial::Frame deadly_trial{};
     state::activity::strike_pact::Frame strike_pact{};
+    state::activity::strike_bond::Frame strike_bond{};
     state::activity::coo::CompletionPublication missionCompletion{};
     /** Optional native type2 configuration, serialized before this type5 snapshot. */
     std::optional<native::activity_clock::Configuration> activityClock{};

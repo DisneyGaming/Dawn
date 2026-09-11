@@ -11,6 +11,7 @@
 // what the accepted host build did on every squad-state report.
 #pragma once
 #include "catalog_all.h"
+#include "../coo/task_costs.h"
 namespace sunrise::state::activity::strike_pact {
 
 /**
@@ -24,28 +25,7 @@ namespace sunrise::state::activity::strike_pact {
  * whole picture selects from whichever group happened to change last and discards every report
  * that does not restate the revision, which is no selection at all.
  */
-struct TaskCosts final {
-    std::array<std::uint8_t,24> cost{};
-    std::uint32_t mask{};
-    std::uint32_t revision{};
-    bool hasRevision{};
-    /** The native initialized latch. A report that clears it discards the squad's whole state. */
-    bool initialized{};
-    /** Merges one reported delta. Absent fields keep the value this squad already reported. */
-    void merge(const TaskCosts& report) noexcept {
-        if(!report.initialized) { *this={}; return; }
-        initialized=true;
-        if(report.hasRevision) {
-            // A new evaluation revision retires every cost measured against the old one.
-            if(hasRevision && revision!=report.revision) { cost={};mask=0; }
-            revision=report.revision;hasRevision=true;
-        }
-        for(std::size_t group=0;group<cost.size();++group) {
-            if((report.mask&(std::uint32_t{1}<<group))==0) { continue; }
-            cost[group]=report.cost[group];mask|=std::uint32_t{1}<<group;
-        }
-    }
-};
+using TaskCosts = coo::TaskCosts;
 /** The top code is the evaluator's own maximum, meaning the group cannot be reached from here. */
 inline constexpr std::uint8_t kTaskUnreachable=127;
 

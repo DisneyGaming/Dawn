@@ -18,7 +18,7 @@ TESTS = (
     "coo_combat_tests", "coo_combat_runtime_tests", "coo_ending_tests",
     "coo_ending_runtime_tests", "beyond_infinity_catalog_tests", "beyond_infinity_tests",
     "deep_storage_catalog_tests", "deep_storage_tests",
-    "hijacked_catalog_tests", "hijacked_tests",
+    "hijacked_catalog_tests", "hijacked_tests", "strike_bond_tests",
 )
 
 NATIVE_TESTS = (
@@ -47,6 +47,7 @@ NATIVE_TESTS = (
     'haunted_forest_scope_tests',
     'log_repetition_tests',
     'mission_launch_arguments_tests',
+    'mission_launch_lifecycle_tests',
     'mission_launch_metadata_tests',
     'mission_launch_tests',
     'mission_launch_ui_tests',

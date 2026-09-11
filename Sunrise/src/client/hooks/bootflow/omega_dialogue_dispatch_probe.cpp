@@ -4,6 +4,7 @@
 #include "../../../state/activity/hijacked/runtime.h"
 #include "../../../state/activity/deadly_trial/runtime.h"
 #include "../../../state/activity/strike_pact/runtime.h"
+#include "../../../state/activity/strike_bond/runtime.h"
 #include <Windows.h>
 #include "deadly_trial_presentation.h"
 #include "hijacked_presentation.h"
@@ -1256,10 +1257,11 @@ __declspec(noinline) void __fastcall dialogue_dispatch(std::byte* component,
                 static_cast<std::uint8_t>(index),generation);
             state::activity::deadly_trial::observe_submission(gatewayDispatchRun,self,offset,bank,
                 static_cast<std::uint8_t>(index),generation);
+            state::activity::strike_bond::observe_submission(gatewayDispatchRun,self,offset,bank,static_cast<std::uint8_t>(index),generation);
             state::activity::strike_pact::observe_submission(gatewayDispatchRun,self,offset,bank,
                 static_cast<std::uint8_t>(index),generation);
             if (bank != kDialogueBankHandle && bank != 0x80F1FC9EU && bank != 0x80F1F086U
-                && !beyondDispatch && state::activity::strike_pact::native_run()==0) {
+                && !beyondDispatch && state::activity::strike_bond::native_run()==0 && state::activity::strike_pact::native_run()==0) {
                 // observe_submission() drops a foreign bank silently; say so once per row.
                 log_reject("dispatch_bank", component, static_cast<std::uint32_t>(index),
                            generation, bank);
@@ -1834,6 +1836,7 @@ void apply_forest_tuner(std::byte* record) noexcept {
 }
 
 #include "beyond_infinity_forest_runtime.inl"
+#include "garden_world_forest_runtime.inl"
 
 /** A cached sensor or configured Omega default does not identify the current world. */
 [[nodiscard]] bool omega_forest_context() noexcept {
@@ -1926,7 +1929,11 @@ __declspec(noinline) std::uint8_t __fastcall forest_solver_hook(
     const auto original = g_forestSolverOriginal.load(std::memory_order_acquire);
     omega_forest::solver_inputs(omega_forest_worker(instance),
         forest_tuner::state().writeFloats.load(std::memory_order_relaxed), first, second);
+    // Both proven forests zero the two f32 topology inputs to retain only the anchor route;
+    // left at their -1.0 sentinels the solver keeps its generic edges and the authored exit
+    // never joins the generated islands.
     if(beyond_forest_runtime::selected() && beyond_forest_runtime::worker(instance)) { first=second=0.F; }
+    else if(garden_forest_runtime::worker(instance)) { first=second=0.F; }
     return original != nullptr ? original(instance, first, second, blockedTiles) : 0U;
 }
 
@@ -1955,6 +1962,7 @@ __declspec(noinline) std::uint64_t __fastcall forest_worker_tick_hook(void* inst
     prepare_omega_forest(instance);
     const bool beyondForest=beyond_forest_runtime::selected();
     if(beyondForest) { beyond_forest_runtime::prepare(instance); }
+    garden_forest_runtime::prepare(instance);
     const bool legacyMutation = omega_forest_context();
     // Omega-only diagnostic ignition; generic native forest workers keep their authority input.
     // The worker reads the sensor authority record at instance+0x180 through

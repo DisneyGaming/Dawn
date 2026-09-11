@@ -17,7 +17,7 @@ struct Body { std::uint32_t owner; t::Vector position;bool readable{true},replac
 std::uint32_t controlled=0x08FAA000U;
 void* fallback{};
 unsigned identitySamples{},identityInvalidations{};bool identityPresent{};
-unsigned publications{},trialPublications{},deepPublications{},hijackedPublications{};t::Vector trialPosition{},deepPosition{},hijackedPosition{};
+unsigned publications{},trialPublications{},deepPublications{},hijackedPublications{},gardenPublications{};t::Vector trialPosition{},deepPosition{},hijackedPosition{},gardenPosition{};
 g::Controller* mission{};
 namespace sunrise::client::hooks::teleport {
 bool read_local_player_entity(void* component,std::uint32_t& entity) noexcept {
@@ -43,6 +43,7 @@ namespace sunrise::state::activity {
 std::uint64_t mission_run_generation() noexcept { return 1; }
 namespace deep_storage { void observe_position(float x,float y,float z) noexcept {++deepPublications;deepPosition={x,y,z};} }
 namespace hijacked { void observe_position(float x,float y,float z) noexcept {++hijackedPublications;hijackedPosition={x,y,z};} }
+namespace strike_bond { void observe_position(float x,float y,float z) noexcept {++gardenPublications;gardenPosition={x,y,z};} }
 namespace beyond_infinity { void observe_position(float,float,float) noexcept {} }
 namespace deadly_trial { void observe_position(float x,float y,float z) noexcept { ++trialPublications;trialPosition={x,y,z}; } }
 namespace gateway { void observe_position(float x,float y,float z) noexcept { ++publications;if(mission) { mission->position(1,{x,y,z}); } } }
@@ -86,6 +87,7 @@ int main() {
     CHECK(publications==beforeCached+1);
     CHECK(deepPublications==publications);CHECK(deepPosition==b.position);
     CHECK(hijackedPublications==publications);CHECK(hijackedPosition==b.position);
+    CHECK(gardenPublications==publications);CHECK(gardenPosition==b.position);
     CHECK(trialPublications==publications);CHECK(trialPosition==b.position);
     CHECK(identitySamples==publications);
     // An observed body loss retires the participant identity immediately.

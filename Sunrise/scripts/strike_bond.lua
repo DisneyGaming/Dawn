@@ -1,0 +1,189 @@
+-- A Garden World STRIKE, reconstructed from -uxfFqyMtxE and native package data.
+-- The campaign scanner/Panoptes ending is outside this strike.
+local composition=graph("composition","A Garden World",{step("mission",parallel("mission.module","mission.checked"))})
+local conditions={
+    condition("entered.tunnel",any_of("tunnel.tv_to_if_dialog","region.forest")),
+    condition("forest.exit",any_of("forest.tv_end","region.past")),
+    condition("past.at_modules",any_of("past.tv_lower_cannon","past.slot_00ED","past.slot_00E9")),
+    condition("past.terrace",any_of("past.slot_00EE","past.slot_00E8","past_dialogue.slot_000C")),
+    condition("past.gates",any_of("past.slot_00E3","past.slot_00E4","past.slot_00E5","past_dialogue.slot_000A")),
+    condition("spire.entry",any_of("spire_entry.slot_0002","spire_entry.slot_0003","region.spire")),
+    condition("spire.mid",any_of("spire.tv_mid","spire.slot_0184","spire.slot_018B","spire.slot_0186")),
+    condition("spire.top",any_of("spire_top.tv_top","arena.tv_arena")),
+}
+-- Helpers expand to immutable steps. Creation, scene start, destruction and
+-- actor death remain separate observations. A request never proves completion.
+local function add(t,id,commands,after)
+    t[#t+1]=step(id,commands,{after=after or {}})
+end
+local function squads(t,id,prefix,first,last,after)
+    local commands={}
+    for i=first,last do commands[#commands+1]=prefix.."["..i.."].request" end
+    add(t,id,commands,after)
+end
+local function block(t,id,prefix,after,unlock)
+    add(t,id.."_create",parallel(prefix..".o_vex_lens.on",prefix..".o_wrapper.on",prefix..".o_vex_block.on",prefix..".d_vex_lens.on",prefix..".d_vex_block.on",prefix..".d_laser_in.on",prefix..".d_laser_out.on",prefix..".d_shield.on"),after)
+    add(t,id.."_ready",prefix..".o_vex_lens.ready",{id.."_create"})
+    add(t,id.."_expose",parallel(prefix..".o_vex_lens.expose",prefix..".o_vex_lens.marker"),unlock and {id.."_ready",unlock} or {id.."_ready"})
+    add(t,id.."_destroyed",prefix..".o_vex_lens.destroyed",{id.."_expose"})
+    add(t,id.."_open",parallel(prefix..".d_vex_block.off",prefix..".d_laser_in.off",prefix..".d_laser_out.off",prefix..".d_shield.off",prefix..".o_vex_block.off"),{id.."_destroyed"})
+end
+local function golem_setup(t,id,prefix,after,tether)
+    add(t,id.."_create",parallel(prefix..".o_lens.on",prefix..".o_wrapper.on",prefix..".d_lens.on",prefix..".d_laser.on",prefix..(tether and ".d_shield.off" or ".d_shield.on")),after)
+    add(t,id.."_scene",prefix..".sn_golem.start",{id.."_create"})
+    add(t,id.."_started",parallel(prefix..".sn_golem.started",prefix..".sq_golem.ready"),{id.."_scene"})
+    if tether then add(t,id.."_tether",parallel(tether..".on",tether..".ready"),{id.."_started"}) end
+end
+local function golem_fight(t,id,prefix,after,tether)
+    add(t,id.."_expose",parallel(prefix..".o_lens.expose",prefix..".o_lens.marker"),after)
+    add(t,id.."_destroyed",prefix..".o_lens.destroyed",{id.."_expose"})
+    local release={prefix..".d_laser.off",prefix..".sn_golem.release"}
+    release[#release+1]=tether and tether..".off" or prefix..".d_shield.off"
+    add(t,id.."_release",release,{id.."_destroyed"})
+    add(t,id.."_released",prefix..".sn_golem.finished",{id.."_release"})
+    add(t,id.."_killed",prefix..".sq_golem.cleared",{id.."_released"})
+end
+local opening=graph("opening","The Lighthouse",{
+    step("arrive","region.lighthouse"),
+    step("defense",parallel("lighthouse.sq_top.request","lighthouse.sq_stairs_left.request","lighthouse.sq_stairs_right.request","lighthouse.sq_landing.request"),{after={"arrive"}}),
+    step("briefing",parallel("objective.0","dialogue.0","portal.lighthouse_teleport.on"),{after={"arrive"}}),
+    step("tunnel","entered.tunnel",{after={"briefing"}}),
+    step("explanation",parallel("dialogue.1","objective.1","forest.generate"),{after={"tunnel"}}),
+    step("leave","region.forest",{after={"explanation"}}),
+})
+local forest=graph("forest","The Infinite Forest",{
+    step("generate",parallel("forest.generate","objective.1")),
+    -- Forest C owns the procedural islands and Daemon doors. These are its
+    -- fixed exit-platform sources, not substitute procedural populations.
+    step("exit_defense",parallel("forest.sq_cyclops[0].request","forest.sq_cyclops[1].request","forest.sq_cyclops[2].request","forest.sq_goblins[0].request","forest.sq_goblins[1].request")),
+    step("exit","forest.exit"),
+    step("objective","objective.2",{after={"exit"}}),
+    step("leave","region.past",{after={"objective"}}),
+})
+local p={}
+add(p,"mouth","past_dialogue.slot_000B")
+add(p,"welcome",parallel("objective.3","dialogue.3","checkpoint.past"),{"mouth"})
+squads(p,"arrival0","past.sq_arrival",0,7,{"welcome"})
+add(p,"flanks",parallel("past.sq_arrival_right_flank.request","past.sq_arrival_left_flank.request","past.sq_lower_platform.request"),{"welcome"})
+add(p,"lift",parallel("past.o_cannon.on","past.d_mancannon[0].on","past.d_mancannon[1].on"),{"welcome"})
+add(p,"cannon_approach","past.tv_lower_cannon",{"lift"})
+add(p,"radiolaria","dialogue.5",{"cannon_approach"})
+add(p,"modules","past.at_modules",{"lift"})
+add(p,"security",parallel("objective.8","dialogue.7","past.sq_upper_platform[0].request","past.sq_upper_platform[1].request"),{"modules"})
+block(p,"block0","past.pf_block[0]",{"security"})
+add(p,"terrace","past.terrace",{"block0_open"})
+add(p,"rebuilt","dialogue.8",{"terrace"})
+squads(p,"terrace_high","past.sq_terrace_high",0,4,{"terrace"})
+squads(p,"terrace_low","past.sq_terrace_low",0,3,{"terrace"})
+block(p,"block1","past.pf_block[1]",{"terrace"})
+local past=graph("past","Enter the Simulant Past",p)
+local t={}
+add(t,"presentation",parallel("objective.5","dialogue.9"))
+squads(t,"support","past.sq_terrace_golem_support",0,3)
+golem_setup(t,"terrace_golem","past.pf_terrace_golem",nil,"past.pf_anomaly[1].o_nomaly")
+golem_fight(t,"terrace_golem","past.pf_terrace_golem",{"terrace_golem_tether"},"past.pf_anomaly[1].o_nomaly")
+add(t,"teamwork","dialogue.10",{"terrace_golem_killed"})
+block(t,"block2","past.pf_block[2]",nil,"terrace_golem_killed")
+add(t,"corridor","past.gates",{"block2_open"})
+local terrace=graph("terrace","Disable the first Minotaur shield",t)
+local i={}
+add(i,"security","objective.9")
+add(i,"gate1",parallel("past.sq_gate1[0].request","past.sq_gate1[1].request","past.sq_gate1[2].request","past.sq_gate1_support[0].request","past.sq_gate1_support[1].request","past.sq_gate1_sniper[0].request","past.sq_gate1_sniper[1].request"))
+block(i,"block3","past.pf_block[3]")
+add(i,"gate2",parallel("past.sq_gate2[0].request","past.sq_gate2[1].request","past.sq_gate2[2].request","past.sq_gate2_support[0].request","past.sq_gate2_support[1].request","past.sq_gate2_support[2].request"),{"block3_open"})
+block(i,"block4","past.pf_block[4]",{"block3_open"},"cannon_golem_killed")
+add(i,"fifth_module",parallel("dialogue.11","past.sq_cannon_snipers.request","past.sq_tower.request"),{"block4_destroyed"})
+squads(i,"cannon_guards","past.sq_cannon",0,3,{"block3_open"})
+golem_setup(i,"cannon_golem","past.pf_cannon_golem",{"block3_open"},"past.pf_anomaly[0].o_nomaly")
+golem_fight(i,"cannon_golem","past.pf_cannon_golem",{"cannon_golem_tether"},"past.pf_anomaly[0].o_nomaly")
+add(i,"cannon",parallel("objective.4","past.o_main_cannon.on","past.d_mancannon[2].on","past.d_mancannon[3].on","spire_entry.ap_to_machine.marker"),{"cannon_golem_killed","block4_open"})
+add(i,"enter_spire","spire.entry",{"cannon"})
+add(i,"arc_energy","dialogue.12",{"enter_spire"})
+add(i,"leave","region.spire",{"arc_energy"})
+local interior=graph("interior","Sabotage the remaining protocols",i)
+local w={}
+add(w,"presentation",parallel("objective.7","checkpoint.spire","spire.d_tower_laser.on"))
+squads(w,"lower","spire.sq_lower",0,4)
+-- The first cannon is below the tower cube; waiting for that cube here deadlocks.
+add(w,"lower_cannon",parallel("spire.d_mancannon[0].on","spire.d_mancannon[1].on"))
+add(w,"mid","spire.mid",{"lower_cannon"})
+squads(w,"middle","spire.sq_mid",0,7,{"mid"})
+squads(w,"snipers","spire.sq_mid_sniper",0,4,{"mid"})
+golem_setup(w,"tower_golem","spire.pf_tower_golem",{"mid"},"spire.pf_anomaly[0].o_nomaly")
+golem_fight(w,"tower_golem","spire.pf_tower_golem",{"tower_golem_tether"},"spire.pf_anomaly[0].o_nomaly")
+block(w,"tower_block","spire.pf_tower_block",{"mid"},"tower_golem_killed")
+add(w,"upper_cannon",parallel("spire.d_mancannon[2].on","spire.d_mancannon[3].on","spire_top.slot_0002.marker"),{"tower_golem_killed","tower_block_open"})
+squads(w,"top_guards","spire.sq_top",0,3,{"upper_cannon"})
+add(w,"top","spire.top",{"upper_cannon"})
+local tower=graph("tower","Climb the Spire",w)
+local a={}
+add(a,"arena","spire.top")
+add(a,"presentation",parallel("objective.6","respawn.restrict","arena.ap_boss.marker"),{"arena"})
+add(a,"cover","arena.cover.start",{"arena"})
+add(a,"platform",parallel("spire.boss_platform.o_loop.on","spire.boss_platform.d.on","spire.d_laser_main.on"),{"arena"})
+add(a,"lens",parallel("spire.o_main_lens.on","spire.d_main_lens.on"),{"arena"})
+-- The middle cube is available before any boss/guardian scene can reserve it.
+add(a,"lens_ready","spire.o_main_lens.ready",{"lens"})
+add(a,"expose","spire.o_main_lens.expose",{"lens_ready"})
+add(a,"destroyed","spire.o_main_lens.destroyed",{"expose"})
+add(a,"power_cut",parallel("dialogue.13","spire.d_laser_main.off","spire.d_tower_laser.off","spire.sq_boss.request"),{"destroyed"})
+add(a,"boss_ready","spire.sq_boss.ready",{"power_cut"})
+add(a,"fight",parallel("objective.10","boss.fight"),{"boss_ready"})
+local intro=graph("intro","Cut the Spire Arc network",a)
+local b={}
+squads(b,"initial_adds","spire.sq_boss_adds",0,3)
+squads(b,"lens_adds","spire.sq_lens_adds",0,5)
+local function shield(t,n,first,second,after)
+    local id="shield"..n
+    local scene="spire.sn_cyclops_lens["..(n==1 and 1 or 3).."]"
+    local g0="spire.pf_golem["..first.."]"
+    local g1="spire.pf_golem["..second.."]"
+    add(t,id.."_health",n==1 and "boss.health.two_thirds" or "boss.health.one_third",after)
+    for i,g in ipairs({g0,g1}) do
+        add(t,id.."_create"..i,parallel(g..".o_lens.on",g..".o_wrapper.on",g..".d_lens.on",g..".d_laser.on",g..".d_shield.on"),{id.."_health"})
+    end
+    add(t,id.."_scene",parallel(scene..".start",g0..".sn_golem.start",g1..".sn_golem.start","spire.d_laser_golem"..n..".on"),{id.."_create1",id.."_create2"})
+    add(t,id.."_started",parallel(scene..".started",g0..".sn_golem.started",g1..".sn_golem.started",g0..".sq_golem.ready",g1..".sq_golem.ready"),{id.."_scene"})
+    add(t,id.."_expose",parallel(g0..".o_lens.expose",g1..".o_lens.expose"),{id.."_started"})
+    for i,g in ipairs({g0,g1}) do
+        add(t,id.."_destroyed"..i,g..".o_lens.destroyed",{id.."_expose"})
+        add(t,id.."_release"..i,parallel(g..".d_laser.off",g..".d_shield.off",g..".sn_golem.release",g..".sn_golem.finished"),{id.."_destroyed"..i})
+        add(t,id.."_killed"..i,g..".sq_golem.cleared",{id.."_release"..i})
+    end
+    local finish={"boss.lens"..n..".destroyed","spire.d_laser_golem"..n..".off",scene..".finished"}
+    for i=(n==1 and 4 or 8),(n==1 and 7 or 11) do finish[#finish+1]="spire.sq_boss_adds["..i.."].request" end
+    add(t,id.."_finished",finish,{id.."_killed1",id.."_killed2"})
+    squads(t,id.."_adds","spire.sq_final_adds"..n,0,3,{id.."_started"})
+end
+shield(b,1,0,1)
+shield(b,2,2,3,{"shield1_finished"})
+squads(b,"final_adds","spire.sq_final_adds3",0,3,{"shield2_finished"})
+add(b,"defeated","boss.dead",{"shield2_finished"})
+local boss=graph("boss","Defeat Dendron, Root Mind",b)
+-- A real boss death interrupts remaining shield/wave work. High damage can
+-- legitimately end the fight early; native teardown is never counted as death.
+local ending=graph("ending","Strike complete",{
+    step("defeated","boss.dead"),
+    step("reward",parallel("dialogue.14","spire.pf_boss_chest.o_chest.on","spire.d_laser_main.off","marker.clear","respawn.allow","arena.cover.stop","spire.d_laser_golem1.off","spire.d_laser_golem2.off"),{after={"defeated"}}),
+    step("closing_dialogue","dialogue.14.finished",{after={"reward"}}),
+    step("complete","mission.finish",{after={"closing_dialogue"}}),
+})
+return mission{
+    id="strike_bond",graphs={composition,opening,forest,past,terrace,interior,tower,intro,boss,ending},
+    roles={mission="composition",opening="opening",ending="ending"},
+    entry="composition",modules={"mission"},observations={"mission.checked"},
+    phases={"opening","forest","past","terrace","interior","tower","intro","boss"},conditions=conditions,
+    presentation=presentation{markers={
+        {objective="0x4E11E907",target="tunnel_portal"},
+        {objective="0xF150883C",target="forest_gateway"},
+        {objective="0x0864173F",target="forest_exit"},
+        {objective="0x2D67AB51",target="module0"},
+        {objective="0x82271EEA",target="module0"},
+        {objective="0x304AC854",target="module3"},
+        {objective="0x6D15E881",target="terrace_golem_lens"},
+        {objective="0x2A7ABBFB",target="past_cannon"},
+        {objective="0x921AE90F",target="spire_ascend"},
+        {objective="0xE6933775",target="dendron_lens"},
+        {objective="0x665C1E1C",target="boss_arena"},
+    }},
+}

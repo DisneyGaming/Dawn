@@ -7,7 +7,7 @@ namespace sunrise::core::ui::textures {
 
 /** One slot per bundled image the interface can draw. */
 enum class Slot : std::uint8_t {
-    /** Grayscale sprite sheet of the animated Sunrise logo. */
+    /** Supplied Dawn logo. The slot identity remains stable for renderer ownership. */
     logoSheet,
     count,
 };

@@ -16,11 +16,11 @@ $receiptPath = Join-Path $validation 'installation.json'
 if (Test-Path -LiteralPath $receiptPath) { throw 'This candidate has an installation receipt; preserve that evidence.' }
 $manifest = Get-Content -Raw -LiteralPath (Join-Path $validation 'package.json') | ConvertFrom-Json
 $names = @('steam_api64.dll', 'steam_api64.pdb', 'Lua_LICENSE.txt',
-    'Sunrise/scripts/omega.lua', 'Sunrise/scripts/deadly_trial.lua', 'Sunrise/scripts/gateway.lua', 'Sunrise/scripts/beyond_infinity.lua', 'Sunrise/scripts/deep_storage.lua', 'Sunrise/scripts/hijacked.lua', 'Sunrise/scripts/strike_pact.lua', 'Sunrise/scripts/mercury_freeroam.json', 'Sunrise/scripts/infinite_abyss.json')
+    'Sunrise/scripts/omega.lua', 'Sunrise/scripts/deadly_trial.lua', 'Sunrise/scripts/gateway.lua', 'Sunrise/scripts/beyond_infinity.lua', 'Sunrise/scripts/deep_storage.lua', 'Sunrise/scripts/hijacked.lua', 'Sunrise/scripts/strike_pact.lua', 'Sunrise/scripts/strike_bond.lua', 'Sunrise/scripts/mercury_freeroam.json', 'Sunrise/scripts/infinite_abyss.json')
 $scopeProperty = $manifest.PSObject.Properties['validationScope']
 $validationScope = if ($scopeProperty) { [string]$scopeProperty.Value } else { 'full-lua' }
 $expectedCount = switch ($validationScope) {
-    'full-lua' { 105 }
+    'full-lua' { 109 }
     'hijacked-release' { 3 }
     'deep-storage-release' { 2 }
     'mercury-reentry-release' { 2 }
