@@ -32,7 +32,9 @@ local function golem_setup(t,id,prefix,after,tether)
     add(t,id.."_create",parallel(prefix..".o_lens.on",prefix..".o_wrapper.on",prefix..".d_lens.on",prefix..".d_laser.on",prefix..(tether and ".d_shield.off" or ".d_shield.on")),after)
     add(t,id.."_scene",prefix..".sn_golem.start",{id.."_create"})
     add(t,id.."_started",parallel(prefix..".sn_golem.started",prefix..".sq_golem.ready"),{id.."_scene"})
-    if tether then add(t,id.."_tether",parallel(tether..".on",tether..".ready"),{id.."_started"}) end
+    -- Beam preparation is asynchronous presentation. It must never hold the
+    -- linked cube shielded or prevent the native Minotaur release sequence.
+    if tether then add(t,id.."_tether",tether..".on",{id.."_started"}) end
 end
 local function golem_fight(t,id,prefix,after,tether)
     add(t,id.."_expose",parallel(prefix..".o_lens.expose",prefix..".o_lens.marker"),after)
@@ -120,38 +122,42 @@ local a={}
 add(a,"arena","spire.top")
 add(a,"presentation",parallel("objective.6","respawn.restrict","arena.ap_boss.marker"),{"arena"})
 add(a,"cover","arena.cover.start",{"arena"})
-add(a,"platform",parallel("spire.boss_platform.o_loop.on","spire.boss_platform.d.on","spire.d_laser_main.on"),{"arena"})
+add(a,"platform",parallel("spire.boss_platform.o_loop.on","spire.boss_platform.d.off","spire.d_laser_main.on"),{"arena"})
+add(a,"boss_spawn","spire.sq_boss.request",{"arena"})
+add(a,"boss_ready","spire.sq_boss.ready",{"boss_spawn"})
 add(a,"lens",parallel("spire.o_main_lens.on","spire.d_main_lens.on"),{"arena"})
--- The middle cube is available before any boss/guardian scene can reserve it.
+-- Spawn Dendron directly, then bind his native intro to the live boss and intact cube.
 add(a,"lens_ready","spire.o_main_lens.ready",{"lens"})
-add(a,"expose","spire.o_main_lens.expose",{"lens_ready"})
+add(a,"intro_start","spire.sn_cyclops_intro.start",{"lens_ready","boss_ready"})
+add(a,"intro_started","spire.sn_cyclops_intro.started",{"intro_start"})
+add(a,"expose","spire.o_main_lens.expose",{"intro_started"})
 add(a,"destroyed","spire.o_main_lens.destroyed",{"expose"})
-add(a,"power_cut",parallel("dialogue.13","spire.d_laser_main.off","spire.d_tower_laser.off","spire.sq_boss.request"),{"destroyed"})
-add(a,"boss_ready","spire.sq_boss.ready",{"power_cut"})
-add(a,"fight",parallel("objective.10","boss.fight"),{"boss_ready"})
+add(a,"power_cut",parallel("dialogue.13","spire.d_laser_main.off","spire.d_tower_laser.off","boss.intro.exit"),{"destroyed"})
+add(a,"intro_finished","spire.sn_cyclops_intro.finished",{"power_cut"})
+add(a,"fight",parallel("objective.10","boss.fight"),{"intro_finished"})
 local intro=graph("intro","Cut the Spire Arc network",a)
 local b={}
 squads(b,"initial_adds","spire.sq_boss_adds",0,3)
 squads(b,"lens_adds","spire.sq_lens_adds",0,5)
 local function shield(t,n,first,second,after)
     local id="shield"..n
-    local scene="spire.sn_cyclops_lens["..(n==1 and 1 or 3).."]"
     local g0="spire.pf_golem["..first.."]"
     local g1="spire.pf_golem["..second.."]"
-    add(t,id.."_health",n==1 and "boss.health.two_thirds" or "boss.health.one_third",after)
+    add(t,id.."_health",parallel(n==1 and "boss.health.two_thirds" or "boss.health.one_third","boss.parked"..n),after)
     for i,g in ipairs({g0,g1}) do
         add(t,id.."_create"..i,parallel(g..".o_lens.on",g..".o_wrapper.on",g..".d_lens.on",g..".d_laser.on",g..".d_shield.on"),{id.."_health"})
     end
-    add(t,id.."_scene",parallel(scene..".start",g0..".sn_golem.start",g1..".sn_golem.start","spire.d_laser_golem"..n..".on"),{id.."_create1",id.."_create2"})
-    add(t,id.."_started",parallel(scene..".started",g0..".sn_golem.started",g1..".sn_golem.started",g0..".sq_golem.ready",g1..".sq_golem.ready"),{id.."_scene"})
+    add(t,id.."_scene",parallel(g0..".sn_golem.start",g1..".sn_golem.start","spire.d_laser_golem"..n..".on"),{id.."_create1",id.."_create2"})
+    add(t,id.."_started",parallel(g0..".sn_golem.started",g1..".sn_golem.started",g0..".sq_golem.ready",g1..".sq_golem.ready"),{id.."_scene"})
     add(t,id.."_expose",parallel(g0..".o_lens.expose",g1..".o_lens.expose"),{id.."_started"})
     for i,g in ipairs({g0,g1}) do
         add(t,id.."_destroyed"..i,g..".o_lens.destroyed",{id.."_expose"})
         add(t,id.."_release"..i,parallel(g..".d_laser.off",g..".d_shield.off",g..".sn_golem.release",g..".sn_golem.finished"),{id.."_destroyed"..i})
         add(t,id.."_killed"..i,g..".sq_golem.cleared",{id.."_release"..i})
     end
-    local finish={"boss.lens"..n..".destroyed","spire.d_laser_golem"..n..".off",scene..".finished"}
+    local finish={"boss.lens"..n..".destroyed","spire.d_laser_golem"..n..".off"}
     for i=(n==1 and 4 or 8),(n==1 and 7 or 11) do finish[#finish+1]="spire.sq_boss_adds["..i.."].request" end
+    finish[#finish+1]="boss.awake"..n
     add(t,id.."_finished",finish,{id.."_killed1",id.."_killed2"})
     squads(t,id.."_adds","spire.sq_final_adds"..n,0,3,{id.."_started"})
 end

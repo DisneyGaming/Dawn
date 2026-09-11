@@ -1,4 +1,6 @@
 #include <Windows.h>
+#include <intrin.h>
+#include <bit>
 
 #include <array>
 #include <atomic>
@@ -25,6 +27,12 @@
 #include "omega_enemy_native_health.h"
 #include "gateway_native_read.h"
 #include "coo_enemy_readiness.h"
+#include "strike_bond_fire_trace.h"
+#include "strike_bond_carriage.h"
+#include "coo_native_components.h"
+#include "strike_bond_intro_release.h"
+#include "strike_bond_boss_cycle.h"
+#include "strike_bond_target_binding.h"
 #include "omega_boss_health.h"
 #include "../../hooking/call_gate.h"
 #include "../../hooking/detour.h"
@@ -60,7 +68,7 @@ using Admission=std::uint64_t(__fastcall*)(void*,const void*) noexcept;
 using CandidateEvent=std::uint64_t(__fastcall*)(void*,std::uint32_t) noexcept;
 using Retirement=void(__fastcall*)(std::uint32_t,std::uint8_t) noexcept;
 hooking::CallGate g_gate;
-std::array<hooking::detour::Handle,3> g_handles{};
+std::array<hooking::detour::Handle,9> g_handles{};
 std::atomic<Admission> g_admission{};
 std::atomic<CandidateEvent> g_candidate{};
 std::atomic<Retirement> g_retirement{};
@@ -830,6 +838,12 @@ __declspec(noinline) void __fastcall retirement_hook(std::uint32_t handle,std::u
             handle,captured.event.actor.entity,before.generation,after.generation,released?1U:0U,accepted?1U:0U);
     },handle,mode);
 }
+#include "strike_bond_intro_release.inl"
+#include "strike_bond_target_binding.inl"
+#include "strike_bond_carriage.inl"
+#include "strike_bond_boss_cycle.inl"
+#include "strike_bond_fire_trace.inl"
+
 void* target(std::uintptr_t rva,const std::array<std::uint8_t,16>& expected) noexcept {
     Read read;std::array<std::byte,16> actual{};
     if(!read.copy(g_image+rva,actual) || std::memcmp(actual.data(),expected.data(),expected.size())!=0) {return nullptr;}
@@ -859,35 +873,58 @@ bool install_omega_enemy_lair_receipts() noexcept {
     if(g_handles[0].attached) {return g_gate.accepting();}
     g_image=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
     if(g_image==0) {return false;}
-    const std::array<hooking::detour::Spec,3> specs{{
+    const std::array<hooking::detour::Spec,9> specs{{
         {target(0xA0D510,{0x48,0x89,0x5C,0x24,0x20,0x56,0x48,0x83,0xEC,0x30,0x48,0x8B,0xD9,0x48,0x8B,0xF2}),reinterpret_cast<void*>(&admission_hook)},
         {target(0xC72390,{0x48,0x89,0x5C,0x24,0x10,0x55,0x56,0x57,0x48,0x83,0xEC,0x20,0x48,0x8B,0xE9,0x8B}),reinterpret_cast<void*>(&candidate_hook)},
-        {target(0xA85540,{0x48,0x89,0x5C,0x24,0x08,0x48,0x89,0x74,0x24,0x10,0x57,0x48,0x83,0xEC,0x70,0x8B}),reinterpret_cast<void*>(&retirement_hook)}
+        {target(0xA85540,{0x48,0x89,0x5C,0x24,0x08,0x48,0x89,0x74,0x24,0x10,0x57,0x48,0x83,0xEC,0x70,0x8B}),reinterpret_cast<void*>(&retirement_hook)},
+        {target(0xBC8F20,{0x40,0x53,0x48,0x83,0xEC,0x20,0x48,0x8B,0xD9,0x48,0x8D,0x4C,0x24,0x30,0xE8,0x5D}),reinterpret_cast<void*>(&garden_fire::one_tick_hook)},
+        {target(0xBC8F80,{0x0F,0x2F,0x89,0xC0,0x0A,0x00,0x00,0x0F,0xB6,0x91,0xC4,0x0A,0x00,0x00,0x76,0x1B}),reinterpret_cast<void*>(&garden_fire::duration_hook)},
+        {target(0xBCD330,{0x40,0x56,0x57,0x48,0x83,0xEC,0x48,0x48,0x89,0x5C,0x24,0x68,0x32,0xC0,0x8B,0x59}),reinterpret_cast<void*>(&garden_fire::update_hook)},
+        {target(0xC31200,{0x48,0x89,0x4C,0x24,0x08,0x53,0x55,0x56,0x57,0x41,0x54,0x41,0x55,0x41,0x56,0x41}),reinterpret_cast<void*>(&garden_fire::eligibility_hook)},
+        {target(0xC613E0,{0x48,0x89,0x5C,0x24,0x18,0x48,0x89,0x74,0x24,0x20,0x57,0x48,0x83,0xEC,0x20,0x44}),reinterpret_cast<void*>(&garden_target::dispatch_hook)},
+        {target(0xC5FEF0,{0x40,0x57,0x48,0x83,0xEC,0x20,0x44,0x0F,0xBE,0x49,0x7A,0x49,0x8B,0xF8,0x41,0x83}),reinterpret_cast<void*>(&garden_target::decode_hook)}
     }};
-    if(specs[0].target==nullptr || specs[1].target==nullptr || specs[2].target==nullptr || !hooking::detour::install(specs,g_handles)) {return false;}
+    for(const auto& spec:specs) if(!spec.target) return false;
+    if(!hooking::detour::install(specs,g_handles)) return false;
     hooking::publish_original(g_admission,reinterpret_cast<Admission>(g_handles[0].original));
     hooking::publish_original(g_candidate,reinterpret_cast<CandidateEvent>(g_handles[1].original));
     hooking::publish_original(g_retirement,reinterpret_cast<Retirement>(g_handles[2].original));
+    hooking::publish_original(garden_fire::oneTick,reinterpret_cast<garden_fire::OneTick>(g_handles[3].original));
+    hooking::publish_original(garden_fire::duration,reinterpret_cast<garden_fire::Duration>(g_handles[4].original));
+    hooking::publish_original(garden_fire::update,reinterpret_cast<garden_fire::Update>(g_handles[5].original));
+    hooking::publish_original(garden_fire::eligibility,reinterpret_cast<garden_fire::Eligibility>(g_handles[6].original));
+    hooking::publish_original(garden_target::dispatch,reinterpret_cast<garden_target::Dispatch>(g_handles[7].original));
+    hooking::publish_original(garden_target::decode,reinterpret_cast<garden_target::Decode>(g_handles[8].original));
     g_gate.accept();
     core::log::write(core::log::Channel::client,core::log::Level::info,
-        "ev=omega_enemy_lair stage=install result=ok admission=A0D510 health_death=C72390 event=80804C54 retirement=A85540");
+        "ev=omega_enemy_lair stage=install result=ok admission=A0D510 health_death=C72390 event=80804C54 retirement=A85540 garden_fire_trace=BC8F20,BC8F80,BCD330,C31200 garden_intro_release=AFB11A12:31A03F93 garden_target_binding=C613E0,C5FEF0");
     return true;
 }
 void quiesce_omega_enemy_lair_receipts() noexcept {g_gate.quiesce();}
 bool uninstall_omega_enemy_lair_receipts() noexcept {
     quiesce_omega_enemy_lair_receipts();if(!g_handles[0].attached) {return true;}
-    const std::array<hooking::detour::ProtectedCodeEntry,9> protectedCode{{
+    const std::array<hooking::detour::ProtectedCodeEntry,15> protectedCode{{
         {reinterpret_cast<void*>(&admission_hook)},{reinterpret_cast<void*>(&candidate_hook)},
         {reinterpret_cast<void*>(&observe_admission)},{reinterpret_cast<void*>(&observe_candidate)},
         {reinterpret_cast<void*>(&omega_boss_health::observe_native_death)},
         {reinterpret_cast<void*>(&poll_native_population_admissions)},
         {reinterpret_cast<void*>(&retirement_hook)},
+        {reinterpret_cast<void*>(&garden_fire::one_tick_hook)},
+        {reinterpret_cast<void*>(&garden_fire::duration_hook)},
+        {reinterpret_cast<void*>(&garden_fire::update_hook)},
+        {reinterpret_cast<void*>(&garden_fire::eligibility_hook)},
+        {reinterpret_cast<void*>(&garden_target::dispatch_hook)},
+        {reinterpret_cast<void*>(&garden_target::decode_hook)},
         {reinterpret_cast<void*>(&hooking::call_gate_detail::enter)},
         {reinterpret_cast<void*>(&hooking::call_gate_detail::leave)}
     }};
     if(hooking::detour::uninstall(g_handles,protectedCode,idle)!=hooking::detour::UninstallResult::removed) {return false;}
     g_admission.store(nullptr,std::memory_order_release);g_candidate.store(nullptr,std::memory_order_release);
     g_retirement.store(nullptr,std::memory_order_release);
+    garden_fire::oneTick.store(nullptr,std::memory_order_release);garden_fire::duration.store(nullptr,std::memory_order_release);
+    garden_fire::update.store(nullptr,std::memory_order_release);garden_fire::eligibility.store(nullptr,std::memory_order_release);
+    garden_target::dispatch.store(nullptr,std::memory_order_release);garden_target::decode.store(nullptr,std::memory_order_release);
+    garden_fire::reset();garden_intro::reset();garden_target::reset();garden_target::reset_replay();garden_carriage::reset();garden_cycle::reset();
     g_image=0;g_run=UINT64_MAX;g_lines=0;g_seenCount=0;g_seen={};
     hijacked_trace_run(0);
     g_pendingBirths={};g_admittedActors={};g_nativeLines.store(0,std::memory_order_relaxed);

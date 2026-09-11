@@ -73,20 +73,24 @@ bool create(void* raw,Create original,bool enabled) noexcept {
     const auto lens=mission::lens_request(b.lens);std::uint32_t generation{};std::uint8_t active{};
     if(lens.owner!=request.owner || !lens.enabled || lens.destroyed || !lens.lens.valid()
         || !read.value(source+0x180,generation) || generation!=state.generation || !read.value(source+0x188,active) || active!=1) return false;
+    const auto resource=mission::tether_resource(b);
     mission::Point start{},end{};mission::TetherPose pose{};
     if(!read.weak({lens.lens.serial,lens.lens.entity}) || !point(lens.lens.entity,start)
-        || !guardian(b,request.owner,end) || !mission::tether_pose(start,end,pose)) return false;
+        || !guardian(b,request.owner,end) || !mission::tether_pose(start,end,pose,resource.length)) return false;
     // The shared constructor dereferences the replacement entity definition.
     // An anomaly's dependency set does not guarantee that the beam is loaded.
     std::uintptr_t beam{};
-    if(!read.resolve(0x80F4B0CFU,beam) || !beam) return false;
+    std::uintptr_t skeleton{};std::uint64_t bytes{};float length{};
+    if(!read.resolve(resource.entity,beam) || !read.value(beam,bytes) || bytes!=7636
+        || !read.resolve(resource.skeleton,skeleton) || !read.value(skeleton,bytes) || bytes!=848
+        || !read.value(skeleton+0x300,length) || std::abs(length-resource.length)>.001F) return false;
     std::uintptr_t asset{};std::array<std::byte,8> scope{};
     if(!read.resolve(b.source.definition,asset) || !read.copy(asset+0x4F8,scope)
         || at<std::uint32_t>(scope.data())!=b.source.registry || at<std::uint16_t>(scope.data()+4)!=4
         || at<std::uint16_t>(scope.data()+6)!=b.source.slot) return false;
     Placement placement{};placement.address=asset+0x580;
     if(!read.copy(placement.address,placement.before) || at<std::uint32_t>(placement.before.data())!=0x80C00F38U) return false;
-    placement.after=placement.before;const std::uint32_t beamClass=0x80F4B0CFU;
+    placement.after=placement.before;const std::uint32_t beamClass=resource.entity;
     std::memcpy(placement.after.data(),&beamClass,4);
     std::memcpy(placement.after.data()+0x10,pose.rotation.data(),16);
     std::memcpy(placement.after.data()+0x20,&pose.position,12);
@@ -94,7 +98,7 @@ bool create(void* raw,Create original,bool enabled) noexcept {
     if(mission::request().owner!=request.owner || mission::lens_request(b.lens).destroyed || !placement.apply()) return false;
     const bool created=original(raw);
     if(created) report("ev=strike_bond stage=tether_created run=%llu slot=%u cube=%u guardian=%u length=%.3f scale=%.3f",
-        static_cast<unsigned long long>(request.owner.run),b.source.slot,b.cube,b.guardian,pose.scale*10.F,pose.scale);
+        static_cast<unsigned long long>(request.owner.run),b.source.slot,b.cube,b.guardian,pose.scale*resource.length,pose.scale);
     return created;
 }
 struct Retained {coo::Generation owner{};std::uint32_t bundle{};gn::Weak entity{};};

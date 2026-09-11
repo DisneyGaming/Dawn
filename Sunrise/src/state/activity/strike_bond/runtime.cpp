@@ -191,7 +191,7 @@ bool observe_admission(const EnemyReceipt& r) noexcept {
 }
 bool observe_death(const EnemyReceipt& r) noexcept {const std::lock_guard lock(mutex);const bool ok=current() && controller.died(r);if(ok) {log_receipt("enemy_died",r.run,r.source);}return ok;}
 EnemyReceipt boss_enemy() noexcept {const std::lock_guard lock(mutex);return current()?controller.boss_enemy():EnemyReceipt{};}
-BossRequest boss_request() noexcept {const std::lock_guard lock(mutex);return current()?BossRequest{controller.owner(),controller.boss_enemy(),controller.frame()}:BossRequest{};}
+BossRequest boss_request() noexcept {const std::lock_guard lock(mutex);return current()?BossRequest{controller.owner(),controller.boss_enemy(),controller.frame(),controller.boss_platform()}:BossRequest{};}
 EnemyReceipt guardian_enemy(std::uint32_t registry,std::uint16_t source) noexcept {
     const std::lock_guard lock(mutex);EnemyReceipt result{};
     if(current()) controller.living_enemies([&](const EnemyReceipt& r) {
@@ -200,6 +200,14 @@ EnemyReceipt guardian_enemy(std::uint32_t registry,std::uint16_t source) noexcep
 }
 void observe_health(const EnemyReceipt& r,float value) noexcept {
     const std::lock_guard lock(mutex);if(current()) static_cast<void>(controller.health(r,value));
+}
+bool observe_boss_motion(const EnemyReceipt& r,const coo::ObjectReceipt& platform,float value) noexcept {
+    const std::lock_guard lock(mutex);return current() && controller.boss_motion(r,platform,value);
+}
+bool observe_boss_animation(const EnemyReceipt& r,std::uint8_t cycle,BossAnimation event) noexcept {
+    const std::lock_guard lock(mutex);const bool accepted=current() && controller.boss_animation(r,cycle,event);
+    if(accepted) log_receipt("boss_animation",r.run,static_cast<unsigned>(event));
+    return accepted;
 }
 void observe_readiness(const EnemyReceipt& r,coo::EnemyReadiness v) noexcept {const std::lock_guard lock(mutex);if(current()) {static_cast<void>(controller.readiness(r,v));}}
 

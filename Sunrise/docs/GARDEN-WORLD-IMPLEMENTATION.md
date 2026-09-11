@@ -34,7 +34,7 @@ The launcher has an **A Garden World** Mercury card in Curse of Osiris, before O
 - First shielded Minotaur: create native scene, observe actual scene start and AI readiness, expose its cube, release its shield on cube destruction, and require genuine Minotaur death to proceed.
 - Interior security sets four and five; the rebuilt-security exchange after the fifth cube; cannon defenders and another shielded Minotaur; final cannon into the Spire.
 - Lower Spire encounter and cannon, then the mid-floor Minotaur and cube. The lower cannon must work before the higher-floor cube can be reached. Both mid-floor requirements unlock the upper cannon.
-- Roof: only the exposed middle cube is present. Its destruction cuts the Arc network and requests Dendron as a normal loose combatant with rule 513 and rooftop task 10. The aborting intro selector no longer reserves his spawn.
+- Roof: Dendron is requested on arena entry as a loose combatant with rule 513 and rooftop task 10. Once he and the intact middle cube are ready, the native intro runs. The cube becomes exposed after native intro startup; its genuine destruction sends 01994745, and native intro completion must precede the first damage phase.
 - Dendron health thirds each start a native shield scene and create only that side's two guardian cubes and dormant Minotaurs. Each cube independently releases its guardian. Both authentic Minotaur deaths are required before Dendron becomes vulnerable again. The opposite pair remains absent until the next third. Native body damage is clamped at 2/3 and 1/3 to prevent one hit from skipping these phases.
 - Genuine Dendron death interrupts unfinished shield/wave work, reveals the native chest, retracts changing cover, removes respawn restriction, clears navigation, plays the full final exchange, and completes the strike.
 
@@ -58,7 +58,7 @@ Respawn restriction is published through both the shared type35 mission director
 
 The Forest adapter requires this mission's current owner, an unfinished enabled frame, native worker class `80804FEC` and exact Forest C configuration `80F4E01E`. The configuration value comes from the archive's historical worker observation. It repairs only that worker's native object-authority bit before generation; island geometry, gateway placement and Daemon rules remain native. Fresh portal connectivity is **NOT YET TESTED**.
 
-Scene-owned guardians require real creation/AI readiness and a started native scene before their cubes become active. Dendron uses a direct combatant request after the exposed middle cube breaks. Native guardian scene completion releases dependent graph work. Shield selector casts retain their authored parameters. Visible pose, shield timing and scene exits need a live playthrough.
+Scene-owned guardians require real creation/AI readiness and a started native scene before their cubes become active. Dendron uses a direct combatant request before the middle cube exposes; the authored intro binds that admitted actor and the intact cube. Native guardian scene completion releases dependent graph work. Shield selector casts retain their authored parameters. Visible pose, shield timing and scene exits need a live playthrough.
 
 The normal route schedules dialogue rows0,1,3,5,7,8,9,10,11,12,13,14. Row3 is the return-to-the-Past exchange; row11 is after the fifth security cube; row12 is the Spire Arc exchange; row13 follows the main cube; row14 closes the strike. Branch alternatives are supplied by the native dialogue bank, not concatenated into an invented conversation.
 
@@ -86,3 +86,157 @@ The live manual spawn and task-only experiments did not make Dendron attack. The
 All three route tethers now write visibility zero on verified cube death, both immediately from the existing damage callback and when a retired source reports a retained render entity. Cached identities are revalidated against current generation, salted entity, bundle and exact beam component before either channel is touched. Retirement cannot re-enable a beam. The native 10 m beam and measured shield endpoints preserve the earlier alignment and thickness correction. Creation checks that the replacement beam definition resolves before entering the shared factory; this guards an unavailable definition but does not establish the root cause of every recorded factory crash.
 
 The existing upper volume 406 disable, launcher card, route cubes and first-three Minotaur release events are retained. No player-health or global kill-volume override is introduced.
+
+
+## Shield regression correction
+
+The next fresh run stalled on `past.pf_anomaly[1].o_nomaly.ready` (source 150) for at least 40 seconds after both real cubes and the Minotaur had bound. The Lua prerequisite kept the linked cube immune until an optional render object acknowledged creation. The beam template was the Spire-only 10 m class 80F4B0CF, although the first two encounters are in the Past. A directory lookup does not stream that class.
+
+Route cube exposure now depends on native guardian readiness and the request to create its beam, without waiting for the visual object. The first two beams use the already-authored Past center-line class 80F4B0EE with its 75 m native length; the Spire retains its 10 m class and thicker appearance. Both classes and their skeleton lengths are checked before factory entry. Real cube death still retires any existing beam and prevents a late pending creation. The replay now includes a whole run where all three beam creations never acknowledge, proving that the cubes, Minotaurs and remaining mission still progress. Live visual confirmation remains outstanding.
+
+
+## Native boss startup and cover correction
+
+The next playthrough confirmed the route shields, health thirds and phased guardian pairs, but Dendron appeared only after cube destruction and did not attack. The direct source request was incorrectly attached to the cube-death step. Native intro 80F45CA5 was absent from the shipped Lua.
+
+A qualified live snapshot from PID 10156 proved that Dendron had a valid AI component 808082EC and a requested/applied rooftop task 10 with a real tactical group. The missing AI was therefore not a missing component or an uncommitted assignment. The earlier intro retry was performed after its cube had already died: the captured selector's own cube branch emitted exit event 01994745, despite the external event being held. Boss source/member, cube and static point parameters were bound. This did not prove an intro construction failure.
+
+The corrected sequence requests Dendron on arena entry, waits for real boss and cube readiness, starts the native intro, then exposes the cube after its started receipt. Cube destruction sends the authored exit event. The controller rejects an early exit and refuses the first damage phase until native intro completion. Direct source creation stays in place; the native scene no longer needs to spawn him. Static points remain excluded from the runtime ownership list, preserving the earlier cleanup-crash correction.
+
+All 32 cover blocks and avoidance objects already acknowledged creation, and native device positions were cycling. The previous all-block readiness explanation was disproved by live reads. The actual commands used snap=true: native DF6C70 immediately copies the target position and skips interpolation startup. Only the 32 rooftop cover devices now use snap=false; gates, lens shields and the separate boss platform keep their current values. The separate platform's source and device were already enabled and applied; no additional unsupported platform link was added.
+
+Focused Release replay: 5,219 checks passed, including the native intro/cube/exit/completion ordering, retained phase gates and route shield regression, and serialized interpolation policy for every mission device. Evidence is in build/coo/garden-boss-ai-fix-20260911 and build/coo/garden-cover-ai-20260911. The boss had despawned before a live test could be performed. Native attack behavior and visible cover animation still require a fresh playthrough; exact internal semantics of the paired intro actions are not claimed as recovered.
+
+
+## Dendron firing investigation — 2026-09-11 tracing build
+
+The saved admitted Dendron character has firing suppression at `+AC4=1`, with
+`+AC0` equal to the native one-tick float (`35C75F6C`). The first weapon eligibility
+callback `C31200` rejects that state. Saved samples do not establish which caller
+refreshes it or whether the character timer update is missing. Clear graph ownership
+flags do not exclude an inlined graph writer. No config/idle/target substitution is
+justified by the existing evidence.
+
+The diagnostic DLL adds read-only callbacks at `BC8F20`, `BC8F80`, `BCD330`, and
+`C31200`. They preserve native arguments, byte results and one original call. The
+trace qualifies the exact Garden boss source, lifecycle generation, salted actor,
+entity, character reference and component identity on both sides of the callback.
+It records suppression before/after, duration or frame delta bits, caller return
+RVA, first-caller stack, native eligibility inputs/result, and aggregate counts.
+Logging is bounded to 2048 records per run. No suppression, targeting, command,
+health, shield or scene state is changed by this diagnostic code.
+
+Validation: ownership and rebinding fixtures plus the Garden mission replay and
+Release DLL build. The next live run must distinguish repeated refresh, inlined
+writers, zero delta, and missing character updates. This build is instrumentation,
+not a verified repair of Dendron's aiming/firing.
+
+
+## Dendron named animation release — verified live cause, 2026-09-11
+
+The instrumented run proves that native `BCD330` decrements the firing countdown
+normally with positive delta. Caller `F4F0D7` immediately resets it on each frame.
+The retained action is opcode `39` in Dendron's `815B5A49/808069EE` motion component:
+`80F459AD`, machine 1, state 0, a looping presentation animation that forbids firing.
+The authored roof scene completed without cancelling this separate named selector.
+
+After the existing intro-complete / middle-cube-dead combat gate, the post-character
+update boundary sends exactly one native `C693F0` stop request for group `AFB11A12`,
+sequence `31A03F93`, opcode `5D`. Live `80F459CD` maps these to group 0 / selector 1;
+interface `80BFDE65` dispatches to `10D35D0`. The engine clears that selector and
+notifies the motion scheduler; normal scheduling retires opcode 39 and the normal
+character timer expires firing suppression. The hook does not write AC0/AC4,
+force targets, bypass eligibility, or free native animation allocations.
+
+Qualification pins the admitted source lease, salted actor/entity/components,
+controller-to-selector runtime dispatch binding, exact active startup payload,
+named group/sequence lookup and native callback/prefix. It runs only in stage 0
+after intro completion, and holds no diagnostic lock across native execution.
+The trace records `garden_intro_release stage=selector_released` only after a fresh
+native selector inactivity observation. A fresh game run must still confirm aiming,
+firing and later boss phases; unit fixtures cannot establish live combat behavior.
+
+
+## Dendron primary target binding - 2026-09-11
+
+The next live run confirms the named intro selector release: Dendron tracks the
+player, the native firing suppression expires, and first eligibility `C31200`
+passes. A separate gate, `C30F60`, still rejects his weapon before aiming-solution,
+range, cooldown or projectile execution. The live primary target slot contains a
+valid player, but opcode `24` decodes target slot `FF` (no target), setting the
+weapon request/applied mode to `2/FF` with flags `+154=1`. Authored weapon policy 3
+has zero flags and rejects that combination.
+
+Expression 384 in program `80F56183` reads parameter `64F350F0` (token `0x50`)
+from environment `80F66F52`, where value index 5 is `FFFFFFFF`. This is an authored
+unbound target parameter. The repair binds that exact request to native primary
+target slot 0 only for the admitted Garden boss after the middle cube starts
+combat. A nested native dispatcher/decoder scope (`C613E0` / `C5FEF0`, caller return
+`C6157B`) checks the request bytes, program/environment, source generation, salted
+actor/entity/component identities, and a living native target before and after
+decoding. It replaces only the local decoded `FF` result. Shared assets, native
+eligibility, line of sight, range, charge, cooldown, health and shield logic remain
+native or retain their existing mission rules. Another NPC, another request, a
+valid decoded target, or a stale binding keeps its original result.
+
+The pre-install read-only validator accepted the production qualification against
+live PID 56732, controller `74F9E611`, player target `4DFAA283` (no process writes).
+The candidate and Release/Debug test receipts are recorded under
+`build/coo/garden-boss-target-fix-20260911`. Regression fixtures cover the exact
+request, phase/lease restrictions, target death/reuse, read failures and rebinding
+within traversal. Native logs record `garden_target_binding` with
+`primary_target_selected` or `context_rejected`. Actual projectile firing and later
+combat phases require a fresh run of the installed candidate; this correction is
+not evidence that subsequent native firing gates have passed.
+
+
+## Cached target command replay - 2026-09-11
+
+The next run loaded target-binding DLL `976CBD3F...86CA30B`, but recorded zero
+`garden_target_binding` events. The intro release succeeded and all118 recorded
+combat eligibility samples retained requested/applied target state `02/FF`.
+The live request and native primary target still passed production qualification.
+
+Native `C729F0` and `A7AFE0` explain why: the weapon dispatcher is an add/change
+callback. An unchanged opcode24 remains cached and is not dispatched again when
+the mission enters combat. The previous correction waited for an event that
+combat admission does not generate. This is a timing defect in that correction.
+
+The existing `C31200` hook now replays the exact active cached opcode24 after
+native eligibility passes and before `C306A0` consumes the requested target.
+It qualifies cache class29, bounds and complete compact row, matching pending AI
+request, current actor/AI/source ownership, and native primary target. `A91FC0`
+builds the native0x30-byte decoder context from main state+C0; the local context
+uses add-action phase4. After another complete binding check, `C620F0` dispatches
+the original request. The existing nested target decoder correction then applies
+and the native dispatcher commits requested target mode1/slot0. No requested/applied
+weapon state, firing eligibility, cooldown or projectile flags are written by the
+replay code. Native calls run without a diagnostic lock held.
+
+Replay checks run at most once per second and stop once the native requested
+state changes from02/FF. Actual replay attempts are bounded; transient missing
+targets remain retryable, with separately bounded guard logging. Logs distinguish
+`garden_target_replay` guard/context failure, unconfirmed dispatch and
+`target_committed`. Existing firing traces can show the subsequent native applied
+mode/slot and attack-state transitions.
+
+A read-only production replay validator accepted the current live actor58F42026,
+controller7DF9F5FE, target48FAA26E and cached row2DC62CBE528. Evidence and candidate
+receipts are under `build/coo/garden-boss-target-replay-fix-20260911`; the originating
+logs and memory capture are under `build/coo/garden-boss-target-followup-20260911`.
+Regression fixtures cover changed/retiring cache entries, boundaries, AI ownership,
+duplicate or missing pending actions, and mutation during qualification. Native
+redispatch and actual projectile firing require the new DLL in a fresh run.
+
+
+## Integrated Dendron intermissions and death - 2026-09-11
+
+The live test confirmed native groupAFB11A12/sequence8FB6C339 for folding and waking. C620F0/opcode5E gates1B8AB5A9 and71E9ABF9 release the sequence. Both references are removed with C693F0 before the next cycle. Entity80F45BA6, from shield scene80F45CA0, is the user-confirmed burst; native104DA00 dispatches it at the current authenticated biped. Native sequenceFC3C74B9 plays death clip80F459BE and produces the genuine source-death event. A zero-health live test completed the mission after this sequence; no mission-dead bit was fabricated.
+
+The controller now holds damage during parking, guardian combat, and wake-up. It waits for the actual platform position and active folded selector before exposing that side's cubes. Both owned guardian deaths request wake-up and the burst once. Actual selector completion resumes damage and rotation. Parking/wake receipts persist, so sustained fire cannot skip a brief awake state and strand the script. The controller follows native endpoint arrival when reversing motion, including a partial lap resumed after parking.
+
+The user's S/P1/P2 thirds map to native positions0,1/3,2/3. The existing native bone1 attachment stays in place. Movement uses native device interpolation, not actor transform writes. At final zero health the driver captures and freezes the current native device position, persists that position through authority, and starts the native death sequence. The platform remains present and stationary, as requested. Only the authenticated source-death callback releases rewards and ending dialogue.
+
+Confirmed live before integration: attachment/movement, folding, wake animation and resumed attacks, burst, death animation, and genuine mission completion. Full integrated automatic timing and exact P1/P2 beam alignment require the next fresh playthrough. The separate large-shield shatter effect was not established by the burst-only test; no guessed effect was added. Existing route Minotaur cube/beam cleanup, upper-height-volume disabling, boss aiming/firing, cover animation, and health gates remain included.
+
+The two old Dendron intermission scenes are no longer started alongside the new driver. This avoids two native controllers competing for the same named animation or spawning duplicate bursts. Their authored burst resource remains the source of the tested effect. Each guardian still uses its own native scene; both authenticated guardian deaths release the controller-owned intermission.

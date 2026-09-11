@@ -4,6 +4,11 @@
 #include "../src/client/activity/campaign_openings.h"
 #include "../src/server/bap/encrypted/activity_message/membership/activity_membership_route.h"
 #include "strike_bond_boss_damage_tests.h"
+#include "strike_bond_fire_trace_tests.h"
+#include "strike_bond_intro_release_tests.h"
+#include "strike_bond_target_binding_tests.h"
+#include "strike_bond_carriage_tests.h"
+#include "../src/client/hooks/bootflow/strike_bond_boss_cycle.h"
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -46,8 +51,9 @@ struct Replay {
     std::bitset<std::size(m::kScenes)> started,finished;
     std::bitset<std::size(m::kDialogueRows)> spoken;
     std::bitset<8> sections;
+    bool delayTethers{},rapidDamage{};
     bool checkedFakeDeath{},checkedReadiness{},checkedImmune{},checkedCannon{},checkedClosing{},checkedShields{};
-    Replay() {
+    explicit Replay(bool delayed=false,bool rapid=false) : delayTethers(delayed),rapidDamage(rapid) {
         check(document!=nullptr,"shipped Lua parses");
         check(m::valid_document(document->views()),"registered native profile");
         check(c.select(document->views(),run),"select mission");
@@ -66,6 +72,7 @@ struct Replay {
         for(std::size_t i=0;i<std::size(m::kAssets);++i) {
             const auto a=m::kAssets[i].asset;const auto s=snapshot.native[i];
             if(!s.managed || !s.desired || a.type!=4) continue;
+            if(delayTethers && m::route_tether(a)) continue;
             if(!s.prepared) {check(c.prepared(c.owner(),a),"native object preparation");continue;}
             if(!s.acknowledged) check(c.object({{run,s.generation},a,static_cast<std::uint32_t>(30000+i),static_cast<std::uint32_t>(40000+i)}),"native object creation");
             const auto l=m::lens_index(a);
@@ -135,7 +142,16 @@ struct Replay {
             if(f.activeRow==14) {tick();check(!c.frame().finished,"submission alone does not truncate closing clip");}
             spoken.set(f.activeRow);
         }
-        if(c.frame().bossFighting && !checkedFakeDeath) {
+        const auto& intro=c.frame().scenes[2];
+        if(intro.eventCount) {
+            check(intro.eventCount==1 && intro.events[0]==0x01994745U,"Dendron receives exactly its authored intro exit event");
+            check(started[2] && c.frame().lensDestroyed[7],"native boss release follows its own cube destruction");
+            Wire wire;check(m::write_body(wire,c.frame(),m::kScenes[2].asset.registry,43,m::kScenes[2].asset.slot)
+                && wire.fields.back()==std::pair<std::uint64_t,unsigned>{0x01994745U,32},"boss intro release is serialized to native scene");
+        }
+        if(c.frame().bossFighting) check(finished[2],"damage phase requires authentic native intro completion");
+        if(c.boss_enemy().valid() && !c.frame().bossFighting && !checkedFakeDeath) {
+
             const auto boss=c.boss_enemy();check(boss.valid(),"Dendron has a native identity");
             sense::combatant_sense::Output actor{};actor.snapshotValid=true;actor.hasSpawnRevision=true;
             actor.spawnRevision=c.frame().spawnGeneration;actor.hasActorQuery=true;actor.actorQuery=0;
@@ -181,7 +197,38 @@ struct Replay {
                 }
                 now+=30000;check(c.health(boss,s.argument==32?2.F/3.F:1.F/3.F),"native boss phase health");return;
             }
-            if(s.argument==30 && !c.frame().bossDead) check(c.died(boss),"authentic Dendron death");
+            if(s.argument==34 || s.argument==35) {
+                const auto cycle=static_cast<std::uint8_t>(s.argument-33);
+                check(c.frame().bossCycle.mode==m::BossMode::parking,"guardian phase waits for native parking");
+                check(c.boss_animation(boss,cycle,m::BossAnimation::asleep),"native folded sequence started");
+                check(!c.boss_animation(boss,cycle,m::BossAnimation::parked),"no synthetic parking without native position");
+                check(c.boss_motion(boss,c.boss_platform(),m::boss_parking(cycle)),"observed parking position");
+                check(c.boss_animation(boss,cycle,m::BossAnimation::parked),"native parked receipt opens guardian phase");return;
+            }
+            if(s.argument==36 || s.argument==37) {
+                const auto cycle=static_cast<std::uint8_t>(s.argument-35);
+                check(c.frame().bossCycle.mode==m::BossMode::waking,"both guardians lead to wake-up, not immediate DPS");
+                check(m::boss_blocked(c.frame(),cycle==1?2.F/3.F:1.F/3.F),"boss stays immune during wake-up");
+                check(!c.boss_animation(boss,cycle,m::BossAnimation::awake),"completion cannot precede wake-up start");
+                check(c.boss_animation(boss,cycle,m::BossAnimation::wakeStarted),"native wake-up and burst started");
+                const auto platform=m::asset_index(m::find(m::kBossActor.registry,23,173)->asset);
+                now+=5000;c.update(run,now,true,region);
+                check(c.frame().native[platform].position==m::boss_parking(cycle),"platform stays parked throughout animation");
+                check(c.boss_animation(boss,cycle,m::BossAnimation::awake),"native sequence completion resumes DPS");
+                if(rapidDamage) {
+                    check(c.health(boss,cycle==1?1.F/3.F:0.F),"immediate damage reaches next phase before script polls");
+                    check((c.frame().bossCycle.awakened & (1U<<(cycle-1)))!=0,"wake completion persists across immediate next health gate");
+                }
+                return;
+            }
+            if(s.argument==30 && !c.frame().bossDead) {
+                check(c.health(boss,0.F),"zero health requests native death sequence");
+                check(!c.frame().bossDead && c.frame().bossCycle.mode==m::BossMode::dying,"zero health is dying, not a death receipt");
+                check(c.boss_motion(boss,c.boss_platform(),.42F),"capture final live platform position");
+                check(c.boss_animation(boss,2,m::BossAnimation::deathStarted),"native death animation freezes platform");
+                check(c.frame().bossPlatformSnap && !c.frame().bossDead,"platform freeze does not fabricate boss death");
+                check(c.died(boss),"authentic Dendron death");
+            }
             return;
         }
         if(s.asset.type==60) for(const auto& v:m::kVolumes) if(v.asset==s.asset) {
@@ -202,8 +249,10 @@ struct Replay {
         }
         if(s.asset.type==4 && s.argument==50) {
             if(s.asset==m::kLenses[7].source) {
-                check(!c.boss_enemy().valid(),"middle cube is exposed before Dendron is requested");
-                check(!c.frame().scenes[2].generation,"aborting intro scene cannot reserve the boss");
+                check(c.boss_enemy().valid(),"Dendron exists before the middle cube can start combat");
+                check(!c.frame().bossFighting && m::boss_blocked(c.frame(),1.F),"Dendron remains immune until the middle cube is destroyed");
+                check(started[2] && !finished[2],"native boss intro is active while the middle cube is intact");
+                check(c.frame().scenes[2].eventCount==0,"middle cube cannot release the intro early");
                 for(unsigned n=8;n<12;++n) check(!c.frame().native[m::asset_index(m::kLenses[n].source)].active,"roof guardians are absent before encounter start");
             }
             for(const auto& tether:m::kRouteTethers) if(m::kLenses[tether.lens].source==s.asset) {
@@ -212,7 +261,8 @@ struct Replay {
                 check(c.frame().native[m::asset_index(routeAsset)].acknowledged,"both room cubes exist before breaking the guardian cube");
                 check(!c.frame().lensExposed[m::lens_index(routeAsset)],"transporter cube stays shielded until Minotaur death");
                 check(!c.frame().native[m::asset_index(m::find(tether.source.registry,23,tether.shield)->asset)].active,"guardian cube has no surrounding shield");
-                check(c.frame().native[m::asset_index(tether.source)].acknowledged,"short beam exists before cube becomes vulnerable");
+                check(c.frame().native[m::asset_index(tether.source)].desired,"short beam requested before cube becomes vulnerable");
+                if(delayTethers) check(!c.frame().native[m::asset_index(tether.source)].acknowledged,"cube exposes even when native beam creation never acknowledges");
             }
 
             const auto l=m::lens_index(s.asset);const auto q=c.lens_request(l);
@@ -229,6 +279,7 @@ struct Replay {
         if(s.asset.type==43 && s.argument==2) {
             const auto n=m::scene_index(s.asset);
             if(m::kScenes[n].graph==0x80F45CAAU) return; // service requires the actual exit event
+            if(n==2) check(c.frame().lensDestroyed[7] && c.frame().scenes[n].eventCount==1 && !c.frame().bossFighting,"intro completion is awaited after cube release, before damage phase");
             if(started[n] && !finished[n]) {finished.set(n);scene(n,true);}
         }
     }
@@ -261,7 +312,8 @@ struct Replay {
         check(checkedFakeDeath && checkedReadiness && checkedImmune && checkedCannon && checkedClosing && checkedShields,"critical regression scenarios exercised");
         check(c.frame().checkpointSliceSet==136 && c.frame().checkpointSpawnSet==0x2EA8FB98U,"Spire native respawn set retained");
         if(!early) {
-            check(finished[3] && finished[4],"both Dendron shield scenes released");
+            check(!started[3] && !started[4],"one native animation owner; legacy boss scenes cannot compete");
+            check(c.frame().bossCycle.awakened==3,"both native boss wake-ups completed");
             for(std::size_t i=0;i<std::size(m::kScenes);++i) {
                 if(m::kScenes[i].graph==0x80F45CAAU && started[i])
                     check(finished[i],"all spawned guardians leave their dormant native scenes");
@@ -315,6 +367,10 @@ static void native_regressions() {
     check(!m::tether_pose(cube,{NAN,0,0},pose) && !m::tether_pose(cube,{0,0,0},pose),"invalid or remote endpoints cannot spawn a beam");
     for(const auto& t:m::kRouteTethers) {
         check(m::kLenses[t.lens].source.slot==t.cube && m::kLenses[t.lens].source.registry==t.source.registry,"each short beam belongs to its actual guardian cube");
+        const auto resource=m::tether_resource(t);
+        check(resource.entity==(t.source.registry==0xC95ECB1AU?0x80F4B0EEU:0x80F4B0CFU),"beam class is authored in the encounter region");
+        m::TetherPose local{};check(m::tether_pose(cube,guardian,local,resource.length),"regional beam pose resolves");
+        check(std::abs(local.scale*resource.length-length)<.001F,"regional beam length reaches the same shield anchor");
         check(m::find(t.source.registry,1,t.guardian) && m::route_tether(t.source)==&t,"three distinct native guardians have tether sources");
         m::Request current{{99,1},{}};current.frame.enabled=true;
         auto& source=current.frame.native[m::asset_index(t.source)];source.managed=source.active=source.desired=true;
@@ -326,6 +382,95 @@ static void native_regressions() {
         check(m::tether_visibility(t,current,lens,current.owner)==0.F,"retirement explicitly writes visibility zero");
         ++lens.owner.run;check(!m::tether_visibility(t,current,lens,current.owner),"stale owner cannot alter reused beam entity");
     }
+}
+static void cover_regressions() {
+    m::Frame f{};f.enabled=true;f.spawnGeneration=1;
+    unsigned covers{};
+    for(const auto& entry:m::kAssets) {
+        const auto a=entry.asset;if(a.type!=23) continue;
+        auto& state=f.native[m::asset_index(a)];state.managed=state.active=true;state.generation=7;state.position=1.F;
+        Wire wire;check(m::write_body(wire,f,a.registry,23,a.slot) && wire.bits==147,"device position authority remains complete");
+        const bool cover=a.registry==0x2CB86C0FU && a.slot>=76 && a.slot<=169 && (a.slot-76)%3==0;
+        const bool mount=a.registry==0x2CB86C0FU && a.slot==173;
+        check(wire.fields[2]==std::pair<std::uint64_t,unsigned>{cover || mount?0U:1U,1},"rooftop cover and Dendron mount interpolate; other devices preserve snap policy");
+        if(cover) ++covers;
+    }
+    check(covers==32,"all 32 authored cover blocks receive smooth movement");
+    check(!m::animated_cover({0x2CB86C0FU,0,4,76}),"cover motion policy cannot match object source types");
+}
+static void mount_regressions() {
+    Replay r;
+    for(unsigned pass=0;pass<1200 && !r.c.frame().bossFighting;++pass) {
+        r.tick();r.service();
+        const auto* graph=r.c.graph();
+        for(const auto& binding:graph->commands) {
+            const auto state=r.c.step_state(binding.step);
+            if(state.phase!=coo::StepPhase::active || !state.commands[binding.command].requested) continue;
+            const auto& spec=graph->definition.steps[binding.step].commands[binding.command];
+            if(coo::is_observation(spec.operation) && !(spec.asset==m::kBossActor && spec.argument>=32)) r.satisfy(spec);
+        }
+    }
+    check(r.c.frame().bossFighting && !r.c.frame().bossDead,"mount test reaches real cube-triggered combat");
+    const auto* asset=m::find(m::kBossActor.registry,23,173);
+    const auto index=m::asset_index(asset->asset);
+    r.tick();
+    const auto generation=r.c.frame().native[index].generation;
+    check(r.c.frame().native[index].position==1.F,"combat starts native outward mount motion");
+    r.c.update(r.run,r.now+120000,true,r.region);
+    check(r.c.frame().native[index].generation==generation,"elapsed time alone cannot reverse native motion");
+    const auto boss=r.c.boss_enemy();const auto platform=r.c.boss_platform();
+    check(r.c.boss_motion(boss,platform,1.F),"native endpoint arrival");
+    r.c.update(r.run,r.now+120100,true,r.region);
+    check(r.c.frame().native[index].position==0.F,"mount reverses on actual arrival");
+    check(r.c.boss_motion(boss,platform,.42F),"observe mount part way through return lap");
+    check(r.c.health(boss,2.F/3.F),"first health floor requests parking");
+    r.c.update(r.run,r.now+120200,true,r.region);
+    check(r.c.frame().native[index].position==m::boss_parking(1),"park at P1 native lap parameter");
+    check(!r.c.frame().bossPlatformSnap,"parking uses native interpolation");
+    check(!r.c.boss_animation(boss,2,m::BossAnimation::asleep),"wrong-cycle animation rejected");
+    auto stale=boss;++stale.generation;
+    check(!r.c.boss_animation(stale,1,m::BossAnimation::asleep),"stale animation owner rejected");
+    check(!r.c.boss_motion(stale,platform,.9F),"stale motion owner rejected");
+    auto wrong=platform;++wrong.entity;
+    check(!r.c.boss_motion(boss,wrong,.9F),"other platform rejected");
+    check(!r.c.boss_motion(boss,platform,std::numeric_limits<float>::quiet_NaN()),"invalid motion rejected");
+    check(r.c.boss_animation(boss,1,m::BossAnimation::asleep),"folded animation observed");
+    check(!r.c.boss_animation(boss,1,m::BossAnimation::parked),"boss cannot park before platform arrives");
+    check(r.c.boss_motion(boss,platform,m::boss_parking(1)),"observe P1 arrival");
+    check(r.c.boss_animation(boss,1,m::BossAnimation::parked),"native parking complete");
+    const auto parkedGeneration=r.c.frame().native[index].generation;
+    r.c.update(r.run,r.now+300000,true,r.region);
+    check(r.c.frame().native[index].generation==parkedGeneration,"parked boss remains fixed across arbitrary elapsed time");
+    check(r.c.died(boss),"authentic unexpected death freezes current platform");
+    check(r.c.frame().bossPlatformSnap && r.c.frame().native[index].position==m::boss_parking(1),"death stops in place without removing platform");
+    check(r.c.frame().native[m::asset_index(m::kBossPlatform)].active,"platform stays present after boss death");
+    r.c.reset();
+    check(!r.c.frame().bossFighting,"reset retires mount combat lifecycle");
+}
+static void cycle_command_regressions() {
+    namespace p=sunrise::client::hooks::bootflow::strike_bond_boss_cycle;
+    for(const auto sequence:{p::kSleep,p::kDeath}) {
+        const auto action=p::action(sequence);
+        check(action[0x60]==std::byte{0x5D},"captured named start opcode");
+        check(m::boss_damage::get<std::uint32_t>(action,0)==0xAFB11A12U
+            && m::boss_damage::get<std::uint32_t>(action,4)==sequence,"captured Dendron sequence group and name");
+        check(m::boss_damage::get<std::uint32_t>(action,12)==UINT32_MAX
+            && m::boss_damage::get<std::uint32_t>(action,16)==UINT32_MAX,"native absent weak target");
+        check(m::boss_damage::get<std::uint64_t>(action,0x68)==0,"no invented request parameters");
+    }
+    for(const auto gate:{p::kGate1,p::kGate2}) {
+        const auto action=p::action(p::kSleep,gate);
+        check(action[0x60]==std::byte{0x5E} && m::boss_damage::get<std::uint32_t>(action,8)==gate,"captured native wake-up gate");
+    }
+    check(p::kBurst==0x80F45BA6U,"user-confirmed burst entity");
+    m::BossRequest request{};request.owner={9,2};request.enemy={9,0x28F42027,0x1234,2,3,m::kBossActor.registry};
+    request.frame.enabled=request.frame.bossFighting=true;request.frame.region=136;
+    request.platform={{9,2},m::kBossPlatform,0x40FAA273,12};
+    check(p::wanted(request),"cycle driver accepts current admitted rooftop owner");
+    auto wrong=request;++wrong.enemy.generation;check(!p::wanted(wrong),"cycle driver rejects stale generation");
+    wrong=request;wrong.frame.finished=true;check(!p::wanted(wrong),"cycle driver stops after completion");
+    wrong=request;wrong.frame.bossDead=true;check(!p::wanted(wrong),"cycle driver cannot replay death");
+    wrong=request;wrong.frame.region=8;check(!p::wanted(wrong),"cycle driver cannot affect route guardians");
 }
 static void boss_regressions() {
     m::Frame f{};f.enabled=true;f.spawnGeneration=1;
@@ -372,6 +517,15 @@ static void catalogue() {
     check(route::retains_held_region("strike_bond"),"Garden retains real held-region transitions");
 }
 int main() {
-    catalogue();native_regressions();boss_regressions();check(strike_bond_boss_damage_contracts(),"Dendron native damage identity contracts");Replay normal;normal.run_all();Replay early;early.run_all(true);
+    check(strike_bond_carriage_contracts(),"Dendron animated plate attachment contracts");
+    check(strike_bond_target_binding_contracts(),"Dendron primary target binding contracts");
+    check(strike_bond_intro_release_contracts(),"Dendron named intro release contracts");
+    check(strike_bond_fire_trace_contracts(),"Dendron firing trace ownership contracts");
+    cycle_command_regressions();catalogue();native_regressions();cover_regressions();mount_regressions();boss_regressions();check(strike_bond_boss_damage_contracts(),"Dendron native damage identity contracts");{
+        auto replay=std::make_unique<Replay>();replay->run_all();
+        replay=std::make_unique<Replay>();replay->run_all(true);
+        replay=std::make_unique<Replay>(true);replay->run_all();
+        replay=std::make_unique<Replay>(false,true);replay->run_all();
+    }
     std::printf("PASS: %u Garden World route, ownership, shield, native death, dialogue and launcher checks\n",checks);
 }

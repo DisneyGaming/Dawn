@@ -17,6 +17,8 @@ EnemyReceipt boss_enemy() noexcept;
 BossRequest boss_request() noexcept;
 EnemyReceipt guardian_enemy(std::uint32_t,std::uint16_t) noexcept;
 void observe_health(const EnemyReceipt&,float) noexcept;
+bool observe_boss_motion(const EnemyReceipt&,const coo::ObjectReceipt&,float) noexcept;
+bool observe_boss_animation(const EnemyReceipt&,std::uint8_t,BossAnimation) noexcept;
 void observe_readiness(const EnemyReceipt&,coo::EnemyReadiness) noexcept;
 void observe_costs(std::uint32_t,std::uint16_t,const coo::TaskCosts&) noexcept;
 void observe_player_trigger(std::uint64_t,std::uint32_t,std::uint16_t) noexcept;

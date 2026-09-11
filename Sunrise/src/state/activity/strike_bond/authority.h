@@ -92,7 +92,7 @@ template<class Writer> bool write_body(Writer& w,const Frame& f,std::uint32_t ke
     case 4:return coo::native_device::object(w,s.generation,s.active);
     case 11:return coo::native_music::select(w,f.musicCandidate);
     case 18:return coo::native_clock::countdown(w,f.completion.valid() && f.completion.state==6,f.endEpoch);
-    case 23:return coo::native_device::position_only(w,device_position(f,a->asset),static_cast<std::int16_t>(s.generation),true);
+    case 23:return coo::native_device::position_only(w,device_position(f,a->asset),static_cast<std::int16_t>(s.generation),!animated_position(a->asset) || (key==kBossActor.registry && slot==173 && f.bossPlatformSnap));
     case 26: {
         const auto* g=golem(key,type,slot);if(!g) return false;
         const auto& lens=f.native[asset_index(kLenses[g->lens].source)];

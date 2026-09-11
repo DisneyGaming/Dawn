@@ -1,6 +1,7 @@
 #pragma once
 #include "bindings.h"
 #include "tethers.h"
+#include "boss_cycle.h"
 #include "../coo/lifecycle_service.h"
 #include "../coo/object_service.h"
 #include "../coo/objective_service.h"
@@ -41,6 +42,7 @@ struct Frame {
     std::array<SceneCommand,std::size(kScenes)> scenes{};
     std::bitset<std::size(kLenses)> lensExposed{},lensDestroyed{};
     coo::ObjectiveState presentation{};coo::CompletionPublication completion{};
+    BossCycle bossCycle{};bool bossPlatformSnap{};
 };
 inline constexpr auto kObjectBindings=[] {
     std::array<coo::ObjectBinding,[] {std::size_t n{};for(const auto& a:kAssets) if(a.asset.type==4) ++n;return n;}()> out{};
@@ -86,6 +88,16 @@ inline constexpr auto kCohorts=[] {
     if(a.registry==0x2CB86C0FU && a.slot==264) { return true; }
     return false;
 }
+[[nodiscard]] inline constexpr bool animated_cover(coo::Asset a) noexcept {
+    // The roof's four eight-block layouts must interpolate between endpoints.
+    // Native DF6C70 skips the movement-start branch when snap is enabled.
+    return a.registry==0x2CB86C0FU && a.type==23 && a.slot>=76 && a.slot<=169 && (a.slot-76)%3==0;
+}
+[[nodiscard]] inline constexpr bool animated_position(coo::Asset a) noexcept {
+    // Dendron's platform graph80F4598F samples its motion from device_position.
+    // Snapping device173 to1 skips the authored60-second phase transition.
+    return animated_cover(a) || (a.registry==0x2CB86C0FU && a.type==23 && a.slot==173);
+}
 inline float device_position(const Frame& f,coo::Asset a) noexcept {
     const auto i=asset_index(a);if(i==std::size(kAssets)) return 0.F;
     if(inverted_barrier(a)) { return f.native[i].active?0.F:1.F; }
@@ -118,10 +130,12 @@ inline constexpr const GolemBinding* golem(std::uint32_t key,std::uint8_t type,s
 // Stage is the number of completed guardian pairs, independent of Lua graph index.
 inline float boss_floor(const Frame& f) noexcept {return f.bossStage==0?2.F/3.F:f.bossStage==1?1.F/3.F:0.F;}
 inline bool boss_blocked(const Frame& f,float fraction) noexcept {
-    return !f.bossFighting || f.bossDead || (f.bossStage<2 && fraction<=boss_floor(f));
+    return !f.bossFighting || f.bossDead || f.bossCycle.mode!=BossMode::damage
+        || (f.bossStage<2 && fraction<=boss_floor(f));
 }
 struct Request {coo::Generation owner{};Frame frame{};};
-struct BossRequest {coo::Generation owner{};EnemyReceipt enemy{};Frame frame{};};
+inline constexpr coo::Asset kBossPlatform{0x2CB86C0FU,0x80F5493BU,4,172};
+struct BossRequest {coo::Generation owner{};EnemyReceipt enemy{};Frame frame{};coo::ObjectReceipt platform{};};
 struct LensRequest {coo::Generation owner{};LensReceipt lens{};std::uint32_t generation{};std::size_t index{};bool enabled{},vulnerable{},destroyed{};};
 inline std::optional<float> tether_visibility(const TetherBinding& b,const Request& current,
     const LensRequest& lens,coo::Generation owner) noexcept {

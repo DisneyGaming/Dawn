@@ -23,7 +23,7 @@ bool contains(const Volume& v,Point p) noexcept {
 void Controller::reset() noexcept {
     executor_.cancel(*this);composition_.reset();lifecycle_.reset();views_=nullptr;run_=now_=0;started_=landed_=false;
     clock_.reset();objects_={};population_={};costs_={};lenses_={};scenes_={};boss_={};bossEnemy_={};bossFraction_=1.F;hasBossHealth_=false;
-    lastPoint_={};hasPoint_=false;nextCover_=0;coverSeed_=0;coverGroup_=UINT8_MAX;dialogue_={};objectives_={};submitted_.reset();voiceEnd_={};seen_.reset();regions_.reset();frame_={};
+    lastPoint_={};hasPoint_=false;platformForward_=true;nextPlatform_=nextCover_=0;coverSeed_=0;coverGroup_=UINT8_MAX;dialogue_={};objectives_={};submitted_.reset();voiceEnd_={};seen_.reset();regions_.reset();frame_={};
 }
 bool Controller::select(const coo::script::Views& v,std::uint64_t run) noexcept {
     if(!run || !valid_document(v)) {reset();return false;}
@@ -113,14 +113,57 @@ bool Controller::admitted(const EnemyReceipt& r) noexcept {
 }
 bool Controller::died(const EnemyReceipt& r) noexcept {
     if(!frame_.enabled || frame_.finished || !population_.died(r,run_,frame_.spawnGeneration)) return false;
-    if(r.registry==kBossActor.registry && r.source==3 && frame_.bossFighting) frame_.bossDead=true;
+    if(r.registry==kBossActor.registry && r.source==3 && frame_.bossFighting) {
+        frame_.bossDead=true;frame_.bossCycle.mode=BossMode::dying;update_boss_platform();
+    }
     ++frame_.revision;return true;
 }
 bool Controller::health(const EnemyReceipt& r,float fraction) noexcept {
     if(!frame_.enabled || frame_.finished || !r.valid() || r!=bossEnemy_
         || !std::isfinite(fraction) || fraction<0.F || fraction>1.F) return false;
     // A fraction is progress evidence only. Even zero cannot synthesize death.
-    bossFraction_=fraction;hasBossHealth_=true;return true;
+    bossFraction_=fraction;hasBossHealth_=true;
+    auto& cycle=frame_.bossCycle;
+    if(frame_.bossFighting && !frame_.bossDead && cycle.mode==BossMode::damage) {
+        if(frame_.bossStage<2 && fraction<=boss_floor(frame_)) {
+            cycle.mode=BossMode::parking;cycle.cycle=frame_.bossStage+1;
+            cycle.asleep=cycle.wakeStarted=false;nextPlatform_=0;++frame_.revision;
+        } else if(frame_.bossStage==2 && fraction==0.F) {
+            cycle.mode=BossMode::dying;nextPlatform_=0;++frame_.revision;
+        }
+    }
+    return true;
+}
+bool Controller::boss_motion(const EnemyReceipt& r,const coo::ObjectReceipt& platform,float value) noexcept {
+    if(!frame_.enabled || frame_.finished || !r.valid() || r!=bossEnemy_ || !platform.valid()
+        || platform!=boss_platform() || !boss_position(value)) return false;
+    frame_.bossCycle.position=value;frame_.bossCycle.hasPosition=true;return true;
+}
+bool Controller::boss_animation(const EnemyReceipt& r,std::uint8_t number,BossAnimation event) noexcept {
+    auto& cycle=frame_.bossCycle;
+    if(!frame_.enabled || frame_.finished || frame_.bossDead || !frame_.bossFighting || !r.valid() || r!=bossEnemy_
+        || number!=cycle.cycle) return false;
+    switch(event) {
+    case BossAnimation::asleep:
+        if(cycle.mode!=BossMode::parking || cycle.asleep) return false;
+        cycle.asleep=true;break;
+    case BossAnimation::parked:
+        if(cycle.mode!=BossMode::parking || !cycle.asleep || !cycle.hasPosition
+            || !boss_at(cycle.position,boss_parking(number))) return false;
+        cycle.mode=BossMode::dormant;cycle.parked|=static_cast<std::uint8_t>(1U<<(number-1));break;
+    case BossAnimation::wakeStarted:
+        if(cycle.mode!=BossMode::waking || cycle.wakeStarted) return false;
+        cycle.wakeStarted=true;break;
+    case BossAnimation::awake:
+        if(cycle.mode!=BossMode::waking || !cycle.wakeStarted) return false;
+        cycle.mode=BossMode::damage;cycle.asleep=false;nextPlatform_=0;
+        cycle.awakened|=static_cast<std::uint8_t>(1U<<(number-1));break;
+    case BossAnimation::deathStarted:
+        if(cycle.mode!=BossMode::dying || cycle.deathStarted || !cycle.hasPosition || frame_.bossStage!=2) return false;
+        if(!platform_position(cycle.position,true)) return false;
+        cycle.platformStopped=true;cycle.deathStarted=true;break;
+    }
+    ++frame_.revision;return true;
 }
 bool Controller::costed(std::uint32_t key,std::uint16_t slot,const coo::TaskCosts& report,std::int8_t& selected,std::uint32_t& known) noexcept {
     selected=-1;known=0;if(!frame_.enabled) return false;
@@ -215,6 +258,40 @@ void Controller::update_cover() noexcept {
     // animations, but not the retail host's random-cover scheduling.
     nextCover_=now_+12000;
 }
+bool Controller::platform_position(float position,bool snap) noexcept {
+    const auto* device=find(kBossActor.registry,23,173);
+    if(!device || !boss_position(position)) return false;
+    auto& state=frame_.native[asset_index(device->asset)];
+    if(!state.managed && !request(device->asset,false)) return false;
+    if(state.position==position && frame_.bossPlatformSnap==snap) return true;
+    if(!revise(device->asset)) return false;
+    state.position=position;state.desired=state.active=position>0.F;frame_.bossPlatformSnap=snap;
+    return true;
+}
+void Controller::update_boss_platform() noexcept {
+    auto& cycle=frame_.bossCycle;
+    if(frame_.region!=136) {nextPlatform_=0;return;}
+    const auto& mount=frame_.native[asset_index(kBossPlatform)];
+    if(!mount.active || !mount.acknowledged) {nextPlatform_=0;return;}
+    if(cycle.mode==BossMode::dying || frame_.bossDead) {
+        nextPlatform_=0;
+        if(!cycle.platformStopped && cycle.hasPosition && platform_position(cycle.position,true)) cycle.platformStopped=true;
+        return;
+    }
+    if(!frame_.bossFighting || frame_.ending) {nextPlatform_=0;return;}
+    if(boss_intermission(cycle.mode)) {
+        nextPlatform_=0;
+        if(!platform_position(boss_parking(cycle.cycle))) frame_.populationFault=true;
+        return;
+    }
+    // Continue a partial lap after native wake-up. Reverse on observed arrival,
+    // not a fresh60-second timer that would overrun a pause or partial lap.
+    const float target=platformForward_?1.F:0.F;
+    if(nextPlatform_ && (!cycle.hasPosition || !boss_at(cycle.position,target))) return;
+    if(nextPlatform_) platformForward_=!platformForward_;
+    if(!platform_position(platformForward_?1.F:0.F)) {frame_.populationFault=true;return;}
+    nextPlatform_=1;
+}
 bool Controller::publish(const coo::Command& command) noexcept {
     if(!views_ || !graph() || !coo::script::valid_token(graph()->definition,executor_,command)) return false;
     const auto& s=command.spec;
@@ -259,15 +336,23 @@ bool Controller::publish(const coo::Command& command) noexcept {
             if(i==std::size(kScenes)) return false;
             if(s.argument==0x858A9281U) {
                 const unsigned phase=s.asset.slot==73?0U:s.asset.slot==75?1U:2U;
-                if(phase>1 || frame_.bossStage!=phase || !frame_.bossFighting) return false;
+                if(phase>1 || frame_.bossStage!=phase || !frame_.bossFighting
+                    || frame_.bossCycle.mode!=BossMode::dormant || frame_.bossCycle.cycle!=phase+1) return false;
                 for(unsigned n=0;n<2;++n) {
                     const auto* source=find(kBossActor.registry,1,static_cast<std::uint16_t>(174+16*phase+8*n));
                     const auto cohort=spawn_index(source->asset);
                     if(!population_.cleared(cohort,kSpawns[cohort].count)) return false;
                 }
-                if(scenes_.event(i,s.argument)!=coo::SceneEvent::accepted) return false;
-                ++frame_.bossStage;
-            } else if(scenes_.event(i,s.argument)!=coo::SceneEvent::accepted) return false;
+                // The native cycle driver owns Dendron's intermission. Do not
+                // also start/release80F45CA0: its old early exit can compete with
+                // the verified named sequence. Guardian scenes remain native.
+                ++frame_.bossStage;frame_.bossCycle.mode=BossMode::waking;
+            } else {
+                // The authored intro runs Dendron's startup before waiting on the main cube.
+                // Its release event cannot precede that exact cube's real destruction.
+                if(i!=2 || !scenes_.seen(i,1) || !lenses_[7].dead()
+                    || scenes_.event(i,s.argument)!=coo::SceneEvent::accepted) return false;
+            }
             break;
         }
         if(s.asset==kModule && (s.argument==10 || s.argument==11)) {frame_.restricted=s.argument==11;break;}
@@ -282,7 +367,7 @@ bool Controller::publish(const coo::Command& command) noexcept {
             }break;
         }
         if(s.asset==kBossActor && s.argument==31) {
-            if(!lenses_[7].dead() || !bossEnemy_.valid()) return false;
+            if(!lenses_[7].dead() || !bossEnemy_.valid() || !scenes_.seen(2,2)) return false;
             frame_.bossFighting=true;break;
         }
         if(s.asset==kObjectiveAsset && s.argument==40) {objectives_.clear_marker();break;}
@@ -306,6 +391,10 @@ bool Controller::observed(const coo::CommandSpec& s) const noexcept {
     if(views_ && views_->condition(s)) return views_->evaluate(s,[this](const auto& child){return observed(child);});
     if(s.asset==kRegion) return s.argument/8<regions_.size() && regions_[s.argument/8];
     if(s.asset==kGenerator) return frame_.forestGenerated;
+    if(s.asset==kBossActor && (s.argument==34 || s.argument==35))
+        return (frame_.bossCycle.parked & (1U<<(s.argument-34)))!=0;
+    if(s.asset==kBossActor && (s.argument==36 || s.argument==37))
+        return (frame_.bossCycle.awakened & (1U<<(s.argument-36)))!=0;
     if(s.asset==kBossActor && s.argument==30) return frame_.bossDead;
     if(s.asset==kBossActor && (s.argument==32 || s.argument==33))
         return frame_.bossFighting && hasBossHealth_ && bossEnemy_.valid()
@@ -357,6 +446,7 @@ void Controller::update_module(std::uint32_t id,const coo::MissionInput& input,F
         dialogue_.discard_before(frame_.section);++frame_.revision;
     }
     update_cover();
+    update_boss_platform();
     if(!started_) started_=executor_.start(graph()->definition,run_);
     if(!started_) return;
     // advance()'s `run` argument becomes the generation stamped on the dialogue record

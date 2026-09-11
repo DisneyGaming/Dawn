@@ -29,7 +29,10 @@ public:
     bool admitted(const EnemyReceipt&) noexcept;
     bool died(const EnemyReceipt&) noexcept;
     bool health(const EnemyReceipt&,float) noexcept;
+    bool boss_motion(const EnemyReceipt&,const coo::ObjectReceipt&,float) noexcept;
+    bool boss_animation(const EnemyReceipt&,std::uint8_t,BossAnimation) noexcept;
     EnemyReceipt boss_enemy() const noexcept {return bossEnemy_;}
+    coo::ObjectReceipt boss_platform() const noexcept {return objects_.owner(object_index(kBossPlatform));}
     bool readiness(const EnemyReceipt& r,coo::EnemyReadiness v) noexcept {return population_.observe(r,v);}
     template<class Visit> void pending_enemies(Visit visit) const noexcept {population_.pending(visit);}
     template<class Visit> void living_enemies(Visit visit) const noexcept {population_.living(visit);}
@@ -55,6 +58,8 @@ private:
     bool request(coo::Asset,bool) noexcept;
     bool cover(bool) noexcept;
     void update_cover() noexcept;
+    void update_boss_platform() noexcept;
+    bool platform_position(float,bool=false) noexcept;
     bool observed(const coo::CommandSpec&) const noexcept;
     bool entered(coo::Asset) const noexcept;
     bool revise(coo::Asset) noexcept;
@@ -75,7 +80,8 @@ private:
     // Diagnostics only. strike_bond had no volume telemetry at all, so a trigger that never fires
     // was indistinguishable from a player who never walked into it.
     Point lastPoint_{};bool hasPoint_{};
-    std::uint64_t nextCover_{};std::uint32_t coverSeed_{};std::uint8_t coverGroup_{UINT8_MAX};
+    std::uint64_t nextPlatform_{},nextCover_{};std::uint32_t coverSeed_{};std::uint8_t coverGroup_{UINT8_MAX};
+    bool platformForward_{true};
     coo::MissionRuntime composition_{};coo::Executor executor_{};Frame frame_{};
 };
 }
