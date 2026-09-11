@@ -144,12 +144,28 @@ If you are unsure, deploy to both locations in step 4 and let this command arbit
 git clone <repo> dawn && cd dawn
 
 "C:/Program Files (x86)/Microsoft Visual Studio/18/BuildTools/MSBuild/Current/Bin/MSBuild.exe" \
-  Sunrise/Sunrise.vcxproj -p:Configuration=Release -p:Platform=x64 -m -v:minimal -nologo
+  Sunrise/Sunrise.vcxproj -p:Configuration=Release -p:Platform=x64 \
+  -p:PreferredToolArchitecture=x64 -m -v:minimal -nologo
 ```
 
 Output: `build/x64/Release/steam_api64.dll`.
 
 There is no `.sln` — build the `.vcxproj` directly.
+
+**`-p:PreferredToolArchitecture=x64` is not optional on a first build.** The project sets
+`MultiProcessorCompilation`, so `-m` on a many-core machine runs many compilers at once. Without
+that flag they are the 32-bit `cl.exe`, and the heavier package translation units exhaust its
+address space:
+
+```
+error C1060: compiler is out of heap space
+  (compiling package_ability_build.cpp / package_subclass_build.cpp / package_build_report.cpp)
+```
+
+This only happens on a **from-scratch** build. Incremental builds recompile a handful of files and
+never hit it, which is why it is invisible to anyone who already has a build tree and reliably
+breaks a tester's first one. If the flag alone is not enough on a smaller machine, reduce the job
+count as well: `-m:4` instead of `-m`.
 
 ### 4. Deploy
 
@@ -166,11 +182,18 @@ Stop-Process -Name destiny2 -Force -ErrorAction SilentlyContinue
 Copy-Item build/x64/Release/steam_api64.dll "$Root/bin/x64/steam_api64.dll" -Force
 Copy-Item build/x64/Release/steam_api64.dll "$Root/steam_api64.dll"         -Force
 
-# the runtime tree goes beside the DLL that is actually mapped
+# the runtime tree must sit beside the DLL that actually maps - deploy to both trees for the
+# same reason the DLL goes to both, and let step 7 arbitrate
+New-Item -ItemType Directory -Force -Path "$Root/bin/x64/Sunrise/scripts", "$Root/Sunrise/scripts" | Out-Null
 Copy-Item Sunrise/scripts/*.lua "$Root/bin/x64/Sunrise/scripts/" -Force
+Copy-Item Sunrise/scripts/*.lua "$Root/Sunrise/scripts/"         -Force
 ```
 
 Keeping both copies identical costs nothing and removes a whole class of "my change did nothing".
+
+Deploying the DLL to both locations but the scripts to only one is the worst of both worlds: the new
+DLL maps, reads the runtime tree beside *itself*, and finds the **old** scripts. That presents as a
+change that did nothing, or as a mission whose C++ and Lua disagree.
 
 **Rollback.** The Sunrise installer preserves the untouched Steam DLL at
 `<GAME_ROOT>/.sunrise/original/steam_api64.dll`. Copy it back over both locations to return to a
@@ -190,8 +213,15 @@ package name:
 
 `bubble` and `slice_set` choose where you land; `spawn_set_hash` chooses the spawn point within it.
 
-`settings.json` has a **64 KB hard cap**. Patch the field you need — never regenerate the file
-wholesale.
+`settings.json` is capped at **1 MiB** — `kConfigCapacity` in
+`core/settings/settings_runtime.cpp`, which rejects anything larger with `fail("too_large")`. A
+file over the cap fails during load, before the log sinks exist, so it presents as a silent boot
+failure rather than an error.
+
+Patch the field you need rather than regenerating the file. Not because of the cap — there is
+plenty of room — but because a pretty-printed rewrite balloons it: a 44 KB document re-rendered
+with indentation reached 578 KB, and the shipped defaults are 72 KB on disk against 45 KB
+compressed. Write compact if you write it at all.
 
 ### 6. Launch
 

@@ -162,8 +162,22 @@ Never downgrade PlatformToolset in the project to work around this.
 
     Step 'Building Dawn (Release x64)'
     Note (Split-Path -Leaf $msbuild)
-    & $msbuild $Project -p:Configuration=Release -p:Platform=x64 -m -v:minimal -nologo
-    if ($LASTEXITCODE -ne 0) { Die 'Build failed. Warnings are errors in this project (/W4 /WX).' }
+    # PreferredToolArchitecture=x64 picks the 64-bit cl.exe. The project sets
+    # MultiProcessorCompilation, so with -m on a many-core machine the 32-bit compiler runs out of
+    # address space on the heavier package translation units and fails with
+    # "error C1060: compiler is out of heap space". That only happens on a from-scratch build,
+    # which is why an incremental build never shows it and a tester's first build always does.
+    & $msbuild $Project -p:Configuration=Release -p:Platform=x64 -p:PreferredToolArchitecture=x64 -m -v:minimal -nologo
+    if ($LASTEXITCODE -ne 0) {
+        Warn 'Build failed. Read the FIRST error above, not the last line.'
+        Warn '  C1060 out of heap space  -> the 64-bit toolchain was not used. Check that'
+        Warn '     the Hostx64 x64 cl.exe exists under VC/Tools/MSVC/<version>/bin, then retry'
+        Warn '     with fewer parallel jobs by changing -m to -m:4 in this script.'
+        Warn '  C2220 / warning as error -> this project is /W4 /WX. Fix the warning.'
+        Warn '  MSB8020 / v145 not found -> install the v145 build tools. Never downgrade'
+        Warn '     PlatformToolset in the .vcxproj to make an older Visual Studio accept it.'
+        Die  'Build failed.'
+    }
 }
 
 if (-not (Test-Path $BuiltDll)) { Die "No build output at $BuiltDll - run without -SkipBuild." }
@@ -228,39 +242,80 @@ foreach ($tree in Get-RuntimeTrees $root) {
 # entirely - so a stock Sunrise install takes the DLL and still has no way to reach the missions.
 # Add only the overrides Dawn ships that the file is missing. Never reorder or drop the user's own.
 
-Step 'Checking mission arrival overrides'
+Step 'Checking settings and mission arrival overrides'
 
-$wanted = (Get-Content $Defaults -Raw | ConvertFrom-Json).state.activity.arrival_overrides
+$defaultDoc = Get-Content $Defaults -Raw | ConvertFrom-Json
+$wanted     = $defaultDoc.state.activity.arrival_overrides
+
+# The real limit is 1 MiB, not 64 KB: core/settings/settings_runtime.cpp sets
+# kConfigCapacity = 1024*1024 and rejects a larger settings.json with fail("too_large"). An earlier
+# 64 KB figure here refused perfectly valid installs - the shipped defaults alone are 72 KB on disk.
+$SettingsCapacity = 1MB
+
+# Always write compact anyway. Pretty-printing is what makes this file enormous: a 44 KB document
+# re-rendered with indentation reached 578 KB. ConvertTo-Json -Compress round-trips this document
+# structurally unchanged, verified against the live settings file.
+function Write-Settings ($path, $doc, $label, $note) {
+    $out   = $doc | ConvertTo-Json -Depth 100 -Compress
+    $bytes = [System.Text.Encoding]::UTF8.GetByteCount($out)
+    if ($bytes -ge $SettingsCapacity) {
+        Warn "$label would be $bytes bytes, past the 1 MiB cap the loader enforces. Left unchanged."
+        return $false
+    }
+    Set-Content -Path $path -Value $out -Encoding UTF8 -NoNewline
+    Good "$label  $note  ($bytes bytes)"
+    return $true
+}
 
 foreach ($tree in Get-RuntimeTrees $root) {
-    $settingsPath = Join-Path $tree 'settings.json'
-    if (-not (Test-Path $settingsPath)) { continue }
+    $parent = Split-Path -Parent $tree
+    if (-not (Test-Path $parent)) { continue }          # this layout does not exist here
+    if (-not (Test-Path $tree)) { New-Item -ItemType Directory -Path $tree -Force | Out-Null }
 
-    $json  = Get-Content $settingsPath -Raw
-    $doc   = $json | ConvertFrom-Json
+    $settingsPath = Join-Path $tree 'settings.json'
+    $label        = Get-Relative $settingsPath
+    $doc          = $null
+
+    if (Test-Path $settingsPath) {
+        try {
+            $doc = Get-Content $settingsPath -Raw | ConvertFrom-Json
+        } catch {
+            # A broken install often has a truncated or hand-edited settings.json. Keep it for
+            # diagnosis, then seed a known-good one rather than aborting a half-finished deploy.
+            $broken = "$settingsPath.broken-$stamp"
+            Move-Item $settingsPath $broken -Force
+            Warn "$label was not valid JSON. Kept as $(Split-Path -Leaf $broken); writing Dawn defaults."
+        }
+    }
+
+    if (-not $doc) {
+        # No file, or an unusable one. The shipped defaults already carry every override.
+        [void](Write-Settings $settingsPath $defaultDoc $label 'written from Dawn defaults')
+        continue
+    }
+
+    # A settings file can be valid JSON and still be missing the whole branch.
+    if ($null -eq $doc.state) {
+        $doc | Add-Member -NotePropertyName state -NotePropertyValue ([pscustomobject]@{}) -Force
+    }
+    if ($null -eq $doc.state.activity) {
+        $doc.state | Add-Member -NotePropertyName activity -NotePropertyValue ([pscustomobject]@{}) -Force
+    }
+    if ($null -eq $doc.state.activity.arrival_overrides) {
+        $doc.state.activity | Add-Member -NotePropertyName arrival_overrides -NotePropertyValue @() -Force
+    }
+
     $have  = @($doc.state.activity.arrival_overrides)
     $names = @($have | ForEach-Object { $_.package_name })
     $added = @()
-
     foreach ($o in $wanted) {
         if ($names -notcontains $o.package_name) { $have += $o; $added += $o.package_name }
     }
 
-    $label = $settingsPath.Substring($root.Length).TrimStart('\')
     if ($added.Count -eq 0) { Note "$label already has all $($wanted.Count) overrides"; continue }
 
     $doc.state.activity.arrival_overrides = $have
-    $out = $doc | ConvertTo-Json -Depth 100
-
-    # settings.json has a 64 KB hard cap. Refuse rather than corrupt it.
-    $bytes = [System.Text.Encoding]::UTF8.GetByteCount($out)
-    if ($bytes -ge 65536) {
-        Warn "$label would reach $bytes bytes, past the 64 KB cap. Left unchanged - add these by hand: $($added -join ', ')"
-        continue
-    }
-
-    Set-Content -Path $settingsPath -Value $out -Encoding UTF8
-    Good "$label  +$($added.Count) overrides: $($added -join ', ')  ($bytes bytes)"
+    [void](Write-Settings $settingsPath $doc $label "+$($added.Count) overrides: $($added -join ', ')")
 }
 
 # ---------------------------------------------------------------- verify
@@ -292,19 +347,82 @@ if (-not $mapped) {
 
 Good "Mapped: $mapped"
 $mappedHash = (Get-FileHash $mapped -Algorithm SHA256).Hash
+$healthy    = $true
 if ($mappedHash -eq $builtHash) {
     Good 'This is the build that was just deployed.'
 } else {
+    $healthy = $false
     Warn 'The mapped DLL is NOT the build just deployed.'
     Warn "  built:  $($builtHash.Substring(0,32))"
     Warn "  mapped: $($mappedHash.Substring(0,32))"
     Warn 'Something else is shadowing it. Do not trust a playtest until this matches.'
 }
 
-$liveTree = Split-Path -Parent $mapped
-$log      = Join-Path $liveTree 'Sunrise\logs\sunrise.log'
-Note "Runtime tree: $(Join-Path $liveTree 'Sunrise')"
+# The DLL reads its runtime tree from beside ITSELF. Deploying the DLL to both locations but the
+# scripts to only one produces a mission whose C++ and Lua disagree, which reads as "my change did
+# nothing". Check the tree that actually won, not the one we hoped would.
+$liveRoot    = Split-Path -Parent $mapped
+$liveScripts = Join-Path $liveRoot 'Sunrise\scripts'
+if (-not (Test-Path $liveScripts)) {
+    $healthy = $false
+    Warn "No scripts directory beside the mapped DLL: $liveScripts"
+} else {
+    $stale = @()
+    foreach ($src in Get-ChildItem $Scripts -Filter *.lua) {
+        $dst = Join-Path $liveScripts $src.Name
+        if (-not (Test-Path $dst)) { $stale += "$($src.Name) (missing)"; continue }
+        if ((Get-FileHash $dst -Algorithm SHA256).Hash -ne (Get-FileHash $src.FullName -Algorithm SHA256).Hash) {
+            $stale += "$($src.Name) (differs)"
+        }
+    }
+    if ($stale.Count -eq 0) {
+        Good "All $luaCount mission scripts match beside the mapped DLL."
+    } else {
+        $healthy = $false
+        Warn "Mission scripts beside the mapped DLL do not match this checkout: $($stale -join ', ')"
+    }
+}
+
+# A settings.json over the loader's cap, or unreadable, fails before the log sinks exist - the
+# boot just goes quiet. Catch it here rather than letting the tester stare at a blank screen.
+$liveSettings = Join-Path $liveRoot 'Sunrise\settings.json'
+if (-not (Test-Path $liveSettings)) {
+    Warn "No settings.json beside the mapped DLL: $liveSettings"
+} else {
+    $sz = (Get-Item $liveSettings).Length
+    if ($sz -ge $SettingsCapacity) {
+        $healthy = $false
+        Warn "settings.json beside the mapped DLL is $sz bytes, past the 1 MiB cap. The loader will reject it."
+    } else {
+        Good "settings.json beside the mapped DLL: $sz bytes"
+    }
+}
+
+$log = Join-Path $liveRoot 'Sunrise\logs\sunrise.log'
+Note "Runtime tree: $(Join-Path $liveRoot 'Sunrise')"
 Note "Log:          $log"
+
+# The log only appears once the host is actually running. Its absence after a successful map is
+# the clearest sign the DLL loaded but the host did not come up.
+for ($i = 0; $i -lt 12; $i++) {
+    if (Test-Path $log) { break }
+    Start-Sleep -Seconds 5
+}
+if (Test-Path $log) {
+    Good "Host is writing the log ($((Get-Item $log).Length) bytes)."
+} else {
+    $healthy = $false
+    Warn 'The DLL mapped but no log appeared. The host did not start.'
+    Warn 'Usual causes: a settings.json the loader rejected, or a missing Sunrise runtime tree.'
+}
+
 Write-Host ''
+if ($healthy) {
+    Good 'Install verified. Dawn is running the build in this checkout.'
+} else {
+    Warn 'Install completed with problems - see the warnings above before playtesting.'
+    Warn 'Roll back with:  .\tools\install\Install-Dawn.ps1 -Restore'
+}
 Note 'Once you enter an activity, confirm the graph that loaded:'
 Note "  Select-String 'ev=coo_script' '$log'"
+if (-not $healthy) { exit 1 }
