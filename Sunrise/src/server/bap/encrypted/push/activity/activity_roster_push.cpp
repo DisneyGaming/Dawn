@@ -70,16 +70,17 @@ std::atomic_uint32_t g_towerfallDeliveryReports{};
     const bool hijacked=name=="adventure_rumba" && snapshot.hijacked.enabled;
     const bool deep=name=="adventure_whisk" && snapshot.deep_storage.enabled;
     const bool strike=name=="strike_pact" && snapshot.strike_pact.enabled;
-    if(!hijacked && !deep && !strike && (name!="adventure_vod" || !snapshot.beyond_infinity.enabled)) { return true; }
+    const bool garden=name=="strike_bond" && snapshot.strike_bond.enabled;
+    if(!garden && !hijacked && !deep && !strike && (name!="adventure_vod" || !snapshot.beyond_infinity.enabled)) { return true; }
     namespace beyond=state::activity::beyond_infinity;
     namespace clock=middleware::bap::activity_message::clock_state;
     const auto current=beyond::request();
     const auto deepCurrent=state::activity::deep_storage::request();
     const auto hijackedCurrent=state::activity::hijacked::request();
-    const auto owner=hijacked?hijackedCurrent.owner:strike?snapshot.strike_pact.completion.owner:deep?deepCurrent.owner:current.owner;
-    const bool enabled=hijacked?hijackedCurrent.frame.enabled:strike?snapshot.strike_pact.enabled:deep?deepCurrent.frame.enabled:current.frame.enabled;
-    const auto generation=hijacked?hijackedCurrent.frame.spawnGeneration:strike?owner.value:deep?deepCurrent.frame.spawnGeneration:current.frame.spawnGeneration;
-    const auto expected=hijacked?snapshot.hijacked.spawnGeneration:strike?snapshot.strike_pact.spawnGeneration:deep?snapshot.deep_storage.spawnGeneration:snapshot.beyond_infinity.spawnGeneration;
+    const auto owner=garden?snapshot.strike_bond.completion.owner:hijacked?hijackedCurrent.owner:strike?snapshot.strike_pact.completion.owner:deep?deepCurrent.owner:current.owner;
+    const bool enabled=garden?snapshot.strike_bond.enabled:hijacked?hijackedCurrent.frame.enabled:strike?snapshot.strike_pact.enabled:deep?deepCurrent.frame.enabled:current.frame.enabled;
+    const auto generation=garden?snapshot.strike_bond.spawnGeneration:hijacked?hijackedCurrent.frame.spawnGeneration:strike?owner.value:deep?deepCurrent.frame.spawnGeneration:current.frame.spawnGeneration;
+    const auto expected=garden?snapshot.strike_bond.spawnGeneration:hijacked?snapshot.hijacked.spawnGeneration:strike?snapshot.strike_pact.spawnGeneration:deep?snapshot.deep_storage.spawnGeneration:snapshot.beyond_infinity.spawnGeneration;
     if(session.activity.joinedForeignSession || !lifecycle::activity_binding_is_current(session)
         || !session.activity.lineage.owns(session.activity.instance)
         || state::activity::world_phase()!=state::activity::WorldPhase::arrived

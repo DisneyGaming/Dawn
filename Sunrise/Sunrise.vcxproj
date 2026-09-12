@@ -107,7 +107,7 @@
     <None Include="scripts\omega.lua" />
     <None Include="scripts\README.md" />
     <None Include="scripts\FORMAT.md" />
-    <None Include="resources\logo_sheet.png" />
+    <None Include="resources\dawn_logo.png" />
     <None Include="vendor\detours\LICENSE.md" />
     <None Include="vendor\imgui\LICENSE.txt" />
   </ItemGroup>
@@ -126,6 +126,8 @@
     <ClCompile Include="src\state\activity\beyond_infinity\controller.cpp"><ObjectFileName>$(IntDir)beyond_infinity_controller.obj</ObjectFileName></ClCompile>
     <ClCompile Include="src\state\activity\strike_pact\strike_pact_runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\state\activity\strike_pact\strike_pact_controller.cpp" />
+    <ClCompile Include="src\state\activity\strike_bond\controller.cpp"><ObjectFileName>$(IntDir)strike_bond_controller.obj</ObjectFileName></ClCompile>
+    <ClCompile Include="src\state\activity\strike_bond\runtime.cpp"><ObjectFileName>$(IntDir)strike_bond_runtime.obj</ObjectFileName><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\state\activity\deadly_trial\deadly_trial_controller.cpp" />
     <ClCompile Include="src\state\activity\deadly_trial\deadly_trial_runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\state\activity\coo\mission_script.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
@@ -1506,6 +1508,7 @@
     <ClInclude Include="src\state\activity\gateway\bindings.h" />
     <ClInclude Include="src\state\activity\strike_pact\bindings.h" />
     <None Include="scripts\strike_pact.lua" />
+    <None Include="scripts\strike_bond.lua" />
     <None Include="scripts\deadly_trial.lua" />
     <None Include="scripts\gateway.lua" />
     <None Include="scripts\deep_storage.lua" />

@@ -12,7 +12,7 @@ struct Selection {
 };
 
 /**
- * Draws the narrow module menu without retaining registry storage.
+ * Draws the wrapping horizontal page menu without retaining registry storage.
  * @param state Layout selection captured at frame start.
  * @return Copied module descriptor for the wide content panel.
  */

@@ -5,7 +5,7 @@
 IDR_DEFAULT_SETTINGS RCDATA "default_settings.json"
 IDR_IMGUI_LICENSE RCDATA "../vendor/imgui/LICENSE.txt"
 IDR_DETOURS_LICENSE RCDATA "../vendor/detours/LICENSE.md"
-IDR_LOGO_SHEET RCDATA "logo_sheet.png"
+IDR_LOGO_SHEET RCDATA "dawn_logo.png"
 
 VS_VERSION_INFO VERSIONINFO
 FILEVERSION SUNRISE_VER_MAJOR, SUNRISE_VER_MINOR, SUNRISE_VER_PATCH, SUNRISE_VER_BUILD
@@ -21,12 +21,12 @@ BEGIN
         // 0409 is US English and 04B0 is UTF-16, which is the pair the VarFileInfo block declares.
         BLOCK "040904B0"
         BEGIN
-            VALUE "FileDescription", "Sunrise"
+            VALUE "FileDescription", "Dawn v.01"
             VALUE "FileVersion", SUNRISE_VER_STRING
-            VALUE "InternalName", "Sunrise"
+            VALUE "InternalName", "Dawn"
             // The shipped file carries the name the game delay-imports, not the module's own.
             VALUE "OriginalFilename", "steam_api64.dll"
-            VALUE "ProductName", "Sunrise"
+            VALUE "ProductName", "Dawn"
             VALUE "ProductVersion", SUNRISE_VER_STRING
         END
     END

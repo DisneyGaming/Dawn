@@ -35,6 +35,7 @@ void observe_gateway_module(void* raw) noexcept {
     observe_beyond_object(raw);
     observe_deep_storage_object(raw);
     observe_hijacked_object(raw);
+    observe_strike_bond_object(raw);
     observe_gateway_object(raw);
     observe_trial_object(raw);
     namespace gateway=state::activity::gateway;

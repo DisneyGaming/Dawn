@@ -4,6 +4,7 @@
 
 #include "middleware/bap/activity_message/sensor_auth_update.h"
 #include "middleware/encoding/bit_reader.h"
+#include "state/activity/strike_bond/authority.h"
 
 namespace wire = sunrise::middleware::bap::activity_message::sensor_auth_update;
 namespace bits = sunrise::middleware::encoding::bits;
@@ -121,5 +122,34 @@ int main() {
     bits::Reader sceneReader(buffer);
     check(sceneReader.read(32, value) && value == 0x00B82771U,
         "The existing signed Scene selector must keep its wire bias");
-    std::puts("PASS: native clock transport, Tower Watch dialogue, directive, Scene and Omega isolation");
+    // Exercise the complete shared writer, not just the mission-local serializer.
+    namespace garden=sunrise::state::activity::strike_bond;
+    snapshot={};snapshot.strike_bond.enabled=true;snapshot.strike_bond.spawnGeneration=128;
+    for(const bool restricted:{true,false}) {
+        snapshot.strike_bond.restricted=restricted;
+        bits::Writer director(buffer);
+        check(wire::write_auth_body(director,snapshot,0x4786C0E0U,35,1,false) && director.bit_count()==359,
+            "Garden respawn director size and write paths agree");
+        bits::Reader state(buffer);check(state.read(1,value) && value==(restricted?1U:0U),"Garden restriction writes explicit on/off");
+        bits::Writer lifetime(buffer);
+        check(wire::write_auth_body(lifetime,snapshot,0x4786C0E0U,17,3,false),"Garden lifetime filter writes");
+        bits::Reader filter(buffer);check(filter.skip(72) && filter.read(32,value) && value==(restricted?0x80000011U:0x80000000U),
+            "Garden restriction targets authored Spire bubble 17");
+    }
+    for(const auto& golem:garden::kGolems) {
+        const auto lens=garden::kLenses[golem.lens].source;
+        auto& native=snapshot.strike_bond.native[garden::asset_index(lens)];native.managed=native.active=true;
+        bits::Writer effect(buffer);
+        check(wire::write_auth_body(effect,snapshot,golem.registry,26,golem.tether,false) && effect.bit_count()==186,
+            "native Garden shield body is routed through shared codec");
+        bits::Reader armed(buffer);check(armed.skip(1) && armed.read(1,value) && value==0,"live cube holds Minotaur shield");
+        snapshot.strike_bond.lensDestroyed.set(golem.lens);
+        bits::Writer off(buffer);
+        check(wire::write_auth_body(off,snapshot,golem.registry,26,golem.tether,false),"destroyed Garden cube updates effect");
+        bits::Reader disabled(buffer);check(disabled.skip(1) && disabled.read(1,value) && value==1,"real cube death disables only linked shield");
+        bits::Writer collection(buffer);
+        check(wire::write_auth_body(collection,snapshot,golem.registry,34,golem.collection,false) && collection.bit_count()==94,
+            "Garden collection selector is a separate native body");
+    }
+    std::puts("PASS: native clock transport, Tower Watch isolation, Garden shields and respawn protocol");
 }

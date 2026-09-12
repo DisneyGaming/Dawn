@@ -41,7 +41,7 @@ OUTPUT_DIRECTORY = {
 }
 PACKAGE_TESTS = {
     'adventure_tests', 'haunted_forest_launch_tests', 'haunted_forest_lifetime_tests',
-    'haunted_forest_mode_tests', 'mission_launch_tests', 'mission_launch_arguments_tests',
+    'haunted_forest_mode_tests', 'mission_launch_tests', 'mission_launch_lifecycle_tests', 'mission_launch_arguments_tests',
     'public_event_tests',
 }
 
@@ -298,7 +298,7 @@ def arguments(name, output_directory):
         return [str(prepare_scenario_cache()), str(output)]
     if name in PACKAGE_TESTS:
         folder = prepare()
-        if name == 'mission_launch_tests':
+        if name in {'mission_launch_tests', 'mission_launch_lifecycle_tests'}:
             return [str(folder / '81327CF0.bin')]
         if name == 'mission_launch_arguments_tests':
             return [str(folder / '81327CF0.bin'), str(folder / '81550015.bin')]
@@ -317,7 +317,7 @@ def arguments(name, output_directory):
             raise MissingEvidence(f'{name}: installed game font is unavailable: {font}')
         if name == 'mission_launch_ui_tests':
             return [str(font)]
-        return [str(prepare_metadata()), str(font), str(output), str(prepare() / '81550015.bin')]
+        return [str(prepare_metadata()), str(font), str(output)]
     return []
 
 

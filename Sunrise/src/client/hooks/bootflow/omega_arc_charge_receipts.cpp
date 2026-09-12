@@ -5,6 +5,8 @@
 #include <Windows.h>
 
 #include <array>
+#include <algorithm>
+#include <cmath>
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
@@ -25,6 +27,7 @@
 #include "../../../state/activity/hijacked/runtime.h"
 #include "../../../state/activity/hijacked/controller.h"
 #include "../../../state/activity/hijacked/plate_presentation.h"
+#include "../../../state/activity/strike_bond/runtime.h"
 #include "../../../state/activity/deep_storage/controller.h"
 #include "../../../state/activity/deep_storage/plate_presentation.h"
 #include "../../../state/activity/deep_storage/hologram_owner.h"
@@ -32,6 +35,7 @@
 #include "beyond_infinity_lens_damage.h"
 #include "deep_storage_lens_damage.h"
 #include "hijacked_boss_damage.h"
+#include "strike_bond_boss_damage.h"
 #include "../../../state/activity/gateway/runtime.h"
 #include "../../../state/activity/deadly_trial/runtime.h"
 #include "../../hooking/call_gate.h"
@@ -795,6 +799,8 @@ void after_trial_use(void* component,const TrialUse& before) noexcept {
 #include "beyond_infinity_object_receipts.inl"
 #include "deep_storage_object_receipts.inl"
 #include "hijacked_object_receipts.inl"
+#include "strike_bond_tethers.inl"
+#include "strike_bond_object_receipts.inl"
 #include "gateway_module_receipts.inl"
 #include "gateway_module_damage_hooks.inl"
 
@@ -896,7 +902,7 @@ __declspec(noinline) void __fastcall dunk_hook(void* component) noexcept {
 __declspec(noinline) bool __fastcall create_hook(void* component) noexcept {
     const hooking::CallGate::Scope scope{g_gate};
     const auto publicEvent=scope.accepts_side_effects()?public_event_deferred_placement_observer::begin(component):public_event_deferred_placement_observer::Context{};
-    const bool created = hooking::await_original(g_create)(component);
+    const bool created = garden_tether::create(component,hooking::await_original(g_create),scope.accepts_side_effects());
     if(scope.accepts_side_effects())static_cast<void>(public_event_deferred_placement_observer::finish(component,publicEvent,created));
     if (created && scope.accepts_side_effects()) {
         observe_gateway_module(component);

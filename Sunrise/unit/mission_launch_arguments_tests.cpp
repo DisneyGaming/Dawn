@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include "client/activity/mission_launch.h"
+#include "client/activity/campaign_openings.h"
 #include "client/activity/mission_launch_options.h"
 #include "core/logging/log.h"
 #include "middleware/content/packages/tables/activity_table.h"
@@ -12,7 +13,7 @@ namespace launch = sunrise::client::activity::mission_launch;
 namespace forced = sunrise::state::activity::forced;
 namespace build = sunrise::state::build_data;
 namespace tables = sunrise::middleware::content::packages::tables;
-unsigned g_checks{}, g_publishes{};
+unsigned g_checks{}, g_publishes{}, g_clears{};
 build::scenarios::Definition g_layout{};
 void check(bool value, const char* message) {
     ++g_checks; if (!value) { std::cerr << "FAIL: " << message << '\n'; std::exit(1); }
@@ -31,7 +32,11 @@ bool find_scenario_layout(std::string_view name, scenarios::Definition& output) 
 }
 bool find_spawn_sets(std::string_view, std::span<spawn_sets::NameHash>, std::size_t& count) noexcept { count = 0; return false; }
 }
+namespace sunrise::client::hooks::bootflow {
+bool prepare_mission_prelaunch(const sunrise::state::activity::forced::ForcedDestination&) noexcept { return true; }
+}
 namespace sunrise::state::activity::forced {
+void clear() noexcept { ++g_clears; }
 bool override_active() noexcept { return false; }
 void snapshot(ForcedDestination& value) noexcept { value = {}; }
 bool publish(const ForcedDestination&) noexcept { ++g_publishes; return true; }
@@ -121,5 +126,38 @@ int main(int argc, char** argv) {
     check(!ordinary.manual && ordinary.index == 648 && ordinary.destination.packageNameLength == 0,
         "ordinary request clears prior manual payload and retains exact variant identity");
     launch::poll();
+    namespace openings = launch::openings;
+    constexpr std::array<const char*, 9> packages{"mission_towerfall", "mission_abs", "adventure_ginger",
+        "adventure_vod", "adventure_whisk", "strike_pact", "adventure_rumba", "strike_bond", "mission_scot"};
+    constexpr std::array<unsigned, 9> bubblesExpected{9, 15, 51, 15, 4, 15, 13, 15, 15};
+    constexpr std::array<unsigned, 9> slicesExpected{72, 120, 408, 120, 32, 120, 104, 120, 120};
+    constexpr std::array<std::uint32_t, 9> spawnsExpected{0, 0x69F52B3E, 0x43954D08, 0x26B11B02,
+        0x3AE5AC33, 0x0E1523FE, 0x1BD69720, 0x0232EBCE, 0x4AB3287A};
+    for (std::size_t i = 0; i < packages.size(); ++i) {
+        check(launch::request_opening(i), "campaign opening queues through the installed donor");
+        const auto opening = launch::snapshot();
+        check(opening.opening && opening.manual && opening.busy && opening.index == 282
+            && launch::destination_name(opening.destination) == packages[i]
+            && opening.destination.bubble == bubblesExpected[i]
+            && opening.destination.sliceSet == slicesExpected[i]
+            && opening.destination.spawnSetHash == spawnsExpected[i]
+            && opening.destination.hasSpawnSetHash == (i != 0),
+            "every campaign button copies its exact opening and Chosen route");
+        check(!launch::request_opening((i + 1) % packages.size()),
+            "another mission cannot overwrite an in-flight opening");
+        check(g_clears == 0 && g_publishes == 0, "enqueue does not change an active override");
+        launch::poll();
+        check(launch::snapshot().status == launch::Status::nativeUnavailable
+            && g_clears == 0 && g_publishes == 0,
+            "failed native validation preserves the previous override for every opening");
+    }
+    check(!launch::request_opening(packages.size()), "unknown opening cannot queue");
+    check(!openings::resolve(0, {}).valid(), "empty donor catalog fails closed");
+    auto donor = activities[282];
+    activities[282].package[0] = 'x';
+    check(!openings::resolve(0, std::span(activities).first(count)).valid(), "wrong donor package fails closed");
+    activities[282] = donor;
+    activities[282].index = 299;
+    check(!openings::resolve(0, std::span(activities).first(count)).valid(), "wrong donor ordinal fails closed");
     std::cout << "PASS: " << g_checks << " installed-scenario/manual argument, dependent-membership, immutable request and native-unavailable checks\n";
 }

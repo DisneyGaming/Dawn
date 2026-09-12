@@ -32,6 +32,7 @@
 #include "../../../../state/activity/omega_ending.h"
 #include "../../../../state/activity/runtime.h"
 #include "../../../../state/activity/strike_pact/runtime.h"
+#include "../../../../state/activity/strike_bond/runtime.h"
 #include "../../../../state/activity/coo/native_player_trigger.h"
 #include "../../../../state/activity/omega/omega_progression.h"
 #include "../../../../state/build_data/scenarios/cue_graph_manifest_exporter.h"
@@ -592,6 +593,26 @@ void report_sense_update(Session& session, const service::Request& request) noex
             state::activity::strike_pact::observe_costs(object.registryKey, object.slotIndex, costs);
         }
     }
+    if (parsed && handleBound && session.activityPatchEpochSeen
+        && same_epoch(update.epoch, session.activityPatchEpoch)
+        && state::activity::strike_bond::native_run() != 0) {
+        for (std::size_t index = 0; index < update.objectCount; ++index) {
+            const service::sense_update::SenseObject& object = update.objects[index];
+            // Every squad delta is forwarded, not only the ones carrying a cost. The revision, the
+            // costs and the initialized latch each arrive in their own report, and the strike
+            // merges them; dropping a report because it restates only one of the three loses it.
+            if (!object.hasSquadOutput) { continue; }
+            state::activity::coo::TaskCosts costs{};
+            costs.mask = object.squadOutput.costMask;
+            costs.revision = object.squadOutput.revision;
+            costs.hasRevision = object.squadOutput.hasRevision;
+            costs.initialized = object.squadOutput.initialized;
+            for (std::size_t group = 0; group < costs.cost.size(); ++group) {
+                costs.cost[group] = object.squadOutput.cost[group];
+            }
+            state::activity::strike_bond::observe_costs(object.registryKey, object.slotIndex, costs);
+        }
+    }
     const bool omegaSelected = handleBound && omega_destination(session.activity.instance);
     const bool towerfallSelected = handleBound
                                    && towerfall_destination(session.activity.instance);
@@ -622,6 +643,28 @@ void report_sense_update(Session& session, const service::Request& request) noex
                 }
                 if(object.slotType==2 && object.hasCombatantOutput) {
                     state::activity::strike_pact::observe_combatant(run,object.registryKey,
+                        object.slotIndex,object.combatantOutput);
+                }
+            }
+        }
+    }
+    if(handleBound && epochBound) {
+        const auto run=state::activity::strike_bond::native_run();
+        if(run!=0) {
+            for(std::size_t index=0;index<update.objectCount;++index) {
+                const auto& object=update.objects[index];
+                if(object.slotType==37 && object.hasForestGeneratorState) {
+                    state::activity::strike_bond::observe_generator(run,object.registryKey,object.slotIndex,
+                        object.forestSeed,object.forestActive32);
+                }
+                if(object.slotType==43 && object.hasSceneOutput) {
+                    state::activity::strike_bond::observe_scene(run,object.registryKey,object.slotIndex,object.sceneOutput);
+                }
+                if(object.slotType==1 && object.hasSquadOutput) {
+                    state::activity::strike_bond::observe_squad(run,object.registryKey,object.slotIndex,object.squadOutput);
+                }
+                if(object.slotType==2 && object.hasCombatantOutput) {
+                    state::activity::strike_bond::observe_combatant(run,object.registryKey,
                         object.slotIndex,object.combatantOutput);
                 }
             }
@@ -1084,6 +1127,15 @@ void report_incident(const service::Request& request,bool liveBinding) noexcept 
         player_trigger::Receipt receipt{};
         if(run!=0 && player_trigger::decode(std::span(parsed.payload).first(parsed.payloadLength),receipt)) {
             state::activity::strike_pact::observe_player_trigger(run,receipt.registry,
+                static_cast<std::uint16_t>(receipt.slot));
+        }
+    }
+    if(liveBinding && verdict==incident::Verdict::accepted && parsed.hasPayload
+        && parsed.primaryTarget==player_trigger::kIncident) {
+        const auto run=state::activity::strike_bond::native_run();
+        player_trigger::Receipt receipt{};
+        if(run!=0 && player_trigger::decode(std::span(parsed.payload).first(parsed.payloadLength),receipt)) {
+            state::activity::strike_bond::observe_player_trigger(run,receipt.registry,
                 static_cast<std::uint16_t>(receipt.slot));
         }
     }

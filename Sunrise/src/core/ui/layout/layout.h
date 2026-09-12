@@ -21,7 +21,7 @@ struct StateSnapshot {
 [[nodiscard]] bool initialize() noexcept;
 
 /**
- * Draws the centered Sunrise surface inside the caller's active Dear ImGui frame.
+ * Draws the centered Dawn surface inside the caller's active Dear ImGui frame.
  * The surface opens and closes over a short transition, so a hidden frame still draws until it
  * has finished closing.
  * @param visible Current Core visibility state, which is the transition target.

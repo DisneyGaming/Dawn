@@ -6,6 +6,7 @@
 #include "../../../../../state/activity/hijacked/runtime.h"
 #include "../../../../../state/activity/beyond_infinity/transit.h"
 #include "../../../../../state/activity/strike_pact/runtime.h"
+#include "../../../../../state/activity/strike_bond/runtime.h"
 #include "../../../../../state/activity/coo/omega_opening_projection.h"
 #include "../../../../../state/activity/runtime.h"
 #include "../../../../../state/activity/native_population_events.h"
@@ -263,6 +264,7 @@ bool consume_activity_keepalive(Session& session,
                 || state::activity::deadly_trial::publication_due(now)
                 || state::activity::beyond_infinity::publication_due(now)
                 || state::activity::deep_storage::publication_due(now)
+                || state::activity::strike_bond::publication_due(now)
                 || state::activity::strike_pact::publication_due(now)
                 || state::activity::hijacked::publication_due(now)));
     if (session.activity.joinedForeignSession) {

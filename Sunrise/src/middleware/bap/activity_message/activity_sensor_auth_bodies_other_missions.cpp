@@ -7,6 +7,7 @@
 #include "../../../state/activity/beyond_infinity/forest_selection.h"
 #include "../../../state/activity/deadly_trial/authority.h"
 #include "../../../state/activity/strike_pact/authority.h"
+#include "../../../state/activity/strike_bond/authority.h"
 
 #include "sensor_auth_update.h"
 #include "../../../state/activity/omega/omega_progression.h"
@@ -132,6 +133,7 @@ constexpr std::size_t kOmegaLifetimeBits = kLifetimeBits + encounters::kSwitchBi
 static_assert(kOmegaLifetimeBits == 617);
 /** Select the mission's typed population inputs before its generator creates encounters. */
 [[nodiscard]] std::size_t forest_switch_count(const Snapshot& snapshot) noexcept {
+    if(snapshot.strike_bond.enabled) { return std::size(state::activity::strike_bond::kForestHashSwitches); }
     return snapshot.strike_pact.services
         ? state::activity::strike_pact::kForestHashSwitches.size()
         : (snapshot.omegaForestVexEncounters ? 1U : 0U);
@@ -228,7 +230,12 @@ constexpr std::size_t kSpawnKeyCount = 32;
                    && writer.write(state::activity::beyond_infinity::forest::selected(snapshot.beyond_infinity) ? 3U : 1U + forest_switch_count(snapshot), 6)
                    && writer.write(kWaitingSwitchKey, 32) && writer.write(1, kPresenceWidth)
                    && writer.write(kWaitingSwitchClass, 32) && writer.write(kSignedZero, 32);
-    if (snapshot.strike_pact.services) {
+    if (snapshot.strike_bond.enabled) {
+        for (const auto& row : state::activity::strike_bond::kForestHashSwitches) {
+            encoded = encoded && writer.write(row.key,32) && writer.write(1,1)
+                && writer.write(encounters::kHashClass,32) && writer.write(row.value,32);
+        }
+    } else if (snapshot.strike_pact.services) {
         for (const auto& row : state::activity::strike_pact::kForestHashSwitches) {
             encoded = encoded && writer.write(row.key,32) && writer.write(1,1)
                 && writer.write(encounters::kHashClass,32) && writer.write(row.value,32);
@@ -284,7 +291,7 @@ write_shared_mission_state(bits::Writer& writer, bool active) noexcept {
     if(missionOwned) {
         // Constructed 808099BF state: no countdown, with an explicit on/off
         // level. The lifetime filter uses each mission's scenario bubble ordinal.
-        return writer.write((snapshot.hijacked.enabled?snapshot.hijacked.restricted:snapshot.deep_storage.enabled?snapshot.deep_storage.restricted:snapshot.omegaMission.restriction)?1U:0U,1) && writer.write(0,1)
+        return writer.write((snapshot.strike_bond.enabled?snapshot.strike_bond.restricted:snapshot.hijacked.enabled?snapshot.hijacked.restricted:snapshot.deep_storage.enabled?snapshot.deep_storage.restricted:snapshot.omegaMission.restriction)?1U:0U,1) && writer.write(0,1)
             && writer.write(1,2) && writer.write(0,2) && writer.write(0,1)
             && writer.write(0,64) && writer.write(0x134F00C00000ULL,64)
             && writer.write(0,64) && writer.write(0,64) && writer.write(UINT64_MAX,64)
@@ -754,6 +761,7 @@ legacy_auth_body_bits(const Snapshot& snapshot,
     if(const auto count=state::activity::gateway::body_bits(snapshot.gateway,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::beyond_infinity::body_bits(snapshot.beyond_infinity,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::deep_storage::body_bits(snapshot.deep_storage,key,slotType,slotIndex)) { return count; }
+    if(const auto count=state::activity::strike_bond::body_bits(snapshot.strike_bond,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::strike_pact::body_bits(snapshot.strike_pact,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::hijacked::body_bits(snapshot.hijacked,key,slotType,slotIndex)) { return count; }
     if(const auto* request=native::engagement::find(snapshot.engagements,key,slotType,slotIndex)) return native::engagement::body_bits(*request);
@@ -837,7 +845,7 @@ legacy_auth_body_bits(const Snapshot& snapshot,
                    : 0;
     }
     if (slotType == kSlotTypeLifetime) {
-        if(snapshot.strike_pact.services) { return kLifetimeBits + forest_switch_count(snapshot) * encounters::kSwitchBits; }
+        if(snapshot.strike_pact.services || snapshot.strike_bond.enabled) { return kLifetimeBits + forest_switch_count(snapshot) * encounters::kSwitchBits; }
         return state::activity::beyond_infinity::forest::selected(snapshot.beyond_infinity)
             ? kLifetimeBits+2*state::activity::beyond_infinity::forest::kSwitchBits
             : snapshot.omegaForestVexEncounters ? kOmegaLifetimeBits : kLifetimeBits;
@@ -850,7 +858,7 @@ legacy_auth_body_bits(const Snapshot& snapshot,
     }
     if (slotType == kSlotTypeMissionDirector && kInitializeMissionDirector
         && (snapshot.initializeMissionAuthorityRuntime
-            || ((snapshot.omegaMission.generation || snapshot.deep_storage.enabled || snapshot.hijacked.enabled) && key==0x4786C0E0U && slotIndex==1)
+            || ((snapshot.omegaMission.generation || snapshot.deep_storage.enabled || snapshot.hijacked.enabled || snapshot.strike_bond.enabled) && key==0x4786C0E0U && slotIndex==1)
             || snapshot.publishOmegaOpeningTransition
             || snapshot.publishAuthoredCueTransition)) {
         return kMissionDirectorBits;
@@ -897,6 +905,9 @@ bool legacy_write_auth_body(bits::Writer& writer,
     }
     if(state::activity::gateway::body_bits(snapshot.gateway,key,slotType,slotIndex)) {
         return state::activity::gateway::write_body(writer,snapshot.gateway,key,slotType,slotIndex);
+    }
+    if(state::activity::strike_bond::body_bits(snapshot.strike_bond,key,slotType,slotIndex)) {
+        return state::activity::strike_bond::write_body(writer,snapshot.strike_bond,key,slotType,slotIndex);
     }
     if(state::activity::strike_pact::body_bits(snapshot.strike_pact,key,slotType,slotIndex)) {
         return state::activity::strike_pact::write_body(writer,snapshot.strike_pact,key,slotType,slotIndex);
@@ -978,7 +989,7 @@ bool legacy_write_auth_body(bits::Writer& writer,
         encoded = write_participation(writer, snapshot);
     } else if (slotType == kSlotTypeLifetime) {
         encoded = write_lifetime(writer, snapshot,key==0x4786C0E0U && slotIndex==3
-            ?(snapshot.hijacked.enabled && snapshot.hijacked.restricted?40U:snapshot.deep_storage.enabled && snapshot.deep_storage.restricted?19U:
+            ?(snapshot.strike_bond.enabled && snapshot.strike_bond.restricted?17U:snapshot.hijacked.enabled && snapshot.hijacked.restricted?40U:snapshot.deep_storage.enabled && snapshot.deep_storage.restricted?19U:
               snapshot.omegaMission.generation && snapshot.omegaMission.restriction?14U:0U):0U,
             key==0x4786C0E0U && slotIndex==3 ? snapshot.lifetimeScenarioOrdinal : std::nullopt);
     } else if (slotType == kSlotTypeActivityScript && kInitializeActivityScript
@@ -988,10 +999,10 @@ bool legacy_write_auth_body(bits::Writer& writer,
         encoded = write_activity_script(writer, snapshot);
     } else if (slotType == kSlotTypeMissionDirector && kInitializeMissionDirector
                && (snapshot.initializeMissionAuthorityRuntime
-                   || ((snapshot.omegaMission.generation || snapshot.deep_storage.enabled || snapshot.hijacked.enabled) && key==0x4786C0E0U && slotIndex==1)
+                   || ((snapshot.omegaMission.generation || snapshot.deep_storage.enabled || snapshot.hijacked.enabled || snapshot.strike_bond.enabled) && key==0x4786C0E0U && slotIndex==1)
                    || snapshot.publishOmegaOpeningTransition
                    || snapshot.publishAuthoredCueTransition)) {
-        encoded = write_mission_director(writer, snapshot,(snapshot.omegaMission.generation || snapshot.deep_storage.enabled || snapshot.hijacked.enabled)
+        encoded = write_mission_director(writer, snapshot,(snapshot.omegaMission.generation || snapshot.deep_storage.enabled || snapshot.hijacked.enabled || snapshot.strike_bond.enabled)
             && key==0x4786C0E0U && slotIndex==1);
     } else if (slotType == kSlotTypeConfiguration) {
         // Both optional arrays absent and the terminal tag clear is the constructed state.

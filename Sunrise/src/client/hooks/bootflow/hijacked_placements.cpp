@@ -1,5 +1,6 @@
 #include <Windows.h>
 #include "hijacked_placements.h"
+#include "omega_enemy_lair_receipts.h"
 #include "native_hook_ownership.h"
 #include "ambient_population_named_observer.h"
 #include "gateway_native_read.h"
@@ -290,6 +291,7 @@ __declspec(noinline) void __fastcall retire_source(std::uintptr_t address) noexc
                 break;
             }
         }
+        retire_strike_bond_boss(address,retirement_allocator_ready());
         // Every path forwards native retirement, including missing TLS and
         // unrelated sources. Keep reentrant cleanup disabled across this call.
         fn(address);return;

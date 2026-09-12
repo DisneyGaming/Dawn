@@ -1,5 +1,8 @@
 #include "mission_launch.h"
 #include "mission_launch_options.h"
+#include "campaign_openings.h"
+#include "../hooks/bootflow/mission_prelaunch.h"
+#include "mission_launch_testing.h"
 #include <Windows.h>
 #include <array>
 #include <cstring>
@@ -37,21 +40,36 @@ template<class T> bool read(std::uintptr_t address, T& value) noexcept {
 }
 template<class F> F resolve(std::uintptr_t base, std::uintptr_t rva,
                             std::array<unsigned char, 8> expected) noexcept {
+#if defined(SUNRISE_MISSION_LAUNCH_TESTS)
+    (void)base; (void)expected;
+    return reinterpret_cast<F>(testing::native_entry(rva));
+#else
     std::array<unsigned char, 8> actual{};
     return read(base + rva, actual) && actual == expected ? reinterpret_cast<F>(base + rva) : nullptr;
+#endif
+}
+std::uint64_t now() noexcept {
+#if defined(SUNRISE_MISSION_LAUNCH_TESTS)
+    return testing::now();
+#else
+    return GetTickCount64();
+#endif
 }
 void finish(Status status) noexcept {
     AcquireSRWLockExclusive(&g_lock);
+    if (g_state.status == status) { ReleaseSRWLockExclusive(&g_lock); return; }
     g_state.status = status;
-    g_state.busy = status == Status::queued;
+    g_state.busy = status == Status::queued || status == Status::preparing;
     const auto state = g_state;
     ReleaseSRWLockExclusive(&g_lock);
     std::array<char, 512> line{};
     const int size = state.manual ? std::snprintf(line.data(), line.size(),
-        "ev=mission_launch activity=%u manual=1 destination=%.*s bubble=%u slice=%u spawn=%08X status=%u detail=%s",
+        "ev=mission_launch activity=%u manual=1 destination=%.*s bubble=%u slice=%u spawn=%08X current_destination=%.*s current_activity=%d in_mission=%u status=%u detail=%s",
         state.index, static_cast<int>(destination_name(state.destination).size()), state.destination.packageName.data(),
         state.destination.bubble, state.destination.sliceSet,
         state.destination.hasSpawnSetHash ? state.destination.spawnSetHash : forced::kAbsentSpawnSetHash,
+        static_cast<int>(state.currentPackageLength), state.currentPackage.data(),
+        static_cast<int>(state.currentIndex), static_cast<unsigned>(state.inMission),
         static_cast<unsigned>(status), description(status))
         : std::snprintf(line.data(), line.size(), "ev=mission_launch activity=%u status=%u detail=%s", state.index,
             static_cast<unsigned>(status), description(status));
@@ -69,53 +87,78 @@ Snapshot snapshot() noexcept {
 }
 bool request(std::uint16_t index) noexcept {
     AcquireSRWLockExclusive(&g_lock);
-    if (g_state.busy) { ReleaseSRWLockExclusive(&g_lock); return false; }
+    if (g_state.busy || g_state.inMission) { ReleaseSRWLockExclusive(&g_lock); return false; }
     g_state = {Status::requested, index, true};
-    g_requestedAt = GetTickCount64();
+    g_requestedAt = now();
     ReleaseSRWLockExclusive(&g_lock);
     return true;
 }
 bool request_manual(std::uint16_t index, const forced::ForcedDestination& destination) noexcept {
     AcquireSRWLockExclusive(&g_lock);
-    if (g_state.busy) { ReleaseSRWLockExclusive(&g_lock); return false; }
+    if (g_state.busy || g_state.inMission) { ReleaseSRWLockExclusive(&g_lock); return false; }
     g_state = {Status::requested, index, true, true, destination};
-    g_requestedAt = GetTickCount64();
+    g_requestedAt = now();
+    ReleaseSRWLockExclusive(&g_lock);
+    return true;
+}
+bool request_opening(std::size_t mission) noexcept {
+    const auto route = openings::resolve(mission, state::build_data::activities::entries());
+    if (!route.valid()) { return false; }
+    AcquireSRWLockExclusive(&g_lock);
+    if (g_state.busy || g_state.inMission) { ReleaseSRWLockExclusive(&g_lock); return false; }
+    g_state = {Status::requested, route.transport, true, true, route.destination, true};
+    g_requestedAt = now();
     ReleaseSRWLockExclusive(&g_lock);
     return true;
 }
 void poll() noexcept {
     const auto state = snapshot();
-    if (!state.busy) { return; }
     // Requests are immutable until this owner completes them; the timestamp follows that lock.
     AcquireSRWLockShared(&g_lock);
     const auto started = g_requestedAt;
     ReleaseSRWLockShared(&g_lock);
     const auto base = reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
     const auto step = resolve<Step>(base, 0xE2D510, {0x48,0x83,0xEC,0x28,0xE8,0x07,0x83,0x00});
+    const auto currentStep = step ? step() : -1;
+    const auto sessionId = state::activity::newest_joined_session();
+    state::activity::destination::DestinationSelection actual{};
+    const bool inMission = currentStep == 38 && sessionId != 0
+        && state::activity::destination::snapshot(sessionId, actual)
+        && actual.packageNameLength > 0 && actual.packageNameLength < actual.packageName.size();
+    // Presence follows the loaded world, even after a request finishes or a Director launch.
+    AcquireSRWLockExclusive(&g_lock);
+    g_state.inMission = inMission;
+    g_state.currentIndex = inMission ? actual.activityIndex : -1;
+    g_state.currentPackage.fill(0);
+    g_state.currentPackageLength = inMission ? actual.packageNameLength : 0;
+    if (inMission) {
+        std::memcpy(g_state.currentPackage.data(), actual.packageName.data(), actual.packageNameLength);
+    }
+    if (!g_state.busy && currentStep == 29
+        && (g_state.status == Status::arrived || g_state.status == Status::unexpectedDestination)) {
+        g_state.status = Status::idle;
+    }
+    ReleaseSRWLockExclusive(&g_lock);
+    if (!state.busy) { return; }
     if (!step) { finish(Status::nativeUnavailable); return; }
-    const auto currentStep = step();
     const auto rows = state::build_data::activities::entries();
     if (state.status == Status::queued) {
         g_leftOrbit = g_leftOrbit || currentStep != 29;
-        const auto session = state::activity::newest_joined_session();
-        state::activity::destination::DestinationSelection destination{};
-        if (g_leftOrbit && currentStep == 38 && session != 0 && session != g_previousSession
-            && state.index < rows.size()
-            && state::activity::destination::snapshot(session, destination)
-            && (state.manual || destination.activityIndex == static_cast<std::int16_t>(state.index))
-            && destination.packageNameLength == (state.manual ? destination_name(state.destination) : rows[state.index].name()).size()
-            && std::memcmp(destination.packageName.data(), state.manual ? state.destination.packageName.data() : rows[state.index].package.data(),
-                destination.packageNameLength) == 0
-            && (!state.manual || ((!state.destination.hasBubble || (destination.hasArrivalBubbleOverride
-                && destination.arrivalBubbleOverride == state.destination.bubble))
-                && (!state.destination.hasSliceSet || (destination.hasSliceSetOverride
-                    && destination.sliceSetOverride == state.destination.sliceSet))
-                && (!state.destination.hasBubble || (destination.hasSpawnSetOverride
-                    && destination.spawnSetOverride == (state.destination.hasSpawnSetHash
-                        ? state.destination.spawnSetHash : forced::kAbsentSpawnSetHash)))))) {
-            finish(Status::arrived); return;
+        if (g_leftOrbit && inMission && sessionId != g_previousSession && state.index < rows.size()) {
+            const auto expectedName = state.manual ? destination_name(state.destination) : rows[state.index].name();
+            const bool matches = (state.manual || actual.activityIndex == static_cast<std::int16_t>(state.index))
+                && actual.packageNameLength == expectedName.size()
+                && std::memcmp(actual.packageName.data(), expectedName.data(), expectedName.size()) == 0
+                && (!state.manual || ((!state.destination.hasBubble || (actual.hasArrivalBubbleOverride
+                    && actual.arrivalBubbleOverride == state.destination.bubble))
+                    && (!state.destination.hasSliceSet || (actual.hasSliceSetOverride
+                        && actual.sliceSetOverride == state.destination.sliceSet))
+                    && (!state.destination.hasBubble || (actual.hasSpawnSetOverride
+                        && actual.spawnSetOverride == (state.destination.hasSpawnSetHash
+                            ? state.destination.spawnSetHash : forced::kAbsentSpawnSetHash)))));
+            finish(matches ? Status::arrived : Status::unexpectedDestination); return;
         }
-        if (GetTickCount64() - started > 120000) { finish(Status::timedOut); }
+        if (now() - started > 120000) { finish(Status::timedOut); }
         return;
     }
     if (rows.empty()) { finish(Status::catalogUnavailable); return; }
@@ -185,10 +228,19 @@ void poll() noexcept {
     std::memcpy(&destination, selection.data() + 4, sizeof(destination));
     if (source != index || destination != index || selection[0] != std::byte{}
         || !valid(selection.data())) { finish(Status::descriptorRejected); return; }
+    // The native manager installs these hooks asynchronously. Never submit the donor first:
+    // its selection publication can finish before the next manager update installs the redirect.
+    if (state.manual && !hooks::bootflow::prepare_mission_prelaunch(state.destination)) {
+        finish(now() - started > 10000 ? Status::prelaunchUnavailable : Status::preparing);
+        return;
+    }
     g_previousSession = state::activity::newest_joined_session();
     g_leftOrbit = false;
     // Reuse the standalone override service only after all native readiness/descriptor checks.
     // It retains its existing persistent effect and Homecoming/Chosen activation semantics.
+    // Re-arm a replay only after validation and native readiness checks have succeeded.
+    // Rejected requests must leave the existing override untouched.
+    if (state.opening) { forced::clear(); }
     if (state.manual && !forced::publish(state.destination)) { finish(Status::manualRejected); return; }
     clear();
     select(0, selection.data());
@@ -200,7 +252,10 @@ const char* description(Status status) noexcept {
     case Status::idle: return "Choose an activity, return to orbit, then launch.";
     case Status::requested: return "Checking the native launch request...";
     case Status::queued: return "Submitted to the Director. Waiting for the native activity transition.";
-    case Status::arrived: return "Native activity arrival confirmed.";
+    case Status::arrived: return "In mission.";
+    case Status::preparing: return "Preparing the mission opening...";
+    case Status::prelaunchUnavailable: return "The mission opening could not be prepared. Wait in orbit and try again.";
+    case Status::unexpectedDestination: return "The selected opening did not load. Return to orbit and try again.";
     case Status::catalogUnavailable: return "Activity catalog is still being extracted.";
     case Status::entryUnavailable: return "This entry has no available direct-launch scenario.";
     case Status::overrideActive: return "An Activity override is active. Disable it before launching this selection.";
@@ -209,7 +264,7 @@ const char* description(Status status) noexcept {
     case Status::notReady: return "The fireteam is not ready to launch. Wait in orbit and try again.";
     case Status::descriptorRejected: return "The native client rejected this activity selection.";
     case Status::timedOut: return "No arrival confirmation was received. Check the Director before retrying.";
-    case Status::manualRejected: return "The manual destination, bubble, slice, spawn or native launch route is no longer valid. Review the selection.";
+    case Status::manualRejected: return "This mission opening is unavailable in the installed content. Check the activity selection.";
     }
     return "Launch status unavailable.";
 }
