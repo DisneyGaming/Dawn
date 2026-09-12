@@ -10,6 +10,7 @@ struct Run {
     m::State state;
     std::uint32_t identity{0x12342010};
     unsigned admissions{},deaths{};
+    std::uint32_t previousReturnEntity{UINT32_MAX};
     explicit Run(bool prepare=true) {
         check(state.bind(boss),"bind accepted physical boss");
         check(state.bind(boss),"duplicate bind preserves state");
@@ -21,7 +22,11 @@ struct Run {
     m::Token claim(m::Action action) {
         auto command=state.snapshot().command;
         check(command.action==action,"documented action order");
-        check(state.claim(command.token,action),"claim exact command");
+        if(action==m::Action::left || action==m::Action::right) {
+            check(state.prepare_arm(command.token),"native arm readiness schedules authority");
+            check(!state.animation(command.token,m::Animation::started),"pending high authority cannot start wave");
+            check(state.arm_applied(command.token,state.snapshot().arm.revision),"qualified native high control receipt");
+        } else check(state.claim(command.token,action),"claim exact command");
         check(!state.claim(command.token,action),"command cannot be claimed twice");
         auto stale=command.token; ++stale.epoch;
         check(!state.animation(stale,m::Animation::started),"foreign epoch cannot start native action");
@@ -54,13 +59,18 @@ struct Run {
     }
     void wave(unsigned index,m::Action action,bool early) {
         check(state.snapshot().command.wave==index,"documented wave order");
+        const bool nativeArm=action==m::Action::left || action==m::Action::right;
         const auto token=claim(action);
         check(!state.animation(token,m::Animation::finished),"finish before actual summon start rejected");
         check(state.animation(token,m::Animation::started),"native summon starts budget");
         check(!state.animation(token,m::Animation::started),"duplicate start cannot repeat requests");
         auto admitted=actors(index);
         if(early) kill(admitted);
-        check(state.animation(token,m::Animation::finished),"native summon completion accepted");
+        if(nativeArm) {
+            check(state.release_arm(token),"native wrap requests low authority");
+            check(!state.animation(token,m::Animation::finished),"wave waits for actual native low receipt");
+            check(state.arm_applied(token,state.snapshot().arm.revision),"qualified native low receipt finishes summon");
+        } else check(state.animation(token,m::Animation::finished),"native summon completion accepted");
         if(!early) kill(admitted);
     }
     void depart(std::uint8_t destination,bool earlyArrival) {
@@ -72,7 +82,7 @@ struct Run {
         if(!earlyArrival) check(state.arrival(token,destination,0x12),"actual arrival after departure accepted");
         check(!state.arrival(token,destination,0x12),"old arrival cannot replay next stage");
     }
-    void mechanic(unsigned cycle,bool earlyHealth,bool earlyRescue) {
+    void mechanic(unsigned cycle,bool earlyHealth,bool earlyRescue,unsigned launcherOrder) {
         auto token=claim(m::Action::deletion);
         const std::uint16_t scene=cycle==1?9:cycle==2?27:46;
         check(!state.rescue_ready(token,scene),"rescue needs issued native Scene");check(!state.rescue_started(token,scene),"arrival needs issued Scene");
@@ -111,9 +121,39 @@ struct Run {
         if(!earlyHealth) check(state.health(token,m::Health::eyeCrossed),"qualified eye crossing");
         token=claim(cycle==3?m::Action::finalDeath:m::Action::recover);
         const auto health=cycle==3?m::Health::dead:m::Health::bodyCheckpoint;
-        if(earlyHealth) check(state.health(token,health),"early native health receipt retained");
-        check(state.animation(token,m::Animation::finished),"actual recovery/death animation finished");
-        if(!earlyHealth) check(state.health(token,health),"native health receipt after animation accepted");
+        if(cycle==3) {
+            if(earlyHealth) check(state.health(token,health),"early native health receipt retained");
+            check(state.animation(token,m::Animation::finished),"actual recovery/death animation finished");
+            if(!earlyHealth) check(state.health(token,health),"native health receipt after animation accepted");
+            return;
+        }
+        // Recovery now joins three independently qualified callbacks: animation,
+        // health checkpoint and the newly created return launcher (source slot30).
+        // Exercise every ordering without treating publication as creation.
+        const auto generation=state.snapshot().generation+2U*cycle-1U;
+        const auto launcherSource=++identity,launcherEntity=++identity;
+        auto stale=token;++stale.epoch;
+        check(!state.eye_object(stale,30,generation,launcherSource,launcherEntity),"foreign recovery epoch cannot acknowledge launcher");
+        check(!state.eye_object(token,30,generation+1,launcherSource,launcherEntity),"wrong launcher generation cannot release recovery");
+        check(!state.eye_object(token,30,generation,UINT32_MAX,launcherEntity),"missing native source cannot acknowledge launcher");
+        if(previousReturnEntity!=UINT32_MAX)
+            check(!state.eye_object(token,30,generation,launcherSource,previousReturnEntity),"prior cycle entity cannot acknowledge replacement launcher");
+        unsigned delivered{};
+        for(unsigned index=0;index<3;++index) {
+            if(index==launcherOrder) {
+                check(state.eye_object(token,30,generation,launcherSource,launcherEntity),"qualified native return launcher creation accepted");
+                check(!state.eye_object(token,30,generation,launcherSource,launcherEntity),"return launcher receipt consumed once");
+                previousReturnEntity=launcherEntity;
+            } else {
+                const bool first=delivered++==0;
+                if(first==earlyHealth) check(state.health(token,health),"qualified native health checkpoint accepted");
+                else check(state.animation(token,m::Animation::finished),"actual native recovery animation finished");
+            }
+            if(index<2) check(state.snapshot().phase==m::Phase::recovery,"recovery waits for every native prerequisite");
+        }
+        check(state.snapshot().phase==m::Phase::summon && state.snapshot().command.wave==(cycle==1?8:11),
+            "all three native receipts release the next authored wave");
+
     }
 };
 void full_route(unsigned order) {
@@ -128,18 +168,19 @@ void full_route(unsigned order) {
     run.wave(4,m::Action::left,order&1); run.depart(4,!(order&2));
     check(run.state.snapshot().cannons==15 && run.state.snapshot().restriction,"Crown arrival enables fourth cannon/restriction");
     run.wave(5,m::Action::startCycle,order&1); run.wave(6,m::Action::left,order&1); run.wave(7,m::Action::right,order&1);
-    run.mechanic(1,order&4,order&8);
+    run.mechanic(1,order&4,order&8,order%3);
     run.wave(8,m::Action::startCycle,order&1); run.wave(9,m::Action::left,order&1); run.wave(10,m::Action::right,order&1);
-    run.mechanic(2,!(order&4),!(order&8));
+    run.mechanic(2,!(order&4),!(order&8),(order+1)%3);
     auto token=run.claim(m::Action::left);
     check(run.state.animation(token,m::Animation::started),"escape starts from native summon");
     const auto escape=run.actors(11);
-    check(run.state.animation(token,m::Animation::finished),"living escape permits departure");
+    check(run.state.release_arm(token),"escape native clip wrap requests low control");
+    check(run.state.arm_applied(token,run.state.snapshot().arm.revision),"living escape permits departure after native low receipt");
     check(!run.state.snapshot().restriction,"second recovery releases restriction");
     run.depart(5,order&2);
     check(run.state.snapshot().restriction,"actual final arrival restores restriction");
     run.wave(12,m::Action::startCycle,order&1); run.wave(13,m::Action::left,order&1); run.wave(14,m::Action::right,order&1);
-    run.mechanic(3,order&4,order&8);
+    run.mechanic(3,order&4,order&8,0);
     token=run.claim(m::Action::ending);
     check(!run.state.ending(token,true),"missing cinematic cannot mean completion");
     check(run.state.ending(token,false),"native ending start accepted");

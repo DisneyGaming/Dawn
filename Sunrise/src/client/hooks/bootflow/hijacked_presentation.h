@@ -15,20 +15,5 @@ inline bool source(std::span<const std::byte> b,bool dialogue) noexcept {
         && read<std::uint32_t>(b,0x4C)==(dialogue?0x80804F4BU:0x80804F53U)
         && read<std::int64_t>(b,0x50)==0;
 }
-// Same requested data as the native wire body. The processed-generation array is untouched.
-inline bool dialogue_records(std::span<std::byte> b,const mission::Frame& f) noexcept {
-    if(!f.enabled || !f.spawnGeneration || f.activeRow>=f.generations.size()
-        || b.size()<0x188+f.generations.size()*32 || !source(b,true)) { return false; }
-    const auto row=f.activeRow;const auto generation=f.generations[row];
-    if(!generation) { return false; }
-    const auto o=0x188+row*32;
-    if(read<std::uint32_t>(b,o+24)==generation && read<std::uint8_t>(b,o+28)==2
-        && read<std::uint64_t>(b,o+8)==1) { return false; }
-    put(b,o,UINT64_MAX);put<std::uint64_t>(b,o+8,1);
-    put(b,o+16,UINT64_C(0xFFFF00FF811C9DC5));put(b,o+24,generation);
-    put<std::uint8_t>(b,o+28,2);return true;
-}
-using Build=void(__fastcall*)(void*,std::uint32_t) noexcept;
-void update_directive(void*,Build) noexcept;
-void update_dialogue(std::byte*) noexcept;
+void observe_directive(void*) noexcept;
 }

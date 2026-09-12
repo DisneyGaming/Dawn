@@ -18,7 +18,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <PropertyGroup>
-    <OutDir>$(ProjectDir)..\..\build\unit\omega_lair_start\$(Configuration)\</OutDir><IntDir>$(OutDir)obj\</IntDir>
+    <OutDir>$(ProjectDir)..\..\build\unit\omega_ending_tests\$(Configuration)\</OutDir><IntDir>$(OutDir)obj\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -38,6 +38,9 @@
     <ClCompile Include="..\src\state\activity\omega\omega_lair_start.cpp" />
     <ClCompile Include="..\src\middleware\bap\activity_message\activity_sensor_auth_blocks.cpp" />
     <ClCompile Include="..\src\middleware\bap\activity_message\activity_sensor_auth_blocks_other_missions.cpp" />
+    <ClCompile Include="..\src\middleware\bap\activity_message\activity_sensor_auth_bodies_other_missions.cpp" />
+    <ClCompile Include="..\src\state\activity\deep_storage\mechanism_bindings.cpp"><ObjectFileName>$(IntDir)deep_storage_mechanism_bindings.obj</ObjectFileName></ClCompile>
+    <ClCompile Include="..\src\state\activity\hijacked\mechanism_bindings.cpp"><ObjectFileName>$(IntDir)hijacked_mechanism_bindings.obj</ObjectFileName></ClCompile>
     <ClCompile Include="..\src\middleware\bap\activity_message\activity_sensor_auth_encoder.cpp" />
     <ClCompile Include="..\src\middleware\bap\activity_message\activity_sensor_auth_encoder_other_missions.cpp" />
     <ClCompile Include="omega_ending_tests.cpp" /><ClCompile Include="..\src\middleware\bap\activity_message\activity_sensor_auth_bodies.cpp" />

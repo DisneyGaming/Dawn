@@ -230,7 +230,7 @@ bool install() noexcept {
     const bool omegaIkoraOriginInstalled = ikoraProbe && install_omega_ikora_origin_probe();
     const bool omegaIkoraOrigin = !ikoraProbe || omegaIkoraOriginInstalled;
     // The shared directive owner always observes Towerfall's class-specific content consumer.
-    // Its Omega HUD mutation path remains independently guarded by directiveUi.
+    // Omega uses server-published native objectives; the client only verifies consumption.
     const bool omegaDirectivePresentationInstalled = install_omega_directive_presentation();
     const bool omegaDirectivePresentation = omegaDirectivePresentationInstalled;
     const bool omegaSceneRetirementInstalled =

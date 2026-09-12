@@ -237,6 +237,10 @@ struct Replay {
                 check(c.boss_animation(boss,cycle,m::BossAnimation::asleep),"native folded sequence started");
                 check(!c.boss_animation(boss,cycle,m::BossAnimation::parked),"no synthetic parking without native position");
                 if(!c.frame().bossCycle.hasParkTarget) check(c.boss_motion(boss,c.boss_platform(),.8F),"first position selects parking destination");
+                if(c.frame().bossPlatformSnap) {
+                    const auto& rebase=c.frame().native[m::asset_index(m::find(m::kBossActor.registry,23,173)->asset)];
+                    check(c.boss_platform_motion(boss,c.boss_platform(),{rebase.position,rebase.position,0.F,static_cast<std::int32_t>(rebase.generation)}),"native phase rebase acknowledged before travel");
+                }
                 check(c.boss_motion(boss,c.boss_platform(),c.frame().bossCycle.parkTarget),"observed parking position");
                 check(c.boss_animation(boss,cycle,m::BossAnimation::parked),"native parked receipt opens guardian phase");return;
             }
@@ -514,13 +518,30 @@ static void mount_regressions() {
     r.c.update(r.run,r.now+120000,true,r.region);
     check(r.c.frame().native[index].generation==generation,"elapsed time cannot start an unwanted lap");
     const auto boss=r.c.boss_enemy();const auto platform=r.c.boss_platform();
-    check(r.c.boss_motion(boss,platform,.42F),"observe live position before a gate");
+    check(r.c.boss_motion(boss,platform,0.F),"observe live position before a gate");
     check(r.c.health(boss,.8501F) && !r.c.frame().bossCycle.hasFirstTarget,"less than 15% damage stays at spawn");
     check(r.c.health(boss,.85F),"15% damage requests first travel");
     check(r.c.frame().bossCycle.hasFirstTarget && r.c.frame().bossCycle.mode==m::BossMode::damage
         && r.c.frame().bossStage==0,"early first travel keeps combat active without spawning intermission guardians");
-    check(r.c.frame().native[index].position==m::boss_parking(1) && !r.c.frame().bossPlatformSnap,
-        "15% damage publishes P1 immediately with native interpolation");
+    const auto rebased=r.c.frame().native[index];
+    check(rebased.position==.5F && r.c.frame().bossPlatformSnap,"endpoint travel publishes equivalent phase snap before destination");
+    Wire rebaseWire;check(m::write_body(rebaseWire,r.c.frame(),asset->asset.registry,23,173)
+        && rebaseWire.at(0,32)==std::bit_cast<std::uint32_t>(.5F) && rebaseWire.at(48,1)==1,"phase snap is carried by existing native type23 writer");
+    r.c.update(r.run,r.now+120100,true,r.region);
+    check(r.c.frame().native[index].generation==rebased.generation,"time cannot skip phase acknowledgement or churn publication");
+    check(r.c.boss_platform_motion(boss,platform,{.5F,.5F,0.F,static_cast<std::int32_t>(rebased.generation)-1})
+        && r.c.frame().native[index].generation==rebased.generation,"old native revision cannot acknowledge new rebase");
+    check(r.c.boss_platform_motion(boss,platform,{.4F,.5F,.01F,static_cast<std::int32_t>(rebased.generation)})
+        && r.c.frame().native[index].generation==rebased.generation,"target alone cannot acknowledge unsnapped current phase");
+    auto staleRebase=boss;++staleRebase.generation;
+    check(!r.c.boss_platform_motion(staleRebase,platform,{.5F,.5F,0.F,static_cast<std::int32_t>(rebased.generation)}),"retired boss cannot acknowledge rebase");
+    auto otherPlate=platform;++otherPlate.serial;
+    check(!r.c.boss_platform_motion(boss,otherPlate,{.5F,.5F,0.F,static_cast<std::int32_t>(rebased.generation)}),"recycled platform cannot acknowledge rebase");
+    check(r.c.boss_platform_motion(boss,platform,{.5F,.5F,0.F,static_cast<std::int32_t>(rebased.generation)}),"exact native phase snap acknowledgement accepted");
+    check(r.c.frame().native[index].position==m::boss_parking(1) && !r.c.frame().bossPlatformSnap
+        && r.c.frame().native[index].generation==rebased.generation+1,"only acknowledged rebase advances to native smooth travel");
+    Wire travelWire;check(m::write_body(travelWire,r.c.frame(),asset->asset.registry,23,173)
+        && travelWire.at(0,32)==std::bit_cast<std::uint32_t>(m::boss_parking(1)) && travelWire.at(48,1)==0,"destination reaches native interpolation without snap");
     const auto firstRevision=r.c.frame().native[index].generation;
     check(r.c.boss_motion(boss,platform,.43F) && r.c.health(boss,.80F),"first travel samples moving boss");
     check(r.c.frame().native[index].generation==firstRevision,"damage during first travel cannot restart or retarget it");

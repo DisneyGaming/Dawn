@@ -4,12 +4,11 @@ namespace garden_cycle {
 namespace policy=strike_bond_boss_cycle;
 namespace gn=gateway_native;
 using Animation=void(__fastcall*)(void*,const void*,void*) noexcept;
-using Position=std::uint64_t(__fastcall*)(void*,float,std::uint8_t) noexcept;
 using Fraction=float(__fastcall*)(void*,int) noexcept;
 SRWLOCK lock=SRWLOCK_INIT;
 struct Ledger {
-    garden::EnemyReceipt enemy{};std::array<bool,2> sleep{},wake{},movement{},returned{};
-    bool openingStarted{},openingSignaled{},openingReleased{},firstTravel{},death{},busy{};
+    garden::EnemyReceipt enemy{};std::array<bool,2> sleep{},wake{};
+    bool openingStarted{},openingSignaled{},openingReleased{},death{},busy{};
     std::uint64_t next{},openingSignalTime{};unsigned reports{};
 };
 Ledger ledger{};
@@ -25,11 +24,7 @@ bool boundaries() noexcept {
     gn::Read read{g_image};std::array<std::uint8_t,16> bytes{};
     for(const auto rva:{0xC620F0U,0xC693F0U}) if(!read.value(g_image+rva,bytes) || bytes!=animation) return false;
     constexpr std::array<std::uint8_t,16> getter{0x48,0x83,0xEC,0x68,0x44,0x8B,0x09,0x4C,0x8B,0xD1,0x48,0x89,0x4C,0x24,0x28,0x41};
-    namespace lattice=omega_vex_lattice_probe::detail;
-    const auto original=lattice::positionOriginal.load(std::memory_order_acquire);
-    return policy::position_boundary(read,g_image+0xDF6C70,reinterpret_cast<std::uintptr_t>(original),
-        reinterpret_cast<std::uintptr_t>(&lattice::position),lattice::handles[0].attached && lattice::callGate.accepting())
-        && read.value(g_image+0xCD6C20,bytes) && bytes==getter;
+    return read.value(g_image+0xCD6C20,bytes) && bytes==getter;
 }
 void dispatch(const policy::Binding& b,std::uint32_t sequence,std::uint32_t gate=0,bool remove=false) noexcept {
     const auto action=policy::action(sequence,gate);
@@ -70,7 +65,9 @@ void after_update(void* character) noexcept {
         || !read.value(b.device+0x374,velocity) || !std::isfinite(velocity)
         || !read.value(b.health+0x338,healthFlags)) return;
     for(unsigned i=0;i<3;++i) if(!read.value(b.selector+0xB4+64*i,flags[i])) return;
-    if(!garden::observe_boss_motion(r.enemy,r.platform,position)) return;
+    garden::PlatformMotion motion{position,0.F,velocity,-1};
+    if(!read.value(b.device+0x37C,motion.target) || !read.value(b.device+0x960,motion.revision)
+        || !garden::observe_boss_platform_motion(r.enemy,r.platform,motion))return;
     // Revalidate all leased components before invoking native code.
     const auto current=garden::boss_request();policy::Binding again{};gn::Read checked{g_image};
     if(current.owner!=r.owner || current.enemy!=r.enemy || current.platform!=r.platform
@@ -108,35 +105,8 @@ void after_update(void* character) noexcept {
         }
         if(!flags[1] && garden::observe_boss_animation(r.enemy,0,garden::BossAnimation::openingAwake))
             report(current,"opening_complete",position);
-    } else if(cycle.mode==garden::BossMode::damage && number==0 && cycle.hasFirstTarget) {
-        if(!ledger.firstTravel) {
-            const auto origin=garden::boss_parking_origin(position,cycle.firstTarget);
-            const auto move=reinterpret_cast<Position>(g_image+0xDF6C70);
-            if(origin!=position) move(reinterpret_cast<void*>(b.device),origin,1);
-            move(reinterpret_cast<void*>(b.device),cycle.firstTarget,0);
-            ledger.firstTravel=true;report(current,"first_damage_turn_started",cycle.firstTarget);
-        }
-    } else if(cycle.mode==garden::BossMode::damage && number>=1 && number<=2 && cycle.hasReturnTarget) {
-        const auto i=number-1;
-        if(!ledger.returned[i]) {
-            const auto origin=garden::boss_parking_origin(position,cycle.returnTarget);
-            const auto move=reinterpret_cast<Position>(g_image+0xDF6C70);
-            if(origin!=position) move(reinterpret_cast<void*>(b.device),origin,1);
-            move(reinterpret_cast<void*>(b.device),cycle.returnTarget,0);
-            ledger.returned[i]=true;report(current,"return_home_started",cycle.returnTarget);
-        }
     } else if(cycle.mode==garden::BossMode::parking && number>=1 && number<=2) {
         const auto i=number-1;
-        if(!ledger.movement[i]) {
-            if(!cycle.hasParkTarget) return;
-            const auto origin=garden::boss_parking_origin(position,cycle.parkTarget);
-            const auto move=reinterpret_cast<Position>(g_image+0xDF6C70);
-            // Rebase only an equivalent native phase. The visible turn begins
-            // immediately at normal speed and never snaps to its destination.
-            if(origin!=position) move(reinterpret_cast<void*>(b.device),origin,1);
-            move(reinterpret_cast<void*>(b.device),cycle.parkTarget,0);
-            ledger.movement[i]=true;report(current,"parking_turn_started",cycle.parkTarget);
-        }
         if(!ledger.sleep[i]) {
             if(flags[1] || flags[2]) return;
             // Native gate references survive sequence completion. Remove our
@@ -163,9 +133,13 @@ void after_update(void* character) noexcept {
         if((healthFlags&1U) || flags[0] || flags[1] || flags[2] || current.frame.bossStage!=2) return;
         const float fraction=reinterpret_cast<Fraction>(g_image+0xCD6C20)(reinterpret_cast<void*>(b.health),0);
         if(fraction!=0.F)return;
-        // Freeze the live channel at its present position before starting the
-        // death clip. The platform object and the native parent remain intact.
-        reinterpret_cast<Position>(g_image+0xDF6C70)(reinterpret_cast<void*>(b.device),position,1);
+        // The server publishes a snap-stop through native type23. Do not
+        // start the clip until this exact native snap publication is consumed.
+        const auto* platform=garden::find(garden::kBossActor.registry,23,173);
+        if(!platform || !current.frame.bossPlatformSnap || !current.frame.bossPlatformAccepted)return;
+        const auto& stop=current.frame.native[garden::asset_index(platform->asset)];
+        if(motion.revision!=static_cast<std::int32_t>(stop.generation)
+            || !garden::boss_at(position,stop.position) || !garden::boss_at(motion.target,stop.position))return;
         if(!garden::observe_boss_animation(r.enemy,number,garden::BossAnimation::deathStarted)) return;
         ledger.death=true;dispatch(b,policy::kDeath);report(current,"death_platform_stopped",position);
         // Only the authentic native death callback can finish the mission.

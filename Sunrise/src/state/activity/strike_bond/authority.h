@@ -35,7 +35,7 @@ inline std::size_t body_bits(const Frame& f,std::uint32_t key,std::uint8_t type,
     if(type==31) return coo::native_player_trigger::kAuthBits;
     if(type==18) return 386;
     if(type==70) return 23;
-    if(type==53) return coo::native_presentation::kDialogueBits+(f.activeRow==coo::kNoDialogue?0:64);
+    if(type==53) return coo::native_presentation::dialogue_bits(f.generations,f.activeRow);
     if(type==68) return f.presentation.published?coo::native_presentation::kDirectiveBits:0;
     if(type==11) return f.musicCandidate<128?7223:0;
     if(type==37) return f.generatorSeed?coo::native_generator::kActivationBits:0;

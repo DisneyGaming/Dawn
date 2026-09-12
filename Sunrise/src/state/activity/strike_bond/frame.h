@@ -42,7 +42,7 @@ struct Frame {
     std::array<SceneCommand,std::size(kScenes)> scenes{};
     std::bitset<std::size(kLenses)> lensExposed{},lensDestroyed{};
     coo::ObjectiveState presentation{};coo::CompletionPublication completion{};
-    BossCycle bossCycle{};bool bossPlatformSnap{};
+    BossCycle bossCycle{};bool bossPlatformSnap{},bossPlatformAccepted{};
 };
 // Ordered reconstruction candidates from the issue report. Native score ordinals
 // were not recovered; these values require listening verification in a fresh run.
@@ -119,7 +119,7 @@ inline float device_position(const Frame& f,coo::Asset a) noexcept {
     return f.native[i].position;
 }
 inline coo::native_generator::Request forest_request(std::uint32_t seed) noexcept {
-    coo::native_generator::Request out{};out.seed=seed;out.values[0]=6;
+    coo::native_generator::Request out{};out.seed=seed;out.values[0]=6;out.topology={0.F,0.F};
     // Forest C is a 3x3 grid: FF34A6/FF5C80 reject north column3.
     // The measured fixed exit is at (-673.86,-947.09,-19.52). Its middle
     // column1/height1 joins the native north connector; height2 is one tier

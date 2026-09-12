@@ -16,7 +16,7 @@ inline constexpr std::array<std::uint32_t,2> kVanceEvents{0x3A5C256CU,0xC2656F80
 [[nodiscard]] inline std::size_t body_bits(const Frame& frame,std::uint32_t key,std::uint8_t type,std::uint16_t slot) noexcept {
     if(!frame.enabled) { return 0; }
     if(key==0x986985D0U) {
-        if(type==53 && slot==2) { return coo::native_presentation::kDialogueBits+(frame.activeRow==coo::kNoDialogue?0U:64U); }
+        if(type==53 && slot==2) { return coo::native_presentation::dialogue_bits(frame.generations,frame.activeRow); }
         if(type==68 && slot==0 && (frame.objective!=0 || frame.presentation.published)) { return coo::native_presentation::kDirectiveBits; }
     }
     // The physical Forest lattice is closed throughout this mission, including arrival.

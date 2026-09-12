@@ -194,18 +194,18 @@ static bool authority() {
             std::size_t expected{};
             switch(a.asset.type) {
             case 1: expected=native::kSpawns[native::spawn_index(a.asset)].categories==2?673U:641U;++sources;break;
-            case 4: expected=252;++objects;break;
+            case 4: expected=252;for(const auto& plate:native::kPlates) {if(active && a.asset==plate.source) {expected+=709;}}++objects;break;
             case 23: expected=147;++devices;break;
             case 65: expected=65;++scans;break;
             case 68: expected=4802;++directives;break;
-            case 53: expected=19767;++dialogues;break;
+            case 53: expected=19767+64*f.generations.size();++dialogues;break;
             default:break;
             }
             CHECK(parity(f,a.asset,expected));
         }
     }
     CHECK(sources==144 && objects>0 && devices==36 && scans==4 && directives==2 && dialogues==2);
-    for(std::uint8_t row=0;row<15;++row) {f.activeRow=row;CHECK(parity(f,native::kDialogueAsset,19831));}
+    for(std::uint8_t row=0;row<15;++row) {f.activeRow=row;CHECK(parity(f,native::kDialogueAsset,19767+64*f.generations.size()));}
     for(const auto& event:native::kObjectives) {
         f.presentation.event=event.event;f.presentation.marker=native::marker(event.event);
         CHECK(parity(f,{0xE6E910D2U,0x80B565DFU,68,0},4802));

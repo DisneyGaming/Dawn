@@ -167,18 +167,18 @@ static bool all_bodies() {
             std::size_t expected{};
             switch(a.asset.type) {
             case 1:expected=native::kSpawns[native::spawn_index(a.asset)].categories==2?673U:641U;++kinds[0];break;
-            case 4:expected=252;++kinds[1];break;
+            case 4:expected=252;for(const auto& plate:native::kPlates) {if(active && a.asset==plate.source) {expected+=709;}}++kinds[1];break;
             case 23:expected=147;++kinds[2];break;
             case 65:expected=65;++kinds[3];break;
             case 68:expected=4802;++kinds[4];break;
-            case 53:expected=19767;++kinds[5];break;
+            case 53:expected=19767+64*frame.generations.size();++kinds[5];break;
             default:break;
             }
             CHECK(parity(frame,a.asset,expected));
         }
     }
     CHECK((kinds==std::array<unsigned,6>{112,28,12,2,2,2}));
-    for(std::uint8_t row=0;row<14;++row) {frame.activeRow=row;CHECK(parity(frame,native::kDialogueAsset,19831));}
+    for(std::uint8_t row=0;row<14;++row) {frame.activeRow=row;CHECK(parity(frame,native::kDialogueAsset,19767+64*frame.generations.size()));}
     for(const auto& objective:native::kObjectives) {
         frame.presentation.event=objective.event;frame.presentation.marker=native::marker(objective.event);
         CHECK(parity(frame,{0x77852DB9U,0x80B4241CU,68,0},4802));

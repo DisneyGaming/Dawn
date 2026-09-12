@@ -12,6 +12,7 @@
 #include "fixtures/gateway_ending_wire.h"
 #include "server/bap/encrypted/push/activity/gateway_roster.h"
 #include "middleware/bap/activity_message/sensor_auth_update.h"
+#include "middleware/encoding/bit_reader.h"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -85,8 +86,39 @@ void codec_tests() {
         CHECK(wire::write_auth_body(right,omega,0x82FB58B7U,static_cast<std::uint8_t>(type),slot,false));
         CHECK(left.bit_count()==right.bit_count());
         if(a!=b) { for(std::size_t i=0;i<a.size();++i) { if(a[i]!=b[i]) { std::fprintf(stderr,"type=%d byte=%zu actual=%02X reference=%02X\n",type,i,std::to_integer<unsigned>(a[i]),std::to_integer<unsigned>(b[i]));break; } } }CHECK(a==b);
-        CHECK(left.bit_count()==(type==53?19831U:4802U));
+        CHECK(left.bit_count()==(type==53?19895U:4802U));
     }
+    // Replay successive publications into retained decoded optional times. An
+    // absent field leaves its previous value; retired rows must explicitly zero it.
+    std::array<std::uint64_t,128> times{};
+    gateway.gateway.generations={};gateway.gateway.generations[1]=1;
+    for(const auto row:std::array<std::uint8_t,4>{1,2,255,1}) {
+        gateway.gateway.activeRow=row;
+        if(row!=255)++gateway.gateway.generations[row];
+        std::array<std::byte,4096> bytes{};bits::Writer out(bytes);
+        CHECK(g::write_body(out,gateway.gateway,g::kRoot,53,2));
+        CHECK(out.bit_count()==g::body_bits(gateway.gateway,g::kRoot,53,2));
+        bits::Reader in(bytes);CHECK(in.skip(55));
+        const auto field=[&](std::uint8_t width) {std::uint64_t value{};CHECK(in.read(width,value));return value;};
+        for(std::size_t i=0;i<128;++i) {
+            CHECK(field(64)==UINT64_MAX);
+            if(field(1))times[i]=field(64);
+            CHECK(in.skip(55));
+            const auto generation=i<gateway.gateway.generations.size()?gateway.gateway.generations[i]:0;
+            CHECK(field(32)==0x80000000ULL+generation);
+            CHECK(field(2)==(i==row?3U:1U));
+            CHECK(times[i]==(i==row?1U:0U));
+        }
+        CHECK(bytes.size()*8-in.remaining_bits()==out.bit_count());
+    }
+    gateway.gateway.generations[2]=0x80000000U;
+    auto rejected=bits::Writer::measuring();
+    CHECK(!g::write_body(rejected,gateway.gateway,g::kRoot,53,2));
+    CHECK(!rejected.bit_count() && !g::body_bits(gateway.gateway,g::kRoot,53,2));
+    gateway.gateway.generations[2]=1;
+    gateway.gateway.activeRow=128;
+    auto badSentinel=bits::Writer::measuring();
+    CHECK(!g::write_body(badSentinel,gateway.gateway,g::kRoot,53,2) && !badSentinel.bit_count());
     auto writer=bits::Writer::measuring();gateway.gateway.activeRow=16;
     CHECK(!g::write_body(writer,gateway.gateway,g::kRoot,53,2));CHECK(writer.bit_count()==0);
     gateway.gateway.enabled=false;CHECK(g::body_bits(gateway.gateway,g::kRoot,53,2)==0);

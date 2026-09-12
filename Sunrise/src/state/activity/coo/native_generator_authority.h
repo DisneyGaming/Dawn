@@ -61,9 +61,10 @@ inline constexpr std::uint8_t kOverrideMaximum=0x7FU;   // the field is 7 bits; 
 // -1 is the in-band "keep the authored default" sentinel for the five i32 record values; they carry
 // no override bit of their own (slot_set_map_generator_activation).
 inline constexpr std::int32_t kKeepAuthoredValue=-1;
-// The encoder's own default for the two f32 topology inputs, and the only value any proven host
-// publishes. UNRESOLVED: what the pair at record +0x30/+0x34 selects; -1 is carried through untouched.
+// The authored-default sentinel for the two f32 topology inputs. Native10059A0
+// reads record+30/+34, commits worker+950/+954 and passes them to FF2F80.
 inline constexpr float kAuthoredTopology=-1.0F;
+inline constexpr std::array<float,kTopologyCount> kAuthoredTopologies{kAuthoredTopology,kAuthoredTopology};
 
 // Both the host encoder and its decoder refuse non-finite floats. std::isfinite is not constexpr and
 // would pull in <cmath>; an all-ones exponent is the whole test.
@@ -104,6 +105,9 @@ struct Request final {
     // Forest generators author it as zero, so a host that leaves it at -1 places no encounter.
     // UNRESOLVED: what values[1..4] select; no proven host path sets them.
     std::array<std::int32_t,kValueCount> values{kAuthoredValues};
+    // Garden selects zero for both native solver inputs; other missions keep
+    // the authored-density sentinels. This does not alter anchors or ownership.
+    std::array<float,kTopologyCount> topology{kAuthoredTopologies};
     // Native +X, -X, +Y, -Y order (slot_set_map_generator_activation). All four or none.
     std::array<Anchor,kAnchorCount> anchors{kAuthoredAnchors};
     bool selectAnchors{};
@@ -126,8 +130,10 @@ template<class Writer>
 [[nodiscard]] bool write_record(Writer& writer,std::uint32_t seedInput,
                                 const std::array<Anchor,kAnchorCount>& anchors,
                                 const std::array<std::int32_t,kValueCount>& values,
-                                std::uint8_t overrides,bool enabled) noexcept {
+                                std::uint8_t overrides,bool enabled,
+                                const std::array<float,kTopologyCount>& topology=kAuthoredTopologies) noexcept {
     if(overrides>kOverrideMaximum) { return false; }
+    for(const auto value:topology) { if(!finite(value)) { return false; } }
     const auto begin=writer.bit_count();
     // UNRESOLVED: the i8 mode at record +0x04. No proven host path sets it, so it is written as the
     // neutral 0 (wire 128) that both host callers leave in place.
@@ -141,7 +147,7 @@ template<class Writer>
     }
     if(!writer.write(overrides,kOverrideWidth) || !writer.write(enabled?1U:0U,kFlagWidth)) { return false; }
     for(std::size_t index=0;index<kTopologyCount;++index) {
-        if(!writer.write(std::bit_cast<std::uint32_t>(kAuthoredTopology),kRealWidth)) { return false; }
+        if(!writer.write(std::bit_cast<std::uint32_t>(topology[index]),kRealWidth)) { return false; }
     }
     for(const auto value:values) {
         if(!writer.write(std::bit_cast<std::uint32_t>(value)+kValueBias,kValueWidth)) { return false; }
@@ -158,7 +164,7 @@ template<class Writer>
     const auto begin=writer.bit_count();
     if(!write_record(writer,request.selectSeed?request.seed:0U,
                      request.selectAnchors?request.anchors:kAuthoredAnchors,request.values,
-                     request.overrides(),request.enabled)) { return false; }
+                     request.overrides(),request.enabled,request.topology)) { return false; }
     // The second record is transition-scoped. Neither proven host path touches it, so it goes out
     // with a clear mask and every input at its authored-absent value, leaving that transition
     // entirely native. UNRESOLVED: which transition selects record 1.

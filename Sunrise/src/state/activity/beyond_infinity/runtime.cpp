@@ -5,11 +5,24 @@
 #include "../../../core/logging/log.h"
 #include <cstdio>
 #include <mutex>
+#include "../../../server/runtime/activity/mission_observation_queue.h"
 
 namespace sunrise::state::activity::beyond_infinity {
 namespace {
 std::mutex mutex;
 Controller controller;
+struct ForestObservation {coo::Generation owner{};std::uint8_t pass{};bool ready{},pending{};} forestObservation;
+std::array<server::runtime::activity::mission_device_pose::Inbox<PlateReceipt>,1> poseInbox{};
+struct Observation {coo::Generation owner{};PlateReceipt plate{};LensReceipt lens{};Point point{};std::uint32_t revision{};float progress{};bool binding{},position{},complete{},lensObservation{};};
+server::runtime::activity::MissionObservationQueue<Observation> observations;
+void consume(const Observation& e) noexcept {
+    if(e.owner!=controller.owner()) {return;}
+    if(e.lensObservation) {static_cast<void>(controller.lens(e.lens,e.complete));}
+    else if(e.position) {controller.position(e.owner.run,e.point);}
+    else if(e.binding) {static_cast<void>(controller.bind_plate(e.plate));}
+    else {static_cast<void>(controller.plate(e.plate,e.revision,e.progress,e.complete));}
+}
+
 std::unique_ptr<coo::script::MissionDocument> document;
 std::uint64_t selectedRun{},nextPublication{};
 coo::StallDiagnostics stalled;
@@ -41,14 +54,20 @@ bool load() noexcept {
 bool prepare(std::uint64_t run,bool selected) noexcept {
     const std::lock_guard lock(mutex);
     if(run!=mission_run_generation()) { return false; }
-    if(!selected) { controller.reset();selectedRun=nextPublication=0;stalled.reset();lastActive=lastComplete=UINT32_MAX;lastSection=UINT8_MAX;return false; }
+    if(!selected) { controller.reset();observations.reset();poseInbox={};forestObservation={};selectedRun=nextPublication=0;stalled.reset();lastActive=lastComplete=UINT32_MAX;lastSection=UINT8_MAX;return false; }
     if(!load() || !controller.select(document->views(),run)) { return false; }
-    if(selectedRun!=run) { stalled.reset();lastActive=lastComplete=UINT32_MAX;lastSection=UINT8_MAX; }
+    if(selectedRun!=run) {observations.reset();poseInbox={};forestObservation={}; stalled.reset();lastActive=lastComplete=UINT32_MAX;lastSection=UINT8_MAX; }
     selectedRun=run;return true;
 }
 Frame snapshot(std::uint64_t run,std::uint64_t now,bool ready) noexcept {
     const std::lock_guard lock(mutex);
     if(run!=selectedRun || run!=mission_run_generation()) { return {}; }
+    if(!observations.drain(consume)) {log("ev=mission_observations result=overflow publication=stopped");return {};}
+    for(auto& inbox:poseInbox) {inbox.drain([](const PlateReceipt& r,auto sample) {static_cast<void>(controller.plate_pose(r,sample));});}
+    if(forestObservation.pending) {
+        static_cast<void>(controller.forest_ready(forestObservation.owner,forestObservation.pass,forestObservation.ready));
+        forestObservation.pending=false;
+    }
     const auto frame=controller.update(run,now,ready && current());
     const auto d=controller.diagnostics();
     if(frame.section!=lastSection || d.active!=lastActive || d.complete!=lastComplete) {
@@ -69,6 +88,12 @@ Frame snapshot(std::uint64_t run,std::uint64_t now,bool ready) noexcept {
     }
     nextPublication=now+100;return frame;
 }
+void observe_forest_readiness(coo::Generation owner,std::uint8_t pass,bool ready) noexcept {
+    const std::lock_guard lock(mutex);
+    if(!current() || owner!=controller.owner() || pass!=controller.frame().forestPass)return;
+    if(forestObservation.owner==owner && forestObservation.pass==pass && forestObservation.ready==ready)return;
+    forestObservation={owner,pass,ready,true};nextPublication=0;
+}
 Request request() noexcept {
     const std::lock_guard lock(mutex);return current()?Request{controller.owner(),controller.frame()}:Request{};
 }
@@ -86,21 +111,26 @@ PlateRequest plate_request() noexcept {
     const auto& frame=controller.frame();const auto plate=controller.plate_owner();
     const auto& native=frame.native[asset_index(kPlate)];
     return {controller.owner(),plate,frame.plateRevision,frame.enabled && native.active && plate.valid()
-        && plate.owner.run==selectedRun && plate.owner.value==native.generation,frame.plateOccupied,frame.lensDestroyed,frame.lensExposed};
+        && plate.owner.run==selectedRun && plate.owner.value==native.generation,frame.plateOccupied,frame.lensDestroyed,frame.lensExposed,frame.plateCapture};
+}
+void observe_plate_pose(const PlateReceipt& r,server::runtime::activity::mission_device_pose::Sample sample) noexcept {
+    const std::lock_guard lock(mutex);
+    if(!current() || !r.valid() || controller.plate_owner()!=r)return;
+    poseInbox[0].submit(r,sample);
 }
 void observe_plate_binding(const PlateReceipt& receipt) noexcept {
-    const std::lock_guard lock(mutex);if(!current() || !controller.bind_plate(receipt)) { return; }
-    std::array<char,240> line{};std::snprintf(line.data(),line.size(),"ev=beyond_infinity stage=plate_bound run=%llu generation=%u entity=%08X device=%08X timer=%08X",static_cast<unsigned long long>(receipt.owner.run),receipt.owner.value,receipt.entity,receipt.device,receipt.timer);log(line.data());
+    const std::lock_guard lock(mutex);if(!current()) {return;}
+    Observation e{};e.owner=controller.owner();e.plate=receipt;e.binding=true;observations.push(e);
 }
 void observe_plate(const PlateReceipt& receipt,std::uint32_t revision,float value,bool complete) noexcept {
-    const std::lock_guard lock(mutex);if(!current() || !controller.plate(receipt,revision,value,complete)) { return; }
-    std::array<char,240> line{};std::snprintf(line.data(),line.size(),"ev=beyond_infinity stage=plate_charged run=%llu generation=%u entity=%08X revision=%u evidence=native_timer_1006F20",static_cast<unsigned long long>(receipt.owner.run),receipt.owner.value,receipt.entity,revision);log(line.data());
+    const std::lock_guard lock(mutex);if(!current()) {return;}
+    Observation e{};e.owner=controller.owner();e.plate=receipt;e.revision=revision;e.progress=value;e.complete=complete;observations.push(e);
 }
 bool publication_due(std::uint64_t now) noexcept {
     const std::lock_guard lock(mutex);return current() && now>=nextPublication;
 }
 void observe_position(float x,float y,float z) noexcept {
-    const std::lock_guard lock(mutex);if(current()) { controller.position(selectedRun,{x,y,z}); }
+    const std::lock_guard lock(mutex);if(current()) { Observation e{};e.owner=controller.owner();e.position=true;e.point={x,y,z};observations.push(e); }
 }
 void observe_submission(std::uint64_t run,std::uint32_t definition,std::int64_t offset,
     std::uint32_t bank,std::uint8_t row,std::uint32_t generation) noexcept {
@@ -113,9 +143,8 @@ void observe_prepared(coo::Generation owner,coo::Asset asset) noexcept {
     const std::lock_guard lock(mutex);if(current()) { static_cast<void>(controller.prepared(owner,asset)); }
 }
 void observe_lens(const LensReceipt& receipt,bool dead) noexcept {
-    const std::lock_guard lock(mutex);
-    if(!current() || !controller.lens(receipt,dead)) { return; }
-    std::array<char,192> line{};std::snprintf(line.data(),line.size(),"ev=beyond_infinity stage=lens_%s run=%llu generation=%u entity=%08X evidence=native_health",dead?"destroyed":"bound",static_cast<unsigned long long>(receipt.owner.run),receipt.owner.value,receipt.entity);log(line.data());
+    const std::lock_guard lock(mutex);if(!current()) {return;}
+    Observation e{};e.owner=controller.owner();e.lensObservation=true;e.lens=receipt;e.complete=dead;observations.push(e);
 }
 void observe_scene(const SceneReceipt& receipt,bool complete) noexcept {
     const std::lock_guard lock(mutex);

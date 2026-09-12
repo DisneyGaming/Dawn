@@ -11,6 +11,24 @@ namespace sunrise::middleware::bap::activity_message::native::dialogue {
 inline constexpr std::size_t kRows=128,kDecodedBytes=0x1008,kInactiveBits=19767;
 inline constexpr std::uint8_t kNoRow=128;
 inline constexpr std::uint32_t kAbsent=0x811C9DC5U;
+// Payload ownership is shared by mission publishers and routed activity requests.
+// Row retirement must explicitly clear optional times when reusing native state.
+struct Rows final {
+    std::span<const std::uint32_t> generations{};
+    std::uint8_t activeRow{kNoRow};
+    bool clearInactiveTimes{};
+};
+[[nodiscard]] constexpr bool valid(const Rows& r) noexcept {
+    if(r.generations.empty() || r.generations.size()>kRows
+        || (r.activeRow!=kNoRow && (r.activeRow>=r.generations.size() || !r.generations[r.activeRow])))return false;
+    return true;
+}
+[[nodiscard]] constexpr std::size_t body_bits(const Rows& r) noexcept {
+    if(!valid(r))return 0;
+    std::size_t count=r.activeRow==kNoRow?0:1;
+    if(r.clearInactiveTimes)for(std::size_t i=0;i<r.generations.size();++i)if(i!=r.activeRow && r.generations[i])++count;
+    return kInactiveBits+64*count;
+}
 struct Request final {
     std::uint32_t registry{};
     std::uint16_t slot{};
@@ -29,15 +47,12 @@ struct Batch final {std::array<Request,4> entries{};std::size_t count{};};
     if(!r.registry || r.registry==UINT32_MAX || r.registry==kAbsent || r.slot>32767
         || !r.bankRows || r.bankRows>kRows || (r.activeRow!=kNoRow && r.activeRow>=r.bankRows)
         || (r.scope!=UINT32_MAX && r.scope>63))return false;
-    if(r.activeRow!=kNoRow && !r.generations[r.activeRow])return false;
+    if(!valid(Rows{std::span{r.generations}.first(r.bankRows),r.activeRow,r.clearInactiveTimes}))return false;
     for(std::size_t i=r.bankRows;i<kRows;++i)if(r.generations[i])return false;
     return true;
 }
 [[nodiscard]] constexpr std::size_t body_bits(const Request& r) noexcept {
-    if(!valid(r))return 0;
-    std::size_t count=r.activeRow==kNoRow?0:1;
-    if(r.clearInactiveTimes)for(std::size_t i=0;i<r.bankRows;++i)if(i!=r.activeRow && r.generations[i])++count;
-    return kInactiveBits+64*count;
+    return valid(r)?body_bits(Rows{std::span{r.generations}.first(r.bankRows),r.activeRow,r.clearInactiveTimes}):0;
 }
 [[nodiscard]] inline const Request* find(const Batch& b,std::uint32_t key,std::uint8_t type,std::uint16_t slot) noexcept {
     if(type!=53 || b.count>b.entries.size())return nullptr;
@@ -72,21 +87,25 @@ template<class Roster> [[nodiscard]] bool valid(const Batch& b,const Roster& ros
     }
     return true;
 }
-template<class Writer> [[nodiscard]] bool write(Writer& w,const Request& r) noexcept {
+template<class Writer> [[nodiscard]] bool write(Writer& w,const Rows& r) noexcept {
     if(!valid(r))return false;
     const auto absent=[&] {return w.write(kAbsent,32) && w.write(0,7) && w.write(32767,16);};
     if(!absent())return false;
     for(std::size_t i=0;i<kRows;++i) {
+        const auto generation=i<r.generations.size()?r.generations[i]:0U;
         const bool active=i==r.activeRow;
-        const bool timePresent=active || (r.clearInactiveTimes && r.generations[i]);
+        const bool timePresent=active || (r.clearInactiveTimes && generation);
         // Native time predicate accepts nonzero optional time; mode2 owns the
-        // expiry policy. Retired rows retain generation and omit optional time.
+        // expiry policy. Retired rows retain their consumed generation.
         if(!w.write(UINT64_MAX,64) || !w.write(timePresent?1U:0U,1)
             || (timePresent && !w.write(active?1U:0U,64)) || !absent()
-            || !w.write(static_cast<std::uint64_t>(r.generations[i])+0x80000000ULL,32)
+            || !w.write(static_cast<std::uint64_t>(generation)+0x80000000ULL,32)
             || !w.write(active?3U:1U,2))return false;
     }
     return true;
+}
+template<class Writer> [[nodiscard]] bool write(Writer& w,const Request& r) noexcept {
+    return valid(r) && write(w,Rows{std::span{r.generations}.first(r.bankRows),r.activeRow,r.clearInactiveTimes});
 }
 using Decoded=std::array<std::byte,kDecodedBytes>;
 [[nodiscard]] inline Decoded decoded(const Request& r) noexcept {

@@ -5,6 +5,7 @@
 #include "../coo/object_service.h"
 #include "../coo/population_service.h"
 #include <bitset>
+#include "../../../server/runtime/activity/mission_capture_service.h"
 namespace sunrise::state::activity::hijacked {
 struct EnemyReceipt {
     std::uint64_t run{};std::uint32_t actor{UINT32_MAX},owner{UINT32_MAX},generation{};
@@ -12,6 +13,7 @@ struct EnemyReceipt {
     bool valid() const noexcept { return run && generation && actor!=UINT32_MAX && owner!=UINT32_MAX && registry; }
     friend bool operator==(const EnemyReceipt&,const EnemyReceipt&)=default;
 };
+struct EnemyPosition {EnemyReceipt enemy{};Point point{};};
 struct NativeState { std::uint32_t generation{};bool managed{},desired{},prepared{},active{},acknowledged{},retired{},suspended{};std::uint8_t survivingRequested{UINT8_MAX}; };
 struct PlateReceipt {
     coo::Generation owner{};std::uintptr_t source{};std::uint8_t index{UINT8_MAX};
@@ -32,6 +34,7 @@ struct Frame {
     std::array<std::uint32_t,std::size(kDialogue)> generations{};
     std::array<NativeState,std::size(kAssets)> native{};
     std::array<PlateState,std::size(kPlates)> plates{};std::array<bool,std::size(kScans)> scanArmed{},scanStarted{},scanComplete{};
+    std::array<server::runtime::activity::mission_capture::Publication,std::size(kPlates)> plateCaptures{};
     coo::ObjectiveState presentation{};coo::CompletionPublication completion{};
     float bossHealth{1.F};std::uint8_t bossStage{};std::uint32_t bossRevision{};bool bossMoveRequested{},bossPositioned{};
 };
@@ -74,6 +77,6 @@ inline constexpr std::size_t kExteriorPopulation=[] {
 static_assert(kExteriorPopulation>0 && kExteriorPopulation<=256);
 struct BossRequest {coo::Generation owner{};EnemyReceipt enemy{};std::uint8_t stage{};std::uint32_t revision{};bool requested{};};
 struct Request { coo::Generation owner{};Frame frame{}; };
-struct PlateRequest { coo::Generation owner{};PlateReceipt plate{};PlateState state{};bool enabled{}; };
+struct PlateRequest { coo::Generation owner{};PlateReceipt plate{};PlateState state{};bool enabled{};server::runtime::activity::mission_capture::Publication capture{}; };
 struct ScanRequest { coo::Generation owner{};ScanReceipt scan{};bool enabled{},started{},complete{}; };
 }

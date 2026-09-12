@@ -44,14 +44,13 @@ namespace combat = state::activity::omega_boss_combat;
 using Tick = void(__fastcall*)(void*) noexcept;
 using Apply = void(__fastcall*)(void*, const void*) noexcept;
 using Lookup = const void*(__fastcall*)(const std::uint32_t*) noexcept;
-using IssueAction = void(__fastcall*)(void*,const void*,std::uint32_t) noexcept;
 using ActorContext = void(__fastcall*)(void*,std::uint32_t) noexcept;
 using Resolve = void*(__fastcall*)(std::uint32_t) noexcept;
 using CharacterInit = void(__fastcall*)(void*,const std::uint32_t*) noexcept;
 using AnimationRequest = void(__fastcall*)(void*,const void*,void*) noexcept;
 using UpdateGraph = char(__fastcall*)(float,void*,void*,char*) noexcept;
 using UpdateFullBody = std::uint64_t(__fastcall*)(void*,void*,float,std::uint8_t,void*,void*) noexcept;
-using SetVariable = std::uint64_t(__fastcall*)(std::uint32_t,const std::uint32_t*,const float*) noexcept;
+using MemberAuthority = const std::byte*(__fastcall*)(const void*) noexcept;
 using UpdateMotion = bool(__fastcall*)(void*,void*,void*) noexcept;
 using CleanupMotion = void(__fastcall*)(void*,void*,void*) noexcept;
 using WorldPosition = float*(__fastcall*)(void*,float*) noexcept;
@@ -79,7 +78,7 @@ constexpr std::array<float,3> departure_destination(std::uint8_t island) noexcep
 }
 std::atomic<UpdateGraph> g_updateGraph{};
 std::atomic<UpdateFullBody> g_updateFullBody{};
-std::atomic<SetVariable> g_setVariable{};
+std::atomic<MemberAuthority> g_memberAuthority{};
 std::atomic_bool g_waitingIntroIdle{};
 std::atomic_bool g_waitingIntroFlight{};
 std::atomic_bool g_waitingIntroSummon{};
@@ -107,7 +106,6 @@ lift::CycleTracker g_lift{};
 std::uint64_t g_liftRequest{},g_liftSample{};
 std::atomic<Tick> g_tick{}, g_resource{};
 std::atomic<Tick> g_memberTick{};
-std::atomic<IssueAction> g_issueAction{};
 std::atomic<ActorContext> g_actorContext{};
 std::atomic<Resolve> g_resolve{};
 std::atomic<CharacterInit> g_characterInit{};
@@ -567,9 +565,8 @@ void try_departure(const lair::Boss& boss,bool nativeIntroActive,bool nativeComb
         || boss.island>4) { return; }
     const auto binding=teleport_binding(boss);
     const auto destination=departure_destination(boss.island);
-    const auto request=motion::encode_request(destination);
-    const auto issue=g_addEvent.load(std::memory_order_acquire);
-    if(!binding.valid || !binding.inactive || !request || issue==nullptr) {
+    const auto full=full_body(binding.character);
+    if(!binding.valid || !binding.inactive || full.object==nullptr) {
         report_owner_guard(boss.actor,"teleport_binding",boss.character,
                            binding.valid?1U:0U,binding.inactive?1U:0U);return;
     }
@@ -577,17 +574,19 @@ void try_departure(const lair::Boss& boss,bool nativeIntroActive,bool nativeComb
         :!release_intro_for_departure(boss,binding,nativeIntroActive)) { return; }
     AcquireSRWLockExclusive(&g_motionLock);
     g_motion.begin_run(boss.run);
-    const bool claimed=lair::claim_action(boss,final?lair::Action::relocateFinal:lair::Action::depart);
+    const lift::Owner programOwner{boss.run,boss.actor,boss.character,boss.entity,boss.generation,
+        boss.revision,full.handle,boss.island,boss.actionEpoch};
+    const bool claimed=lair::request_boss_movement(programOwner);
     const bool tracked=claimed && g_motion.claim(binding.owner,++g_motionRequest,true,destination,0.25F);
     if(tracked) { g_motionPending.store(true,std::memory_order_release); }
     ReleaseSRWLockExclusive(&g_motionLock);
     if(!tracked) { if(claimed) { lair::invalidate(boss.run); }return; }
-    // Claim before dispatch, but hold no observer lock while native code may
-    // publish/consume its motion event. Never retry an uncertain native request.
-    issue(binding.character.object,request->data(),nullptr);
+    // The native .6 consumer and opcode45 producer dispatch the authored path
+    // target. Keep only actual motion/position observations in this callback.
     report_motion("teleport_requested",binding.owner);
 }
 
+bool observe_current_boss_program(const lair::Boss& boss) noexcept;
 bool motion_handler(void* handler) noexcept {
     std::array<std::byte,8> bytes{};
     return copy(handler,bytes) && at<std::uintptr_t>(bytes.data())==g_image+0x1C40050;
@@ -599,7 +598,8 @@ TeleportBinding current_motion_binding(std::span<const std::byte> raw) noexcept 
     const bool departing=state.phase==lair::Phase::departing || (state.boss.island==4
         && state.phase==lair::Phase::mechanicRequested && state.crownStage==lair::CrownStage::relocation);
     if(!state.enabled || state.failed || !departing
-        || state.boss.entity!=at<std::uint32_t>(raw.data()+0x30)) { return {}; }
+        || state.boss.entity!=at<std::uint32_t>(raw.data()+0x30)
+        || state.intro.program.departure!=state.boss.island || !observe_current_boss_program(state.boss)) { return {}; }
     return teleport_binding(state.boss);
 }
 struct MotionSample final {
@@ -815,33 +815,21 @@ void finish_crown_lease(const p::Navigation& navigation,std::uint32_t actor,std:
         && state.boss==encounter_boss(lease)) { lair::invalidate(lease.run); }
     if(retired) { report_crown("crown_summon_retired",lease,request); }
 }
-void try_crown_summon(void* member,const lair::Boss& boss,const BossOwner& character,
-    const FullBody& body) noexcept {
-    const auto issue=g_issueAction.load(std::memory_order_acquire);
-    if(issue==nullptr || boss.island!=4 || character.object==nullptr || body.object==nullptr
+void try_crown_summon(const lair::Boss& boss,const BossOwner& character,const FullBody& body) noexcept {
+    if(boss.island!=4 || character.object==nullptr || body.object==nullptr
         || character.handle!=boss.character || character.entity!=boss.entity) { return; }
     const crown::Owner owner{boss.run,boss.actor,boss.character,boss.entity,boss.generation,
                              boss.revision,body.biped,boss.island};
+    const lift::Owner programOwner{boss.run,boss.actor,boss.character,boss.entity,boss.generation,
+        boss.revision,body.handle,boss.island,boss.actionEpoch};
     AcquireSRWLockExclusive(&g_crownLock);
-    const bool claimed=g_crown.phase()==crown::Phase::idle && lair::claim_action(boss,lair::Action::summonBoth);
+    const bool claimed=g_crown.phase()==crown::Phase::idle && lair::request_boss_program(programOwner,crown::kSequence);
     const bool tracked=claimed && g_crown.claim(owner,++g_crownRequest);
     const auto request=g_crown.request_id();
     if(tracked) { g_waitingCrown.store(true,std::memory_order_release); }
     ReleaseSRWLockExclusive(&g_crownLock);
     if(!tracked) { if(claimed) { lair::invalidate(boss.run); }return; }
-    // Claim before native dispatch; no observer lock is held while native code
-    // can load a graph and synchronously deliver its first receipt.
-    const auto queue=crown::action();issue(member,queue.data(),0);
-    if(!g_gate.accepting()) { return; }
-    report_crown("crown_summon_requested",owner,request);
-    std::array<std::byte,0xA48> bytes{};
-    if(!copy(member,bytes) || at<std::uint32_t>(bytes.data()+0x21C)!=boss.actor
-        || at<std::uint32_t>(bytes.data()+0x180)!=boss.generation
-        || at<std::uint32_t>(bytes.data()+0x190)!=boss.revision
-        || at<std::uint8_t>(bytes.data()+0x1D4)!=0
-        || !crown::action_active(std::span(bytes).subspan(0x230,0x808),at<std::int32_t>(bytes.data()+0x228))) {
-        lair::invalidate(boss.run);
-    }
+    report_crown("crown_program_requested",owner,request);
 }
 __declspec(noinline) void observe_crown_graph(std::span<const std::byte> bytes) noexcept {
     if(!g_waitingCrown.load(std::memory_order_acquire)) { return; }
@@ -849,7 +837,7 @@ __declspec(noinline) void observe_crown_graph(std::span<const std::byte> bytes) 
     const auto lease=g_crown.owner();const auto request=g_crown.request_id();
     ReleaseSRWLockShared(&g_crownLock);
     const auto navigation=p::navigation();const auto state=lair::status(lease.run);
-    if(!lease.valid() || !navigation.enabled || navigation.run!=lease.run || !state.enabled
+    if(!lease.valid() || !navigation.enabled || navigation.run!=lease.run || !state.enabled || !state.intro.applied
         || state.failed || state.boss!=encounter_boss(lease)) { return; }
     const auto character=boss_owner(lease.actor,false);const auto body=full_body(character);
     if(character.object==nullptr || character.handle!=lease.character || character.entity!=lease.entity
@@ -1221,7 +1209,7 @@ void retire_combat(const p::Navigation& navigation,std::uint32_t actor,std::uint
     }
     report_combat("combat_retired",graph);
 }
-void try_combat(void* member,const lair::Status& state,const BossOwner& owner,const FullBody& body,
+void try_combat(const lair::Status& state,const BossOwner& owner,const FullBody& body,
     std::span<const std::byte> queue,std::int32_t head,std::int32_t count) noexcept {
     if(!state.token.valid() || state.failed || owner.object==nullptr || body.object==nullptr
         || owner.handle!=state.boss.character || owner.entity!=state.boss.entity) { return; }
@@ -1249,22 +1237,15 @@ void try_combat(void* member,const lair::Status& state,const BossOwner& owner,co
             ReleaseSRWLockExclusive(&g_combatLock);
         }
         if(head<count || !combat_motion_ready(state.boss)) { return; }
-        const auto issue=g_issueAction.load(std::memory_order_acquire);if(issue==nullptr) { return; }
+        const lift::Owner programOwner{state.boss.run,state.boss.actor,state.boss.character,state.boss.entity,
+            state.boss.generation,state.boss.revision,body.handle,state.boss.island,state.boss.actionEpoch};
         AcquireSRWLockExclusive(&g_combatLock);
-        const bool claimed=!g_combat.active() && lair::claim_action(state.boss,state.action);
+        const bool claimed=!g_combat.active() && lair::request_boss_program(programOwner,combat::graph(token.cycle)->sequence);
         const bool tracked=claimed && g_combat.begin(token);
         if(tracked) { g_waitingCombat.store(true,std::memory_order_release); }
         ReleaseSRWLockExclusive(&g_combatLock);
         if(!tracked) { if(claimed) { lair::invalidate(state.boss.run); }return; }
-        const auto action=combat::action(token.cycle);issue(member,action.data(),0);
-        if(!g_gate.accepting()) { return; }
-        std::array<std::byte,0xA48> after{};
-        const bool accepted=copy(member,after) && at<std::uint32_t>(after.data()+0x21C)==state.boss.actor
-            && at<std::uint32_t>(after.data()+0x180)==state.boss.generation
-            && at<std::uint32_t>(after.data()+0x190)==state.boss.revision && after[0x1D4]==std::byte{}
-            && combat::action_active(std::span(after).subspan(0x230,0x808),at<std::int32_t>(after.data()+0x228),token.cycle);
-        report_combat(accepted?"combat_summon_requested":"combat_summon_uncertain",token);
-        if(!accepted) { lair::invalidate(state.boss.run); }
+        report_combat("combat_program_requested",token);
         return;
     }
     combat::Command command{};
@@ -1359,6 +1340,7 @@ __declspec(noinline) void observe_combat_graph(std::span<const std::byte> bytes,
     if(blocked || !graph.valid()) { return; }
     const auto run=graph.owner.run;
     const auto navigation=p::navigation();const auto state=lair::status(run);
+    if(!state.intro.applied) { return; }
     if(!navigation.enabled || navigation.run!=run || !state.enabled || state.failed || !physical_match(graph.owner,state.boss)) {
         report_reject(run,"combat_graph","state",state.enabled?1U:0U,state.failed?1U:0U,state.boss.actor,state.boss.actionEpoch);return;
     }
@@ -1523,32 +1505,55 @@ __declspec(noinline) char __fastcall graph_update_hook(float dt,void* context,vo
     return result;
 }
 
-/** Observe after native overlay compaction, then request/release a single named
- * property through its original setter. The existing terminal-idle queue stays
- * in place. Native animation time, not a wall clock, releases the owned cycle. */
-void release_cancelled_lift(void* instance) noexcept {
-    if(!TryAcquireSRWLockExclusive(&g_liftLock)) { return; }
-    if(g_lift.phase()==lift::CyclePhase::claimed || g_lift.phase()==lift::CyclePhase::playing) {
-        const auto lease=g_lift.owner();
-        const auto owner=boss_owner(lease.actor);
-        const auto body=full_body(owner);
-        const auto setter=g_setVariable.load(std::memory_order_acquire);
-        std::array<float,4> before{};
-        if(setter!=nullptr && body.object==instance && body.handle==lease.fullBody
-            && owner.handle==lease.character && owner.entity==lease.entity
-            && bound_value(body,g_lift.arm(),before)) {
-            if(all_one(before)) {
-                const auto name=lift::property(g_lift.arm());
-                const std::array<float,4> zero{};
-                const auto result=setter(owner.entity,&name,zero.data());
-                report_lift("lift_cancel_release",lease,g_lift.arm(),result);
-            }
-            // Dispatch at most once; a changed native value belongs to its new owner.
-            g_lift={};
-        }
+// The member callback observes native .5 application and requests authority.
+// It retains no component pointer. Only the original AB2D00 writes arm inputs.
+__declspec(noinline) void observe_arm_member(void* instance,std::uint64_t run) noexcept {
+    const auto state=lair::status(run);
+    if(!state.enabled || !state.boss.valid()) { return; }
+    const auto getAuthority=g_memberAuthority.load(std::memory_order_acquire);
+    std::array<std::byte,0xAB4> member{};
+    std::array<std::byte,0x108> auth{};
+    if(getAuthority==nullptr || !copy(instance,member)) { return; }
+    const auto* authority=getAuthority(instance);
+    if(authority==nullptr || !copy(authority,auth)) { return; }
+    auto receipt=sunrise::state::activity::omega_archive_arm::inspect(member,auth);
+    if(!receipt.applied || receipt.actor!=state.boss.actor || receipt.generation!=state.boss.generation
+        || !state.intro.applied || receipt.queueRevision!=state.intro.program.revision) { return; }
+    receipt.queueRevision=state.intro.incarnation; // Stable actor lease, separately verified program.
+    const auto character=boss_owner(receipt.actor);
+    const auto body=full_body(character);
+    if(body.object==nullptr || character.handle!=state.boss.character || character.entity!=state.boss.entity) { return; }
+    const lift::Owner owner{run,receipt.actor,character.handle,character.entity,receipt.generation,
+        receipt.queueRevision,body.handle,state.boss.island,state.boss.actionEpoch};
+    std::array<float,4> left{},right{};
+    if(!bound_value(body,lift::Arm::left,left) || !bound_value(body,lift::Arm::right,right)) { return; }
+    if(state.arm.pending) {
+        static_cast<void>(lair::observe_arm_control(owner,receipt,left,right));return;
+    }
+    if(state.failed || (state.action!=lair::Action::summonLeft && state.action!=lair::Action::summonRight)
+        || state.arm.control.high || receipt.revision!=state.arm.control.revision
+        || receipt.left!=0 || receipt.right!=0 || !lift::zero_baseline(left) || !lift::zero_baseline(right)
+        || !TryAcquireSRWLockExclusive(&g_liftLock)) { return; }
+    g_lift.begin_run(run);
+    const auto arm=state.action==lair::Action::summonLeft?lift::Arm::left:lift::Arm::right;
+    if(lair::prepare_arm(owner)) {
+        if(g_lift.claim(owner,++g_liftRequest,arm,arm==lift::Arm::left?left:right)) {
+            report_lift("lift_authority_requested",owner,arm);
+        } else { lair::invalidate(run); }
     }
     ReleaseSRWLockExclusive(&g_liftLock);
 }
+void release_cancelled_lift(void*) noexcept {
+    if(!TryAcquireSRWLockExclusive(&g_liftLock)) { return; }
+    if(g_lift.phase()==lift::CyclePhase::claimed || g_lift.phase()==lift::CyclePhase::playing) {
+        static_cast<void>(lair::release_arm(g_lift.owner(),false));
+        g_lift={};
+    }
+    ReleaseSRWLockExclusive(&g_liftLock);
+}
+/** Native overlay start/wrap receipts still decide when a summon played. The
+ * server publishes the low input; a later member callback acknowledges release
+ * before the encounter admits its next action. */
 __declspec(noinline) void observe_lift(void* instance) noexcept {
     std::array<std::byte,0x30> prefix{};
     if(!copy(instance,prefix) || !identity(prefix.data(),0x815B5A41U,0x80803640U,0x15B8)) { return; }
@@ -1556,24 +1561,19 @@ __declspec(noinline) void observe_lift(void* instance) noexcept {
     if(!navigation.enabled) { release_cancelled_lift(instance);return; }
     const auto state=lair::status(navigation.run);
     if(!state.enabled || state.failed) { release_cancelled_lift(instance);return; }
-    if(!state.boss.valid()) { return; }
-    if(at<std::uint32_t>(prefix.data()+0x2C)!=state.boss.entity) { return; }
+    if(!state.boss.valid() || at<std::uint32_t>(prefix.data()+0x2C)!=state.boss.entity) { return; }
     const auto owner=boss_owner(state.boss.actor);
     const auto body=full_body(owner);
     if(body.object!=instance || owner.handle!=state.boss.character || owner.entity!=state.boss.entity) { return; }
     const lift::Owner current{navigation.run,state.boss.actor,owner.handle,owner.entity,
                              state.boss.generation,state.boss.revision,body.handle,state.boss.island,state.boss.actionEpoch};
-    const auto setter=g_setVariable.load(std::memory_order_acquire);
-    if(setter==nullptr || !TryAcquireSRWLockExclusive(&g_liftLock)) { return; }
+    if(!TryAcquireSRWLockExclusive(&g_liftLock)) { return; }
     g_lift.begin_run(navigation.run);
     const bool running=g_lift.phase()==lift::CyclePhase::claimed || g_lift.phase()==lift::CyclePhase::playing;
-    if(running) {
-        if(current.island!=g_lift.owner().island) {
-            ReleaseSRWLockExclusive(&g_liftLock);return;
-        }
+    if(running && !state.arm.pending && state.arm.control.high) {
         const auto arm=g_lift.arm();
         std::array<float,4> before{};
-        if(current!=g_lift.owner() || !bound_value(body,arm,before) || !all_one(before)) {
+        if(current!=g_lift.owner() || current!=state.arm.owner || !bound_value(body,arm,before) || !all_one(before)) {
             report_lift("lift_ownership_lost",current,arm);lair::invalidate(navigation.run);
             ReleaseSRWLockExclusive(&g_liftLock);return;
         }
@@ -1588,35 +1588,9 @@ __declspec(noinline) void observe_lift(void* instance) noexcept {
             report_lift("lift_started",current,arm);
             lair::observe_summon(encounter_boss(current),summon_action(arm),false);
         } else if(event==lift::CycleEvent::completed || event==lift::CycleEvent::interrupted) {
-            const auto name=lift::property(arm);
-            const std::array<float,4> zero{};
-            const auto setResult=setter(owner.entity,&name,zero.data());
-            std::array<float,4> after{};
-            const auto fresh=full_body(boss_owner(current.actor));
-            const bool released=fresh.object==body.object && bound_value(fresh,arm,after) && lift::zero_baseline(after);
-            report_lift(released?"lift_released":"lift_release_uncertain",current,arm,setResult);
-            if(event==lift::CycleEvent::completed && released) {
-                lair::observe_summon(encounter_boss(current),summon_action(arm),true);
-            } else { lair::invalidate(navigation.run); }
-        }
-    } else if(state.action==lair::Action::summonLeft || state.action==lair::Action::summonRight) {
-        const auto arm=state.action==lair::Action::summonLeft?lift::Arm::left:lift::Arm::right;
-        std::array<float,4> left{},right{};
-        if(bound_value(body,lift::Arm::left,left) && bound_value(body,lift::Arm::right,right)
-            && lift::zero_baseline(left) && lift::zero_baseline(right)
-            && lair::claim_action(state.boss,state.action)) {
-            if(!g_lift.claim(current,++g_liftRequest,arm,arm==lift::Arm::left?left:right)) {
-                lair::invalidate(navigation.run);
-            } else {
-                const auto name=lift::property(arm);
-                const std::array<float,4> one{1,1,1,1};
-                const auto setResult=setter(owner.entity,&name,one.data());
-                std::array<float,4> after{};
-                const auto fresh=full_body(boss_owner(current.actor));
-                const bool applied=fresh.object==body.object && bound_value(fresh,arm,after) && all_one(after);
-                report_lift(applied?"lift_requested":"lift_request_uncertain",current,arm,setResult);
-                if(!applied) { lair::invalidate(navigation.run); }
-            }
+            const bool completed=event==lift::CycleEvent::completed;
+            if(!lair::release_arm(current,completed)) { lair::invalidate(navigation.run); }
+            report_lift(completed?"lift_authority_release":"lift_interrupted",current,arm);
         }
     }
     ReleaseSRWLockExclusive(&g_liftLock);
@@ -1830,6 +1804,71 @@ void try_summon_event(std::uint64_t run,std::uint32_t actor,std::uint32_t genera
 // Lane J: red-eye scalar initialization; shares this file's helpers and gate.
 #include "omega_boss_vfx_start.inl"
 
+bool observe_program_member(void* instance,std::uint64_t run,std::uint32_t actor,std::uint32_t generation,
+                            std::uint32_t& revision,std::span<const std::byte> queue,std::int32_t head) noexcept {
+    const auto state=lair::status(run);
+    if(!state.enabled) { return false; }
+    if(!state.intro.program.revision) { return revision==0; }
+    const auto& program=state.intro.program;
+    if(generation!=program.generation || revision!=program.revision || actor!=state.intro.owner.actor) { return false; }
+    const auto getter=g_memberAuthority.load(std::memory_order_acquire);std::array<std::byte,0x108> auth{};
+    const auto* authority=getter==nullptr?nullptr:getter(instance);
+    if(authority==nullptr || !copy(authority,auth) || at<std::uint32_t>(auth.data())!=generation
+        || at<std::uint32_t>(auth.data()+0x100)!=revision || auth[6]==std::byte{}) { return false; }
+    if(!state.intro.applied) {
+        const bool matched=program.play?sunrise::state::activity::omega_archive_intro::matches_queue(queue,head,program)
+            :head==0 && queue.size()>=4 && at<std::uint32_t>(queue.data())==0;
+        if(!matched) { return false; }
+        const auto character=boss_owner(actor,false);const auto body=full_body(character);
+        if(character.object==nullptr || body.object==nullptr) { return false; }
+        const auto& expected=state.intro.owner;
+        const lift::Owner owner{run,actor,character.handle,character.entity,generation,revision,body.handle,expected.island,expected.actionEpoch};
+        if(!lair::observe_intro_control(owner)) { return false; }
+        if(program.play && program.sequence==p::kBossIntroSequence) {
+            AcquireSRWLockExclusive(&g_summonLock);
+            g_issuedIntro={true,false,run,actor,generation,revision};
+            g_waitingIntroIdle.store(true,std::memory_order_release);
+            g_waitingIntroFlight.store(true,std::memory_order_release);
+            g_waitingIntroSummon.store(true,std::memory_order_release);
+            ReleaseSRWLockExclusive(&g_summonLock);
+        }
+        std::array<char,256> message{};
+        log(message,std::snprintf(message.data(),message.size(),
+            "ev=omega_boss stage=program_authority_applied run=%llu actor=%08X generation=%u revision=%u sequence=%08X",
+            static_cast<unsigned long long>(run),actor,generation,revision,program.sequence));
+    }
+    // Native .6 is a command revision, not an actor incarnation. Every graph,
+    // Scene and motion lease keeps the first acknowledged incarnation instead.
+    revision=lair::status(run).intro.incarnation;return true;
+}
+
+/** Motion may begin before the next member callback. A fresh native program
+ * receipt here preserves its first real departure stage without trusting only
+ * the published request. The actor's typed member backlink is rechecked. */
+bool observe_current_boss_program(const lair::Boss& boss) noexcept {
+    std::array<std::byte,8> baseBytes{};std::array<std::byte,4> strideBytes{};
+    if(!copy(reinterpret_cast<const void*>(g_image+0x1F9D7F8),baseBytes)
+        || !copy(reinterpret_cast<const void*>(g_image+0x1F9D800),strideBytes)) { return false; }
+    const auto base=at<std::uintptr_t>(baseBytes.data());const auto stride=at<std::uint32_t>(strideBytes.data());
+    const auto offset=std::uintptr_t{boss.actor&0x1FFFU}*stride;
+    if(base<0x10000 || stride<0x70 || stride>0x100000 || base>UINTPTR_MAX-offset) { return false; }
+    const auto* row=reinterpret_cast<const void*>(base+offset);
+    std::array<std::byte,0x70> actor{},after{};
+    if(!copy(row,actor) || at<std::uint32_t>(actor.data()+0x48)!=boss.actor
+        || at<std::uint32_t>(actor.data()+0x4C)!=boss.entity
+        || at<std::uint32_t>(actor.data()+0x64)!=0x8080834EU || at<std::uint64_t>(actor.data()+0x68)!=0) { return false; }
+    const auto handle=at<std::uint32_t>(actor.data()+0x60);auto* member=resolve_part(handle,0);
+    std::array<std::byte,0xA48> bytes{};
+    if(member==nullptr || !copy(member,bytes) || !identity(bytes.data(),p::kBossMemberDefinition,0x80807D9DU,0xB58)
+        || at<std::uint32_t>(bytes.data()+0x48)!=handle || at<std::uint32_t>(bytes.data()+0x4C)!=0x8080834EU
+        || at<std::uint64_t>(bytes.data()+0x50)!=0 || at<std::uint32_t>(bytes.data()+0x180)!=boss.generation
+        || at<std::uint32_t>(bytes.data()+0x21C)!=boss.actor || bytes[0x1D4]!=std::byte{}) { return false; }
+    auto revision=at<std::uint32_t>(bytes.data()+0x190);
+    if(!copy(row,after) || actor!=after || resolve_part(handle,0)!=member) { return false; }
+    return observe_program_member(member,boss.run,boss.actor,boss.generation,revision,
+        std::span(bytes).subspan(0x230,0x808),at<std::int32_t>(bytes.data()+0x228)) && revision==boss.revision;
+}
+
 /** Called while the native member owns its lifetime. Keep its authority, actor
  * binding and generation unchanged; the native command setter owns the queue
  * copy and animation completion. Do not replace a currently active command. */
@@ -1844,8 +1883,11 @@ __declspec(noinline) void observe_boss_member(void* instance) noexcept {
     const auto head=at<std::int32_t>(bytes.data()+0x228);
     const auto count=at<std::int32_t>(bytes.data()+0x230);
     const auto generation=at<std::uint32_t>(bytes.data()+0x180);
-    const auto revision=at<std::uint32_t>(bytes.data()+0x190);
+    auto revision=at<std::uint32_t>(bytes.data()+0x190);
     const bool disabled=at<std::uint8_t>(bytes.data()+0x1D4)!=0;
+    if(navigation.enabled && !disabled && actor!=UINT32_MAX
+        && !observe_program_member(instance,navigation.run,actor,generation,revision,
+            std::span(bytes).subspan(0x230,0x808),head)) { return; }
     retire_combat(navigation,actor,generation,revision,disabled,std::span(bytes).subspan(0x230,0x808),head);
     finish_crown_lease(navigation,actor,generation,revision,disabled,
         crown::action_active(std::span(bytes).subspan(0x230,0x808),head));
@@ -1853,6 +1895,9 @@ __declspec(noinline) void observe_boss_member(void* instance) noexcept {
         !navigation.enabled || disabled
         || !p::boss_intro_action_active(std::span(bytes).subspan(0x230,0x808),head));
     if(!navigation.enabled) { return; }
+    if(!disabled && actor!=UINT32_MAX) {
+        observe_arm_member(instance,navigation.run);
+    }
     if(!disabled && actor!=UINT32_MAX) {
         const auto binding=g_characterBinding.load(std::memory_order_acquire);
         if(static_cast<std::uint32_t>(binding>>32)==actor) {
@@ -1879,15 +1924,14 @@ __declspec(noinline) void observe_boss_member(void* instance) noexcept {
             disabled?1U:0U,head,count));
     }
     if(!disabled && actor!=UINT32_MAX) { trace_intro_vfx(navigation.run,actor); }
-    const auto issue=g_issueAction.load(std::memory_order_acquire);
-    if(issue==nullptr || actor==UINT32_MAX || disabled || head<0 || count<0 || count>32
+    if(actor==UINT32_MAX || disabled || head<0 || count<0 || count>32
         || head>32) { return; }
     const auto crownState=lair::status(navigation.run);
     if(crownState.enabled && crownState.token.valid() && crownState.boss.actor==actor
         && crownState.boss.generation==generation && crownState.boss.revision==revision) {
         const auto character=boss_owner(actor,false);const auto full=full_body(character);
         observe_combat_health(crownState,character);
-        try_combat(instance,crownState,character,full,std::span(bytes).subspan(0x230,0x808),head,count);
+        try_combat(crownState,character,full,std::span(bytes).subspan(0x230,0x808),head,count);
         return;
     }
     if(head<count) {
@@ -1908,47 +1952,22 @@ __declspec(noinline) void observe_boss_member(void* instance) noexcept {
     if(state.enabled && state.boss.island==4) {
         if(!state.failed && state.boss.actor==actor && state.boss.generation==generation && state.boss.revision==revision
             && state.boss.character==owner.handle && state.boss.entity==owner.entity
-            && state.action==lair::Action::summonBoth) { try_crown_summon(instance,state.boss,owner,body); }
+            && state.action==lair::Action::summonBoth) { try_crown_summon(state.boss,owner,body); }
         return;
     }
     if(!p::observe_boss(navigation.run,p::kBossEntity,owner.entity,generation)) { return; }
     if(!p::claim_boss_intro_action(navigation.run)) { return; }
-    AcquireSRWLockExclusive(&g_summonLock);
-    g_issuedIntro={true,false,navigation.run,actor,generation,revision};
-    g_waitingIntroIdle.store(true,std::memory_order_release);
-    g_waitingIntroFlight.store(true,std::memory_order_release);
-    g_waitingIntroSummon.store(true,std::memory_order_release);
-    ReleaseSRWLockExclusive(&g_summonLock);
-    const auto queue=p::boss_intro_action();
+    // The first program establishes native queue revision1 before the encounter
+    // binds its Boss. Later leases retain that baseline. No local queue setter.
+    const lift::Owner introOwner{navigation.run,actor,owner.handle,owner.entity,generation,revision,body.handle,0,0};
+    prepare_intro_vfx(navigation.run,actor,generation,revision,owner,disabled,head,count);
+    const bool requested=lair::request_intro(introOwner);
     std::array<char,256> message{};
     log(message,std::snprintf(message.data(),message.size(),
-        "ev=omega_boss stage=intro_action_begin run=%llu actor=%08X group=%08X sequence=%08X generation=%u revision=%u",
-        static_cast<unsigned long long>(navigation.run),actor,p::kBossIntroGroup,
-        p::kBossIntroSequence,generation,revision));
-    // Enable the authored red-eye scalar through its original setter once per
-    // owner and run, immediately before the intro graph is queued. Its outcome
-    // never gates the intro.
-    prepare_intro_vfx(navigation.run,actor,generation,revision,owner,disabled,head,count);
-    issue(instance,queue.data(),0);
-    if(copy(instance,bytes)) {
-        log(message,std::snprintf(message.data(),message.size(),
-            "ev=omega_boss stage=intro_action_return run=%llu actor=%08X generation=%u revision=%u head=%d count=%d dispatch=%p",
-            static_cast<unsigned long long>(navigation.run),at<std::uint32_t>(bytes.data()+0x21C),
-            at<std::uint32_t>(bytes.data()+0x180),at<std::uint32_t>(bytes.data()+0x190),
-            at<std::int32_t>(bytes.data()+0x228),at<std::int32_t>(bytes.data()+0x230),
-            reinterpret_cast<void*>(at<std::uintptr_t>(bytes.data()+0xA40))));
-        finish_summon_lease(navigation.run,at<std::uint32_t>(bytes.data()+0x21C),
-            at<std::uint32_t>(bytes.data()+0x180),at<std::uint32_t>(bytes.data()+0x190),
-            !p::boss_intro_action_active(std::span(bytes).subspan(0x230,0x808),
-                                         at<std::int32_t>(bytes.data()+0x228)));
-        if(at<std::uint8_t>(bytes.data()+0x1D4)==0
-            && p::boss_intro_action_active(std::span(bytes).subspan(0x230,0x808),
-                                           at<std::int32_t>(bytes.data()+0x228))) {
-            try_summon_event(navigation.run,at<std::uint32_t>(bytes.data()+0x21C),
-                             at<std::uint32_t>(bytes.data()+0x180),
-                             at<std::uint32_t>(bytes.data()+0x190));
-        }
-    }
+        "ev=omega_boss stage=intro_authority_requested run=%llu actor=%08X generation=%u accepted=%u",
+        static_cast<unsigned long long>(navigation.run),actor,generation,requested?1U:0U));
+    if(!requested) { lair::invalidate(navigation.run); }
+
 }
 __declspec(noinline) void __fastcall member_tick_hook(void* instance) noexcept {
     const hooking::CallGate::Scope call(g_gate);
@@ -1973,8 +1992,6 @@ bool install_omega_lair_cinematic() noexcept {
     g_image=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
     const auto lookup=reinterpret_cast<Lookup>(target(0xC4C1A0,
         {0x40,0x53,0x55,0x57,0x41,0x54,0x41,0x55,0x41,0x56,0x41,0x57,0x48,0x83,0xEC,0x50}));
-    const auto issue=reinterpret_cast<IssueAction>(target(0xAB6C60,
-        {0x48,0x89,0x5C,0x24,0x08,0x57,0x48,0x83,0xEC,0x20,0x48,0x8B,0xF9,0x48,0x81,0xC1}));
     const auto actorContext=reinterpret_cast<ActorContext>(target(0xA8CB20,
         {0x40,0x53,0x48,0x83,0xEC,0x20,0x89,0x51,0x04,0x48,0x8B,0xD9,0x48,0x8B,0x05,0xC5}));
     const auto resolve=reinterpret_cast<Resolve>(target(0x30CAB0,
@@ -1983,8 +2000,8 @@ bool install_omega_lair_cinematic() noexcept {
         0x48,0x89,0x5C,0x24,0x08,0x48,0x89,0x7C,0x24,0x10,0x55,0x48,0x8B,0xEC,0x48,0x83};
     const auto add=reinterpret_cast<AnimationRequest>(target(0xC620F0,eventPrefix));
     const auto remove=reinterpret_cast<AnimationRequest>(target(0xC693F0,eventPrefix));
-    const auto setVariable=reinterpret_cast<SetVariable>(target(0x576420,
-        {0x48,0x89,0x5C,0x24,0x08,0x48,0x89,0x74,0x24,0x10,0x55,0x57,0x41,0x56,0x48,0x8D}));
+    const auto memberAuthority=reinterpret_cast<MemberAuthority>(target(0xAB27C0,
+        {0x48,0x83,0xEC,0x28,0x48,0x8D,0x54,0x24,0x38,0xE8,0xB2,0x35,0xA3,0xFF,0x8B,0x44}));
     const auto worldPosition=reinterpret_cast<WorldPosition>(target(0x3F7C30,
         {0x48,0x89,0x5C,0x24,0x08,0x57,0x48,0x83,0xEC,0x40,0x0F,0x29,0x74,0x24,0x30,0x48}));
     const auto namedLookup=reinterpret_cast<NamedSequenceLookup>(target(0xA89430,
@@ -1993,8 +2010,8 @@ bool install_omega_lair_cinematic() noexcept {
         {0x48,0x83,0xEC,0x38,0x45,0x0F,0xB6,0xD8,0x4C,0x8B,0xC2,0x48,0x85,0xD2,0x0F,0x84}));
     const auto namedStop=reinterpret_cast<NamedSequenceStop>(target(0xC6FE70,
         {0x48,0x89,0x74,0x24,0x18,0x48,0x89,0x7C,0x24,0x20,0x41,0x56,0x48,0x83,0xEC,0x20}));
-    if(lookup==nullptr || issue==nullptr || actorContext==nullptr || resolve==nullptr
-        || add==nullptr || remove==nullptr || setVariable==nullptr || worldPosition==nullptr
+    if(lookup==nullptr || actorContext==nullptr || resolve==nullptr
+        || add==nullptr || remove==nullptr || memberAuthority==nullptr || worldPosition==nullptr
         || namedLookup==nullptr || namedStart==nullptr || namedStop==nullptr) { return false; }
     const std::array<hooking::detour::Spec,9> specs{{
         {target(0x106AB20,{0x40,0x53,0x48,0x83,0xEC,0x50,0x48,0x8B,0x05,0x5B,0xEF,0x03,0x01,0x48,0x33,0xC4}),reinterpret_cast<void*>(&tick_hook)},
@@ -2021,8 +2038,7 @@ bool install_omega_lair_cinematic() noexcept {
     hooking::publish_original(g_updateMotion,reinterpret_cast<UpdateMotion>(g_handles[7].original));
     hooking::publish_original(g_cleanupMotion,reinterpret_cast<CleanupMotion>(g_handles[8].original));
     g_worldPosition.store(worldPosition,std::memory_order_release);
-    g_setVariable.store(setVariable,std::memory_order_release);
-    g_issueAction.store(issue,std::memory_order_release);
+    g_memberAuthority.store(memberAuthority,std::memory_order_release);
     g_actorContext.store(actorContext,std::memory_order_release);
     g_resolve.store(resolve,std::memory_order_release);
     g_addEvent.store(add,std::memory_order_release); g_removeEvent.store(remove,std::memory_order_release);
@@ -2058,14 +2074,14 @@ bool uninstall_omega_lair_cinematic() noexcept {
     if(hooking::detour::uninstall(g_handles,protectedCode,idle)!=hooking::detour::UninstallResult::removed) { return false; }
     g_tick.store(nullptr,std::memory_order_release); g_apply.store(nullptr,std::memory_order_release);
     g_resource.store(nullptr,std::memory_order_release); g_lookup.store(nullptr,std::memory_order_release);
-    g_memberTick.store(nullptr,std::memory_order_release); g_issueAction.store(nullptr,std::memory_order_release);
+    g_memberTick.store(nullptr,std::memory_order_release);
     g_actorContext.store(nullptr,std::memory_order_release); g_resolve.store(nullptr,std::memory_order_release);
     g_characterInit.store(nullptr,std::memory_order_release);
     g_updateGraph.store(nullptr,std::memory_order_release);g_updateFullBody.store(nullptr,std::memory_order_release);
     g_updateMotion.store(nullptr,std::memory_order_release);g_cleanupMotion.store(nullptr,std::memory_order_release);
     g_worldPosition.store(nullptr,std::memory_order_release);
     g_motion={};g_introStopOwner={};g_motionRequest=0;g_motionSample=0;g_motionPending.store(false,std::memory_order_release);g_image=0;
-    g_setVariable.store(nullptr,std::memory_order_release);g_waitingIntroIdle.store(false,std::memory_order_release);
+    g_memberAuthority.store(nullptr,std::memory_order_release);g_waitingIntroIdle.store(false,std::memory_order_release);
     g_waitingIntroFlight.store(false,std::memory_order_release);g_waitingIntroSummon.store(false,std::memory_order_release);
     g_lift={};g_liftRequest=0;g_liftSample=0;
     g_crown={};g_crownRequest=0;g_crownSample=0;g_waitingCrown.store(false,std::memory_order_release);

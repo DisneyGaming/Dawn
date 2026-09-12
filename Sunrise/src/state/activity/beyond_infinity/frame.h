@@ -2,6 +2,7 @@
 #include "bindings.h"
 #include "../coo/lifecycle_service.h"
 #include <bitset>
+#include "../../../server/runtime/activity/mission_capture_service.h"
 
 namespace sunrise::state::activity::beyond_infinity {
 struct NativeState {
@@ -39,6 +40,8 @@ struct Frame {
     bool enabled{},checked{},finished{},lensDestroyed{},plateOccupied{},lensExposed{};
     std::uint8_t section{},forestPass{},transitRoute{},transitContact{},activeRow{coo::kNoDialogue};
     std::uint32_t spawnGeneration{},revision{},objective{},plateRevision{1};
+    std::uint32_t forestSeed{};
+    bool forestReady{};
     std::array<std::uint32_t,49> generations{};
     std::array<NativeState,std::size(kAssets)> native{};
     std::array<SceneRequest,std::size(kScenes)> sceneRequests{};
@@ -46,6 +49,7 @@ struct Frame {
     coo::CompletionPublication completion{};
     // Authority time starts on this run's authenticated arrival and never rewinds.
     std::uint64_t gameplayClockTicks{};
+    server::runtime::activity::mission_capture::Publication plateCapture{};
 };
 inline constexpr std::size_t asset_index(coo::Asset asset) noexcept {
     for(std::size_t i=0;i<std::size(kAssets);++i) { if(kAssets[i].asset==asset) { return i; } }

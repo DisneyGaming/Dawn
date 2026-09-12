@@ -5,6 +5,7 @@
 #include "../coo/object_service.h"
 #include "../coo/population_service.h"
 #include <bitset>
+#include "../../../server/runtime/activity/mission_capture_service.h"
 namespace sunrise::state::activity::deep_storage {
 struct EnemyReceipt {
     std::uint64_t run{};std::uint32_t actor{UINT32_MAX},owner{UINT32_MAX},generation{};
@@ -21,6 +22,7 @@ struct LensReceipt {
     friend bool operator==(const LensReceipt&,const LensReceipt&)=default;
 };
 struct LensRequest {coo::Generation owner{};LensReceipt lens{};std::uint32_t objectGeneration{};bool enabled{},vulnerable{},destroyed{};};
+struct EnemyPosition {EnemyReceipt enemy{};Point point{};};
 struct NativeState { std::uint32_t generation{};bool managed{},desired{},prepared{},active{},acknowledged{}; };
 struct PlateReceipt {
     coo::Generation owner{};std::uintptr_t source{};std::uint8_t index{UINT8_MAX};
@@ -41,6 +43,7 @@ struct Frame {
     std::array<std::uint32_t,std::size(kDialogue)> generations{};
     std::array<NativeState,std::size(kAssets)> native{};
     std::array<PlateState,3> plates{};std::array<bool,2> scanArmed{},scanStarted{},scanComplete{};
+    std::array<server::runtime::activity::mission_capture::Publication,std::size(kPlates)> plateCaptures{};
     coo::ObjectiveState presentation{};coo::CompletionPublication completion{};
     bool lensExposed{},lensDestroyed{};
 };
@@ -72,6 +75,6 @@ inline constexpr auto kCohorts=[] {
     std::array<Cohort,std::size(kSpawns)> out{};for(std::size_t i=0;i<out.size();++i) {out[i]={kSpawns[i].registry,kSpawns[i].source,kSpawns[i].count,true};}return out;
 }();
 struct Request { coo::Generation owner{};Frame frame{}; };
-struct PlateRequest { coo::Generation owner{};PlateReceipt plate{};PlateState state{};bool enabled{}; };
+struct PlateRequest { coo::Generation owner{};PlateReceipt plate{};PlateState state{};bool enabled{};server::runtime::activity::mission_capture::Publication capture{}; };
 struct ScanRequest { coo::Generation owner{};ScanReceipt scan{};bool enabled{},started{},complete{}; };
 }

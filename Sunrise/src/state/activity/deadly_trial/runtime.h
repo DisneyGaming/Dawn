@@ -1,7 +1,12 @@
 #pragma once
+#include "../coo/population_readiness_request.h"
 #include "frame.h"
 #include "../coo/population_service.h"
 namespace sunrise::state::activity::deadly_trial {
+void observe_objective_readiness(coo::Generation,std::uint32_t,std::uintptr_t,std::uintptr_t,bool) noexcept;
+[[nodiscard]] coo::ReadinessRequest<EnemyReceipt> readiness_request(std::uint64_t now) noexcept;
+[[nodiscard]] coo::Generation traversal_request(std::uint64_t now) noexcept;
+void observe_mount(const PikeMount&,Point) noexcept;
 struct Presentation { std::uint64_t run{};Frame frame{}; };
 Presentation presentation() noexcept;
 bool prepare(std::uint64_t,bool) noexcept;

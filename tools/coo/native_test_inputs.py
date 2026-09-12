@@ -35,6 +35,7 @@ OPTIONAL_EVIDENCE = {
     'public_event_tests': 'optional original native apply snapshots; installed descriptors are supplied',
 }
 OUTPUT_DIRECTORY = {
+    'native_mission_dialogue_tests', 'native_generator_topology_tests',
     'forest_generator_exports', 'public_event_dialogue_tests', 'public_event_incoming_tests',
     'public_event_interaction_tests', 'public_event_music_tests', 'public_event_participant_tests',
     'public_event_sequence_tests', 'public_event_world_tests', 'world_device_service_tests',
@@ -286,6 +287,11 @@ def arguments(name, output_directory):
         raise MissingEvidence(f'{name}: missing {CAPTURE_ONLY[name]}')
     output = Path(output_directory).resolve()
     output.mkdir(parents=True, exist_ok=True)
+    if name == 'native_mission_interaction_tests':
+        image = ROOT / 'destiny2_unpacked.bin'
+        if not image.is_file():
+            raise MissingEvidence(f'{name}: pinned native image is unavailable: {image}')
+        return [str(image)]
     if name in OUTPUT_DIRECTORY:
         return [str(output)]
     if name == 'public_event_initial_lifetime_tests':

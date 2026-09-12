@@ -51,6 +51,55 @@ void handshake() {
     auto snapshot=tr::make_snapshot(idle,{},1),wrong=snapshot;wrong.hasTeleportReceipt=false;
     check(snapshot.hasTeleportReceipt && !tr::equal(snapshot,wrong),"snapshot exact guard includes provenance");
 }
+// Drive the production receipt API to accepted dunk, then verify its snapshot
+// gates the actual encoded portal body. Each fixture retains the full arm path.
+void portal_receipts() {
+    for(unsigned cycle=1;cycle<=2;++cycle) {
+        Run run;
+        run.wave(0,m::Action::left,false);run.wave(1,m::Action::right,false);run.depart(1,false);
+        run.wave(2,m::Action::left,false);run.depart(2,false);
+        run.wave(3,m::Action::right,false);run.depart(3,false);
+        run.wave(4,m::Action::left,false);run.depart(4,false);
+        run.wave(5,m::Action::startCycle,false);run.wave(6,m::Action::left,false);run.wave(7,m::Action::right,false);
+        if(cycle==2) {
+            run.mechanic(1,false,false,0);
+            run.wave(8,m::Action::startCycle,false);run.wave(9,m::Action::left,false);run.wave(10,m::Action::right,false);
+        }
+        auto token=run.claim(m::Action::deletion);
+        const std::uint16_t scene=cycle==1?9:27;
+        check(run.state.animation(token,m::Animation::started),"portal fixture native deletion starts");
+        check(run.state.rescue_started(token,scene),"portal fixture native rescue arrives");
+        check(run.state.animation(token,m::Animation::deletionHold),"portal fixture native deletion holds");
+        check(run.state.rescue_ready(token,scene),"portal fixture native rescue ready");
+        check(run.state.route_arrival(token,false,0x12),"portal fixture native charge platform arrival");
+        const m::ChargeReceipt charge{token,0x122,2,0x233,0x12,0x344,cycle==1?0x40BF06U:0x40BF05U,
+            static_cast<std::uint16_t>(cycle==1?18:1),static_cast<std::uint16_t>(cycle==1?20:3)};
+        check(run.state.pickup(charge) && run.state.dunk(charge),"portal fixture accepted native pickup and dunk");
+        token=run.state.snapshot().command.token;
+        for(bool backFirst:{false,true}) {
+            auto state=run.state;
+            for(unsigned count=0;count<3;++count) {
+                if(count) {
+                    const bool back=count==1?backFirst:!backFirst;
+                    const auto slot=static_cast<std::uint16_t>(back?28:27);
+                    const auto generation=2U+(back?2U*cycle-1U:1U);
+                    auto stale=token;++stale.epoch;
+                    check(!state.eye_object(stale,slot,generation,0x567,back?0x678:0x789),"stale eye source receipt rejected");
+                    check(!state.eye_object(token,slot,generation+1,0x567,back?0x678:0x789),"wrong eye source generation rejected");
+                    check(state.eye_object(token,slot,generation,0x567,back?0x678:0x789),"exact native eye source creation accepted");
+                }
+                wire::Snapshot snapshot{};snapshot.omegaMission=state.snapshot();
+                for(const auto& row:t::sources) if(row.role==t::Role::portal && row.cycle==cycle) {
+                    std::array<std::byte,32> bytes{};bits::Writer writer(bytes);
+                    check(wire::write_auth_body(writer,snapshot,row.registry,4,row.slot,false),"receipt-backed portal packet encodes");
+                    bits::Reader reader(bytes);
+                    check(take(reader,32)==0x80000000ULL+(count==2?3U:2U),"only second native platform receipt advances source generation");
+                    check(take(reader,32)==0x80000000ULL && take(reader,1)==static_cast<unsigned>(count==2),"missing or single native platform keeps portal inactive");
+                }
+            }
+        }
+    }
+}
 void packets() {
     wire::Snapshot snapshot{};snapshot.omegaEndingSelected=true;snapshot.omegaEndingRevision=2;snapshot.omegaEndingPlay=true;
     std::array<std::byte,256> bytes{};bits::Writer writer(bytes);
@@ -86,16 +135,18 @@ void packets() {
         }
         if(row.gate) {bits::Writer gate(bytes);check(wire::write_auth_body(gate,snapshot,row.registry,23,row.gate,false) && gate.bit_count()==147,"all18 gate bodies production147");}
     }
-    for(const auto& row:t::sources) if(row.role==t::Role::portal) for(unsigned step=0;step<6;++step) {
+    for(const auto& row:t::sources) if(row.role==t::Role::portal) for(unsigned receipts=0;receipts<4;++receipts) for(unsigned step=0;step<6;++step) {
         snapshot={};auto& s=snapshot.omegaMission;s.generation=2;s.command.cycle=row.cycle;
         s.chargeEnabled=step==1 || step==2;s.chargePickedUp=step>=2;s.chargeDunked=step>=3;
         s.phase=step>=3?m::Phase::shield:m::Phase::carrying;s.eyePlatform=step==4;
+        s.dpsFrontCreated=(receipts&1)!=0;s.dpsBackCreated=(receipts&2)!=0;
+        const bool ready=row.cycle==3 || receipts==3;
         if(step==5) ++s.command.cycle;
         bits::Writer contact(bytes);
         check(wire::write_auth_body(contact,snapshot,row.registry,4,row.slot,false) && contact.bit_count()==252,"all three contact portals retain valid native source framing");
         bits::Reader cr(bytes);
-        check(take(cr,32)==0x80000000ULL+(step>=4?4U:step==3?3U:2U),"transport generation changes only for accepted dunk and retirement");
-        check(take(cr,32)==0x80000000ULL && take(cr,1)==static_cast<unsigned>(step==3),"native transport active only between dunk and receiving-platform arrival");
+        check(take(cr,32)==0x80000000ULL+(step>=4?4U:step==3 && ready?3U:2U),"transport generation changes only after qualified creation receipts or retirement");
+        check(take(cr,32)==0x80000000ULL && take(cr,1)==static_cast<unsigned>(step==3 && ready),"cycles1/2 require both platforms; cycle3 needs no such creation receipts");
     }
     for(const auto& row:t::sources) if(row.role==t::Role::endFx) for(unsigned step=0;step<6;++step) {
         snapshot={};auto& s=snapshot.omegaMission;s.generation=2;s.command.cycle=row.cycle;
@@ -144,18 +195,19 @@ m::State ending_state() {
     run.wave(4,m::Action::left,order&1); run.depart(4,!(order&2));
     check(run.state.snapshot().cannons==15 && run.state.snapshot().restriction,"Crown arrival enables fourth cannon/restriction");
     run.wave(5,m::Action::startCycle,order&1); run.wave(6,m::Action::left,order&1); run.wave(7,m::Action::right,order&1);
-    run.mechanic(1,order&4,order&8);
+    run.mechanic(1,order&4,order&8,order%3);
     run.wave(8,m::Action::startCycle,order&1); run.wave(9,m::Action::left,order&1); run.wave(10,m::Action::right,order&1);
-    run.mechanic(2,!(order&4),!(order&8));
+    run.mechanic(2,!(order&4),!(order&8),order%3);
     auto token=run.claim(m::Action::left);
     check(run.state.animation(token,m::Animation::started),"escape starts from native summon");
     const auto escape=run.actors(11);
-    check(run.state.animation(token,m::Animation::finished),"living escape permits departure");
+    check(run.state.release_arm(token),"escape native clip wrap requests low control");
+    check(run.state.arm_applied(token,run.state.snapshot().arm.revision),"living escape permits departure after native low receipt");
     check(!run.state.snapshot().restriction,"second recovery releases restriction");
     run.depart(5,order&2);
     check(run.state.snapshot().restriction,"actual final arrival restores restriction");
     run.wave(12,m::Action::startCycle,order&1); run.wave(13,m::Action::left,order&1); run.wave(14,m::Action::right,order&1);
-    run.mechanic(3,order&4,order&8);
+    run.mechanic(3,order&4,order&8,order%3);
     return run.state;
 }
 void runtime() {
@@ -199,4 +251,4 @@ void presentation() {
     s.phase=m::Phase::recovery;queue.observe(s,100003);check(queue.view(1).pending==255,"recovery retires obsolete eye prompt");
     s.endingStarted=true;queue.observe(s,100004);check(queue.view(1).cinematic && queue.view(1).pending==255,"native movie owns remaining audio");
 }
-int main() {handshake();packets();presentation();runtime();std::cout<<checks<<" ending/transit checks, "<<failures<<" failures\n";return failures?1:0;}
+int main() {handshake();packets();portal_receipts();presentation();runtime();std::cout<<checks<<" ending/transit checks, "<<failures<<" failures\n";return failures?1:0;}

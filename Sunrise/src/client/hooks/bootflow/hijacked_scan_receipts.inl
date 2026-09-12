@@ -41,8 +41,7 @@ void update(std::uintptr_t sensor) noexcept {
                 && read.value(actor+0x1D0,offset) && offset==0x30) {participant=true;break;}
         }}
         std::uintptr_t again{};if(!capture(read,sensor,request,again) || again!=device) {return;}
-        if(!request.started && playback.started(request.scan.owner.value,participant)) {ds::observe_scan(request.scan,true,false);}
-        if(playback.finished(request.scan.owner.value,request.started)) {ds::observe_scan(request.scan,false,true);}
+        ds::observe_scan_playback(request.scan,playback,participant);
         return;
     }
 }

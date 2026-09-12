@@ -310,6 +310,7 @@
     <ClCompile Include="src\client\hooks\bootflow\omega_arc_charge_receipts.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\omega_boss_health.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\omega_enemy_lair_receipts.cpp" />
+    <ClCompile Include="src\client\hooks\bootflow\mission_population_observer.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\vance_contact_observer.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\omega_lair_cinematic.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\omega_navigation.cpp" />
@@ -1440,6 +1441,10 @@
     <ClInclude Include="src\state\activity\omega_enemy_lair_wave.h" />
     <ClInclude Include="src\state\activity\omega_first_lair_encounter.h" />
     <ClInclude Include="src\state\activity\omega_first_lair_runtime.h" />
+    <ClInclude Include="src\state\activity\omega_archive_arm_control.h" />
+    <ClInclude Include="src\state\activity\omega_archive_intro_control.h" />
+    <ClInclude Include="src\state\activity\coo\native_mission_forest_authority.h" />
+    <ClInclude Include="src\state\activity\coo\objective_delivery.h" />
     <ClInclude Include="src\state\activity\omega_first_mancannon_authority.h" />
     <ClInclude Include="src\state\activity\omega_ikora_lattice.h" />
     <ClInclude Include="src\state\activity\omega_intro_rules.h" />
@@ -1492,6 +1497,10 @@
     <ClInclude Include="src\client\hooks\bootflow\omega_enemy_forest_receipts.h" />
     <ClInclude Include="src\client\hooks\bootflow\omega_enemy_forest_receipts_runtime.h" />
     <ClInclude Include="src\client\hooks\bootflow\omega_enemy_lair_receipts.h" />
+    <ClInclude Include="src\client\hooks\bootflow\mission_population_observer.h" />
+    <ClInclude Include="src\state\activity\coo\population_readiness_request.h" />
+    <ClInclude Include="src\server\runtime\activity\mission_capture_service.h" />
+    <ClInclude Include="src\server\runtime\activity\mission_observation_queue.h" />
     <ClInclude Include="src\client\hooks\bootflow\vance_contact_observer.h" />
     <ClInclude Include="src\client\hooks\bootflow\vance_contact_contract.h" />
     <ClInclude Include="src\client\hooks\bootflow\omega_enemy_native_admission.h" />
@@ -1572,5 +1581,9 @@
     <ClInclude Include="src\state\activity\coo\scan_playback.h" />
     <ClInclude Include="src\state\activity\coo\plate_presentation.h" />
     <ClInclude Include="src\state\activity\hijacked\plate_presentation.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\middleware\bap\activity_message\native\generic_device_authority.h" />
+    <ClInclude Include="src\server\runtime\activity\mission_device_pose_service.h" />
   </ItemGroup>
 </Project>

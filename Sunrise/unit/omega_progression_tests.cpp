@@ -232,6 +232,7 @@ void complete_packet() {
     const std::array<wire::BubbleSubBlock, 3> bubbles{{{11, forestKeys}, {14, crownKeys}, {15, openingKeys}}};
     for (bool portalEnabled : {false, true}) for (bool bossActive : {false,true})
     for (bool leftStarted : {false, true})
+    for (unsigned armStage=0;armStage<3;++armStage)
     for (unsigned mode = 0; mode < 3; ++mode) {
         wire::Snapshot snapshot{};
         snapshot.lifetime = 3;
@@ -239,6 +240,7 @@ void complete_packet() {
         snapshot.omegaPortalEntry = portalEnabled;
         snapshot.omegaBossAuthority = true;
         snapshot.omegaBossGeneration = bossActive ? 17U : 0U;
+        if(armStage) snapshot.omegaMission.arm={17,armStage,false,armStage==1};
         snapshot.omegaLairAuthority = true;
         snapshot.omegaLairGeneration = snapshot.omegaBossGeneration;
         snapshot.omegaLairLeftStarted = bossActive && leftStarted;
@@ -305,12 +307,22 @@ void complete_packet() {
                     check(reader.skip(437)&&field(reader,1)==0,"parent remainder ends at absent native sense");
                     ++bossParentCount;
                 } else if(group==keys[9]&&type==2&&index==1) {
-                    check(size==45,"member42bits plus auth reset/presence and sense absence");
+                    const bool issued=bossActive && armStage;
+                    check(size==(issued?311U:183U),"explicit reset or arm body includes exact outer framing");
                     check(field(reader,1)==1&&field(reader,1)==1&&field(reader,1)==1,"member body and generation are present");
                     check(field(reader,31)==snapshot.omegaBossGeneration,"retained packet shares exact member generation");
                     check(field(reader,2)==1&&field(reader,3)==1,"member native retirement/location defaults");
                     check(field(reader,1)==static_cast<unsigned>(bossActive),"retained packet activates only intended member");
-                    check(field(reader,4)==0&&field(reader,1)==0,"member nested records and native sense remain absent");
+                    check(field(reader,1)==0 && field(reader,1)==1,"control present while auxiliary member record remains absent");
+                    check(field(reader,31)==(issued?armStage:0U),"full packet retains independent native control revision");
+                    check(field(reader,6)==0 && field(reader,6)==0 && field(reader,3)==0,"full packet control preserves non-scalar flags and hash defaults");
+                    check(field(reader,32)==0x811C9DC5U && field(reader,7)==0 && field(reader,16)==0x7FFFU && field(reader,32)==0,"full packet control keeps absent target and index");
+                    check(field(reader,5)==(issued?2U:0U),"only active owned arms carry scalar rows");
+                    if(issued) {
+                        check(field(reader,32)==0xA2AE120FU && field(reader,32)==(armStage==1?0x3F800000U:0U),"full packet left scalar follows high and release commands");
+                        check(field(reader,32)==0x8496ABD2U && field(reader,32)==0,"full packet keeps the other arm low");
+                    }
+                    check(field(reader,3)==0,"animation queue, last nested record and native sense remain absent");
                     ++bossMemberCount;
                 } else if(group==keys[10] && type==1 && index>=3 && index<=8) {
                     check(size==644,"initial combat source has reflected641-bit body");
@@ -683,42 +695,84 @@ void forest_lifetime(const char* exportPath) {
 }
 
 void forest_population_receipts() {
-    namespace receipt = sunrise::client::hooks::bootflow::forest_enemy;
+    namespace receipt = sunrise::client::hooks::bootflow::omega_enemy_forest;
     namespace presentation = sunrise::client::hooks::bootflow::omega_presentation;
-    std::array<std::byte, 0x150> header{};
-    presentation::write<std::uint32_t>(header, 0x148, 0x12345678);
-    presentation::write<std::uint32_t>(header, 0x14C, 7);
-    presentation::write<std::int64_t>(header, 0xC0, 2);
-    presentation::write<std::int32_t>(header, 0x100, 5);
-    receipt::Population result;
-    check(receipt::population_header(header, 0x12345678, 7, result), "encounter backlinks match current worker and entry");
-    std::array<std::byte, 0x60> rows{};
+    std::array<std::byte, receipt::kEntryBytes> bytes{};
+    presentation::write<std::uint32_t>(bytes, 0x34, 0x12345678U);
+    presentation::write<std::uint8_t>(bytes, 0x18, 0);
+    presentation::write<std::uint8_t>(bytes, 0x19, 3);
+    presentation::write<std::uint8_t>(bytes, 0x22, 25);
+    presentation::write<std::uint8_t>(bytes, 0x23, 7);
+    presentation::write<std::uint8_t>(bytes, 0x24, 9);
+    presentation::write<std::uint8_t>(bytes, 0x27, 2);
+    const auto entry = receipt::entry(bytes);
+    check(entry.encounter == 0x12345678U && entry.kind == 0 && entry.state == 3
+          && entry.palette == 25 && entry.area == 7 && entry.gateway == 9 && entry.pending == 2,
+          "current forest entry offsets preserve native identity and request state");
+    const auto digest = receipt::hash(bytes);
+    presentation::write<std::uint32_t>(bytes, 0x34, 0x12347678U); // Same low slot, different salt.
+    check(receipt::entry(bytes).encounter != entry.encounter && receipt::hash(bytes) != digest,
+          "recycled encounter salt remains distinguishable in decoded entry and change receipt");
+    presentation::write<std::uint32_t>(bytes, 0x34, UINT32_MAX);
+    check(receipt::entry(bytes).encounter == UINT32_MAX,
+          "invalid native encounter sentinel is retained for caller qualification");
+    check(receipt::read<std::uint32_t>(std::span(bytes).first(0x37), 0x34) == 0
+          && receipt::read<std::uint32_t>(bytes, SIZE_MAX) == 0,
+          "bounded field reader never assembles a partial or overflowed identity");
+
+    std::array<std::byte, 3 * receipt::kActorRowBytes> rows{};
     presentation::write<std::int32_t>(rows, 0x20, 3);
     presentation::write<std::int32_t>(rows, 0x24, 2);
     presentation::write<std::uint8_t>(rows, 0x2C, 1);
-    presentation::write<std::int32_t>(rows, 0x50, 99); // Disabled rows do not contribute.
-    auto reader = [&](std::uintptr_t address, void* output, std::size_t size) {
-        if (address < 0x1000 || address - 0x1000 > rows.size() || size > rows.size() - (address - 0x1000)) return false;
-        std::memcpy(output, rows.data() + address - 0x1000, size);
-        return true;
+    presentation::write<std::int32_t>(rows, 0x50, INT32_MAX); // Disabled row does not contribute.
+    presentation::write<std::int32_t>(rows, 0x54, INT32_MAX);
+    presentation::write<std::int32_t>(rows, 0x80, 7);
+    presentation::write<std::int32_t>(rows, 0x84, 4);
+    presentation::write<std::uint8_t>(rows, 0x8C, 2); // Any nonzero native enable flag counts.
+    receipt::Totals totals{};
+    check(receipt::actor_totals(rows, 3, totals) && totals.rows == 3 && totals.enabled == 2
+          && totals.remaining == 10 && totals.queued == 6,
+          "only enabled native request rows contribute to accounting");
+    presentation::write<std::int32_t>(rows, 0x20, INT32_MAX);
+    presentation::write<std::int32_t>(rows, 0x80, INT32_MAX);
+    presentation::write<std::int32_t>(rows, 0x24, -2);
+    presentation::write<std::int32_t>(rows, 0x84, -4);
+    check(receipt::actor_totals(rows, 3, totals)
+          && totals.remaining == 2LL * INT32_MAX && totals.queued == -6,
+          "native signed request counters sum in64bits without being interpreted as kills");
+    const auto reject = [&](std::span<const std::byte> data, std::int64_t count) {
+        totals = {99, 88, 77, 66};
+        return !receipt::actor_totals(data, count, totals) && totals.rows == 0
+               && totals.enabled == 0 && totals.remaining == 0 && totals.queued == 0;
     };
-    check(receipt::population_rows(0x1000, reader, result) && result.status == 3
-          && result.enabled == 1 && result.remaining == 3 && result.queued == 2 && result.tracked == 5,
-          "only enabled native rows contribute, and tracked references remain separate");
-    check(!receipt::population_header(header, 0x12345678, 8, result) && result.status == 2 && result.remaining == -1,
-          "stale encounter from another entry cannot masquerade as an empty encounter");
-    check(receipt::population_header(header, 0x12345678, 7, result), "restore valid encounter");
-    auto failedRead = [](std::uintptr_t, void*, std::size_t) { return false; };
-    check(!receipt::population_rows(0x1000, failedRead, result) && result.status == 2 && result.remaining == -1,
-          "failed population decoding never reports zero enemies");
-    check(!receipt::population_rows(UINTPTR_MAX - 4, reader, result), "row pointer overflow rejected");
-    presentation::write<std::int64_t>(header, 0xC0, -1);
-    check(!receipt::population_header(header, 0x12345678, 7, result), "invalid row count rejected");
-    receipt::Budget budget{};
-    check(budget.copy(receipt::kCopyBudget - 1) && !budget.copy(2) && budget.exhausted
-          && budget.bytes == receipt::kCopyBudget - 1, "capture refuses reads beyond the byte budget");
-    for (unsigned i = 0; i < 4; ++i) check(budget.getter(), "bounded existing-reference lookup admitted");
-    check(!budget.getter(), "fifth native getter refused in one poll");
+    check(reject(rows, -1) && reject(rows, INT64_MIN), "negative native row count rejected and prior totals cleared");
+    check(reject(rows, 4) && reject(std::span(rows).first(rows.size() - 1), 3),
+          "missing or partially copied actor rows return failure instead of successful empty accounting");
+    std::array<std::byte, receipt::kMaximumActorRows * receipt::kActorRowBytes> maximum{};
+    check(receipt::actor_totals(maximum, receipt::kMaximumActorRows, totals)
+          && totals.rows == receipt::kMaximumActorRows && totals.enabled == 0,
+          "full512row forest palette capacity is accepted");
+    check(reject(maximum, receipt::kMaximumActorRows + 1) && reject(maximum, INT64_MAX),
+          "oversized native palette count rejected before row indexing");
+    check(receipt::actor_totals({}, 0, totals) && totals.rows == 0 && totals.enabled == 0
+          && totals.remaining == 0 && totals.queued == 0,
+          "explicit zero row request remains distinct from rejected accounting");
+
+    std::uintptr_t address{};
+    check(receipt::relative(0x20000, 0x30, 0xD8, address) && address == 0x20108
+          && receipt::relative(0x20000, -0x30, 0xD8, address) && address == 0x200A8,
+          "native relative rows support both displacement signs and field suffix");
+    check(!receipt::relative(UINTPTR_MAX - 3, 0, 4, address)
+          && !receipt::relative(UINTPTR_MAX - 3, 4, 0, address),
+          "suffix and positive displacement overflow rejected independently");
+    check(!receipt::relative(0x10000, INT64_MIN, 0, address)
+          && !receipt::relative(0x10000, -1, 0, address),
+          "negative displacement underflow and low invalid address rejected");
+    auto oldReceipt = std::uint64_t{1469598103934665603ULL};
+    auto recycledReceipt = oldReceipt;
+    receipt::fold(oldReceipt, entry.encounter);
+    receipt::fold(recycledReceipt, std::uint32_t{0x12347678U});
+    check(oldReceipt != recycledReceipt, "population receipt digest retains full salted encounter identity");
 }
 
 void portal_player_hash() {
@@ -833,7 +887,7 @@ void boss_authority_scope_and_generation() {
     for(bool enabled:{false,true}) {
         snapshot.omegaBossAuthority=enabled;
         check(wire::auth_body_bits(snapshot,authority::kRegistry,1,0,false)==(enabled?641U:0U),"parent body only when boss authority is scoped");
-        check(wire::auth_body_bits(snapshot,authority::kRegistry,2,1,false)==(enabled?42U:0U),"member body only when boss authority is scoped");
+        check(wire::auth_body_bits(snapshot,authority::kRegistry,2,1,false)==(enabled?180U:0U),"explicit control reset only when boss authority is scoped");
         for(auto type:std::array<std::uint8_t,3>{1,2,66})
         for(auto index:std::array<std::uint16_t,3>{0,1,57}) {
             const bool owned=(type==1&&index==0)||(type==2&&index==1);
@@ -858,11 +912,15 @@ void boss_authority_scope_and_generation() {
     check(second==35&&second!=first,"fresh door crossing uses a new run generation");
     for(auto generation:std::array<std::uint32_t,4>{0,first,0,second}) {
         snapshot.omegaBossGeneration=generation;
-        std::array<std::byte,6> member{};bits::Writer writer(member);
-        check(wire::write_auth_body(writer,snapshot,authority::kRegistry,2,1,false)&&writer.bit_count()==42,"scoped member body survives active/dormant transitions");
+        std::array<std::byte,23> member{};bits::Writer writer(member);
+        check(wire::write_auth_body(writer,snapshot,authority::kRegistry,2,1,false)&&writer.bit_count()==180,"scoped member reset body survives active/dormant transitions");
         bits::Reader reader(member);
         check(field(reader,1)==1&&field(reader,31)==generation,"serializer encodes exact run generation");
         check(reader.skip(5)&&field(reader,1)==static_cast<unsigned>(generation!=0),"serializer keeps enablement consistent with generation");
+        check(field(reader,1)==0 && field(reader,1)==1 && field(reader,31)==0,"startup and dormancy explicitly clear independent control revision");
+        check(field(reader,6)==0 && field(reader,6)==0 && field(reader,3)==0,"reset leaves actor flags and hash domain empty");
+        check(field(reader,32)==0x811C9DC5U && field(reader,7)==0 && field(reader,16)==0x7FFFU && field(reader,32)==0,"reset retains absent target and index");
+        check(field(reader,5)==0 && field(reader,1)==0 && field(reader,1)==0,"reset contains no scalar actions or replacement animation queue");
     }
 }
 

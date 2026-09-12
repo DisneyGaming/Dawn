@@ -6,13 +6,14 @@
 #include <cstdio>
 #include <cmath>
 #include <mutex>
-#include "../../../client/hooks/bootflow/gateway_native_read.h"
-#include "../../../client/hooks/bootflow/coo_enemy_readiness.h"
 
 namespace sunrise::state::activity::strike_bond {
 namespace {
 std::mutex mutex;
 Controller controller;
+struct PlatformObservation {EnemyReceipt enemy{};coo::ObjectReceipt platform{};PlatformMotion motion{};bool pending{};};
+PlatformObservation platformObservation{};
+coo::ReadinessSchedule readinessSchedule;
 std::unique_ptr<coo::script::MissionDocument> document;
 std::uint64_t selectedRun{},nextPublication{};
 std::bitset<std::size(kVolumes)> loggedVolumes{};bool loggedFault{};coo::StallDiagnostics stalled;
@@ -45,32 +46,28 @@ bool load() noexcept {
 }
 bool prepare(std::uint64_t run,bool selected) noexcept {
     const std::lock_guard lock(mutex);if(run!=mission_run_generation()) {return false;}
-    if(!selected) {controller.reset();selectedRun=nextPublication=0;stalled.reset();return false;}
+    if(!selected) {controller.reset();platformObservation={};readinessSchedule.reset();selectedRun=nextPublication=0;stalled.reset();return false;}
     if(!load() || !controller.select(document->views(),run)) {return false;}
-    if(selectedRun!=run) {loggedVolumes.reset();loggedFault=false;lastActive=lastComplete=UINT32_MAX;lastSection=lastBossStage=UINT8_MAX;lastBossFighting=false;stalled.reset();refusedLenses.reset();lastObjective=UINT32_MAX;lastMarker={};}
+    if(selectedRun!=run) {platformObservation={};readinessSchedule.reset();loggedVolumes.reset();loggedFault=false;lastActive=lastComplete=UINT32_MAX;lastSection=lastBossStage=UINT8_MAX;lastBossFighting=false;stalled.reset();refusedLenses.reset();lastObjective=UINT32_MAX;lastMarker={};}
     selectedRun=run;return true;
 }
 namespace {
 void log_receipt(const char* stage,std::uint64_t run,std::uint32_t value) noexcept {
     std::array<char,192> line{};std::snprintf(line.data(),line.size(),"ev=strike_bond stage=%s run=%llu value=%u",stage,static_cast<unsigned long long>(run),value);log(line.data());
 }
-void poll_readiness(std::uint64_t run,std::uint64_t now) noexcept {
-    static std::uint64_t next{},lastRun{};static std::size_t cursor{};
-    std::array<EnemyReceipt,256> pending{};std::size_t count{},begin{};
-    {const std::lock_guard lock(mutex);if(!current() || run!=selectedRun) {return;}
-     if(run!=lastRun) {next=0;cursor=0;lastRun=run;}if(now<next) {return;}next=now+500;
-     controller.pending_enemies([&](const auto& r) {if(count<pending.size()) {pending[count++]=r;}});
-     if(count) {begin=cursor%count;cursor=(begin+12)%count;}}
-    const auto image=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
-    for(std::size_t i=0;i<(std::min)(count,std::size_t{12});++i) {
-        client::hooks::bootflow::gateway_native::Read read{image};const auto& r=pending[(begin+i)%count];
-        observe_readiness(r,client::hooks::bootflow::coo_native::enemy(read,image,r));
-    }
 
 }
+coo::ReadinessRequest<EnemyReceipt> readiness_request(std::uint64_t now) noexcept {
+    const std::lock_guard lock(mutex);
+    if(!selectedRun || selectedRun!=mission_run_generation() || !mission_seed_armed()
+        || world_phase()!=WorldPhase::arrived) { return {}; }
+    return readinessSchedule.request<EnemyReceipt, 256>(selectedRun,now,
+        [&](auto visit) noexcept { controller.pending_enemies(visit); });
 }
 Frame snapshot(std::uint64_t run,std::uint64_t now,bool ready,int region) noexcept {
-    poll_readiness(run,now);const std::lock_guard lock(mutex);if(!current() || run!=selectedRun) {return {};}
+    const std::lock_guard lock(mutex);if(!current() || run!=selectedRun) {return {};}
+    if(platformObservation.pending) {const auto sample=platformObservation;platformObservation.pending=false;
+        static_cast<void>(controller.boss_platform_motion(sample.enemy,sample.platform,sample.motion));}
     const auto f=controller.update(run,now,ready,region);nextPublication=now+100;const auto d=controller.diagnostics();
     if(d.active!=lastActive || d.complete!=lastComplete || f.section!=lastSection) {
         lastActive=d.active;lastComplete=d.complete;lastSection=f.section;std::array<char,320> line{};
@@ -201,9 +198,14 @@ EnemyReceipt guardian_enemy(std::uint32_t registry,std::uint16_t source) noexcep
 void observe_health(const EnemyReceipt& r,float value) noexcept {
     const std::lock_guard lock(mutex);if(current()) static_cast<void>(controller.health(r,value));
 }
-bool observe_boss_motion(const EnemyReceipt& r,const coo::ObjectReceipt& platform,float value) noexcept {
-    const std::lock_guard lock(mutex);return current() && controller.boss_motion(r,platform,value);
+bool observe_boss_platform_motion(const EnemyReceipt& r,const coo::ObjectReceipt& platform,PlatformMotion sample) noexcept {
+    const std::lock_guard lock(mutex);
+    if(!current() || !r.valid() || r!=controller.boss_enemy() || !platform.valid() || platform!=controller.boss_platform())return false;
+    // Latest game-thread observation only. Publishing/transitioning remains on
+    // the server snapshot thread and repeated world ticks cannot fill a queue.
+    platformObservation={r,platform,sample,true};return true;
 }
+
 bool observe_boss_animation(const EnemyReceipt& r,std::uint8_t cycle,BossAnimation event) noexcept {
     const std::lock_guard lock(mutex);const bool accepted=current() && controller.boss_animation(r,cycle,event);
     if(accepted) log_receipt("boss_animation",r.run,static_cast<unsigned>(event));

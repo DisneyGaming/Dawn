@@ -60,12 +60,6 @@ inline bool switch_value(std::uintptr_t image,std::uint32_t key,std::uint32_t de
         && read_value<std::uint32_t>(value+4)==selection::kHashClass
         && read_value<std::uint32_t>(value+8)==desired;
 }
-inline void apply(void* instance,std::byte* source,bool enabled,std::uint32_t seed,std::uint8_t pass) noexcept {
-    __try {
-        if(enabled) { static_cast<void>(beyond_forest::prepare({static_cast<std::byte*>(instance),beyond_forest::kWorkerBytes},seed,pass)); }
-        static_cast<void>(beyond_forest::enable({source+0x180,0x60},enabled));
-    } __except(EXCEPTION_EXECUTE_HANDLER) { }
-}
 inline void prepare(void* instance) noexcept {
     if(!selected() || !worker(instance)) { return; }
     const auto request=mission::request();
@@ -87,13 +81,13 @@ inline void prepare(void* instance) noexcept {
         if(owner==UINT32_MAX || !setter || !readable(word,4)) { return; }
         if((read_value<std::uint32_t>(word)&(1U<<(owner&31U)))==0) { setter(owner,1U); }
     }
-    apply(instance,source,ready,seed,pass);
+    mission::observe_forest_readiness(request.owner,pass,ready);
     static std::atomic_uint64_t reported{UINT64_MAX};
     const auto stamp=(static_cast<std::uint64_t>(seed)<<1)|(ready?1ULL:0ULL);
     if(reported.exchange(stamp,std::memory_order_relaxed)!=stamp) {
         std::array<char,256> line{};
         const int length=std::snprintf(line.data(),line.size(),
-            "ev=beyond_forest run=%llu generation=%u pass=%u ready=%u seed=%u config=80F4D0F1 worker=%p sensor=%p mutation=native_inputs",
+            "ev=beyond_forest run=%llu generation=%u pass=%u ready=%u seed=%u config=80F4D0F1 worker=%p sensor=%p observation=switch_readiness",
             static_cast<unsigned long long>(request.owner.run),request.owner.value,unsigned(pass),ready?1U:0U,seed,instance,static_cast<void*>(source));
         if(length>0 && static_cast<std::size_t>(length)<line.size()) { core::log::write(core::log::Channel::client,core::log::Level::info,{line.data(),static_cast<std::size_t>(length)}); }
     }

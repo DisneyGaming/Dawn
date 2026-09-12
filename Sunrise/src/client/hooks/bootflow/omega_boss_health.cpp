@@ -91,7 +91,20 @@ Reject member_current(const DeathLease& lease,std::uint32_t* observed=nullptr) n
     }
     std::array<std::byte,kMemberBytes> member{};
     const auto* instance=lease.resolve(ref.handle);
-    if(!copy(instance,member) || !member_identity(member,boss,ref)) {
+    const auto state=lair::status(boss.run);
+    std::array<std::byte,kMemberAuthorityPrefix.size()> prefix{};
+    std::array<std::byte,0x108> authority{};
+    using MemberAuthority=const std::byte*(__fastcall*)(const void*) noexcept;
+    const auto getterAddress=lease.image+0xAB27C0;
+    if(!copy(reinterpret_cast<const void*>(getterAddress),prefix)
+        || std::memcmp(prefix.data(),kMemberAuthorityPrefix.data(),prefix.size())!=0
+        || !state.enabled || state.failed || state.boss!=boss || instance==nullptr) {
+        return Reject::memberIdentity;
+    }
+    const auto getter=reinterpret_cast<MemberAuthority>(getterAddress);
+    const auto* nativeAuthority=getter(instance);
+    if(!copy(instance,member) || !copy(nativeAuthority,authority)
+        || !member_program_identity(member,authority,boss,ref,state.intro)) {
         if(observed!=nullptr) { *observed=detail::read<std::uint32_t>(member,0x21C); }
         return Reject::memberIdentity;
     }
@@ -102,7 +115,14 @@ Reject member_current(const DeathLease& lease,std::uint32_t* observed=nullptr) n
         || detail::read<std::uint32_t>(after,0x48)!=boss.actor
         || detail::read<std::uint32_t>(after,0x4C)!=boss.entity
         || std::memcmp(after.data()+0x60,actor.data()+0x60,sizeof(Reference))!=0
-        || lease.resolve(ref.handle)!=instance) { return Reject::memberIdentity; }
+        || lease.resolve(ref.handle)!=instance || getter(instance)!=nativeAuthority) { return Reject::memberIdentity; }
+    const auto current=lair::status(boss.run);
+    std::array<std::byte,kMemberBytes> memberAfter{};
+    std::array<std::byte,0x108> authorityAfter{};
+    if(!current.enabled || current.failed || current.boss!=boss
+        || current.intro.program.revision!=state.intro.program.revision
+        || !copy(instance,memberAfter) || !copy(nativeAuthority,authorityAfter)
+        || !member_program_identity(memberAfter,authorityAfter,boss,ref,current.intro)) { return Reject::memberIdentity; }
     return Reject::none;
 }
 bool is_native_death_event(const DeathLease& lease,std::uint32_t event,std::uint32_t* observed=nullptr) noexcept {

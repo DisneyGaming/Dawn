@@ -1,3 +1,4 @@
+#include "../../../../../state/activity/coo/native_mission_forest_authority.h"
 #include <Windows.h>
 
 #include <algorithm>
@@ -594,6 +595,7 @@ RosterOutcome build_roster_snapshot(Session& session,
         syntheticOmega
         && (session.activity.sensorObservation.omegaForestEntranceTriggered
             || (inputs.regionIndex >= 64 && inputs.regionIndex <= 104));
+    snapshot.omegaForestSeed=state::activity::coo::native_generator::mission_seed(state::activity::mission_run_generation(),0,1);
     snapshot.omegaGateAuthority = syntheticOmega && omegaExperiments.gateAuthority;
     snapshot.omegaPortalMutation = syntheticOmega && omegaExperiments.portalMutation;
     // TEMP diagnostic: which arm flag drops at the gate (dialogue/directive applies stop there).

@@ -15,6 +15,8 @@ inline void project(const Frame& frame, wire::Snapshot& snapshot) noexcept {
         snapshot.omegaIntroPlay = presentation.intro.play;
         snapshot.omegaBossGeneration = presentation.bossGeneration;
         const auto& encounter = frame.encounter;
+        snapshot.omegaArchiveArm=encounter.arm;
+        snapshot.omegaArchiveIntro=encounter.intro;
         snapshot.omegaFirstLairGeneration=encounter.generation;
         snapshot.omegaFirstLairLoose=encounter.loose;
         snapshot.omegaFirstLairAnchor=encounter.anchor;

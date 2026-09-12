@@ -30,6 +30,7 @@ public:
     bool died(const EnemyReceipt&) noexcept;
     bool health(const EnemyReceipt&,float) noexcept;
     bool boss_motion(const EnemyReceipt&,const coo::ObjectReceipt&,float) noexcept;
+    bool boss_platform_motion(const EnemyReceipt&,const coo::ObjectReceipt&,PlatformMotion) noexcept;
     bool boss_animation(const EnemyReceipt&,std::uint8_t,BossAnimation) noexcept;
     EnemyReceipt boss_enemy() const noexcept {return bossEnemy_;}
     coo::ObjectReceipt boss_platform() const noexcept {return objects_.owner(object_index(kBossPlatform));}
@@ -60,6 +61,7 @@ private:
     void update_cover() noexcept;
     void update_boss_platform() noexcept;
     bool platform_position(float,bool=false) noexcept;
+    bool platform_travel(float) noexcept;
     bool observed(const coo::CommandSpec&) const noexcept;
     bool entered(coo::Asset) const noexcept;
     bool revise(coo::Asset) noexcept;
@@ -81,7 +83,7 @@ private:
     // was indistinguishable from a player who never walked into it.
     Point lastPoint_{};bool hasPoint_{};
     std::uint64_t nextPlatform_{},nextCover_{};std::uint32_t coverSeed_{};std::uint8_t coverGroup_{UINT8_MAX};
-    bool platformForward_{true};
+    bool platformForward_{true};PlatformTravel platformTravel_{};
     coo::MissionRuntime composition_{};coo::Executor executor_{};Frame frame_{};
 };
 }

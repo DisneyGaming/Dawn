@@ -1,4 +1,5 @@
 #include "controller.h"
+#include "../coo/native_mission_forest_authority.h"
 #include "transit_contacts.h"
 #include <cmath>
 
@@ -111,6 +112,12 @@ bool Controller::lens(const LensReceipt& receipt,bool dead) noexcept {
     if(!frame_.lensExposed) { return false; }
     lens_.expose();if(!lens_.destroyed(receipt)) { return false; }
     frame_.lensDestroyed=true;well_channels();++frame_.revision;return true;
+}
+bool Controller::plate_pose(const PlateReceipt& r,server::runtime::activity::mission_device_pose::Sample sample) noexcept {
+    if(!r.valid() || r!=plate_ || !frame_.enabled || r.owner.run!=run_)return false;
+    const auto& native=frame_.native[asset_index(kPlate)];
+    if(!native.active || native.generation!=r.owner.value)return false;
+    return server::runtime::activity::mission_device_pose::observe(frame_.plateCapture.pose,sample);
 }
 bool Controller::bind_plate(const PlateReceipt& receipt) noexcept {
     const auto& state=frame_.native[asset_index(kPlate)];
@@ -234,7 +241,9 @@ bool Controller::publish(const coo::Command& command) noexcept {
             // The first visit belongs to the observations collected during
             // the reveal. Only a different, later visit retires those latches.
             if(frame_.forestPass && frame_.forestPass!=pass) { seen_=inside_; }
+            if(frame_.forestPass!=pass)frame_.forestReady=false;
             frame_.forestPass=pass;
+            frame_.forestSeed=coo::native_generator::mission_seed(owner().run,owner().value,pass);
         }
         else { return false; }++frame_.revision;break;
     case coo::Operation::complete:
@@ -296,6 +305,12 @@ void Controller::update_module(std::uint32_t id,const coo::MissionInput& input,F
         ++frame_.revision;
     }
     frame_.enabled=executor_.diagnostics().phase!=coo::Phase::failed;
+    // Charge duration remains the documented seven-second reconstruction estimate.
+    if(!server::runtime::activity::mission_capture::update(frame_.plateCapture,frame_.plateRevision,
+        frame_.native[asset_index(kPlate)].active && frame_.plateOccupied && !frame_.lensDestroyed,
+        frame_.lensExposed && !frame_.lensDestroyed,coo::native_activity_ticks(7000),frame_.gameplayClockTicks)) {frame_.enabled=false;}
+    frame_.plateCapture.presentationPosition=!frame_.lensDestroyed && (frame_.plateOccupied || frame_.lensExposed)?.1F:0.F;
+        if(!server::runtime::activity::mission_device_pose::desire(frame_.plateCapture.pose,frame_.plateCapture.presentationPosition)) {frame_.enabled=false;}
     frame_.checked=frame_.finished;frame_.presentation=objectives_.state();frame_.completion=lifecycle_.publication();output=frame_;
 }
 Frame Controller::update(std::uint64_t run,std::uint64_t now,bool ready) noexcept {

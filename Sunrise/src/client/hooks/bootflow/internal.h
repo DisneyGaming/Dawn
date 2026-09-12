@@ -177,8 +177,6 @@ void quiesce_omega_first_cannon_receipt() noexcept;
 void quiesce_omega_navigation() noexcept;
 [[nodiscard]] bool uninstall_omega_navigation() noexcept;
 
-/** Game-thread consumer of the forest-transition latch; installs the native type-7 request. */
-void sample_omega_portal_transport() noexcept;
 
 /** Legacy player_broadcast probe. Quarantined because it performs a native timing correction. */
 [[nodiscard]] bool install_player_broadcast_create_probe() noexcept;

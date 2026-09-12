@@ -14,6 +14,6 @@ inline float position(const PlateState& state,std::uint8_t index) noexcept {
 template<class Read,class Current,class Apply>
 bool reconcile(const PlateRequest& request,Read& read,std::uintptr_t device,Current current,Apply apply) noexcept {
     if(!request.state.armed && request.plate.index==0) {return false;}
-    return coo::plate_presentation::reconcile(request,read,device,position(request.state,request.plate.index),current,apply);
+    return coo::plate_presentation::reconcile(request,read,device,request.capture.presentationPosition,current,apply);
 }
 }

@@ -172,7 +172,21 @@ struct Replay {
         const auto plateSource=c.frame().native[ds::asset_index(ds::kPlates[0].source)];
         if(plateSource.acknowledged && !c.plate_request(0).plate.valid()) {
             ds::PlateReceipt r{{run,plateSource.generation},0x20000,0,4100,4200,4300,4400};
-            check(c.bind_plate(r),"owned plate timer bound");enter(c,run,ds::kPlates[0].volume);
+            check(c.bind_plate(r),"owned plate timer bound");
+            {auto wrongPoseOwner=r;++wrongPoseOwner.owner.value;
+             check(!c.plate_pose(wrongPoseOwner,{0.F,0.F,INT32_MAX,INT32_MAX}),"pose rejects retired source generation");
+             wrongPoseOwner=r;++wrongPoseOwner.serial;
+             check(!c.plate_pose(wrongPoseOwner,{0.F,0.F,INT32_MAX,INT32_MAX}),"pose rejects recycled entity identity");
+             wrongPoseOwner=r;++wrongPoseOwner.device;
+             check(!c.plate_pose(wrongPoseOwner,{0.F,0.F,INT32_MAX,INT32_MAX}),"pose rejects another device component");
+             wrongPoseOwner=r;++wrongPoseOwner.owner.run;
+             check(!c.plate_pose(wrongPoseOwner,{0.F,0.F,INT32_MAX,INT32_MAX}),"pose rejects retired mission run");
+             wrongPoseOwner=r;++wrongPoseOwner.source;
+             check(!c.plate_pose(wrongPoseOwner,{0.F,0.F,INT32_MAX,INT32_MAX}),"pose rejects another source address");
+             wrongPoseOwner=r;++wrongPoseOwner.timer;
+             check(!c.plate_pose(wrongPoseOwner,{0.F,0.F,INT32_MAX,INT32_MAX}),"pose rejects another native timer");
+             check(c.plate_pose(r,{0.F,0.F,700,900}),"server accepts exact native pose receipt");}
+enter(c,run,ds::kPlates[0].volume);
             check(!c.plate(r,c.frame().plates[0].revision,1.F,true),"unarmed or unstarted plate cannot complete");plateChecked=true;
         }
         const auto scanSource=c.frame().native[ds::asset_index(ds::kScans[0].source)];
@@ -723,19 +737,7 @@ static void presentation_records() {
     auto wrong=bytes;p::put<std::uint32_t>(wrong,0,0x80B4241CU);
     check(!p::source(wrong,true),"foreign dialogue definition rejected");
     check(!p::source(std::span<const std::byte>(bytes).first(0x57),true),"short source rejected");
-    ds::Frame frame{};frame.enabled=true;frame.spawnGeneration=513;frame.activeRow=12;frame.generations[12]=515;
-    const auto before=bytes;check(p::dialogue_records(bytes,frame),"active requested row seeded");
-    constexpr auto offset=0x188+12*32;
-    check(p::read<std::uint32_t>(bytes,offset+24)==515 && p::read<std::uint8_t>(bytes,offset+28)==2
-        && p::read<std::uint64_t>(bytes,offset+8)==1,"requested row carries exact generation and request state");
-    for(std::size_t i=0;i<bytes.size();++i) {
-        if(i>=offset && i<offset+29) {continue;}
-        check(bytes[i]==before[i],"inactive rows and native processed array remain unchanged");
-    }
-    check(bytes[0x1188]==before[0x1188] && !p::dialogue_records(bytes,frame),"processed array untouched and identical request deduplicated");
-    frame.enabled=false;const auto seeded=bytes;check(!p::dialogue_records(bytes,frame) && bytes==seeded,"disabled frame cannot seed dialogue");
-    frame.enabled=true;check(!p::dialogue_records(wrong,frame),"wrong native source cannot receive a valid mission request");
-    frame.generations[12]=0;check(!p::dialogue_records(bytes,frame),"zero generation rejected");
+    // Dialogue delivery is tested from production wire bodies by native_mission_dialogue_tests.
     p::put<std::uint32_t>(wrong,0,0x80B4241CU);p::put<std::uint32_t>(wrong,4,0x80804F54U);
     p::put<std::int64_t>(wrong,8,0xB88);p::put<std::uint32_t>(wrong,0x4C,0x80804F53U);
     check(p::source(wrong,false),"exact directive source accepted");p::put<std::uint32_t>(wrong,0,0x80B4241FU);

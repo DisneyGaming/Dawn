@@ -12,6 +12,7 @@
 #include <mutex>
 
 #include "omega_enemy_lair_receipts.h"
+#include "mission_population_observer.h"
 #include "hijacked_placements.h"
 #include "../../../state/activity/gateway/runtime.h"
 #include "../../../state/activity/deadly_trial/runtime.h"
@@ -864,6 +865,7 @@ __declspec(noinline) void retire_strike_bond_boss(std::uintptr_t source,bool all
 __declspec(noinline) void poll_native_population_admissions() noexcept {
     const hooking::CallGate::Scope scope{g_gate};
     if(!scope.accepts_side_effects()) return;
+    poll_mission_population_readiness(g_image,GetTickCount64());
     const auto hijackedRun=hijacked::native_run();
     if(hijackedRun && TryAcquireSRWLockExclusive(&g_lock)) {
         trace_hijacked_attachments(hijackedRun);

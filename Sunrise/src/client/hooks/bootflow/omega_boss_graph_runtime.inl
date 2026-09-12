@@ -36,7 +36,8 @@ std::byte* resolve_handle(std::uint32_t handle) noexcept {
     return reinterpret_cast<std::byte*>(row - static_cast<std::uintptr_t>(relocation));
 }
 struct MemberView {
-    std::uint32_t self{UINT32_MAX}, actor{UINT32_MAX}, generation{}, revision{};
+    std::uint32_t self{UINT32_MAX}, actor{UINT32_MAX}, generation{}, revision{}, controlRevision{};
+    bool armControl{},armDomain{}; float leftControl{},rightControl{};
     std::int64_t offset{};
     std::int32_t head{}, count{};
     bool enabled{}, exactQueue{};
@@ -57,7 +58,7 @@ bool owner_wait(std::uint64_t run, unsigned stage, const char* field,
 }
 bool member_view(std::byte* component, MemberView& out) noexcept {
     const frame_timing::PostSpan workTiming(frame_timing::Kind::member_view);
-    std::array<std::byte, 0xA38> member{};
+    std::array<std::byte, 0xAB4> member{};
     if (!copy_native(component, member.data(), member.size())
         || !omega_reveal_source::matches(member, {0x80F4756DU, 0x80807D9DU, 0xB58})) return false;
     // AB5080/AB6600 construct {owning datum handle, relative component offset}.
@@ -88,6 +89,23 @@ bool member_view(std::byte* component, MemberView& out) noexcept {
     out.enabled = read<std::uint8_t>(auth.data(), 6) != 0
         && read<std::uint8_t>(member.data(), 0x1D4) == 0
         && read<std::uint32_t>(auth.data(), 0x100) == out.revision;
+    // AB2D00 commits .5 at+AB0 before applying its scalar rows. Match both
+    // revisions and the exact two-row domain; the caller also reads live scalars.
+    out.controlRevision=read<std::uint32_t>(member.data(),0xAB0);
+    out.armDomain=read<std::uint8_t>(auth.data(),0x50)==0 && read<std::uint8_t>(auth.data(),0x51)==0
+        && read<std::uint32_t>(auth.data(),0x54)==0 && read<std::uint32_t>(auth.data(),0x70)==0x811C9DC5U
+        && read<std::int8_t>(auth.data(),0x74)==-1 && read<std::int16_t>(auth.data(),0x76)==-1
+        && read<std::int32_t>(auth.data(),0x78)==-1;
+    for(unsigned i=0;i<6;++i) out.armDomain=out.armDomain && read<std::uint32_t>(auth.data(),0x58+i*4)==0x811C9DC5U;
+    // AB7350 applies the default control on activation. Require its cached hash
+    // list to agree before publishing, so a foreign native target list is not reset.
+    for(unsigned i=0;i<7;++i) out.armDomain=out.armDomain
+        && read<std::uint32_t>(member.data(),0xA90+i*4)==read<std::uint32_t>(auth.data(),0x54+i*4);
+    out.armControl=out.armDomain && out.controlRevision!=0 && read<std::uint32_t>(auth.data(),0x4C)==out.controlRevision
+        && read<std::uint32_t>(auth.data(),0x7C)==2
+        && read<std::uint32_t>(auth.data(),0x80)==0xA2AE120FU
+        && read<std::uint32_t>(auth.data(),0x88)==0x8496ABD2U;
+    out.leftControl=read<float>(auth.data(),0x84);out.rightControl=read<float>(auth.data(),0x8C);
     graph::Queue queue{};
     std::memcpy(queue.data(), member.data() + 0x230, queue.size());
     out.exactQueue = graph::queue_matches(queue);

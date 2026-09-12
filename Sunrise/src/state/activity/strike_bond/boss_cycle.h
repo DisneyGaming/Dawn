@@ -4,6 +4,12 @@
 namespace sunrise::state::activity::strike_bond {
 enum class BossMode : std::uint8_t { damage, parking, dormant, waking, dying, opening };
 enum class BossAnimation : std::uint8_t { asleep, parked, wakeStarted, awake, deathStarted, openingStarted, openingAwake };
+struct PlatformMotion {
+    float position{},target{},velocity{};std::int32_t revision{-1};
+};
+struct PlatformTravel {
+    float target{},origin{};bool requested{},rebasing{};
+};
 struct BossCycle {
     BossMode mode{BossMode::damage};std::uint8_t cycle{},parked{},awakened{};
     bool asleep{},wakeStarted{},deathStarted{},platformStopped{},hasPosition{};

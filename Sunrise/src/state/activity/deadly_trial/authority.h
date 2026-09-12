@@ -6,7 +6,7 @@
 namespace sunrise::state::activity::deadly_trial {
 inline std::size_t body_bits(const Frame& f,std::uint32_t key,std::uint8_t type,std::uint16_t slot) noexcept {
     if(!f.enabled || !f.spawnGeneration) { return 0; }
-    if(key==kRoot && type==53 && slot==2) { return coo::native_presentation::kDialogueBits+(f.activeRow==coo::kNoDialogue?0U:64U); }
+    if(key==kRoot && type==53 && slot==2) { return coo::native_presentation::dialogue_bits(f.generations,f.activeRow); }
     if(key==kRoot && type==68 && slot==0 && f.presentation.published) { return coo::native_presentation::kDirectiveBits; }
     if(key==kAlleysA && (f.cohorts&(1U<<4))) {
         if(type==1 && slot==34) { return 641; }
@@ -19,7 +19,8 @@ inline std::size_t body_bits(const Frame& f,std::uint32_t key,std::uint8_t type,
     }
     if(key==kAlleysB) {
         if(type==23 && slot==14) { return 147; }
-        if(type==4 && ((slot>=10 && slot<=12)||(slot>=21 && slot<=23)||slot==59)) { return 252; }
+        if(type==4 && slot==59) { return coo::native_device::object_bits(f.reviveEnabled,false,coo::native_device::interaction::Mode::enabled); }
+        if(type==4 && ((slot>=10 && slot<=12)||(slot>=21 && slot<=23))) { return 252; }
 
     }
     if(key==0x27660927U && type==65 && slot==0) { return 65; }
@@ -27,7 +28,7 @@ inline std::size_t body_bits(const Frame& f,std::uint32_t key,std::uint8_t type,
 }
 template<class Writer> bool write_body(Writer& w,const Frame& f,std::uint32_t key,std::uint8_t type,std::uint16_t slot) noexcept {
     if(!body_bits(f,key,type,slot)) { return false; }
-    if(key==kRoot) { return type==53?coo::native_presentation::dialogue(w,f.generations,f.activeRow):coo::native_presentation::objective(w,f.presentation); }
+    if(key==kRoot) { return type==53?coo::native_presentation::dialogue(w,f.generations,f.activeRow):coo::native_presentation::objective(w,f.presentation,{},false,true); }
     if(key==kAlleysA && type==1 && slot==34) {
         // One authored member owns this Skiff; never issue a duplicate loose spawn.
         coo::native_combatant::Source ship{key,f.spawnGeneration,0,0,{},0,false,false};
@@ -40,7 +41,8 @@ template<class Writer> bool write_body(Writer& w,const Frame& f,std::uint32_t ke
     if(type==23) { const bool open=key==kAlleysA && f.barrierOpen;return coo::native_device::position_only(w,key==kAlleysA?(open?1.F:0.F):1.F,static_cast<std::int16_t>(f.spawnGeneration+(open?1U:0U)),true); }
     if(type==4) {
         const bool active=key==kAlleysB && slot==59?f.reviveEnabled:key==kAlleysA && slot<=6?f.pikes>=1:f.pikes>=2;
-        return coo::native_device::object(w,f.spawnGeneration+(active?1U:0U),active);
+        return coo::native_device::object(w,f.spawnGeneration+(active?1U:0U),active,nullptr,
+            key==kAlleysB && slot==59?coo::native_device::interaction::Mode::enabled:coo::native_device::interaction::Mode::unchanged);
     }
     // Native 80804D3F: biased i32 revision, active bit, selector hash.
     // Keep the Ghost-link dormant until the real Ghost is bound. The old

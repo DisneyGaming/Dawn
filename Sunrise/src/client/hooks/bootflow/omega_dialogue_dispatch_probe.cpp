@@ -93,30 +93,6 @@ constexpr std::array<std::byte, 21> kDeviceSetterPrefix{
 /** The .data object-authority bitmap the setters and the gate tick both consult. */
 constexpr std::uintptr_t kObjectAuthorityTableRva = 0x26BE0E0U;
 /**
- * Native type-7 transition entry points (recovered ABI, PORTAL-TRAVERSAL-ASSESSMENT Â§9).
- * +0xE2E720: precondition check - the pending-request slice at manager+0x524 must be empty.
- * +0xE2E7E0: mode-1 request wrapper (targetSlice, &spawnHash, nativeLocalToken=0); it locates
- * the world-transition manager itself and installs the pending request; native promotion
- * (+0xE25A30) and the type-7 start (+0xE2B120) then run inside the manager's own update.
- */
-constexpr std::uintptr_t kTransitionPrecheckRva = 0xE2E720U;
-constexpr std::array<std::byte, 21> kTransitionPrecheckPrefix{
-    std::byte{0x48}, std::byte{0x83}, std::byte{0xEC}, std::byte{0x28}, std::byte{0xE8},
-    std::byte{0x47}, std::byte{0x6A}, std::byte{0x00}, std::byte{0x00}, std::byte{0x81},
-    std::byte{0xB8}, std::byte{0x24}, std::byte{0x05}, std::byte{0x00}, std::byte{0x00},
-    std::byte{0xFF}, std::byte{0x01}, std::byte{0x00}, std::byte{0x00}, std::byte{0x76},
-    std::byte{0x10}};
-constexpr std::uintptr_t kTransitionRequestRva = 0xE2E7E0U;
-constexpr std::array<std::byte, 21> kTransitionRequestPrefix{
-    std::byte{0x48}, std::byte{0x89}, std::byte{0x5C}, std::byte{0x24}, std::byte{0x08},
-    std::byte{0x48}, std::byte{0x89}, std::byte{0x74}, std::byte{0x24}, std::byte{0x18},
-    std::byte{0x57}, std::byte{0x48}, std::byte{0x83}, std::byte{0xEC}, std::byte{0x30},
-    std::byte{0x41}, std::byte{0x0F}, std::byte{0xB6}, std::byte{0xD8}, std::byte{0x48},
-    std::byte{0x8B}};
-/** Recovered first-Forest destination: slice 88, spawn ap_inside_forest. */
-constexpr std::uint32_t kForestTargetSlice = 88U;
-constexpr std::uint32_t kForestSpawnHash = 0x4E5FD117U;
-/**
  * Scene/component destructor that faults during the region teardown (assert PC +0x4E3C08 =
  * this+0xC8). It resolves the component from the handle at param[0] through the shared registry
  * (global +0x2439C70), then runs an EXTRA free only when the resolved object's +0x40 field is
@@ -182,13 +158,7 @@ constexpr std::array<std::byte, 24> kIndexFreePrefix{
  * the sensor's sense record. Tick key 0x128CC0BD4; state machine byte at instance+0x9BC. */
 constexpr std::uintptr_t kForestWorkerCreateRva = 0xFFE820U;
 constexpr std::uintptr_t kForestWorkerTickRva = 0x10059A0U;
-constexpr std::uintptr_t kForestSolverRva = 0xFF2F80U;
 constexpr std::uintptr_t kForestOwnerAuthoritySetterRva = 0x403BD0U;
-constexpr std::array<std::byte, 16> kForestSolverPrefix{
-    std::byte{0x48}, std::byte{0x8B}, std::byte{0xC4}, std::byte{0x48},
-    std::byte{0x89}, std::byte{0x58}, std::byte{0x20}, std::byte{0x55},
-    std::byte{0x56}, std::byte{0x57}, std::byte{0x41}, std::byte{0x54},
-    std::byte{0x41}, std::byte{0x55}, std::byte{0x41}, std::byte{0x56}};
 constexpr std::array<std::byte, 16> kForestOwnerAuthoritySetterPrefix{
     std::byte{0x81}, std::byte{0xE1}, std::byte{0xFF}, std::byte{0x1F},
     std::byte{0x00}, std::byte{0x00}, std::byte{0x4C}, std::byte{0x8D},
@@ -306,21 +276,6 @@ std::atomic_uint32_t g_deviceConfigureCount{};
 /** The barrier wall's own device, captured when its configure registers "vex_wall". */
 std::atomic<std::byte*> g_vexWallDevice{nullptr};
 std::atomic_uint32_t g_vexWallPushState{};
-using TransitionPrecheck = char(__fastcall*)() noexcept;
-using TransitionRequest = void(__fastcall*)(std::uint32_t targetSlice,
-                                            std::uint32_t* spawnHash,
-                                            std::uint8_t nativeLocalToken) noexcept;
-/** 0 = unresolved, 1 = verified, 2 = prefix mismatch (log once, stay inert). */
-std::atomic_uint32_t g_transitionResolveState{};
-std::atomic<TransitionPrecheck> g_transitionPrecheck{nullptr};
-std::atomic<TransitionRequest> g_transitionRequest{nullptr};
-/** A consumed latch that could not fire yet (precheck busy) retries on later frames. */
-std::atomic_bool g_transitionPending{false};
-std::atomic_bool g_transitionIssued{false};
-/** Frames sampled since the transition request arrived; the type-7 installs only after the
- *  client's net thread has had time to apply the region-88 membership the server sent first. */
-std::atomic_uint32_t g_transitionArmFrames{0};
-std::atomic_uint32_t g_transitionLogThrottle{};
 using SceneDestructor = void(__fastcall*)(std::uint32_t* component) noexcept;
 hooking::detour::Handle g_destructorHandle{};
 std::atomic<SceneDestructor> g_destructorOriginal{nullptr};
@@ -392,13 +347,8 @@ std::atomic<void*> g_forestSensorPtr{nullptr};
 [[nodiscard]] bool readable(const std::byte* ptr, std::size_t size) noexcept;
 hooking::detour::Handle g_forestWorkerCreateHandle{};
 hooking::detour::Handle g_forestWorkerTickHandle{};
-using ForestSolverFn = std::uint8_t(__fastcall*)(void*, float, float, void*) noexcept;
 using ForestOwnerAuthoritySetter = void(__fastcall*)(std::uint32_t, std::uint8_t) noexcept;
-hooking::detour::Handle g_forestSolverHandle{};
-std::atomic<ForestSolverFn> g_forestSolverOriginal{nullptr};
 std::atomic<ForestOwnerAuthoritySetter> g_forestOwnerAuthoritySetter{nullptr};
-SRWLOCK g_forestRunSeedLock = SRWLOCK_INIT;
-omega_forest::RunSeed g_forestRunSeed{};
 std::atomic<ForestPairFn> g_forestWorkerCreateOriginal{nullptr};
 std::atomic<ForestPairFn> g_forestWorkerTickOriginal{nullptr};
 std::atomic_uint32_t g_forestWorkerCreateCount{};
@@ -1166,8 +1116,7 @@ __declspec(noinline) void __fastcall dialogue_scan(std::byte* component) noexcep
             log_record_zero("scan", component, count);
         }
     }
-    hijacked_presentation::update_dialogue(component);
-    deadly_trial_presentation::update_dialogue(component);
+    // Mission rows arrive through native 80804F77 apply; this scan only observes playback.
     const DialogueScan original = g_scanOriginal.load(std::memory_order_acquire);
     const auto adventureBefore=adventure_dialogue_observer::begin(component);
     if (original != nullptr) {
@@ -1592,23 +1541,6 @@ __declspec(noinline) void __fastcall directive_apply(std::byte* component,
     }
 }
 
-void portal_log(const char* stage, const char* result) noexcept {
-    std::array<char, 192> line{};
-    const int length = std::snprintf(
-        line.data(),
-        line.size(),
-        "ev=omega_portal stage=%s result=%s slice=%u spawn=0x%08X",
-        stage,
-        result,
-        kForestTargetSlice,
-        kForestSpawnHash);
-    if (length > 0) {
-        core::log::write(core::log::Channel::client,
-                         core::log::Level::info,
-                         {line.data(), static_cast<std::size_t>(length)});
-    }
-}
-
 /** True only when [ptr, ptr+size) is entirely committed and readable; no fault on a bad resolve. */
 [[nodiscard]] bool readable(const std::byte* ptr, std::size_t size) noexcept {
     if (ptr == nullptr) {
@@ -1862,45 +1794,10 @@ void apply_forest_tuner(std::byte* record) noexcept {
            && omega_forest::matches({bytes, omega_forest::kWorkerPrefixSize}, "mission_scot");
 }
 
-[[nodiscard]] std::uint32_t omega_forest_run_seed() noexcept {
-    const auto generation = state::activity::mission_run_generation();
-    AcquireSRWLockExclusive(&g_forestRunSeedLock);
-    const bool fresh = g_forestRunSeed.needs_seed(generation);
-    std::uint32_t candidate{};
-    if (fresh && !middleware::crypto::random::fill(
-            std::as_writable_bytes(std::span{&candidate, std::size_t{1}}))) {
-        // A non-secret layout seed may fall back to process timing if system RNG fails.
-        LARGE_INTEGER tick{};
-        QueryPerformanceCounter(&tick);
-        candidate = static_cast<std::uint32_t>(tick.QuadPart)
-                    ^ GetCurrentProcessId() ^ static_cast<std::uint32_t>(generation);
-    }
-    const auto seed = g_forestRunSeed.select(generation, candidate);
-    ReleaseSRWLockExclusive(&g_forestRunSeedLock);
-    if (fresh) {
-        std::array<char, 160> line{};
-        const int length = std::snprintf(line.data(), line.size(),
-            "ev=forest stage=omega_recipe run=%llu seed=%u entrance=2/0 exit=1/2 route=single",
-            static_cast<unsigned long long>(generation), seed);
-        if (length > 0) {
-            core::log::write(core::log::Channel::client, core::log::Level::info,
-                             {line.data(), static_cast<std::size_t>(length)});
-        }
-    }
-    return seed;
-}
-
-/** Prepare cached inputs only. Native change detection, generation and doors remain in charge. */
+/** Native generator authority owns recipe delivery. Gateway ownership remains a compatibility adapter. */
 void prepare_omega_forest(void* instance) noexcept {
     if (!omega_forest_worker(instance)) { return; }
     auto* worker = static_cast<std::byte*>(instance);
-    auto seed = omega_forest_run_seed();
-    const auto& dial = forest_tuner::state();
-    if (dial.writeSeed.load(std::memory_order_relaxed)) {
-        seed = static_cast<std::uint32_t>(dial.seed.load(std::memory_order_relaxed));
-    }
-    omega_forest::prepare_worker({worker, omega_forest::kWorkerPrefixSize}, seed);
-
     // FF4B20 skips replicated gateway creation without the WORKER OWNER'S authority bit.
     // Repair just this live owner's bit before native state4; never force gate position/progress.
     const auto owner = read_value<std::uint32_t>(worker + 0x2CU);
@@ -1922,19 +1819,6 @@ void prepare_omega_forest(void* instance) noexcept {
             }
         }
     }
-}
-
-__declspec(noinline) std::uint8_t __fastcall forest_solver_hook(
-    void* instance, float first, float second, void* blockedTiles) noexcept {
-    const auto original = g_forestSolverOriginal.load(std::memory_order_acquire);
-    omega_forest::solver_inputs(omega_forest_worker(instance),
-        forest_tuner::state().writeFloats.load(std::memory_order_relaxed), first, second);
-    // Both proven forests zero the two f32 topology inputs to retain only the anchor route;
-    // left at their -1.0 sentinels the solver keeps its generic edges and the authored exit
-    // never joins the generated islands.
-    if(beyond_forest_runtime::selected() && beyond_forest_runtime::worker(instance)) { first=second=0.F; }
-    else if(garden_forest_runtime::worker(instance)) { first=second=0.F; }
-    return original != nullptr ? original(instance, first, second, blockedTiles) : 0U;
 }
 
 __declspec(noinline) std::uint64_t __fastcall forest_worker_create_hook(void* instance,
@@ -1975,19 +1859,8 @@ __declspec(noinline) std::uint64_t __fastcall forest_worker_tick_hook(void* inst
     if (legacyMutation && sensor != nullptr && !beyondForest) {
         auto* const record = static_cast<std::byte*>(sensor) + kForestAuthorityOffset;
         if (readable(record, 0x60U)) {
-            const std::uint8_t mask = read_value<std::uint8_t>(record + 0x2CU);
-            const std::uint8_t enable = read_value<std::uint8_t>(record + 0x2DU);
+            // Explicit developer UI overrides only; ordinary mission delivery is native.
             apply_forest_tuner(record);
-            if ((mask & 0x08U) == 0U || enable == 0U) {
-                record[0x2CU] = static_cast<std::byte>(read_value<std::uint8_t>(record + 0x2CU)
-                                                       | 0x08U);
-                record[0x2DU] = std::byte{1};
-                static std::atomic_bool s_ignitionLogged{false};
-                if (!s_ignitionLogged.exchange(true, std::memory_order_relaxed)) {
-                    core::log::write(core::log::Channel::client, core::log::Level::info,
-                                     "ev=forest stage=ignition result=written");
-                }
-            }
         }
     }
     // Entry force-toggle: the dial hands an entry index; call the worker's own per-entry
@@ -2323,72 +2196,6 @@ __declspec(noinline) void __fastcall scene_destructor(std::uint32_t* component) 
 
 } // namespace
 
-/** Frame-poll consumer: installs the native type-7 pending request on the game thread. */
-void sample_omega_portal_transport() noexcept {
-    if (state::activity::consume_omega_forest_transition_request()) {
-        g_transitionPending.store(true, std::memory_order_release);
-        g_transitionArmFrames.store(0, std::memory_order_release);
-    }
-    if (!g_transitionPending.load(std::memory_order_acquire)
-        || g_transitionIssued.load(std::memory_order_acquire)) {
-        return;
-    }
-    // The server publishes the region-88 membership before requesting; these frames let the
-    // client's own net update apply it so the transition tabulates region 88, not stale 120.
-    const std::uint32_t armFrames =
-        g_transitionArmFrames.fetch_add(1, std::memory_order_acq_rel) + 1U;
-    if (armFrames < 45U) {
-        if (armFrames == 1U) {
-            portal_log("arm", "delaying_45_frames");
-        }
-        return;
-    }
-    std::uint32_t resolve = g_transitionResolveState.load(std::memory_order_acquire);
-    if (resolve == 0U) {
-        std::byte* const precheckTarget = verified_target(kTransitionPrecheckRva,
-                                                          kTransitionPrecheckPrefix.data(),
-                                                          kTransitionPrecheckPrefix.size());
-        std::byte* const requestTarget = verified_target(kTransitionRequestRva,
-                                                         kTransitionRequestPrefix.data(),
-                                                         kTransitionRequestPrefix.size());
-        if (precheckTarget == nullptr || requestTarget == nullptr) {
-            g_transitionResolveState.store(2U, std::memory_order_release);
-            portal_log("resolve", "prefix_mismatch");
-            return;
-        }
-        g_transitionPrecheck.store(reinterpret_cast<TransitionPrecheck>(precheckTarget),
-                                   std::memory_order_release);
-        g_transitionRequest.store(reinterpret_cast<TransitionRequest>(requestTarget),
-                                  std::memory_order_release);
-        g_transitionResolveState.store(1U, std::memory_order_release);
-        resolve = 1U;
-    }
-    if (resolve != 1U) {
-        return;
-    }
-    const TransitionPrecheck precheck = g_transitionPrecheck.load(std::memory_order_acquire);
-    const TransitionRequest request = g_transitionRequest.load(std::memory_order_acquire);
-    if (precheck == nullptr || request == nullptr) {
-        return;
-    }
-    if (precheck() == '\0') {
-        const std::uint32_t throttle =
-            g_transitionLogThrottle.fetch_add(1, std::memory_order_relaxed);
-        if ((throttle & 127U) == 0U) {
-            portal_log("precheck", "busy_retrying");
-        }
-        return;
-    }
-    std::uint32_t spawn = kForestSpawnHash;
-    // Silence Omega authority BEFORE the request so no in-flight body applies into the
-    // de-instantiating slice set (run-8 froze on exactly that double-free).
-    state::activity::note_omega_forest_transition_issued();
-    request(kForestTargetSlice, &spawn, 0);
-    g_transitionIssued.store(true, std::memory_order_release);
-    g_transitionPending.store(false, std::memory_order_release);
-    portal_log("request", "issued");
-}
-
 namespace forest_tuner {
 
 State& state() noexcept {
@@ -2439,8 +2246,6 @@ bool install_omega_dialogue_dispatch_probe() noexcept {
     std::byte* const forestWorkerTickTarget = verified_target(kForestWorkerTickRva,
                                                               kForestWorkerTickPrefix.data(),
                                                               kForestWorkerTickPrefix.size());
-    std::byte* const forestSolverTarget = verified_target(kForestSolverRva,
-        kForestSolverPrefix.data(), kForestSolverPrefix.size());
     std::byte* const forestOwnerAuthorityTarget = verified_target(kForestOwnerAuthoritySetterRva,
         kForestOwnerAuthoritySetterPrefix.data(), kForestOwnerAuthoritySetterPrefix.size());
     std::byte* const indexFreeTarget = verified_target(kIndexFreeRva,
@@ -2472,7 +2277,7 @@ bool install_omega_dialogue_dispatch_probe() noexcept {
         || indexFreeTarget == nullptr || forestCreateTarget == nullptr
         || forestApplyTarget == nullptr || forestSenseTarget == nullptr
         || forestWorkerCreateTarget == nullptr || forestWorkerTickTarget == nullptr
-        || forestSolverTarget == nullptr || forestOwnerAuthorityTarget == nullptr
+        || forestOwnerAuthorityTarget == nullptr
         || recordProcessorTarget == nullptr || seedCheckTarget == nullptr) {
         core::log::write(core::log::Channel::client,
                          core::log::Level::warn,
@@ -2507,8 +2312,6 @@ bool install_omega_dialogue_dispatch_probe() noexcept {
         forestWorkerCreateTarget, reinterpret_cast<void*>(&forest_worker_create_hook)};
     const hooking::detour::Spec forestWorkerTickSpec{
         forestWorkerTickTarget, reinterpret_cast<void*>(&forest_worker_tick_hook)};
-    const hooking::detour::Spec forestSolverSpec{
-        forestSolverTarget, reinterpret_cast<void*>(&forest_solver_hook)};
     const hooking::detour::Spec indexFreeSpec{indexFreeTarget,
                                               reinterpret_cast<void*>(&index_free_guard)};
     const hooking::detour::Spec recordProcessorSpec{
@@ -2531,7 +2334,6 @@ bool install_omega_dialogue_dispatch_probe() noexcept {
         || !hooking::detour::install(forestSenseSpec, g_forestSenseHandle)
         || !hooking::detour::install(forestWorkerCreateSpec, g_forestWorkerCreateHandle)
         || !hooking::detour::install(forestWorkerTickSpec, g_forestWorkerTickHandle)
-        || !hooking::detour::install(forestSolverSpec, g_forestSolverHandle)
         || !hooking::detour::install(recordProcessorSpec, g_recordProcessorHandle)
         || !hooking::detour::install(seedCheckSpec, g_seedCheckHandle)
         || !hooking::detour::install(rosterSpec,g_rosterHandle)) {
@@ -2579,9 +2381,6 @@ bool install_omega_dialogue_dispatch_probe() noexcept {
         }
         if (g_forestWorkerTickHandle.attached) {
             (void)hooking::detour::uninstall(g_forestWorkerTickHandle);
-        }
-        if (g_forestSolverHandle.attached) {
-            (void)hooking::detour::uninstall(g_forestSolverHandle);
         }
         if (g_recordProcessorHandle.attached) {
             (void)hooking::detour::uninstall(g_recordProcessorHandle);
@@ -2632,8 +2431,6 @@ bool install_omega_dialogue_dispatch_probe() noexcept {
     g_forestWorkerTickOriginal.store(
         reinterpret_cast<ForestPairFn>(g_forestWorkerTickHandle.original),
         std::memory_order_release);
-    g_forestSolverOriginal.store(reinterpret_cast<ForestSolverFn>(g_forestSolverHandle.original),
-                                std::memory_order_release);
     g_forestOwnerAuthoritySetter.store(
         reinterpret_cast<ForestOwnerAuthoritySetter>(forestOwnerAuthorityTarget),
         std::memory_order_release);
@@ -2713,9 +2510,6 @@ void uninstall_omega_dialogue_dispatch_probe() noexcept {
     if (g_forestWorkerTickHandle.attached) {
         (void)hooking::detour::uninstall(g_forestWorkerTickHandle);
     }
-    if (g_forestSolverHandle.attached) {
-        (void)hooking::detour::uninstall(g_forestSolverHandle);
-    }
     if (g_recordProcessorHandle.attached) {
         (void)hooking::detour::uninstall(g_recordProcessorHandle);
     }
@@ -2758,7 +2552,6 @@ void uninstall_omega_dialogue_dispatch_probe() noexcept {
     g_forestDumpBudget.store(12, std::memory_order_release);
     g_forestWorkerCreateOriginal.store(nullptr, std::memory_order_release);
     g_forestWorkerTickOriginal.store(nullptr, std::memory_order_release);
-    g_forestSolverOriginal.store(nullptr, std::memory_order_release);
     g_forestOwnerAuthoritySetter.store(nullptr, std::memory_order_release);
     g_forestWorkerCreateCount.store(0, std::memory_order_release);
     g_forestWorkerTickCount.store(0, std::memory_order_release);

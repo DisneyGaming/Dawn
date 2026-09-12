@@ -7,6 +7,7 @@
 #include "state/activity/coo/omega_reveal.h"
 #include "state/activity/omega_arc_charge_authority.h"
 #include "fixtures/coo_combat_legacy.h"
+#include "fixtures/omega_archive_arm_control.h"
 namespace fight=sunrise::state::activity::omega_first_lair;
 namespace frozen=sunrise::state::activity::frozen_combat;
 namespace coo=sunrise::state::activity::coo;
@@ -20,6 +21,8 @@ static bool deadFirst{},lateInitial{},earlyFinal{},keepCabalAlive{},batchRecover
 class Pair final {
 public:
     fight::Encounter modern;
+    sunrise::state::activity::omega_archive_arm::Ledger arm;
+    sunrise::state::activity::omega_archive_intro::Ledger programs;
     frozen::Encounter reference;
     bool deferred{};
     void sync() { if(!deferred) { modern.update_executor();compare(); } }
@@ -58,12 +61,60 @@ public:
             CHECK(a.command.eventCount==b.command.eventCount);CHECK(a.command.events==b.command.events);
         }
     }
-    void begin(std::uint64_t run) { operation="begin";reference.begin(run);modern.begin(run,true);sync(); }
-    bool initial_summon(fight::Boss boss) { operation="initial_summon";const bool a=modern.initial_summon(boss);const bool b=reference.initial_summon(std::bit_cast<frozen::Boss>(boss));CHECK(a==b);sync();return a; }
-    bool initial_idle(fight::Boss boss) { operation="initial_idle";const bool a=modern.initial_idle(boss);const bool b=reference.initial_idle(std::bit_cast<frozen::Boss>(boss));CHECK(a==b);sync();return a; }
-    bool claim(fight::Boss boss, fight::Action action) { operation="claim";const bool a=modern.claim(boss, action);const bool b=reference.claim(std::bit_cast<frozen::Boss>(boss), std::bit_cast<frozen::Action>(action));CHECK(a==b);sync();return a; }
+    void begin(std::uint64_t run) { operation="begin";arm={};programs={};reference.begin(run);modern.begin(run,true);sync(); }
+    void initial_program(fight::Boss boss) {
+        if(programs.status().program.revision || boss.run!=modern.run() || boss.island || boss.actionEpoch) { return; }
+        auto owner=omega_archive_arm_fixture::arm_owner(boss);owner.revision=0;
+        CHECK(programs.request(owner));owner.revision=1;CHECK(programs.acknowledge(owner));
+    }
+    bool initial_summon(fight::Boss boss) { initial_program(boss);operation="initial_summon";const bool a=modern.initial_summon(boss);const bool b=reference.initial_summon(std::bit_cast<frozen::Boss>(boss));CHECK(a==b);sync();return a; }
+    bool initial_idle(fight::Boss boss) { initial_program(boss);operation="initial_idle";const bool a=modern.initial_idle(boss);const bool b=reference.initial_idle(std::bit_cast<frozen::Boss>(boss));CHECK(a==b);sync();return a; }
+    bool claim(fight::Boss boss, fight::Action action) {
+        operation="claim";const bool a=modern.claim(boss,action);
+        const bool b=reference.claim(std::bit_cast<frozen::Boss>(boss),std::bit_cast<frozen::Action>(action));CHECK(a==b);
+        if(a && (action==fight::Action::summonLeft || action==fight::Action::summonRight)) {
+            const auto owner=omega_archive_arm_fixture::arm_owner(boss);
+            const auto before=arm.status().control.revision;
+            CHECK(arm.prepare(owner,action==fight::Action::summonRight));CHECK(arm.status().control.revision==before+1);
+            CHECK(!arm.prepare(owner,action==fight::Action::summonRight));
+            const omega_archive_arm_fixture::ControlFixture native(boss,arm.status().control);
+            const std::array<float,4> zero{},one{1,1,1,1};
+            CHECK(arm.acknowledge(owner,native.receipt(),action==fight::Action::summonLeft?one:zero,
+                action==fight::Action::summonRight?one:zero));
+        }
+        if(a && action==fight::Action::summonBoth) {
+            const auto owner=omega_archive_arm_fixture::arm_owner(boss);
+            constexpr std::array<std::uint32_t,4> sequences{0x65D2379CU,0x65D2379EU,0x65D2379DU,0x65D2379BU};
+            CHECK(programs.next(owner,sequences[modern.cycle()]));
+            auto native=owner;native.revision=programs.status().program.revision;
+            CHECK(programs.acknowledge(native));CHECK(programs.status().incarnation==boss.revision);
+            CHECK(programs.status().owner.revision==boss.revision); // Scene and arm tokens retain their actor incarnation.
+            CHECK(arm.status().control.revision!=0 && !arm.status().control.high && !arm.status().pending);
+        }
+        if(a && (action==fight::Action::depart || action==fight::Action::relocateFinal)) {
+            const auto owner=omega_archive_arm_fixture::arm_owner(boss);
+            CHECK(programs.depart(owner));CHECK(!programs.depart(owner));
+            auto native=owner;native.revision=programs.status().program.revision;
+            CHECK(!programs.acknowledge(owner));CHECK(programs.acknowledge(native));
+            CHECK(programs.status().incarnation==boss.revision && programs.status().program.departure==boss.island);
+        }
+        sync();return a;
+    }
     bool summon_started(fight::Boss boss, fight::Action action) { operation="summon_started";const bool a=modern.summon_started(boss, action);const bool b=reference.summon_started(std::bit_cast<frozen::Boss>(boss), std::bit_cast<frozen::Action>(action));CHECK(a==b);sync();return a; }
-    bool summon_finished(fight::Boss boss, fight::Action action) { operation="summon_finished";const bool a=modern.summon_finished(boss, action);const bool b=reference.summon_finished(std::bit_cast<frozen::Boss>(boss), std::bit_cast<frozen::Action>(action));CHECK(a==b);sync();return a; }
+    bool summon_finished(fight::Boss boss, fight::Action action) {
+        operation="summon_finished";
+        const bool playing=(action==fight::Action::summonLeft && modern.phase()==fight::Phase::leftPlaying)
+            || (action==fight::Action::summonRight && modern.phase()==fight::Phase::rightPlaying);
+        if(playing && boss==modern.boss()) {
+            const auto owner=omega_archive_arm_fixture::arm_owner(boss);
+            CHECK(arm.release(owner,true));CHECK(!arm.release(owner,true));
+            const omega_archive_arm_fixture::ControlFixture native(boss,arm.status().control);
+            const std::array<float,4> zero{};CHECK(arm.acknowledge(owner,native.receipt(),zero,zero));
+        }
+        const bool a=modern.summon_finished(boss,action);
+        const bool b=reference.summon_finished(std::bit_cast<frozen::Boss>(boss),std::bit_cast<frozen::Action>(action));CHECK(a==b);
+        sync();return a;
+    }
     bool admitted(fight::ActorReceipt receipt) { operation="admitted";const bool a=modern.admitted(receipt);const bool b=reference.admitted(std::bit_cast<frozen::ActorReceipt>(receipt));CHECK(a==b);sync();return a; }
     bool died(fight::ActorReceipt receipt) { operation="died";const bool a=modern.died(receipt);const bool b=reference.died(std::bit_cast<frozen::ActorReceipt>(receipt));CHECK(a==b);sync();return a; }
     bool departed(fight::Boss boss, bool folded, bool milestone) { operation="departed";const bool a=modern.departed(boss, folded, milestone);const bool b=reference.departed(std::bit_cast<frozen::Boss>(boss), folded, milestone);CHECK(a==b);sync();return a; }

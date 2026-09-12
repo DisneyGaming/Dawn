@@ -23,7 +23,7 @@ bool contains(const Volume& v,Point p) noexcept {
 void Controller::reset() noexcept {
     executor_.cancel(*this);composition_.reset();lifecycle_.reset();views_=nullptr;run_=now_=0;started_=landed_=false;
     clock_.reset();objects_={};population_={};costs_={};lenses_={};scenes_={};boss_={};bossEnemy_={};bossFraction_=1.F;hasBossHealth_=false;
-    lastPoint_={};hasPoint_=false;platformForward_=true;nextPlatform_=nextCover_=0;coverSeed_=0;coverGroup_=UINT8_MAX;dialogue_={};objectives_={};submitted_.reset();voiceEnd_={};seen_.reset();regions_.reset();frame_={};
+    lastPoint_={};hasPoint_=false;platformForward_=true;platformTravel_={};nextPlatform_=nextCover_=0;coverSeed_=0;coverGroup_=UINT8_MAX;dialogue_={};objectives_={};submitted_.reset();voiceEnd_={};seen_.reset();regions_.reset();frame_={};
 }
 bool Controller::select(const coo::script::Views& v,std::uint64_t run) noexcept {
     if(!run || !valid_document(v)) {reset();return false;}
@@ -149,6 +149,18 @@ bool Controller::health(const EnemyReceipt& r,float fraction) noexcept {
             ++frame_.revision;update_boss_platform();
         }
     }
+    return true;
+}
+bool Controller::boss_platform_motion(const EnemyReceipt& r,const coo::ObjectReceipt& platform,PlatformMotion sample) noexcept {
+    if(!boss_position(sample.target) || !std::isfinite(sample.velocity) || sample.revision<-1
+        || !boss_motion(r,platform,sample.position))return false;
+    const auto* device=find(kBossActor.registry,23,173);
+    if(!device)return false;
+    const auto& command=frame_.native[asset_index(device->asset)];
+    frame_.bossPlatformAccepted=command.managed && sample.revision==static_cast<std::int32_t>(command.generation)
+        && boss_at(sample.target,command.position)
+        && (!frame_.bossPlatformSnap || boss_at(sample.position,command.position));
+    if(frame_.bossPlatformAccepted && platformTravel_.rebasing)update_boss_platform();
     return true;
 }
 bool Controller::boss_motion(const EnemyReceipt& r,const coo::ObjectReceipt& platform,float value) noexcept {
@@ -300,8 +312,26 @@ bool Controller::platform_position(float position,bool snap) noexcept {
     if(!state.managed && !request(device->asset,false)) return false;
     if(state.position==position && frame_.bossPlatformSnap==snap) return true;
     if(!revise(device->asset)) return false;
-    state.position=position;state.desired=state.active=position>0.F;frame_.bossPlatformSnap=snap;
+    state.position=position;state.desired=state.active=position>0.F;frame_.bossPlatformSnap=snap;frame_.bossPlatformAccepted=false;
     return true;
+}
+bool Controller::platform_travel(float target) noexcept {
+    const auto& cycle=frame_.bossCycle;
+    if(!cycle.hasPosition || !boss_position(target))return false;
+    if(!platformTravel_.requested || platformTravel_.target!=target) {
+        const auto origin=boss_parking_origin(cycle.position,target);
+        if(!boss_position(origin))return false;
+        platformTravel_={target,origin,true,origin!=cycle.position};
+        // Publish the equivalent visible phase first. A second command cannot
+        // overtake it: only authenticated native revision/pose acknowledgement
+        // permits the following interpolated destination publication.
+        return platform_position(platformTravel_.rebasing?origin:target,platformTravel_.rebasing);
+    }
+    if(platformTravel_.rebasing) {
+        if(!frame_.bossPlatformAccepted)return true;
+        platformTravel_.rebasing=false;
+    }
+    return platform_position(target);
 }
 void Controller::update_boss_platform() noexcept {
     auto& cycle=frame_.bossCycle;
@@ -309,14 +339,14 @@ void Controller::update_boss_platform() noexcept {
     const auto& mount=frame_.native[asset_index(kBossPlatform)];
     if(!mount.active || !mount.acknowledged) {nextPlatform_=0;return;}
     if(cycle.mode==BossMode::dying || frame_.bossDead) {
-        nextPlatform_=0;
+        nextPlatform_=0;platformTravel_={};
         if(!cycle.platformStopped && cycle.hasPosition && platform_position(cycle.position,true)) cycle.platformStopped=true;
         return;
     }
     if(!frame_.bossFighting || frame_.ending) {nextPlatform_=0;return;}
     if(boss_intermission(cycle.mode)) {
         nextPlatform_=0;
-        if(cycle.hasParkTarget && !platform_position(cycle.parkTarget)) frame_.populationFault=true;
+        if(cycle.hasParkTarget && !platform_travel(cycle.parkTarget)) frame_.populationFault=true;
         return;
     }
     // Stay at spawn until 15% damage, then travel to P1 while still fighting.
@@ -324,7 +354,7 @@ void Controller::update_boss_platform() noexcept {
     if(cycle.mode==BossMode::opening || !cycle.hasHome) return;
     const float target=cycle.hasReturnTarget?cycle.returnTarget:
         cycle.hasFirstTarget && cycle.cycle==0?cycle.firstTarget:cycle.home;
-    if(!platform_position(target)) frame_.populationFault=true;
+    if(!platform_travel(target)) frame_.populationFault=true;
 }
 bool Controller::publish(const coo::Command& command) noexcept {
     if(!views_ || !graph() || !coo::script::valid_token(graph()->definition,executor_,command)) return false;

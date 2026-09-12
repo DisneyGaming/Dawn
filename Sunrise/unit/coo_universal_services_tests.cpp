@@ -3,6 +3,7 @@
 #include "state/activity/coo/objective_service.h"
 #include "state/activity/coo/scene_orchestration.h"
 #include "state/activity/coo/population_service.h"
+#include "state/activity/coo/population_readiness_request.h"
 #include "state/activity/coo/native_presentation_authority.h"
 #include "state/activity/coo/mission_script.h"
 #include "client/hooks/bootflow/coo_enemy_readiness.h"
@@ -24,6 +25,36 @@ struct Receipt {
 };
 struct Group { std::uint16_t source;std::uint32_t registry;std::uint8_t count;bool required; };
 constexpr std::array<Group,2> groups{{{4,0x111,2,true},{7,0x222,1,true}}};
+void readiness_requests() {
+    c::ReadinessSchedule schedule;
+    std::array<Receipt,25> actors{};
+    for(std::size_t i=0;i<actors.size();++i) actors[i]={1,static_cast<std::uint32_t>(i),41,1,4,0x111};
+    unsigned enumerations{};
+    const auto enumerate=[&](auto visit) { ++enumerations;for(const auto& actor:actors) visit(actor); };
+    CHECK((schedule.request<Receipt,25>(0,0,enumerate).run==0));CHECK(enumerations==0);
+    auto batch=schedule.request<Receipt,25>(1,0,enumerate);
+    CHECK(batch.run==1 && batch.count==12 && batch.actors[0].actor==0 && batch.actors[11].actor==11);
+    CHECK((schedule.request<Receipt,25>(1,499,enumerate).run==0));CHECK(enumerations==1);
+    batch=schedule.request<Receipt,25>(1,500,enumerate);
+    CHECK(batch.count==12 && batch.actors[0].actor==12 && batch.actors[11].actor==23);
+    batch=schedule.request<Receipt,25>(1,1000,enumerate);
+    CHECK(batch.actors[0].actor==24 && batch.actors[1].actor==0);
+    // A mission transition must be sampled immediately; its cursor and budget reset.
+    batch=schedule.request<Receipt,25>(2,1001,enumerate,8);
+    CHECK(batch.run==2 && batch.count==8 && batch.actors[0].actor==0);
+    schedule.reset();batch=schedule.request<Receipt,25>(2,1002,enumerate);
+    CHECK(batch.run==2 && batch.count==12 && batch.actors[0].actor==0);
+    // Empty requests retain the owner for a capacity sample, without an actor read.
+    schedule.reset();batch=schedule.request<Receipt,25>(3,1100,[](auto) {});
+    CHECK(batch.run==3 && batch.count==0);
+    // Replies for a previously selected actor cannot ready a different incarnation.
+    c::PopulationService<Receipt,2,2> service;service.enable(1);
+    Receipt current{2,33,43,2,7,0x222};CHECK(service.admit(groups,current,2,2)==c::Admission::accepted);
+    service.policy(1,{true,c::EnemyIntent::idleReveal,0x222,20,3});
+    auto stale=current;stale.generation=1;
+    CHECK(!service.observe(stale,{true,true,true,true,44,0x222,20,3}));CHECK(!service.ready(1,1));
+    CHECK(service.observe(current,{true,true,true,true,44,0x222,20,3}));CHECK(service.ready(1,1));
+}
 void population() {
     c::PopulationService<Receipt,2,2> service;service.enable(0);service.enable(1);
     service.policy(0,{true,c::EnemyIntent::combat,0x111,10,2});service.policy(1,{true,c::EnemyIntent::idleReveal,0x222,20,3});
@@ -255,4 +286,4 @@ void alternate_script() {
     CHECK(executor.enqueue({executor.token(1,0),c::Milestone::observed}));executor.update(host);CHECK(host.life.activity_state()==6);CHECK(!host.hud.state().active);CHECK(!host.hud.state().marker.valid());
     executor.update(host);CHECK(executor.diagnostics().phase==c::Phase::complete);const auto stale=executor.token(1,0);executor.cancel(host);host.life.reset();CHECK(host.life.begin(37));CHECK(executor.start(graph.definition,37));executor.update(host);CHECK(!executor.enqueue({stale,c::Milestone::observed}));
 }
-int main() { population();objects();scenes();lifecycle();objectives();captured_components();native_capacity();native_enemy();alternate_script();std::printf("Universal services: %u checks passed\n",checks); }
+int main() { readiness_requests();population();objects();scenes();lifecycle();objectives();captured_components();native_capacity();native_enemy();alternate_script();std::printf("Universal services: %u checks passed\n",checks); }

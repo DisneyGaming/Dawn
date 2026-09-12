@@ -1,17 +1,18 @@
 #include <Windows.h>
 #include "runtime.h"
 #include "controller.h"
+#include "../coo/objective_delivery.h"
 #include "../runtime.h"
-#include "../../../client/hooks/bootflow/gateway_native_read.h"
-#include "../../../client/hooks/bootflow/coo_enemy_readiness.h"
-#include "../../../client/hooks/bootflow/coo_native_player_mount.h"
 #include "../../../core/logging/log.h"
 #include <mutex>
 #include <cstdio>
 namespace sunrise::state::activity::deadly_trial {
 namespace {
-std::mutex mutex;Controller controller;std::unique_ptr<coo::script::MissionDocument> document;
-std::uint64_t selectedRun{},lastPublish{},nextProbe{},nextTraversal{};std::size_t probeCursor{};
+std::mutex mutex;Controller controller;
+coo::ReadinessSchedule readinessSchedule;
+coo::ObjectiveDelivery objectiveDelivery;
+std::unique_ptr<coo::script::MissionDocument> document;
+std::uint64_t selectedRun{},lastPublish{},nextTraversal{};
 coo::StallDiagnostics stalls;std::uint32_t lastActive{UINT32_MAX};std::uint8_t lastSection{UINT8_MAX};
 std::bitset<std::size(kVolumes)> logged;
 void log(std::string_view s) noexcept { core::log::write(core::log::Channel::server,core::log::Level::info,s); }
@@ -39,61 +40,36 @@ void receipt_log(const char* stage,std::uint64_t run,std::uint32_t value) noexce
 }
 bool prepare(std::uint64_t run,bool selected) noexcept {
     const std::lock_guard lock(mutex);if(run!=mission_run_generation()) { return false; }
-    if(!selected) { controller.reset();selectedRun=0;stalls.reset();logged.reset();lastActive=UINT32_MAX;lastSection=UINT8_MAX;nextTraversal=nextProbe=lastPublish=0;probeCursor=0;return false; }
-    if(!load()) { return false; }if(run!=selectedRun) { stalls.reset();logged.reset();lastActive=UINT32_MAX;lastSection=UINT8_MAX;nextTraversal=nextProbe=lastPublish=0;probeCursor=0; }
+    if(!selected) { controller.reset();objectiveDelivery={};selectedRun=0;stalls.reset();logged.reset();lastActive=UINT32_MAX;lastSection=UINT8_MAX;nextTraversal=lastPublish=0;readinessSchedule.reset();return false; }
+    if(!load()) { return false; }if(run!=selectedRun) { objectiveDelivery={};stalls.reset();logged.reset();lastActive=UINT32_MAX;lastSection=UINT8_MAX;nextTraversal=lastPublish=0;readinessSchedule.reset(); }
     if(!controller.select(document->views(),run)) { return false; }selectedRun=run;return true;
 }
-namespace {
-struct NativeMount {
-    std::uintptr_t image{};
-    void controlled(std::uint32_t& out) const noexcept { reinterpret_cast<void(*)(std::uint32_t*)>(image+0x4B2260)(&out); }
-    void parent(std::uintptr_t row,std::uint32_t& out) const noexcept { reinterpret_cast<void(*)(std::uintptr_t,std::uint32_t*)>(image+0x5582E0)(row,&out); }
-    void position(std::uintptr_t row,std::array<float,4>& out) const noexcept { reinterpret_cast<void(*)(std::uintptr_t,std::array<float,4>*)>(image+0x558330)(row,&out); }
-    bool valid(client::hooks::bootflow::gateway_native::Read& read) const noexcept {
-        constexpr std::array<std::uintptr_t,3> entries{0x4B2260,0x5582E0,0x558330};
-        constexpr std::array<std::array<std::uint8_t,16>,3> prefixes{{
-            {0x40,0x53,0x48,0x83,0xEC,0x20,0x48,0x8B,0xD9,0xC7,0x01,0xFF,0xFF,0xFF,0xFF,0x48},
-            {0x48,0x83,0xC1,0xA0,0xC7,0x02,0xFF,0xFF,0xFF,0xFF,0xB8,0x00,0x00,0x00,0x00,0xF6},
-            {0x40,0x57,0x48,0x83,0xEC,0x40,0x48,0x83,0xC1,0xA0,0xB8,0x00,0x00,0x00,0x00,0x48}}};
-        for(std::size_t i=0;i<entries.size();++i) {
-            std::array<std::uint8_t,16> bytes{};
-            if(!read.value(image+entries[i],bytes) || bytes!=prefixes[i]) { return false; }
-        }return true;
-    }
-};
-void poll_traversal(std::uint64_t run) noexcept {
-    { const std::lock_guard lock(mutex);
-      if(!current() || run!=selectedRun || !controller.frame().enabled || controller.frame().finished || GetTickCount64()<nextTraversal) { return; }
-      nextTraversal=GetTickCount64()+100;
-    }
-    const auto image=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
-    client::hooks::bootflow::gateway_native::Read read{image};NativeMount native{image};
-    client::hooks::bootflow::coo_native::MountedPlayer sample{};
-    if(!native.valid(read) || !client::hooks::bootflow::coo_native::mounted_pike(read,native,sample)) { return; }
-    const std::lock_guard lock(mutex);if(!current() || run!=selectedRun) { return; }
-    controller.position(run,{sample.position[0],sample.position[1],sample.position[2]});
-    if(controller.mounted({{run,controller.frame().spawnGeneration},sample.player,sample.vehicle,sample.seat})) {
-        receipt_log("pike_mounted",run,sample.vehicle);
-    }
+coo::ReadinessRequest<EnemyReceipt> readiness_request(std::uint64_t now) noexcept {
+    const std::lock_guard lock(mutex);
+    if(!selectedRun || selectedRun!=mission_run_generation() || !mission_seed_armed()
+        || world_phase()!=WorldPhase::arrived) { return {}; }
+    return readinessSchedule.request<EnemyReceipt, 94>(selectedRun,now,
+        [&](auto visit) noexcept { controller.pending_enemies(visit); }, 8);
 }
+coo::Generation traversal_request(std::uint64_t now) noexcept {
+    const std::lock_guard lock(mutex);
+    if(!current() || !mission_seed_armed() || world_phase()!=WorldPhase::arrived
+        || !controller.frame().enabled || controller.frame().finished || now<nextTraversal) return {};
+    nextTraversal=now>UINT64_MAX-100?UINT64_MAX:now+100;
+    return {selectedRun,controller.frame().spawnGeneration};
 }
-void poll(std::uint64_t run) noexcept {
-    if(!mission_seed_armed() || world_phase()!=WorldPhase::arrived) { return; }
-    poll_traversal(run);
-    std::array<EnemyReceipt,94> pending{};std::size_t count{},begin{};
-    { const std::lock_guard lock(mutex);if(!current() || run!=selectedRun || GetTickCount64()<nextProbe) { return; }
-      nextProbe=GetTickCount64()+500;controller.pending_enemies([&](const EnemyReceipt& r) noexcept { if(count<pending.size()) { pending[count++]=r; } });
-      if(count) { begin=probeCursor%count;probeCursor=(begin+8)%count; }
-    }
-    const auto image=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
-    for(std::size_t i=0;i<(std::min)(count,std::size_t{8});++i) {
-        client::hooks::bootflow::gateway_native::Read read{image};const auto& r=pending[(begin+i)%count];
-        observe_readiness(r,client::hooks::bootflow::coo_native::enemy(read,image,r));
-    }
+void observe_mount(const PikeMount& receipt,Point position) noexcept {
+    const std::lock_guard lock(mutex);
+    if(!current() || !mission_seed_armed() || world_phase()!=WorldPhase::arrived
+        || receipt.owner.run!=selectedRun || receipt.owner.value!=controller.frame().spawnGeneration
+        || !receipt.valid()) return;
+    controller.position(selectedRun,position);
+    if(controller.mounted(receipt)) receipt_log("pike_mounted",selectedRun,receipt.vehicle);
 }
 Frame snapshot(std::uint64_t run,std::uint64_t now,bool ready) noexcept {
-    poll(run);const std::lock_guard lock(mutex);if(!current() || run!=selectedRun) { return {}; }
-    const auto f=controller.update(run,now,ready && mission_seed_armed() && world_phase()==WorldPhase::arrived);lastPublish=now;
+    const std::lock_guard lock(mutex);if(!current() || run!=selectedRun) { return {}; }
+    auto f=controller.update(run,now,ready && mission_seed_armed() && world_phase()==WorldPhase::arrived);lastPublish=now;
+    f.presentation=objectiveDelivery.project({run,f.spawnGeneration},f.presentation);
     const auto d=controller.diagnostics();
     if(d.active!=lastActive || f.section!=lastSection) { lastActive=d.active;lastSection=f.section;
         std::array<char,256> line{};std::snprintf(line.data(),line.size(),"ev=coo_executor mission=deadly_trial run=%llu section=%u phase=%u active=%08X complete=%08X failure=%u finished=%u",static_cast<unsigned long long>(run),f.section,static_cast<unsigned>(d.phase),d.active,d.complete,static_cast<unsigned>(d.failure),f.finished?1U:0U);log(line.data());
@@ -113,9 +89,15 @@ Presentation presentation() noexcept {
     const std::lock_guard lock(mutex);return current()?Presentation{selectedRun,controller.frame()}:Presentation{};
 }
 std::uint64_t native_run() noexcept { if(!mission_seed_armed() || world_phase()!=WorldPhase::arrived) { return 0; }const std::lock_guard lock(mutex);return current()?selectedRun:0; }
+void observe_objective_readiness(coo::Generation owner,std::uint32_t handle,std::uintptr_t component,std::uintptr_t content,bool ready) noexcept {
+    const std::lock_guard lock(mutex);
+    if(!current() || owner!=coo::Generation{selectedRun,controller.frame().spawnGeneration} || !controller.frame().enabled)return;
+    objectiveDelivery.select(owner);
+    if(objectiveDelivery.observe(owner,handle,component,content,ready)) {lastPublish=0;}
+}
 bool publication_due(std::uint64_t now) noexcept {
     if(!mission_seed_armed() || world_phase()!=WorldPhase::arrived) { return false; }const std::lock_guard lock(mutex);
-    return current() && controller.frame().enabled && !controller.frame().finished && now>=lastPublish+100;
+    return current() && controller.frame().enabled && now>=lastPublish+100;
 }
 Request request() noexcept { if(!mission_seed_armed() || world_phase()!=WorldPhase::arrived) { return {}; }const std::lock_guard lock(mutex);return current()?controller.request():Request{}; }
 bool observe_admission(const EnemyReceipt& r) noexcept { const std::lock_guard lock(mutex);const bool ok=current() && controller.admitted(r);if(ok) { receipt_log("enemy_admitted",r.run,r.source); }return ok; }

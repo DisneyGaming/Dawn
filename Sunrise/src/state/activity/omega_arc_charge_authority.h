@@ -60,17 +60,22 @@ inline constexpr std::uint32_t kMaximumGeneration = 0x7FFFFFFDU; // headroom for
     return appliedRevision > kActiveRevisionOffset ? appliedRevision - kActiveRevisionOffset : 0U;
 }
 
-/** Standard native activity-object authority. No transform or component-state
- * override is needed: the Arc item and interaction retain their authored
- * predicates, hold-to-use behavior, carry mechanics and native graph events. */
+/** Only the active sink carries an enable record. Dormant preparation and
+ * retired/consumed generations retain their empty dynamic list. The native
+ * interaction consumer leaves the authored use predicate and counters intact. */
+[[nodiscard]] constexpr std::size_t authority_bits(const Source& source,
+    const Authority& authority) noexcept {
+    if(source.cycle==nullptr || !authority.generation || authority.generation>=kMaximumGeneration) {return 0;}
+    return coo::native_device::object_bits(lifecycle(source,authority)==Lifecycle::active,false,
+        source.object==Object::sink?coo::native_device::interaction::Mode::enabled:coo::native_device::interaction::Mode::unchanged);
+}
 template<class Writer>
 [[nodiscard]] bool write_authority(Writer& writer, const Source& source,
                                    const Authority& authority) noexcept {
-    if (source.cycle == nullptr || authority.generation == 0
-        || authority.generation >= kMaximumGeneration) { return false; }
-    const auto state = lifecycle(source, authority); // cycle > 3 stays dormant, as before
-    return omega_first_mancannon::write_authority(writer, revision(authority.generation, state),
-                                                  state == Lifecycle::active);
+    if(!authority_bits(source,authority)) {return false;}
+    const auto state = lifecycle(source, authority);
+    return coo::native_device::object(writer,revision(authority.generation,state),state==Lifecycle::active,nullptr,
+        source.object==Object::sink?coo::native_device::interaction::Mode::enabled:coo::native_device::interaction::Mode::unchanged);
 }
 
 } // namespace sunrise::state::activity::omega_arc_charge

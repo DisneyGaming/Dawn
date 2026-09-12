@@ -8,6 +8,7 @@
 #include <span>
 
 #include "../../../state/activity/omega_first_lair_encounter.h"
+#include "../../../state/activity/omega_archive_intro_control.h"
 
 namespace sunrise::client::hooks::bootflow::omega_boss_health {
 
@@ -78,6 +79,29 @@ static_assert(offsetof(Reference,handle)==0 && offsetof(Reference,kind)==4 && of
         && read<std::uint32_t>(bytes,0x190)==boss.revision
         && read<std::uint8_t>(bytes,0x1D4)==0
         && read<std::uint32_t>(bytes,0x21C)==boss.actor;
+}
+
+// AB27C0 resolves the native authority for an inline member. It is read-only.
+inline constexpr std::array<std::uint8_t,16> kMemberAuthorityPrefix{
+    0x48,0x83,0xEC,0x28,0x48,0x8D,0x54,0x24,
+    0x38,0xE8,0xB2,0x35,0xA3,0xFF,0x8B,0x44};
+/** Program revisions change for crown/attack queues while the actor incarnation
+ * remains fixed. Admit that mapping only after the current server program was
+ * acknowledged and the native member and authority both commit its revision. */
+[[nodiscard]] inline bool member_program_identity(std::span<const std::byte> bytes,
+    std::span<const std::byte> authority,const state::activity::omega_first_lair::Boss& boss,
+    const Reference& member,const state::activity::omega_archive_intro::Status& program) noexcept {
+    const auto& owner=program.owner;
+    if(!program.applied || !program.program.play || !program.program.revision
+        || program.incarnation!=boss.revision || owner.revision!=boss.revision
+        || owner.run!=boss.run || owner.actor!=boss.actor || owner.character!=boss.character
+        || owner.entity!=boss.entity || owner.generation!=boss.generation
+        || program.program.generation!=boss.generation || authority.size()<0x108
+        || detail::read<std::uint32_t>(authority,0)!=boss.generation
+        || detail::read<std::uint32_t>(authority,0x100)!=program.program.revision
+        || authority[6]==std::byte{}) { return false; }
+    auto physical=boss;physical.revision=program.program.revision;
+    return member_identity(bytes,physical,member);
 }
 
 [[nodiscard]] inline bool character_identity(std::span<const std::byte> bytes,

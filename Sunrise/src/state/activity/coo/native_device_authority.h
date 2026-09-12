@@ -1,11 +1,16 @@
 #pragma once
+#include "../../../middleware/bap/activity_message/native/generic_device_authority.h"
 #include <bit>
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <span>
+#include "../../../middleware/bap/activity_message/native/capture_controller_authority.h"
+#include "../../../middleware/bap/activity_message/native/public_event_interaction_authority.h"
 namespace sunrise::state::activity::coo::native_device {
+namespace generic=middleware::bap::activity_message::native::generic_device;
+namespace interaction=middleware::bap::activity_message::native::interaction;
 [[nodiscard]] inline bool inactive_state(std::span<const std::byte,0x44> state) noexcept {
     const auto read32=[](const std::byte* b) noexcept { std::uint32_t v{};std::memcpy(&v,b,sizeof v);return v; };
     const auto read64=[](const std::byte* b) noexcept { std::uint64_t v{};std::memcpy(&v,b,sizeof v);return v; };
@@ -51,7 +56,22 @@ template<class Writer> bool linked_effect(Writer& w,std::uint32_t registry,std::
     for(unsigned i=0;i<4;++i) { if(!w.write(0x80000000U,32)) { return false; } }
     return w.write(registry,32) && w.write(35,7) && w.write(32768U+collection,16) && w.write(0,1);
 }
-template<class Writer> bool object(Writer& writer,std::uint32_t generation,bool active) noexcept {
+// Inactive preparation has no entity to receive component state. Preserve its
+// canonical empty dynamic list; otherwise inactive_state rejects the source
+// and the server never publishes the active generation that creates the plate.
+[[nodiscard]] inline constexpr std::size_t object_bits(bool active,bool capture=false,
+    interaction::Mode mode=interaction::Mode::unchanged,bool pose=false) noexcept {
+    if(!interaction::valid(mode)) {return 0;}
+    return 252U+(active && capture?middleware::bap::activity_message::native::capture_controller::kRecordBits:0U)
+        +(active && mode!=interaction::Mode::unchanged?1U+interaction::kPayloadBits:0U)
+        +(active && pose?generic::kRecordBits:0U);
+}
+template<class Writer> bool object(Writer& writer,std::uint32_t generation,bool active,
+    const middleware::bap::activity_message::native::capture_controller::State* capture=nullptr,
+    interaction::Mode mode=interaction::Mode::unchanged,const generic::State* pose=nullptr) noexcept {
+    if(!interaction::valid(mode)) {return false;}
+    if(!active) {capture=nullptr;mode=interaction::Mode::unchanged;pose=nullptr;}
+    const bool interacting=mode!=interaction::Mode::unchanged;
     return writer.write(generation ^ 0x80000000U, 32) // decoded generation
         && writer.write(0x80000000U, 32)              // decoded candidate index 0
         && writer.write(active ? 1U : 0U, 1)
@@ -62,7 +82,10 @@ template<class Writer> bool object(Writer& writer,std::uint32_t generation,bool 
         && writer.write(0x7FFFU, 16)                 // decoded index -1
         && writer.write(0U, 32) && writer.write(0U, 32) && writer.write(0U, 32)
         && writer.write(0U, 1)                       // auxiliary object flag off
-        && writer.write(0U, 2);                      // zero dynamic component states
+        && writer.write((capture?1U:0U)+(interacting?1U:0U)+(pose?1U:0U), 2)
+        && (!capture || middleware::bap::activity_message::native::capture_controller::write_record(writer,*capture))
+        && (!interacting || interaction::write_record(writer,mode))
+        && (!pose || generic::write_record(writer,*pose));
 }
 
 // Change only the position channel. Absent revisions (-1) preserve native power

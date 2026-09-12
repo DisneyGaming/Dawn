@@ -249,6 +249,9 @@ struct Snapshot final {
     std::uint32_t omegaIntroRevision{};
     bool omegaIntroPlay{};
     std::uint32_t omegaBossGeneration{};
+    // Active archive encounter control; independent of the unused legacy mission snapshot.
+    state::activity::omega::boss_authority::ArmControl omegaArchiveArm{};
+    state::activity::omega::boss_authority::IntroProgram omegaArchiveIntro{};
     /** Native first-approach sources. Requests remain zero until a verified arm lift. */
     std::uint32_t omegaFirstLairGeneration{};
     std::array<std::uint8_t,21> omegaFirstLairLoose{};
@@ -256,6 +259,7 @@ struct Snapshot final {
     std::uint8_t omegaActiveDialogueRow{0xFFU};
     /** Publishes a neutral map-generator authority body so the forest generator activates. */
     bool omegaForestGenerator{};
+    std::uint32_t omegaForestSeed{};
     /** Stable Omega-only typed Vex selection, published before Forest generation. */
     /** Exact sq_boss authority. Dormant until the doorway; stable for its native member. */
     bool omegaBossAuthority{};

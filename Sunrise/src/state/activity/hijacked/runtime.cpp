@@ -1,17 +1,44 @@
 #include <Windows.h>
 #include "runtime.h"
 #include "controller.h"
+#include "../coo/objective_delivery.h"
 #include "../runtime.h"
 #include "../../../core/logging/log.h"
 #include <cstdio>
 #include <mutex>
-#include "../../../client/hooks/bootflow/gateway_native_read.h"
-#include "../../../client/hooks/bootflow/coo_enemy_readiness.h"
+#include "../../../server/runtime/activity/mission_observation_queue.h"
 
 namespace sunrise::state::activity::hijacked {
 namespace {
 std::mutex mutex;
 Controller controller;
+std::array<server::runtime::activity::mission_device_pose::Inbox<PlateReceipt>,std::size(kPlates)> poseInbox{};
+coo::ReadinessSchedule readinessSchedule;
+coo::ObjectiveDelivery objectiveDelivery;
+enum class ObservationKind {position,plateBinding,plateProgress,contest,scanBinding,scanPlayback};
+struct Observation {
+    ObservationKind kind{};coo::Generation owner{};Point point{};PlateReceipt plate{};ScanReceipt scan{};
+    ScanPlayback playback{};std::uint32_t revision{};float progress{};bool flag{};
+};
+server::runtime::activity::MissionObservationQueue<Observation> observations;
+struct ContestObservation {PlateReceipt plate{};std::array<EnemyPosition,256> positions{};std::size_t count{};bool complete{};};
+std::array<ContestObservation,16> contests;
+std::size_t contestCount{};
+void consume(const Observation& e) noexcept {
+    if(e.owner!=controller.owner()) {return;}
+    switch(e.kind) {
+    case ObservationKind::position:controller.position(e.owner.run,e.point);break;
+    case ObservationKind::plateBinding:static_cast<void>(controller.bind_plate(e.plate));break;
+    case ObservationKind::plateProgress:static_cast<void>(controller.plate(e.plate,e.revision,e.progress,e.flag));break;
+    case ObservationKind::contest: {
+        const auto& sample=contests[e.revision];
+        static_cast<void>(controller.contested_positions(sample.plate,std::span(sample.positions).first(sample.count),sample.complete));break;
+    }
+    case ObservationKind::scanBinding:static_cast<void>(controller.bind_scan(e.scan));break;
+    case ObservationKind::scanPlayback:static_cast<void>(controller.scan_playback(e.scan,e.playback,e.flag));break;
+    }
+}
+
 std::unique_ptr<coo::script::MissionDocument> document;
 std::uint64_t selectedRun{},nextPublication{};
 coo::StallDiagnostics stalled;
@@ -43,37 +70,35 @@ bool load() noexcept {
 }
 bool prepare(std::uint64_t run,bool selected) noexcept {
     const std::lock_guard lock(mutex);if(run!=mission_run_generation()) {return false;}
-    if(!selected) {controller.reset();selectedRun=nextPublication=0;stalled.reset();return false;}
+    if(!selected) {controller.reset();objectiveDelivery={};readinessSchedule.reset();observations.reset();poseInbox={};contestCount=0;selectedRun=nextPublication=0;stalled.reset();return false;}
     // The process-owned document is immutable after load(), and selectedRun is
     // published only after Controller::select succeeds. Repeated roster updates
     // must not revalidate the entire script while the game thread waits here.
     // Deselection above and each new run still take the full selection path.
     if(run && selectedRun==run && document && controller.owner().run==run) {return true;}
     if(!load() || !controller.select(document->views(),run)) {return false;}
-    if(selectedRun!=run) {loggedRetirements.reset();lastActive=lastComplete=UINT32_MAX;lastSection=UINT8_MAX;stalled.reset();}
+    if(selectedRun!=run) {objectiveDelivery={};readinessSchedule.reset();observations.reset();poseInbox={};contestCount=0;loggedRetirements.reset();lastActive=lastComplete=UINT32_MAX;lastSection=UINT8_MAX;stalled.reset();}
     selectedRun=run;return true;
 }
 namespace {
 void log_receipt(const char* stage,std::uint64_t run,std::uint32_t value) noexcept {
     std::array<char,192> line{};std::snprintf(line.data(),line.size(),"ev=hijacked stage=%s run=%llu value=%u",stage,static_cast<unsigned long long>(run),value);log(line.data());
 }
-void poll_readiness(std::uint64_t run,std::uint64_t now) noexcept {
-    static std::uint64_t next{},lastRun{};static std::size_t cursor{};
-    std::array<EnemyReceipt,256> pending{};std::size_t count{},begin{};
-    {const std::lock_guard lock(mutex);if(!current() || run!=selectedRun) {return;}
-     if(run!=lastRun) {next=0;cursor=0;lastRun=run;}if(now<next) {return;}next=now+500;
-     controller.pending_enemies([&](const auto& r) {if(count<pending.size()) {pending[count++]=r;}});
-     if(count) {begin=cursor%count;cursor=(begin+12)%count;}}
-    const auto image=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
-    for(std::size_t i=0;i<(std::min)(count,std::size_t{12});++i) {
-        client::hooks::bootflow::gateway_native::Read read{image};const auto& r=pending[(begin+i)%count];
-        observe_readiness(r,client::hooks::bootflow::coo_native::enemy(read,image,r));
-    }
+
 }
+coo::ReadinessRequest<EnemyReceipt> readiness_request(std::uint64_t now) noexcept {
+    const std::lock_guard lock(mutex);
+    if(!current()) return {};
+    return readinessSchedule.request<EnemyReceipt,256>(selectedRun,now,
+        [&](auto visit) noexcept { controller.pending_enemies(visit); });
 }
 Frame snapshot(std::uint64_t run,std::uint64_t now,bool ready) noexcept {
-    poll_readiness(run,now);const std::lock_guard lock(mutex);if(!current() || run!=selectedRun) {return {};}
-    const auto f=controller.update(run,now,ready);nextPublication=now+100;const auto d=controller.diagnostics();
+    const std::lock_guard lock(mutex);if(!current() || run!=selectedRun) {return {};}
+    if(!observations.drain(consume)) {log("ev=mission_observations result=overflow publication=stopped");return {};}
+    for(auto& inbox:poseInbox) {inbox.drain([](const PlateReceipt& r,auto sample) {static_cast<void>(controller.plate_pose(r,sample));});}
+    contestCount=0;
+    auto f=controller.update(run,now,ready);nextPublication=now+100;
+    f.presentation=objectiveDelivery.project(controller.owner(),f.presentation);const auto d=controller.diagnostics();
     for(std::size_t i=0;i<std::size(kSpawns);++i) {
         const auto& spawn=kSpawns[i];const auto a=find(spawn.registry,1,spawn.source)->asset;
         const auto& s=f.native[asset_index(a)];if(!s.retired || loggedRetirements[i]) {continue;}
@@ -95,6 +120,12 @@ Frame snapshot(std::uint64_t run,std::uint64_t now,bool ready) noexcept {
 }
 Request request() noexcept {const std::lock_guard lock(mutex);return current()?Request{controller.owner(),controller.frame()}:Request{};}
 std::uint64_t native_run() noexcept {const std::lock_guard lock(mutex);return current()?selectedRun:0;}
+void observe_objective_readiness(coo::Generation owner,std::uint32_t handle,std::uintptr_t component,std::uintptr_t content,bool ready) noexcept {
+    const std::lock_guard lock(mutex);
+    if(!current() || owner!=controller.owner() || !controller.frame().enabled)return;
+    objectiveDelivery.select(owner);
+    if(objectiveDelivery.observe(owner,handle,component,content,ready)) {nextPublication=0;}
+}
 bool publication_due(std::uint64_t now) noexcept {const std::lock_guard lock(mutex);return current() && controller.frame().enabled && now>=nextPublication;}
 void observe_position(float x,float y,float z) noexcept {
     const std::lock_guard lock(mutex);if(!current()) {return;}
@@ -142,10 +173,22 @@ LivingEnemies retirement_enemies() noexcept {
     out.owner=controller.owner();controller.retirement_enemies([&](const EnemyReceipt& r) {if(out.count<out.actors.size()) {out.actors[out.count++]=r;}});return out;
 }
 PlateRequest plate_request(std::size_t i) noexcept {const std::lock_guard lock(mutex);return current()?controller.plate_request(i):PlateRequest{};}
-void observe_plate_binding(const PlateReceipt& r) noexcept {const std::lock_guard lock(mutex);if(current() && controller.bind_plate(r)) {log_receipt("plate_bound",r.owner.run,r.index);}}
-void observe_plate(const PlateReceipt& r,std::uint32_t revision,float value,bool complete) noexcept {const std::lock_guard lock(mutex);if(current() && controller.plate(r,revision,value,complete)) {log_receipt("plate_charged",r.owner.run,r.index);}}
-void observe_contested(const PlateReceipt& r,bool value) noexcept {const std::lock_guard lock(mutex);if(current()) {static_cast<void>(controller.contested(r,value));}}
+void observe_plate_pose(const PlateReceipt& r,server::runtime::activity::mission_device_pose::Sample sample) noexcept {
+    const std::lock_guard lock(mutex);
+    if(!current() || !r.valid() || controller.plate_request(r.index).plate!=r)return;
+    poseInbox[r.index].submit(r,sample);
+}
+void observe_plate_binding(const PlateReceipt& r) noexcept {const std::lock_guard lock(mutex);if(current()) {Observation e{};e.kind=ObservationKind::plateBinding;e.owner=controller.owner();e.plate=r;observations.push(e);}}
+void observe_plate(const PlateReceipt& r,std::uint32_t revision,float value,bool complete) noexcept {const std::lock_guard lock(mutex);if(current()) {Observation e{};e.kind=ObservationKind::plateProgress;e.owner=controller.owner();e.plate=r;e.revision=revision;e.progress=value;e.flag=complete;observations.push(e);}}
+void observe_contested_positions(const PlateReceipt& r,std::span<const EnemyPosition> positions,bool complete) noexcept {
+    const std::lock_guard lock(mutex);if(!current() || !r.valid() || positions.size()>256) {return;}
+    if(contestCount==contests.size()) {observations.fail();return;}
+    Observation queued{};queued.kind=ObservationKind::contest;queued.owner=controller.owner();queued.revision=static_cast<std::uint32_t>(contestCount);
+    if(!observations.push(queued)) {return;}
+    auto& event=contests[contestCount++];event.plate=r;event.count=positions.size();event.complete=complete;
+    for(std::size_t i=0;i<positions.size();++i) {event.positions[i]=positions[i];}
+}
 ScanRequest scan_request(std::size_t i) noexcept {const std::lock_guard lock(mutex);return current()?controller.scan_request(i):ScanRequest{};}
-void observe_scan_binding(const ScanReceipt& r) noexcept {const std::lock_guard lock(mutex);if(current() && controller.bind_scan(r)) {log_receipt("scan_bound",r.owner.run,r.index);}}
-void observe_scan(const ScanReceipt& r,bool started,bool complete) noexcept {const std::lock_guard lock(mutex);if(current() && controller.scan(r,started,complete)) {log_receipt(complete?"scan_finished":"scan_started",r.owner.run,r.index);}}
+void observe_scan_binding(const ScanReceipt& r) noexcept {const std::lock_guard lock(mutex);if(current()) {Observation e{};e.kind=ObservationKind::scanBinding;e.owner=controller.owner();e.scan=r;observations.push(e);}}
+void observe_scan_playback(const ScanReceipt& r,ScanPlayback playback,bool participant) noexcept {const std::lock_guard lock(mutex);if(current()) {Observation e{};e.kind=ObservationKind::scanPlayback;e.owner=controller.owner();e.scan=r;e.playback=playback;e.flag=participant;observations.push(e);}}
 }

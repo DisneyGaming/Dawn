@@ -1,4 +1,5 @@
 #include "controller.h"
+#include "plate_presentation.h"
 #include <cmath>
 namespace sunrise::state::activity::deep_storage {
 bool valid_document(const coo::script::Views& v) noexcept {
@@ -90,10 +91,30 @@ bool Controller::lens(const LensReceipt& r,bool dead) noexcept {
     ++device.generation;device.acknowledged=false;
     frame_.lensDestroyed=true;++frame_.revision;return true;
 }
+bool Controller::plate_pose(const PlateReceipt& r,server::runtime::activity::mission_device_pose::Sample sample) noexcept {
+    if(!r.valid() || r!=plates_[r.index] || !frame_.enabled || r.owner.run!=run_)return false;
+    const auto& native=frame_.native[asset_index(kPlates[r.index].source)];
+    if(!native.active || native.generation!=r.owner.value)return false;
+    return server::runtime::activity::mission_device_pose::observe(frame_.plateCaptures[r.index].pose,sample);
+}
 bool Controller::bind_plate(const PlateReceipt& r) noexcept {
     if(!r.valid() || !frame_.enabled || r.owner.run!=run_) {return false;}
     const auto& s=frame_.native[asset_index(kPlates[r.index].source)];
     if(!s.active || s.generation!=r.owner.value || plates_[r.index].valid()) {return false;}plates_[r.index]=r;return true;
+}
+bool Controller::contested_positions(const PlateReceipt& r,std::span<const EnemyPosition> positions,bool complete) noexcept {
+    if(!r.valid() || r!=plates_[r.index] || positions.size()>256) {return false;}
+    const Volume* volume{};for(const auto& v:kVolumes) {if(v.asset==kPlates[r.index].volume) {volume=&v;break;}}
+    if(!volume) {return false;}
+    bool occupied{};
+    population_.living([&](const EnemyReceipt& enemy) {
+        const EnemyPosition* sample{};
+        for(const auto& p:positions) {if(p.enemy==enemy) {sample=&p;break;}}
+        if(!sample || !std::isfinite(sample->point.x) || !std::isfinite(sample->point.y) || !std::isfinite(sample->point.z)) {complete=false;return;}
+        occupied|=contains(*volume,sample->point);
+    });
+    // Missing or newly admitted actors cannot become evidence of an empty plate.
+    return (occupied || complete) && contested(r,occupied);
 }
 bool Controller::contested(const PlateReceipt& r,bool value) noexcept {
     if(!r.valid() || !frame_.enabled || r!=plates_[r.index]) {return false;}
@@ -116,6 +137,12 @@ bool Controller::bind_scan(const ScanReceipt& r) noexcept {
     if(!r.valid() || !frame_.enabled || r.owner.run!=run_) {return false;}
     const auto& s=frame_.native[asset_index(kScans[r.index].source)];
     if(!s.active || s.generation!=r.owner.value || scans_[r.index].valid()) {return false;}scans_[r.index]=r;return true;
+}
+bool Controller::scan_playback(const ScanReceipt& r,ScanPlayback playback,bool participant) noexcept {
+    if(!r.valid()) {return false;}
+    if(playback.started(r.owner.value,participant)) {return scan(r,true,false);}
+    if(playback.finished(r.owner.value,frame_.scanStarted[r.index])) {return scan(r,false,true);}
+    return false;
 }
 bool Controller::scan(const ScanReceipt& r,bool started,bool completed) noexcept {
     if(!r.valid() || !frame_.enabled || r!=scans_[r.index] || r.owner.run!=run_ || !frame_.scanArmed[r.index] || frame_.scanComplete[r.index]) {return false;}
@@ -189,6 +216,16 @@ void Controller::update_module(std::uint32_t id,const coo::MissionInput& input,F
         phaseFinished_=false;++frame_.section;executor_.cancel(*this);started_=executor_.start(graph()->definition,run_);if(started_) {executor_.update(*this);}++frame_.revision;
     }
     frame_.enabled=!frame_.populationFault && executor_.diagnostics().phase!=coo::Phase::failed;
+    for(std::size_t i=0;i<std::size(kPlates);++i) {
+        const auto& plate=frame_.plates[i];
+        if(!server::runtime::activity::mission_capture::update(frame_.plateCaptures[i],plate.revision,
+            frame_.native[asset_index(kPlates[i].source)].active && plate.armed && plate.occupied && !plate.contested,
+            plate.charged,coo::native_activity_ticks(static_cast<std::uint64_t>(kPlates[i].chargeSeconds*1000.F)),frame_.gameplayClockTicks)) {
+            frame_.populationFault=true;frame_.enabled=false;
+        }
+        frame_.plateCaptures[i].presentationPosition=plate_presentation::position(plate,static_cast<std::uint8_t>(i));
+        if(!server::runtime::activity::mission_device_pose::desire(frame_.plateCaptures[i].pose,frame_.plateCaptures[i].presentationPosition)) {frame_.enabled=false;}
+    }
     frame_.checked=frame_.finished;frame_.presentation=objectives_.state();frame_.completion=lifecycle_.publication();output=frame_;
 }
 Frame Controller::update(std::uint64_t run,std::uint64_t now,bool ready) noexcept {

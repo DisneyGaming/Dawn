@@ -129,9 +129,6 @@ void poll_world_step() noexcept {
     // The camera owner invokes this poll every frame. Keep the native HUD call on that game thread;
     // calling it from the embedded server's keepalive worker is not safe.
     sample_omega_directive_presentation();
-    // Same game-thread contract: the native transition request wrapper must run here, not on
-    // the embedded server's worker (the vex_wall device push froze from that context).
-    sample_omega_portal_transport();
     omega_activity_handoff::poll();
     hijacked_placements::poll();
     poll_native_population_admissions();

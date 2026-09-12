@@ -146,17 +146,13 @@ void note_world_phase(WorldPhase phase) noexcept;
  * this when the Omega forest-entrance monitor sense latches (portal_mutation experiment); the
  * client's frame poll consumes it and installs the native type-7 pending request.
  */
-void request_omega_forest_transition() noexcept;
 
-/** @return True exactly once per request; consuming clears the latch. */
-[[nodiscard]] bool consume_omega_forest_transition_request() noexcept;
 
 /**
  * The game thread issued the native type-7 request: every Omega authority emission must stop
  * immediately so no dialogue/scene body applies into components the slice teardown is freeing
  * (the index-heap double-free). Cleared with the seed latch on the next idle world phase.
  */
-void note_omega_forest_transition_issued() noexcept;
 
 /** @return True once the transition was issued; Omega authority emission must be silent. */
 [[nodiscard]] bool omega_authority_quiesced() noexcept;

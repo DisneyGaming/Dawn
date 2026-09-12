@@ -12,8 +12,13 @@ public:
     bool select(const coo::script::Views&,std::uint64_t run) noexcept;
     void position(std::uint64_t run,Point) noexcept;
     bool prepared(coo::Generation,coo::Asset) noexcept;
+    bool forest_ready(coo::Generation owner,std::uint8_t pass,bool ready) noexcept {
+        if(owner!=this->owner() || pass!=frame_.forestPass || pass<1 || pass>2)return false;
+        frame_.forestReady=ready;return true;
+    }
     bool lens(const LensReceipt&,bool dead) noexcept;
     bool bind_plate(const PlateReceipt&) noexcept;
+    bool plate_pose(const PlateReceipt&,server::runtime::activity::mission_device_pose::Sample) noexcept;
     bool plate(const PlateReceipt&,std::uint32_t revision,float value,bool complete) noexcept;
     bool scene(const SceneReceipt&,bool complete) noexcept;
     bool scene_speech(const SceneReceipt&,std::uint8_t row,std::uint32_t state) noexcept;

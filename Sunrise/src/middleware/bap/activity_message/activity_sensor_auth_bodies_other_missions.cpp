@@ -778,7 +778,8 @@ legacy_auth_body_bits(const Snapshot& snapshot,
         return native::population::bits(*request);
     if(snapshot.omegaEndingSelected && state::activity::omega::ending::slot(key,slotType,slotIndex)) return 263;
     if (snapshot.omegaBossAuthority && boss::parent_slot(key, slotType, slotIndex)) return boss::kParentBits;
-    if (snapshot.omegaBossAuthority && boss::member_slot(key, slotType, slotIndex)) return boss::kMemberBits;
+    if (snapshot.omegaBossAuthority && boss::member_slot(key, slotType, slotIndex))
+        return boss::member_bits(snapshot.omegaBossGeneration!=0,snapshot.omegaBossGeneration,snapshot.omegaMission.arm,true);
     if (snapshot.omegaMission.generation) {
         if(const auto* route=transit::find(key,slotType,slotIndex))
             return slotType==4?(route->role==transit::Role::sink?375:252):147;
@@ -932,7 +933,7 @@ bool legacy_write_auth_body(bits::Writer& writer,
     if (snapshot.omegaBossAuthority && boss::parent_slot(key, slotType, slotIndex)) {
         encoded = boss::write_parent(writer, snapshot.omegaBossGeneration != 0, snapshot.omegaBossGeneration);
     } else if (snapshot.omegaBossAuthority && boss::member_slot(key, slotType, slotIndex)) {
-        encoded = boss::write_member(writer, snapshot.omegaBossGeneration != 0, snapshot.omegaBossGeneration);
+        encoded = boss::write_member(writer, snapshot.omegaBossGeneration != 0, snapshot.omegaBossGeneration,snapshot.omegaMission.arm,true);
     } else if(snapshot.omegaEndingSelected && state::activity::omega::ending::slot(key,slotType,slotIndex)) {
         encoded=state::activity::omega::ending::write(writer,snapshot.omegaEndingRevision,snapshot.omegaEndingPlay);
     } else if(snapshot.omegaMission.generation && transit::find(key,slotType,slotIndex)) {

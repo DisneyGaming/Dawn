@@ -11,7 +11,6 @@
 #include <string_view>
 
 #include "../../../core/logging/log.h"
-#include "../../../core/settings/settings.h"
 #include "../../../state/activity/forced/activity_forced_destination.h"
 #include "../../../state/activity/runtime.h"
 #include "../../hooking/call_gate.h"
@@ -85,13 +84,9 @@ constexpr std::array<std::uint32_t, 28> kTowerfallValueHashes{
     0xF75227A4U, 0xABC99255U, 0x4AFB40C9U, 0x44FBFF68U,
     0x7F082155U, 0x99CD57C9U, 0xC1739F32U, 0x9C5D1EAEU,
     0xC018E549U, 0xBBEE8CD5U, 0x5DC0DEE3U, 0xB10B97C3U};
-/** Canonical absent activity client-reference key. */
-constexpr std::uint32_t kAbsentReference = 0x811C9DC5U;
 /** One decoded 0x80804F6B directive record. */
 constexpr std::size_t kDirectiveRecordBytes = 0xF8U;
 constexpr std::size_t kDirectiveLookupSnapshotBytes = 0x40U;
-constexpr std::size_t kDirectiveOptionalReferenceOffset = 0x38U;
-constexpr std::size_t kDirectiveClientReferenceOffset = 0x5CU;
 /** The HUD manager owns no more than sixteen 0x148-byte directive entries. */
 constexpr std::size_t kDirectiveManagerEntryCountOffset = 0x1480U;
 constexpr std::size_t kDirectiveManagerEntryStride = 0x148U;
@@ -489,30 +484,6 @@ void trace_towerfall_component(std::uint32_t* component,
     return found;
 }
 
-[[nodiscard]] std::array<std::byte, kDirectiveRecordBytes> opening_record() noexcept {
-    std::array<std::byte, kDirectiveRecordBytes> record{};
-    const std::int32_t variant = 0;
-    const std::int64_t noOptionalReference = -1;
-    const std::int8_t absentType = -1;
-    const std::int16_t absentIndex = -1;
-    std::memcpy(record.data(), &kOmegaOpeningDirective, sizeof kOmegaOpeningDirective);
-    std::memcpy(record.data() + 4U, &variant, sizeof variant);
-    // Byte +8 is already zero. That exact state is the native install/new-objective edge.
-    std::memcpy(record.data() + kDirectiveOptionalReferenceOffset,
-                &noOptionalReference,
-                sizeof noOptionalReference);
-    std::memcpy(record.data() + kDirectiveClientReferenceOffset,
-                &kAbsentReference,
-                sizeof kAbsentReference);
-    std::memcpy(record.data() + kDirectiveClientReferenceOffset + 4U,
-                &absentType,
-                sizeof absentType);
-    std::memcpy(record.data() + kDirectiveClientReferenceOffset + 6U,
-                &absentIndex,
-                sizeof absentIndex);
-    return record;
-}
-
 void report_attempt(std::uint32_t attempt,
                     const char* result,
                     std::uintptr_t component,
@@ -523,7 +494,7 @@ void report_attempt(std::uint32_t attempt,
         line.data(),
         line.size(),
         "ev=activity stage=omega_directive_presentation attempt=%u result=%s "
-        "event=0x%08X hud_hash=0x%08X component=%p content=%p manager=%p mutation=local_ui",
+        "event=0x%08X hud_hash=0x%08X component=%p content=%p manager=%p mutation=observe_only authority=server",
         attempt,
         result,
         kOmegaOpeningDirective,
@@ -845,7 +816,7 @@ bool install_omega_directive_presentation() noexcept {
         "component=+1009630 content=+1009430 lookup=+100A110 install=+1009ED0 "
         "manager=+137D6F0 event=0xC252E306 towerfall_consumer=observe_only "
         "component_zero_hits=reported lookup_scope=all install_scope=all "
-        "timing=post_arrival mutation=local_ui_guarded");
+        "timing=post_arrival mutation=observe_only authority=server_guarded");
     return true;
 }
 
@@ -853,8 +824,7 @@ namespace {
 
 void sample_omega_directive_presentation_body(
     const hooking::CallGate::Scope& call) noexcept {
-    if (!call.accepts_side_effects() || !core::settings::get().omegaExperiments.directiveUi
-        || !g_installed.load(std::memory_order_acquire)) {
+    if (!call.accepts_side_effects() || !g_installed.load(std::memory_order_acquire)) {
         return;
     }
     const state::activity::WorldPhase phase = state::activity::world_phase();
@@ -932,13 +902,9 @@ void sample_omega_directive_presentation_body(
     g_lastAttemptTick.store(now, std::memory_order_release);
 
     const std::uintptr_t componentAddress = g_component.load(std::memory_order_acquire);
-    const DirectiveContentResolve contentResolve = g_contentResolve.load(std::memory_order_acquire);
-    const DirectiveContentLookup contentLookup = g_contentLookup.load(std::memory_order_acquire);
-    const DirectiveInstall directiveInstall = g_directiveInstall.load(std::memory_order_acquire);
     const DirectiveManagerReady managerReady = g_managerReady.load(std::memory_order_acquire);
     const DirectiveManagerGet managerGet = g_managerGet.load(std::memory_order_acquire);
-    if (componentAddress == 0U || contentResolve == nullptr || contentLookup == nullptr
-        || directiveInstall == nullptr || managerReady == nullptr || managerGet == nullptr) {
+    if (componentAddress == 0U || managerReady == nullptr || managerGet == nullptr) {
         return;
     }
 
@@ -972,41 +938,11 @@ void sample_omega_directive_presentation_body(
         return;
     }
     const std::uint32_t attempt = g_attempts.fetch_add(1U, std::memory_order_acq_rel) + 1U;
-    auto record = opening_record();
-    void* content = nullptr;
-    bool invoked = false;
-    __try {
-        auto* const component = reinterpret_cast<std::uint32_t*>(componentAddress);
-        content = contentResolve(component);
-        std::uint32_t key = kOmegaOpeningDirective;
-        if (call.accepts_side_effects() && content != nullptr
-            && contentLookup(content, &key) != nullptr
-            && call.accepts_side_effects()) {
-            directiveInstall(component, record.data(), content);
-            invoked = true;
-        }
-    } __except (EXCEPTION_EXECUTE_HANDLER) {
-        content = nullptr;
-        invoked = false;
-    }
-
-    if (!call.accepts_side_effects()) {
-        return;
-    }
-    if (invoked && manager_contains_opening_directive(manager)) {
-        if (!call.accepts_side_effects()) {
-            return;
-        }
-        g_confirmed.store(true, std::memory_order_release);
-        report_attempt(attempt, "confirmed_inserted", componentAddress, content, manager);
-        return;
-    }
+    // The server publishes the current objective through 80804F67. This adapter
+    // observes the native manager only; it must never synthesize a second opening
+    // objective or resurrect one after the mission has advanced.
     if (call.accepts_side_effects() && (attempt == 1U || attempt % 8U == 0U)) {
-        report_attempt(attempt,
-                       invoked ? "not_confirmed" : "prerequisite_missing",
-                       componentAddress,
-                       content,
-                       manager);
+        report_attempt(attempt, "awaiting_native_publication", componentAddress, nullptr, manager);
     }
 }
 

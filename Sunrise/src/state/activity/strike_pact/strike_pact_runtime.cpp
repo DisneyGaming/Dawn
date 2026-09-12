@@ -1,8 +1,6 @@
 #include <Windows.h>
 #include "runtime.h"
 #include "controller.h"
-#include "../../../client/hooks/bootflow/gateway_native_read.h"
-#include "../../../client/hooks/bootflow/coo_enemy_readiness.h"
 #include "../runtime.h"
 #include "../../../core/logging/log.h"
 #include <cstdio>
@@ -11,8 +9,9 @@ namespace sunrise::state::activity::strike_pact {
 namespace {
 std::mutex mutex;
 Controller controller;
+coo::ReadinessSchedule readinessSchedule;
 coo::StallDiagnostics stalled,background;
-std::size_t probeCursor{};std::uint64_t nextProbe{},nextPublication{};
+std::uint64_t nextPublication{};
 std::uint32_t publishedRevision{UINT32_MAX};
 std::uint64_t selectedRun{};
 std::unique_ptr<coo::script::MissionDocument> document;
@@ -47,7 +46,7 @@ bool load() noexcept {
     return document!=nullptr;
 }
 void reset_diagnostics() noexcept {
-    stalled.reset();background.reset();probeCursor=0;nextProbe=0;nextPublication=0;publishedRevision=UINT32_MAX;
+    stalled.reset();background.reset();readinessSchedule.reset();nextPublication=0;publishedRevision=UINT32_MAX;
     loggedVolumes.reset();loggedActive=UINT32_MAX;loggedSection=UINT8_MAX;loggedTimeouts=0;loggedPhase=coo::Phase::idle;loggedBank=false;
 }
 }
@@ -60,36 +59,31 @@ bool prepare(std::uint64_t run,bool selected) noexcept {
             std::snprintf(line.data(),line.size(),"ev=strike_pact stage=reset run=%llu reason=destination_changed",
                 static_cast<unsigned long long>(selectedRun));log(line.data());
         }
-        controller.reset();reset_diagnostics();selectedRun=0;return false;
+        controller.reset();readinessSchedule.reset();reset_diagnostics();selectedRun=0;return false;
     }
     if(!load()) { return false; }
     if(run!=selectedRun) { reset_diagnostics(); }
     if(!controller.select(document->views(),run)) { return false; }
     selectedRun=run;return true;
 }
-void poll_enemies(std::uint64_t run) noexcept {
-    if(!mission_seed_armed() || world_phase()!=WorldPhase::arrived || run!=mission_run_generation()) { return; }
-    std::array<EnemyReceipt,64> pending{};std::size_t count{},begin{};
-    { const std::lock_guard lock(mutex);if(run!=selectedRun || GetTickCount64()<nextProbe) { return; }nextProbe=GetTickCount64()+500;
-      controller.pending_enemies([&](const EnemyReceipt& receipt) noexcept { if(count<pending.size()) { pending[count++]=receipt; } });
-      if(count) { begin=probeCursor%count;probeCursor=(begin+12)%count; }
-    }
-    const auto image=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
-    { client::hooks::bootflow::gateway_native::Read read{image};
-      const auto capacity=client::hooks::bootflow::coo_native::capacity(read,image+0x1F9D7F0);
-      const std::lock_guard lock(mutex);if(run==selectedRun) { controller.capacity(capacity); }
-    }
-    for(std::size_t i=0;i<(std::min)(count,std::size_t{12});++i) {
-        client::hooks::bootflow::gateway_native::Read read{image};const auto& receipt=pending[(begin+i)%count];
-        observe_readiness(receipt,client::hooks::bootflow::coo_native::enemy(read,image,receipt));
-    }
+coo::ReadinessRequest<EnemyReceipt> readiness_request(std::uint64_t now) noexcept {
+    const std::lock_guard lock(mutex);
+    if(!selectedRun || selectedRun!=mission_run_generation() || !mission_seed_armed()
+        || world_phase()!=WorldPhase::arrived) { return {}; }
+    return readinessSchedule.request<EnemyReceipt, 64>(selectedRun,now,
+        [&](auto visit) noexcept { controller.pending_enemies(visit); });
 }
+
 void observe_readiness(const EnemyReceipt& receipt,coo::EnemyReadiness value) noexcept {
     const std::lock_guard lock(mutex);if(receipt.run!=selectedRun || receipt.run!=mission_run_generation()) { return; }
     static_cast<void>(controller.readiness(receipt,value));
 }
+void observe_capacity(std::uint64_t run,coo::PopulationCapacity value) noexcept {
+    const std::lock_guard lock(mutex);
+    if(run && run==selectedRun && run==mission_run_generation() && mission_seed_armed()
+        && world_phase()==WorldPhase::arrived) controller.capacity(value);
+}
 Frame snapshot(std::uint64_t run,std::uint64_t now,bool ready,int region) noexcept {
-    poll_enemies(run);
     const std::lock_guard lock(mutex);
     if(run!=selectedRun || run!=mission_run_generation()) { return {}; }
     const auto frame=controller.update(run,now,ready && mission_seed_armed() && world_phase()==WorldPhase::arrived,region);

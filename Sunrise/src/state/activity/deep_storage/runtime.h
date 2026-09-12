@@ -1,6 +1,9 @@
 #pragma once
+#include "../coo/population_readiness_request.h"
 #include "frame.h"
+#include "scan_playback.h"
 namespace sunrise::state::activity::deep_storage {
+[[nodiscard]] coo::ReadinessRequest<EnemyReceipt> readiness_request(std::uint64_t now) noexcept;
 bool prepare(std::uint64_t,bool) noexcept;
 Frame snapshot(std::uint64_t,std::uint64_t,bool) noexcept;
 Request request() noexcept;
@@ -19,9 +22,10 @@ LensRequest lens_request() noexcept;
 void observe_lens(const LensReceipt&,bool) noexcept;
 PlateRequest plate_request(std::size_t) noexcept;
 void observe_plate_binding(const PlateReceipt&) noexcept;
+void observe_plate_pose(const PlateReceipt&,server::runtime::activity::mission_device_pose::Sample) noexcept;
 void observe_plate(const PlateReceipt&,std::uint32_t,float,bool) noexcept;
-void observe_contested(const PlateReceipt&,bool) noexcept;
+void observe_contested_positions(const PlateReceipt&,std::span<const EnemyPosition>,bool complete) noexcept;
 ScanRequest scan_request(std::size_t) noexcept;
 void observe_scan_binding(const ScanReceipt&) noexcept;
-void observe_scan(const ScanReceipt&,bool,bool) noexcept;
+void observe_scan_playback(const ScanReceipt&,ScanPlayback,bool participant) noexcept;
 }

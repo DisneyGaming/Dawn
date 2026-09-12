@@ -1,5 +1,6 @@
 #pragma once
 #include "omega_mission_catalog.h"
+#include "omega_boss_authority.h"
 #include <algorithm>
 
 namespace sunrise::state::activity::omega::mission {
@@ -40,6 +41,8 @@ struct SceneCommand {
 };
 struct Snapshot {
     Command command{};
+    boss_authority::ArmControl arm{};
+    bool armPending{};
     Phase phase{};
     std::array<std::array<std::uint8_t,2>,kSources.size()> requested{};
     std::array<SceneCommand,9> scenes{};
@@ -60,7 +63,7 @@ public:
             return s_.command.token.boss==boss;
         if(s_.command.token.boss.run && boss.run<=s_.command.token.boss.run) return false;
         *this=State{};
-        s_.command.token.boss=boss; s_.generation=boss.generation;
+        s_.command.token.boss=boss; s_.generation=boss.generation; s_.arm.generation=boss.generation;
         summon(0,0,0,Action::left);
         return true;
     }
@@ -71,9 +74,34 @@ public:
         if(action==Action::shield && !s_.eyePlatform) return false;
         s_.command.claimed=true; return true;
     }
+    // Readiness is observed on the native fullbody callback; publication and
+    // revision ownership stay in this state. A transmitted body is not an ack.
+    bool prepare_arm(const Token& token) noexcept {
+        if(!current(token) || s_.phase!=Phase::summon || s_.armPending
+            || s_.arm.high || s_.arm.revision>=0x7FFFFFFFU
+            || (s_.command.action!=Action::left && s_.command.action!=Action::right)
+            || !claim(token,s_.command.action)) return false;
+        ++s_.arm.revision; s_.arm.right=s_.command.action==Action::right;
+        s_.arm.high=true; s_.armPending=true; changed(); return true;
+    }
+    bool release_arm(const Token& token) noexcept {
+        if(!current(token) || s_.phase!=Phase::summon || !s_.command.claimed
+            || !waveStarted_ || s_.armPending || !s_.arm.high || s_.arm.revision>=0x7FFFFFFFU) return false;
+        ++s_.arm.revision; s_.arm.high=false; s_.armPending=true; changed(); return true;
+    }
+    bool arm_applied(const Token& token,std::uint32_t revision) noexcept {
+        if(!current(token) || s_.phase!=Phase::summon || !s_.command.claimed
+            || !s_.armPending || !revision || revision!=s_.arm.revision) return false;
+        s_.armPending=false; changed();
+        return s_.arm.high || animation(token,Animation::finished);
+    }
     bool animation(const Token& token,Animation event) noexcept {
         if(!current(token) || !s_.command.claimed) return false;
         if(s_.phase==Phase::summon) {
+            if((s_.command.action==Action::left || s_.command.action==Action::right)
+                && (!s_.arm.revision || s_.armPending
+                || (event==Animation::started && !s_.arm.high)
+                || (event==Animation::finished && s_.arm.high))) return false;
             if(event==Animation::started && !waveStarted_) {
                 waveStarted_=true;
                 for(std::size_t i=0;i<kSources.size();++i)

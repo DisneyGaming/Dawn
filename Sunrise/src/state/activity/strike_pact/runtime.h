@@ -1,4 +1,5 @@
 #pragma once
+#include "../coo/population_readiness_request.h"
 #include "frame.h"
 #include "catalog.h"
 #include "../coo/population_service.h"
@@ -6,6 +7,8 @@
 #include "../../../middleware/bap/activity_message/scene_sense.h"
 #include "../../../middleware/bap/activity_message/squad_sense.h"
 namespace sunrise::state::activity::strike_pact {
+[[nodiscard]] coo::ReadinessRequest<EnemyReceipt> readiness_request(std::uint64_t now) noexcept;
+void observe_capacity(std::uint64_t,coo::PopulationCapacity) noexcept;
 [[nodiscard]] bool prepare(std::uint64_t run,bool selected) noexcept;
 [[nodiscard]] Frame snapshot(std::uint64_t run,std::uint64_t now,bool ready,int region) noexcept;
 [[nodiscard]] std::uint64_t native_run() noexcept;

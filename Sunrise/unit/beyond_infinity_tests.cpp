@@ -232,9 +232,26 @@ int main() {
     std::uint64_t now=100000;
     bool checkedLens=false,completed=false,beholdFinished=false,beholdHeld=false,checkedSpeech=false;std::uint64_t beholdStarted{};std::array<bool,8> visited{};
     std::uint64_t overlookAt{},futureCueAt{};
-    bool jumpHeld{},futureCueHeld{};
+    bool jumpHeld{},futureCueHeld{};std::uint8_t previousForestPass{};std::array<bool,3> forestPassChecked{};
     for(unsigned iteration=0;iteration<1500 && !completed;++iteration) {
         frame=controller.update(17,now,true);now+=1000;visited[frame.section]=true;wires(frame);
+        if(frame.forestPass!=previousForestPass) {
+            check(!frame.forestReady,"changing Forest pass cannot inherit prior native readiness");
+            previousForestPass=frame.forestPass;
+        }
+        if(frame.forestPass>=1 && frame.forestPass<=2 && !forestPassChecked[frame.forestPass]) {
+            const auto owner=controller.owner();const auto pass=frame.forestPass;
+            check(!controller.forest_ready({owner.run+1,owner.value},pass,true),"Forest rejects foreign run");
+            check(!controller.forest_ready({owner.run,owner.value+1},pass,true),"Forest rejects stale incarnation");
+            check(!controller.forest_ready(owner,pass==1?2:1,true),"Forest rejects the other traversal");
+            check(!controller.forest_ready(owner,0,true) && !controller.forest_ready(owner,3,true),"Forest rejects unsupported pass");
+            check(controller.forest_ready(owner,pass,true) && controller.frame().forestReady,"exact native switch readiness enables Forest");
+            const auto seed=controller.frame().forestSeed;check(seed!=0,"Forest gets stable positive native seed");
+            check(controller.forest_ready(owner,pass,false) && !controller.frame().forestReady,"readiness loss parks native request");
+            check(controller.forest_ready(owner,pass,true) && controller.frame().forestSeed==seed,"recovery retains native seed");
+            forestPassChecked[pass]=true;
+        }
+
         if(frame.activeRow!=coo::kNoDialogue) {
             check(controller.submitted(17,bi::kBank,frame.activeRow,frame.generations[frame.activeRow],now),"accept current offered row");
         }
@@ -333,6 +350,20 @@ int main() {
                     auto wrongPlate=plate;++wrongPlate.owner.value;
                     check(!controller.bind_plate(wrongPlate),"foreign plate generation rejected");
                     check(controller.bind_plate(plate),"native plate source and component binding accepted");
+            {auto wrongPoseOwner=plate;++wrongPoseOwner.owner.value;
+             check(!controller.plate_pose(wrongPoseOwner,{0.F,0.F,INT32_MAX,INT32_MAX}),"pose rejects retired source generation");
+             wrongPoseOwner=plate;++wrongPoseOwner.serial;
+             check(!controller.plate_pose(wrongPoseOwner,{0.F,0.F,INT32_MAX,INT32_MAX}),"pose rejects recycled entity identity");
+             wrongPoseOwner=plate;++wrongPoseOwner.device;
+             check(!controller.plate_pose(wrongPoseOwner,{0.F,0.F,INT32_MAX,INT32_MAX}),"pose rejects another device component");
+             wrongPoseOwner=plate;++wrongPoseOwner.owner.run;
+             check(!controller.plate_pose(wrongPoseOwner,{0.F,0.F,INT32_MAX,INT32_MAX}),"pose rejects retired mission run");
+             wrongPoseOwner=plate;++wrongPoseOwner.source;
+             check(!controller.plate_pose(wrongPoseOwner,{0.F,0.F,INT32_MAX,INT32_MAX}),"pose rejects another source address");
+             wrongPoseOwner=plate;++wrongPoseOwner.timer;
+             check(!controller.plate_pose(wrongPoseOwner,{0.F,0.F,INT32_MAX,INT32_MAX}),"pose rejects another native timer");
+             check(controller.plate_pose(plate,{0.F,0.F,700,900}),"server accepts exact native pose receipt");}
+
                     check(!controller.plate(plate,revision,1.F,true),"old full value before a running receipt rejected");
                     check(!controller.plate(plate,revision,.3F,false) && !controller.frame().lensExposed,"partial native charge keeps shield");
                     check(!controller.plate(wrongPlate,revision,1.F,true),"foreign plate completion rejected");
@@ -380,9 +411,11 @@ int main() {
     check(jumpHeld && futureCueHeld,"Forest jump and native future reveal cue gate progression");
     check(checkedLens,"route passes actual lens receipt gate");check(completed,"all authored phases reach completion with required receipts");
     for(bool seen:visited) { check(seen,"every phase exercised"); }
+    check(forestPassChecked[1] && forestPassChecked[2],"both native Forest readiness lifecycles covered");
     check(controller.frame().completion.valid(),"completion has current lifecycle owner");
     const auto previous=controller.owner();controller.reset();check(controller.select(doc->views(),17),"same run may be reselected after reset");
     check(controller.owner().value>previous.value,"reset preserves generation high-water mark");
+    check(!controller.forest_ready(previous,1,true),"reset rejects previous Forest readiness");
     check(!controller.prepared(previous,bi::kLens),"retired generation rejected on replay");
     const auto& reveal=bi::kScenes[bi::scene_index(cap("reveal.scene_if_reveal").spec.asset)];
     check(reveal.cast.size()==5,"reveal has all five authored cast members");

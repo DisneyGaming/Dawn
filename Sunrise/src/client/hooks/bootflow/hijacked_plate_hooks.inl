@@ -29,8 +29,7 @@ void contest(const ds::PlateRequest& request) noexcept {
     if(applied[i].plate.owner!=request.plate.owner) {nextContest[i]=0;}
     if(now<nextContest[i]) {return;}nextContest[i]=now+100;
     const auto living=ds::living_enemies();if(living.owner!=request.owner) {return;}
-    const ds::Volume* volume{};for(const auto& v:ds::kVolumes) {if(v.asset==ds::kPlates[i].volume) {volume=&v;break;}}if(!volume) {return;}
-    bool occupied{},complete=true;
+    std::array<ds::EnemyPosition,256> positions{};std::size_t positionCount{};bool complete=true;
     // This accessor is already used for authenticated local/native positions.
     // It runs here only on the original actor-timer world thread.
     constexpr std::array<std::uint8_t,16> signature{0x40,0x57,0x48,0x83,0xEC,0x40,0x48,0x83,0xC1,0xA0,0xB8,0,0,0,0,0x48};
@@ -56,56 +55,37 @@ void contest(const ds::PlateRequest& request) noexcept {
         std::array<float,4> point{};reinterpret_cast<void(__fastcall*)(std::uintptr_t,std::array<float,4>*)>(g_image+0x558330)(row,&point);
         if(!read.value(actor+0x48,self) || self!=enemy.actor || !read.value(actor+0x4C,self) || self!=entity || !read.value(row+12,self) || self!=entity || !read.value(actor+0x38,self) || self!=enemy.owner
             || !read.value(source+0x1FC,generation) || generation!=enemy.generation || !read.value(source+0x244,committed) || committed!=generation) {complete=false;continue;}
-        if(ds::contains(*volume,{point[0],point[1],point[2]})) {occupied=true;break;}
+        positions[positionCount++]={enemy,{point[0],point[1],point[2]}};
     }
-    if((occupied || complete) && current(request)) {ds::observe_contested(request.plate,occupied);}
-}
-bool command(const ds::PlateRequest& request,void* raw,plate_native::Command& out) noexcept {
-    out=plate_native::stopped();if(!request.state.armed || !request.state.occupied || request.state.contested) {return true;}
-    gateway_native::Read read{g_image};float end{};if(!plate_native::authored_end(read,reinterpret_cast<std::uintptr_t>(raw),end)) {return false;}
-    std::array<std::byte,8> key{};const std::uint32_t unset=0x811C9DC5U;std::memcpy(key.data(),&unset,sizeof unset);gateway_native::Ref scope{};
-    if(!g_plateScenario(request.plate.entity,key.data()) || !g_plateScope(key.data(),&scope)) {return false;}
-    std::uintptr_t base{};if(!read.resolve(scope.handle,base) || scope.offset<0 || scope.offset>0x1000000 || base>UINTPTR_MAX-static_cast<std::uintptr_t>(scope.offset)) {return false;}
-    auto* clock=g_plateClock(reinterpret_cast<void*>(base+static_cast<std::uintptr_t>(scope.offset)));std::uint64_t now=UINT64_MAX,duration{};
-    if(!clock || g_plateNow(clock,&now)!=&now || g_plateDuration(&duration,ds::kPlates[request.plate.index].chargeSeconds)!=&duration) {return false;}
-    return plate_native::start(out,duration,now);
+    if(current(request)) {ds::observe_contested_positions(request.plate,std::span(positions).first(positionCount),complete);}
 }
 bool present(const ds::PlateRequest& request,void* raw) noexcept {
-    std::uintptr_t device{};if(!addresses(request,raw,device)) {return false;}
-    gateway_native::Read read{g_image};
-    return ds::plate_presentation::reconcile(request,read,device,[&] {
-        std::uintptr_t checked{};return addresses(request,raw,checked) && checked==device;
-    },[&](float position,std::uint32_t revision) {
-        g_plateDevice(reinterpret_cast<std::byte*>(device),position,1,revision);
-    });
+    std::uintptr_t device{};server::runtime::activity::mission_device_pose::Sample sample{};
+    if(!addresses(request,raw,device) || !plate_pose_sample(device,sample)
+        || !addresses(request,raw,device))return false;
+    ds::observe_plate_pose(request.plate,sample);return true;
 }
 
 ds::PlateRequest before(void* raw) noexcept {
     for(std::size_t i=0;i<std::size(ds::kPlates);++i) {
         auto request=ds::plate_request(i);std::uintptr_t device{};if(!addresses(request,raw,device)) {continue;}
         contest(request);request=ds::plate_request(i);if(!addresses(request,raw,device)) {return {};}
-        // Keep checking the native pose after completion, including after departure.
-        // The timer stays completed; only a drifted visual channel is repaired.
-        if(request.state.charged) {return present(request,raw)?request:ds::PlateRequest{};}
-        const Drive desired{request.plate,request.state.revision,request.state.armed};
-        if(applied[i]==desired) {return request;}
-        plate_native::Command body{};if(!command(request,raw,body) || !addresses(request,raw,device)) {return {};}
-        g_plateApply(raw,body.bytes.data());std::array<std::byte,plate_native::kStateBytes> state{};
-        if(!addresses(request,raw,device) || !copy(static_cast<std::byte*>(raw)+0x30,state)
-            || std::memcmp(state.data(),body.bytes.data()+plate_native::kStateOffset,state.size())) {return {};}
-        if(!present(request,raw)) {return {};}
-        applied[i]=desired;return request;
+        if(!present(request,raw))return {};
+        applied[i]={request.plate,request.state.revision,request.state.armed};
+        // Return the authenticated request even while the timer publication is
+        // pending so the post-original sample can report native pose drift.
+        return request;
     }return {};
 }
 void after(void* raw,const ds::PlateRequest& request) noexcept {
     if(!request.enabled) {return;}
-    // The original stopped timer may select idle; restore the preloaded red pose.
-    if(!request.state.armed) {static_cast<void>(present(request,raw));return;}
-    if(request.state.charged) {static_cast<void>(present(request,raw));return;}
+    // Native stopped/completed timers can choose idle. Report that drift to
+    // server authority; the observer never writes the component or renderer.
+    if(!present(request,raw) || !request.state.armed || request.state.charged)return;
     if(!request.state.occupied || request.state.contested) {return;}
-    std::uintptr_t device{};if(!addresses(request,raw,device)) {return;}
+    std::uintptr_t device{};if(!addresses(request,raw,device) || !plate_consumed(raw,request.capture,request.state.revision)) {return;}
     const auto p=reinterpret_cast<std::uintptr_t>(raw);std::uint8_t active{},latched{};float value{},remaining{};
-    if(!read_at(p+0x30,active) || !read_at(p+0x79,latched) || !read_at(p+0x1B8,value) || !read_at(p+0x1BC,remaining) || !addresses(request,raw,device)) {return;}
+    if(!read_at(p+0x30,active) || !read_at(p+0x79,latched) || !read_at(p+0x1B8,value) || !read_at(p+0x1BC,remaining) || !addresses(request,raw,device) || !plate_consumed(raw,request.capture,request.state.revision)) {return;}
     ds::observe_plate(request.plate,request.state.revision,value,plate_native::complete(active,latched,value,remaining));
     const auto completed=ds::plate_request(request.plate.index);
     if(completed.plate==request.plate && completed.state.charged) {static_cast<void>(present(completed,raw));}

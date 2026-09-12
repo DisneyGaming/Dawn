@@ -2,9 +2,13 @@
 
 #include "omega_first_lair_encounter.h"
 #include "omega_crown_respawn_authority.h"
+#include "omega_archive_arm_control.h"
+#include "omega_archive_intro_control.h"
 
 namespace sunrise::state::activity::omega_first_lair {
 struct Authority final {
+    omega_archive_arm::Control arm{};
+    omega_archive_intro::Program intro{};
     std::uint32_t generation{};
     std::array<std::uint8_t,21> loose{};
     bool anchor{},cannon{};
@@ -37,16 +41,27 @@ struct Status final {
     std::uint8_t cycle{},wave{};
     CrownStage crownStage{};
     CrownToken token{};
+    omega_archive_arm::Status arm{};
+    omega_archive_intro::Status intro{};
 };
 /** Called for the admitted local Omega roster. Preparation preserves all
  * authored source placements and uses zero loose requests until a lift starts. */
 [[nodiscard]] Authority authority(std::uint64_t run,std::uint32_t generation,bool executorOwned=false) noexcept;
 [[nodiscard]] Status status(std::uint64_t run) noexcept;
 /** Native intro graph node 4 (two-arm summon clip) loaded for the bound boss. */
+[[nodiscard]] bool request_intro(const omega_archive_intro::Owner& owner) noexcept;
+[[nodiscard]] bool request_boss_program(const omega_archive_intro::Owner& owner,std::uint32_t sequence) noexcept;
+[[nodiscard]] bool request_boss_movement(const omega_archive_intro::Owner& owner) noexcept;
+[[nodiscard]] bool observe_intro_control(const omega_archive_intro::Owner& owner) noexcept;
 void observe_initial_summon(const Boss& boss) noexcept;
 void observe_initial_idle(const Boss& boss) noexcept;
 [[nodiscard]] bool claim_action(const Boss& boss,Action action) noexcept;
 void observe_summon(const Boss& boss,Action action,bool finished) noexcept;
+[[nodiscard]] bool prepare_arm(const omega_archive_arm::Owner& owner) noexcept;
+[[nodiscard]] bool observe_arm_control(const omega_archive_arm::Owner& owner,
+    const omega_archive_arm::NativeControl& receipt,const std::array<float,4>& left,
+    const std::array<float,4>& right) noexcept;
+[[nodiscard]] bool release_arm(const omega_archive_arm::Owner& owner,bool completed) noexcept;
 [[nodiscard]] bool observe_admission(const ActorReceipt& receipt) noexcept;
 [[nodiscard]] bool observe_death(const ActorReceipt& receipt) noexcept;
 void observe_departure(const Boss& boss,bool folded,bool atMilestone) noexcept;

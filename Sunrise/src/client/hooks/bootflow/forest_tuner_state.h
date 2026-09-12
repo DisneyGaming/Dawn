@@ -22,8 +22,8 @@ struct Group {
 };
 
 struct State {
-    /** Keeps the worker's enable bool set (the ignition); the machine idles without it. */
-    std::atomic<bool> enable{true};
+    /** Optional manual diagnostic override; server authority owns normal activation. */
+    std::atomic<bool> enable{false};
     std::atomic<bool> writeSeed{false};
     std::atomic<int> seed{9001};
     std::atomic<bool> writeMode{false};

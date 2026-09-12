@@ -66,7 +66,7 @@ inline constexpr std::array<DeviceRow,2> kDevices{{
     if(key==kRoot) {
         if(type==11 && slot==1) { return frame.musicCandidate<128?7223U:0U; }
         if(type==53 && slot==2) {
-            return coo::native_presentation::kDialogueBits+(frame.activeRow==coo::kNoDialogue?0U:64U);
+            return coo::native_presentation::dialogue_bits(frame.generations,frame.activeRow);
         }
         if(type==68 && slot==0 && frame.presentation.published) {
             return coo::native_presentation::kDirectiveBits;

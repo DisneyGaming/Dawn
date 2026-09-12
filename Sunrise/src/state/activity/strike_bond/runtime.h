@@ -1,6 +1,8 @@
 #pragma once
+#include "../coo/population_readiness_request.h"
 #include "controller.h"
 namespace sunrise::state::activity::strike_bond {
+[[nodiscard]] coo::ReadinessRequest<EnemyReceipt> readiness_request(std::uint64_t now) noexcept;
 bool prepare(std::uint64_t,bool) noexcept;
 Frame snapshot(std::uint64_t,std::uint64_t,bool,int) noexcept;
 Request request() noexcept;
@@ -17,7 +19,7 @@ EnemyReceipt boss_enemy() noexcept;
 BossRequest boss_request() noexcept;
 EnemyReceipt guardian_enemy(std::uint32_t,std::uint16_t) noexcept;
 void observe_health(const EnemyReceipt&,float) noexcept;
-bool observe_boss_motion(const EnemyReceipt&,const coo::ObjectReceipt&,float) noexcept;
+bool observe_boss_platform_motion(const EnemyReceipt&,const coo::ObjectReceipt&,PlatformMotion) noexcept;
 bool observe_boss_animation(const EnemyReceipt&,std::uint8_t,BossAnimation) noexcept;
 void observe_readiness(const EnemyReceipt&,coo::EnemyReadiness) noexcept;
 void observe_costs(std::uint32_t,std::uint16_t,const coo::TaskCosts&) noexcept;

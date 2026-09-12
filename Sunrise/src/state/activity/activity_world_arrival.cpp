@@ -25,8 +25,6 @@ std::atomic<bool> g_missionSeedArmed{false};
 std::atomic<std::uint64_t> g_missionRunGeneration{1};
 /** Set only after the client post-apply path resolves the current instance's type-18 storage. */
 std::atomic<bool> g_missionAuthorityRuntimeInitialized{false};
-/** Set by the server when the Omega forest-entrance monitor latches; consumed on the game thread. */
-std::atomic<bool> g_omegaForestTransitionRequested{false};
 /** Set once the native type-7 request is issued; silences Omega authority emission. */
 std::atomic<bool> g_omegaAuthorityQuiesced{false};
 /**
@@ -55,7 +53,6 @@ void note_world_phase(WorldPhase phase) noexcept {
         }
         g_missionSeedArmed.store(false, std::memory_order_relaxed);
         g_omegaAuthorityQuiesced.store(false, std::memory_order_relaxed);
-        g_omegaForestTransitionRequested.store(false, std::memory_order_relaxed);
         g_towerWatchOpeningDialogueProcessed.store(false, std::memory_order_relaxed);
     }
     g_phase.store(phase, std::memory_order_relaxed);
@@ -69,16 +66,6 @@ WorldPhase world_phase() noexcept {
 /** @return Whether the current destination has reached in-world at least once. */
 bool mission_seed_armed() noexcept {
     return g_missionSeedArmed.load(std::memory_order_relaxed);
-}
-
-/** Server: the Omega forest-entrance monitor sense latched; ask for the native transition. */
-void request_omega_forest_transition() noexcept {
-    g_omegaForestTransitionRequested.store(true, std::memory_order_release);
-}
-
-/** Client game thread: one-shot consume of the pending transition request. */
-bool consume_omega_forest_transition_request() noexcept {
-    return g_omegaForestTransitionRequested.exchange(false, std::memory_order_acq_rel);
 }
 
 /** Server route: the forest-entrance sense arms the next-launch forest arrival. */
@@ -103,11 +90,6 @@ bool mark_tower_watch_opening_dialogue_processed() noexcept {
 /** Host: retain the acknowledgement until the world returns to idle. */
 bool tower_watch_opening_dialogue_processed() noexcept {
     return g_towerWatchOpeningDialogueProcessed.load(std::memory_order_acquire);
-}
-
-/** Game thread: the type-7 request is installed; stop every Omega authority emission now. */
-void note_omega_forest_transition_issued() noexcept {
-    g_omegaAuthorityQuiesced.store(true, std::memory_order_release);
 }
 
 /** Server publication paths read this before arming any Omega body. */

@@ -179,16 +179,19 @@ void presentation_and_overpass(const c::script::Views& views) {
     t::Frame f{};f.enabled=true;f.spawnGeneration=7;f.presentation.active=true;f.presentation.event=0x183F9715U;
     header(false);CHECK(native::route_point(bytes,f));CHECK(native::read<std::uint8_t>(bytes,0x484)==3);
     CHECK(native::read<std::uint8_t>(bytes,0x48C)==2);CHECK(native::read<float>(bytes,0x4A0)==945.683655F);
+    for(std::uint32_t index=1;index<3;++index) {
+        header(false);CHECK(native::route_point(bytes,f,index));
+        CHECK(native::read<std::uint8_t>(bytes,0x484+index*0x200)==3);
+        CHECK(native::read<std::uint8_t>(bytes,0x48C+index*0x200)==2);
+        CHECK(native::read<float>(bytes,0x4A0+index*0x200)==945.683655F);
+        CHECK(native::read<std::uint8_t>(bytes,0x484)==0);
+    }
+    const auto unchanged=bytes;CHECK(!native::route_point(bytes,f,3));CHECK(bytes==unchanged);
     CHECK(t::navigation::goal(f.presentation.event).target.asset.type==47);
     CHECK(t::navigation::goal(f.presentation.event).target.locator[0]==0x29930BA4U);
     f.presentation.active=false;CHECK(native::route_point(bytes,f));CHECK(native::read<std::uint8_t>(bytes,0x484)==0);
     header(false);native::put<std::uint32_t>(bytes,0,0x80F47BD4U);const auto foreign=bytes;CHECK(!native::route_point(bytes,f));CHECK(bytes==foreign);
-    header(true);f.generations[1]=7;f.activeRow=1;
-    native::put<std::uint32_t>(bytes,0x118C,6);CHECK(native::dialogue_records(bytes,f));
-    CHECK(native::read<std::uint32_t>(bytes,0x1C0)==7);CHECK(native::read<std::uint8_t>(bytes,0x1C4)==2);
-    CHECK(native::read<std::uint32_t>(bytes,0x118C)==6);CHECK(!native::dialogue_records(bytes,f));
-    f.activeRow=c::kNoDialogue;CHECK(native::dialogue_records(bytes,f));CHECK(native::read<std::uint64_t>(bytes,0x1B0)==0);
-    CHECK(native::read<std::uint32_t>(bytes,0x118C)==6);
+    // Dialogue delivery is tested from production wire bodies by native_mission_dialogue_tests.
     // Captured exterior point identity plus the user-confirmed walkway height.
     header(false);f.presentation.active=true;f.presentation.event=0xE58BB2F6U;
     const auto exterior=t::navigation::goal(f.presentation.event);

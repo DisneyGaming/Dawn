@@ -95,12 +95,6 @@ bool fullbody_owner(std::byte* component, const graph::Owner& owner,
         && read<std::uint32_t>(definition.data(), 0x110) == 0x80F45169U
         && read<std::uint32_t>(definition.data(), 0x11C) == 0x80F45197U;
 }
-bool set_left_scalar(std::uint32_t entity, float value, bool right = false) noexcept {
-    const auto property=right?combat::kRightProperty:combat::kLeftProperty;
-    const ScalarValue scalar{{value, value, value, value}};
-    using Set = bool(__fastcall*)(std::uint32_t, const std::uint32_t*, const ScalarValue*) noexcept;
-    return native<Set>(0x576420)(entity, &property, &scalar);
-}
 struct LeftOutput {
     std::array<std::byte, combat::kActionGroupBytes> group{};
     float duration{};
@@ -189,8 +183,7 @@ bool __fastcall fullbody_update(std::byte* component, const void* frame, float d
         }
         issued = runState.graphOwner; track = runState.left;
     }
-    if (track.stage == combat::Stage::requesting || track.stage == combat::Stage::releasing
-        || track.stage == combat::Stage::complete || track.stage == combat::Stage::uncertain) return result;
+    if (track.stage == combat::Stage::complete || track.stage == combat::Stage::uncertain) return result;
     MemberView member{};
     graph::Owner current{};
     std::uint32_t self{}, entity{};
@@ -217,6 +210,9 @@ bool __fastcall fullbody_update(std::byte* component, const void* frame, float d
     const bool leftPlaying = result && validOutput && nativeOutput.enabled
         && combat::left_playback(nativeOutput.group, nativeOutput.duration, playback, right);
     if (track.stage == combat::Stage::unissued) {
+        ScalarView other{};
+        if(!member.armDomain || member.controlRevision!=missionSnapshot.arm.revision
+            || !left_scalar(entity,other,!right) || !scalar_equals(other.value,0.F)) return result;
         if (!validOutput || leftPlaying || !scalar_equals(scalar.value, 0.F)) {
             const auto bits = read<std::uint32_t>(reinterpret_cast<const std::byte*>(scalar.value.lanes.data()), 0);
             owner_wait(run, 27, !validOutput ? "left_output_layout" : leftPlaying ? "left_already_playing" : "left_scalar_baseline",
@@ -231,24 +227,38 @@ bool __fastcall fullbody_update(std::byte* component, const void* frame, float d
             runState.left.scalarSelf = scalar.self; runState.left.scalarIndex = scalar.index;
             runState.left.boundScalar = scalar.bound;
         }
-        if(!mission::runtime::receipt([&](auto& state){return state.claim(token,right?mission::Action::right:mission::Action::left);})) return result;
-        const auto issuedSelf = self, issuedEntity = entity;
-        const bool accepted = set_left_scalar(entity, 1.F, right);
-        ScalarView after{};
-        const bool confirmed = accepted && current_owner(issued, member, current) && current == issued
-            && member.enabled && (initialArm ? member.head==0 && member.exactQueue : crownArm ? mission_crown_queue(current,member,missionSnapshot.command.cycle) : member.head==member.count)
-            && fullbody_owner(component, current, self, entity) && self == issuedSelf && entity == issuedEntity
-            && left_scalar(entity, after, right) && after.self == scalar.self && after.index == scalar.index
-            && after.bound == scalar.bound
-            && scalar_equals(after.value, 1.F);
-        const std::lock_guard lock(mutex);
-        if (runState.run != run || runState.graphOwner != issued) return result;
-        runState.left.stage = confirmed ? combat::Stage::requested : combat::Stage::uncertain;
-        log("ev=omega_reveal stage=%s_request run=%llu actor=%08X character=%08X biped=%08X fullbody=%08X "
-            "entity=%08X scalar=%08X index=%d bound=%u accepted=%u confirmed=%u guard=%u receipt=scalar_only",
-            right?"right":"left", run, issued.actor, issued.character, issued.biped, self, entity, scalar.self, scalar.index,
-            scalar.bound ? 1U : 0U, accepted ? 1U : 0U, confirmed ? 1U : 0U, after.failure);
+        const bool prepared=mission::runtime::receipt([&](auto& state){return state.prepare_arm(token);});
+        if(!prepared) { const std::lock_guard lock(mutex); runState.left.stage=combat::Stage::uncertain; }
+        log("ev=omega_mission stage=arm_publication_requested run=%llu epoch=%u arm=%s accepted=%u receipt=native_fullbody_ready",
+            run,token.epoch,right?"right":"left",prepared?1U:0U);
         return result;
+    }
+    if(track.stage==combat::Stage::requesting || track.stage==combat::Stage::releasing) {
+        const auto authority=missionSnapshot.arm;
+        const float target=track.stage==combat::Stage::requesting?1.F:0.F;
+        ScalarView other{};
+        if(!missionSnapshot.armPending || authority.high!=(target==1.F) || authority.right!=right
+            || authority.generation!=issued.generation || !member.armControl || member.controlRevision!=authority.revision
+            || member.leftControl!=(authority.high && !right?1.F:0.F)
+            || member.rightControl!=(authority.high && right?1.F:0.F)
+            || scalar.self!=track.scalarSelf || scalar.index!=track.scalarIndex || scalar.bound!=track.boundScalar
+            || !scalar_equals(scalar.value,target) || !left_scalar(entity,other,!right) || !scalar_equals(other.value,0.F)) return result;
+        // Recheck owner/token after native reads. The .5 receipt never changes
+        // the .6 graph revision retained by arm, crown, and motion leases.
+        MemberView after{};graph::Owner afterOwner{};
+        if(!current_owner(issued,after,afterOwner) || afterOwner!=issued || !after.enabled
+            || !after.armControl || after.controlRevision!=authority.revision
+            || mission::runtime::snapshot(run).command.token!=token) return result;
+        const std::lock_guard lock(mutex);
+        if(runState.run!=run || runState.graphOwner!=issued || runState.left.stage!=track.stage) return result;
+        if(!mission::runtime::receipt([&](auto& state){return state.arm_applied(token,authority.revision);})) return result;
+        runState.left.stage=target==1.F?combat::Stage::requested:combat::Stage::complete;
+        log("ev=omega_mission stage=arm_native_control_applied run=%llu epoch=%u revision=%u arm=%s value=%g receipt=native_member_and_scalar",
+            run,token.epoch,authority.revision,right?"right":"left",static_cast<double>(target));
+        // The first applied sample may already contain the start of the clip.
+        // Process it below so a short clip cannot disappear between acknowledgments.
+        if(target==0.F) return result;
+        track=runState.left;
     }
     if (scalar.self != track.scalarSelf || scalar.index != track.scalarIndex
         || scalar.bound != track.boundScalar
@@ -287,17 +297,9 @@ bool __fastcall fullbody_update(std::byte* component, const void* frame, float d
         log("ev=omega_mission stage=arm_started run=%llu wave=%u arm=%s epoch=%u",run,missionSnapshot.command.wave,right?"right":"left",token.epoch);
     }
     if (!release) return result;
-    const bool accepted = set_left_scalar(entity, 0.F, right);
-    ScalarView after{};
-    const bool confirmed = accepted && current_owner(issued, member, current) && current == issued
-        && left_scalar(entity, after, right) && after.self == scalar.self && after.index == scalar.index
-        && after.bound == scalar.bound
-        && scalar_equals(after.value, 0.F);
-    const std::lock_guard lock(mutex);
-    if (runState.run != run || runState.graphOwner != issued) return result;
-    runState.left.stage = confirmed ? combat::Stage::complete : combat::Stage::uncertain;
-    if(confirmed) mission::runtime::receipt([&](auto& state){return state.animation(token,mission::Animation::finished);});
-    log("ev=omega_reveal stage=%s_released run=%llu actor=%08X confirmed=%u trigger=native_clip_wrap",
-        right?"right":"left", run, issued.actor, confirmed ? 1U : 0U);
+    const bool requested=mission::runtime::receipt([&](auto& state){return state.release_arm(token);});
+    if(!requested) {const std::lock_guard lock(mutex);runState.left.stage=combat::Stage::uncertain;}
+    log("ev=omega_reveal stage=%s_release_requested run=%llu actor=%08X accepted=%u trigger=native_clip_wrap",
+        right?"right":"left",run,issued.actor,requested?1U:0U);
     return result;
 }

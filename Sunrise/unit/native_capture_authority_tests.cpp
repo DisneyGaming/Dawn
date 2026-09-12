@@ -2,6 +2,11 @@
 #include "../src/middleware/encoding/bit_reader.h"
 #include "../src/middleware/encoding/bit_writer.h"
 #include "../src/server/runtime/activity/native_activity_clock.h"
+#include "../src/server/runtime/activity/mission_capture_service.h"
+#include "../src/server/runtime/activity/mission_observation_queue.h"
+#include "../src/state/activity/coo/native_device_authority.h"
+#include "../src/client/hooks/bootflow/beyond_infinity_plate_timer.h"
+#include "fixtures/native_plate_preparation_tests.h"
 #include <array>
 #include <cstdio>
 #include <limits>
@@ -16,6 +21,34 @@ std::uint64_t read(bits::Reader& reader,std::uint8_t width) {
     std::uint64_t value{};check(reader.read(width,value),"bounded reflected read");return value;
 }
 int main() {
+    native_plate_preparation_fixture::run(check);
+    namespace mission=sunrise::server::runtime::activity::mission_capture;
+    namespace oldtimer=sunrise::client::hooks::bootflow::beyond_infinity_plate_timer;
+    mission::Publication timer{};
+    check(mission::update(timer,1,false,false,3366000,100),"server publishes native stopped capture before occupancy");
+    check(!timer.state.active && timer.published,"stopped capture is explicit");
+    check(mission::update(timer,2,true,false,3366000,200),"occupancy publishes a native five second charge");
+    const auto initial=timer;
+    check(mission::update(timer,2,true,false,3366000,900) && timer.state==initial.state,"publication cadence cannot restart native timer");
+    oldtimer::Command old{};check(oldtimer::start(old,3366000,200),"independent legacy native tuple available");
+    check(mission::matches(timer,2,std::span(old.bytes).subspan(0x20,0x48)),"server publication matches previously verified native apply tuple");
+    check(!mission::matches(timer,3,std::span(old.bytes).subspan(0x20,0x48)),"later occupancy cannot consume old revision");
+    check(mission::update(timer,3,false,false,3366000,1000) && !timer.state.clock.running,"departure stops capture through native authority");
+    check(!mission::matches(timer,3,std::span(old.bytes).subspan(0x20,0x48)),"stopped command rejects old running native state");
+    check(mission::update(timer,4,true,false,3366000,1200) && timer.state.clock.anchor==1200,"new occupancy gets new server clock anchor");
+    const auto charged=timer.state;
+    check(mission::update(timer,5,false,true,3366000,2000) && timer.state==charged,"confirmed completion retains exact native timer across departure");
+    check(!mission::update(timer,6,true,false,UINT64_MAX,100),"unrepresentable duration rejected");
+    auto measured=bits::Writer::measuring();
+    check(sunrise::state::activity::coo::native_device::object(measured,129,true,&charged) && measured.bit_count()==640,"live mission source contains one388bit capture record");
+    sunrise::server::runtime::activity::MissionObservationQueue<unsigned,3> queue;
+    unsigned consumed{};
+    check(queue.push(1) && queue.push(2) && consumed==0,"observation intake cannot advance server state");
+    check(queue.drain([&](unsigned e) {consumed=consumed*10+e;}) && consumed==12,"server consumes start before completion in original order");
+    check(queue.push(1) && queue.push(2) && queue.push(3) && !queue.push(4),"bounded queue reports overflow");
+    check(!queue.drain([&](unsigned) {++consumed;}) && consumed==12,"overflow cannot drop receipts then continue mission");
+    queue.reset();check(queue.drain([&](unsigned) {++consumed;}) && consumed==12,"new owner clears previous receipts and overflow");
+
     // Independent reflection vectors: bool f0 then raw IEEE754 float f1.
     const std::array<std::array<std::byte,5>,2> expected{{
         {std::byte{0x1F},std::byte{0xC0},std::byte{},std::byte{},std::byte{}},

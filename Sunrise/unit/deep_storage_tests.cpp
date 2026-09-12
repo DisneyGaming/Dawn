@@ -98,7 +98,8 @@ struct PlateDevice {
             if(at==address+0x960) {out=revision;return true;}
         }return false;
     }
-    bool reconcile(const ds::PlateRequest& request) noexcept {
+    bool reconcile(ds::PlateRequest request) noexcept {
+        request.capture.presentationPosition=ds::plate_presentation::position(request.state,request.plate.index);
         return ds::plate_presentation::reconcile(request,*this,address,[&] {return owned;},[&](float desired,std::uint32_t next) {
             ++calls;if(accept) {actual=desired;if(acceptTarget) {target=desired;}if(acceptRevision) {revision=next;}}
         });
@@ -283,6 +284,20 @@ struct Replay {
             const auto s=c.frame().native[ds::asset_index(ds::kPlates[i].source)];if(!s.acknowledged || c.plate_request(i).plate.valid()) {continue;}
             ds::PlateReceipt r{{run,s.generation},0x10000U+std::uintptr_t(i)*0x1000,i,100U+i,200U+i,300U+i,400U+i};
             auto stale=r;++stale.owner.value;check(!c.bind_plate(stale),"plate bound to current created source only");check(c.bind_plate(r),"native plate owner accepted");
+            {auto wrongPoseOwner=r;++wrongPoseOwner.owner.value;
+             check(!c.plate_pose(wrongPoseOwner,{0.F,0.F,INT32_MAX,INT32_MAX}),"pose rejects retired source generation");
+             wrongPoseOwner=r;++wrongPoseOwner.serial;
+             check(!c.plate_pose(wrongPoseOwner,{0.F,0.F,INT32_MAX,INT32_MAX}),"pose rejects recycled entity identity");
+             wrongPoseOwner=r;++wrongPoseOwner.device;
+             check(!c.plate_pose(wrongPoseOwner,{0.F,0.F,INT32_MAX,INT32_MAX}),"pose rejects another device component");
+             wrongPoseOwner=r;++wrongPoseOwner.owner.run;
+             check(!c.plate_pose(wrongPoseOwner,{0.F,0.F,INT32_MAX,INT32_MAX}),"pose rejects retired mission run");
+             wrongPoseOwner=r;++wrongPoseOwner.source;
+             check(!c.plate_pose(wrongPoseOwner,{0.F,0.F,INT32_MAX,INT32_MAX}),"pose rejects another source address");
+             wrongPoseOwner=r;++wrongPoseOwner.timer;
+             check(!c.plate_pose(wrongPoseOwner,{0.F,0.F,INT32_MAX,INT32_MAX}),"pose rejects another native timer");
+             check(c.plate_pose(r,{0.F,0.F,700,900}),"server accepts exact native pose receipt");}
+
         }
         for(std::uint8_t i=0;i<2;++i) {
             const auto s=c.frame().native[ds::asset_index(ds::kScans[i].source)];if(!s.acknowledged || c.scan_request(i).scan.valid()) {continue;}
@@ -382,7 +397,10 @@ struct Replay {
                 static_cast<void>(c.plate(receipt,state.revision,.3F,false));
                 check(c.contested(receipt,true),"native enemy occupying volume contests plate");
                 check(!c.plate(receipt,state.revision,1.F,true),"enemy contest invalidates prior completion");
-                check(c.contested(receipt,false),"native enemy departure clears contest");state=c.frame().plates[i];
+                check(!c.contested_positions(receipt,{},false) && c.frame().plates[i].contested,"missing enemy positions cannot clear contest");
+                std::array<ds::EnemyPosition,256> outside{};std::size_t outsideCount{};
+                c.living_enemies([&](const auto& enemy) {outside[outsideCount++]={enemy,{100000.F,100000.F,100000.F}};});
+                check(c.contested_positions(receipt,std::span(outside).first(outsideCount),true),"server clears contest only after all current living actors are outside");state=c.frame().plates[i];
                 auto bad=receipt;++bad.serial;check(!c.plate(bad,state.revision,.5F,false),"recycled entity cannot charge plate");plateChecked[i]=true;
             }
             state=c.frame().plates[i];static_cast<void>(c.plate(receipt,state.revision,.1F,false));
@@ -401,17 +419,17 @@ struct Replay {
             auto bad=request.scan;++bad.controller;check(!c.scan(bad,true,false),"foreign Ghost controller cannot start scan");
             ds::ScanPlayback playback{request.scan.owner.value,2,1,.25F,i==0?5.F:9.F};
             if(s.argument==11 && !request.started) {
-                check(!c.scan(request.scan,playback.started(request.scan.owner.value,false),false),"missing native participant cannot start route scan");
-                check(!c.scan(request.scan,playback.started(request.scan.owner.value+1,true),false),"stale playback generation cannot start route scan");
-                check(c.scan(request.scan,playback.started(request.scan.owner.value,true),false),"5/9-second native playback starts held interaction");scanChecked[i]=true;
+                check(!c.scan_playback(request.scan,playback,false),"missing native participant cannot start route scan");
+                auto stalePlayback=playback;++stalePlayback.revision;check(!c.scan_playback(request.scan,stalePlayback,true),"stale playback generation cannot start route scan");
+                check(c.scan_playback(request.scan,playback,true),"5/9-second native playback starts held interaction");scanChecked[i]=true;
             }
             if(s.argument==12 && request.started && !request.complete) {
                 const auto missing=c.missing(s);
                 check(missing.missing==coo::Missing::observation && missing.detail==12,"bound started scan reports pending completion observation");
                 playback.active=0;playback.elapsed=3.F;
-                check(!c.scan(request.scan,false,playback.finished(request.scan.owner.value,request.started)),"default3 cannot release overridden route scan");
+                check(!c.scan_playback(request.scan,playback,false),"default3 cannot release overridden route scan");
                 playback.elapsed=playback.duration+.00310754776F;
-                check(c.scan(request.scan,false,playback.finished(request.scan.owner.value,request.started)),"5/9-second native completion advances mission");
+                check(c.scan_playback(request.scan,playback,false),"5/9-second native completion advances mission");
             }return;
         }
     }

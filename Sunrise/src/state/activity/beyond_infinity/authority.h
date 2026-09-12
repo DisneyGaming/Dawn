@@ -1,5 +1,6 @@
 #pragma once
 #include "frame.h"
+#include "../coo/native_mission_forest_authority.h"
 #include "shield_authority.h"
 #include "ai_bindings.h"
 #include "../coo/native_presentation_authority.h"
@@ -15,7 +16,8 @@ inline const SourceBinding* source(coo::Asset asset) noexcept {
 inline std::size_t body_bits(const Frame& f,std::uint32_t key,std::uint8_t type,std::uint16_t slot) noexcept {
     if(!f.enabled || !f.spawnGeneration) { return 0; }
     const auto* binding=find(key,type,slot);if(!binding) { return 0; }
-    if(binding->asset==kDialogueAsset) { return coo::native_presentation::kDialogueBits+(f.activeRow==coo::kNoDialogue?0U:64U); }
+    if(type==37 && key==0x8E70632BU && slot==3 && binding->authority==0x80805007U)return coo::native_generator::kActivationBits;
+    if(binding->asset==kDialogueAsset) { return coo::native_presentation::dialogue_bits(f.generations,f.activeRow); }
     if(key==kRoot && type==68 && slot==0 && f.presentation.published) { return coo::native_presentation::kDirectiveBits; }
     const auto& state=f.native[asset_index(binding->asset)];
     if(type==43) {
@@ -28,7 +30,7 @@ inline std::size_t body_bits(const Frame& f,std::uint32_t key,std::uint8_t type,
     }
     if(!state.managed) { return 0; }
     if(const auto shieldBits=shields::bits(binding->asset,state)) { return shieldBits; }
-    if(type==4 && binding->authority==0x8080992FU) { return 252; }
+    if(type==4 && binding->authority==0x8080992FU) { return coo::native_device::object_bits(state.active,binding->asset==kPlate,coo::native_device::interaction::Mode::unchanged,binding->asset==kPlate); }
     if(type==23 && binding->authority==0x80804F48U) { return 147; }
     return 0;
 }
@@ -36,6 +38,7 @@ template<class Writer>
 bool write_body(Writer& w,const Frame& f,std::uint32_t key,std::uint8_t type,std::uint16_t slot) noexcept {
     if(!body_bits(f,key,type,slot)) { return false; }
     const auto asset=find(key,type,slot)->asset;
+    if(type==37)return coo::native_generator::write_activation(w,coo::native_generator::beyond_request(f.forestSeed,f.forestPass,f.forestReady && !f.finished));
     if(asset==kDialogueAsset) { return coo::native_presentation::dialogue(w,f.generations,f.activeRow); }
     if(type==68) { return coo::native_presentation::objective(w,f.presentation); }
     const auto& state=f.native[asset_index(asset)];
@@ -51,7 +54,7 @@ bool write_body(Writer& w,const Frame& f,std::uint32_t key,std::uint8_t type,std
             static_cast<std::uint8_t>(state.active?1:0),tactical_group(asset),static_cast<std::uint8_t>(state.active && s.categories==2?1:0),s.categories==2,s.hasRule});
     }
     if(type==26 || type==34) { return shields::write(w,asset,state); }
-    if(type==4) { return coo::native_device::object(w,state.generation,state.active); }
+    if(type==4) { return coo::native_device::object(w,state.generation,state.active,asset==kPlate?&f.plateCapture.state:nullptr,coo::native_device::interaction::Mode::unchanged,asset==kPlate?&f.plateCapture.pose.state:nullptr); }
     const bool lens=key==0x233E7149U && slot==41;
     // Past C1 and the two static Future frames resolve to entity80F3DB0A.
     // Graph80F3DB09's activate range is [0.0901,0.1001]; position1 matches none.

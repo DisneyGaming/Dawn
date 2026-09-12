@@ -1,5 +1,6 @@
 #pragma once
 #include "frame.h"
+#include "scan_playback.h"
 #include "../coo/native_activity_clock.h"
 #include "../coo/stall_diagnostics.h"
 namespace sunrise::state::activity::deep_storage {
@@ -20,15 +21,18 @@ public:
     bool lens(const LensReceipt&,bool) noexcept;
     LensRequest lens_request() const noexcept {return {owner(),lens_,frame_.native[asset_index(kLens)].generation,frame_.enabled && frame_.native[asset_index(kLens)].active,frame_.lensExposed,frame_.lensDestroyed};}
     bool bind_plate(const PlateReceipt&) noexcept;
+    bool plate_pose(const PlateReceipt&,server::runtime::activity::mission_device_pose::Sample) noexcept;
     bool plate(const PlateReceipt&,std::uint32_t,float,bool) noexcept;
     bool contested(const PlateReceipt&,bool) noexcept;
+    bool contested_positions(const PlateReceipt&,std::span<const EnemyPosition>,bool complete) noexcept;
     bool bind_scan(const ScanReceipt&) noexcept;
     bool scan(const ScanReceipt&,bool,bool) noexcept;
+    bool scan_playback(const ScanReceipt&,ScanPlayback,bool participant) noexcept;
     bool submitted(std::uint64_t,std::uint32_t,std::uint8_t,std::uint32_t,std::uint64_t) noexcept;
     Frame update(std::uint64_t,std::uint64_t,bool) noexcept;
     const Frame& frame() const noexcept { return frame_; }
     coo::Generation owner() const noexcept { return lifecycle_.owner(); }
-    PlateRequest plate_request(std::size_t i) const noexcept { return i<3?PlateRequest{owner(),plates_[i],frame_.plates[i],frame_.enabled && (frame_.plates[i].armed || (i>0 && frame_.native[asset_index(kPlates[i].source)].active)) && (!frame_.finished || frame_.plates[i].charged)}:PlateRequest{}; }
+    PlateRequest plate_request(std::size_t i) const noexcept { return i<3?PlateRequest{owner(),plates_[i],frame_.plates[i],frame_.enabled && (frame_.plates[i].armed || (i>0 && frame_.native[asset_index(kPlates[i].source)].active)) && (!frame_.finished || frame_.plates[i].charged),frame_.plateCaptures[i]}:PlateRequest{}; }
     ScanRequest scan_request(std::size_t i) const noexcept { return i<2?ScanRequest{owner(),scans_[i],frame_.enabled && frame_.scanArmed[i] && !frame_.finished,frame_.scanStarted[i],frame_.scanComplete[i]}:ScanRequest{}; }
     const coo::script::GraphView* graph() const noexcept { return views_ && frame_.section<views_->phases.size()?views_->phases[frame_.section]:nullptr; }
     coo::Diagnostics diagnostics() const noexcept { return executor_.diagnostics(); }

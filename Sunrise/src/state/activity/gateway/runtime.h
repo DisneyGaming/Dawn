@@ -1,10 +1,13 @@
 #pragma once
+#include "../coo/population_readiness_request.h"
 #include "frame.h"
 #include "ending_receipts.h"
 #include "traversal_catalog.h"
 #include "../coo/population_service.h"
 #include "../coo/object_service.h"
 namespace sunrise::state::activity::gateway {
+[[nodiscard]] coo::ReadinessRequest<EnemyReceipt> readiness_request(std::uint64_t now) noexcept;
+void observe_capacity(std::uint64_t,coo::PopulationCapacity) noexcept;
 struct ObjectRequest { coo::Generation owner{};std::array<coo::ObjectState,3> states{};bool enabled{}; };
 [[nodiscard]] ObjectRequest object_request() noexcept;
 void observe_object(std::size_t,const coo::ObjectReceipt&,bool,float,std::int16_t) noexcept;

@@ -25,9 +25,9 @@ int main() {
         0x4786C0E0U, 0xD00142CFU, 0x82FB58B7U, 0xBA5F26EFU, 0x2763EC97U,
         0xF4D0E0B2U, 0x95FB2E01U, 0x99BD2FEBU, 0x0040BF06U, 0x0040BF05U,
         0x0040BF03U, 0x3A6CE17AU, 0x30A025E8U, 0xC40F2AF4U, 0x9D8076E4U};
-    constexpr std::array<std::uint8_t, 14> types{1, 2, 4, 6, 11, 13, 17, 18, 23, 30, 35, 43, 68, 70};
+    constexpr std::array<std::uint8_t, 15> types{1, 2, 4, 6, 11, 13, 17, 18, 23, 30, 35, 37, 43, 68, 70};
     std::array<std::byte, 8192> buffer{};
-    unsigned nonempty{}, packets{};
+    unsigned nonempty{}, packets{}, fullPackets{};
     for (std::uint8_t phase = 0; phase < 12; ++phase) {
         wire::Snapshot s{};
 #ifdef OMEGA_PORT_LOCAL
@@ -49,6 +49,14 @@ int main() {
         s.omegaIntroRevision = 7;
         s.omegaIntroPlay = phase == 4;
         s.omegaBossGeneration = 7;
+#ifdef OMEGA_PORT_LOCAL
+        s.omegaForestGenerator=phase>=3;
+        s.omegaForestSeed=12345;
+        s.omegaArchiveArm={7,static_cast<std::uint32_t>(phase+1),bool(phase&1U),phase>=4};
+        s.omegaArchiveIntro={7,static_cast<std::uint32_t>(phase+1),phase!=11,0x65D2379FU};
+        if(phase>=6 && phase<=10) {s.omegaArchiveIntro.sequence=0xCBFDCA32U;s.omegaArchiveIntro.departure=static_cast<std::int8_t>(phase-6);}
+
+#endif
         s.omegaFirstLairGeneration = 7;
         s.omegaFirstLairLoose.fill(1);
         s.omegaFirstLairAnchor = phase >= 4;
@@ -84,6 +92,7 @@ int main() {
                     ++nonempty;
                     bits::Writer writer(buffer);
                     const bool ok = wire::write_auth_body(writer, s, key, type, index, type == 13);
+                    if(!ok || writer.bit_count()!=width) { std::fprintf(stderr,"body mismatch key=%08X type=%u slot=%u expected=%zu got=%zu\n",key,type,index,width,writer.bit_count());std::abort(); }
                     mix(ok);
                     mix(writer.bit_count());
                     std::size_t written{};
@@ -106,11 +115,28 @@ int main() {
         mix(ok);
         mix(written);
         if (ok) { ++packets; }
+#ifdef OMEGA_PORT_LOCAL
+        constexpr std::array<std::uint8_t,1> forestTypes{37};
+        constexpr std::array<std::uint8_t,1> forestFlags{wire::kSlotAuthFlag};
+        constexpr std::array<std::uint16_t,1> forestSlots{1};
+        constexpr std::array<std::uint8_t,2> bossTypes{1,2};
+        constexpr std::array<std::uint8_t,2> bossFlags{wire::kSlotAuthFlag,wire::kSlotAuthFlag};
+        constexpr std::array<std::uint16_t,2> bossSlots{0,1};
+        s.roster.groups[1]={0x2763EC97U,forestTypes,forestFlags,forestSlots};
+        s.roster.groups[2]={0x95FB2E01U,bossTypes,bossFlags,bossSlots};
+        s.roster.groupCount=s.roster.topLevelGroupCount=3;s.phaseOneOnly=false;
+        std::size_t fullWritten{};
+        auto full=s;full.preserveMissionAuthorityState=true;full.omegaCrownRestricted=false;
+        full.omegaEndingSeedRuntime=false;full.omegaPortalEntry=false;full.omegaMusicPresent=false;
+        if(!wire::encode_sensor_auth_update(full,buffer,fullWritten) || !fullWritten) {std::fprintf(stderr,"native Forest/boss publication failed at phase %u\n",phase);std::abort();}
+        ++fullPackets;
+#endif
+
         for (std::size_t byte = 0; byte < written; ++byte) {
             mix(std::to_integer<unsigned char>(buffer[byte]));
         }
     }
-    std::printf("bodies=%u packets=%u digest=%016llX\n", nonempty, packets,
+    std::printf("bodies=%u packets=%u fullPackets=%u digest=%016llX\n", nonempty, packets, fullPackets,
         static_cast<unsigned long long>(digest));
     return nonempty > 0 && packets == 12 ? 0 : 1;
 }

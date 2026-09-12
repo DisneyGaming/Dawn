@@ -13,6 +13,11 @@ namespace sunrise::state::activity::omega_first_lair {
 namespace {
 SRWLOCK g_lock=SRWLOCK_INIT;
 Encounter g_run{};
+omega_archive_arm::Ledger g_arm{};
+omega_archive_intro::Ledger g_intro{};
+Boss arm_boss(const omega_archive_arm::Owner& owner) noexcept {
+    return {owner.run,owner.actor,owner.character,owner.entity,owner.generation,owner.revision,owner.island,owner.actionEpoch};
+}
 std::uint32_t g_generation{};
 std::uint64_t g_revision{},g_published{},g_lastPublish{};
 std::uint64_t g_transitRejectLogged{};
@@ -74,7 +79,7 @@ Authority authority(std::uint64_t run,std::uint32_t generation,bool executorOwne
     if(run!=0 && run==mission_run_generation() && generation!=0 && generation<0x7FFFFFFFU
         && mission_seed_armed() && !omega_authority_quiesced() && world_phase()!=WorldPhase::idle) {
         if(run!=g_run.run()) {
-            g_run.begin(run,executorOwned);g_generation=generation;g_revision=1;g_published=0;g_transitRejectLogged=0;g_transitCreated=0;
+            g_run.begin(run,executorOwned);g_arm={};g_intro={};g_generation=generation;g_revision=1;g_published=0;g_transitRejectLogged=0;g_transitCreated=0;
             g_dpsBackEntity=UINT32_MAX;g_dpsBackCycle=0;
             g_rescueMarkerReadyMask=0;
             changed("prepare");
@@ -82,6 +87,8 @@ Authority authority(std::uint64_t run,std::uint32_t generation,bool executorOwne
         if(generation==g_generation) {
             advance_locked();
             output.generation=generation;
+            output.arm=g_arm.status().control;
+            output.intro=g_intro.status().program;
             if(g_run.island()==4) { output.crownGeneration=generation; }
             for(std::size_t index=0;index<kAllGroups.size();++index) {
                 if(!g_run.group_enabled(index)) { continue; }
@@ -135,7 +142,7 @@ Status status(std::uint64_t run) noexcept {
     AcquireSRWLockShared(&g_lock);
     const bool active=admitted(run);
     const Status output{g_run.boss(),active?g_run.pending():Action::none,g_run.phase(),active,g_run.failed(),g_run.island(),
-        g_run.cycle(),g_run.wave(),g_run.crown_stage(),g_run.token()};
+        g_run.cycle(),g_run.wave(),g_run.crown_stage(),g_run.token(),g_arm.status(),g_intro.status()};
     ReleaseSRWLockShared(&g_lock);return output;
 }
 bool observe_rescue_marker_created(std::uint64_t run,std::uint32_t generation,
@@ -153,14 +160,54 @@ bool observe_rescue_marker_created(std::uint64_t run,std::uint32_t generation,
     ReleaseSRWLockExclusive(&g_lock);
     return accepted;
 }
+bool request_intro(const omega_archive_intro::Owner& owner) noexcept {
+    AcquireSRWLockExclusive(&g_lock);
+    const bool accepted=admitted(owner.run) && owner.generation==g_generation && !g_run.failed()
+        && !g_run.boss().valid() && g_run.phase()==Phase::initial && g_intro.request(owner);
+    if(accepted) { changed("intro_program_requested"); }
+    ReleaseSRWLockExclusive(&g_lock);return accepted;
+}
+bool request_boss_program(const omega_archive_intro::Owner& owner,std::uint32_t sequence) noexcept {
+    AcquireSRWLockExclusive(&g_lock);
+    constexpr std::array<std::uint32_t,4> sequences{0x65D2379CU,0x65D2379EU,0x65D2379DU,0x65D2379BU};
+    const auto cycle=g_run.cycle();
+    const bool accepted=admitted(owner.run) && owner.generation==g_generation && !g_run.failed()
+        && arm_boss(owner)==g_run.boss() && g_run.pending()==Action::summonBoth
+        && cycle<sequences.size() && sequence==sequences[cycle] && !g_arm.status().pending && !g_arm.status().control.high
+        && g_intro.next(owner,sequence);
+    if(accepted) { static_cast<void>(g_run.claim(arm_boss(owner),Action::summonBoth));changed("boss_program_requested"); }
+    ReleaseSRWLockExclusive(&g_lock);return accepted;
+}
+bool request_boss_movement(const omega_archive_intro::Owner& owner) noexcept {
+    AcquireSRWLockExclusive(&g_lock);
+    const auto action=g_run.pending();
+    const bool moving=(owner.island<4 && action==Action::depart)
+        || (owner.island==4 && action==Action::relocateFinal && g_run.cycle()==2);
+    const bool accepted=admitted(owner.run) && owner.generation==g_generation && !g_run.failed()
+        && arm_boss(owner)==g_run.boss() && moving && !g_arm.status().pending && !g_arm.status().control.high
+        && g_intro.depart(owner);
+    if(accepted) { static_cast<void>(g_run.claim(arm_boss(owner),action));changed("boss_movement_requested"); }
+    ReleaseSRWLockExclusive(&g_lock);return accepted;
+}
+bool observe_intro_control(const omega_archive_intro::Owner& owner) noexcept {
+    AcquireSRWLockExclusive(&g_lock);
+    const auto& program=g_intro.status();
+    const bool current=!g_run.boss().valid() || arm_boss(program.owner)==g_run.boss();
+    const bool accepted=admitted(owner.run) && owner.generation==g_generation && current
+        && (!g_run.failed() || !program.program.play) && g_intro.acknowledge(owner);
+    if(accepted) { changed("intro_program_applied"); }
+    ReleaseSRWLockExclusive(&g_lock);return accepted;
+}
 void observe_initial_summon(const Boss& boss) noexcept {
     AcquireSRWLockExclusive(&g_lock);
-    if(admitted(boss.run) && boss.generation==g_generation && g_run.initial_summon(boss)) { changed("initial_summon"); }
+    if(admitted(boss.run) && boss.generation==g_generation && g_intro.status().applied
+        && arm_boss(g_intro.status().owner)==boss && g_run.initial_summon(boss)) { changed("initial_summon"); }
     ReleaseSRWLockExclusive(&g_lock);
 }
 void observe_initial_idle(const Boss& boss) noexcept {
     AcquireSRWLockExclusive(&g_lock);
-    if(admitted(boss.run) && boss.generation==g_generation) {
+    if(admitted(boss.run) && boss.generation==g_generation && g_intro.status().applied
+        && arm_boss(g_intro.status().owner)==boss) {
         // Idle without the node-4 receipt still releases the cohort; log it apart.
         const bool late=g_run.phase()==Phase::initial;
         if(g_run.initial_idle(boss)) { changed(late?"initial_idle_late_summon":"initial_idle"); }
@@ -169,16 +216,57 @@ void observe_initial_idle(const Boss& boss) noexcept {
 }
 bool claim_action(const Boss& boss,Action action) noexcept {
     AcquireSRWLockExclusive(&g_lock);
-    const bool claimed=admitted(boss.run) && g_run.claim(boss,action);
+    const bool claimed=admitted(boss.run) && action!=Action::summonLeft && action!=Action::summonRight && action!=Action::summonBoth && action!=Action::depart && action!=Action::relocateFinal
+        && g_run.claim(boss,action);
     if(claimed) { changed("action_claimed"); }
     ReleaseSRWLockExclusive(&g_lock);return claimed;
 }
 void observe_summon(const Boss& boss,Action action,bool finished) noexcept {
     AcquireSRWLockExclusive(&g_lock);
-    if(admitted(boss.run) && (finished?g_run.summon_finished(boss,action):g_run.summon_started(boss,action))) {
+    const bool single=action==Action::summonLeft || action==Action::summonRight;
+    const auto& arm=g_arm.status();
+    const bool acceptedArm=(!single && g_intro.status().applied) || (single && arm_boss(arm.owner)==boss && !arm.pending
+        && arm.control.right==(action==Action::summonRight) && arm.control.high && !finished);
+    if(admitted(boss.run) && acceptedArm && (finished?g_run.summon_finished(boss,action):g_run.summon_started(boss,action))) {
         changed(finished?"summon_finished":"summon_started");
     }
     ReleaseSRWLockExclusive(&g_lock);
+}
+bool prepare_arm(const omega_archive_arm::Owner& owner) noexcept {
+    AcquireSRWLockExclusive(&g_lock);
+    const auto action=g_run.pending();
+    const bool accepted=admitted(owner.run) && !g_run.failed() && owner.generation==g_generation
+        && g_intro.status().applied && arm_boss(owner)==g_run.boss() && (action==Action::summonLeft || action==Action::summonRight)
+        && g_arm.prepare(owner,action==Action::summonRight);
+    if(accepted) { static_cast<void>(g_run.claim(arm_boss(owner),action));changed("arm_requested"); }
+    ReleaseSRWLockExclusive(&g_lock);return accepted;
+}
+bool observe_arm_control(const omega_archive_arm::Owner& owner,const omega_archive_arm::NativeControl& receipt,
+                         const std::array<float,4>& left,const std::array<float,4>& right) noexcept {
+    AcquireSRWLockExclusive(&g_lock);
+    const bool accepted=admitted(owner.run) && owner.generation==g_generation
+        && arm_boss(owner)==g_run.boss() && g_arm.acknowledge(owner,receipt,left,right);
+    if(accepted) {
+        const auto& arm=g_arm.status();
+        if(!arm.control.high && arm.completed && !g_run.failed()) {
+            if(!g_run.summon_finished(arm_boss(owner),arm.control.right?Action::summonRight:Action::summonLeft)) {
+                g_run.invalidate(owner.run);
+            }
+        }
+        changed(arm.control.high?"arm_applied":"arm_released");
+    }
+    ReleaseSRWLockExclusive(&g_lock);return accepted;
+}
+bool release_arm(const omega_archive_arm::Owner& owner,bool completed) noexcept {
+    AcquireSRWLockExclusive(&g_lock);
+    const auto expected=g_arm.status().control.right?Phase::rightPlaying:Phase::leftPlaying;
+    const bool accepted=admitted(owner.run) && arm_boss(owner)==g_run.boss()
+        && (!completed || (!g_run.failed() && g_run.phase()==expected)) && g_arm.release(owner,completed);
+    if(accepted) {
+        if(!completed) { g_run.invalidate(owner.run); }
+        changed(completed?"arm_release_requested":"arm_cancelled");
+    }
+    ReleaseSRWLockExclusive(&g_lock);return accepted;
 }
 bool observe_admission(const ActorReceipt& receipt) noexcept {
     AcquireSRWLockExclusive(&g_lock);
@@ -199,7 +287,8 @@ bool observe_death(const ActorReceipt& receipt) noexcept {
 }
 void observe_departure(const Boss& boss,bool folded,bool atMilestone) noexcept {
     AcquireSRWLockExclusive(&g_lock);
-    if(admitted(boss.run) && (boss.island==4?
+    if(admitted(boss.run) && g_intro.status().applied && g_intro.status().program.departure==boss.island
+        && arm_boss(g_intro.status().owner)==boss && (boss.island==4?
         g_run.final_departed({boss,g_run.cycle()},folded,atMilestone):g_run.departed(boss,folded,atMilestone))) { changed("departed"); }
     ReleaseSRWLockExclusive(&g_lock);
 }
@@ -225,7 +314,7 @@ void observe_cannon_prepared(std::uint64_t run,std::uint32_t generation,std::uin
 }
 bool observe_animation(const CrownToken& token,AnimationMilestone event) noexcept {
     AcquireSRWLockExclusive(&g_lock);
-    const bool accepted=admitted(token.boss.run) && g_run.animation(token,event);
+    const bool accepted=admitted(token.boss.run) && g_intro.status().applied && g_run.animation(token,event);
     if(accepted) { changed("animation_milestone"); }
     ReleaseSRWLockExclusive(&g_lock);return accepted;
 }
@@ -308,7 +397,7 @@ bool observe_transit_created(std::uint64_t run,std::uint8_t index,std::uint32_t 
 }
 void invalidate(std::uint64_t run) noexcept {
     AcquireSRWLockExclusive(&g_lock);
-    if(admitted(run) && !g_run.failed()) { g_run.invalidate(run);changed("invalidated"); }
+    if(admitted(run) && !g_run.failed()) { static_cast<void>(g_arm.release(g_arm.status().owner,false));static_cast<void>(g_intro.cancel());g_run.invalidate(run);changed("invalidated"); }
     ReleaseSRWLockExclusive(&g_lock);
 }
 bool publication_due(std::uint64_t now) noexcept {
@@ -319,7 +408,7 @@ bool publication_due(std::uint64_t now) noexcept {
 }
 void reset() noexcept {
     AcquireSRWLockExclusive(&g_lock);
-    g_run.begin(0);g_generation=0;g_revision=0;g_published=0;g_lastPublish=0;
+    g_run.begin(0);g_arm={};g_intro={};g_generation=0;g_revision=0;g_published=0;g_lastPublish=0;
     g_dpsBackEntity=UINT32_MAX;g_dpsBackCycle=0;
     g_rescueMarkerReadyMask=0;
     ReleaseSRWLockExclusive(&g_lock);

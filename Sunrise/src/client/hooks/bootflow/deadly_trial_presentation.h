@@ -16,30 +16,14 @@ inline bool source(std::span<const std::byte> b,bool dialogue) noexcept {
         && read<std::uint32_t>(b,0x4C)==(dialogue?0x80804F4BU:0x80804F53U)
         && read<std::int64_t>(b,0x50)==0;
 }
-// Same requested data as the native wire body. The processed-generation array is untouched.
-inline bool dialogue_records(std::span<std::byte> b,const trial::Frame& f) noexcept {
-    if(!f.enabled || !f.spawnGeneration || b.size()<0x188+11*32 || !source(b,true)) { return false; }
-    bool changed{};
-    for(std::size_t row=0;row<f.generations.size();++row) {
-        if(!f.generations[row]) { continue; }
-        const auto o=0x188+row*32;const auto active=f.activeRow==row;
-        if(read<std::uint32_t>(b,o+24)==f.generations[row] && read<std::uint8_t>(b,o+28)==(active?2:0)
-            && read<std::uint64_t>(b,o+8)==(active?1U:0U)) { continue; }
-        put(b,o,UINT64_MAX);put<std::uint64_t>(b,o+8,active?1:0);
-        put(b,o+16,UINT64_C(0xFFFF00FF811C9DC5));put(b,o+24,f.generations[row]);
-        put<std::uint8_t>(b,o+28,active?2:0);changed=true;
-    }return changed;
-}
-inline bool route_point(std::span<std::byte> b,const trial::Frame& f) noexcept {
-    if(b.size()<0xB00 || !source(b,false) || !f.enabled) { return false; }
+inline bool route_point(std::span<std::byte> b,const trial::Frame& f,std::uint32_t index=0) noexcept {
+    if(b.size()<0xB00 || index>=3 || !source(b,false) || !f.enabled) { return false; }
     const auto nav=trial::navigation::goal(f.presentation.event);
     const bool active=f.presentation.active && nav.target.valid();
-    put<std::uint8_t>(b,0x484,active?3:0);put<std::uint8_t>(b,0x48C,2);
-    if(active) { put(b,0x498,nav.bubble);put(b,0x4A0,std::array<float,4>{nav.position.x,nav.position.y,nav.position.z,1.F}); }
+    put<std::uint8_t>(b,0x484+index*0x200,active?3:0);put<std::uint8_t>(b,0x48C+index*0x200,2);
+    if(active) { put(b,0x498+index*0x200,nav.bubble);put(b,0x4A0+index*0x200,std::array<float,4>{nav.position.x,nav.position.y,nav.position.z,1.F}); }
     return true;
 }
-using Build=void(__fastcall*)(void*,std::uint32_t) noexcept;
 using Register=void(__fastcall*)(const void*) noexcept;
-void update_directive(void*,Build,Register) noexcept;
-void update_dialogue(std::byte*) noexcept;
+void observe_directive(void*,Register) noexcept;
 }

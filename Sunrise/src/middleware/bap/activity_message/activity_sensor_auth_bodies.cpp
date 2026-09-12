@@ -2,6 +2,8 @@
 #include <bit>
 
 #include "sensor_auth_update.h"
+#include "../../../state/activity/coo/native_presentation_authority.h"
+#include "../../../state/activity/coo/native_mission_forest_authority.h"
 #include "../../../state/activity/beyond_infinity/forest_selection.h"
 #include "../../../state/activity/omega_intro_rules.h"
 #include "../../../state/activity/omega_ending_rules.h"
@@ -276,22 +278,11 @@ constexpr std::size_t kOmegaDialogueBits = 55 + kOmegaDialogueRecords * kOmegaDi
  * ring entry 0. Total exactly 4,802 bits. */
 constexpr std::uint8_t kOmegaDirectiveSlotType = 68;
 constexpr std::uint16_t kOmegaDirectiveSlotIndex = 0;
-/** Infinite Forest map generator component 2763EC97/37/1: authority schema 0x80805007,
- *  fixed 11,350-bit body (calibrated against the live-proven directive schema: 1-bit bools,
- *  inline arrays always fully serialized).
- *  PARKED: a body the client cannot consume marks the slot's sync record unseeded forever,
- *  and ClientRosterSync_AllRecordsInBubbleSeeded then vetoes bubble 11's seed commit — which
- *  is the very sweep that instantiates the network-replicated map-generator WORKER
- *  (kind 0x80805017). An empty-body record seeds that slot without the unverified body.
- *  Its default seed is 0; 9001 is a placement-budget argument, not the seed. Omega's
- *  Forest-D currently gets its measured anchors and per-run seed at the worker boundary,
- *  and zero topology inputs at the solver boundary; see docs/OMEGA-FOREST.md. Keep this
- *  wire encoder disabled until its decode and per-segment scope are independently verified. */
-constexpr bool kOmegaForestGeneratorBodyReady = false;
+// Native type37 variable-count authority; independently verified against the original worker.
 constexpr std::uint32_t kOmegaForestGeneratorRegistry = 0x2763EC97U;
 constexpr std::uint8_t kOmegaForestGeneratorSlotType = 37U;
 constexpr std::uint16_t kOmegaForestGeneratorSlotIndex = 1U;
-constexpr std::size_t kOmegaForestGeneratorBits = 11350U;
+constexpr std::size_t kOmegaForestGeneratorBits = state::activity::coo::native_generator::kActivationBits;
 constexpr std::size_t kOmegaDirectiveTargetBits = 55 + 55 + 128 + 1;
 constexpr std::size_t kOmegaDirectiveProgressBits = 1 + 5 * 64 + 32;
 constexpr std::size_t kOmegaDirectiveRecordBits =
@@ -632,9 +623,8 @@ write_shared_mission_state(bits::Writer& writer, bool active) noexcept {
  * creates from the configured parent; native reconciliation binds the resulting
  * type-2 origin back to this member. Never convert a live loose-spawn run. */
 [[nodiscard]] bool write_omega_boss_member(bits::Writer& writer,const Snapshot& snapshot) noexcept {
-    return writer.write(1,1) && writer.write(snapshot.omegaBossGeneration,31)
-        && writer.write(1,2) && writer.write(1,3) && writer.write(1,1)
-        && writer.write(0,4);
+    return state::activity::omega::boss_authority::write_member(writer,true,
+        snapshot.omegaBossGeneration,snapshot.omegaArchiveArm,true,snapshot.omegaArchiveIntro,true);
 }
 
 /** 80804F08, empty audience and dependency collections. Both nested arrays have
@@ -666,69 +656,9 @@ write_shared_mission_state(bits::Writer& writer, bool active) noexcept {
  * client scan (+0x100A180) dispatches bank row 0 = AD60F465; the rest carry generation 0 and are
  * skipped. Non-selecting fields are written as their bias so they decode to zero; the per-record
  * optional u64 time is omitted. */
-/** One 0x8080500B record (5,275 bits), all fields decoding to zero, tile count zero.
- * Wire conventions calibrated against the LIVE-PROVEN directive schema (walk 4,787 + 15
- * type-2 bools = the observed 4,802): bools are 1 wire bit even though the reflection
- * gives them width 0, and inline arrays are FIXED-length with no count prefix — so the
- * 100-element 0x8080500C tile array is always fully serialized (4,800 bits); the 7-bit
- * count field only says how many entries are meaningful. */
-[[nodiscard]] bool write_generator_500b(bits::Writer& writer) noexcept {
-    // +0x00 u32=0; +0x04 u8 bias0x80 ->0; then 0x8080500F (196 bits).
-    if (!writer.write(0, 32) || !writer.write(0x80, 8)) {
-        return false;
-    }
-    // 0x8080500F: four groups of {u8 bias0x80, u8 bias0x80, f32, bool} = 196 bits.
-    for (std::size_t group = 0; group < 4; ++group) {
-        if (!writer.write(0x80, 8) || !writer.write(0x80, 8) || !writer.write(0, 32)
-            || !writer.write(0, 1)) {
-            return false;
-        }
-    }
-    // +0x2C u7 ->0; +0x2D bool; +0x30/+0x34 two f32; +0x38..+0x48 five i32 bias INT32_MIN.
-    if (!writer.write(0, 7) || !writer.write(0, 1) || !writer.write(0, 32)
-        || !writer.write(0, 32)) {
-        return false;
-    }
-    for (std::size_t value = 0; value < 5; ++value) {
-        if (!writer.write(0x80000000ULL, 32)) {
-            return false;
-        }
-    }
-    // +0x4C 0x8080500D: 7-bit tile count = 0, then ALL 100 fixed tiles (3 x i16 bias
-    // 0x8000 each, written bias-neutral so they decode to zero; unread while count = 0).
-    if (!writer.write(0, 7)) {
-        return false;
-    }
-    for (std::size_t tile = 0; tile < 100; ++tile) {
-        if (!writer.write(0x8000, 16) || !writer.write(0x8000, 16)
-            || !writer.write(0x8000, 16)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-/** Neutral map-generator authority body (0x80805007 -> 0x80805008). */
-[[nodiscard]] bool write_active_omega_forest_generator(bits::Writer& writer) noexcept {
-    // 0x80805008: two 0x8080500B records, then one 0x80805009.
-    if (!write_generator_500b(writer) || !write_generator_500b(writer)) {
-        return false;
-    }
-    // 0x80805009: u32=0, a 32-byte array (256 bits) and a 64-byte array (512 bits), all zero.
-    if (!writer.write(0, 32)) {
-        return false;
-    }
-    for (std::size_t byte = 0; byte < 32 + 64; ++byte) {
-        if (!writer.write(0, 8)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 [[nodiscard]] bool omega_forest_generator(const Snapshot& snapshot, std::uint32_t key,
                                           std::uint8_t slotType, std::uint16_t slotIndex) noexcept {
-    return kOmegaForestGeneratorBodyReady && snapshot.omegaForestGenerator
+    return snapshot.omegaForestGenerator && snapshot.omegaForestSeed!=0
            && key == kOmegaForestGeneratorRegistry
            && slotType == kOmegaForestGeneratorSlotType
            && slotIndex == kOmegaForestGeneratorSlotIndex;
@@ -736,35 +666,8 @@ write_shared_mission_state(bits::Writer& writer, bool active) noexcept {
 
 [[nodiscard]] bool write_active_omega_dialogue(bits::Writer& writer,
                                                const Snapshot& snapshot) noexcept {
-    if (!write_dialogue_ref_absent(writer)) {
-        return false;
-    }
-    for (std::size_t record = 0U; record < kOmegaDialogueRecords; ++record) {
-        const bool known = record < snapshot.omegaDialogueGenerations.size();
-        const std::uint32_t generation = known ? snapshot.omegaDialogueGenerations[record] : 0U;
-        const bool active = known && record == snapshot.omegaActiveDialogueRow && generation != 0;
-        // field0 0x80809B3F: the mandatory u64 defaults to -1 (observed in the default-filled
-        // component), then the optional u64 time. The record validity check is `time != 0`, so
-        // the armed record carries a nonzero time; inert records omit it (their generation is 0).
-        if (!writer.write(0xFFFFFFFFFFFFFFFFULL, 64)
-            || !writer.write(active ? 1U : 0U, kPresenceWidth)
-            || (active && !writer.write(1, 64))) {
-            return false;
-        }
-        if (!write_dialogue_ref_absent(writer)) {  // field1 0x80809C42, decodes to zero
-            return false;
-        }
-        // Keep consumed generations, but remove their optional time. Recreated components must
-        // not replay the complete mission's dialogue history on their next scan.
-        if (!writer.write(static_cast<std::uint64_t>(generation) + 0x80000000ULL, 32)) {
-            return false;
-        }
-        // mode (i8 @+0x1C, 2 bits, bias 1): 2 is the play mode for record 0.
-        if (!writer.write((active ? 2ULL : 0ULL) + 1ULL, 2)) {
-            return false;
-        }
-    }
-    return true;
+    return state::activity::coo::native_presentation::dialogue(writer,
+        snapshot.omegaDialogueGenerations,snapshot.omegaActiveDialogueRow);
 }
 
 [[nodiscard]] bool omega_directive(std::uint32_t key, std::uint8_t slotType,
@@ -925,7 +828,10 @@ auth_body_bits(const Snapshot& snapshot,
     }
     if(omega_rescue_source(snapshot,key,slotType,slotIndex)) { return rescue::kSceneSourceBits; }
     if(omega_rescue_marker(snapshot,key,slotType,slotIndex)!=nullptr) { return cannon::kAuthorityBits; }
-    if(omega_charge_source(snapshot,key,slotType,slotIndex).cycle!=nullptr) { return cannon::kAuthorityBits; }
+    if(const auto source=omega_charge_source(snapshot,key,slotType,slotIndex);source.cycle!=nullptr) {
+        return charge::authority_bits(source,{snapshot.omegaFirstLairGeneration,snapshot.omegaCrownCycle,
+            snapshot.omegaCrownChargeEnabled,snapshot.omegaCrownChargeDunked,snapshot.omegaCrownTransitBridge});
+    }
     if(omega_transit_source(snapshot,key,slotType,slotIndex)!=nullptr) { return cannon::kAuthorityBits; }
     if(omega_transit_gate(snapshot,key,slotType,slotIndex)!=nullptr
         || omega_dunk_gate(snapshot,key,slotType,slotIndex)!=nullptr) { return transit::kGateBits; }
@@ -941,7 +847,10 @@ auth_body_bits(const Snapshot& snapshot,
     if(omega_first_cannon_gate(snapshot,key,slotType,slotIndex)) { return kOmegaPortalGateBits; }
     if (omega_ikora_lattice(snapshot,key,slotType,slotIndex)) { return kOmegaPortalGateBits; }
     if (omega_boss(snapshot,key,slotType,slotIndex)) { return kOmegaBossBits; }
-    if (omega_boss_member(snapshot,key,slotType,slotIndex)) { return kOmegaBossMemberBits; }
+    if (omega_boss_member(snapshot,key,slotType,slotIndex)) {
+        return state::activity::omega::boss_authority::member_bits(true,
+            snapshot.omegaBossGeneration,snapshot.omegaArchiveArm,true,snapshot.omegaArchiveIntro,true);
+    }
     if (omega_intro(snapshot,key,slotType,slotIndex)) { return kOmegaIntroBits; }
     if (omega_ending(snapshot,key,slotType,slotIndex)) { return kOmegaIntroBits; }
     if (active_omega_portal_component(snapshot, key, slotType, slotIndex)) {
@@ -972,10 +881,8 @@ auth_body_bits(const Snapshot& snapshot,
     }
     if (snapshot.omegaSceneAuthority && kOmegaDialogueBodyReady
         && snapshot.omegaDialogueArm && omega_dialogue(key, slotType, slotIndex)) {
-        const auto row = snapshot.omegaActiveDialogueRow;
-        const bool active = row < snapshot.omegaDialogueGenerations.size()
-                            && snapshot.omegaDialogueGenerations[row] != 0;
-        return kOmegaDialogueBits + (active ? 64U : 0U);
+        return state::activity::coo::native_presentation::dialogue_bits(
+            snapshot.omegaDialogueGenerations,snapshot.omegaActiveDialogueRow);
     }
     if (snapshot.omegaSceneAuthority && kOmegaDirectiveBodyReady
         && snapshot.omegaDialogueArm && omega_directive(key, slotType, slotIndex)) {
@@ -1135,7 +1042,8 @@ bool write_auth_body(bits::Writer& writer,
                && snapshot.seedAuthoredSensors && omega_opening_scene(key, slotType, slotIndex)) {
         encoded = write_omega_scene(writer, snapshot);
     } else if (omega_forest_generator(snapshot, key, slotType, slotIndex)) {
-        encoded = write_active_omega_forest_generator(writer);
+        encoded = state::activity::coo::native_generator::write_activation(writer,
+            state::activity::coo::native_generator::omega_request(snapshot.omegaForestSeed));
     } else if (snapshot.omegaSceneAuthority && snapshot.omegaMusicPresent
                && music::is_sensor(key, slotType, slotIndex)) {
         encoded = music::write(writer, snapshot.omegaMusic);
