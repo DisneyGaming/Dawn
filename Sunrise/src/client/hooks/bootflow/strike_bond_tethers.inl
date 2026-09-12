@@ -101,7 +101,36 @@ bool create(void* raw,Create original,bool enabled) noexcept {
         static_cast<unsigned long long>(request.owner.run),b.source.slot,b.cube,b.guardian,pose.scale*resource.length,pose.scale);
     return created;
 }
-struct Retained {coo::Generation owner{};std::uint32_t bundle{};gn::Weak entity{};};
+// Use the same native local-pose setter used by hierarchy movement. For these
+// unparented visual entities local pose is world pose. It encodes translation,
+// dirties the entity and notifies its components; raw world-row writes do not.
+bool follow(const mission::TetherBinding& b,coo::Generation owner,std::uint32_t bundle,gn::Weak entity) noexcept {
+    const auto current=mission::request();const auto lens=mission::lens_request(b.lens);
+    if(mission::tether_visibility(b,current,lens,owner)!=1.F || !lens.lens.valid()) return false;
+    gn::Read read{g_image};std::uintptr_t row{};std::uint32_t parent{},actualBundle{},flags{};
+    if(!read.entity_row(entity,row) || !read.value(row+0x3C,parent) || parent!=UINT32_MAX
+        || !read.value(row+4,flags) || (flags&5U) || !read.value(row+0x4C,actualBundle) || actualBundle!=bundle
+        || !read.weak({lens.lens.serial,lens.lens.entity})) return false;
+    mission::Point start{},end{};mission::TetherPose pose{};
+    if(!point(lens.lens.entity,start) || !guardian(b,owner,end)
+        || !mission::tether_pose(start,end,pose,mission::tether_resource(b).length)) return false;
+    constexpr std::array<std::uint8_t,11> wrapper{0x41,0xB8,0x02,0,0,0,0xE9,0xF5,0x01,0,0};
+    constexpr std::array<std::uint8_t,16> setter{0x48,0x89,0x5C,0x24,0x08,0x48,0x89,0x74,0x24,0x10,0x57,0x48,0x83,0xEC,0x40,0x0F};
+    std::array<std::uint8_t,11> entry{};std::array<std::uint8_t,16> body{};
+    if(!read.value(g_image+0x559A00,entry) || entry!=wrapper
+        || !read.value(g_image+0x559C00,body) || body!=setter) return false;
+    const auto fresh=mission::lens_request(b.lens);std::uintptr_t again{};
+    if(fresh.owner!=lens.owner || fresh.lens!=lens.lens
+        || mission::tether_visibility(b,mission::request(),fresh,owner)!=1.F
+        || !read.entity_row(entity,again) || again!=row || !read.value(row+0x3C,parent) || parent!=UINT32_MAX
+        || !read.value(row+0x4C,actualBundle) || actualBundle!=bundle) return false;
+    static_assert(sizeof(mission::TetherPose)==32);
+    alignas(16) const auto aligned=pose;
+    using SetPose=void(__fastcall*)(std::uintptr_t,const void*) noexcept;
+    reinterpret_cast<SetPose>(g_image+0x559A00)(row,&aligned);
+    return true;
+}
+struct Retained {coo::Generation owner{};std::uint32_t bundle{};gn::Weak entity{};bool following{};};
 SRWLOCK retainedLock=SRWLOCK_INIT;
 std::array<Retained,3> retained{};
 void visible(const mission::TetherBinding& b,coo::Generation owner,std::uint32_t bundle,gn::Weak entity) noexcept {
@@ -114,8 +143,21 @@ void visible(const mission::TetherBinding& b,coo::Generation owner,std::uint32_t
         || !read.copy(component,header) || !prefix(header.data(),0x80C7063BU,0x80803910U,0xA78)
         || at<std::uint32_t>(header.data()+0x2C)!=entity.handle) return;
     AcquireSRWLockExclusive(&retainedLock);
-    for(std::size_t i=0;i<retained.size();++i) if(mission::kRouteTethers[i].source==b.source) retained[i]={owner,bundle,entity};
+    for(std::size_t i=0;i<retained.size();++i) if(mission::kRouteTethers[i].source==b.source) {
+        const bool same=retained[i].owner==owner && retained[i].bundle==bundle && retained[i].entity==entity;
+        retained[i]={owner,bundle,entity,same && retained[i].following};
+    }
     ReleaseSRWLockExclusive(&retainedLock);
+    if(*visibility==1.F && follow(b,owner,bundle,entity)) {
+        bool first{};AcquireSRWLockExclusive(&retainedLock);
+        for(std::size_t i=0;i<retained.size();++i) if(mission::kRouteTethers[i].source==b.source
+            && retained[i].owner==owner && retained[i].entity==entity) {
+            first=!retained[i].following;retained[i].following=true;
+        }
+        ReleaseSRWLockExclusive(&retainedLock);
+        if(first) report("ev=strike_bond stage=tether_following run=%llu slot=%u guardian=%u entity=%08X",
+            static_cast<unsigned long long>(owner.run),b.source.slot,b.guardian,entity.handle);
+    }
     const auto self=at<std::uint32_t>(header.data()+0x24);std::uintptr_t fresh{};float before{};const float after=*visibility;
     // Same bounded visibility channels used in the confirmed live test. No
     // health, immunity or actor state is changed by the presentation adapter.

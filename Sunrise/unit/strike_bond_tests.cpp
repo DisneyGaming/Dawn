@@ -8,6 +8,7 @@
 #include "strike_bond_intro_release_tests.h"
 #include "strike_bond_target_binding_tests.h"
 #include "strike_bond_carriage_tests.h"
+#include "strike_bond_boss_shield_tests.h"
 #include "../src/client/hooks/bootflow/strike_bond_boss_cycle.h"
 #include <cstdio>
 #include <cstdlib>
@@ -122,13 +123,18 @@ struct Replay {
             check(command.eventCount<=1,"guardian sends at most one release event");
             if(!command.eventCount) continue;
             const auto lens=m::lens_index(binding.cast[1]);
-            check(started[i] && lens<std::size(m::kLenses) && c.frame().lensDestroyed[lens],
-                "guardian release requires its own destroyed cube and a started scene");
+            check(started[i] && lens<std::size(m::kLenses)
+                && (m::route_guardian(binding.cast[0]) || c.frame().lensDestroyed[lens]),
+                "only route guardians can release AI before their own cube is destroyed");
             check(command.events[0]==0x33E63A8BU,"guardian uses the native animation exit event");
             Wire wire;check(m::write_body(wire,c.frame(),binding.asset.registry,43,binding.asset.slot)
                 && wire.fields.back()==std::pair<std::uint64_t,unsigned>{0x33E63A8BU,32},
                 "guardian release reaches the native authority packet");
-            if(!finished[i]) {finished.set(i);scene(i,true);}
+            // Live run64852: route AI was active, but the owning scene did not
+            // finish with its cube intact. Do not fake completion on release.
+            if(!finished[i] && (!m::route_guardian(binding.cast[0]) || c.frame().lensDestroyed[lens])) {
+                finished.set(i);scene(i,true);
+            }
         }
         const auto f=c.frame();
         if(submit && f.activeRow!=coo::kNoDialogue) {
@@ -188,6 +194,15 @@ struct Replay {
         if(s.asset==m::kDialogueAsset) {now+=m::kDialogueRows[s.argument].durationMs+500;return;}
         if(s.asset==m::kBossActor) {
             const auto boss=c.boss_enemy();
+            if(s.argument==38) {
+                check(c.frame().bossCycle.mode==m::BossMode::opening,"middle cube begins native opening");
+                check(!c.frame().coverEnabled && m::boss_blocked(c.frame(),1.F),"opening waits before cover and damage");
+                check(!c.boss_animation(boss,0,m::BossAnimation::openingAwake),"opening completion cannot precede start");
+                check(c.boss_motion(boss,c.boss_platform(),0.F),"capture stationary native spawn");
+                check(c.boss_animation(boss,0,m::BossAnimation::openingStarted),"native opening animation begins");
+                check(c.boss_animation(boss,0,m::BossAnimation::openingAwake),"native opening completes");
+                check(!m::boss_blocked(c.frame(),1.F),"opening completion permits damage");return;
+            }
             if(s.argument==32 || s.argument==33) {
                 const unsigned expected=s.argument==32?0U:1U;
                 check(c.frame().bossStage==expected,"boss damage stages advance only after the previous guardian pair dies");
@@ -202,32 +217,43 @@ struct Replay {
                 check(c.frame().bossCycle.mode==m::BossMode::parking,"guardian phase waits for native parking");
                 check(c.boss_animation(boss,cycle,m::BossAnimation::asleep),"native folded sequence started");
                 check(!c.boss_animation(boss,cycle,m::BossAnimation::parked),"no synthetic parking without native position");
-                check(c.boss_motion(boss,c.boss_platform(),m::boss_parking(cycle)),"observed parking position");
+                if(!c.frame().bossCycle.hasParkTarget) check(c.boss_motion(boss,c.boss_platform(),.8F),"first position selects parking destination");
+                check(c.boss_motion(boss,c.boss_platform(),c.frame().bossCycle.parkTarget),"observed parking position");
                 check(c.boss_animation(boss,cycle,m::BossAnimation::parked),"native parked receipt opens guardian phase");return;
             }
             if(s.argument==36 || s.argument==37) {
                 const auto cycle=static_cast<std::uint8_t>(s.argument-35);
                 check(c.frame().bossCycle.mode==m::BossMode::waking,"both guardians lead to wake-up, not immediate DPS");
-                check(m::boss_blocked(c.frame(),cycle==1?2.F/3.F:1.F/3.F),"boss stays immune during wake-up");
+                check(!m::boss_blocked(c.frame(),cycle==1?2.F/3.F:1.F/3.F),"boss takes damage throughout wake-up");
                 check(!c.boss_animation(boss,cycle,m::BossAnimation::awake),"completion cannot precede wake-up start");
                 check(c.boss_animation(boss,cycle,m::BossAnimation::wakeStarted),"native wake-up and burst started");
                 const auto platform=m::asset_index(m::find(m::kBossActor.registry,23,173)->asset);
                 now+=5000;c.update(run,now,true,region);
-                check(c.frame().native[platform].position==m::boss_parking(cycle),"platform stays parked throughout animation");
-                check(c.boss_animation(boss,cycle,m::BossAnimation::awake),"native sequence completion resumes DPS");
+                check(c.frame().native[platform].position==c.frame().bossCycle.parkTarget,"platform stays parked throughout animation");
                 if(rapidDamage) {
-                    check(c.health(boss,cycle==1?1.F/3.F:0.F),"immediate damage reaches next phase before script polls");
-                    check((c.frame().bossCycle.awakened & (1U<<(cycle-1)))!=0,"wake completion persists across immediate next health gate");
+                    check(c.health(boss,cycle==1?1.F/3.F:0.F),"wake-up damage reaches next floor");
+                    check(c.frame().bossCycle.mode==m::BossMode::waking,"damage cannot cut the wake animation short");
+                    check(m::boss_blocked(c.frame(),m::boss_floor(c.frame()))==(cycle==1),"next gate still clamps wake-up damage");
+                }
+                check(c.boss_animation(boss,cycle,m::BossAnimation::awake),"native wake completes before movement or next animation");
+                check((c.frame().bossCycle.awakened & (1U<<(cycle-1)))!=0,"wake completion persists across immediate next health gate");
+                if(rapidDamage) check(c.frame().bossCycle.mode==(cycle==1?m::BossMode::parking:m::BossMode::dying),"cached wake-up damage starts next gate or death without another hit");
+                else {
+                    check(c.frame().bossCycle.hasReturnTarget && (m::boss_at(c.frame().bossCycle.returnTarget,0.F) || m::boss_at(c.frame().bossCycle.returnTarget,.5F)),"wake-up returns to an equivalent spawn position");
                 }
                 return;
             }
             if(s.argument==30 && !c.frame().bossDead) {
                 check(c.health(boss,0.F),"zero health requests native death sequence");
                 check(!c.frame().bossDead && c.frame().bossCycle.mode==m::BossMode::dying,"zero health is dying, not a death receipt");
+                check(c.frame().musicCandidate!=m::kMusicBossDead,"zero health cannot start closing music");
+                check(!m::boss_blocked(c.frame(),0.F),"dying permits the animation to deliver its native kill event");
                 check(c.boss_motion(boss,c.boss_platform(),.42F),"capture final live platform position");
                 check(c.boss_animation(boss,2,m::BossAnimation::deathStarted),"native death animation freezes platform");
                 check(c.frame().bossPlatformSnap && !c.frame().bossDead,"platform freeze does not fabricate boss death");
+                check(!m::boss_blocked(c.frame(),0.F),"platform freeze cannot re-enable death immunity");
                 check(c.died(boss),"authentic Dendron death");
+                check(c.frame().musicCandidate==m::kMusicBossDead,"authentic death starts closing music");
             }
             return;
         }
@@ -249,6 +275,8 @@ struct Replay {
         }
         if(s.asset.type==4 && s.argument==50) {
             if(s.asset==m::kLenses[7].source) {
+                check(c.frame().objective==0x82271EEAU && c.frame().presentation.marker.asset==m::kLenses[7].source,"roof sabotage objective points to the shootable middle cube");
+                check(!c.frame().coverEnabled,"cover waits until the boss opening completes");
                 check(c.boss_enemy().valid(),"Dendron exists before the middle cube can start combat");
                 check(!c.frame().bossFighting && m::boss_blocked(c.frame(),1.F),"Dendron remains immune until the middle cube is destroyed");
                 check(started[2] && !finished[2],"native boss intro is active while the middle cube is intact");
@@ -259,6 +287,12 @@ struct Replay {
                 const std::uint16_t route=tether.guardian==105?81:tether.guardian==121?97:260;
                 const auto routeAsset=m::find(tether.source.registry,4,route)->asset;
                 check(c.frame().native[m::asset_index(routeAsset)].acknowledged,"both room cubes exist before breaking the guardian cube");
+                for(std::size_t si=0;si<std::size(m::kScenes);++si) if(m::kScenes[si].graph==0x80F45CAAU && m::kScenes[si].cast[1]==s.asset)
+                    check(!finished[si] && c.frame().scenes[si].eventCount==1,
+                        "route cube is damageable and beam requested while AI is released but the scene remains unfinished");
+                for(const auto& g:m::kGolems) if(g.registry==tether.source.registry && g.source==tether.guardian) {
+                    Wire effect;check(m::write_body(effect,c.frame(),g.registry,26,g.tether) && effect.fields[1]==std::pair<std::uint64_t,unsigned>{0,1},"route guardian shield remains enabled while its AI is released");
+                }
                 check(!c.frame().lensExposed[m::lens_index(routeAsset)],"transporter cube stays shielded until Minotaur death");
                 check(!c.frame().native[m::asset_index(m::find(tether.source.registry,23,tether.shield)->asset)].active,"guardian cube has no surrounding shield");
                 check(c.frame().native[m::asset_index(tether.source)].desired,"short beam requested before cube becomes vulnerable");
@@ -307,8 +341,9 @@ struct Replay {
         check(c.frame().finished && c.frame().bossDead,"full strike reaches genuine completion");
         if(!(early?sections[6]:sections.all())) std::fprintf(stderr,"sections=%s early=%d graph=%.*s\n",sections.to_string().c_str(),early,int(c.graph()->id.size()),c.graph()->id.data());
         check(early?sections[6]:sections.all(),"all required route and boss phases visited");
-        for(const auto row:{0,1,3,5,7,8,9,10,11,12,13,14}) if(!early || row==14) {if(!spoken[row]) std::fprintf(stderr,"Missing dialogue row %u early=%u\n",row,early);check(spoken[row],"required strike exchange dispatched");}
+        for(const auto row:{0,1,3,4,5,6,7,8,9,10,11,12,13,14}) if(!early || row==14) {if(!spoken[row]) std::fprintf(stderr,"Missing dialogue row %u early=%u\n",row,early);check(spoken[row],"required strike exchange dispatched");}
         check(!spoken[2],"campaign-only dialogue excluded");
+        for(unsigned row=15;row<24;++row) check(!spoken[row],"campaign scanner and Panoptes ending stay out of strike");
         check(checkedFakeDeath && checkedReadiness && checkedImmune && checkedCannon && checkedClosing && checkedShields,"critical regression scenarios exercised");
         check(c.frame().checkpointSliceSet==136 && c.frame().checkpointSpawnSet==0x2EA8FB98U,"Spire native respawn set retained");
         if(!early) {
@@ -372,6 +407,16 @@ static void native_regressions() {
         m::TetherPose local{};check(m::tether_pose(cube,guardian,local,resource.length),"regional beam pose resolves");
         check(std::abs(local.scale*resource.length-length)<.001F,"regional beam length reaches the same shield anchor");
         check(m::find(t.source.registry,1,t.guardian) && m::route_tether(t.source)==&t,"three distinct native guardians have tether sources");
+        for(const auto moving:{guardian,m::Point{guardian.x+4.F,guardian.y-3.F,guardian.z+1.F},
+            m::Point{cube.x-8.F,cube.y,cube.z-3.2F}}) {
+            m::TetherPose updated{};
+            check(m::tether_pose(cube,moving,updated,resource.length),"moving guardian produces a new native beam pose");
+            const auto q2=updated.rotation;const auto reach=updated.scale*resource.length;
+            check(std::abs(updated.position.x+reach*(1.F-2.F*(q2[1]*q2[1]+q2[2]*q2[2]))-moving.x)<.001F
+                && std::abs(updated.position.y+reach*2.F*(q2[0]*q2[1]+q2[3]*q2[2])-moving.y)<.001F
+                && std::abs(updated.position.z+reach*2.F*(q2[0]*q2[2]-q2[3]*q2[1])-(moving.z+3.2F))<.001F,
+                "beam still starts at cube and ends on moving guardian, including reversed direction");
+        }
         m::Request current{{99,1},{}};current.frame.enabled=true;
         auto& source=current.frame.native[m::asset_index(t.source)];source.managed=source.active=source.desired=true;
         m::LensRequest lens{};lens.owner=current.owner;lens.index=t.lens;lens.enabled=true;
@@ -413,17 +458,24 @@ static void mount_regressions() {
     check(r.c.frame().bossFighting && !r.c.frame().bossDead,"mount test reaches real cube-triggered combat");
     const auto* asset=m::find(m::kBossActor.registry,23,173);
     const auto index=m::asset_index(asset->asset);
-    r.tick();
+    r.satisfy({coo::Operation::observation,m::kBossActor,38,coo::Wait::observed});r.tick();
     const auto generation=r.c.frame().native[index].generation;
-    check(r.c.frame().native[index].position==1.F,"combat starts native outward mount motion");
+    check(r.c.frame().native[index].position==0.F,"opening damage phase stays at spawn");
     r.c.update(r.run,r.now+120000,true,r.region);
-    check(r.c.frame().native[index].generation==generation,"elapsed time alone cannot reverse native motion");
+    check(r.c.frame().native[index].generation==generation,"elapsed time cannot start an unwanted lap");
     const auto boss=r.c.boss_enemy();const auto platform=r.c.boss_platform();
-    check(r.c.boss_motion(boss,platform,1.F),"native endpoint arrival");
-    r.c.update(r.run,r.now+120100,true,r.region);
-    check(r.c.frame().native[index].position==0.F,"mount reverses on actual arrival");
-    check(r.c.boss_motion(boss,platform,.42F),"observe mount part way through return lap");
+    check(r.c.boss_motion(boss,platform,.42F),"observe live position before a gate");
+    check(r.c.health(boss,.8501F) && !r.c.frame().bossCycle.hasFirstTarget,"less than 15% damage stays at spawn");
+    check(r.c.health(boss,.85F),"15% damage requests first travel");
+    check(r.c.frame().bossCycle.hasFirstTarget && r.c.frame().bossCycle.mode==m::BossMode::damage
+        && r.c.frame().bossStage==0,"early first travel keeps combat active without spawning intermission guardians");
+    check(r.c.frame().native[index].position==m::boss_parking(1) && !r.c.frame().bossPlatformSnap,
+        "15% damage publishes P1 immediately with native interpolation");
+    const auto firstRevision=r.c.frame().native[index].generation;
+    check(r.c.boss_motion(boss,platform,.43F) && r.c.health(boss,.80F),"first travel samples moving boss");
+    check(r.c.frame().native[index].generation==firstRevision,"damage during first travel cannot restart or retarget it");
     check(r.c.health(boss,2.F/3.F),"first health floor requests parking");
+    check(r.c.frame().native[index].position==m::boss_parking(1),"health receipt immediately publishes parking destination");
     r.c.update(r.run,r.now+120200,true,r.region);
     check(r.c.frame().native[index].position==m::boss_parking(1),"park at P1 native lap parameter");
     check(!r.c.frame().bossPlatformSnap,"parking uses native interpolation");
@@ -447,9 +499,49 @@ static void mount_regressions() {
     r.c.reset();
     check(!r.c.frame().bossFighting,"reset retires mount combat lifecycle");
 }
+struct CycleCodeRead {
+    std::array<std::byte,1024> bytes{};
+    template<class T> bool value(std::uintptr_t at,T& out) const noexcept {
+        if(at>bytes.size() || sizeof(T)>bytes.size()-at) return false;
+        std::memcpy(&out,bytes.data()+at,sizeof(T));return true;
+    }
+    template<class T> void put(std::uintptr_t at,const T& value) noexcept {std::memcpy(bytes.data()+at,&value,sizeof(T));}
+};
+static void cycle_boundary_regressions() {
+    namespace p=sunrise::client::hooks::bootflow::strike_bond_boss_cycle;
+    CycleCodeRead read;constexpr std::uintptr_t entry=64,original=256,relay=384,replacement=512;
+    read.put(entry,p::kPositionPrefix);
+    check(p::position_boundary(read,entry,0,0,false),"untouched native position boundary accepted");
+    for(unsigned i=0;i<7;++i) read.bytes[original+i]=static_cast<std::byte>(p::kPositionPrefix[i]);
+    read.put(entry,std::uint8_t{0xE9});read.put(entry+1,static_cast<std::int32_t>(relay-entry-5));
+    read.put(entry+5,std::uint16_t{0xCCCC});
+    read.put(relay,std::uint16_t{0x25FF});read.put(relay+2,std::int32_t{-14});read.put(relay-8,replacement);
+    read.put(original+7,std::uint16_t{0x25FF});read.put(original+9,std::int32_t{59});read.put(original+72,entry+7);
+    check(p::position_boundary(read,entry,original,replacement,true),"captured Lighthouse detour preserves valid boss-cycle boundary");
+    check(!p::position_boundary(read,entry,original,replacement,false),"unowned detour rejected");
+    check(!p::position_boundary(read,entry,original,replacement+1,true),"foreign replacement rejected");
+    read.put(original+72,entry+8);
+    check(!p::position_boundary(read,entry,original,replacement,true),"wrong trampoline return rejected");
+    read.put(original+72,entry+7);read.bytes[entry+8]=std::byte{};
+    check(!p::position_boundary(read,entry,original,replacement,true),"changed native suffix rejected");
+    check(m::boss_parking(1)==.3758F && m::boss_parking(2)==.6259F,"parking includes visually confirmed boss-body centering");
+}
+static void parking_route_regressions() {
+    for(std::uint8_t cycle=1;cycle<=2;++cycle) for(unsigned sample=0;sample<=100;++sample) {
+        const float current=sample/100.F,target=m::boss_nearest_parking(cycle,current);
+        const float origin=m::boss_parking_origin(current,target);
+        check(m::boss_position(origin) && m::boss_position(target),"parking stays within native input limits");
+        check(std::abs(target-origin)<=.250001F,"parking never takes an extra orbit");
+        check(origin==current || std::abs(std::abs(origin-current)-.5F)<.000001F,"rebase preserves the equivalent physical position");
+        check(std::abs(target-m::boss_parking(cycle))<.000001F || std::abs(std::abs(target-m::boss_parking(cycle))-.5F)<.000001F,"both phase copies identify the same parking stop");
+    }
+    const auto target=m::boss_nearest_parking(1,.860230F);
+    check(std::abs(target-.8758F)<.000001F && m::boss_parking_origin(.860230F,target)==.860230F,"captured 29-second failure chooses the nearby stop");
+    check((target-.860230F)*60.F<1.F,"captured run needs less than one second at unchanged native speed");
+}
 static void cycle_command_regressions() {
     namespace p=sunrise::client::hooks::bootflow::strike_bond_boss_cycle;
-    for(const auto sequence:{p::kSleep,p::kDeath}) {
+    for(const auto sequence:{p::kSleep,p::kIntro,p::kDeath}) {
         const auto action=p::action(sequence);
         check(action[0x60]==std::byte{0x5D},"captured named start opcode");
         check(m::boss_damage::get<std::uint32_t>(action,0)==0xAFB11A12U
@@ -462,15 +554,100 @@ static void cycle_command_regressions() {
         const auto action=p::action(p::kSleep,gate);
         check(action[0x60]==std::byte{0x5E} && m::boss_damage::get<std::uint32_t>(action,8)==gate,"captured native wake-up gate");
     }
+    const auto opening=p::action(p::kIntro,p::kIntroExit);
+    check(opening[0x60]==std::byte{0x5E} && m::boss_damage::get<std::uint32_t>(opening,8)==0x9CD3EB24U,"opening uses the authored terminal exit gate");
+    const auto start=p::action(p::kIntro,p::kIntroStart);
+    check(start[0x60]==std::byte{0x5E} && m::boss_damage::get<std::uint32_t>(start,8)==0x3FEE384CU,
+        "opening also sends the node-zero start input");
+    check(!p::release_opening_hold(true,true,false,true,1000,8999),"intro recovery preserves presentation window");
+    check(p::release_opening_hold(true,true,false,true,1000,9000),"stuck native intro gets a bounded stop");
+    check(!p::release_opening_hold(true,true,true,true,1000,9000),"intro stop is once only");
+    check(!p::release_opening_hold(true,true,false,false,1000,9000),"naturally finished intro needs no stop");
+    check(!p::release_opening_hold(false,true,false,true,1000,9000)
+        && !p::release_opening_hold(true,false,false,true,1000,9000),"unstarted or unsignaled intro cannot be released");
+    check(!p::release_opening_hold(true,true,false,true,1000,999),"backwards clock cannot stop intro early");
     check(p::kBurst==0x80F45BA6U,"user-confirmed burst entity");
     m::BossRequest request{};request.owner={9,2};request.enemy={9,0x28F42027,0x1234,2,3,m::kBossActor.registry};
     request.frame.enabled=request.frame.bossFighting=true;request.frame.region=136;
     request.platform={{9,2},m::kBossPlatform,0x40FAA273,12};
     check(p::wanted(request),"cycle driver accepts current admitted rooftop owner");
+    request.frame.lensDestroyed.set(7);
+    namespace intro=sunrise::client::hooks::bootflow::strike_bond_intro_release;
+    check(intro::wanted(request),"old held intro may release after cube destruction");
+    request.frame.bossCycle.openingStarted=true;
+    check(!intro::wanted(request),"old intro cleanup cannot cancel the new opening animation");
     auto wrong=request;++wrong.enemy.generation;check(!p::wanted(wrong),"cycle driver rejects stale generation");
     wrong=request;wrong.frame.finished=true;check(!p::wanted(wrong),"cycle driver stops after completion");
     wrong=request;wrong.frame.bossDead=true;check(!p::wanted(wrong),"cycle driver cannot replay death");
     wrong=request;wrong.frame.region=8;check(!p::wanted(wrong),"cycle driver cannot affect route guardians");
+}
+static void music_regressions() {
+    m::Frame f{};f.enabled=true;f.spawnGeneration=1;
+    const auto* sensor=m::find(0xEA9691FBU,11,1);
+    // Find the authored sensor rather than coupling the check to the group key.
+    for(const auto& a:m::kAssets) if(a.asset.type==11) sensor=&a;
+    check(sensor,"authored music sensor exists");
+    const auto a=sensor->asset;
+    check(m::body_bits(f,a.registry,11,a.slot)==0,"unset music is not published");
+    check(!m::raise_music(f,m::music_for_region(-1)),"unknown region cannot start music");
+    for(const auto region:{120,80,8,136}) {
+        check(m::raise_music(f,m::music_for_region(region)),"forward region raises score");
+        const auto score=f.musicCandidate;
+        check(!m::raise_music(f,m::music_for_region(120)) && f.musicCandidate==score,"earlier region cannot lower score");
+        Wire w;check(m::write_body(w,f,a.registry,11,a.slot) && w.bits==7223,"selected music reaches native sensor");
+    }
+    for(const auto next:{m::kMusicBossIntro,m::kMusicBossSecond,m::kMusicBossThird,m::kMusicBossDead}) {
+        check(m::raise_music(f,next),"boss score order advances");
+        check(!m::raise_music(f,next),"duplicate score does not republish");
+    }
+    check(!m::raise_music(f,255),"invalid score rejected");
+}
+static void forest_endpoint_regressions() {
+    const auto request=m::forest_request(12345);
+    check(request.seed==12345 && request.selectAnchors,"Forest endpoint override retains layout seed");
+    for(const auto& a:request.anchors)
+        check(a.column>=0 && a.column<3 && a.height>=0 && a.height<3,"Forest C anchor is admitted by native three-column solver");
+    const auto& exit=request.anchors[2];
+    check(exit.column==1 && exit.height==1 && exit.progress==1.F,"Forest exit uses measured middle column and lower tier");
+    check(request.anchors[0].column==1 && request.anchors[0].height==1
+        && request.anchors[1].column==2 && request.anchors[1].height==0
+        && request.anchors[3].column==1 && request.anchors[3].height==0,"Forest correction preserves other endpoints");
+    Wire wire;check(coo::native_generator::write_activation(wire,request)
+        && wire.bits==coo::native_generator::kMinimumBits,"Corrected endpoints reach a complete native activation packet");
+    // The first record begins with seed/mode; every endpoint contributes four
+    // fields. Verify the north coordinates and unique goal on the wire too.
+    check(wire.fields[10]==std::pair<std::uint64_t,unsigned>{129,8}
+        && wire.fields[11]==std::pair<std::uint64_t,unsigned>{129,8},"North column and height survive authority serialization");
+    for(unsigned i=0;i<4;++i)
+        check(wire.fields[4+4*i].first==(i==2?0x3F800000U:0U),"Only the fixed north exit is the maximum-progress goal");
+}
+static void boss_shield_regressions() {
+    namespace shield=sunrise::client::hooks::bootflow::strike_bond_boss_shield;
+    check(strike_bond_shield_contracts(),"Dendron shield draw-pass identity and native dispatch contracts");
+    m::Frame f{};f.enabled=true;
+    check(shield::visible(f,1.F),"shield visible before the start cube breaks");
+    f.bossFighting=true;f.bossCycle.mode=m::BossMode::opening;
+    check(shield::visible(f,1.F),"shield visible during immune opening");
+    for(std::uint8_t stage=0;stage<3;++stage) {
+        f.bossStage=stage;f.bossCycle.mode=m::BossMode::damage;
+        check(!shield::visible(f,m::boss_floor(f)+.1F),"shield hidden throughout each damage bar");
+        check(shield::visible(f,m::boss_floor(f))==(stage<2),"shield follows the exact native damage floor");
+        if(stage<2) {
+            for(const auto mode:{m::BossMode::parking,m::BossMode::dormant}) {
+                f.bossCycle.mode=mode;check(shield::visible(f,m::boss_floor(f)),"shield visible during travel and guardian immunity");
+            }
+        }
+    }
+    for(std::uint8_t stage=1;stage<=2;++stage) {
+        f.bossStage=stage;f.bossCycle.mode=m::BossMode::waking;
+        check(!shield::visible(f,(3.F-stage)/3.F),"shield hidden from the start of both vulnerable wake-up animations");
+    }
+    f.bossCycle.mode=m::BossMode::dying;
+    check(!shield::visible(f,0.F),"death animation starts with shield hidden");
+    f.bossDead=true;check(!shield::visible(f,0.F),"death cannot restore shield");
+    f.bossCycle.mode=m::BossMode::dormant;f.bossDead=false;f.ending=true;
+    check(!shield::visible(f,1.F),"ending cannot restore shield");
+    f.ending=false;f.finished=true;check(!shield::visible(f,1.F),"completed mission cannot restore shield");
 }
 static void boss_regressions() {
     m::Frame f{};f.enabled=true;f.spawnGeneration=1;
@@ -521,7 +698,7 @@ int main() {
     check(strike_bond_target_binding_contracts(),"Dendron primary target binding contracts");
     check(strike_bond_intro_release_contracts(),"Dendron named intro release contracts");
     check(strike_bond_fire_trace_contracts(),"Dendron firing trace ownership contracts");
-    cycle_command_regressions();catalogue();native_regressions();cover_regressions();mount_regressions();boss_regressions();check(strike_bond_boss_damage_contracts(),"Dendron native damage identity contracts");{
+    boss_shield_regressions();forest_endpoint_regressions();parking_route_regressions();cycle_boundary_regressions();cycle_command_regressions();catalogue();native_regressions();cover_regressions();mount_regressions();music_regressions();boss_regressions();check(strike_bond_boss_damage_contracts(),"Dendron native damage identity contracts");{
         auto replay=std::make_unique<Replay>();replay->run_all();
         replay=std::make_unique<Replay>();replay->run_all(true);
         replay=std::make_unique<Replay>(true);replay->run_all();

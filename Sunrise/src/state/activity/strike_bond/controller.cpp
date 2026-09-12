@@ -114,7 +114,7 @@ bool Controller::admitted(const EnemyReceipt& r) noexcept {
 bool Controller::died(const EnemyReceipt& r) noexcept {
     if(!frame_.enabled || frame_.finished || !population_.died(r,run_,frame_.spawnGeneration)) return false;
     if(r.registry==kBossActor.registry && r.source==3 && frame_.bossFighting) {
-        frame_.bossDead=true;frame_.bossCycle.mode=BossMode::dying;update_boss_platform();
+        frame_.bossDead=true;static_cast<void>(raise_music(frame_,kMusicBossDead));frame_.bossCycle.mode=BossMode::dying;update_boss_platform();
     }
     ++frame_.revision;return true;
 }
@@ -127,9 +127,17 @@ bool Controller::health(const EnemyReceipt& r,float fraction) noexcept {
     if(frame_.bossFighting && !frame_.bossDead && cycle.mode==BossMode::damage) {
         if(frame_.bossStage<2 && fraction<=boss_floor(frame_)) {
             cycle.mode=BossMode::parking;cycle.cycle=frame_.bossStage+1;
-            cycle.asleep=cycle.wakeStarted=false;nextPlatform_=0;++frame_.revision;
+            cycle.asleep=cycle.wakeStarted=false;cycle.hasReturnTarget=false;cycle.hasParkTarget=cycle.hasPosition;
+            if(cycle.hasParkTarget) cycle.parkTarget=cycle.cycle==1 && cycle.hasFirstTarget
+                ?cycle.firstTarget:boss_nearest_parking(cycle.cycle,cycle.position);
+            nextPlatform_=0;++frame_.revision;update_boss_platform();
         } else if(frame_.bossStage==2 && fraction==0.F) {
             cycle.mode=BossMode::dying;nextPlatform_=0;++frame_.revision;
+        } else if(frame_.bossStage==0 && fraction<=.85F && !cycle.hasFirstTarget && cycle.hasPosition) {
+            // Move while still fighting after the first 15% damage. The 2/3
+            // health floor remains the only trigger for sleep and guardians.
+            cycle.firstTarget=boss_nearest_parking(1,cycle.position);cycle.hasFirstTarget=true;
+            ++frame_.revision;update_boss_platform();
         }
     }
     return true;
@@ -137,19 +145,31 @@ bool Controller::health(const EnemyReceipt& r,float fraction) noexcept {
 bool Controller::boss_motion(const EnemyReceipt& r,const coo::ObjectReceipt& platform,float value) noexcept {
     if(!frame_.enabled || frame_.finished || !r.valid() || r!=bossEnemy_ || !platform.valid()
         || platform!=boss_platform() || !boss_position(value)) return false;
-    frame_.bossCycle.position=value;frame_.bossCycle.hasPosition=true;return true;
+    auto& cycle=frame_.bossCycle;cycle.position=value;cycle.hasPosition=true;
+    if(!cycle.hasHome) {cycle.home=value;cycle.hasHome=true;}
+    if(cycle.mode==BossMode::parking && !cycle.hasParkTarget) {
+        cycle.parkTarget=boss_nearest_parking(cycle.cycle,value);cycle.hasParkTarget=true;
+        ++frame_.revision;update_boss_platform();
+    }
+    return true;
 }
 bool Controller::boss_animation(const EnemyReceipt& r,std::uint8_t number,BossAnimation event) noexcept {
     auto& cycle=frame_.bossCycle;
     if(!frame_.enabled || frame_.finished || frame_.bossDead || !frame_.bossFighting || !r.valid() || r!=bossEnemy_
         || number!=cycle.cycle) return false;
     switch(event) {
+    case BossAnimation::openingStarted:
+        if(number!=0 || cycle.mode!=BossMode::opening || cycle.openingStarted) return false;
+        cycle.openingStarted=true;break;
+    case BossAnimation::openingAwake:
+        if(number!=0 || cycle.mode!=BossMode::opening || !cycle.openingStarted || !cycle.hasHome) return false;
+        cycle.openingComplete=true;cycle.mode=BossMode::damage;break;
     case BossAnimation::asleep:
         if(cycle.mode!=BossMode::parking || cycle.asleep) return false;
         cycle.asleep=true;break;
     case BossAnimation::parked:
         if(cycle.mode!=BossMode::parking || !cycle.asleep || !cycle.hasPosition
-            || !boss_at(cycle.position,boss_parking(number))) return false;
+            || !cycle.hasParkTarget || !boss_at(cycle.position,cycle.parkTarget)) return false;
         cycle.mode=BossMode::dormant;cycle.parked|=static_cast<std::uint8_t>(1U<<(number-1));break;
     case BossAnimation::wakeStarted:
         if(cycle.mode!=BossMode::waking || cycle.wakeStarted) return false;
@@ -157,7 +177,13 @@ bool Controller::boss_animation(const EnemyReceipt& r,std::uint8_t number,BossAn
     case BossAnimation::awake:
         if(cycle.mode!=BossMode::waking || !cycle.wakeStarted) return false;
         cycle.mode=BossMode::damage;cycle.asleep=false;nextPlatform_=0;
-        cycle.awakened|=static_cast<std::uint8_t>(1U<<(number-1));break;
+        cycle.hasReturnTarget=cycle.hasHome;
+        if(cycle.hasReturnTarget) cycle.returnTarget=boss_nearest_phase(cycle.home,cycle.position);
+        cycle.awakened|=static_cast<std::uint8_t>(1U<<(number-1));
+        // Damage is allowed during wake-up. Consume a reached floor only after
+        // this clip finishes, so its owner cannot compete with sleep or death.
+        if(hasBossHealth_) static_cast<void>(health(r,bossFraction_));
+        break;
     case BossAnimation::deathStarted:
         if(cycle.mode!=BossMode::dying || cycle.deathStarted || !cycle.hasPosition || frame_.bossStage!=2) return false;
         if(!platform_position(cycle.position,true)) return false;
@@ -240,7 +266,7 @@ bool Controller::cover(bool active) noexcept {
     return true;
 }
 void Controller::update_cover() noexcept {
-    if(!frame_.coverEnabled || frame_.bossDead || now_<nextCover_) return;
+    if(!frame_.coverEnabled || !frame_.bossFighting || !frame_.bossCycle.openingComplete || frame_.bossDead || now_<nextCover_) return;
     // Do not raise collision before all of the native block objects exist.
     for(std::uint16_t i=0;i<32;++i) {
         const auto* block=find(kBossActor.registry,4,static_cast<std::uint16_t>(78+3*i));
@@ -281,16 +307,15 @@ void Controller::update_boss_platform() noexcept {
     if(!frame_.bossFighting || frame_.ending) {nextPlatform_=0;return;}
     if(boss_intermission(cycle.mode)) {
         nextPlatform_=0;
-        if(!platform_position(boss_parking(cycle.cycle))) frame_.populationFault=true;
+        if(cycle.hasParkTarget && !platform_position(cycle.parkTarget)) frame_.populationFault=true;
         return;
     }
-    // Continue a partial lap after native wake-up. Reverse on observed arrival,
-    // not a fresh60-second timer that would overrun a pause or partial lap.
-    const float target=platformForward_?1.F:0.F;
-    if(nextPlatform_ && (!cycle.hasPosition || !boss_at(cycle.position,target))) return;
-    if(nextPlatform_) platformForward_=!platformForward_;
-    if(!platform_position(platformForward_?1.F:0.F)) {frame_.populationFault=true;return;}
-    nextPlatform_=1;
+    // Stay at spawn until 15% damage, then travel to P1 while still fighting.
+    // After each wake-up, travel home once. Never request repeated laps.
+    if(cycle.mode==BossMode::opening || !cycle.hasHome) return;
+    const float target=cycle.hasReturnTarget?cycle.returnTarget:
+        cycle.hasFirstTarget && cycle.cycle==0?cycle.firstTarget:cycle.home;
+    if(!platform_position(target)) frame_.populationFault=true;
 }
 bool Controller::publish(const coo::Command& command) noexcept {
     if(!views_ || !graph() || !coo::script::valid_token(graph()->definition,executor_,command)) return false;
@@ -320,14 +345,15 @@ bool Controller::publish(const coo::Command& command) noexcept {
     }
     case coo::Operation::mechanic:
         if(s.asset==kModule && (s.argument==70 || s.argument==71)) return cover(s.argument==70);
-        // 80F45CAA holds the reserved Minotaur in its dormant animation until
-        // input 33E63A8B. Device/shield changes alone do not release native AI.
+        // 80F45CAA holds native AI until input 33E63A8B. Route guardians release
+        // that hold on arrival; their independent type-26 shield still follows
+        // lens destruction. Rooftop guardians retain their cube-gated release.
         if(s.asset.type==43 && s.argument==0x33E63A8BU) {
             const auto i=scene_index(s.asset);
             if(i==std::size(kScenes) || kScenes[i].graph!=0x80F45CAAU
                 || kScenes[i].cast.size()!=2 || !scenes_.seen(i,1)) return false;
             const auto lens=lens_index(kScenes[i].cast[1]);
-            if(lens==std::size(kLenses) || !lenses_[lens].dead()
+            if(lens==std::size(kLenses) || (!route_guardian(kScenes[i].cast[0]) && !lenses_[lens].dead())
                 || scenes_.event(i,s.argument)!=coo::SceneEvent::accepted) return false;
             break;
         }
@@ -347,6 +373,7 @@ bool Controller::publish(const coo::Command& command) noexcept {
                 // also start/release80F45CA0: its old early exit can compete with
                 // the verified named sequence. Guardian scenes remain native.
                 ++frame_.bossStage;frame_.bossCycle.mode=BossMode::waking;
+                static_cast<void>(raise_music(frame_,frame_.bossStage==1?kMusicBossSecond:kMusicBossThird));
             } else {
                 // The authored intro runs Dendron's startup before waiting on the main cube.
                 // Its release event cannot precede that exact cube's real destruction.
@@ -368,7 +395,8 @@ bool Controller::publish(const coo::Command& command) noexcept {
         }
         if(s.asset==kBossActor && s.argument==31) {
             if(!lenses_[7].dead() || !bossEnemy_.valid() || !scenes_.seen(2,2)) return false;
-            frame_.bossFighting=true;break;
+            frame_.bossFighting=true;frame_.bossCycle.mode=BossMode::opening;
+            static_cast<void>(raise_music(frame_,kMusicBossIntro));break;
         }
         if(s.asset==kObjectiveAsset && s.argument==40) {objectives_.clear_marker();break;}
         // Type 4 as well as 47: the diamond is aimed at the shootable object itself, because the
@@ -396,6 +424,7 @@ bool Controller::observed(const coo::CommandSpec& s) const noexcept {
     if(s.asset==kBossActor && (s.argument==36 || s.argument==37))
         return (frame_.bossCycle.awakened & (1U<<(s.argument-36)))!=0;
     if(s.asset==kBossActor && s.argument==30) return frame_.bossDead;
+    if(s.asset==kBossActor && s.argument==38) return frame_.bossCycle.openingComplete;
     if(s.asset==kBossActor && (s.argument==32 || s.argument==33))
         return frame_.bossFighting && hasBossHealth_ && bossEnemy_.valid()
             && bossFraction_<=(s.argument==32?2.F/3.F:1.F/3.F);
@@ -432,6 +461,7 @@ void Controller::update_module(std::uint32_t id,const coo::MissionInput& input,F
     if(id!=1 || !views_ || input.run!=run_) return;
     now_=input.now;frame_.region=input.region;if(input.region>=0 && input.region/8<64) regions_.set(input.region/8);frame_.gameplayClockTicks=clock_.sample(now_);
     if(!landed_) {output=frame_;return;}
+    if(raise_music(frame_,music_for_region(frame_.region))) ++frame_.revision;
     frame_.enabled=!frame_.populationFault;
     if(!frame_.enabled) {output=frame_;return;}
     if(frame_.finished) {

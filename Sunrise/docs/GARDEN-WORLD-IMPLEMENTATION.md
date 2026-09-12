@@ -240,3 +240,118 @@ The user's S/P1/P2 thirds map to native positions0,1/3,2/3. The existing native 
 Confirmed live before integration: attachment/movement, folding, wake animation and resumed attacks, burst, death animation, and genuine mission completion. Full integrated automatic timing and exact P1/P2 beam alignment require the next fresh playthrough. The separate large-shield shatter effect was not established by the burst-only test; no guessed effect was added. Existing route Minotaur cube/beam cleanup, upper-height-volume disabling, boss aiming/firing, cover animation, and health gates remain included.
 
 The two old Dendron intermission scenes are no longer started alongside the new driver. This avoids two native controllers competing for the same named animation or spawning duplicate bursts. Their authored burst resource remains the source of the tested effect. Each guardian still uses its own native scene; both authenticated guardian deaths release the controller-owned intermission.
+
+
+## Live intermission correction, September 11 evening
+
+The first integrated run rejected every cycle update because its boundary check expected untouched DF6C70 bytes. The already-installed Lighthouse diagnostic detours that function. The platform reached its host-requested target, but no native sleep or parked receipt could be emitted, so the Lua guardian wave remained waiting. The corrected boundary accepts either the exact native prefix or the exact owned Lighthouse relay and original trampoline return. Foreign replacements, changed suffixes and incorrect return addresses remain rejected. Boundary failures now have a separate log event from component identity failures.
+
+The native platform animation covers two revolutions over device input 0..1. Equal-third inputs were an incorrect parking assumption. In PID16376, native position0.375 placed the upper socket at(1595.9567,1150.6345,250.0813), angle14.987degrees; the first authored beam is14.798degrees. The user confirmed this is the correct first stop. Position0.625 placed the socket at(1491.2682,1122.6096,250.0846), angle-165.014degrees; the second beam is-165.085degrees. The socket lies about4units behind the beam start, at the boss body rather than its face. Both stops use these measured inputs. Temporary callbacks were restored after each native test. No actor transforms, health or AI fields were edited.
+
+Regression fixtures include the actual E9/FF25 detour shape, its trampoline return, and rejection of foreign or altered code. A fresh complete encounter still verifies the integrated sleep/guardian/wake/death sequence.
+
+
+## Immediate normal-speed parking and centering
+
+The user clarified that a health gate must start turning toward the stop immediately at normal speed; it must not teleport or accelerate to the destination. The previous run started at device0.860230 and incorrectly targeted0.375, taking29.25seconds through nearly a complete extra orbit. Because the native input covers two revolutions,0.875 is the same physical stop nearby. The controller now records the nearest equivalent target at the health receipt and publishes it immediately. The native cycle driver also starts that normal-speed command once on its existing admitted-character boundary. Near an input endpoint, it can rebase by exactly0.5 to the equivalent physical pose before the normal-speed turn; the destination itself is never snapped. Captured-run travel becomes under one second at the unchanged native speed. Other starting positions still take the normal travel time over their shortest arc.
+
+P1 now uses0.3758/0.8758 to center Dendron's body and eye, rather than only the platform socket. The user confirmed centering in live PID61084. P2 uses0.6259/0.1259, applying the same body offset against its slightly different authored beam angle; its one-shot live adjustment is recorded separately. The parking target remains fixed while asleep and waking, and normal DPS movement resumes through native sequence completion. Arrival still requires both the real dormant animation and the observed stationary platform; no fabricated arrival or guardian-spawn receipt is introduced.
+
+Focused regression tests cover both phases across101 input positions, valid native bounds, equivalent-pose rebasing, absence of an extra orbit, immediate host publication, persistent parking and the existing full mission replay.
+
+Death completion correction, verified live in PID61084: treating every non-damage mode as immune also blocked the authored death animation's native kill event. Restrict that mode check to parking/dormant/waking. The dying mode keeps native damage eligibility, while real bossDead still blocks damage. After changing only the three mission damage predicates and replaying FC3C74B9 once, C72390 delivered death_accepted for actor5DF42013 and the mission entered ending. The user confirmed the death animation looked correct. The platform remained stopped.
+
+
+## Current integrated behavior — issue report follow-up
+
+This section supersedes the earlier continuous-lap and wake-up-immunity descriptions.
+The user's final scope keeps the existing two-thirds/one-third health gates and both
+rooftop guardian pairs. Infinite Forest generation and the other Minotaur redesigns
+are deferred. Only the three route Minotaurs gain AI while shielded.
+
+Dendron and his native platform/intro are prepared during the middle of the climb,
+before the upper cannon opens. The rooftop objective points to the central cube.
+Breaking that cube releases the retained intro hold, then plays the native opening
+sequence 31A03F93 with its authored terminal exit input 9CD3EB24. The old hold cleanup
+cannot cancel this new sequence. Cover waits for real opening completion.
+
+The opening damage phase stays at spawn. Each health gate immediately starts a
+normal-speed shortest-arc turn toward its confirmed, centered P1/P2 stop. Sleep,
+stationary arrival, both guardian deaths, wake-up and burst keep their native
+receipts. Once both guardians die, Dendron takes damage during the whole wake-up
+transition. The next health floor still clamps damage. If that floor or final zero
+is reached during the clip, its transition is consumed when the clip finishes;
+no extra shot is required, and competing sleep/death clips cannot interrupt wake-up.
+After wake-up he makes one trip back to the equivalent spawn position and stays
+there until the next gate. Death freezes the platform and retains the corrected
+native kill-event eligibility and authentic mission completion.
+
+Route guardians C95ECB1A:105/121 and 2CB86C0F:244 receive their existing native
+33E63A8B scene-release input once their actors and scenes are ready. Cube exposure
+waits for that scene completion. Their independent type-26 shield still resolves
+the same source and remains enabled until its own cube dies. Cube placement,
+shield linkage, transporter locks, short-beam cleanup, and rooftop guardian
+release timing are unchanged. No raw actor-AI flags or transforms are written.
+
+Presentation corrections: the exit approach shows Enter the Past; Past arrival
+shows Enter the Spire; the radiolaria exchange queues with Sabotage; dialogue11
+follows block3 rather than block4; the Arc-energy exchange uses an interior volume;
+and the roof's sabotage marker targets the central shootable cube. Missing generic
+strike exchanges4/6 are now included. Campaign-only row2 and scanner/Panoptes
+rows15–23 remain excluded; the strike still ends with dialogue14 and genuine death.
+
+The report's music-publication fix was absent from this checkout and is included
+here. Region and boss progress monotonically raise the native sensor candidate;
+only authenticated death starts the closing candidate. The report's ordinal map
+2/4/6/8/10/12/13/15 remains an explicit reconstruction that needs listening checks.
+It is not a recovered retail soundtrack-to-phase mapping.
+
+Validation and build/install receipts: build/coo/garden-issues-20260912. Focused
+Release and Debug replay tests cover early route-AI release with a retained shield,
+stationary opening, roof marker/cover timing, both gate/wake cycles, damage during
+wake-up (including next-gate and zero-health hits), genuine death, music publication,
+and existing route/tether/launcher behavior. The newly integrated opening animation,
+station-to-station motion and shielded route-guardian attacks need a fresh native
+playthrough; older successful live tests do not prove this new timing.
+
+
+## Route AI release dependency correction
+
+Fresh run64852 confirmed route Minotaur AI activates after33E63A8B, but the
+scene does not finish while its cube remains intact. The previous Lua waited on
+sn_golem.finished before requesting the short beam and exposing the cube. Logs
+show terrace scene110 still waiting after160seconds: cube111 had a live binding,
+but no exposure or tether request could execute. This was a dependency deadlock,
+not a failure to enable the Minotaur AI.
+
+Route AI release, short-beam request, and cube exposure now proceed from the
+started scene/ready actor without a scene-completion join. Cube destruction
+still retires its shield and both beams; the source's authentic death still
+unlocks the transporter cube. Rooftop Minotaur behavior is unchanged. The regression
+replay now deliberately leaves each route scene unfinished until its cube dies,
+matching the live observation instead of inventing completion on the AI input.
+
+Evidence and installation receipts: build/coo/garden-route-ai-link-fix-20260912.
+
+
+## Dendron visible shield (2026-09-12)
+
+The large shield shares Dendron's mesh model, rather than the separate cube
+visual. Live testing confirmed that suppressing native draw pass 7 removes
+the shield while retaining his body. The existing character update now queues
+that pass through native 1150420, using the same boss_blocked predicate as
+damage eligibility. It is hidden during damage and both wake-up animations,
+shown during opening/parking/dormant immunity, and hidden before the native
+death animation. This does not alter damage, AI, movement, or other draw passes.
+
+The bridge validates the current boss lease, character, model and health headers,
+renderer handles, model subobject, and native entry bytes before dispatch. It
+resolves components again immediately before the call. Native pass counters
+are preserved; showing restores their current effective count. A bounded
+250 ms refresh survives native visual updates, and state changes are checked
+every 50 ms. The dying update hides the shield before starting the death clip.
+
+Evidence, focused checks, build and installation receipts are under
+build/coo/garden-shield-visibility-20260912. The manual shield-only toggle was
+visually confirmed; automatic full-fight transitions require the next fresh run.
+The installed Infinite Forest endpoint correction is retained.

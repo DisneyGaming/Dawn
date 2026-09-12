@@ -8,8 +8,9 @@ using Position=std::uint64_t(__fastcall*)(void*,float,std::uint8_t) noexcept;
 using Fraction=float(__fastcall*)(void*,int) noexcept;
 SRWLOCK lock=SRWLOCK_INIT;
 struct Ledger {
-    garden::EnemyReceipt enemy{};std::array<bool,2> sleep{},wake{};
-    bool death{},busy{};std::uint64_t next{};unsigned reports{};
+    garden::EnemyReceipt enemy{};std::array<bool,2> sleep{},wake{},movement{},returned{};
+    bool openingStarted{},openingSignaled{},openingReleased{},firstTravel{},death{},busy{};
+    std::uint64_t next{},openingSignalTime{};unsigned reports{};
 };
 Ledger ledger{};
 void reset() noexcept {ledger={};}
@@ -21,11 +22,13 @@ void report(const garden::BossRequest& r,const char* event,float position=0.F) n
 }
 bool boundaries() noexcept {
     constexpr std::array<std::uint8_t,16> animation{0x48,0x89,0x5C,0x24,0x08,0x48,0x89,0x7C,0x24,0x10,0x55,0x48,0x8B,0xEC,0x48,0x83};
-    constexpr std::array<std::uint8_t,16> position{0x48,0x8B,0xC4,0x48,0x89,0x58,0x10,0x48,0x89,0x68,0x18,0x48,0x89,0x70,0x20,0x57};
     gn::Read read{g_image};std::array<std::uint8_t,16> bytes{};
     for(const auto rva:{0xC620F0U,0xC693F0U}) if(!read.value(g_image+rva,bytes) || bytes!=animation) return false;
     constexpr std::array<std::uint8_t,16> getter{0x48,0x83,0xEC,0x68,0x44,0x8B,0x09,0x4C,0x8B,0xD1,0x48,0x89,0x4C,0x24,0x28,0x41};
-    return read.value(g_image+0xDF6C70,bytes) && bytes==position
+    namespace lattice=omega_vex_lattice_probe::detail;
+    const auto original=lattice::positionOriginal.load(std::memory_order_acquire);
+    return policy::position_boundary(read,g_image+0xDF6C70,reinterpret_cast<std::uintptr_t>(original),
+        reinterpret_cast<std::uintptr_t>(&lattice::position),lattice::handles[0].attached && lattice::callGate.accepting())
         && read.value(g_image+0xCD6C20,bytes) && bytes==getter;
 }
 void dispatch(const policy::Binding& b,std::uint32_t sequence,std::uint32_t gate=0,bool remove=false) noexcept {
@@ -56,8 +59,11 @@ void after_update(void* character) noexcept {
     ReleaseSRWLockExclusive(&lock);if(!claim)return;
     struct Release {~Release(){AcquireSRWLockExclusive(&lock);ledger.busy=false;ReleaseSRWLockExclusive(&lock);}} release;
     policy::Binding b{};gn::Read read{g_image};const auto address=reinterpret_cast<std::uintptr_t>(character);
-    if(!policy::sample(read,g_image,address,r,b) || !boundaries()) {
+    if(!policy::sample(read,g_image,address,r,b)) {
         if(ledger.reports++<4) report(r,"identity_guard");return;
+    }
+    if(!boundaries()) {
+        if(ledger.reports++<4) report(r,"native_boundary_guard");return;
     }
     float position{},velocity{};std::uint8_t healthFlags{};std::array<std::uint32_t,3> flags{};
     if(!read.value(b.device+0x370,position) || !garden::boss_position(position)
@@ -71,8 +77,66 @@ void after_update(void* character) noexcept {
         || current.frame.bossCycle.mode!=r.frame.bossCycle.mode || current.frame.bossCycle.cycle!=r.frame.bossCycle.cycle
         || !policy::sample(checked,g_image,address,current,again) || again!=b) return;
     const auto& cycle=current.frame.bossCycle;const auto number=cycle.cycle;
-    if(cycle.mode==garden::BossMode::parking && number>=1 && number<=2) {
+    if(cycle.mode==garden::BossMode::opening) {
+        if(flags[0] || flags[2]) return;
+        if(!ledger.openingStarted) {
+            // garden_intro releases the stale pre-cube hold first. Replay the
+            // authored load/unfold sequence with clean start and exit inputs.
+            if(flags[1]) return;
+            dispatch(b,policy::kIntro,policy::kIntroStart,true);
+            dispatch(b,policy::kIntro,policy::kIntroExit,true);
+            dispatch(b,policy::kIntro);
+            ledger.openingStarted=true;
+            garden::observe_boss_animation(r.enemy,0,garden::BossAnimation::openingStarted);
+            report(current,"opening_started",position);return;
+        }
+        if(!ledger.openingSignaled) {
+            if(!flags[1] || !burst_ready()) return;
+            dispatch(b,policy::kIntro,policy::kIntroStart);
+            dispatch(b,policy::kIntro,policy::kIntroExit);burst(b);
+            ledger.openingSignaled=true;ledger.openingSignalTime=now;
+            report(current,"opening_start_and_exit_armed",position);return;
+        }
+        // This selector can retain its intro hold after presentation. Use the
+        // named stop verified live, once, after an eight-second presentation
+        // window. Time never fabricates completion: the following update must
+        // observe the native selector inactive before combat can start.
+        if(policy::release_opening_hold(ledger.openingStarted,ledger.openingSignaled,ledger.openingReleased,
+            flags[1]!=0,ledger.openingSignalTime,now)) {
+            ledger.openingReleased=true;dispatch(b,policy::kIntro,0,true);
+            report(current,"opening_hold_released",position);return;
+        }
+        if(!flags[1] && garden::observe_boss_animation(r.enemy,0,garden::BossAnimation::openingAwake))
+            report(current,"opening_complete",position);
+    } else if(cycle.mode==garden::BossMode::damage && number==0 && cycle.hasFirstTarget) {
+        if(!ledger.firstTravel) {
+            const auto origin=garden::boss_parking_origin(position,cycle.firstTarget);
+            const auto move=reinterpret_cast<Position>(g_image+0xDF6C70);
+            if(origin!=position) move(reinterpret_cast<void*>(b.device),origin,1);
+            move(reinterpret_cast<void*>(b.device),cycle.firstTarget,0);
+            ledger.firstTravel=true;report(current,"first_damage_turn_started",cycle.firstTarget);
+        }
+    } else if(cycle.mode==garden::BossMode::damage && number>=1 && number<=2 && cycle.hasReturnTarget) {
         const auto i=number-1;
+        if(!ledger.returned[i]) {
+            const auto origin=garden::boss_parking_origin(position,cycle.returnTarget);
+            const auto move=reinterpret_cast<Position>(g_image+0xDF6C70);
+            if(origin!=position) move(reinterpret_cast<void*>(b.device),origin,1);
+            move(reinterpret_cast<void*>(b.device),cycle.returnTarget,0);
+            ledger.returned[i]=true;report(current,"return_home_started",cycle.returnTarget);
+        }
+    } else if(cycle.mode==garden::BossMode::parking && number>=1 && number<=2) {
+        const auto i=number-1;
+        if(!ledger.movement[i]) {
+            if(!cycle.hasParkTarget) return;
+            const auto origin=garden::boss_parking_origin(position,cycle.parkTarget);
+            const auto move=reinterpret_cast<Position>(g_image+0xDF6C70);
+            // Rebase only an equivalent native phase. The visible turn begins
+            // immediately at normal speed and never snaps to its destination.
+            if(origin!=position) move(reinterpret_cast<void*>(b.device),origin,1);
+            move(reinterpret_cast<void*>(b.device),cycle.parkTarget,0);
+            ledger.movement[i]=true;report(current,"parking_turn_started",cycle.parkTarget);
+        }
         if(!ledger.sleep[i]) {
             if(flags[1] || flags[2]) return;
             // Native gate references survive sequence completion. Remove our
@@ -82,7 +146,7 @@ void after_update(void* character) noexcept {
             ledger.sleep[i]=true;report(current,"sleep_requested",position);return;
         }
         if(flags[0] && !cycle.asleep) garden::observe_boss_animation(r.enemy,number,garden::BossAnimation::asleep);
-        if(flags[0] && garden::boss_at(position,garden::boss_parking(number)) && std::abs(velocity)<.0001F
+        if(flags[0] && cycle.hasParkTarget && garden::boss_at(position,cycle.parkTarget) && std::abs(velocity)<.0001F
             && garden::observe_boss_animation(r.enemy,number,garden::BossAnimation::parked)) report(current,"parked",position);
     } else if(cycle.mode==garden::BossMode::waking && number>=1 && number<=2) {
         const auto i=number-1;

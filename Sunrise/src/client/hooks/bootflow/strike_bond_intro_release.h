@@ -14,7 +14,7 @@ struct Binding {
 };
 inline bool wanted(const mission::BossRequest& request) noexcept {
     return trace::admitted(request) && request.frame.bossFighting && request.frame.bossStage==0
-        && request.frame.lensDestroyed[7];
+        && request.frame.lensDestroyed[7] && !request.frame.bossCycle.openingStarted;
 }
 inline std::array<std::byte,128> stop_request() noexcept {
     std::array<std::byte,128> out{};

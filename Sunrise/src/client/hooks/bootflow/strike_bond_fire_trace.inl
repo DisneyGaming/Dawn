@@ -139,6 +139,8 @@ __declspec(noinline) std::uint8_t __fastcall update_hook(void* character,const v
     if(scope.accepts_side_effects() && before.valid) {
         garden_intro::after_update(character);
         garden_carriage::after_update(character);
+        // Hide the shield before a dying update can dispatch the death clip.
+        garden_shield::after_update(character);
         garden_cycle::after_update(character);
     }
     if(scope.accepts_side_effects()) finish(character,false,before,2,caller,result,inputs);

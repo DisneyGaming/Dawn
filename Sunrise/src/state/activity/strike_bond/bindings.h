@@ -44,6 +44,7 @@ inline constexpr coo::script::Capability kCapabilities[]{
     {"forest.generate","*",{coo::Operation::mechanic,kGenerator,20U,coo::Wait::requested}},
     {"forest.generated","*",{coo::Operation::observation,kGenerator,20U,coo::Wait::observed}},
     {"boss.dead","*",{coo::Operation::observation,kBossActor,30U,coo::Wait::observed}},
+    {"boss.opened","*",{coo::Operation::observation,kBossActor,38U,coo::Wait::observed}},
     {"boss.fight","*",{coo::Operation::mechanic,kBossActor,31U,coo::Wait::requested}},
     {"marker.clear","*",{coo::Operation::mechanic,kObjectiveAsset,40U,coo::Wait::requested}},
     {"region.lighthouse","*",{coo::Operation::observation,kRegion,120U,coo::Wait::observed}},

@@ -4,10 +4,12 @@ local composition=graph("composition","A Garden World",{step("mission",parallel(
 local conditions={
     condition("entered.tunnel",any_of("tunnel.tv_to_if_dialog","region.forest")),
     condition("forest.exit",any_of("forest.tv_end","region.past")),
+    condition("past.gateway",any_of("forest.slot_001B","forest.tv_end","region.past")),
     condition("past.at_modules",any_of("past.tv_lower_cannon","past.slot_00ED","past.slot_00E9")),
     condition("past.terrace",any_of("past.slot_00EE","past.slot_00E8","past_dialogue.slot_000C")),
     condition("past.gates",any_of("past.slot_00E3","past.slot_00E4","past.slot_00E5","past_dialogue.slot_000A")),
     condition("spire.entry",any_of("spire_entry.slot_0002","spire_entry.slot_0003","region.spire")),
+    condition("spire.dialogue_inside",any_of("spire_entry.tv_dialog_enter","spire.tv_entry")),
     condition("spire.mid",any_of("spire.tv_mid","spire.slot_0184","spire.slot_018B","spire.slot_0186")),
     condition("spire.top",any_of("spire_top.tv_top","arena.tv_arena")),
 }
@@ -34,16 +36,23 @@ local function golem_setup(t,id,prefix,after,tether)
     add(t,id.."_started",parallel(prefix..".sn_golem.started",prefix..".sq_golem.ready"),{id.."_scene"})
     -- Beam preparation is asynchronous presentation. It must never hold the
     -- linked cube shielded or prevent the native Minotaur release sequence.
-    if tether then add(t,id.."_tether",tether..".on",{id.."_started"}) end
+    if tether then
+        -- Only the three route guardians fight behind their cube-owned shield.
+        -- Releasing AI does not finish the scene while its cube is intact.
+        -- Neither cube exposure nor tether creation may wait for scene completion.
+        add(t,id.."_awake",prefix..".sn_golem.release",{id.."_started"})
+        add(t,id.."_tether",tether..".on",{id.."_started"})
+    end
 end
 local function golem_fight(t,id,prefix,after,tether)
     add(t,id.."_expose",parallel(prefix..".o_lens.expose",prefix..".o_lens.marker"),after)
     add(t,id.."_destroyed",prefix..".o_lens.destroyed",{id.."_expose"})
-    local release={prefix..".d_laser.off",prefix..".sn_golem.release"}
+    local release={prefix..".d_laser.off"}
+    if not tether then release[#release+1]=prefix..".sn_golem.release" end
     release[#release+1]=tether and tether..".off" or prefix..".d_shield.off"
     add(t,id.."_release",release,{id.."_destroyed"})
-    add(t,id.."_released",prefix..".sn_golem.finished",{id.."_release"})
-    add(t,id.."_killed",prefix..".sq_golem.cleared",{id.."_released"})
+    if not tether then add(t,id.."_released",prefix..".sn_golem.finished",{id.."_release"}) end
+    add(t,id.."_killed",prefix..".sq_golem.cleared",{id..(tether and "_release" or "_released")})
 end
 local opening=graph("opening","The Lighthouse",{
     step("arrive","region.lighthouse"),
@@ -59,20 +68,24 @@ local forest=graph("forest","The Infinite Forest",{
     -- fixed exit-platform sources, not substitute procedural populations.
     step("exit_defense",parallel("forest.sq_cyclops[0].request","forest.sq_cyclops[1].request","forest.sq_cyclops[2].request","forest.sq_goblins[0].request","forest.sq_goblins[1].request")),
     step("exit","forest.exit"),
-    step("objective","objective.2",{after={"exit"}}),
+    step("gate_approach","past.gateway"),
+    step("objective","objective.2",{after={"gate_approach"}}),
     step("leave","region.past",{after={"objective"}}),
 })
 local p={}
+add(p,"arrival_objective",parallel("objective.3","checkpoint.past"))
 add(p,"mouth","past_dialogue.slot_000B")
-add(p,"welcome",parallel("objective.3","dialogue.3","checkpoint.past"),{"mouth"})
+add(p,"welcome","dialogue.3",{"mouth"})
 squads(p,"arrival0","past.sq_arrival",0,7,{"welcome"})
 add(p,"flanks",parallel("past.sq_arrival_right_flank.request","past.sq_arrival_left_flank.request","past.sq_lower_platform.request"),{"welcome"})
 add(p,"lift",parallel("past.o_cannon.on","past.d_mancannon[0].on","past.d_mancannon[1].on"),{"welcome"})
 add(p,"cannon_approach","past.tv_lower_cannon",{"lift"})
-add(p,"radiolaria","dialogue.5",{"cannon_approach"})
+add(p,"radiolaria",parallel("objective.8","dialogue.5"),{"cannon_approach"})
 add(p,"modules","past.at_modules",{"lift"})
-add(p,"security",parallel("objective.8","dialogue.7","past.sq_upper_platform[0].request","past.sq_upper_platform[1].request"),{"modules"})
+add(p,"security",parallel("dialogue.4","past.sq_upper_platform[0].request","past.sq_upper_platform[1].request"),{"modules"})
 block(p,"block0","past.pf_block[0]",{"security"})
+add(p,"barrier_power","dialogue.6",{"block0_ready"})
+add(p,"path_revealed","dialogue.7",{"block0_open"})
 add(p,"terrace","past.terrace",{"block0_open"})
 add(p,"rebuilt","dialogue.8",{"terrace"})
 squads(p,"terrace_high","past.sq_terrace_high",0,4,{"terrace"})
@@ -94,13 +107,15 @@ add(i,"gate1",parallel("past.sq_gate1[0].request","past.sq_gate1[1].request","pa
 block(i,"block3","past.pf_block[3]")
 add(i,"gate2",parallel("past.sq_gate2[0].request","past.sq_gate2[1].request","past.sq_gate2[2].request","past.sq_gate2_support[0].request","past.sq_gate2_support[1].request","past.sq_gate2_support[2].request"),{"block3_open"})
 block(i,"block4","past.pf_block[4]",{"block3_open"},"cannon_golem_killed")
-add(i,"fifth_module",parallel("dialogue.11","past.sq_cannon_snipers.request","past.sq_tower.request"),{"block4_destroyed"})
+add(i,"fifth_module","dialogue.11",{"block3_destroyed"})
+add(i,"tower_guards",parallel("past.sq_cannon_snipers.request","past.sq_tower.request"),{"block4_destroyed"})
 squads(i,"cannon_guards","past.sq_cannon",0,3,{"block3_open"})
 golem_setup(i,"cannon_golem","past.pf_cannon_golem",{"block3_open"},"past.pf_anomaly[0].o_nomaly")
 golem_fight(i,"cannon_golem","past.pf_cannon_golem",{"cannon_golem_tether"},"past.pf_anomaly[0].o_nomaly")
 add(i,"cannon",parallel("objective.4","past.o_main_cannon.on","past.d_mancannon[2].on","past.d_mancannon[3].on","spire_entry.ap_to_machine.marker"),{"cannon_golem_killed","block4_open"})
 add(i,"enter_spire","spire.entry",{"cannon"})
-add(i,"arc_energy","dialogue.12",{"enter_spire"})
+add(i,"dialogue_inside","spire.dialogue_inside",{"enter_spire"})
+add(i,"arc_energy","dialogue.12",{"dialogue_inside"})
 add(i,"leave","region.spire",{"arc_energy"})
 local interior=graph("interior","Sabotage the remaining protocols",i)
 local w={}
@@ -110,31 +125,32 @@ squads(w,"lower","spire.sq_lower",0,4)
 add(w,"lower_cannon",parallel("spire.d_mancannon[0].on","spire.d_mancannon[1].on"))
 add(w,"mid","spire.mid",{"lower_cannon"})
 squads(w,"middle","spire.sq_mid",0,7,{"mid"})
+add(w,"boss_prepare",parallel("spire.boss_platform.o_loop.on","spire.boss_platform.d.off","spire.d_laser_main.on","spire.sq_boss.request","spire.o_main_lens.on","spire.d_main_lens.on"),{"mid"})
+add(w,"boss_ready",parallel("spire.sq_boss.ready","spire.o_main_lens.ready"),{"boss_prepare"})
+add(w,"boss_intro","spire.sn_cyclops_intro.start",{"boss_ready"})
+add(w,"boss_prepared","spire.sn_cyclops_intro.started",{"boss_intro"})
 squads(w,"snipers","spire.sq_mid_sniper",0,4,{"mid"})
 golem_setup(w,"tower_golem","spire.pf_tower_golem",{"mid"},"spire.pf_anomaly[0].o_nomaly")
 golem_fight(w,"tower_golem","spire.pf_tower_golem",{"tower_golem_tether"},"spire.pf_anomaly[0].o_nomaly")
 block(w,"tower_block","spire.pf_tower_block",{"mid"},"tower_golem_killed")
-add(w,"upper_cannon",parallel("spire.d_mancannon[2].on","spire.d_mancannon[3].on","spire_top.slot_0002.marker"),{"tower_golem_killed","tower_block_open"})
+add(w,"upper_cannon",parallel("spire.d_mancannon[2].on","spire.d_mancannon[3].on","spire_top.slot_0002.marker"),{"tower_golem_killed","tower_block_open","boss_prepared"})
 squads(w,"top_guards","spire.sq_top",0,3,{"upper_cannon"})
 add(w,"top","spire.top",{"upper_cannon"})
 local tower=graph("tower","Climb the Spire",w)
 local a={}
 add(a,"arena","spire.top")
-add(a,"presentation",parallel("objective.6","respawn.restrict","arena.ap_boss.marker"),{"arena"})
-add(a,"cover","arena.cover.start",{"arena"})
-add(a,"platform",parallel("spire.boss_platform.o_loop.on","spire.boss_platform.d.off","spire.d_laser_main.on"),{"arena"})
-add(a,"boss_spawn","spire.sq_boss.request",{"arena"})
-add(a,"boss_ready","spire.sq_boss.ready",{"boss_spawn"})
-add(a,"lens",parallel("spire.o_main_lens.on","spire.d_main_lens.on"),{"arena"})
+add(a,"presentation",parallel("objective.8","respawn.restrict","spire.o_main_lens.marker"),{"arena"})
+add(a,"cover","arena.cover.start",{"opened"})
+add(a,"boss_ready","spire.sq_boss.ready",{"arena"})
 -- Spawn Dendron directly, then bind his native intro to the live boss and intact cube.
-add(a,"lens_ready","spire.o_main_lens.ready",{"lens"})
-add(a,"intro_start","spire.sn_cyclops_intro.start",{"lens_ready","boss_ready"})
-add(a,"intro_started","spire.sn_cyclops_intro.started",{"intro_start"})
+add(a,"lens_ready","spire.o_main_lens.ready",{"arena"})
+add(a,"intro_started","spire.sn_cyclops_intro.started",{"lens_ready","boss_ready"})
 add(a,"expose","spire.o_main_lens.expose",{"intro_started"})
 add(a,"destroyed","spire.o_main_lens.destroyed",{"expose"})
 add(a,"power_cut",parallel("dialogue.13","spire.d_laser_main.off","spire.d_tower_laser.off","boss.intro.exit"),{"destroyed"})
 add(a,"intro_finished","spire.sn_cyclops_intro.finished",{"power_cut"})
 add(a,"fight",parallel("objective.10","boss.fight"),{"intro_finished"})
+add(a,"opened","boss.opened",{"fight"})
 local intro=graph("intro","Cut the Spire Arc network",a)
 local b={}
 squads(b,"initial_adds","spire.sq_boss_adds",0,3)
@@ -183,7 +199,7 @@ return mission{
         {objective="0x4E11E907",target="tunnel_portal"},
         {objective="0xF150883C",target="forest_gateway"},
         {objective="0x0864173F",target="forest_exit"},
-        {objective="0x2D67AB51",target="module0"},
+        {objective="0x2D67AB51",target="spire_machine"},
         {objective="0x82271EEA",target="module0"},
         {objective="0x304AC854",target="module3"},
         {objective="0x6D15E881",target="terrace_golem_lens"},

@@ -32,6 +32,8 @@
 #include "coo_native_components.h"
 #include "strike_bond_intro_release.h"
 #include "strike_bond_boss_cycle.h"
+#include "strike_bond_boss_shield.h"
+#include "omega_vex_lattice_probe.h"
 #include "strike_bond_target_binding.h"
 #include "omega_boss_health.h"
 #include "../../hooking/call_gate.h"
@@ -842,6 +844,7 @@ __declspec(noinline) void __fastcall retirement_hook(std::uint32_t handle,std::u
 #include "strike_bond_target_binding.inl"
 #include "strike_bond_carriage.inl"
 #include "strike_bond_boss_cycle.inl"
+#include "strike_bond_boss_shield.inl"
 #include "strike_bond_fire_trace.inl"
 
 void* target(std::uintptr_t rva,const std::array<std::uint8_t,16>& expected) noexcept {
@@ -924,7 +927,7 @@ bool uninstall_omega_enemy_lair_receipts() noexcept {
     garden_fire::oneTick.store(nullptr,std::memory_order_release);garden_fire::duration.store(nullptr,std::memory_order_release);
     garden_fire::update.store(nullptr,std::memory_order_release);garden_fire::eligibility.store(nullptr,std::memory_order_release);
     garden_target::dispatch.store(nullptr,std::memory_order_release);garden_target::decode.store(nullptr,std::memory_order_release);
-    garden_fire::reset();garden_intro::reset();garden_target::reset();garden_target::reset_replay();garden_carriage::reset();garden_cycle::reset();
+    garden_fire::reset();garden_intro::reset();garden_target::reset();garden_target::reset_replay();garden_carriage::reset();garden_cycle::reset();garden_shield::reset();
     g_image=0;g_run=UINT64_MAX;g_lines=0;g_seenCount=0;g_seen={};
     hijacked_trace_run(0);
     g_pendingBirths={};g_admittedActors={};g_nativeLines.store(0,std::memory_order_relaxed);

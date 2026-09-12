@@ -44,6 +44,18 @@ struct Frame {
     coo::ObjectiveState presentation{};coo::CompletionPublication completion{};
     BossCycle bossCycle{};bool bossPlatformSnap{};
 };
+// Ordered reconstruction candidates from the issue report. Native score ordinals
+// were not recovered; these values require listening verification in a fresh run.
+inline constexpr std::uint8_t kMusicAbsent=UINT8_MAX,kMusicLighthouse=2,kMusicForest=4,kMusicPast=6,
+    kMusicSpire=8,kMusicBossIntro=10,kMusicBossSecond=12,kMusicBossThird=13,kMusicBossDead=15;
+inline constexpr std::uint8_t music_for_region(int region) noexcept {
+    return region==120?kMusicLighthouse:region==80?kMusicForest:region==8?kMusicPast
+        :region==136?kMusicSpire:kMusicAbsent;
+}
+inline bool raise_music(Frame& f,std::uint8_t candidate) noexcept {
+    if(candidate>=128 || (f.musicCandidate!=kMusicAbsent && candidate<=f.musicCandidate)) return false;
+    f.musicCandidate=candidate;return true;
+}
 inline constexpr auto kObjectBindings=[] {
     std::array<coo::ObjectBinding,[] {std::size_t n{};for(const auto& a:kAssets) if(a.asset.type==4) ++n;return n;}()> out{};
     std::size_t i{};for(const auto& a:kAssets) if(a.asset.type==4) out[i++]={a.asset,{},0.F,true};return out;
@@ -108,9 +120,11 @@ inline float device_position(const Frame& f,coo::Asset a) noexcept {
 }
 inline coo::native_generator::Request forest_request(std::uint32_t seed) noexcept {
     coo::native_generator::Request out{};out.seed=seed;out.values[0]=6;
-    // Forest C, map22, container80F4E031 -> worker80F4E01F. Preserve its own
-    // authored columns/heights; progress selects the real +Y exit.
-    out.anchors={coo::native_generator::Anchor{1,1,0.F,true},{2,0,0.F,true},{3,2,1.F,true},{1,0,0.F,true}};
+    // Forest C is a 3x3 grid: FF34A6/FF5C80 reject north column3.
+    // The measured fixed exit is at (-673.86,-947.09,-19.52). Its middle
+    // column1/height1 joins the native north connector; height2 is one tier
+    // too high. Preserve the other anchors, entrance and owner transform.
+    out.anchors={coo::native_generator::Anchor{1,1,0.F,true},{2,0,0.F,true},{1,1,1.F,true},{1,0,0.F,true}};
     out.selectAnchors=true;return out;
 }
 // Exact prefab linkage recovered from the native selectors. Type 26 is the
@@ -127,10 +141,16 @@ inline constexpr const GolemBinding* golem(std::uint32_t key,std::uint8_t type,s
     for(const auto& g:kGolems) if(g.registry==key && ((type==26 && g.tether==slot) || (type==34 && g.collection==slot))) return &g;
     return nullptr;
 }
+inline constexpr bool route_guardian(coo::Asset source) noexcept {
+    return source.type==1 && ((source.registry==0xC95ECB1AU && (source.slot==105 || source.slot==121))
+        || (source.registry==0x2CB86C0FU && source.slot==244));
+}
 // Stage is the number of completed guardian pairs, independent of Lua graph index.
 inline float boss_floor(const Frame& f) noexcept {return f.bossStage==0?2.F/3.F:f.bossStage==1?1.F/3.F:0.F;}
 inline bool boss_blocked(const Frame& f,float fraction) noexcept {
-    return !f.bossFighting || f.bossDead || f.bossCycle.mode!=BossMode::damage
+    // Dying must remain eligible for the authored death clip's native kill event.
+    return !f.bossFighting || f.bossDead || f.bossCycle.mode==BossMode::opening
+        || f.bossCycle.mode==BossMode::parking || f.bossCycle.mode==BossMode::dormant
         || (f.bossStage<2 && fraction<=boss_floor(f));
 }
 struct Request {coo::Generation owner{};Frame frame{};};
