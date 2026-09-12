@@ -37,7 +37,7 @@ local function golem_setup(t,id,prefix,after,tether)
     -- Beam preparation is asynchronous presentation. It must never hold the
     -- linked cube shielded or prevent the native Minotaur release sequence.
     if tether then
-        -- Only the three route guardians fight behind their cube-owned shield.
+        -- Route guardians fight behind their cube-owned shield.
         -- Releasing AI does not finish the scene while its cube is intact.
         -- Neither cube exposure nor tether creation may wait for scene completion.
         add(t,id.."_awake",prefix..".sn_golem.release",{id.."_started"})
@@ -74,11 +74,14 @@ local forest=graph("forest","The Infinite Forest",{
 })
 local p={}
 add(p,"arrival_objective",parallel("objective.3","checkpoint.past"))
+-- These four devices address the placed cannon effects, not the two separate
+-- launch-source objects. Keep every route effect present before approaching it.
+add(p,"cannon_effects",parallel("past.d_mancannon[0].on","past.d_mancannon[1].on","past.d_mancannon[2].on","past.d_mancannon[3].on"))
 add(p,"mouth","past_dialogue.slot_000B")
 add(p,"welcome","dialogue.3",{"mouth"})
 squads(p,"arrival0","past.sq_arrival",0,7,{"welcome"})
 add(p,"flanks",parallel("past.sq_arrival_right_flank.request","past.sq_arrival_left_flank.request","past.sq_lower_platform.request"),{"welcome"})
-add(p,"lift",parallel("past.o_cannon.on","past.d_mancannon[0].on","past.d_mancannon[1].on"),{"welcome"})
+add(p,"lift","past.o_cannon.on",{"welcome"})
 add(p,"cannon_approach","past.tv_lower_cannon",{"lift"})
 add(p,"radiolaria",parallel("objective.8","dialogue.5"),{"cannon_approach"})
 add(p,"modules","past.at_modules",{"lift"})
@@ -112,7 +115,7 @@ add(i,"tower_guards",parallel("past.sq_cannon_snipers.request","past.sq_tower.re
 squads(i,"cannon_guards","past.sq_cannon",0,3,{"block3_open"})
 golem_setup(i,"cannon_golem","past.pf_cannon_golem",{"block3_open"},"past.pf_anomaly[0].o_nomaly")
 golem_fight(i,"cannon_golem","past.pf_cannon_golem",{"cannon_golem_tether"},"past.pf_anomaly[0].o_nomaly")
-add(i,"cannon",parallel("objective.4","past.o_main_cannon.on","past.d_mancannon[2].on","past.d_mancannon[3].on","spire_entry.ap_to_machine.marker"),{"cannon_golem_killed","block4_open"})
+add(i,"cannon",parallel("objective.4","past.o_main_cannon.on","spire_entry.ap_to_machine.marker"),{"cannon_golem_killed","block4_open"})
 add(i,"enter_spire","spire.entry",{"cannon"})
 add(i,"dialogue_inside","spire.dialogue_inside",{"enter_spire"})
 add(i,"arc_energy","dialogue.12",{"dialogue_inside"})
@@ -121,8 +124,9 @@ local interior=graph("interior","Sabotage the remaining protocols",i)
 local w={}
 add(w,"presentation",parallel("objective.7","checkpoint.spire","spire.d_tower_laser.on"))
 squads(w,"lower","spire.sq_lower",0,4)
--- The first cannon is below the tower cube; waiting for that cube here deadlocks.
-add(w,"lower_cannon",parallel("spire.d_mancannon[0].on","spire.d_mancannon[1].on"))
+-- All four placed effects belong to the climb, independently of the upper
+-- floor's encounter. Preserve the existing traversal and combat dependencies.
+add(w,"lower_cannon",parallel("spire.d_mancannon[0].on","spire.d_mancannon[1].on","spire.d_mancannon[2].on","spire.d_mancannon[3].on"))
 add(w,"mid","spire.mid",{"lower_cannon"})
 squads(w,"middle","spire.sq_mid",0,7,{"mid"})
 add(w,"boss_prepare",parallel("spire.boss_platform.o_loop.on","spire.boss_platform.d.off","spire.d_laser_main.on","spire.sq_boss.request","spire.o_main_lens.on","spire.d_main_lens.on"),{"mid"})
@@ -133,7 +137,7 @@ squads(w,"snipers","spire.sq_mid_sniper",0,4,{"mid"})
 golem_setup(w,"tower_golem","spire.pf_tower_golem",{"mid"},"spire.pf_anomaly[0].o_nomaly")
 golem_fight(w,"tower_golem","spire.pf_tower_golem",{"tower_golem_tether"},"spire.pf_anomaly[0].o_nomaly")
 block(w,"tower_block","spire.pf_tower_block",{"mid"},"tower_golem_killed")
-add(w,"upper_cannon",parallel("spire.d_mancannon[2].on","spire.d_mancannon[3].on","spire_top.slot_0002.marker"),{"tower_golem_killed","tower_block_open","boss_prepared"})
+add(w,"upper_cannon","spire_top.slot_0002.marker",{"tower_golem_killed","tower_block_open","boss_prepared"})
 squads(w,"top_guards","spire.sq_top",0,3,{"upper_cannon"})
 add(w,"top","spire.top",{"upper_cannon"})
 local tower=graph("tower","Climb the Spire",w)
@@ -165,10 +169,12 @@ local function shield(t,n,first,second,after)
     end
     add(t,id.."_scene",parallel(g0..".sn_golem.start",g1..".sn_golem.start","spire.d_laser_golem"..n..".on"),{id.."_create1",id.."_create2"})
     add(t,id.."_started",parallel(g0..".sn_golem.started",g1..".sn_golem.started",g0..".sq_golem.ready",g1..".sq_golem.ready"),{id.."_scene"})
-    add(t,id.."_expose",parallel(g0..".o_lens.expose",g1..".o_lens.expose"),{id.."_started"})
+    -- Like route guardians, these Minotaurs fight while their own cubes shield
+    -- them. Release native AI on arrival without waiting for scene completion.
+    add(t,id.."_expose",parallel(g0..".sn_golem.release",g1..".sn_golem.release",g0..".o_lens.expose",g1..".o_lens.expose"),{id.."_started"})
     for i,g in ipairs({g0,g1}) do
         add(t,id.."_destroyed"..i,g..".o_lens.destroyed",{id.."_expose"})
-        add(t,id.."_release"..i,parallel(g..".d_laser.off",g..".d_shield.off",g..".sn_golem.release",g..".sn_golem.finished"),{id.."_destroyed"..i})
+        add(t,id.."_release"..i,parallel(g..".d_laser.off",g..".d_shield.off",g..".sn_golem.finished"),{id.."_destroyed"..i})
         add(t,id.."_killed"..i,g..".sq_golem.cleared",{id.."_release"..i})
     end
     local finish={"boss.lens"..n..".destroyed","spire.d_laser_golem"..n..".off"}

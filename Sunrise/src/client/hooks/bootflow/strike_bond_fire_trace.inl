@@ -26,8 +26,9 @@ Capture begin(void* input,bool controller) noexcept {
         || trace::field<std::uint32_t>(header,0)!=(controller?0x80F66F56U:0x80F459A3U)
         || trace::field<std::uint32_t>(header,4)!=(controller?0x80806832U:0x80803A00U)) return out;
     const auto request=garden::boss_request();
-    if(!trace::sample(read,g_image,address,controller,request,out.identity)
-        || !trace::suppression(read,out.identity,out.before)) return out;
+    if(!trace::sample(read,g_image,address,controller,request,out.identity)) return out;
+    garden_retirement::capture(request,out.identity);
+    if(!trace::suppression(read,out.identity,out.before)) return out;
     out.owner=request.owner;out.enemy=request.enemy;out.stage=request.frame.bossStage;
     out.fighting=request.frame.bossFighting;out.middleBroken=request.frame.lensDestroyed[7];
     out.clock=request.frame.gameplayClockTicks;out.valid=true;return out;

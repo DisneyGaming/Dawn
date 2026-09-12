@@ -42,14 +42,15 @@ inline std::size_t body_bits(const Frame& f,std::uint32_t key,std::uint8_t type,
     const auto& state=f.native[asset_index(a->asset)];
     if(type==2 && a->asset==kBossActor) {
         const auto* source=find(key,1,3);
-        return source && f.native[asset_index(source->asset)].active?coo::native_combatant::kBindBits:0;
+        return source && (f.native[asset_index(source->asset)].active || f.bossDead)?coo::native_combatant::kBindBits:0;
     }
     if(const auto* g=golem(key,type,slot)) {
         const auto& lens=f.native[asset_index(kLenses[g->lens].source)];
         return lens.managed?(type==26?186:94):0;
     }
     if(!state.managed) return 0;
-    if(type==1 && key==kBossActor.registry && slot==3) return state.active?coo::native_combatant::kSourceBits:0;
+    // Retirement is an explicit publication, not the absence of a spawn body.
+    if(type==1 && key==kBossActor.registry && slot==3) return state.active || f.bossDead?coo::native_combatant::kSourceBits:0;
     if(type==1) {const auto i=spawn_index(a->asset);return state.active && i<std::size(kSpawns)?coo::native_combatant::authored_source_bits(kSpawns[i].categories,true):0;}
     if(type==4) return 252;
     if(type==23) return 147;
@@ -82,13 +83,24 @@ template<class Writer> bool write_body(Writer& w,const Frame& f,std::uint32_t ke
             // request can commit its generation without ever creating Dendron.
             source.hasRule=true;source.ruleSlot=row.rule;
             source.tactical={key,row.objective,10,1};
+            if(f.bossDead && !s.active) {
+                // Changed generation with BC=0 invokes native source retirement
+                // (4E9550 -> 4EC1A0) with no replacement request. The detached
+                // corpse's captured entity lease is cleaned at that boundary.
+                source.generation=s.generation;source.looseRequested=0;source.retireOwned=true;
+            }
             return coo::native_combatant::write_source(w,source);
         }
         source.sceneRequested=row.sceneOwned;
         source.tactical={key,row.objective,static_cast<std::int8_t>(static_cast<int>(f.taskPlusOne[i])-1),1};
         return coo::native_combatant::write_authored_source(w,source,{0,0,0,0});
     }
-    case 2:return coo::native_combatant::write_bind(w,f.spawnGeneration);
+    case 2:
+        if(f.bossDead && a->asset==kBossActor) {
+            const auto source=find(key,1,3)->asset;
+            return coo::native_combatant::write_retire_member(w,f.native[asset_index(source)].generation);
+        }
+        return coo::native_combatant::write_bind(w,f.spawnGeneration);
     case 4:return coo::native_device::object(w,s.generation,s.active);
     case 11:return coo::native_music::select(w,f.musicCandidate);
     case 18:return coo::native_clock::countdown(w,f.completion.valid() && f.completion.state==6,f.endEpoch);

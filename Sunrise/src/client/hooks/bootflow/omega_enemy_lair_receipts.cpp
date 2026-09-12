@@ -33,6 +33,7 @@
 #include "strike_bond_intro_release.h"
 #include "strike_bond_boss_cycle.h"
 #include "strike_bond_boss_shield.h"
+#include "strike_bond_boss_retirement.h"
 #include "omega_vex_lattice_probe.h"
 #include "strike_bond_target_binding.h"
 #include "omega_boss_health.h"
@@ -845,6 +846,7 @@ __declspec(noinline) void __fastcall retirement_hook(std::uint32_t handle,std::u
 #include "strike_bond_carriage.inl"
 #include "strike_bond_boss_cycle.inl"
 #include "strike_bond_boss_shield.inl"
+#include "strike_bond_boss_retirement.inl"
 #include "strike_bond_fire_trace.inl"
 
 void* target(std::uintptr_t rva,const std::array<std::uint8_t,16>& expected) noexcept {
@@ -853,6 +855,11 @@ void* target(std::uintptr_t rva,const std::array<std::uint8_t,16>& expected) noe
     return reinterpret_cast<void*>(g_image+rva);
 }
 } // namespace
+
+__declspec(noinline) void retire_strike_bond_boss(std::uintptr_t source,bool allocatorReady) noexcept {
+    const hooking::CallGate::Scope scope{g_gate};
+    if(scope.accepts_side_effects()) garden_retirement::dispatch(source,allocatorReady);
+}
 
 __declspec(noinline) void poll_native_population_admissions() noexcept {
     const hooking::CallGate::Scope scope{g_gate};
@@ -906,12 +913,14 @@ bool install_omega_enemy_lair_receipts() noexcept {
 void quiesce_omega_enemy_lair_receipts() noexcept {g_gate.quiesce();}
 bool uninstall_omega_enemy_lair_receipts() noexcept {
     quiesce_omega_enemy_lair_receipts();if(!g_handles[0].attached) {return true;}
-    const std::array<hooking::detour::ProtectedCodeEntry,15> protectedCode{{
+    const std::array<hooking::detour::ProtectedCodeEntry,17> protectedCode{{
         {reinterpret_cast<void*>(&admission_hook)},{reinterpret_cast<void*>(&candidate_hook)},
         {reinterpret_cast<void*>(&observe_admission)},{reinterpret_cast<void*>(&observe_candidate)},
         {reinterpret_cast<void*>(&omega_boss_health::observe_native_death)},
         {reinterpret_cast<void*>(&poll_native_population_admissions)},
         {reinterpret_cast<void*>(&retirement_hook)},
+        {reinterpret_cast<void*>(&retire_strike_bond_boss)},
+        {reinterpret_cast<void*>(&garden_retirement::dispatch)},
         {reinterpret_cast<void*>(&garden_fire::one_tick_hook)},
         {reinterpret_cast<void*>(&garden_fire::duration_hook)},
         {reinterpret_cast<void*>(&garden_fire::update_hook)},
@@ -927,7 +936,7 @@ bool uninstall_omega_enemy_lair_receipts() noexcept {
     garden_fire::oneTick.store(nullptr,std::memory_order_release);garden_fire::duration.store(nullptr,std::memory_order_release);
     garden_fire::update.store(nullptr,std::memory_order_release);garden_fire::eligibility.store(nullptr,std::memory_order_release);
     garden_target::dispatch.store(nullptr,std::memory_order_release);garden_target::decode.store(nullptr,std::memory_order_release);
-    garden_fire::reset();garden_intro::reset();garden_target::reset();garden_target::reset_replay();garden_carriage::reset();garden_cycle::reset();garden_shield::reset();
+    garden_fire::reset();garden_intro::reset();garden_target::reset();garden_target::reset_replay();garden_carriage::reset();garden_cycle::reset();garden_shield::reset();garden_retirement::reset();
     g_image=0;g_run=UINT64_MAX;g_lines=0;g_seenCount=0;g_seen={};
     hijacked_trace_run(0);
     g_pendingBirths={};g_admittedActors={};g_nativeLines.store(0,std::memory_order_relaxed);

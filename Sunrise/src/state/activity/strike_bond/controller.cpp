@@ -115,6 +115,15 @@ bool Controller::died(const EnemyReceipt& r) noexcept {
     if(!frame_.enabled || frame_.finished || !population_.died(r,run_,frame_.spawnGeneration)) return false;
     if(r.registry==kBossActor.registry && r.source==3 && frame_.bossFighting) {
         frame_.bossDead=true;static_cast<void>(raise_music(frame_,kMusicBossDead));frame_.bossCycle.mode=BossMode::dying;update_boss_platform();
+        // The authored delayed-death event follows the final explosion. Retire
+        // its source only after this genuine death receipt, never at zero HP.
+        // Source and named member share the terminal revision. Native death
+        // detaches the corpse first; the retirement boundary also consumes the
+        // authenticated entity lease retained before that detachment.
+        const auto source=find(kBossActor.registry,1,3)->asset;
+        if(revise(source)) {
+            auto& state=frame_.native[asset_index(source)];state.active=state.desired=false;
+        } else frame_.populationFault=true;
     }
     ++frame_.revision;return true;
 }
@@ -345,15 +354,15 @@ bool Controller::publish(const coo::Command& command) noexcept {
     }
     case coo::Operation::mechanic:
         if(s.asset==kModule && (s.argument==70 || s.argument==71)) return cover(s.argument==70);
-        // 80F45CAA holds native AI until input 33E63A8B. Route guardians release
+        // 80F45CAA holds native AI until input 33E63A8B. All guardians release
         // that hold on arrival; their independent type-26 shield still follows
-        // lens destruction. Rooftop guardians retain their cube-gated release.
+        // their own lens destruction.
         if(s.asset.type==43 && s.argument==0x33E63A8BU) {
             const auto i=scene_index(s.asset);
             if(i==std::size(kScenes) || kScenes[i].graph!=0x80F45CAAU
                 || kScenes[i].cast.size()!=2 || !scenes_.seen(i,1)) return false;
             const auto lens=lens_index(kScenes[i].cast[1]);
-            if(lens==std::size(kLenses) || (!route_guardian(kScenes[i].cast[0]) && !lenses_[lens].dead())
+            if(lens==std::size(kLenses)
                 || scenes_.event(i,s.argument)!=coo::SceneEvent::accepted) return false;
             break;
         }

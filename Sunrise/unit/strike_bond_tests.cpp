@@ -9,6 +9,7 @@
 #include "strike_bond_target_binding_tests.h"
 #include "strike_bond_carriage_tests.h"
 #include "strike_bond_boss_shield_tests.h"
+#include "strike_bond_boss_retirement_tests.h"
 #include "../src/client/hooks/bootflow/strike_bond_boss_cycle.h"
 #include <cstdio>
 #include <cstdlib>
@@ -41,6 +42,11 @@ struct Wire {
     std::size_t bits{};std::vector<std::pair<std::uint64_t,unsigned>> fields;
     std::size_t bit_count() const noexcept {return bits;}
     bool write(std::uint64_t value,unsigned width) {bits+=width;fields.push_back({value,width});return true;}
+    std::uint64_t at(std::size_t offset,unsigned width) const {
+        std::size_t cursor{};
+        for(const auto& [value,size]:fields) {if(cursor==offset && size==width) return value;cursor+=size;}
+        return UINT64_MAX;
+    }
 };
 struct Replay {
     std::unique_ptr<coo::script::MissionDocument> document=parse(shipped());
@@ -53,7 +59,7 @@ struct Replay {
     std::bitset<std::size(m::kDialogueRows)> spoken;
     std::bitset<8> sections;
     bool delayTethers{},rapidDamage{};
-    bool checkedFakeDeath{},checkedReadiness{},checkedImmune{},checkedCannon{},checkedClosing{},checkedShields{};
+    bool checkedFakeDeath{},checkedReadiness{},checkedImmune{},checkedCannon{},checkedPastCannons{},checkedClosing{},checkedShields{};
     explicit Replay(bool delayed=false,bool rapid=false) : delayTethers(delayed),rapidDamage(rapid) {
         check(document!=nullptr,"shipped Lua parses");
         check(m::valid_document(document->views()),"registered native profile");
@@ -123,16 +129,15 @@ struct Replay {
             check(command.eventCount<=1,"guardian sends at most one release event");
             if(!command.eventCount) continue;
             const auto lens=m::lens_index(binding.cast[1]);
-            check(started[i] && lens<std::size(m::kLenses)
-                && (m::route_guardian(binding.cast[0]) || c.frame().lensDestroyed[lens]),
-                "only route guardians can release AI before their own cube is destroyed");
+            check(started[i] && lens<std::size(m::kLenses),
+                "guardians release native AI only after their owning scene starts");
             check(command.events[0]==0x33E63A8BU,"guardian uses the native animation exit event");
             Wire wire;check(m::write_body(wire,c.frame(),binding.asset.registry,43,binding.asset.slot)
                 && wire.fields.back()==std::pair<std::uint64_t,unsigned>{0x33E63A8BU,32},
                 "guardian release reaches the native authority packet");
-            // Live run64852: route AI was active, but the owning scene did not
-            // finish with its cube intact. Do not fake completion on release.
-            if(!finished[i] && (!m::route_guardian(binding.cast[0]) || c.frame().lensDestroyed[lens])) {
+            // The same guardian graph can release AI while its cube is intact.
+            // Keep scene completion pending to catch accidental gameplay gates.
+            if(!finished[i] && c.frame().lensDestroyed[lens]) {
                 finished.set(i);scene(i,true);
             }
         }
@@ -171,9 +176,23 @@ struct Replay {
             auto wrong=boss;++wrong.actor;check(!c.health(wrong,.5F),"unowned health rejected");
             c.health(boss,1.F);checkedFakeDeath=true;
         }
+        if(c.graph()->id=="past" && !checkedPastCannons) {
+            for(std::uint16_t slot=141;slot<=144;++slot) {
+                const auto* cannon=m::find(0xC95ECB1AU,23,slot);
+                check(cannon && c.frame().native[m::asset_index(cannon->asset)].active,"all Past cannon effects requested on area entry");
+                Wire wire;check(m::write_body(wire,c.frame(),0xC95ECB1AU,23,slot) && wire.bits==147,"each Past effect has a native device publication");
+                check(wire.fields.front().first==std::bit_cast<std::uint32_t>(1.F),"Past cannon effect uses the active endpoint");
+            }
+            check(!c.frame().native[m::asset_index(m::find(0xC95ECB1AU,4,140)->asset)].desired,"effect activation cannot request the gated main launch source");
+            checkedPastCannons=true;
+        }
         if(c.graph()->id=="tower" && !checkedCannon) {
-            const auto* cannon=m::find(0x2CB86C0FU,23,222);
-            check(cannon && c.frame().native[m::asset_index(cannon->asset)].active,"lower cannon enabled before higher floor cube");
+            for(std::uint16_t slot=222;slot<=225;++slot) {
+                const auto* cannon=m::find(0x2CB86C0FU,23,slot);
+                check(cannon && c.frame().native[m::asset_index(cannon->asset)].active,"all Spire cannon effects enabled before higher floor cube");
+                Wire wire;check(m::write_body(wire,c.frame(),0x2CB86C0FU,23,slot) && wire.bits==147,"each Spire effect has a native device publication");
+                check(wire.fields.front().first==std::bit_cast<std::uint32_t>(1.F),"Spire cannon effect uses the active endpoint");
+            }
             check(!c.frame().lensDestroyed[15],"lower cannon does not require tower cube death");checkedCannon=true;
         }
         if(!checkedShields) for(const auto& g:m::kGolems) {
@@ -252,7 +271,20 @@ struct Replay {
                 check(c.boss_animation(boss,2,m::BossAnimation::deathStarted),"native death animation freezes platform");
                 check(c.frame().bossPlatformSnap && !c.frame().bossDead,"platform freeze does not fabricate boss death");
                 check(!m::boss_blocked(c.frame(),0.F),"platform freeze cannot re-enable death immunity");
+                const auto bossSource=m::find(m::kBossActor.registry,1,3)->asset;
+                const auto generation=c.frame().native[m::asset_index(bossSource)].generation;
+                Wire alive;check(m::write_body(alive,c.frame(),bossSource.registry,1,3),"dying source remains published");
+                check(alive.at(121,32)==0x80000001U && alive.at(603,2)==2,"death presentation retains its native owner until real death");
                 check(c.died(boss),"authentic Dendron death");
+                const auto& retired=c.frame().native[m::asset_index(bossSource)];
+                check(!retired.active && !retired.desired && retired.generation==generation+1,"real death retires one source generation");
+                Wire after;check(m::write_body(after,c.frame(),bossSource.registry,1,3) && after.bits==coo::native_combatant::kSourceBits,"dead source publishes native retirement");
+                check(after.at(121,32)==0x80000000U && after.at(173,31)==generation+1
+                    && after.at(572,31)==generation+1 && after.at(603,2)==1,"retirement removes owned entities without spawning another boss");
+                Wire member;check(m::write_body(member,c.frame(),m::kBossActor.registry,2,m::kBossActor.slot)
+                    && member.bits==coo::native_combatant::kBindBits,"death explicitly retires the named combatant owner");
+                check(member.at(1,31)==generation+1 && member.at(32,2)==1 && member.at(34,3)==2
+                    && member.at(37,1)==0,"named teardown destroys its attached actor and disables rebinding");
                 check(c.frame().musicCandidate==m::kMusicBossDead,"authentic death starts closing music");
             }
             return;
@@ -274,6 +306,18 @@ struct Replay {
             for(const auto& r:actors[n]) c.died(r);now+=15000;return;
         }
         if(s.asset.type==4 && s.argument==50) {
+            for(const auto& golem:m::kGolems) if(m::kLenses[golem.lens].source==s.asset
+                && golem.registry==m::kBossActor.registry && golem.source>=174 && golem.source<=198) {
+                for(std::size_t si=0;si<std::size(m::kScenes);++si)
+                    if(m::kScenes[si].graph==0x80F45CAAU && m::kScenes[si].cast[1]==s.asset)
+                        check(started[si] && !finished[si] && c.frame().scenes[si].eventCount==1,
+                            "rooftop guardian AI is released while its cube is intact and scene completion is pending");
+                Wire shield;check(m::write_body(shield,c.frame(),golem.registry,26,golem.tether)
+                    && shield.fields[1]==std::pair<std::uint64_t,unsigned>{0,1},
+                    "early rooftop AI release preserves the cube-owned Minotaur shield");
+                check(c.frame().bossStage<2 && m::boss_blocked(c.frame(),m::boss_floor(c.frame())),
+                    "early guardian AI cannot release Dendron from immunity");
+            }
             if(s.asset==m::kLenses[7].source) {
                 check(c.frame().objective==0x82271EEAU && c.frame().presentation.marker.asset==m::kLenses[7].source,"roof sabotage objective points to the shootable middle cube");
                 check(!c.frame().coverEnabled,"cover waits until the boss opening completes");
@@ -325,6 +369,8 @@ struct Replay {
                 const auto before=c.frame();
                 check(!before.finished,"closing exchange precedes completion");
                 check(!c.died(c.boss_enemy()),"duplicate boss death cannot grant another reward");
+                const auto source=m::asset_index(m::find(m::kBossActor.registry,1,3)->asset);
+                check(c.frame().native[source].generation==before.native[source].generation,"duplicate death cannot repeat retirement");
                 checkedClosing=true;
             }
             const auto* g=c.graph();
@@ -339,12 +385,16 @@ struct Replay {
             std::fprintf(stderr,"Stalled graph %.*s active=%08X complete=%08X\n",static_cast<int>(c.graph()->id.size()),c.graph()->id.data(),c.diagnostics().active,c.diagnostics().complete);
         }
         check(c.frame().finished && c.frame().bossDead,"full strike reaches genuine completion");
+        Wire retired;check(m::write_body(retired,c.frame(),m::kBossActor.registry,1,3)
+            && retired.at(121,32)==0x80000000U && retired.at(603,2)==1,"completion keeps boss source retired through summary");
+        Wire retiredMember;check(m::write_body(retiredMember,c.frame(),m::kBossActor.registry,2,m::kBossActor.slot)
+            && retiredMember.at(32,2)==1 && retiredMember.at(37,1)==0,"completion retains explicit named-owner teardown");
         if(!(early?sections[6]:sections.all())) std::fprintf(stderr,"sections=%s early=%d graph=%.*s\n",sections.to_string().c_str(),early,int(c.graph()->id.size()),c.graph()->id.data());
         check(early?sections[6]:sections.all(),"all required route and boss phases visited");
         for(const auto row:{0,1,3,4,5,6,7,8,9,10,11,12,13,14}) if(!early || row==14) {if(!spoken[row]) std::fprintf(stderr,"Missing dialogue row %u early=%u\n",row,early);check(spoken[row],"required strike exchange dispatched");}
         check(!spoken[2],"campaign-only dialogue excluded");
         for(unsigned row=15;row<24;++row) check(!spoken[row],"campaign scanner and Panoptes ending stay out of strike");
-        check(checkedFakeDeath && checkedReadiness && checkedImmune && checkedCannon && checkedClosing && checkedShields,"critical regression scenarios exercised");
+        check(checkedFakeDeath && checkedReadiness && checkedImmune && checkedCannon && checkedPastCannons && checkedClosing && checkedShields,"critical regression scenarios exercised");
         check(c.frame().checkpointSliceSet==136 && c.frame().checkpointSpawnSet==0x2EA8FB98U,"Spire native respawn set retained");
         if(!early) {
             check(!started[3] && !started[4],"one native animation owner; legacy boss scenes cannot compete");
@@ -625,31 +675,40 @@ static void boss_shield_regressions() {
     namespace shield=sunrise::client::hooks::bootflow::strike_bond_boss_shield;
     check(strike_bond_shield_contracts(),"Dendron shield draw-pass identity and native dispatch contracts");
     m::Frame f{};f.enabled=true;
-    check(shield::visible(f,1.F),"shield visible before the start cube breaks");
+    check(!shield::visible(f),"combat face effect is absent before the start cube breaks");
     f.bossFighting=true;f.bossCycle.mode=m::BossMode::opening;
-    check(shield::visible(f,1.F),"shield visible during immune opening");
+    check(shield::visible(f),"cube-triggered opening enables combat face effect");
     for(std::uint8_t stage=0;stage<3;++stage) {
         f.bossStage=stage;f.bossCycle.mode=m::BossMode::damage;
-        check(!shield::visible(f,m::boss_floor(f)+.1F),"shield hidden throughout each damage bar");
-        check(shield::visible(f,m::boss_floor(f))==(stage<2),"shield follows the exact native damage floor");
+        check(shield::visible(f),"purple face effect stays enabled throughout every damage bar");
+        check(!m::boss_blocked(f,m::boss_floor(f)+.1F),"visible face effect does not make Dendron immune");
+        check(m::boss_blocked(f,m::boss_floor(f))==(stage<2),"damage floors retain their separate immunity policy");
         if(stage<2) {
             for(const auto mode:{m::BossMode::parking,m::BossMode::dormant}) {
-                f.bossCycle.mode=mode;check(shield::visible(f,m::boss_floor(f)),"shield visible during travel and guardian immunity");
+                f.bossCycle.mode=mode;check(shield::visible(f),"combat effect base remains available to native phase visibility owners");
             }
         }
     }
     for(std::uint8_t stage=1;stage<=2;++stage) {
         f.bossStage=stage;f.bossCycle.mode=m::BossMode::waking;
-        check(!shield::visible(f,(3.F-stage)/3.F),"shield hidden from the start of both vulnerable wake-up animations");
+        check(shield::visible(f),"combat face effect remains enabled through both wake-up animations");
     }
     f.bossCycle.mode=m::BossMode::dying;
-    check(!shield::visible(f,0.F),"death animation starts with shield hidden");
-    f.bossDead=true;check(!shield::visible(f,0.F),"death cannot restore shield");
+    check(!shield::visible(f),"death animation retires the combat face effect");
+    f.bossCycle.mode=m::BossMode::damage;
+    f.bossDead=true;check(!shield::visible(f),"death cannot restore combat face effect");
     f.bossCycle.mode=m::BossMode::dormant;f.bossDead=false;f.ending=true;
-    check(!shield::visible(f,1.F),"ending cannot restore shield");
-    f.ending=false;f.finished=true;check(!shield::visible(f,1.F),"completed mission cannot restore shield");
+    check(!shield::visible(f),"ending cannot restore combat face effect");
+    f.ending=false;f.finished=true;check(!shield::visible(f),"completed mission cannot restore combat face effect");
+    f.finished=false;f.enabled=false;check(!shield::visible(f),"disabled mission cannot enable combat face effect");
+    f.enabled=true;f.bossFighting=false;check(!shield::visible(f),"encounter reset retires combat face effect");
 }
 static void boss_regressions() {
+    for(const auto generation:{0U,0x80000000U,UINT32_MAX}) {
+        Wire invalid;check(!coo::native_combatant::write_retire_member(invalid,generation) && invalid.bits==0,"invalid member retirement does not publish partial authority");
+    }
+    Wire binding;check(coo::native_combatant::write_bind(binding,7) && binding.at(32,2)==0
+        && binding.at(37,1)==1,"existing member binding retains its keep-alive defaults");
     m::Frame f{};f.enabled=true;f.spawnGeneration=1;
     const auto* source=m::find(m::kBossActor.registry,1,3);
     auto& state=f.native[m::asset_index(source->asset)];state.managed=state.active=true;
@@ -694,6 +753,7 @@ static void catalogue() {
     check(route::retains_held_region("strike_bond"),"Garden retains real held-region transitions");
 }
 int main() {
+    check(strike_bond_boss_retirement_contracts(),"detached Dendron entity retirement identity contracts");
     check(strike_bond_carriage_contracts(),"Dendron animated plate attachment contracts");
     check(strike_bond_target_binding_contracts(),"Dendron primary target binding contracts");
     check(strike_bond_intro_release_contracts(),"Dendron named intro release contracts");

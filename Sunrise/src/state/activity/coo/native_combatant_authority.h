@@ -174,4 +174,17 @@ template<class Writer>
     return ok && writer.bit_count()-begin==kBindBits;
 }
 
+/** Retire a bound member on a new spawn-edge revision. AB71E0 consumes logical
+ * .1=0 to detach and destroy its actor; .3=false prevents another attachment.
+ * Source retirement alone skips actors already owned by a named member. */
+template<class Writer>
+[[nodiscard]] bool write_retire_member(Writer& writer,std::uint32_t generation) noexcept {
+    if(generation==0 || generation>0x7FFFFFFFU) { return false; }
+    const auto begin=writer.bit_count();
+    const bool ok=writer.write(1,1) && writer.write(generation,31)
+        && writer.write(1,2) && writer.write(2,3) && writer.write(0,1)
+        && writer.write(0,1) && writer.write(0,1) && writer.write(0,1) && writer.write(0,1);
+    return ok && writer.bit_count()-begin==kBindBits;
+}
+
 } // namespace sunrise::state::activity::coo::native_combatant
