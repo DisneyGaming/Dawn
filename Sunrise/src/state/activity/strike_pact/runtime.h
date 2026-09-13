@@ -9,9 +9,11 @@
 namespace sunrise::state::activity::strike_pact {
 [[nodiscard]] coo::ReadinessRequest<EnemyReceipt> readiness_request(std::uint64_t now) noexcept;
 void observe_capacity(std::uint64_t,coo::PopulationCapacity) noexcept;
-[[nodiscard]] bool prepare(std::uint64_t run,bool selected) noexcept;
+[[nodiscard]] bool prepare(std::uint64_t run,bool selected,bool campaign=false) noexcept;
 [[nodiscard]] Frame snapshot(std::uint64_t run,std::uint64_t now,bool ready,int region) noexcept;
 [[nodiscard]] std::uint64_t native_run() noexcept;
+BossRequest boss_request() noexcept;
+bool observe_health(const EnemyReceipt&,float) noexcept;
 void observe_player_trigger(std::uint64_t run,std::uint32_t registry,std::uint16_t slot) noexcept;
 [[nodiscard]] bool publication_due(std::uint64_t now) noexcept;
 void observe_generator(std::uint64_t run,std::uint32_t registry,std::uint16_t slot,
@@ -30,4 +32,6 @@ void observe_squad(std::uint64_t run,std::uint32_t registry,std::uint16_t slot,
 void observe_readiness(const EnemyReceipt&,coo::EnemyReadiness) noexcept;
 void observe_submission(std::uint64_t run,std::uint32_t definition,std::int64_t offset,
     std::uint32_t bank,std::uint8_t row,std::uint32_t generation) noexcept;
+coo::CampaignScanRequest scan_request() noexcept;
+void observe_scan(coo::Generation,std::uint32_t,std::uint32_t,coo::ScanPlayback,bool) noexcept;
 }

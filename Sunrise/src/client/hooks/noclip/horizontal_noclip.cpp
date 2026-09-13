@@ -21,6 +21,7 @@
 #include "../../hooking/detour.h"
 #include "../../input/window_focus.h"
 #include "../../movement/movement_settings_store.h"
+#include "../../../state/activity/nightfall/rules.h"
 #include "../../patterns/image_scan.h"
 #include "../fly/fly.h"
 #include "runtime.h"
@@ -189,6 +190,9 @@ capped_speed(const std::array<float, kVectorLanes>& velocity, float limit) noexc
  * @return True while noclip is on.
  */
 [[nodiscard]] bool poll_toggle() noexcept {
+    if (state::activity::nightfall::movement_blocked()) {
+        g_toggleDown.store(false,std::memory_order_relaxed); return false;
+    }
     const client::movement::Settings settings = client::movement::get();
     if (settings.noclipToggleKey == client::movement::kNoKey) {
         g_toggleDown.store(false, std::memory_order_relaxed);
@@ -223,7 +227,7 @@ capped_speed(const std::array<float, kVectorLanes>& velocity, float limit) noexc
 
 /** @return True while the stored switch has noclip on. */
 [[nodiscard]] bool enabled() noexcept {
-    return client::movement::get().noclipEnabled;
+    return !state::activity::nightfall::movement_blocked() && client::movement::get().noclipEnabled;
 }
 
 /** Runs Havok normally, then moves the character on from where it stood before the step. */

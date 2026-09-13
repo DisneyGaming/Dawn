@@ -24,6 +24,7 @@
 #include "omega_rescue_scene_receipts.h"
 #include "deadly_trial_revival.h"
 #include "deadly_trial_lifetime.h"
+#include "gateway_patrol.h"
 
 namespace sunrise::client::hooks::bootflow {
 namespace {
@@ -48,6 +49,9 @@ constexpr bool kEnableUnsafeActivitySelectionProbe = false;
 constexpr bool kEnableUnsafeActivityScriptUpstreamProbe = false;
 constexpr bool kEnableUnsafeActivityFeatureFlagProbe = false;
 constexpr bool kEnableLegacyUnsafeObserverBundle = false;
+
+/** Optional contact-query diagnostics. Mercury gameplay never consumes these samples. */
+constexpr bool kEnableVanceContactDiagnostics = false;
 
 static_assert(!kEnableActivitySpawnerChainProbe,
               "The narrow Ikora origin classifier and retired broad probe share hook targets");
@@ -249,7 +253,9 @@ bool install() noexcept {
     const bool omegaNavigation = install_omega_navigation();
     const bool omegaLairCinematic = install_omega_lair_cinematic();
     const bool omegaLairReceipts = install_omega_enemy_lair_receipts();
-    const bool vanceContact = install_vance_contact_observer();
+    const bool vanceContactInstalled = kEnableVanceContactDiagnostics
+                                       && install_vance_contact_observer();
+    const bool vanceContact = !kEnableVanceContactDiagnostics || vanceContactInstalled;
     const bool ambientNamedPoints = install_ambient_population_named_observer();
     const bool nativeCapture = install_native_capture_observer();
     const bool replicationObserver = native_replication_observer::install();
@@ -259,6 +265,7 @@ bool install() noexcept {
     const bool omegaRescueScenes = install_omega_rescue_scene_receipts();
     const bool trialRevival = deadly_trial_revival::install();
     const bool trialLifetime = deadly_trial_lifetime::install();
+    const bool gatewayPatrol = gateway_patrol::install();
     const bool hijackedPlacements = hijacked_placements::install();
     const bool omegaLatticeProbe = omega_vex_lattice_probe::install();
     const bool prologueFiller = install_prologue_filler_ready();
@@ -274,8 +281,8 @@ bool install() noexcept {
                         || omegaDirectivePresentationInstalled
                         || omegaSceneRetirementInstalled
                         || type31CaptureInstalled || dialogueDispatchProbe || omegaNavigation || omegaLairCinematic
-                        || omegaLairReceipts || vanceContact || ambientNamedPoints || nativeCapture || replicationObserver || omegaCannonReceipt || omegaArcCharge || publicEventParticipant || omegaRescueScenes || trialRevival || trialLifetime || hijackedPlacements
-                        || omegaLatticeProbe
+                        || omegaLairReceipts || vanceContactInstalled || ambientNamedPoints || nativeCapture || replicationObserver || omegaCannonReceipt || omegaArcCharge || publicEventParticipant || omegaRescueScenes || trialRevival || trialLifetime || hijackedPlacements
+                        || omegaLatticeProbe || gatewayPatrol
                         || featureFlagInstalled
                         || prologueFiller || regionPrivate
                         || worldStep || spawn || towerfallExecutor || fade;
@@ -291,7 +298,7 @@ bool install() noexcept {
                               && omegaNavigation && omegaLairCinematic
                               && omegaLairReceipts && vanceContact && ambientNamedPoints && nativeCapture && omegaCannonReceipt && omegaArcCharge && publicEventParticipant && omegaRescueScenes && trialRevival && trialLifetime && hijackedPlacements
                               && featureFlag && prologueFiller && regionPrivate
-                              && worldStep && spawn && towerfallExecutor && fade;
+                              && worldStep && spawn && towerfallExecutor && fade && gatewayPatrol;
     // Admission opens only for this fresh lifecycle and before its installed publication. The
     // exclusive lock keeps retail callbacks from observing either half of that publication.
     g_acceptLateInstalls.store(anyFix, std::memory_order_release);
@@ -314,7 +321,9 @@ void quiesce() noexcept {
     quiesce_omega_navigation();
     quiesce_omega_lair_cinematic();
     quiesce_omega_enemy_lair_receipts();
-    quiesce_vance_contact_observer();
+    if constexpr (kEnableVanceContactDiagnostics) {
+        quiesce_vance_contact_observer();
+    }
     quiesce_ambient_population_named_observer();
     quiesce_native_capture_observer();
     native_replication_observer::quiesce();
@@ -324,6 +333,7 @@ void quiesce() noexcept {
     quiesce_omega_rescue_scene_receipts();
     deadly_trial_revival::quiesce();
     deadly_trial_lifetime::quiesce();
+    gateway_patrol::quiesce();
     omega_vex_lattice_probe::quiesce();
 
     quiesce_type31_objective_capture();
@@ -388,7 +398,9 @@ bool uninstall() noexcept {
     if (!uninstall_omega_navigation()) { return false; }
     if (!uninstall_omega_lair_cinematic()) { return false; }
     if (!uninstall_omega_enemy_lair_receipts()) { return false; }
-    if (!uninstall_vance_contact_observer()) { return false; }
+    if constexpr (kEnableVanceContactDiagnostics) {
+        if (!uninstall_vance_contact_observer()) { return false; }
+    }
     if (!uninstall_ambient_population_named_observer()) { return false; }
     if (!uninstall_native_capture_observer()) { return false; }
     if (!native_replication_observer::uninstall()) { return false; }
@@ -398,6 +410,7 @@ bool uninstall() noexcept {
     if (!uninstall_omega_rescue_scene_receipts()) { return false; }
     if (!deadly_trial_revival::uninstall()) { return false; }
     if (!deadly_trial_lifetime::uninstall()) { return false; }
+    if (!gateway_patrol::uninstall()) { return false; }
     if (!omega_vex_lattice_probe::uninstall()) { return false; }
     uninstall_omega_dialogue_dispatch_probe();
     uninstall_activity_spawner_chain_probe();

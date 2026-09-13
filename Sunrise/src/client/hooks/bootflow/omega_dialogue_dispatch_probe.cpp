@@ -1,3 +1,4 @@
+#include "garden_ending_native.h"
 #include "../../../state/activity/gateway/runtime.h"
 #include "../../../state/activity/beyond_infinity/runtime.h"
 #include "../../../state/activity/deep_storage/runtime.h"
@@ -2091,6 +2092,8 @@ __declspec(noinline) void __fastcall roster_apply_hook(void* context,const void*
     const hooking::CallGate::Scope scope(g_rosterGate);
     const auto original=hooking::await_original(g_rosterOriginal);
     namespace ending=state::activity::omega_ending;
+    const auto gardenLease=scope.accepts_side_effects()?garden_ending_native::before(teardown_source(),
+        reinterpret_cast<std::uintptr_t>(context),reinterpret_cast<std::uintptr_t>(delta)):garden_ending_native::Cleanup{};
     ending::Token token{};
     omega_teardown_native::Retirement lease{};
     if(scope.accepts_side_effects()) {
@@ -2105,6 +2108,7 @@ __declspec(noinline) void __fastcall roster_apply_hook(void* context,const void*
         const graphics::hijacked_frame_timing::PostSpan timing(graphics::hijacked_frame_timing::Kind::roster_apply);
         original(context,delta);
     }
+    if(scope.accepts_side_effects()) garden_ending_native::after(teardown_source(),gardenLease);
     if(!scope.accepts_side_effects() || !lease.valid()) { return; }
     if(state::activity::mission_run_generation()!=token.run
         || ending::retirement_request(token.run)!=token

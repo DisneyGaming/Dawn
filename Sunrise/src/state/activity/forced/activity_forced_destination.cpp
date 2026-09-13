@@ -32,6 +32,7 @@ std::atomic_bool g_openingHostReady{};
  * launch must remain released even if native teardown visits idle before svc6.
  * Only a changed operator configuration or Clear re-arms the override. */
 bool g_omegaCompletionSuspended{};
+std::int16_t g_directActivity{destination::kAbsentActivityIndex};
 
 [[nodiscard]] bool same_configuration(const ForcedDestination& left,
                                       const ForcedDestination& right) noexcept {
@@ -157,6 +158,7 @@ bool publish(const ForcedDestination& value) noexcept {
     const bool changed =
         !same_configuration(runtime::storage::g_state.activity.forced, value);
     runtime::storage::g_state.activity.forced = value;
+    g_directActivity = destination::kAbsentActivityIndex;
     if (changed || !active(value)) { g_omegaCompletionSuspended = false; }
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
     if (changed || !active(value) || !prelaunch::configured(value)) {
@@ -184,6 +186,19 @@ bool publish(const ForcedDestination& value) noexcept {
                              {line.data(), static_cast<std::size_t>(length)});
         }
     }
+    return true;
+}
+
+bool publish_direct(const ForcedDestination& value, std::int16_t activity) noexcept {
+    if (!active(value) || !storable(value) || activity < 0) { return false; }
+    AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
+    runtime::storage::g_state.activity.forced = value;
+    g_directActivity = activity;
+    g_omegaCompletionSuspended = false;
+    g_prelaunchCommitted.store(true, std::memory_order_release);
+    g_openingHostReady.store(false, std::memory_order_release);
+    g_prelaunchStagedReported.store(false, std::memory_order_release);
+    ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
     return true;
 }
 
@@ -235,6 +250,7 @@ bool omega_completion_suspended() noexcept {
 void clear() noexcept {
     AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
     runtime::storage::g_state.activity.forced = {};
+    g_directActivity = destination::kAbsentActivityIndex;
     g_omegaCompletionSuspended = false;
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
     g_prelaunchCommitted.store(false, std::memory_order_release);
@@ -329,9 +345,25 @@ bool opening_host_ready() noexcept {
 /** Overwrites one committed destination with the forced one. */
 bool apply(destination::DestinationSelection& selection) noexcept {
     ForcedDestination value{};
-    snapshot(value);
-    if (!active(value)) {
-        return false;
+    AcquireSRWLockShared(&runtime::storage::g_stateLock);
+    value = g_omegaCompletionSuspended ? ForcedDestination{} : runtime::storage::g_state.activity.forced;
+    const auto directActivity = g_directActivity;
+    ReleaseSRWLockShared(&runtime::storage::g_stateLock);
+    if (!active(value)) return false;
+    if (directActivity != destination::kAbsentActivityIndex) {
+        const std::string_view incoming(reinterpret_cast<const char*>(selection.packageName.data()),
+            selection.packageNameLength <= selection.packageName.size() ? selection.packageNameLength : 0);
+        if (selection.activityIndex != directActivity || selection.previousActivityIndex != directActivity
+            || incoming != std::string_view(value.packageName.data(), value.packageNameLength)) { return false; }
+        selection.arrivalBubbleOverride=value.bubble;selection.hasArrivalBubbleOverride=value.hasBubble;
+        selection.sliceSetOverride=value.sliceSet;selection.hasSliceSetOverride=value.hasSliceSet;
+        selection.spawnSetOverride=value.hasSpawnSetHash?value.spawnSetHash:kAbsentSpawnSetHash;
+        selection.hasSpawnSetOverride=value.hasBubble;
+        if (incoming == "mission_scot") {
+            g_openingHostReady.store(false, std::memory_order_release);
+            state::activity::reset_mission_authority_runtime_initialization();
+        }
+        return true;
     }
 
     if (const auto* profile=prelaunch::configured(value); profile==&prelaunch::kGateway || profile==&prelaunch::kDeadlyTrial || profile==&prelaunch::kBeyondInfinity || profile==&prelaunch::kDeepStorage) {

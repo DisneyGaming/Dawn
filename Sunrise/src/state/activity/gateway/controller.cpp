@@ -9,6 +9,7 @@ bool valid_document(const coo::script::Views& views) noexcept {
 }
 
 void Controller::reset() noexcept {
+    forestXReached_=hydraDefeated_=false;
     executor_.cancel(*this); composition_.reset(); views_=nullptr;run_=0;now_=0;
     started_=false;landingSeen_=false;dialogueSubmitted_.reset();dialogue_={};frame_={};seen_.reset();population_={};prepared_=0;deathCohorts_.reset();destructible_={};scene_={};dialogueClock_.reset();objects_={};objectives_={};lifecycle_.reset();vanceRequested_=greetingRequested_=false;voiceEnds_={};
 }
@@ -27,6 +28,7 @@ bool Controller::select(const coo::script::Views& views,std::uint64_t run) noexc
 }
 void Controller::position(std::uint64_t run,Point point) noexcept {
     if(run!=run_ || !views_) { return; }
+    if(std::isfinite(point.x) && point.x>=266.F) forestXReached_=true;
     if(!views_->observationStart) { landingSeen_=true; }
     for(std::size_t i=0;i<std::size(kVolumes) && !landingSeen_;++i) {
         const auto& asset=views_->observationStart->asset;
@@ -115,6 +117,7 @@ bool Controller::admitted(const EnemyReceipt& receipt) noexcept {
 bool Controller::died(const EnemyReceipt& receipt) noexcept {
     if(!views_ || !frame_.enabled || !population_.died(receipt,run_,publicationGeneration_)) { return false; }
     const auto* source=spawn(receipt.registry,receipt.source);
+    if(receipt.registry==kMainlandRegistry && receipt.source==49) hydraDefeated_=true;
     if(source && source->cohort<deathCohorts_.size()) { deathCohorts_.set(source->cohort); }
     return true;
 }
@@ -159,6 +162,8 @@ void Controller::project_services() noexcept {
 }
 
 bool Controller::observed(const coo::CommandSpec& spec) const noexcept {
+    if(spec.asset==kModule && spec.argument==1024) return forestXReached_;
+    if(spec.asset==kModule && spec.argument==1025) return hydraDefeated_;
     if(views_ && views_->condition(spec)) { return views_->evaluate(spec,[this](const auto& native) noexcept { return observed(native); }); }
     if(spec.operation==coo::Operation::eventAfter) {
         if(spec.asset.definition==kDialogueAsset.definition) { return dialogueClock_.elapsed(spec.asset.slot,now_,spec.argument); }

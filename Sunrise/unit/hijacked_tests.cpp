@@ -138,7 +138,11 @@ struct Replay {
     std::uint64_t now{1000},endingEnd{};bool earlyDeath{},suppressInitialArrival{},heldEnding{},heldBoss{},plateChecked{},scanChecked{};
     std::array<std::vector<ds::EnemyReceipt>,std::size(ds::kSpawns)> enemies{};
     std::array<unsigned,3> moves{};std::vector<unsigned> dialogue;unsigned healthWait{},bossWait{},optionalSurvivors{};
-    explicit Replay(const coo::script::Views& v,bool early,bool suppress=false):views(v),earlyDeath(early),suppressInitialArrival(suppress) {check(c.select(v,run),"select current mission");enter(c,run,v.observationStart->asset);}
+    explicit Replay(const coo::script::Views& v,bool early,bool suppress=false):views(v),earlyDeath(early),suppressInitialArrival(suppress) {
+        check(c.select(v,run),"select current mission");
+        check(!c.update(run,now,false).enabled,"loading does not publish opening");
+        check(c.update(run,now,true).enabled,"confirmed arrival starts without a position sample");
+    }
     void serve() {
         auto frame=c.frame();
         for(std::size_t i=0;i<std::size(ds::kAssets);++i) {

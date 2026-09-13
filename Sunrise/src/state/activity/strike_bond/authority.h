@@ -5,9 +5,15 @@
 #include "../coo/native_combatant_authority.h"
 #include "../coo/native_device_authority.h"
 #include "../coo/native_scene_cast_authority.h"
+#include "../coo/native_scene_authority.h"
 #include "../coo/native_clock_authority.h"
 #include "../coo/native_music_authority.h"
 namespace sunrise::state::activity::strike_bond {
+inline std::uint32_t encounter_key(const Frame& f,std::uint32_t key) noexcept {
+    if(f.campaign && key==0x277205FBU) return kRoot;
+    if(f.campaign && key==0x4786C0E0U) return 0xF29221F5U;
+    return key;
+}
 // The wire list owns runtime participants. Static type-48 performance points
 // remain in the authored 80806268 parameters, but must never be released as
 // components by B3F620 -> 4E83B0 (roof crash at exe+4E8421).
@@ -26,7 +32,9 @@ inline coo::Asset audience(int region) noexcept {
     return {};
 }
 inline std::size_t body_bits(const Frame& f,std::uint32_t key,std::uint8_t type,std::uint16_t slot) noexcept {
+    key=encounter_key(f,key);
     if(!f.enabled || !f.spawnGeneration) return 0;
+    if(f.campaign && key==0xC80A735BU && type==65 && slot==0) return 65;
     const auto* a=find(key,type,slot);if(!a) return 0;
     // t_kv_upper was omitted from the original catalogue, so its disable
     // request was never published. Its volume spans Z=207.662..228.662 across
@@ -51,6 +59,7 @@ inline std::size_t body_bits(const Frame& f,std::uint32_t key,std::uint8_t type,
     if(!state.managed) return 0;
     // Retirement is an explicit publication, not the absence of a spawn body.
     if(type==1 && key==kBossActor.registry && slot==3) return state.active || f.bossDead?coo::native_combatant::kSourceBits:0;
+    if(type==1 && key==0xC80A735BU) return f.campaign && state.active?641:0;
     if(type==1) {const auto i=spawn_index(a->asset);return state.active && i<std::size(kSpawns)?coo::native_combatant::authored_source_bits(kSpawns[i].categories,true):0;}
     if(type==4) return 252;
     if(type==23) return 147;
@@ -58,7 +67,8 @@ inline std::size_t body_bits(const Frame& f,std::uint32_t key,std::uint8_t type,
         const auto i=scene_index(a->asset);if(i==std::size(kScenes) || !f.scenes[i].generation) return 0;
         // Source objects complete preparation and native creation before a
         // scene can resolve its non-actor cast. Reserved actors are scene-owned.
-        for(const auto target:kScenes[i].cast) if(target.type==4) {
+        // A stop must still reach an existing scene after its cast is retired.
+        for(const auto target:kScenes[i].cast) if(target.type==4 && !f.scenes[i].stop) {
             const auto n=asset_index(target);
             if(n==std::size(kAssets) || !f.native[n].active || !f.native[n].acknowledged) return 0;
         }
@@ -67,10 +77,14 @@ inline std::size_t body_bits(const Frame& f,std::uint32_t key,std::uint8_t type,
     return 0;
 }
 template<class Writer> bool write_body(Writer& w,const Frame& f,std::uint32_t key,std::uint8_t type,std::uint16_t slot) noexcept {
+    key=encounter_key(f,key);
     if(!body_bits(f,key,type,slot)) return false;
     const auto* a=find(key,type,slot);const auto& s=f.native[asset_index(a->asset)];
     switch(type) {
+    case 65:return f.campaign && w.write(0x80000000U+f.spawnGeneration+1U,32)
+        && w.write(f.scan.armed && !f.scan.complete && !f.finished?1U:0U,1) && w.write(0x811C9DC5U,32);
     case 1: {
+        if(key==0xC80A735BU) return coo::native_scene::write_source(w,s.generation,s.active);
         const auto i=spawn_index(a->asset);const auto& row=kSpawns[i];
         // looseRequested/secondRequested request one actor per authored category. A category
         // holds six weighted SELECTIONS, but those are alternatives for the one slot, not six
@@ -78,6 +92,7 @@ template<class Writer> bool write_body(Writer& w,const Frame& f,std::uint32_t ke
         // kSpawns.count is therefore the category count, and that is the authored actor count.
         coo::native_combatant::Source source{key,f.spawnGeneration,0,1,{},
             static_cast<std::uint8_t>(row.categories==2?1:0),row.categories==2,false};
+        source.variant = f.enemyVariant==5 && grandmaster_substitution_source(key,slot) ? 5U : 0U;
         if(key==kBossActor.registry && slot==3) {
             // A normal loose request owns spawning and AI. A reserved scene
             // request can commit its generation without ever creating Dendron.
@@ -103,7 +118,7 @@ template<class Writer> bool write_body(Writer& w,const Frame& f,std::uint32_t ke
         return coo::native_combatant::write_bind(w,f.spawnGeneration);
     case 4:return coo::native_device::object(w,s.generation,s.active);
     case 11:return coo::native_music::select(w,f.musicCandidate);
-    case 18:return coo::native_clock::countdown(w,f.completion.valid() && f.completion.state==6,f.endEpoch);
+    case 18:return coo::native_clock::countdown(w,f.completion.valid() && f.completion.state==6,f.endEpoch,f.campaign?10000U:30000U);
     case 23:return coo::native_device::position_only(w,device_position(f,a->asset),static_cast<std::int16_t>(s.generation),!animated_position(a->asset) || (key==kBossActor.registry && slot==173 && f.bossPlatformSnap));
     case 26: {
         const auto* g=golem(key,type,slot);if(!g) return false;
@@ -123,7 +138,7 @@ template<class Writer> bool write_body(Writer& w,const Frame& f,std::uint32_t ke
     case 37:return coo::native_generator::write_activation(w,forest_request(f.generatorSeed));
     case 43: {
         const auto i=scene_index(a->asset);const auto& scene=f.scenes[i];
-        return coo::native_scene::cast_scene(w,scene.generation,participants(kScenes[i]).view(),std::span(scene.events).first(scene.eventCount));
+        return coo::native_scene::cast_scene(w,scene.generation,participants(kScenes[i]).view(),std::span(scene.events).first(scene.eventCount),1,scene.stop);
     }
     case 53:return coo::native_presentation::dialogue(w,f.generations,f.activeRow);
     case 68:return coo::native_presentation::objective(w,f.presentation,audience(f.region),true);

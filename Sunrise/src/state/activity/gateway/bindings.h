@@ -14,6 +14,8 @@ inline constexpr coo::Asset kDialogueAsset{kRoot,0x80F47426U,53,2};
 // Event clock keys use slot as the dialogue row; they are never published as native objects.
 inline constexpr coo::Asset kBlockedDialogueClock{kRoot,0x80F47426U,53,5};
 inline constexpr coo::script::Capability kCapabilities[]{
+    {"forest.x266","*",{coo::Operation::observation,kModule,1024,coo::Wait::observed}},
+    {"forest.hydra_dead","*",{coo::Operation::observation,kModule,1025,coo::Wait::observed}},
     {"opening.module","composition",{coo::Operation::mechanic,{0x986985D0U,0x80F46DB0U,0,0},1U,coo::Wait::requested}},
     {"opening.checked","composition",{coo::Operation::observation,{0x00000000U,0x00000000U,0,0},0U,coo::Wait::observed}},
     {"landing.entered","*",{coo::Operation::observation,{0x85742F3EU,0x80F470E5U,60,359},0U,coo::Wait::observed}},
@@ -91,6 +93,7 @@ inline constexpr coo::script::Capability kCapabilities[]{
     {"population.cleared.4","*",{coo::Operation::observation,kModule,4,coo::Wait::observed}},
     {"population.cleared.5","*",{coo::Operation::observation,kModule,5,coo::Wait::observed}},
     {"population.contact.9","*",{coo::Operation::observation,kModule,265,coo::Wait::observed}},
+    {"population.contact.8","*",{coo::Operation::observation,kModule,264,coo::Wait::observed}},
 
 };
 inline constexpr coo::script::ModuleCapability kModules[]{{"opening",{kModule,1}}};

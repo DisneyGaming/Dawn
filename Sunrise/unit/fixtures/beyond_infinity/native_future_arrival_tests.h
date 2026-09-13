@@ -26,7 +26,7 @@ template<class Check> void run(Check check,const sunrise::state::activity::coo::
         auto views=shipped;views.phases=shipped.phases.subspan(5,2);
         bi::Controller controller;const std::uint64_t owner=runAhead?807:806;
         check(controller.select(views,owner),"select shipped second Forest and Future phases");
-        controller.position(owner,point(views.observationStart->asset));
+        if(views.observationStart) { controller.position(owner,point(views.observationStart->asset)); }
         std::uint64_t now=1000;bool allowWarning{};unsigned warningSubmissions{};
         const auto tick=[&]() {
             const auto frame=controller.update(owner,now,true);now+=1000;

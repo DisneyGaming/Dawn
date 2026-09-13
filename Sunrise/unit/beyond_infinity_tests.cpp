@@ -192,15 +192,13 @@ int main() {
     {
         bi::Controller clockController;
         check(clockController.select(doc->views(),71),"clock owner selected");
-        check(!clockController.update(71,90000,true).enabled,"loading cannot start the gameplay clock");
-        enter(clockController,71,doc->views().observationStart->asset);
+        check(!clockController.update(71,90000,false).enabled,"loading cannot start the gameplay clock");
         check(clockController.update(71,100000,true).gameplayClockTicks==0,"arrival starts clock at zero");
         check(clockController.update(71,107000,true).gameplayClockTicks==4712400,"seven seconds match native timer units");
         check(!clockController.update(72,200000,true).enabled,"foreign run cannot publish clock");
         check(clockController.update(71,106000,true).gameplayClockTicks==4712400,"late sample cannot rewind native time");
         check(clockController.update(71,108000,true).gameplayClockTicks==5385600,"clock continues after a stale sample");
         clockController.reset();check(clockController.select(doc->views(),72),"clock replay selects new owner");
-        enter(clockController,72,doc->views().observationStart->asset);
         check(clockController.update(72,300000,true).gameplayClockTicks==0,"new run cannot inherit old native epoch");
         check(coo::native_activity_ticks(1)==673 && coo::native_activity_ticks(10)==6732,"native tick conversion keeps subsecond precision");
         check(coo::native_activity_ticks(UINT64_MAX)==UINT64_MAX,"native tick conversion cannot wrap on overflow");
@@ -215,10 +213,9 @@ int main() {
     check(!other || !bi::valid_document(other->views()),"foreign mission rejected");
     bi::Controller controller;
     check(controller.select(doc->views(),17),"select run");
-    check(!controller.update(17,1,true).enabled,"no progression before authenticated opening position");
-    controller.position(99,{269,250,87});check(!controller.update(17,2,true).enabled,"foreign position rejected");
-    enter(controller,17,doc->views().observationStart->asset);
-    auto frame=controller.update(17,3,true);check(frame.enabled,"opening arrival starts executor");
+    check(!controller.update(17,1,false).enabled,"no progression during loading");
+    controller.position(99,{269,250,87});check(!controller.update(17,2,false).enabled,"foreign position cannot establish arrival");
+    auto frame=controller.update(17,3,true);check(frame.enabled,"confirmed arrival starts without a position sample");
     controller.update(17,4,true);frame=controller.update(17,5,true);
     for(unsigned i=0;i<8 && frame.activeRow==coo::kNoDialogue;++i) { frame=controller.update(17,6+i,true); }
     check(frame.activeRow==0,"opening row offered");

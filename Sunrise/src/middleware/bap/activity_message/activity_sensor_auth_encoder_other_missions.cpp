@@ -1,3 +1,4 @@
+#include "garden_ending_encoder.h"
 #include "../../../state/activity/omega/omega_mission_authority.h"
 #include "../../../state/activity/omega/omega_rescue_catalog.h"
 #include <algorithm>
@@ -626,6 +627,7 @@ constexpr std::uint32_t kMaximumRegion = 0x7FFFFFFF;
  * @return True when every field fit.
  */
 [[nodiscard]] bool write_body(bits::Writer& writer, const Snapshot& snapshot) noexcept {
+    if(snapshot.strike_bond.campaign && snapshot.strike_bond.endingFlow.retire) return garden_ending::write(writer,snapshot);
     // The hardwipe token is unchecked unless the client's `use_hardwipe_tokens` config is on.
     bool encoded = writer.write(0, kHardwipeWidth)
                    && writer.write(snapshot.patchEpoch.first, kEpochWidth)

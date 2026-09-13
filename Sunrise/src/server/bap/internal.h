@@ -240,6 +240,8 @@ struct Session {
     std::uint64_t accountGeneration{};
     /** Newest shared-account generation owed as a full cross-peer refresh. */
     std::uint64_t accountResyncGeneration{};
+    /** Latest native Nightfall power projection revision published to this peer. */
+    std::uint64_t nightfallPowerRevision{};
     /** Set by encrypted processing only after one account mutation commits and is copied out. */
     bool accountMutationPublished{};
     /** True while another peer's account mutation still needs a full local refresh. */

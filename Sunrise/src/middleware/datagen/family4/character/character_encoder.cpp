@@ -7,6 +7,7 @@
 #include <limits>
 #include <optional>
 
+#include "../../../../state/activity/nightfall/native_power.h"
 #include "../../../../state/unlocks/unlocks_runtime.h"
 #include "../instance/layout.h"
 #include "../progression/progression_bank_keys.h"
@@ -132,8 +133,12 @@ bool encode(const state::CharacterState& state,
             const loadout::ResolvedLoadout& resolvedLoadout,
             const state::equipment::light::Evaluation& lightEvaluation,
             std::span<std::byte> output) noexcept {
+    state::equipment::light::Evaluation effectiveLight = lightEvaluation;
+    const auto powerResult = state::activity::nightfall::cap_equipment_summary(
+        effectiveLight, state::activity::nightfall::current_native_power_projection());
     if (!valid(state) || !valid(resolvedLoadout)
-        || !summary_matches_loadout(resolvedLoadout, lightEvaluation)
+        || powerResult == state::activity::nightfall::NativePowerApplyResult::invalid
+        || !summary_matches_loadout(resolvedLoadout, effectiveLight)
         || output.size() < layout::kObjectSize) {
         return false;
     }
@@ -161,7 +166,7 @@ bool encode(const state::CharacterState& state,
         object.objectiveValues[index] =
             index < unlocks.characterObjectValues.size() ? unlocks.characterObjectValues[index] : 0;
     }
-    if (!build_equipment_summary(lightEvaluation, object.equipmentSummary)) {
+    if (!build_equipment_summary(effectiveLight, object.equipmentSummary)) {
         return false;
     }
     if (!progression::key_bank(state::build_data::progressions::Scope::character,

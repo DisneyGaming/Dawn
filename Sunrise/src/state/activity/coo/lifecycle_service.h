@@ -32,9 +32,13 @@ public:
         if(!owner.valid() || owner!=owner_ || complete_) { return false; }
         complete_=true;return true;
     }
-    bool complete_timed(Generation owner,std::uint64_t now) noexcept {
+    bool complete_timed(Generation owner,std::uint64_t now,std::uint32_t durationMs=30000) noexcept {
         if(!complete(owner)) { return false; }
-        timed_=true;deadline_=now+30000;return true;
+        timed_=true;deadline_=now+durationMs;return true;
+    }
+    bool complete_to_orbit(Generation owner) noexcept {
+        if(!complete(owner)) return false;
+        state_=8;return true;
     }
     bool advance(std::uint64_t now) noexcept {
         if(!timed_ || !complete_ || state_>=8 || now<deadline_) { return false; }

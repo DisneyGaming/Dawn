@@ -1,4 +1,5 @@
 #include "activity_global_state_push.h"
+#include "../../../../../state/activity/strike_bond/runtime.h"
 
 #include <Windows.h>
 
@@ -79,6 +80,13 @@ resolve_state_for_selection(state::activity::ActivityInstanceKey activity,
         output.hasSliceSet = true;
         output.sliceSetIndex =
             arrival_slice_set(defaults.defaultDestination, selection, name, layout);
+        if(name=="mission_bond" && layout.tag==0x80F47445U
+            && activity==state::activity::newest_joined_activity()) {
+            const auto garden=state::activity::strike_bond::request();
+            if(garden.frame.campaign && garden.frame.endingFlow.retired && output.bubbleCount>3) {
+                output.bubbleStates[3]=0x81;output.sliceSetIndex=25;
+            }
+        }
         if(name=="mission_scot" && layout.tag==0x80F47522U
             && activity==state::activity::newest_joined_activity()
             && state::activity::mission_seed_armed()) {

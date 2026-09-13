@@ -159,6 +159,27 @@ class MercuryCatalogChecks(unittest.TestCase):
             attrs = {a['key']: a['value'] for a in variant[0]['selector_attributes']}
             self.assertEqual((attrs['6EECD523'], attrs['B10F785D']), ('72300E38', '4A3554B4'))
 
+    def test_requested_density_fits_receipt_and_observer_capacity(self):
+        inventory = installed_components(self.reader)
+        result = ambient_comparison(self.reader, inventory)
+        selected = {
+            '74337EDD', 'EB1E8934', 'B3CBA385', '2571C34D', '9D083869', '9692BB5E',
+            '1ED6087A', 'FB7F2889', '1780D86F', '90EFDE28', 'CF2196EA', '8C756CC3',
+            'BBF1BA51', '9B219BF3', 'CCF03E8D', '0EFE61CB',
+        }
+        # Count every authored choice in every category as if it materialized;
+        # this is stricter than weighted selection and avoids inferring retail
+        # spawn behavior from the package layout.
+        def ceiling(source):
+            return max(sum(len(category['variants'][variant]) for category in source['categories'])
+                       for variant in range(6))
+        self.assertEqual(max(ceiling(source) for source in result['sources']), 3)
+        self.assertLessEqual(max(ceiling(source) for source in result['sources']
+                                 if source['registry'] in selected), 3)
+        self.assertLessEqual((4 + 5) * 3, 64)       # one large war source generation
+        self.assertLessEqual((8 * 3 + 8 * 4) * 3, 256)  # simultaneous initial admissions
+        self.assertLessEqual((8 * 3 + 8 * 4) * 3 * 3, 1024)  # birth/death/retirement burst
+
     def test_adjacent_retreat_announcement_identity_without_completion_claim(self):
         result = incident_presentation(self.read(0x80B9E5BF, 0x80807C9B), 0x8753E5BA)
         self.assertEqual(result['incident_row'], 3987)

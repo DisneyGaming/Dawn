@@ -14,6 +14,11 @@
 #include "../coo/native_clock_authority.h"
 #include "../coo/native_music_authority.h"
 namespace sunrise::state::activity::strike_pact {
+inline std::uint32_t encounter_key(const Frame& f,std::uint32_t key) noexcept {
+    if(f.campaign && key==0x0F0A7E94U) return kRoot;
+    if(f.campaign && key==0x4786C0E0U) return 0xF29221F5U;
+    return key;
+}
 
 // One authored device the mission drives, and the frame bit that decides its position. Every one
 // of these is a type-23 link-state body: position 1 is the device's authored physical presence and
@@ -37,7 +42,9 @@ inline constexpr std::array<DeviceRow,2> kDevices{{
 
 [[nodiscard]] inline std::size_t body_bits(const Frame& frame,std::uint32_t key,std::uint8_t type,
                                            std::uint16_t slot) noexcept {
+    key=encounter_key(frame,key);
     if(!frame.enabled || frame.spawnGeneration==0) { return 0; }
+    if(frame.campaign && key==0x547F6321U && type==65 && slot==0) return 65;
     if(type==31 && player_trigger(key,slot)) { return coo::native_player_trigger::kAuthBits; }
     if(type==18 && key==0xF29221F5U && slot==2) { return 386; }
     for(const auto& region:presentation::kRegions) {
@@ -119,10 +126,13 @@ inline constexpr std::array<DeviceRow,2> kDevices{{
 template<class Writer>
 bool write_body(Writer& writer,const Frame& frame,std::uint32_t key,std::uint8_t type,
                 std::uint16_t slot) noexcept {
+    key=encounter_key(frame,key);
     if(body_bits(frame,key,type,slot)==0) { return false; }
+    if(type==65) return frame.campaign && writer.write(0x80000000U+frame.spawnGeneration+1U,32)
+        && writer.write(frame.scan.armed && !frame.scan.complete && !frame.finished?1U:0U,1) && writer.write(0x811C9DC5U,32);
     if(type==31) { return coo::native_player_trigger::arm(writer,frame.spawnGeneration); }
     if(type==18) { return coo::native_clock::countdown(writer,frame.completion.valid()
-        && frame.completion.state==6,frame.endEpoch); }
+        && frame.completion.state==6,frame.endEpoch,frame.campaign?10000U:30000U); }
     if(type==70) {
         return writer.write(0,5) && writer.write(0,1) && writer.write(32769U,16) && writer.write(0,1);
     }
@@ -136,7 +146,10 @@ bool write_body(Writer& writer,const Frame& frame,std::uint32_t key,std::uint8_t
         if(type==26) { return coo::native_attachment::squad(writer,kBoss,kBossSquad,frame.boss.immune); }
         if(type==23 && slot>=120 && slot<=125) {
             const auto room=(slot-120)/2;
-            const bool open=(slot%2)==0 || (frame.boss.cleared&(1U<<room))!=0;
+            // Access the Map owns the campaign exit. Remaining optional room adds
+            // cannot leave the terminal behind a barrier once its scan is armed.
+            const bool mapAccess=frame.campaign && frame.scan.armed && slot==kBossRooms.back().exit;
+            const bool open=(slot%2)==0 || (frame.boss.cleared&(1U<<room))!=0 || mapAccess;
             return coo::native_device::position_only(writer,open?0.F:1.F,
                 static_cast<std::int16_t>(frame.spawnGeneration+(open?1U:0U)),(slot%2)==0);
         }
@@ -162,6 +175,7 @@ bool write_body(Writer& writer,const Frame& frame,std::uint32_t key,std::uint8_t
         const auto& source=kAllSpawns[index];
         coo::native_combatant::Source body{key,frame.spawnGeneration,0,source.loose,{},source.second,
                                            source.categories==2,false};
+        body.variant = frame.enemyVariant==5 && grandmaster_substitution_source(key,slot) ? 5U : 0U;
         body.sceneRequested=key==kLedge && reserved_cargo(slot);
         // Every squad names its section's combat objective, because an unreferenced squad is never
         // costed and never given an authored task: its actors are created and then stand where the

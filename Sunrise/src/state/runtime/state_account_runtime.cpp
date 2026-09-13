@@ -12,6 +12,7 @@
 #include "../../core/logging/log.h"
 #include "../../middleware/datagen/family4/loadout/loadout_resolver.h"
 #include "../build_data/runtime.h"
+#include "../activity/nightfall/rules.h"
 #include "runtime.h"
 #include "state.h"
 #include "state_account_transaction_helpers.h"
@@ -171,6 +172,7 @@ bool set_selected_character(std::uint64_t characterSoid, bool& changed) noexcept
 bool prepare_equipment_swap(std::uint64_t requestedInstanceSoid,
                             PendingEquipmentSwap& mutation) noexcept {
     mutation = {};
+    if (activity::nightfall::equipment_locked()) return false;
     const AccountState account = account_snapshot();
     if (requestedInstanceSoid == 0 || !account::valid(account)) {
         return false;
@@ -287,6 +289,7 @@ bool prepare_equipment_swap(std::uint64_t requestedInstanceSoid,
 bool prepare_equipment_unequip(std::uint64_t requestedInstanceSoid,
                                PendingEquipmentSwap& mutation) noexcept {
     mutation = {};
+    if (activity::nightfall::equipment_locked()) return false;
     const AccountState account = account_snapshot();
     if (requestedInstanceSoid == 0 || !account::valid(account)) {
         return false;
@@ -404,6 +407,8 @@ bool prepare_equipment_unequip(std::uint64_t requestedInstanceSoid,
 bool commit_equipment_swap(PendingEquipmentSwap& mutation) noexcept {
     const PendingEquipmentSwap prepared = mutation;
     mutation = {};
+    const activity::nightfall::EquipmentMutation nightfallGuard;
+    if (!nightfallGuard.allowed()) return false;
     if (!prepared.prepared || prepared.characterSoid == 0 || prepared.requestedInstanceSoid == 0
         || (prepared.kind != EquipmentMutationKind::equip
             && prepared.kind != EquipmentMutationKind::unequip)

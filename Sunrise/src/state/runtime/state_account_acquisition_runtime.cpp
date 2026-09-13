@@ -515,6 +515,98 @@ bool prepare_profile_item_acquisition(std::uint16_t collectibleIndex,
     return true;
 }
 
+/** Prepares a bounded free credit for one installed profile currency. */
+ProfileCurrencyGrantResult
+prepare_profile_currency_grant(std::uint32_t definitionHash,
+                               std::int32_t quantity,
+                               PendingProfileItemAcquisition& mutation) noexcept {
+    mutation = {};
+    const AccountState account = account_snapshot();
+    build_data::items::Definition item{};
+    item_details::Definition detail{};
+    inventory_buckets::Descriptor bucket{};
+    if (definitionHash == authored_inventory::kNoDefinitionHash || quantity <= 0
+        || !account::valid(account) || !valid_profile_inventory(account)
+        || !build_data::find_item_definition_hash(definitionHash, item)
+        || item.definitionHash != definitionHash
+        || !build_data::find_configured_item_detail(item.definitionIndex, detail)
+        || detail.definitionIndex != item.definitionIndex || detail.definitionHash != definitionHash
+        || detail.bucketId != item.bucketId
+        || detail.instancedDefinitionState != item_details::InstancedDefinitionState::stackable
+        || detail.maxStackSize <= 0
+        || !build_data::find_inventory_bucket_descriptor(detail.bucketId, bucket)
+        || bucket.arraySelector != inventory_buckets::ArraySelector::profile
+        || bucket.slotCount != 1
+        || build_data::is_profile_action_source(item.definitionIndex, item.bucketId)) {
+        return ProfileCurrencyGrantResult::rejected;
+    }
+
+    std::size_t profileIndex = account.profileItemCount;
+    std::size_t matches = 0;
+    std::int32_t greatestMutationSerial = 0;
+    for (std::size_t index = 0; index < account.profileItemCount; ++index) {
+        const auto& existing = account.profileItems[index];
+        greatestMutationSerial =
+            (std::max)(greatestMutationSerial, existing.mutationSerial);
+        if (existing.definitionHash == definitionHash) {
+            ++matches;
+            profileIndex = index;
+        }
+    }
+    if (matches > 1 || greatestMutationSerial == (std::numeric_limits<std::int32_t>::max)()) {
+        return ProfileCurrencyGrantResult::rejected;
+    }
+    if (matches == 1 && account.profileItems[profileIndex].quantity >= detail.maxStackSize) {
+        return account.profileItems[profileIndex].quantity == detail.maxStackSize
+                   ? ProfileCurrencyGrantResult::capped
+                   : ProfileCurrencyGrantResult::rejected;
+    }
+    const bool appended = matches == 0;
+    if (appended && account.profileItemCount >= account.profileItems.size()) {
+        return ProfileCurrencyGrantResult::rejected;
+    }
+    const std::int32_t previousQuantity =
+        appended ? 0 : account.profileItems[profileIndex].quantity;
+    const std::int32_t credited =
+        profile_currency_credit(previousQuantity, detail.maxStackSize, quantity);
+    if (credited <= 0) {
+        return ProfileCurrencyGrantResult::rejected;
+    }
+    AccountState after = account;
+    const std::int32_t nextSerial = greatestMutationSerial + 1;
+    if (appended) {
+        after.profileItems[profileIndex] = {0, definitionHash, credited, nextSerial};
+        ++after.profileItemCount;
+    } else {
+        after.profileItems[profileIndex].quantity += credited;
+        after.profileItems[profileIndex].mutationSerial = nextSerial;
+    }
+    if (!account::valid(after) || !valid_profile_inventory(after)) {
+        return ProfileCurrencyGrantResult::rejected;
+    }
+    mutation.beforeItems = account.profileItems;
+    mutation.afterItems = after.profileItems;
+    mutation.accountSoid = account.primarySoid;
+    mutation.acquiredDefinitionHash = definitionHash;
+    mutation.expectedItemCount = account.profileItemCount;
+    mutation.afterItemCount = after.profileItemCount;
+    mutation.profileIndex = profileIndex;
+    mutation.previousQuantity = previousQuantity;
+    mutation.acquiredQuantity = previousQuantity + credited;
+    mutation.previousMutationSerial =
+        appended ? 0 : account.profileItems[profileIndex].mutationSerial;
+    mutation.acquiredMutationSerial = nextSerial;
+    mutation.bucketId = detail.bucketId;
+    mutation.appended = appended;
+    mutation.rewardGrant = true;
+    mutation.prepared = true;
+    if (!valid_profile_mutation_shape(mutation)) {
+        mutation = {};
+        return ProfileCurrencyGrantResult::rejected;
+    }
+    return ProfileCurrencyGrantResult::prepared;
+}
+
 /** Produces the exact account after-image while the captured profile view is still current. */
 bool preview_profile_item_acquisition(const PendingProfileItemAcquisition& mutation,
                                       AccountState& after) noexcept {

@@ -13,6 +13,7 @@
 #include "../../core/logging/log.h"
 #include "../../core/settings/settings.h"
 #include "../activity/defaults/activity_defaults_validation.h"
+#include "../activity/nightfall/completion_reward.h"
 #include "../investment/investment_clock.h"
 #include "../build_data/runtime.h"
 #include "equipment/configured_equipment_identity.h"
@@ -266,6 +267,7 @@ bool initialize(void* module,
         return false;
     }
     // Publish one complete State and its clock only after every generated secret is valid.
+    activity::nightfall::rewards::clear();
     AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
     runtime::storage::g_state = initialized;
     investmentClock = clock;
@@ -276,6 +278,7 @@ bool initialize(void* module,
 
 /** Securely erases State, including activity destinations and matchmaking descriptors. */
 void shutdown() noexcept {
+    activity::nightfall::rewards::clear();
     AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
     SecureZeroMemory(&runtime::storage::g_state, sizeof runtime::storage::g_state);
     investmentClock = {};

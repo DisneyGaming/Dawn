@@ -72,4 +72,47 @@ void population_service_cases() {
     CHECK(!invalid.begin({43,{1}},malformed));
     malformed=m::kPopulations;malformed[1]=malformed[0];
     CHECK(!invalid.begin({43,{1}},malformed));
+
+    // A recurring Mercury source changes generation only after its exact
+    // consumed mirror. The next generation rejects the old mirror identity.
+    p::Service recurring;CHECK(recurring.begin({52,{7}},m::kPopulations,9));
+    p::Command recurringCommand{{52,{7}},1,1,0x74337EDD,0,1,9};
+    CHECK(recurring.request(recurringCommand,15)==p::Result::accepted);
+    sense={};sense.registryKey=0x74337EDD;sense.slotType=1;sense.slotIndex=0;
+    sense.hasNativeSchema=true;sense.nativeSchema=0x80807ECC;sense.hasRootDelta=true;
+    sense.nativeRevision=1;sense.sourceDelta.present=1;sense.sourceDelta.scalar[0]=7;
+    sense.sourceDelta.consumedPresent=true;sense.sourceDelta.consumedCount=1;sense.sourceDelta.consumed[0]=1;
+    CHECK(recurring.observe(15,sense) && recurring.consumed(0));
+    recurringCommand.expectedRevision=2;recurringCommand.request=2;recurringCommand.requested=4;
+    CHECK(recurring.renew(recurringCommand,15)==p::Result::accepted);
+    auto requestWhileRenewing=recurringCommand;++requestWhileRenewing.request;requestWhileRenewing.requested=2;
+    CHECK(recurring.request(requestWhileRenewing,15)==p::Result::exhausted);
+    CHECK(recurring.project(15).entries[0].source.generation==7 && recurring.renewal(0).pending);
+    CHECK(recurring.renewal(0).target==1 && recurring.renewal(0).nextTarget==4);
+    CHECK(recurring.commit_renewal(0));
+    CHECK(recurring.project(15).entries[0].source.generation==8
+        && recurring.project(15).entries[0].source.looseRequested==4 && !recurring.renewal(0).pending);
+    sense.nativeRevision=2;CHECK(!recurring.observe(15,sense));
+    sense.sourceDelta.scalar[0]=8;sense.sourceDelta.consumed[0]=4;
+    CHECK(recurring.observe(15,sense) && recurring.consumed(0));
+    recurringCommand.expectedRevision=recurring.revision();
+    recurringCommand.request=recurring.last_request()+1;recurringCommand.requested=3;
+    CHECK(recurring.renew(recurringCommand,15)==p::Result::accepted);
+    ++recurringCommand.request;
+    CHECK(recurring.renew(recurringCommand,15)==p::Result::exhausted); // bridge acknowledgement still pending
+    recurring.cancel_renewal(0);CHECK(!recurring.renewal(0).pending);
+    for(std::uint32_t cycle=0;cycle<80;++cycle) {
+        recurringCommand.expectedRevision=recurring.revision();
+        recurringCommand.request=recurring.last_request()+1;
+        recurringCommand.requested=static_cast<std::uint8_t>(3+cycle%2);
+        CHECK(recurring.renew(recurringCommand,15)==p::Result::accepted);
+        const auto generation=9+cycle;
+        CHECK(recurring.project(15).entries[0].source.generation==generation-1);
+        CHECK(recurring.commit_renewal(0));
+        CHECK(recurring.project(15).entries[0].source.generation==generation
+            && recurring.project(15).entries[0].source.looseRequested==recurringCommand.requested);
+        sense.nativeRevision=3+cycle;sense.sourceDelta.scalar[0]=generation;
+        sense.sourceDelta.consumed[0]=recurringCommand.requested;
+        CHECK(recurring.observe(15,sense) && recurring.consumed(0));
+    }
 }

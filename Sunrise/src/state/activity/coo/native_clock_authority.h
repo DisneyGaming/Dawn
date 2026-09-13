@@ -14,8 +14,8 @@ template<class Writer> bool stamp(Writer& w,std::uint64_t value) noexcept {
     return true;
 }
 // 80809919: fixed activity timer, with an epoch in the same domain as message 5.
-template<class Writer> bool countdown(Writer& w,bool running,std::uint64_t epoch) noexcept {
-    const auto duration=ticks(30000);
+template<class Writer> bool countdown(Writer& w,bool running,std::uint64_t epoch,std::uint32_t durationMs=30000) noexcept {
+    const auto duration=ticks(durationMs);
     return w.write(running?1U:0U,1) && w.write(0,64) && w.write(duration,64)
         && w.write(0,64) && w.write(duration,64) && w.write(epoch,64)
         && w.write(std::bit_cast<std::uint32_t>(1.F),32) && w.write(0,1)

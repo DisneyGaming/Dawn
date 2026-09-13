@@ -24,6 +24,7 @@
 #include "../../../../../state/activity/forced/activity_forced_destination.h"
 #include "../../../../../state/activity/membership/activity_membership_query.h"
 #include "../../../../../state/activity/runtime.h"
+#include "../../../../../state/activity/nightfall/rules.h"
 #include "../../../../../state/activity/omega_presentation.h"
 #include "../../../../../state/activity/coo/omega_projection.h"
 #include "../../../../../state/activity/coo/omega_opening_projection.h"
@@ -515,9 +516,11 @@ RosterOutcome build_roster_snapshot(Session& session,
     const bool deepDestination=name=="adventure_whisk" && !session.activity.joinedForeignSession;
     const bool deepPrepared=state::activity::deep_storage::prepare(state::activity::mission_run_generation(),deepDestination);
     if(deepDestination && !deepPrepared) { return RosterOutcome::noGroups; }
-    const bool gardenPrepared=state::activity::strike_bond::prepare(state::activity::mission_run_generation(),name=="strike_bond" && !session.activity.joinedForeignSession);
-    const bool strikeDestination=name=="strike_pact" && !session.activity.joinedForeignSession;
-    const bool strikePrepared=!session.activity.joinedForeignSession && state::activity::strike_pact::prepare(state::activity::mission_run_generation(),strikeDestination);
+    const bool gardenDestination=(name=="strike_bond" || name=="mission_bond") && !session.activity.joinedForeignSession;
+    const bool gardenPrepared=state::activity::strike_bond::prepare(state::activity::mission_run_generation(),gardenDestination,name=="mission_bond");
+    if(gardenDestination && !gardenPrepared) return RosterOutcome::noGroups;
+    const bool strikeDestination=(name=="strike_pact" || name=="mission_pact") && !session.activity.joinedForeignSession;
+    const bool strikePrepared=!session.activity.joinedForeignSession && state::activity::strike_pact::prepare(state::activity::mission_run_generation(),strikeDestination,name=="mission_pact");
     if(strikeDestination && !strikePrepared) { return RosterOutcome::noGroups; }
     const bool hijackedDestination=name=="adventure_rumba" && !session.activity.joinedForeignSession;
     const bool hijackedPrepared=!session.activity.joinedForeignSession && state::activity::hijacked::prepare(state::activity::mission_run_generation(),hijackedDestination);
@@ -892,6 +895,9 @@ RosterOutcome build_roster_snapshot(Session& session,
         }
         snapshot.strike_bond=state::activity::strike_bond::snapshot(state::activity::mission_run_generation(),GetTickCount64(),state::activity::mission_seed_armed(),
             inputs.sourceMembership.currentRegion.index>=0?inputs.sourceMembership.currentRegion.index:inputs.regionIndex);
+        // Freeze the exact launch identity into this authority snapshot. Body encoding never reads
+        // mutable UI or global difficulty state.
+        snapshot.strike_bond.enemyVariant = selection.activityIndex==813 ? 5U : 0U;
         if(snapshot.strike_bond.enabled) {
             snapshot.missionCompletion=snapshot.strike_bond.completion;
             snapshot.gameplayClockTicks=snapshot.strike_bond.gameplayClockTicks;
@@ -903,7 +909,13 @@ RosterOutcome build_roster_snapshot(Session& session,
         if(!strike_pact_roster::admit(layout,scratch,snapshot.roster,inputs.regionIndex,
             [](std::size_t index,layouts::RosterGroup& group) noexcept {
                 return state::build_data::find_roster_group(index,group);
-            },strikeReport)) { return RosterOutcome::noGroups; }
+            },strikeReport)) {
+            std::array<char,256> line{};
+            std::snprintf(line.data(),line.size(),"ev=strike_pact stage=roster_rejected mission=%.*s missing=%u last_key=%08X present=%u full=%u",
+                static_cast<int>(name.size()),name.data(),strikeReport.missing,strikeReport.lastMissing,strikeReport.present,strikeReport.full);
+            core::log::write(core::log::Channel::server,core::log::Level::warn,line.data());
+            return RosterOutcome::noGroups;
+        }
         const auto strikeRun=state::activity::mission_run_generation();
         static std::atomic_uint64_t lastStrikeRoster{UINT64_MAX};
         const auto stamp=(strikeRun<<20)^(static_cast<std::uint64_t>(inputs.regionIndex)<<8)
@@ -924,6 +936,7 @@ RosterOutcome build_roster_snapshot(Session& session,
         snapshot.strike_pact=state::activity::strike_pact::snapshot(strikeRun,GetTickCount64(),
             state::activity::mission_seed_armed(),inputs.sourceMembership.currentRegion.index>=0
                 ?inputs.sourceMembership.currentRegion.index:inputs.regionIndex);
+        snapshot.strike_pact.enemyVariant = selection.activityIndex==835 ? 5U : 0U;
         if(snapshot.strike_pact.enabled) {
             snapshot.missionCompletion=snapshot.strike_pact.completion;
             snapshot.gameplayClockTicks=snapshot.strike_pact.activityTime;
@@ -1107,6 +1120,13 @@ RosterOutcome build_roster_snapshot(Session& session,
         }
     }
     snapshot.lifetime = kLifetimeState;
+    if (snapshot.strike_bond.enabled || snapshot.strike_pact.enabled) {
+        const auto run = state::activity::mission_run_generation();
+        snapshot.nightfallFailed = state::activity::nightfall::failed(run);
+        if (snapshot.missionCompletion.valid() && !snapshot.nightfallFailed)
+            state::activity::nightfall::complete(run,GetTickCount64());
+        if (snapshot.nightfallFailed) snapshot.missionCompletion = {};
+    }
     snapshot.keyOnEveryParticipationSlot = defaults.rosterKeyOnAllSlots;
     // The participation record's `+0` latches only when the region index is known.
     snapshot.region = static_cast<std::uint32_t>(inputs.regionIndex);
@@ -1461,7 +1481,7 @@ namespace {
 
 /** Maps one copied membership after-image into the fixed wire schema. */
 [[nodiscard]] bool make_membership_wire(
-    state::activity::ActivityInstanceKey activity,bool validatedOmega,bool validatedBeyond,
+    state::activity::ActivityInstanceKey activity,bool validatedOmega,bool validatedBeyond,bool validatedGarden,
     const state::activity::membership::MembershipState& membership,
     const gameplay::AdvertisementSnapshot& advertisement,
     membership_message::MembershipSnapshot& wire) noexcept {
@@ -1510,8 +1530,18 @@ namespace {
         && !membership_message::select_active_region(wire,membership.region.index)) {
         return false;
     }
+    // During prefetch the gameplay frame can still name the old arena. The
+    // real membership advertisement carries the verified destination (25).
+    auto gardenNative=nativeTransit;
+    if(wire.citizen.present) {gardenNative.currentRegion=wire.citizen.regionIndex;gardenNative.hasRegion=true;}
+    const auto garden=state::activity::strike_bond::ending_transit(activity,
+        state::activity::mission_run_generation(),membership.identity.memberKey,validatedGarden,gardenNative);
+    if(garden.publish) {
+        terminal=garden;wire.teleport={garden.host.state,garden.host.token,garden.host.sliceSetIndex,garden.host.sliceSetHash};
+        if(!membership_message::select_active_region(wire,garden.host.sliceSetIndex)) return false;
+    }
     wire.hasHostSynchronizationToken=state::activity::omega_ending_transit::host_synchronization_ready(
-        terminal,nativeTransit,membership.hasSynchronizationToken,membership.synchronizationToken,
+        terminal,garden.publish?gardenNative:nativeTransit,membership.hasSynchronizationToken,membership.synchronizationToken,
         advertisement.readiness==gameplay::AdvertisementReadiness::ready && wire.citizen.present,
         wire.citizen.regionIndex);
     if(wire.hasHostSynchronizationToken) { wire.hostSynchronizationToken=terminal.host.token; }
@@ -1680,6 +1710,7 @@ namespace {
         && !make_membership_wire(lineage.bound,allowArrival && name=="mission_scot"
                 && hasLayout && layout.tag==0x80F47522U,
             allowArrival && name=="adventure_vod" && hasLayout && layout.tag==state::activity::beyond_infinity::kScenario,
+            allowArrival && name=="mission_bond" && hasLayout && layout.tag==0x80F47445U,
             membershipAfter, advertisement, output.membershipWire)) {
         gameplay::group::release_host_activity_lineage(advertisementLease);
         return RegionSnapshotBuildResult::failed;

@@ -12,7 +12,7 @@ void Controller::generator(std::uint64_t run,std::uint32_t registry,std::uint16_
     }
 }
 bool valid_document(const coo::script::Views& views) noexcept {
-    if(!views.valid || views.missionId!="strike_pact" || views.profileId!=kProfile.id || views.phases.empty()
+    if(!views.valid || (views.missionId!="strike_pact" && views.missionId!="mission_pact") || views.profileId!=kProfile.id || views.phases.empty()
         || views.mission.modules.size()!=1 || views.mission.modules[0].asset!=kModule
         || views.mission.modules[0].id!=1) { return false; }
     return coo::script::authorized(views,kProfile);
@@ -22,7 +22,7 @@ void Controller::reset() noexcept {
     executor_.cancel(*this); composition_.reset(); views_=nullptr;run_=0;now_=0;
     started_=false;landingSeen_=false;dialogueSubmitted_.reset();dialogue_={};frame_={};seen_.reset();
     population_={};objectives_={};lifecycle_.reset();voiceEnds_={};costs_={};harvester_={};
-    bossScene_={};bossActor_={};bossSeen_=bossRemoved_=bossEnded_=false;bossAlive_=0;
+    bossScene_={};bossActor_={};bossEnemy_={};bossSeen_=bossRemoved_=bossEnded_=false;bossAlive_=0;
     laserDeadline_=0;laserHigh_=false;clock_.reset();
     ledgeFinalSeen_=false;region_=-1;
 }
@@ -32,7 +32,7 @@ bool Controller::select(const coo::script::Views& views,std::uint64_t run) noexc
     reset();
     if(!lifecycle_.begin(run)) { return false; }
     publicationGeneration_=lifecycle_.owner().value;views_=&views;run_=run;frame_.spawnGeneration=publicationGeneration_;
-    frame_.services=true;return true;
+    frame_.campaign=views.missionId=="mission_pact";frame_.services=true;return true;
 }
 void Controller::position(std::uint64_t run,Point point) noexcept {
     if(run!=run_ || !views_) { return; }
@@ -89,9 +89,8 @@ bool Controller::monitor(std::uint64_t run,std::uint32_t registry,std::uint16_t 
 }
 bool Controller::submitted(std::uint64_t run,std::uint32_t bank,std::uint8_t row,std::uint32_t generation,std::uint64_t now) noexcept {
     if(!views_ || run!=run_ || !started_ || row>=32) { return false; }
-    // The strike's bank handle is reported by its own type-53 component; the definition pins
-    // the component, so the bank is accepted as observed rather than pinned here.
-    auto policy=views_->dialogue;policy.bank=bank;
+    if(bank!=kBank) return false;
+    const auto& policy=views_->dialogue;
     if(!dialogue_.submitted(policy,bank,row,generation,now,frame_,frame_.revision)) { return false; }
     dialogueSubmitted_.set(row);voiceEnds_[row]=dialogue_.voice_until();
     return true;
@@ -139,6 +138,9 @@ bool Controller::publish(const coo::Command& command) noexcept {
                 static_cast<std::uint32_t>(std::chrono::steady_clock::now().time_since_epoch().count()
                     ^ (run_*2654435761ULL)));
             ++frame_.revision;
+        } else if(spec.asset==kMissionAsset && spec.argument==80) {
+            if(!frame_.campaign || !frame_.boss.dead) return false;
+            frame_.scan.armed=true;++frame_.revision;
         } else if(spec.asset==kMissionAsset && spec.argument>=kMechanicCheckpointBase) {
             const auto index=spec.argument-kMechanicCheckpointBase;
             if(index>=std::size(presentation::kCheckpoints)) { return false; }
@@ -149,7 +151,7 @@ bool Controller::publish(const coo::Command& command) noexcept {
         } else { return false; }
     }
     else if(spec.operation==coo::Operation::complete) {
-        if(!lifecycle_.complete_timed(lifecycle_.owner(),now_)) { return false; }
+        if(!lifecycle_.complete_timed(lifecycle_.owner(),now_,frame_.campaign?10000U:30000U)) { return false; }
         frame_.endEpoch=frame_.activityTime;frame_.musicCandidate=16;
         objectives_.clear();frame_.finished=true;++frame_.revision;
     }
@@ -207,8 +209,18 @@ bool Controller::cleared(std::uint32_t cohort) const noexcept {
 }
 bool Controller::admitted(const EnemyReceipt& receipt) noexcept {
     if(!views_ || !frame_.enabled || frame_.populationFault) { return false; }
+    // The reserved boss squad has zero loose actors. Its named member still
+    // supplies a native admission receipt and must own its health-floor policy.
+    if(receipt.valid() && receipt.run==run_ && receipt.generation==publicationGeneration_
+        && receipt.registry==kBoss && receipt.source==kBossSquad && frame_.boss.sceneGeneration) {
+        if(bossEnemy_.valid()) { return bossEnemy_==receipt; }
+        bossEnemy_=receipt;++frame_.revision;return true;
+    }
     const auto result=population_.admit(kAllSpawns,receipt,run_,publicationGeneration_);
     if(result==coo::Admission::overflow) { frame_.populationFault=true; }
+    if(result==coo::Admission::accepted && receipt.registry==kBoss && receipt.source==kMinotaurSquad) {
+        frame_.boss.minotaurSpawned=true;++frame_.revision;
+    }
     return result==coo::Admission::accepted;
 }
 /**
@@ -261,6 +273,7 @@ bool Controller::costed(std::uint32_t registry,std::uint16_t slot,const TaskCost
 }
 bool Controller::died(const EnemyReceipt& receipt) noexcept {
     if(!views_ || !frame_.enabled || !population_.died(receipt,run_,publicationGeneration_)) { return false; }
+    if(receipt.registry==kBoss && receipt.source==kMinotaurSquad) { frame_.boss.minotaurDead=true; }
     ++frame_.revision;return true;
 }
 bool Controller::combatant(std::uint64_t run,std::uint32_t registry,std::uint16_t slot,
@@ -287,7 +300,10 @@ void Controller::project_services() noexcept {
     }
 }
 bool Controller::observed(const coo::CommandSpec& spec) const noexcept {
+    if(spec.asset==kMissionAsset && spec.argument==81) return frame_.scan.started;
+    if(spec.asset==kMissionAsset && spec.argument==82) return frame_.scan.complete;
     if(views_ && views_->condition(spec)) { return views_->evaluate(spec,[this](const auto& native) noexcept { return observed(native); }); }
+    if(spec.asset==kDialogueAsset) { return spec.argument<32 && dialogueSubmitted_[spec.argument] && now_>=voiceEnds_[spec.argument]; }
     if(spec.asset==kModule) { return cleared(spec.argument); }
     if(spec.asset==kBossMechanic) { return boss_observed(spec.argument); }
     // A held region is what a portal or a fade delivers; no volume can stand for it.
@@ -316,7 +332,7 @@ void Controller::update_module(std::uint32_t id,const coo::MissionInput& input,F
     if(region_>=0) { frame_.region=static_cast<std::uint16_t>(region_); }
     // Route-specific dialogue is an optional presentation cue, never a prerequisite for leaving
     // a region. The shared dialogue service retains its one-shot state until the mission resets.
-    if(const auto* route=views_->table("route")) {
+    if(const auto* route=views_->table(frame_.campaign?"campaign_route":"route")) {
         for(const auto& binding:route->dialogue) {
             if(entered(binding.asset)) {
                 dialogue_.enqueue(views_->dialogue,binding.row,now_,binding.delayMs,0,frame_.revision);
@@ -449,6 +465,21 @@ void Controller::boss_health(const middleware::bap::activity_message::combatant_
     }
     if(bossActor_.hasActorQuery) { bossEnded_=final && bossActor_.actorQuery==0; }
 }
+BossRequest Controller::boss_request() const noexcept {
+    const auto& boss=frame_.boss;
+    if(!frame_.enabled || frame_.finished || boss.dead || !boss.sceneGeneration || !bossEnemy_.valid()
+        || boss.room<1 || boss.room>3) {return {};}
+    return {lifecycle_.owner(),bossEnemy_,static_cast<std::uint8_t>(boss.room-1),frame_.revision,
+        !boss.sceneFinished || boss.immune || !(boss.fights&(1U<<(boss.room-1)))};
+}
+bool Controller::health(const EnemyReceipt& enemy,float fraction) noexcept {
+    const auto request=boss_request();
+    if(!request.owner.valid() || enemy!=request.enemy || !std::isfinite(fraction) || fraction<0 || fraction>1) {return false;}
+    auto& boss=frame_.boss;
+    if(boss.healthObserved && fraction>=boss.health) {return false;}
+    boss.healthObserved=true;boss.health=fraction;++frame_.revision;
+    advance_boss();return true;
+}
 void Controller::boss_lasers(std::uint8_t room,bool on) noexcept {
     auto& boss=frame_.boss;const auto bit=static_cast<std::uint8_t>(1U<<(room-1));
     if(on) {
@@ -465,10 +496,14 @@ void Controller::advance_boss() noexcept {
     auto& boss=frame_.boss;
     if(!boss.prepared) { return; }
     if(boss.sceneFinished && boss.room>0 && boss.room<3 && (boss.fights&(1U<<(boss.room-1))) && !boss.immune
-        && bossActor_.identified && bossActor_.spawnRevision==frame_.spawnGeneration && bossActor_.hasActorQuery) {
+        && (boss.healthObserved || (bossActor_.identified && bossActor_.spawnRevision==frame_.spawnGeneration && bossActor_.hasActorQuery))) {
         const auto bit=static_cast<std::uint8_t>(1U<<(boss.room-1));
-        const float health=static_cast<float>(bossActor_.actorQuery)/127.F;
-        if(!(boss.retreated&bit) && health<=(boss.room==1?kBossGateRoom1:kBossGateRoom2)) {
+        const float threshold=boss.room==1?kBossGateRoom1:kBossGateRoom2;
+        // The damage boundary supplies the exact applied fraction. Sense is a
+        // quantized fallback: a thirds floor may round upward to 85/127 or 43/127.
+        const bool reached=boss.healthObserved ? boss.health<=threshold
+            :bossActor_.actorQuery<=static_cast<std::uint32_t>(std::ceil(threshold*127.F));
+        if(!(boss.retreated&bit) && reached) {
             boss.retreated|=bit;boss.immune=true;
             const auto& next=kBossRooms[boss.room];
             enable(boss_cohort(static_cast<std::uint8_t>(kCohortRoom1+boss.room)));
@@ -504,6 +539,10 @@ bool Controller::boss_observed(std::uint32_t argument) const noexcept {
     case kBossRoom2Exit:return (boss.cleared&2)!=0;
     case kBossRoom2Start:return (boss.arrived&2)!=0;
     case kBossRoom3Start:return (boss.arrived&4)!=0;
+    case kBossMinotaurSpawned:return boss.minotaurSpawned || boss.sceneFinished;
+    // The authored reveal kills its Minotaur. Its authenticated completion is
+    // also proof of that death if the cinematic bypasses a standalone death receipt.
+    case kBossMinotaurDead:return boss.minotaurDead || boss.sceneFinished;
     case kBossDeath:return boss.dead;
     default:return false;
     }

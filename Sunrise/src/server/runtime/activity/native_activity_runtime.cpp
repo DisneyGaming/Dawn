@@ -1,6 +1,7 @@
 #include <Windows.h>
 #include "native_activity_runtime.h"
 #include "native_activity_profiles.h"
+#include "mercury_freeroam_runtime.h"
 #include "../../../state/activity/native_population_events.h"
 #include "../../../core/filesystem/path.h"
 #include "../../../core/logging/log.h"
@@ -19,8 +20,13 @@ namespace nativeEvents=state::activity::native_population;
 struct Entry {
     PersistentActivity activity{};std::uint64_t nextPoll{},lastText{};
     activity_clock::Service clock{};
-    std::array<coo::NativePopulationLedger<16>,32> ledgers{};
+    // A loose request can create an authored group. The largest Mercury wave
+    // raises one source by five requests before renewal, so retain a bounded
+    // cohort rather than assuming one request equals one actor.
+    std::array<coo::NativePopulationLedger<64>,32> ledgers{};
     std::array<std::uint32_t,32> sourceHandles{};
+    mercury::freeroam::Director mercuryFreeroam{};
+    bool mercuryFreeroamReady{};
     bool observationFailure{};
 };
 std::mutex mutex;
@@ -207,7 +213,15 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
     }
     if(!current) {
         if(!empty || !empty->activity.begin(owner,definition,document,boot_token())) return {};
-        current=empty;report(current->activity.population(),"ready");
+        current=empty;
+        if(&definition==&mercury::kActivity) {
+            mercury::freeroam::Configuration configuration{};SYSTEMTIME local{};GetLocalTime(&local);
+            if(!mercury::freeroam::configure(*document,configuration)
+                || !current->mercuryFreeroam.begin(owner,current->activity.population().boot(),
+                    static_cast<std::uint8_t>(local.wMinute),configuration)) {*current={};return {};}
+            current->mercuryFreeroamReady=true;
+        }
+        report(current->activity.population(),"ready");
         if(current->activity.animation().owner()) report_animation(current->activity.animation(),"ready");
     }
     if(current->activity.definition()!=&definition) return {};
@@ -284,6 +298,72 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
     }
     const auto local=public_event::participant_bridge::local_identity(GetTickCount64());
     auto frame=current->activity.update(bubble,arrived,selected,openingAdmissionReady,clock,local.identity);
+    if(current->mercuryFreeroamReady) {
+        std::array<std::uint8_t,32> nativePending{};
+        for(std::size_t i=0;i<definition.populations.size();++i) {
+            const auto priorOwner=current->ledgers[i].owner();
+            if(priorOwner.valid()) nativePending[i]=nativeEvents::pending_lease(
+                {owner,priorOwner,static_cast<std::uint8_t>(definition.populations[i].registry->bubble)})?1U:0U;
+        }
+        if(!current->mercuryFreeroam.update(GetTickCount64(),bubble,arrived,current->activity.population(),
+            std::span<const coo::NativePopulationLedger<64>>(current->ledgers),nativePending))return {};
+        // The Director only stages a ticket. Keep publishing the old source
+        // until the native bridge can exclude queued, provisional and still
+        // unidentified births while atomically swapping the exact lease.
+        for(std::size_t i=0;i<definition.populations.size();++i) {
+            const auto renewal=current->activity.population().renewal(i);if(!renewal.pending)continue;
+            const auto& cap=definition.populations[i];auto& ledger=current->ledgers[i];
+            const auto priorOwner=ledger.owner();const auto counts=ledger.counts();
+            coo::Asset asset{cap.registry->key,0,1,cap.slot};
+            for(const auto& slot:cap.registry->slots)if(slot.index==cap.slot)asset.definition=slot.descriptorTag;
+            const coo::PopulationOwner nextOwner{owner.sessionId,current->activity.population().boot(),
+                owner.incarnation.value,asset,renewal.generation+1};
+            if(!priorOwner.valid() || renewal.generation!=priorOwner.generation || !renewal.target
+                || counts.failed || counts.dead>counts.admitted) {
+                current->observationFailure=true;return {};
+            }
+            const bool settled=current->activity.population().consumed(i) && counts.admitted
+                && counts.dead==counts.admitted && !counts.alive && !counts.resident;
+            // A provisional birth may finish after the Director staged this
+            // ticket. Cancel it without failing the activity; the patrol will
+            // require the new actor's real death/retirement and a fresh timer.
+            if(!settled) {current->activity.population().cancel_renewal(i);continue;}
+            auto staged=ledger;
+            if(!staged.renew(priorOwner,nextOwner)) {current->observationFailure=true;return {};}
+            const auto result=nativeEvents::renew(
+                {owner,priorOwner,static_cast<std::uint8_t>(cap.registry->bubble)},
+                {owner,nextOwner,static_cast<std::uint8_t>(cap.registry->bubble)});
+            if(result==nativeEvents::RenewResult::busy)continue;
+            if(result!=nativeEvents::RenewResult::renewed
+                || !current->activity.population().commit_renewal(i)) {
+                current->observationFailure=true;return {};
+            }
+            ledger=std::move(staged);current->sourceHandles[i]=0;
+        }
+        if(arrived && bubble==definition.bubble && current->mercuryFreeroam.wave_clear_pending()) {
+            const auto state=current->mercuryFreeroam.diagnostics();
+            std::array<nativeEvents::Lease,2> waveLeases{};bool validWave=state.wave<mercury::freeroam::kWaves.size();
+            if(validWave)for(std::size_t side=0;side<waveLeases.size();++side) {
+                const auto capability=mercury::freeroam::kWaves[state.wave].capabilities[side];
+                const auto source=current->ledgers[capability].owner();
+                validWave&=source.valid() && current->activity.population().consumed(capability);
+                waveLeases[side]={owner,source,static_cast<std::uint8_t>(definition.populations[capability].registry->bubble)};
+            }
+            if(!validWave) {current->observationFailure=true;return {};}
+            if(nativeEvents::quiescent(waveLeases) && !current->mercuryFreeroam.commit_wave_clear()) {
+                current->observationFailure=true;return {};
+            }
+        }
+        std::uint32_t announcement{};
+        if(current->mercuryFreeroam.take_announcement(announcement)) {
+            const auto state=current->mercuryFreeroam.diagnostics();std::array<char,320> line{};
+            const auto size=std::snprintf(line.data(),line.size(),
+                "ev=mercury_faction_war phase=start owner=%016llX incarnation=%llu incident=%08X wave=%zu join_eligible=%u presentation=unavailable policy=reconstructed",
+                owner.sessionId,owner.incarnation.value,announcement,state.wave,state.joinEligible?1U:0U);
+            if(size>0 && static_cast<std::size_t>(size)<line.size())core::log::write(core::log::Channel::server,
+                core::log::Level::info,{line.data(),static_cast<std::size_t>(size)});
+        }
+    }
     if(const auto status=current->activity.public_initial().state();status!=priorPublicInitial) {
         std::array<char,320> line{};const auto n=std::snprintf(line.data(),line.size(),
             "ev=public_event_initial owner=%016llX incarnation=%llu boot=%016llX state=%u prior=%u development=1 completion=unimplemented schedule=development_probe",
@@ -430,8 +510,12 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
             for(const auto& slot:cap.registry->slots) if(slot.index==cap.slot) asset.definition=slot.descriptorTag;
             const coo::PopulationOwner source{owner.sessionId,current->activity.population().boot(),
                 owner.incarnation.value,asset,request.source.generation};
-            if(!current->ledgers[i].owner().valid() && !current->ledgers[i].begin(source)) current->observationFailure=true;
-            if(!nativeEvents::bind({owner,source,cap.registry->bubble})) current->observationFailure=true;
+            auto& ledger=current->ledgers[i];const auto priorOwner=ledger.owner();
+            if(priorOwner.valid() && priorOwner!=source){current->observationFailure=true;return {};}
+            if(!priorOwner.valid() && (!ledger.begin(source)
+                || !nativeEvents::bind({owner,source,static_cast<std::uint8_t>(cap.registry->bubble)}))) {
+                current->observationFailure=true;return {};
+            }
         }
     }
     return frame;

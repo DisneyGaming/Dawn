@@ -6,10 +6,12 @@
 #include "client/hooks/bootflow/gateway_module_native_path.h"
 #include "client/hooks/bootflow/gateway_vance_native_path.h"
 #include "client/hooks/bootflow/gateway_module_damage.h"
+#include "client/hooks/bootflow/gateway_patrol_native.h"
 #include "state/activity/omega_rescue_scene_authority.h"
 #include "fixtures/gateway_traversal_wire.h"
 #include "fixtures/gateway_mainland_wire.h"
 #include "fixtures/gateway_ending_wire.h"
+#include "fixtures/reinforcement_counts.h"
 #include "server/bap/encrypted/push/activity/gateway_roster.h"
 #include "middleware/bap/activity_message/sensor_auth_update.h"
 #include "middleware/encoding/bit_reader.h"
@@ -19,6 +21,7 @@
 #include <fstream>
 #include <limits>
 #include <memory>
+#include <map>
 namespace g=sunrise::state::activity::gateway;
 namespace c=sunrise::state::activity::coo;
 namespace r=sunrise::server::bap::encrypted::push::activity::gateway_roster;
@@ -192,21 +195,23 @@ void traversal_tests(const c::script::Views& views,bool retainShelfActor,bool sk
     now+=60000;tick();CHECK(frame.cohorts==3 && !frame.cannons);
     // Backline play: the first clear starts reinforcements without entering their volume.
     clear(1);CHECK(frame.cohorts==7);clear(2);CHECK(!frame.cannons);
+    CHECK(frame.cohorts==47); // Both later platforms are placed before either arrival.
     CHECK(!controller.prepared(run,generation+1,0));CHECK(!controller.prepared(run+1,generation,0));
     CHECK(controller.prepared(run,generation,0));tick();CHECK(!frame.cannons);
     CHECK(controller.prepared(run,generation,1));tick();if(!frame.cannons) { const auto d=controller.diagnostics();std::fprintf(stderr,"cannon blocked phase=%u active=%08X complete=%08X cohorts=%X fault=%u\n",unsigned(d.phase),d.active,d.complete,frame.cohorts,unsigned(frame.populationFault)); } CHECK(frame.cannons);
     CHECK(!controller.prepared(run,generation,1));
-    controller.position(run,interior(369));tick();CHECK(frame.cohorts==15);
+    controller.position(run,interior(369));tick();CHECK(frame.cohorts==47);
     // Forward play can request reinforcements before the first cohort dies.
-    if(!skipShelfReinforcement) { controller.position(run,interior(372));tick();CHECK(frame.cohorts==31);clear(4); }
+    if(!skipShelfReinforcement) { controller.position(run,interior(372));tick();CHECK(frame.cohorts==63);clear(4); }
     CHECK(!frame.finalCannon);clear(3);
     // Captured run: all shelf actors except source 231 have died. Time cannot resolve it.
-    CHECK(shelfStraggler.valid()==retainShelfActor);now+=60000;tick();CHECK(frame.cohorts==(skipShelfReinforcement?15U:31U));CHECK(!frame.finalCannon);
+    CHECK(shelfStraggler.valid()==retainShelfActor);now+=60000;tick();CHECK(frame.cohorts==(skipShelfReinforcement?47U:63U));CHECK(!frame.finalCannon);
     controller.position(run,interior(375));tick();CHECK(frame.cohorts==63);
     if(skipShelfReinforcement) { clear(4); }
     // Reaching the final ledge starts its real encounter despite the surviving shelf actor.
     CHECK(!frame.finalCannon);clear(5);CHECK(frame.cohorts==127);CHECK(!frame.finalCannon);
     clear(6);tick();CHECK(frame.finalCannon);
+    CHECK(frame.cohorts==511); // Mainland placed before the final cannon is taken.
     // Shelf passage did not fabricate that actor's death or discard its native identity.
     if(retainShelfActor) { CHECK(controller.died(shelfStraggler));CHECK(!controller.died(shelfStraggler)); }
     CHECK(frame.activeRow==2);CHECK(!frame.checked);
@@ -228,17 +233,30 @@ void traversal_tests(const c::script::Views& views,bool retainShelfActor,bool sk
         CHECK(controller.submitted(run,g::kBank,row,frame.generations[row],now));tick();
     };
     speak(3);
-    // The gate cannot advance on arrival or time while its defenders are alive.
+    // The ready line starts during the Hydra fight, without clearing cohort 8.
     controller.position(run,interior(441,g::kMainlandRegistry));tick();
+    speak(4);CHECK(!frame.checked);CHECK(!frame.generations[5]);
+    // First barrier contact queues the exchange even with defenders alive.
     controller.position(run,interior(448,g::kMainlandRegistry));now+=60000;tick();
-    CHECK(!frame.checked);CHECK(frame.objective==g::kObjectives[1]);CHECK(frame.activeRow==c::kNoDialogue);
-    clear(8);speak(4);CHECK(!frame.checked);
+    CHECK(!frame.checked);CHECK(frame.objective==g::kObjectives[1]);CHECK(frame.activeRow==5);
+    const auto blockedGeneration=frame.generations[5];
+    controller.position(run,interior(448,g::kMainlandRegistry));tick();
+    CHECK(frame.generations[5]==blockedGeneration); // Repeated contact cannot replay it.
+    // Only the Hydra is a kill gate. Admit its defenders and leave them alive.
+    for(const auto& source:g::kSpawns) if(source.cohort==8) {
+        for(unsigned n=0;n<source.count;++n) {
+            g::EnemyReceipt receipt{run,++nextActor,0x23450123U,generation,source.source,source.registry};
+            CHECK(controller.admitted(receipt));
+            if(source.source==49) { CHECK(controller.died(receipt)); }
+        }
+    }
+    tick();CHECK(!frame.checked);
     const c::CommandSpec returnCue{c::Operation::eventAfter,g::kBlockedDialogueClock,returnDelay,c::Wait::observed};
     CHECK(frame.returnCuePending && !frame.openingChecked);
     CHECK(controller.missing(returnCue).missing==c::Missing::eventOrigin);
     // Queueing, elapsed queue time, wrong receipts, and delayed native dispatch
     // must not start return enemies or move the objective.
-    now+=25000;tick();CHECK(frame.activeRow==5);
+    now+=1000;tick();CHECK(frame.activeRow==5);
     now+=g::kReturnCueMs+100;frame=controller.update(run,now,true);
     CHECK(!frame.openingChecked && frame.cohorts==511 && frame.objective==g::kObjectives[1]);
     CHECK(!controller.submitted(run+1,g::kBank,5,frame.generations[5],now));
@@ -261,13 +279,13 @@ void traversal_tests(const c::script::Views& views,bool retainShelfActor,bool sk
     CHECK(frame.objective==g::kObjectives[3]);
     CHECK(frame.presentation.active && frame.presentation.marker.asset==g::kMarkers[1].target.asset);
     CHECK((frame.cohorts&(1U<<9)) && (frame.cohorts&(1U<<10)));
-    // Outbound volume sightings were cleared at the return-section boundary.
-    CHECK((frame.cohorts&(1U<<11))==0);
+    // Hydra death plus the exchange cue starts wave one without return kills or travel.
+    CHECK(frame.cohorts&(1U<<11));
     clear(9);CHECK(frame.activeRow==c::kNoDialogue);
     now=exchangeAt+views.dialogue.rows[5].durationMs+views.dialogue.rows[5].delayMs+views.dialogue.spacingMs-1;
     frame=controller.update(run,now,true);CHECK(frame.activeRow==c::kNoDialogue);
     ++now;frame=controller.update(run,now,true);CHECK(frame.activeRow==6);speak(6);
-    controller.position(run,interior(461,g::kMainlandRegistry));tick();CHECK(frame.cohorts&(1U<<11));
+    tick();CHECK(frame.cohorts&(1U<<11)); // No additional proximity trigger.
     now+=60000;tick();CHECK(!(frame.cohorts&(1U<<12)));CHECK(!frame.moduleVulnerable);
     clear(11);CHECK(frame.cohorts&(1U<<12));clear(12);CHECK(frame.cohorts&(1U<<13));
     CHECK(frame.cohorts&(1U<<14));CHECK(!frame.moduleVulnerable);clear(13);
@@ -399,7 +417,20 @@ void traversal_wire_tests() {
         if(!expected) { continue; }
         auto writer=bits::Writer::measuring();CHECK(g::write_body(writer,frame,group.key,slot.type,slot.index));CHECK(writer.bit_count()==expected);
     }
-    const auto compare=[&](std::uint8_t type,std::uint16_t slot,const auto& expected,unsigned count) {
+    // Preserve the frozen packet except the explicitly changed 32-bit request count.
+    const auto expectedSource=[](auto expected,const g::Spawn* source) {
+        if(source && source->count>source->categories) {
+            constexpr unsigned offset=121; // Two native references, then source category header.
+            for(unsigned i=0;i<32;++i) {
+                const auto bit=offset+i;const auto mask=1U<<(7-bit%8);
+                expected[bit/8]=static_cast<std::uint8_t>((expected[bit/8]&~mask)
+                    | (((0x80000002U>>(31-i))&1U)?mask:0U));
+            }
+        }
+        return expected;
+    };
+    const auto compare=[&](std::uint8_t type,std::uint16_t slot,const auto& frozen,unsigned count) {
+        const auto expected=expectedSource(frozen,type==1?g::spawn(g::kTraversalRegistry,slot):nullptr);
         std::array<std::byte,128> actual{};bits::Writer writer(actual);
         CHECK(g::write_body(writer,frame,g::kTraversalRegistry,type,slot));CHECK(writer.bit_count()==count);
         for(std::size_t i=0;i<expected.size();++i) { CHECK(std::to_integer<unsigned>(actual[i])==expected[i]); }
@@ -413,7 +444,8 @@ void traversal_wire_tests() {
     namespace f=gateway_wire_fixture;
     compare(1,16,f::source16,f::source16Bits);compare(1,216,f::source216,f::source216Bits);compare(1,230,f::source230,f::source230Bits);
     compare(26,25,f::effect,f::effectBits);compare(34,268,f::collection,f::collectionBits);
-    const auto mainlandCompare=[&](std::uint16_t slot,const auto& expected,unsigned count) {
+    const auto mainlandCompare=[&](std::uint16_t slot,const auto& frozen,unsigned count) {
+        const auto expected=expectedSource(frozen,g::spawn(g::kMainlandRegistry,slot));
         std::array<std::byte,128> actual{};bits::Writer writer(actual);
         CHECK(g::write_body(writer,frame,g::kMainlandRegistry,1,slot));CHECK(writer.bit_count()==count);
         for(std::size_t i=0;i<expected.size();++i) { CHECK(std::to_integer<unsigned>(actual[i])==expected[i]); }
@@ -719,10 +751,167 @@ return mission{id="gateway",graphs={root,finish,encounter},roles={mission="compo
     CHECK(controller.diagnostics().phase==c::Phase::complete);
 }
 
+struct PatrolCommandRead {
+    bool fail{};
+    template<class T> bool value(std::uintptr_t address,T& out) {
+        if(fail || !address) return false;
+        std::memcpy(&out,reinterpret_cast<const void*>(address),sizeof(out));return true;
+    }
+};
+struct PatrolIdentityRead {
+    std::map<std::uintptr_t,std::byte> bytes;
+    std::map<std::uint32_t,std::uintptr_t> handles;
+    template<class T> void put(std::uintptr_t address,T value) {
+        const auto* p=reinterpret_cast<const std::byte*>(&value);
+        for(std::size_t i=0;i<sizeof(T);++i) bytes[address+i]=p[i];
+    }
+    template<class T> bool value(std::uintptr_t address,T& out) {
+        auto* p=reinterpret_cast<std::byte*>(&out);
+        for(std::size_t i=0;i<sizeof(T);++i) {
+            const auto it=bytes.find(address+i);if(it==bytes.end()) return false;p[i]=it->second;
+        }
+        return true;
+    }
+    bool resolve(std::uint32_t handle,std::uintptr_t& out) {
+        const auto it=handles.find(handle);if(it==handles.end()) return false;out=it->second;return true;
+    }
+};
+void patrol_identity_tests(const c::script::Views& views) {
+    namespace p=sunrise::client::hooks::bootflow::gateway_patrol;
+    PatrolIdentityRead m;constexpr std::uintptr_t image=0x10000000,actor=0x20000000,
+        source=0x30000000,definition=0x40000000,parent=0x50000000,entity=0x60000000;
+    g::EnemyReceipt owner{91,0x12340000,0x34560000,7,16,g::kTraversalRegistry};
+    m.put(image+0x1F9D7F8,actor);m.put(image+0x1F9D800,std::uint32_t{0xB000});
+    m.put(actor+0x48,owner.actor);m.put(actor+0x38,owner.owner);m.put(actor+0x40,std::int64_t{0});
+    m.handles[owner.owner]=source;m.handles[0x45670000]=definition;m.handles[0x56780000]=parent;
+    m.put(source+4,std::uint32_t{0x8080948F});m.put(source+0x1FC,owner.generation);m.put(source+0x244,owner.generation);
+    m.put(source,std::uint32_t{0x45670000});m.put(source+8,std::int64_t{0});
+    m.put(definition+0x30,owner.registry);m.put(definition+0x34,std::uint8_t{1});m.put(definition+0x36,owner.source);
+    m.put(actor+0x4C,std::uint32_t{0x67880000});m.put(actor+0x50,std::uint32_t{0x56780000});
+    m.put(parent+4,std::uint32_t{0x808082EC});m.put(parent+0x24,std::uint32_t{0x56780000});
+    m.put(parent+0x2C,std::uint32_t{0x67880000});m.put(parent+0x1470,owner.actor);
+    m.put(image+0x1F93428,entity);m.put(image+0x1F93430,std::uint32_t{0x200});
+    m.put(entity+0xC,std::uint32_t{0x67880000});m.put(entity+4,std::uint32_t{0});
+    const auto owned=[&] {return p::owns(m,image,actor,owner);};CHECK(owned());
+    // Every source identity must survive re-resolution. Recycling any one
+    // native row excludes it from both continuous patrol and no-aggro behavior.
+    for(const auto address:{actor+0x48,actor+0x38,source+4,source+0x1FC,source+0x244,
+        definition+0x30,definition+0x34,definition+0x36,parent+4,parent+0x24,parent+0x2C,parent+0x1470,entity+0xC}) {
+        m.bytes[address]^=std::byte{1};CHECK(!owned());m.bytes[address]^=std::byte{1};CHECK(owned());
+    }
+    m.put(entity+4,std::uint32_t{4});CHECK(!owned());m.put(entity+4,std::uint32_t{0});
+    for(const auto& spawn:g::kSpawns) {
+        owner.registry=spawn.registry;owner.source=spawn.source;
+        m.put(definition+0x30,owner.registry);m.put(definition+0x36,owner.source);
+        CHECK(owned()==(spawn.cohort==0));
+    }
+    g::Controller controller;CHECK(controller.select(views,91));
+    auto frame=controller.update(91,100,true);CHECK(frame.marchers);
+    std::uint32_t actorHandle=0x12340000;
+    for(const auto& spawn:g::kSpawns) if(spawn.cohort==0) {
+        g::EnemyReceipt live{91,++actorHandle,0x34560000,frame.spawnGeneration,spawn.source,spawn.registry};
+        CHECK(!controller.marcher(live.actor).valid());CHECK(controller.admitted(live));CHECK(controller.marcher(live.actor)==live);
+        CHECK(controller.died(live));CHECK(!controller.marcher(live.actor).valid());
+    }
+    CHECK(controller.submitted(91,g::kBank,1,frame.generations[1],101));
+    controller.position(91,interior(361));for(unsigned i=0;i<4;++i) frame=controller.update(91,102+i,true);
+    for(const auto& spawn:g::kSpawns) if(spawn.cohort==1) {
+        g::EnemyReceipt live{91,++actorHandle,0x34560000,frame.spawnGeneration,spawn.source,spawn.registry};
+        CHECK(controller.admitted(live));CHECK(!controller.marcher(live.actor).valid());
+    }
+    CHECK(controller.select(views,92));CHECK(!controller.marcher(actorHandle).valid());
+}
+void patrol_command_tests() {
+    namespace p=sunrise::client::hooks::bootflow::gateway_patrol;
+    for(const bool nativeChanged:{false,true}) for(const bool redirected:{false,true}) {
+        alignas(16) std::array<std::byte,0xB0> retained{},output{};
+        retained.fill(std::byte{0x23});output.fill(std::byte{0xCC});
+        if(nativeChanged) output=retained;
+        const auto original=output;
+        const std::array<std::uintptr_t,4> context{0,0x12340001,0,reinterpret_cast<std::uintptr_t>(retained.data())};
+        PatrolCommandRead read;
+        unsigned calls{};
+        const auto change=[&](std::uintptr_t actor,std::uintptr_t candidate) {
+            ++calls;CHECK(actor==context[1]);
+            auto& bytes=*reinterpret_cast<std::array<std::byte,0xB0>*>(candidate);CHECK(bytes==retained);
+            if(redirected) bytes[0x10]=std::byte{0x54};
+            return redirected;
+        };
+        CHECK(p::publish_point(read,reinterpret_cast<std::uintptr_t>(context.data()),output.data(),nativeChanged,change)==(nativeChanged || redirected));
+        CHECK(calls==1);
+        auto expected=original;if(redirected) {expected=retained;expected[0x10]=std::byte{0x54};}CHECK(output==expected);
+        read.fail=true;calls=0;
+        CHECK(p::publish_point(read,reinterpret_cast<std::uintptr_t>(context.data()),output.data(),nativeChanged,change)==nativeChanged);
+        CHECK(calls==0 && output==expected);
+    }
+    alignas(16) std::array<std::byte,0xB0> output{};output.fill(std::byte{0xCC});const auto original=output;
+    const std::array<std::uintptr_t,4> context{0,0x12340001,0,0};PatrolCommandRead read;
+    CHECK(!p::publish_point(read,reinterpret_cast<std::uintptr_t>(context.data()),output.data(),false,
+        [](auto,auto) { CHECK(false);return true; }));CHECK(output==original);
+}
+void patrol_loop_tests() {
+    g::patrol::Loop loop;
+    const auto same=[](g::Point a,g::Point b) { return a.x==b.x && a.y==b.y && a.z==b.z; };
+    for(std::size_t i=0;i<44;++i) {
+        const auto slot=static_cast<std::uint16_t>(16+(i/4)*18+(i%4)*2);
+        CHECK(g::patrol::index(g::kTraversalRegistry,slot)==i);
+        g::EnemyReceipt receipt{7,static_cast<std::uint32_t>(100+i),static_cast<std::uint32_t>(200+i),3,slot,g::kTraversalRegistry};
+        const auto& lane=g::patrol::kLanes[i/4];const auto nativeGoal=g::patrol::center(lane);
+        auto target=loop.update(receipt,lane.start,nativeGoal);CHECK(target.valid && !target.turned && target.turns==0);
+        const auto away=target.position;
+        auto next=loop.update(receipt,away,nativeGoal);CHECK(next.valid && next.turned && next.turns==1);
+        const auto home=next.position;CHECK(!same(home,away));
+        // Repeated observations at one end cannot flap the direction. There is
+        // no timeout, finite command list, lap limit, respawn or generation bump.
+        for(unsigned turn=2;turn<=2000;++turn) {
+            target=loop.update(receipt,next.position,nativeGoal);
+            CHECK(target.valid && target.turned && target.turns==turn);
+            CHECK(same(target.position,turn%2?home:away));
+            next=loop.update(receipt,next.position,nativeGoal);
+            CHECK(next.valid && !next.turned && next.turns==turn && same(next.position,target.position));
+        }
+        auto invalid=receipt;invalid.registry=g::kMainlandRegistry;
+        CHECK(!loop.update(invalid,home,nativeGoal).valid);
+        invalid=receipt;invalid.source=206;CHECK(!loop.update(invalid,home,nativeGoal).valid);
+        CHECK(!loop.update(receipt,{home.x,home.y,home.z+20.F},nativeGoal).valid);
+        CHECK(!loop.update(receipt,{std::numeric_limits<float>::quiet_NaN(),home.y,home.z},nativeGoal).valid);
+        ++receipt.run;target=loop.update(receipt,lane.start,nativeGoal);
+        CHECK(target.valid && !target.turned && target.turns==0);
+        ++receipt.actor;target=loop.update(receipt,nativeGoal,nativeGoal);
+        CHECK(target.valid && target.turns==0 && same(target.position,home));
+    }
+    for(const auto& source:g::kSpawns) CHECK((g::patrol::index(source.registry,source.source)<44)==(source.cohort==0));
+}
+void forest_threshold_tests(const c::script::Views& views) {
+    const c::CommandSpec threshold{c::Operation::observation,g::kModule,1024,c::Wait::observed};
+    const c::CommandSpec hydra{c::Operation::observation,g::kModule,1025,c::Wait::observed};
+    for(const auto point:std::array<g::Point,3>{{{266.F,245.5F,88.8F},{266.F,-9000.F,7000.F},{1000.F,9000.F,-7000.F}}}) {
+        g::Controller controller;CHECK(controller.select(views,987));
+        CHECK(controller.update(987,1,true).enabled);
+        controller.position(988,point);CHECK(controller.missing(threshold).missing!=c::Missing::none);
+        controller.position(987,{std::numeric_limits<float>::quiet_NaN(),0,0});
+        controller.position(987,{265.999F,point.y,point.z});
+        CHECK(controller.missing(threshold).missing!=c::Missing::none);
+        controller.position(987,point);CHECK(controller.missing(threshold).missing==c::Missing::none);
+        auto frame=controller.update(987,2,true);
+        CHECK(frame.activeRow==1);
+        CHECK(controller.submitted(987,g::kBank,1,frame.generations[1],3));
+        for(unsigned n=25000;n<25008;++n) frame=controller.update(987,n,true);
+        CHECK(frame.activeRow==4);CHECK(frame.generations[4]!=0);CHECK(frame.generations[5]==0);
+        CHECK(controller.missing(hydra).missing!=c::Missing::none);
+        controller.position(987,{-1000.F,0,0});
+        CHECK(controller.missing(threshold).missing==c::Missing::none);
+        CHECK(controller.select(views,989));
+        CHECK(controller.missing(threshold).missing!=c::Missing::none);
+        CHECK(controller.missing(hydra).missing!=c::Missing::none);
+    }
+}
 int main() {
+    patrol_loop_tests();patrol_command_tests();
     changed_lua_flow_tests();
     std::string error;auto document=c::script::MissionDocument::read("Sunrise/scripts/gateway.lua",g::kProfile,error);
     if(!document) { std::fprintf(stderr,"%s\n",error.c_str()); }CHECK(document);CHECK(g::valid_document(document->views()));
+    forest_threshold_tests(document->views());
     CHECK(document->views().dialogue.rows[0].sceneOwned);CHECK(document->views().dialogue.rows[11].sceneOwned);
     std::ifstream cueFile("Sunrise/scripts/gateway.lua");
     std::string cueText((std::istreambuf_iterator<char>(cueFile)),std::istreambuf_iterator<char>());
@@ -730,12 +919,13 @@ int main() {
     cueText.replace(cueAt,originalCue.size(),"argument=6000");
     auto customCue=c::script::MissionDocument::parse_lua(cueText,g::kProfile,error);CHECK(customCue && g::valid_document(customCue->views()));
     traversal_tests(customCue->views(),false,false,6000); // Timing belongs to the document.
+    patrol_identity_tests(document->views());
     auto altered=document->views();altered.missionId="omega";CHECK(!g::valid_document(altered));
     g::Controller controller;CHECK(controller.select(document->views(),71));
     CHECK(!controller.update(71,100,false).enabled);
-    auto frame=controller.update(71,100,true);CHECK(frame.objective==0);CHECK(frame.activeRow==c::kNoDialogue);
-    controller.position(71,{350,250,100});frame=controller.update(71,101,true);CHECK(frame.objective==0);
-    controller.position(70,{-772.25F,-130.75F,-7.5F});frame=controller.update(71,102,true);CHECK(frame.objective==0);
+    auto frame=controller.update(71,100,true);CHECK(frame.objective==0xC8DC7CFDU);CHECK(frame.activeRow==1);
+    controller.position(71,{350,250,100});frame=controller.update(71,101,true);CHECK(frame.objective==0xC8DC7CFDU);
+    controller.position(70,{-772.25F,-130.75F,-7.5F});frame=controller.update(71,102,true);CHECK(frame.objective==0xC8DC7CFDU);
     controller.position(71,{-772.25F,-130.75F,-7.5F});frame=controller.update(71,103,true);
     CHECK(frame.objective==0xC8DC7CFDU);CHECK(frame.activeRow==1);const auto generation=frame.generations[1];
     CHECK(!controller.submitted(70,g::kBank,1,generation,104));CHECK(!controller.submitted(71,0x80F1FC9FU,1,generation,104));
@@ -759,7 +949,7 @@ int main() {
     CHECK(!g::contains(*recess,{std::numeric_limits<float>::quiet_NaN(),inside.y,inside.z}));
     controller.position(72,inside);frame=controller.update(72,20006,true);CHECK(!frame.checked);CHECK(frame.marchers);
     const auto priorGeneration=frame.generations[1];controller.reset();CHECK(!controller.update(72,20007,true).enabled);
-    CHECK(controller.select(document->views(),72));frame=controller.update(72,20008,true);CHECK(frame.objective==0);CHECK(!frame.checked);
+    CHECK(controller.select(document->views(),72));frame=controller.update(72,20008,true);CHECK(frame.objective==0xC8DC7CFDU);CHECK(!frame.checked);
     controller.position(72,{-772.25F,-130.75F,-7.5F});frame=controller.update(72,20009,true);
     CHECK(frame.generations[1]!=priorGeneration);CHECK(!controller.submitted(72,g::kBank,1,priorGeneration,20010));
     constexpr g::Point triangle[]{{0,0,0},{2,0,0},{0,2,0},{0,0,0}};

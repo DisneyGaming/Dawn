@@ -608,8 +608,8 @@ __declspec(noinline) void observe_candidate(void* instance,std::uint32_t event,
 namespace nativeEvents=state::activity::native_population;
 namespace pending=native_population_pending;
 std::mutex g_pendingMutex;
-pending::Queue<128> g_pendingBirths;
-pending::Queue<128> g_admittedActors;
+pending::Queue<256> g_pendingBirths;
+pending::Queue<8192> g_admittedActors;
 std::atomic_uint g_nativeLines{};
 template<class... Args> void native_report(const char* format,Args... args) noexcept {
     if(g_nativeLines.fetch_add(1,std::memory_order_relaxed)>=128) return;
@@ -620,7 +620,7 @@ template<class... Args> void native_report(const char* format,Args... args) noex
 // Shared observer for explicitly registered activity sources. Package definitions,
 // salted actor backlinks, typed health interfaces and source generations are
 // qualified before copying an event into the state mailbox. No spawn or AI call.
-bool registered_source(Read& read,const Actor& actorState,nativeEvents::Lease& lease) noexcept {
+bool registered_source(Read& read,const Actor& actorState,nativeEvents::Receipt& receipt) noexcept {
     std::uintptr_t address{},definitionAddress{};Ref definition{};std::uint32_t marker{};
     if(actorState.source.kind!=0x80809A3BU || actorState.source.offset!=0
         || !read.resolve(actorState.source,address) || !read.value(address,definition)
@@ -633,11 +633,11 @@ bool registered_source(Read& read,const Actor& actorState,nativeEvents::Lease& l
         || !read.value(address+0x1FC,generation) || !read.value(address+0x244,sense)
         || !generation || generation!=sense) return false;
     const auto slot=at<std::int16_t>(identity.data()+6);if(slot<0) return false;
-    lease=nativeEvents::lookup(definition.handle,at<std::uint32_t>(identity.data()),static_cast<std::uint16_t>(slot),generation);
-    return lease.activity && lease.source.valid();
+    receipt=nativeEvents::capture(definition.handle,at<std::uint32_t>(identity.data()),static_cast<std::uint16_t>(slot),generation);
+    return receipt && receipt.lease.activity && receipt.lease.source.valid();
 }
-void observe_native_admission(std::uint32_t parent,std::uint64_t epochValue) noexcept {
-    if(!epochValue || parent==UINT32_MAX) return;
+void observe_native_admission(std::uint32_t parent,nativeEvents::Creation creation) noexcept {
+    if(!creation || parent==UINT32_MAX) {nativeEvents::cancel(creation);return;}
     Read read;std::uintptr_t address{},again{};std::array<std::byte,0x28> header{};
     std::uint32_t handle{UINT32_MAX};Actor actorState;nativeEvents::Lease lease;
     if(!read.resolve({parent,0,0},address) || address>UINTPTR_MAX-0x1470
@@ -646,9 +646,10 @@ void observe_native_admission(std::uint32_t parent,std::uint64_t epochValue) noe
         || !actor(read,handle,actorState) || actorState.parent!=parent
         || !read.resolve({actorState.parent,0,0},again) || again!=address) {
         native_report("ev=native_population_capture stage=created result=identity_rejected parent=%08X actor=%08X",parent,handle);
-        return;
+        nativeEvents::cancel(creation);return;
     }
-    if(!registered_source(read,actorState,lease)) {
+    nativeEvents::Receipt sourceReceipt;
+    if(!registered_source(read,actorState,sourceReceipt)) {
         native_report("ev=native_population_capture stage=created result=source_rejected parent=%08X actor=%08X source=%08X entity=%08X",
             parent,handle,actorState.source.handle,actorState.entity);
         // A streamed copy can finish construction without any source link. Keep
@@ -671,12 +672,20 @@ void observe_native_admission(std::uint32_t parent,std::uint64_t epochValue) noe
             native_report("ev=native_population_capture stage=source_less_path parent=%08X definition=%08X actor=%08X flags=%04X native_rvas=%s",
                 parent,at<std::uint32_t>(header.data()),handle,actorState.flags,path.data());
         }
+        nativeEvents::cancel(creation);return;
+    }
+    lease=sourceReceipt.lease;
+    std::lock_guard lock(g_pendingMutex);
+    const nativeEvents::Event provisional{lease,{lease.source,actorState.handle,actorState.entity},
+        actorState.source.handle,nativeEvents::Kind::admitted};
+    nativeEvents::Receipt receipt;
+    const auto staged=nativeEvents::stage(creation,provisional,receipt);
+    if(staged==nativeEvents::StageResult::ended) {
+        native_report("ev=native_population_capture stage=created result=lifetime_ended actor=%08X",actorState.handle);
         return;
     }
-    std::lock_guard lock(g_pendingMutex);
-    if(epochValue!=nativeEvents::epoch()) {nativeEvents::observation_lost();return;}
-    const auto result=g_pendingBirths.add({{lease,{lease.source,actorState.handle,actorState.entity},
-        actorState.source.handle,nativeEvents::Kind::admitted},parent});
+    if(staged!=nativeEvents::StageResult::staged) {nativeEvents::observation_lost();return;}
+    const auto result=g_pendingBirths.add({provisional,parent,receipt});
     if(result!=pending::Intake::accepted && result!=pending::Intake::duplicate) nativeEvents::observation_lost();
     native_report("ev=native_population_capture stage=created registry=%08X slot=%u actor=%08X entity=%08X parent=%08X result=%u",
         lease.source.source.registry,lease.source.source.slot,actorState.handle,actorState.entity,parent,static_cast<unsigned>(result));
@@ -687,12 +696,10 @@ void finish_native_admissions(std::uint32_t onlyActor=UINT32_MAX) noexcept {
     for(std::size_t i=0;i<g_pendingBirths.size();) {
         const auto birth=g_pendingBirths[i];const auto& expected=birth.event;
         if(onlyActor!=UINT32_MAX && expected.actor.actor!=onlyActor) {++i;continue;}
-        const auto& source=expected.lease.source;
-        const auto epochValue=nativeEvents::epoch();
-        if(nativeEvents::lookup(source.source.definition,source.source.registry,source.source.slot,source.generation)!=expected.lease) {
-            g_pendingBirths.erase(i);continue; // Authoritative owner/lease was released.
+        if(!nativeEvents::provisional(birth.receipt,expected)) {
+            g_pendingBirths.erase(i);continue; // The authoritative owner was released.
         }
-        Read read;Actor current;nativeEvents::Lease lease;std::uintptr_t address{};
+        Read read;Actor current;nativeEvents::Receipt currentReceipt;std::uintptr_t address{};
         std::array<std::byte,0x30> header{};std::uint32_t parentActor{UINT32_MAX};
         if(!actor(read,expected.actor.actor,current) || current.parent!=birth.parent
             || current.source.handle!=expected.sourceHandle || !read.resolve({birth.parent,0,0},address)
@@ -700,23 +707,29 @@ void finish_native_admissions(std::uint32_t onlyActor=UINT32_MAX) noexcept {
             || !read.value(address+0x1470,parentActor)
             || !omega_enemy_native_admission::identity(birth.parent,at<std::uint32_t>(header.data()+4),
                 at<std::uint32_t>(header.data()+0x24),parentActor,current.handle,current.parent)
-            || !registered_source(read,current,lease) || lease!=expected.lease) {
-            nativeEvents::observation_lost();g_pendingBirths.erase(i);
+            || !registered_source(read,current,currentReceipt) || currentReceipt!=birth.receipt) {
+            nativeEvents::observation_lost();++i;
             native_report("ev=native_population_capture stage=attachment result=identity_lost actor=%08X",expected.actor.actor);
             continue;
         }
         if(current.entity==UINT32_MAX || at<std::uint32_t>(header.data()+0x2C)==UINT32_MAX) {++i;continue;}
         if(current.entity!=at<std::uint32_t>(header.data()+0x2C)) {
-            nativeEvents::observation_lost();g_pendingBirths.erase(i);
+            nativeEvents::observation_lost();++i;
             native_report("ev=native_population_capture stage=attachment result=entity_mismatch actor=%08X",current.handle);
             continue;
         }
+        const auto& lease=currentReceipt.lease;
         const nativeEvents::Event complete{lease,{lease.source,current.handle,current.entity},
             current.source.handle,nativeEvents::Kind::admitted};
-        const bool accepted=nativeEvents::submit(complete,epochValue);
+        // Keep the mailbox provisional until retirement tracking has room. This
+        // makes local capacity pressure retryable and preserves the real actor.
+        if(g_admittedActors.full()) {++i;continue;}
+        const auto admission=nativeEvents::admit(birth.receipt,complete);
+        const bool accepted=admission==nativeEvents::AdmitResult::admitted;
+        if(admission==nativeEvents::AdmitResult::busy) {++i;continue;}
         if(!accepted) nativeEvents::observation_lost();
         else {
-            const auto retained=g_admittedActors.add({complete,birth.parent});
+            const auto retained=g_admittedActors.add({complete,birth.parent,birth.receipt});
             if(retained!=pending::Intake::accepted && retained!=pending::Intake::duplicate) nativeEvents::observation_lost();
             observe_vance_contact_admission(complete,birth.parent);
         }
@@ -725,18 +738,18 @@ void finish_native_admissions(std::uint32_t onlyActor=UINT32_MAX) noexcept {
         g_pendingBirths.erase(i);
     }
 }
-void observe_native_candidate(void* instance,std::uint32_t event,std::uint64_t epochValue) noexcept {
-    if(!epochValue) return;
+void observe_native_candidate(void* instance,std::uint32_t event) noexcept {
     Read read;std::array<std::byte,0x3C> eventHeader{};std::array<std::byte,0x38> payload{};
     std::uint32_t eventDefinition{};
     if(!event_payload(read,event,eventHeader,payload,eventDefinition) || eventDefinition!=0x80804C54U) return;
     const auto address=reinterpret_cast<std::uintptr_t>(instance);std::uintptr_t resolved{},healthAddress{};
-    std::array<std::byte,0xC4> character{};Actor actorState;nativeEvents::Lease lease;
+    std::array<std::byte,0xC4> character{};Actor actorState;nativeEvents::Receipt receipt;
     if(address>UINTPTR_MAX-0x2E8 || !read.copy(address,character)
         || at<std::uint32_t>(character.data()+4)!=0x80806832U
         || !actor(read,at<std::uint32_t>(character.data()+0xC0),actorState)
         || !read.resolve({at<std::uint32_t>(character.data()+0x24),0,0},resolved) || resolved!=address
-        || !registered_source(read,actorState,lease)) return;
+        || !registered_source(read,actorState,receipt)) return;
+    const auto& lease=receipt.lease;
     Ref healthRef{};std::array<std::byte,0x340> health{};
     if(!omega_enemy_native_health::owner(actorState.entity,at<std::uint32_t>(character.data()+0x2C))
         || !read.value(address+0x2E8,healthRef) || healthRef.kind!=0x80804BEEU || healthRef.offset!=0
@@ -750,34 +763,41 @@ void observe_native_candidate(void* instance,std::uint32_t event,std::uint64_t e
     // first under the same lock, then its independently qualified native death.
     std::lock_guard lock(g_pendingMutex);
     finish_native_admissions(actorState.handle);
-    if(!nativeEvents::submit({lease,{lease.source,actorState.handle,actorState.entity},
-        actorState.source.handle,nativeEvents::Kind::died},epochValue)) nativeEvents::observation_lost();
+    bool admitted{};
+    for(std::size_t i=0;i<g_admittedActors.size();++i)
+        admitted|=g_admittedActors[i].receipt==receipt && g_admittedActors[i].event.actor.actor==actorState.handle;
+    if(admitted && !nativeEvents::submit({lease,{lease.source,actorState.handle,actorState.entity},
+        actorState.source.handle,nativeEvents::Kind::died},receipt)
+        && nativeEvents::capture(lease)==receipt) nativeEvents::observation_lost();
 }
 __declspec(noinline) std::uint64_t __fastcall admission_hook(void* instance,const void* context) noexcept {
     const hooking::CallGate::Scope scope{g_gate};
     const auto nav=selected_context();
-    const auto nativeEpoch=scope.accepts_side_effects()?nativeEvents::epoch():0;
+    bool observing{};
+    const auto creation=scope.accepts_side_effects()?nativeEvents::begin_creation(observing):nativeEvents::Creation{};
+    if(observing && !creation) nativeEvents::observation_lost();
     std::uint32_t parent=UINT32_MAX;
-    if(scope.accepts_side_effects() && ((nav.enabled && nav.run!=0) || nativeEpoch)) {
+    if(scope.accepts_side_effects() && ((nav.enabled && nav.run!=0) || observing)) {
         Read read;std::array<std::byte,0x28> header{};
         if(read.copy(reinterpret_cast<std::uintptr_t>(instance),header)
             && at<std::uint32_t>(header.data()+4)==0x808082ECU) {
             parent=at<std::uint32_t>(header.data()+0x24);
         }
     }
-    return omega_enemy_native_admission::forward(hooking::await_original(g_admission),
+    const auto result=omega_enemy_native_admission::forward(hooking::await_original(g_admission),
         [&scope]() noexcept {return scope.accepts_side_effects();},
-        [callRun=nav.run,nativeEpoch](std::uint32_t identity) noexcept {
-            if(identity!=UINT32_MAX) {observe_admission(identity,callRun);observe_native_admission(identity,nativeEpoch);}
-            else if(nativeEpoch) native_report("ev=native_population_capture stage=created result=pre_identity_rejected");
+        [callRun=nav.run,creation](std::uint32_t identity) noexcept {
+            if(identity!=UINT32_MAX) {observe_admission(identity,callRun);observe_native_admission(identity,creation);}
+            else if(creation) native_report("ev=native_population_capture stage=created result=pre_identity_rejected");
         },instance,context,parent);
+    nativeEvents::cancel(creation);return result;
 }
 __declspec(noinline) std::uint64_t __fastcall candidate_hook(void* instance,std::uint32_t event) noexcept {
     const hooking::CallGate::Scope scope{g_gate};
     const auto original=hooking::await_original(g_candidate);
     if(scope.accepts_side_effects()) {omega_boss_health::observe_native_death(instance,event,scope);}
     if(scope.accepts_side_effects()) {observe_candidate(instance,event,scope);
-        observe_native_candidate(instance,event,nativeEvents::epoch());}
+        observe_native_candidate(instance,event);}
     return original(instance,event);
 }
 bool idle() noexcept {return g_gate.idle();}
@@ -801,16 +821,15 @@ __declspec(noinline) void __fastcall retirement_hook(std::uint32_t handle,std::u
         trace_hijacked_retirement(hijackedRun,handle);
         ReleaseSRWLockExclusive(&g_lock);
     }
-    const auto epochValue=scope.accepts_side_effects()?nativeEvents::epoch():0;
     pending::Birth captured;native_population_retirement::Slot before;
     bool qualified{};
-    if(epochValue) {
+    if(scope.accepts_side_effects()) {
         std::lock_guard lock(g_pendingMutex);
         finish_native_admissions(handle);
         for(std::size_t i=0;i<g_admittedActors.size();++i) {
             const auto& birth=g_admittedActors[i];if(birth.event.actor.actor!=handle) continue;
             const auto& source=birth.event.lease.source;Read read;Actor current;
-            qualified=nativeEvents::lookup(source.source.definition,source.source.registry,source.source.slot,source.generation)==birth.event.lease
+            qualified=nativeEvents::capture(source.source.definition,source.source.registry,source.source.slot,source.generation)==birth.receipt
                 && actor(read,handle,current)
                 && native_population_retirement::identity(birth.event.actor.actor,birth.event.actor.entity,birth.parent,
                     birth.event.sourceHandle,current.handle,current.entity,current.parent,current.source.handle)
@@ -832,8 +851,8 @@ __declspec(noinline) void __fastcall retirement_hook(std::uint32_t handle,std::u
         const bool released=retirement_slot(read,handle,after) && native_population_retirement::released(before,after);
         auto event=captured.event;event.kind=nativeEvents::Kind::retired;
         std::lock_guard lock(g_pendingMutex);
-        const bool accepted=released && nativeEvents::submit(event,epochValue);
-        if(!accepted) nativeEvents::observation_lost();
+        const bool accepted=released && nativeEvents::submit(event,captured.receipt);
+        if(!accepted && nativeEvents::capture(event.lease)==captured.receipt) nativeEvents::observation_lost();
         if(released) observe_vance_contact_retirement(event);
         for(std::size_t i=0;i<g_admittedActors.size();++i) {
             if(g_admittedActors[i].event.actor==event.actor) {g_admittedActors.erase(i);break;}
@@ -875,7 +894,7 @@ __declspec(noinline) void poll_native_population_admissions() noexcept {
     finish_native_admissions();
     for(std::size_t i=0;i<g_admittedActors.size();) {
         const auto& birth=g_admittedActors[i];const auto& source=birth.event.lease.source;
-        if(nativeEvents::lookup(source.source.definition,source.source.registry,source.source.slot,source.generation)!=birth.event.lease)
+        if(nativeEvents::capture(source.source.definition,source.source.registry,source.source.slot,source.generation)!=birth.receipt)
             g_admittedActors.erase(i);
         else ++i;
     }

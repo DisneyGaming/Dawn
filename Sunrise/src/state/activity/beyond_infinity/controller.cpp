@@ -315,6 +315,7 @@ void Controller::update_module(std::uint32_t id,const coo::MissionInput& input,F
 }
 Frame Controller::update(std::uint64_t run,std::uint64_t now,bool ready) noexcept {
     if(!views_ || run!=run_ || !ready) { return {}; }
+    if(!views_->observationStart) { arrived_=true; }
     return composition_.update(views_->mission,{run,now,0,false,true},*this);
 }
 }

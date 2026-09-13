@@ -55,6 +55,13 @@ $BuiltDll = Join-Path $RepoRoot 'build\x64\Release\steam_api64.dll'
 $Scripts  = Join-Path $RepoRoot 'Sunrise\scripts'
 $Defaults = Join-Path $RepoRoot 'Sunrise\resources\default_settings.json'
 
+# JSON activity graphs are runtime inputs too (including Mercury's population
+# and quarter-hour war settings). Keep both supported script formats together.
+function Get-RuntimeScripts ($directory) {
+    Get-ChildItem -LiteralPath $directory -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Extension -in @('.lua', '.json') }
+}
+
 # ---------------------------------------------------------------- locate the install
 
 function Find-GameRoot {
@@ -236,13 +243,14 @@ function Backup-File ($absolute) {
 }
 
 foreach ($dll in Get-DllTargets $root) { Backup-File $dll }
+foreach ($dll in Get-DllTargets $root) { Backup-File ([IO.Path]::ChangeExtension($dll, '.pdb')) }
 foreach ($tree in Get-RuntimeTrees $root) {
     foreach ($name in @('settings.json', 'hud.json', 'movement.json', 'player.json')) {
         Backup-File (Join-Path $tree $name)
     }
     $scriptDir = Join-Path $tree 'scripts'
     if (Test-Path $scriptDir) {
-        Get-ChildItem $scriptDir -Filter *.lua -ErrorAction SilentlyContinue |
+        Get-RuntimeScripts $scriptDir |
             ForEach-Object { Backup-File $_.FullName }
     }
 }
@@ -255,17 +263,29 @@ foreach ($dll in Get-DllTargets $root) {
     $dir = Split-Path -Parent $dll
     if (-not (Test-Path $dir)) { continue }        # only write into directories that exist
     Copy-Item $BuiltDll $dll -Force
+    $builtPdb = [IO.Path]::ChangeExtension($BuiltDll, '.pdb')
+    if (Test-Path -LiteralPath $builtPdb) {
+        Copy-Item -LiteralPath $builtPdb -Destination ([IO.Path]::ChangeExtension($dll, '.pdb')) -Force
+    }
     Note "dll  -> $($dll.Substring($root.Length).TrimStart('\'))"
 }
 
-$luaCount = (Get-ChildItem $Scripts -Filter *.lua).Count
+$runtimeScripts = @(Get-RuntimeScripts $Scripts)
+$scriptCount = $runtimeScripts.Count
 foreach ($tree in Get-RuntimeTrees $root) {
     $parent = Split-Path -Parent $tree
     if (-not (Test-Path $parent)) { continue }
     $scriptDir = Join-Path $tree 'scripts'
     if (-not (Test-Path $scriptDir)) { New-Item -ItemType Directory -Path $scriptDir -Force | Out-Null }
-    Copy-Item (Join-Path $Scripts '*.lua') $scriptDir -Force
-    Note "lua  -> $($scriptDir.Substring($root.Length).TrimStart('\'))  ($luaCount scripts)"
+    foreach ($src in $runtimeScripts) {
+        $dst = Join-Path $scriptDir $src.Name
+        # A development checkout may also be the game root. Its source tree is
+        # already current; Copy-Item rejects copying a file onto itself.
+        if ([IO.Path]::GetFullPath($src.FullName) -ne [IO.Path]::GetFullPath($dst)) {
+            Copy-Item -LiteralPath $src.FullName -Destination $dst -Force
+        }
+    }
+    Note "scripts -> $($scriptDir.Substring($root.Length).TrimStart('\'))  ($scriptCount scripts)"
 
     # hud/movement/player are optional at runtime - each store keeps its compiled defaults when the
     # file is absent - but a tester who never gets them runs on those defaults instead of Dawn's
@@ -365,6 +385,48 @@ foreach ($tree in Get-RuntimeTrees $root) {
 
 # ---------------------------------------------------------------- verify
 
+# Verify the on-disk install even when the game is not launched. Record the
+# exact deployed payload and backup location so a playtest can identify it.
+$installedFiles = @()
+foreach ($dll in Get-DllTargets $root) {
+    if (-not (Test-Path -LiteralPath (Split-Path -Parent $dll))) { continue }
+    $hash = (Get-FileHash -LiteralPath $dll -Algorithm SHA256).Hash
+    if ($hash -ne $builtHash) { Die "Installed DLL differs from build: $dll" }
+    $installedFiles += [pscustomobject]@{ path = (Get-Relative $dll); sha256 = $hash }
+    $builtPdb = [IO.Path]::ChangeExtension($BuiltDll, '.pdb')
+    if (Test-Path -LiteralPath $builtPdb) {
+        $installedPdb = [IO.Path]::ChangeExtension($dll, '.pdb')
+        $pdbHash = (Get-FileHash -LiteralPath $installedPdb -Algorithm SHA256).Hash
+        if ($pdbHash -ne (Get-FileHash -LiteralPath $builtPdb -Algorithm SHA256).Hash) {
+            Die "Installed debug symbols differ from build: $installedPdb"
+        }
+        $installedFiles += [pscustomobject]@{ path = (Get-Relative $installedPdb); sha256 = $pdbHash }
+    }
+}
+foreach ($tree in Get-RuntimeTrees $root) {
+    if (-not (Test-Path -LiteralPath (Split-Path -Parent $tree))) { continue }
+    foreach ($src in $runtimeScripts) {
+        $dst = Join-Path (Join-Path $tree 'scripts') $src.Name
+        $hash = (Get-FileHash -LiteralPath $dst -Algorithm SHA256).Hash
+        if ($hash -ne (Get-FileHash -LiteralPath $src.FullName -Algorithm SHA256).Hash) {
+            Die "Installed activity script differs from source: $dst"
+        }
+        $installedFiles += [pscustomobject]@{ path = (Get-Relative $dst); sha256 = $hash }
+    }
+}
+$receiptDir = Join-Path $root '.dawn\installations'
+New-Item -ItemType Directory -Path $receiptDir -Force | Out-Null
+$receiptPath = Join-Path $receiptDir "$stamp.json"
+[pscustomobject]@{
+    installedAtUtc = [DateTime]::UtcNow.ToString('o')
+    backupDirectory = $backupDir
+    buildDll = $BuiltDll
+    verification = 'on-disk hashes; gameplay not verified by this receipt'
+    files = $installedFiles
+} | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $receiptPath -Encoding UTF8
+Good "Installed DLLs and all $scriptCount activity scripts match their build/source hashes."
+Note "Install receipt: $receiptPath"
+
 if ($NoLaunch) {
     Step 'Done (not launching)'
     Note 'Verify manually: start the game, then run'
@@ -413,7 +475,7 @@ if (-not (Test-Path $liveScripts)) {
     Warn "No scripts directory beside the mapped DLL: $liveScripts"
 } else {
     $stale = @()
-    foreach ($src in Get-ChildItem $Scripts -Filter *.lua) {
+    foreach ($src in $runtimeScripts) {
         $dst = Join-Path $liveScripts $src.Name
         if (-not (Test-Path $dst)) { $stale += "$($src.Name) (missing)"; continue }
         if ((Get-FileHash $dst -Algorithm SHA256).Hash -ne (Get-FileHash $src.FullName -Algorithm SHA256).Hash) {
@@ -421,7 +483,7 @@ if (-not (Test-Path $liveScripts)) {
         }
     }
     if ($stale.Count -eq 0) {
-        Good "All $luaCount mission scripts match beside the mapped DLL."
+        Good "All $scriptCount activity scripts match beside the mapped DLL."
     } else {
         $healthy = $false
         Warn "Mission scripts beside the mapped DLL do not match this checkout: $($stale -join ', ')"

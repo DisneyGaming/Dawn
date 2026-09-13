@@ -12,6 +12,7 @@
 #include "../../../state/activity/coo/mercury_ambient_primary_owner.h"
 #include "../../../state/activity/coo/mercury_public_event_registries.h"
 #include "internal.h"
+#include "campaign_shared_groups.h"
 
 namespace sunrise::client::content::scenarios {
 namespace {
@@ -247,13 +248,16 @@ void classify(const ObjectMemo& memo,
         context.registry == 2
         && tables::package_of(objectTag) == context.scenarioPackage
         && (memo.explicitSliceMask & (std::uint64_t{1} << context.slice)) != 0;
+    selectedLocal = selectedLocal || campaign_shared::selected(context.scenarioTag,objectTag,
+        memo.registryKey,context.registry,context.slice,memo.explicitSliceMask);
 }
 
 [[nodiscard]] bool potentially_authored(const ResolveContext& context,
                                         std::uint32_t objectTag) noexcept {
     return context.registry == 0
            || (context.registry == 2
-               && tables::package_of(objectTag) == context.scenarioPackage);
+               && (tables::package_of(objectTag) == context.scenarioPackage
+                   || campaign_shared::candidate(context.scenarioTag,objectTag)));
 }
 
 void reject_authored_read(RosterStorage& storage,

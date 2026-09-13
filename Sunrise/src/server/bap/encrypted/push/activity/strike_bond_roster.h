@@ -132,7 +132,8 @@ template<class Storage,class FindGroup>
     report={};
     report.stage="layout";
     if(layout.nameLength>layout.name.size()
-        || std::string_view(layout.name.data(),layout.nameLength)!="strike_bond"
+        || (std::string_view(layout.name.data(),layout.nameLength)!="strike_bond"
+            && std::string_view(layout.name.data(),layout.nameLength)!="mission_bond")
         || layout.bubbleCount>layouts::kBubbleCapacity
         || layout.rosterGroupCount>layout.rosterGroups.size()
         || layout.bubbleGroupCount>layout.bubbleGroups.size()) { return false; }
@@ -228,7 +229,11 @@ template<class Storage,class FindGroup>
         }
     }
     // Validate the mission's known identities without removing the other authored objects.
-    for(const auto& expected:kGroups) {
+    for(auto expected:kGroups) {
+        if(std::string_view(layout.name.data(),layout.nameLength)=="mission_bond") {
+            if(expected.key==native::kRoot) { expected.key=0x277205FBU;expected.tag=0x80F474CCU; }
+            if(expected.key==0xF29221F5U) { expected.key=0x4786C0E0U;expected.tag=0x80FEB3DCU; }
+        }
         bool found=false;
         for(std::size_t i=0;i<count;++i) {
             if(!matches(storage.rosterGroups[i],expected)) { continue; }

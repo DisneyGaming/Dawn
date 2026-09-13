@@ -9,6 +9,7 @@
 #include "../../../../../middleware/datagen/family4/loadout/loadout_resolver.h"
 #include "../../../../../state/account/account_state.h"
 #include "../../../../../state/equipment/light/resolution/configured_equipment_light_resolver.h"
+#include "../../../../../state/activity/nightfall/native_power.h"
 #include "../../../../../state/runtime/runtime.h"
 #include "internal.h"
 #include "snapshot_storage.h"
@@ -54,6 +55,8 @@ bool prepare_banner(Scratch& scratch,
         || !state::equipment::light::resolution::character_light(account, selectedIndex, light)) {
         return false;
     }
+    light = state::activity::nightfall::cap_player_power(
+        light, state::activity::nightfall::current_native_power_projection());
 
     /** Both family-zero objects are staged together, so raw storage must hold the pair. */
     constexpr std::size_t kTotalSize =
@@ -165,6 +168,8 @@ bool prepare_character_appearance_refresh(Scratch& scratch,
         || !state::equipment::light::resolution::character_light(account, characterIndex, light)) {
         return report_failure("equip_appearance_resolve");
     }
+    light = state::activity::nightfall::cap_player_power(
+        light, state::activity::nightfall::current_native_power_projection());
 
     // The banner-facing emblem consumers bind through the Family-0 anchor rather than directly
     // observing the character record.  A normal equipment refresh can upsert the resident record

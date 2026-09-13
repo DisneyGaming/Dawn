@@ -146,15 +146,22 @@ constexpr ForcedDestination strike_pact_opening() noexcept {
     v.hasBubble=v.hasSliceSet=v.hasSpawnSetHash=v.enabled=true;return v;
 }
 inline constexpr ForcedDestination kStrikePactOpening=strike_pact_opening();
-// Native three-player Lighthouse set at (123.5,255.5,89.5), map 32.
-// The spawn is a spatial reconstruction; retail orientation needs live acceptance.
+// Authored three-player Lighthouse south-side start, map 32, facing northeast.
+// Spatial match to the supplied Garden opening view; live framing needs acceptance.
 constexpr ForcedDestination strike_bond_opening() noexcept {
     ForcedDestination v{};constexpr char name[]="strike_bond";
     for(std::size_t i=0;i<sizeof(name)-1;++i) {v.packageName[i]=name[i];}
-    v.packageNameLength=sizeof(name)-1;v.bubble=15;v.sliceSet=120;v.spawnSetHash=0x0232EBCEU;
+    v.packageNameLength=sizeof(name)-1;v.bubble=15;v.sliceSet=120;v.spawnSetHash=0xB09FB979U;
     v.hasBubble=v.hasSliceSet=v.hasSpawnSetHash=v.enabled=true;return v;
 }
 inline constexpr ForcedDestination kStrikeBondOpening=strike_bond_opening();
+constexpr ForcedDestination campaign_opening(ForcedDestination v, const char* name, std::uint8_t size) noexcept {
+    v.packageName.fill(0);
+    for (std::size_t i=0;i<size;++i) { v.packageName[i]=name[i]; }
+    v.packageNameLength=size;return v;
+}
+inline constexpr auto kMissionPactOpening=campaign_opening(kStrikePactOpening,"mission_pact",12);
+inline constexpr auto kMissionBondOpening=campaign_opening(kStrikeBondOpening,"mission_bond",12);
 static_assert(active(kStrikeBondOpening));
 static_assert(active(kStrikePactOpening));
 // Spatial reconstruction: the three native map points in this set lie inside

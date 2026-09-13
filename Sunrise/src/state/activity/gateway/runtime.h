@@ -19,6 +19,7 @@ void observe_vance(const SceneReceipt&,VanceMilestone) noexcept;
 [[nodiscard]] bool prepare(std::uint64_t run,bool selected) noexcept;
 [[nodiscard]] Frame snapshot(std::uint64_t run,std::uint64_t now,bool ready) noexcept;
 [[nodiscard]] std::uint64_t native_run() noexcept;
+[[nodiscard]] EnemyReceipt marcher(std::uint32_t actor) noexcept;
 [[nodiscard]] bool publication_due(std::uint64_t now) noexcept;
 [[nodiscard]] bool observe_admission(const EnemyReceipt& receipt) noexcept;
 [[nodiscard]] bool observe_death(const EnemyReceipt& receipt) noexcept;

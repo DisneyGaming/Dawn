@@ -21,8 +21,20 @@ void observe_strike_bond_object(void* raw) noexcept {
     // Retired sources can retain a live render entity. Apply the explicit zero
     // before the active-only receipt path, while its salted identity still exists.
     if(!read.value(source+0x180,generation) || generation!=desired.generation
-        || !read.value(source+0x2F0,committed) || committed!=generation
+        || !read.value(source+0x2F0,committed)
         || !read.value(source+0x440,entity) || !read.entity_row(entity,row) || !read.value(row+0x4C,bundle)) return;
+    if(committed!=generation) {
+        const auto kind=garden::ending_object::kind(binding->asset);
+        if(!request.frame.campaign || !kind) return;
+        gn::Read componentRead{g_image};std::uintptr_t component{};std::array<std::byte,0x30> identity{};
+        if(!coo_native::component(componentRead,bundle,entity.handle,kind,component) || !read.copy(component,identity)
+            || !garden::ending_object::retained(request.owner,binding->asset,desired,generation,committed,entity.handle,
+                {at<std::uint32_t>(identity.data()),at<std::uint32_t>(identity.data()+4),at<std::uint32_t>(identity.data()+0x24),
+                 at<std::uint32_t>(identity.data()+0x2C),at<std::uint64_t>(identity.data()+8)})) return;
+    }
+    std::uint32_t stableGeneration{},stableCommitted{};
+    if(!read.value(source+0x180,stableGeneration) || stableGeneration!=generation
+        || !read.value(source+0x2F0,stableCommitted) || stableCommitted!=committed) return;
     if(!read.value(source+0x440,again) || again!=entity || !read.weak(again) || garden::request().owner!=request.owner) return;
     if(const auto* tether=garden::route_tether(binding->asset)) garden_tether::visible(*tether,request.owner,bundle,entity);
     if(!desired.active || !read.value(source+0x188,active) || active!=1) return;

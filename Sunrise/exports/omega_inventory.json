@@ -78,7 +78,7 @@
     },
     {
       "registry_key": "0x82FB58B7",
-      "table_index": 1206,
+      "table_index": 1237,
       "object_tag": "0x80F47BDD",
       "package_id": "0x03A3",
       "slot_count": 3,
@@ -91,7 +91,7 @@
     },
     {
       "registry_key": "0xBA5F26EF",
-      "table_index": 1216,
+      "table_index": 1247,
       "object_tag": "0x80F47B5B",
       "package_id": "0x03A3",
       "slot_count": 3,
@@ -104,7 +104,7 @@
     },
     {
       "registry_key": "0xD00142CF",
-      "table_index": 1217,
+      "table_index": 1248,
       "object_tag": "0x80F47BB2",
       "package_id": "0x03A3",
       "slot_count": 25,
@@ -139,7 +139,7 @@
     },
     {
       "registry_key": "0xF7A6CE7F",
-      "table_index": 1218,
+      "table_index": 1249,
       "object_tag": "0x80F47BC6",
       "package_id": "0x03A3",
       "slot_count": 4,

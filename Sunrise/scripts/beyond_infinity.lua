@@ -7,7 +7,6 @@ local composition = graph("composition", "Beyond Infinity", {
 })
 
 local entrance = graph("entrance", "Enter the Infinite Forest", sequence(
-    step("arrival", "lighthouse.mercury_m_vod_lighthouse_010_filter"),
     step("find_osiris", parallel("objective.0", "dialogue.0", "lighthouse.lighthouse_teleport.on")),
     step("gate", "lighthouse.mercury_m_vod_lighthouse_030_filter"),
     step("vestibule", "well_objectives._directive_initial_volume"),
@@ -189,5 +188,5 @@ return mission{
     id="beyond_infinity", graphs={composition, entrance, well, reflections, forest_past, past, forest_future, future, escape},
     roles={mission="composition"}, entry="composition", modules={"mission"}, observations={"mission.checked"},
     phases={"entrance", "well", "reflections", "forest_past", "past", "forest_future", "future", "escape"},
-    observation_start="lighthouse.mercury_m_vod_lighthouse_010_filter", conditions={intro,six},
+    conditions={intro,six},
 }

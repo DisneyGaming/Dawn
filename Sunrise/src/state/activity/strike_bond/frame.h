@@ -1,7 +1,9 @@
 #pragma once
+#include "../coo/campaign_scan.h"
 #include "bindings.h"
 #include "tethers.h"
 #include "boss_cycle.h"
+#include "ending_flow.h"
 #include "../coo/lifecycle_service.h"
 #include "../coo/object_service.h"
 #include "../coo/objective_service.h"
@@ -32,8 +34,12 @@ struct LensReceipt {
 struct NativeState {std::uint32_t generation{};float position{};bool managed{},desired{},prepared{},active{},acknowledged{};};
 struct SceneCommand {std::uint32_t generation{};bool stop{};std::uint8_t eventCount{};std::array<std::uint32_t,32> events{};};
 struct Frame {
+    EndingFlow endingFlow{};
+    bool campaign{};coo::CampaignScan scan{};
     bool enabled{},checked{},finished{},ending{},coverEnabled{},populationFault{},restricted{},bossFighting{},bossDead{},forestGenerated{};
     std::uint8_t bossStage{},section{},activeRow{coo::kNoDialogue},musicCandidate{UINT8_MAX};
+    /** Frozen source-template selector copied from the exact launch activity. */
+    std::uint8_t enemyVariant{};
     std::uint32_t spawnGeneration{},revision{},objective{},generatorSeed{},checkpointSpawnSet{};
     int region{-1},checkpointSliceSet{-1};std::uint64_t gameplayClockTicks{},endEpoch{};
     std::array<std::uint32_t,std::size(kDialogueRows)> generations{};
@@ -105,13 +111,22 @@ inline constexpr auto kCohorts=[] {
     // Native DF6C70 skips the movement-start branch when snap is enabled.
     return a.registry==0x2CB86C0FU && a.type==23 && a.slot>=76 && a.slot<=169 && (a.slot-76)%3==0;
 }
+inline constexpr coo::Asset kProbabilityTreeDevice{0xC80A735BU,0x80F474AEU,23,11};
 [[nodiscard]] inline constexpr bool animated_position(coo::Asset a) noexcept {
     // Dendron's platform graph80F4598F samples its motion from device_position.
     // Snapping device173 to1 skips the authored60-second phase transition.
-    return animated_cover(a) || (a.registry==0x2CB86C0FU && a.type==23 && a.slot==173);
+    // Campaign ending platforms use 80C22861: increasing position starts the
+    // phase-in effect that reveals their solid meshes. Snap skips that effect.
+    const bool endingPlatform=a.registry==0xB9395B1BU && a.type==23 && a.slot<=8;
+    return a==kProbabilityTreeDevice || endingPlatform || animated_cover(a)
+        || (a.registry==0x2CB86C0FU && a.type==23 && a.slot==173);
 }
 inline float device_position(const Frame& f,coo::Asset a) noexcept {
     const auto i=asset_index(a);if(i==std::size(kAssets)) return 0.F;
+    // 80F4ACA0 authors three phases: 0 is hidden, .5 reveals the tree,
+    // and 1 shuts it down. The reveal must interpolate through its effect cue.
+    // Confirmed in the campaign live test; an on/off 1/0 mapping skipped it.
+    if(a==kProbabilityTreeDevice) return !f.native[i].managed?0.F:f.native[i].active?.5F:1.F;
     if(inverted_barrier(a)) { return f.native[i].active?0.F:1.F; }
     const auto l=lens_index(a);
     // Both 80F48031 (guardians) and 80F56863 (Dendron) have these native ranges.

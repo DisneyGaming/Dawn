@@ -181,7 +181,7 @@ void Controller::pump() noexcept {
 void Controller::update_module(std::uint32_t id,const coo::MissionInput& in,Frame& out) noexcept {
     if(id!=1 || !views_ || in.run!=run_ || !graph()) { return; }now_=in.now;
     if(!started_) { started_=executor_.start(graph()->definition,run_); }if(!started_) { return; }
-    pump();dialogue_.advance(views_->dialogue,frame_.spawnGeneration-1U,now_,false,frame_,frame_.revision);
+    pump();dialogue_.advance(views_->dialogue,frame_.spawnGeneration-1U,now_,false,frame_,frame_.revision,true);
     frame_.enabled=executor_.diagnostics().phase!=coo::Phase::failed;
     if(executor_.diagnostics().phase==coo::Phase::complete && phase_+1<views_->phases.size()) {
         ++phase_;frame_.section=static_cast<std::uint8_t>(phase_);executor_.cancel(*this);started_=executor_.start(graph()->definition,run_);

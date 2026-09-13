@@ -449,7 +449,8 @@ valid_profile_mutation_shape(const PendingProfileItemAcquisition& mutation) noex
         || mutation.afterItemCount > authored_inventory::kProfileItemCapacity
         || mutation.profileIndex >= mutation.afterItemCount || mutation.previousQuantity < 0
         || mutation.acquiredQuantity <= mutation.previousQuantity
-        || mutation.acquiredQuantity - mutation.previousQuantity != 1
+        || (!mutation.rewardGrant
+            && mutation.acquiredQuantity - mutation.previousQuantity != 1)
         || mutation.previousMutationSerial < 0
         || mutation.acquiredMutationSerial <= mutation.previousMutationSerial) {
         return false;
@@ -461,6 +462,8 @@ valid_profile_mutation_shape(const PendingProfileItemAcquisition& mutation) noex
     } else if (mutation.previousQuantity == 0) {
         return false;
     }
+
+    if (mutation.rewardGrant && !profile_currency_grant_after_image_exact(mutation)) return false;
 
     bool foundBeforeTarget = mutation.appended;
     for (std::size_t index = 0; index < mutation.beforeItems.size(); ++index) {
@@ -510,13 +513,17 @@ valid_profile_mutation_shape(const PendingProfileItemAcquisition& mutation) noex
     inventory_buckets::Descriptor bucket{};
     build_data::items::Definition item{};
     build_data::collectibles::Definition collectible{};
-    if (!build_data::find_collectible_definition(mutation.collectibleIndex, collectible)
-        || collectible.itemDefinitionIndex
-               == build_data::collectibles::kUnavailableItemDefinitionIndex
-        || collectible.materialRequirementSetHash != mutation.materialRequirementSetHash
-        || collectible.materialRequirementCount != mutation.materialRequirementCount
+    const bool sourceValid = mutation.rewardGrant
+        ? mutation.collectibleIndex == 0 && mutation.materialRequirementSetHash == 0
+            && mutation.materialRequirementCount == 0 && !mutation.actionSource
+        : build_data::find_collectible_definition(mutation.collectibleIndex, collectible)
+            && collectible.itemDefinitionIndex
+                   != build_data::collectibles::kUnavailableItemDefinitionIndex
+            && collectible.materialRequirementSetHash == mutation.materialRequirementSetHash
+            && collectible.materialRequirementCount == mutation.materialRequirementCount;
+    if (!sourceValid
         || !build_data::find_item_definition_hash(mutation.acquiredDefinitionHash, item)
-        || collectible.itemDefinitionIndex != item.definitionIndex
+        || (!mutation.rewardGrant && collectible.itemDefinitionIndex != item.definitionIndex)
         || !build_data::find_configured_item_detail(item.definitionIndex, detail)
         || detail.definitionHash != mutation.acquiredDefinitionHash
         || detail.definitionIndex != item.definitionIndex || detail.bucketId != item.bucketId
@@ -525,6 +532,7 @@ valid_profile_mutation_shape(const PendingProfileItemAcquisition& mutation) noex
         || detail.maxStackSize <= 0 || mutation.acquiredQuantity > detail.maxStackSize
         || !build_data::find_inventory_bucket_descriptor(detail.bucketId, bucket)
         || bucket.arraySelector != inventory_buckets::ArraySelector::profile
+        || (mutation.rewardGrant && bucket.slotCount != 1)
         || build_data::is_profile_action_source(item.definitionIndex, item.bucketId)
                != mutation.actionSource) {
         return false;

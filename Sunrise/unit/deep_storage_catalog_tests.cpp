@@ -150,7 +150,7 @@ static bool catalog() {
         const auto& p=native::kSpawns[i];const auto& s=native::kSources[i];
         CHECK(p.registry==s.asset.registry && p.source==s.asset.slot && p.definition==s.asset.definition);
         CHECK(p.categories==s.categories && (p.categories==1 || p.categories==2));
-        CHECK(p.count==p.categories); // Explicit one-request-per-category policy, not retail wave counts.
+        CHECK(p.count==p.categories); // Wave counts remain authored.
         CHECK(native::find(p.registry,1,p.source)->offset==p.offset && p.offset==0x728U);
         CHECK(native::find(p.registry,66,p.rule));
         CHECK(p.tactical.registry==p.registry && p.tactical.row>=0 && p.tactical.row<24);

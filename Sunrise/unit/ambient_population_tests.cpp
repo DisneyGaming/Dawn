@@ -377,7 +377,7 @@ void cabal_persistent_cases() {
     text.replace(offset,parameter.size(),"\"ambient_cabal_primary_probe_count\": 1");
     auto enabled=coo::script::MissionDocument::parse(text,runtime::mercury::kProfile,error);
     CHECK(enabled && runtime::PersistentActivity::valid(runtime::mercury::kActivity,*enabled));
-    CHECK(ambient::optional_registries(runtime::mercury::kActivity,*enabled,registries));CHECK(registries.count==2);
+    CHECK(ambient::optional_registries(runtime::mercury::kActivity,*enabled,registries));CHECK(registries.count==1);
     runtime::PersistentActivity activity;const population::Owner owner{301,{2}};
     CHECK(activity.begin(owner,runtime::mercury::kActivity,std::move(enabled),101));
     CHECK(activity.ambient().size()==1 && activity.ambient().policy(0)->source->registry->key==0x2571C34D);
@@ -407,7 +407,31 @@ void cabal_persistent_cases() {
     points::release(owner);CHECK(!points::lookup(probe::kNamedDependency.list).binding.epoch);
 }
 
+void freeroam_profile_cases() {
+    namespace coo=sunrise::state::activity::coo;
+    std::ifstream file("Sunrise/scripts/mercury_freeroam.json",std::ios::binary);CHECK(file.good());
+    std::string text((std::istreambuf_iterator<char>(file)),{}),error;
+    const auto document=coo::script::MissionDocument::parse(text,runtime::mercury::kProfile,error);
+    CHECK(document && runtime::PersistentActivity::valid(runtime::mercury::kActivity,*document));
+    CHECK(runtime::mercury::kActivity.registries.size()==20);
+    CHECK(runtime::mercury::kActivity.populations.size()==23);
+    CHECK(runtime::mercury::kActivity.ambientInitial.size()==2);
+    for(const auto& capability:runtime::mercury::kActivity.populations) {
+        CHECK(population::valid(capability));bool registered{};
+        for(const auto& registry:runtime::mercury::kActivity.registries)
+            if(capability.registry==&registry)registered=true;
+        for(const auto& binding:runtime::mercury::kActivity.optionalRegistries)
+            if(capability.registry==binding.registry)registered=true;
+        CHECK(registered);
+    }
+    CHECK(text.find("\"freeroam_respawn_ms\": 30000")!=std::string::npos);
+    CHECK(text.find("\"freeroam_normal_patrol_count\": 3")!=std::string::npos);
+    CHECK(text.find("\"freeroam_large_patrol_count\": 4")!=std::string::npos);
+    CHECK(text.find("\"faction_war_wave_4_count\": 5")!=std::string::npos);
+}
+
 int main() {
-    decode_cases();captured_wire_cases();catalog_cases();activation_cases();definition_cases();persistent_integration_cases();cabal_persistent_cases();
+    decode_cases();captured_wire_cases();catalog_cases();activation_cases();definition_cases();
+    persistent_integration_cases();cabal_persistent_cases();freeroam_profile_cases();
     std::printf("ambient_population_tests: %u checks passed\n",checks);
 }

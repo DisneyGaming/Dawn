@@ -81,8 +81,10 @@ inline constexpr bool kOmegaDirectiveBodyReady = true;
 inline constexpr std::uint8_t kMaximumMissionDirectorVariant = 3;
 /** A grant token of zero equals the client's cleared mirror, so it grants nothing. */
 inline constexpr std::uint16_t kMinimumGrantToken = 1;
-/** Top-level and bubble-local groups one message body may carry together. */
-inline constexpr std::size_t kGroupCapacity = 20;
+/** Host storage for top-level and bubble-local groups together. Mercury needs
+ * patrol groups alongside player roots, public events and adventure overlays.
+ * Group bodies use presence-terminated records; this is not a wire count width. */
+inline constexpr std::size_t kGroupCapacity = 32;
 /** The three lifetime states spawn gate G4's unbounded jump table accepts. */
 inline constexpr std::array<std::uint8_t, 3> kLifetimeStates = {3, 6, 10};
 /** Slot flag bit for a block that carries a sense reset bit. */
@@ -173,6 +175,8 @@ struct Snapshot final {
     state::activity::strike_pact::Frame strike_pact{};
     state::activity::strike_bond::Frame strike_bond{};
     state::activity::coo::CompletionPublication missionCompletion{};
+    /** Terminal native phase8, with no success result, after a qualified Nightfall failure. */
+    bool nightfallFailed{};
     /** Optional native type2 configuration, serialized before this type5 snapshot. */
     std::optional<native::activity_clock::Configuration> activityClock{};
     /** Original3C9FC0 consumes this64-bit header as native673200-unit elapsed time. */

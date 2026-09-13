@@ -173,9 +173,9 @@ struct Replay {
     bool rightFirst{},skipWaves{},descentRequestedEarly{},descentDeferred{},earlyVolumes{};
     std::array<unsigned,2> firstWaveTicks{};std::array<bool,2> firstWaveBeforeCharge{},secondWaveBeforeCharge{},sideVisited{};
     explicit Replay(const coo::script::Views& v,bool last=false,bool right=false,bool skip=false):views(v),bossLast(last),rightFirst(right),skipWaves(skip) {
-        check(c.select(v,run),"select recovered mission");check(!c.update(run,now,true).enabled,"no progression before opening position");
-        c.position(run+1,point(ds::kVolumes[0]));check(!c.update(run,++now,true).enabled,"foreign position rejected");
-        enter(c,run,v.observationStart->asset);
+        check(c.select(v,run),"select recovered mission");check(!c.update(run,now,false).enabled,"loading cannot start the mission");
+        c.position(run+1,point(ds::kVolumes[0]));check(!c.update(run,++now,false).enabled,"foreign position cannot establish arrival");
+        check(c.update(run,++now,true).enabled,"confirmed arrival starts without a position sample");
     }
     unsigned living(std::uint16_t first,std::uint16_t last) {
         unsigned count{};c.living_enemies([&](const auto& r) {if(r.registry==0x59700FA7U && r.source>=first && r.source<=last) {++count;}});return count;
@@ -372,7 +372,7 @@ struct Replay {
             for(const auto& r:enemies[i]) {
                 if(!deathChecked) {
                     auto wrong=r;++wrong.owner;check(!c.died(wrong),"foreign source owner cannot report death");
-                    auto stale=r;++stale.actor;check(!c.died(stale),"recycled actor cannot report death");deathChecked=true;
+                    auto stale=r;stale.actor^=0x40000000U;check(!c.died(stale),"unadmitted actor cannot report death");deathChecked=true;
                 }
                 static_cast<void>(c.died(r));
             }

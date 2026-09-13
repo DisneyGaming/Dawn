@@ -13,6 +13,8 @@ namespace sunrise::state::activity::forced {
  * @return True when every named field is inside its wire range and the value was stored.
  */
 [[nodiscard]] bool publish(const ForcedDestination& value) noexcept;
+/** Apply opening coordinates only to this activity's own native selection; preserve its descriptor. */
+[[nodiscard]] bool publish_direct(const ForcedDestination& value, std::int16_t activity) noexcept;
 
 /**
  * Copies the effective operator configuration. It is empty while the completed

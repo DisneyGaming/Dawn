@@ -12,6 +12,7 @@
 #include "../../../../../middleware/datagen/family4/instance/layout.h"
 #include "../../../../../middleware/datagen/family4/loadout/loadout_resolver.h"
 #include "../../../../../state/runtime/runtime.h"
+#include "../../../../../state/activity/nightfall/native_power.h"
 #include "internal.h"
 #include "snapshot_storage.h"
 
@@ -19,6 +20,17 @@ namespace sunrise::server::bap::encrypted::push::snapshot {
 namespace {
 
 namespace family4_datagen = middleware::datagen::family4;
+
+/** True only for an item in the selected character's live equipment array. */
+[[nodiscard]] bool is_equipped_instance(const state::CharacterState& character,
+                                        std::uint64_t instanceSoid) noexcept {
+    for (const auto& item : character.equipment.slots) {
+        if (item.has_value() && item->instanceSoid == instanceSoid) {
+            return true;
+        }
+    }
+    return false;
+}
 
 /**
  * Publishes the staged family metadata once every needed object is done.
@@ -72,6 +84,8 @@ bool prepare(Scratch& scratch,
     if (!state::account::valid(account)) {
         return report_failure("account_state");
     }
+    const auto nativePower =
+        state::activity::nightfall::current_native_power_projection();
 
     const std::optional<std::size_t> selectedIndex = find_character_index(account);
     Resolved selected{};
@@ -111,8 +125,10 @@ bool prepare(Scratch& scratch,
             rawStorage.first(family4_datagen::character::layout::kObjectSize);
         const state::CharacterState& selectedCharacter =
             account.characters[selected.characterIndex];
-        if (!family4_datagen::character::encode(
-                selectedCharacter, selected.loadout, selected.lightEvaluation, characterBytes)) {
+        if (!family4_datagen::character::encode(selectedCharacter,
+                                                selected.loadout,
+                                                selected.lightEvaluation,
+                                                characterBytes)) {
             return report_failure("character_encode");
         }
         if (!append_object(scratch,
@@ -138,6 +154,19 @@ bool prepare(Scratch& scratch,
         if (!family4_datagen::loadout::resolve_owned_instances(
                 account, characterIndex, instances)) {
             return report_failure("loadout");
+        }
+        if (selectedIndex.has_value() && characterIndex == *selectedIndex) {
+            if (instances.itemCount > instances.items.size()) {
+                return report_failure("loadout_count");
+            }
+            const state::CharacterState& selectedCharacter = account.characters[characterIndex];
+            for (std::size_t itemIndex = 0; itemIndex < instances.itemCount; ++itemIndex) {
+                auto& instance = instances.items[itemIndex].instance;
+                instance.level = state::activity::nightfall::project_selected_item_level(
+                    instance.level,
+                    is_equipped_instance(selectedCharacter, instance.instanceSoid),
+                    nativePower);
+            }
         }
         if (instances.itemCount != 0
             && !append_items(scratch,

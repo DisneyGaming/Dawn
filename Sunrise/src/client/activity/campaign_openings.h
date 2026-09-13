@@ -5,6 +5,7 @@
 #include <string_view>
 #include "../../state/activity/forced/definition.h"
 #include "../../state/activity/forced/prelaunch_profile.h"
+#include "../../state/activity/strike_variants.h"
 #include "../../state/build_data/activities/activity_catalog.h"
 
 namespace sunrise::client::activity::mission_launch {
@@ -16,6 +17,8 @@ struct Mission {
     const char* location;
     const char* description;
     unsigned campaign;
+    std::uint16_t activity;
+    std::uint32_t investmentHash;
     forced::ForcedDestination destination;
 };
 
@@ -30,16 +33,18 @@ inline constexpr auto kOmegaOpening = [] {
     return value;
 }();
 
-inline constexpr std::array<Mission, 9> kMissions{{
-    {"Homecoming", "THE LAST CITY", "Return to the Tower as the Red Legion attacks the Last City.", 0, forced::profiles::kTowerfallOpening},
-    {"Gateway", "MERCURY", "Follow Ikora to Mercury and begin the search for Osiris.", 1, forced::profiles::kGatewayOpening},
-    {"A Deadly Trial", "EUROPEAN DEAD ZONE", "Track a lead through the EDZ in search of a way into the Infinite Forest.", 1, forced::profiles::kDeadlyTrialOpening},
-    {"Beyond Infinity", "MERCURY", "Enter the Infinite Forest and explore the Vex simulations.", 1, forced::profiles::kBeyondInfinityOpening},
-    {"Deep Storage", "IO", "Search the Vex network on Io for the information you need.", 1, forced::profiles::kDeepStorageOpening},
-    {"Tree of Probabilities", "MERCURY", "Follow the trail through the shifting paths of the Infinite Forest.", 1, forced::profiles::kStrikePactOpening},
-    {"Hijacked", "NESSUS", "Find a Vex mind on Nessus to help locate Panoptes.", 1, forced::profiles::kHijackedOpening},
-    {"A Garden World", "MERCURY", "Return to the Simulant Past and defeat Dendron, Root Mind. Strike version.", 1, forced::profiles::kStrikeBondOpening},
-    {"Omega", "MERCURY", "Return to the Infinite Forest and confront Panoptes with Osiris.", 1, kOmegaOpening},
+inline constexpr std::array<Mission, 11> kMissions{{
+    {"Homecoming", "THE LAST CITY", "Return to the Tower as the Red Legion attacks the Last City.", 0, 266, 0x62D85FB3U, forced::profiles::kTowerfallOpening},
+    {"Gateway", "MERCURY", "Follow Ikora to Mercury and begin the search for Osiris.", 1, 292, 0x5A2E3FF4U, forced::profiles::kGatewayOpening},
+    {"A Deadly Trial", "EUROPEAN DEAD ZONE", "Track a lead through the EDZ in search of a way into the Infinite Forest.", 1, 293, 0x87D9CA16U, forced::profiles::kDeadlyTrialOpening},
+    {"Beyond Infinity", "MERCURY", "Enter the Infinite Forest and explore the Vex simulations.", 1, 294, 0x3E9433BDU, forced::profiles::kBeyondInfinityOpening},
+    {"Deep Storage", "IO", "Search the Vex network on Io for the information you need.", 1, 295, 0x550500EEU, forced::profiles::kDeepStorageOpening},
+    {"Tree of Probabilities", "MERCURY", "Follow the trail through the shifting paths of the Infinite Forest.", 1, 296, 0x3BBB85F8U, forced::profiles::kMissionPactOpening},
+    {"Hijacked", "NESSUS", "Find a Vex mind on Nessus to help locate Panoptes.", 1, 297, 0x83211FEDU, forced::profiles::kHijackedOpening},
+    {"A Garden World", "MERCURY", "Return to the Simulant Past and defeat Dendron, Root Mind. Scan the algorithm to locate Panoptes.", 1, 298, 0x4C36870FU, forced::profiles::kMissionBondOpening},
+    {"Omega", "MERCURY", "Return to the Infinite Forest and confront Panoptes with Osiris.", 1, 299, 0x87AC2003U, kOmegaOpening},
+    {"Tree of Probabilities", "MERCURY", "Pursue Valus Thuun through the Infinite Forest.", 2, 230, 0x9FFC7326U, forced::profiles::kStrikePactOpening},
+    {"A Garden World", "MERCURY", "Climb the spire and defeat Dendron, Root Mind.", 2, 229, 0x99BDAB3DU, forced::profiles::kStrikeBondOpening},
 }};
 
 struct Route {
@@ -48,14 +53,26 @@ struct Route {
     [[nodiscard]] constexpr bool valid() const noexcept { return transport != 0xFFFF; }
 };
 
-// All curated openings use the existing Chosen donor, including missions with hidden native rows.
-// Never substitute a similarly named activity if the pinned donor identity is unavailable.
+// Select the exact installed public activity. Similar names include heroic and playlist variants.
+// Keep the activity identity intact so Destiny derives its own mission/strike presentation.
 [[nodiscard]] inline Route resolve(std::size_t mission,
-    std::span<const state::build_data::activities::Definition> rows) noexcept {
-    constexpr auto donor = forced::prelaunch::kDonorActivity;
-    if (mission >= kMissions.size() || rows.size() <= donor
-        || rows[donor].index != donor || rows[donor].name() != "mission_reunion") { return {}; }
-    return {static_cast<std::uint16_t>(donor), kMissions[mission].destination};
+    std::span<const state::build_data::activities::Definition> rows,
+    state::activity::strikes::Difficulty difficulty = state::activity::strikes::Difficulty::standard) noexcept {
+    if (mission >= kMissions.size()) { return {}; }
+    const auto& selected = kMissions[mission];
+    auto index = selected.activity;
+    auto hash = selected.investmentHash;
+    if (difficulty != state::activity::strikes::Difficulty::standard) {
+        if (selected.campaign != 2) { return {}; }
+        const auto* variant = state::activity::strikes::find(
+            {selected.destination.packageName.data(), selected.destination.packageNameLength}, difficulty);
+        if (!variant) { return {}; }
+        index = variant->activity; hash = variant->hash;
+    }
+    if (rows.size() <= index || rows[index].index != index || rows[index].hash != hash
+        || rows[index].name() != std::string_view(selected.destination.packageName.data(),
+            selected.destination.packageNameLength)) { return {}; }
+    return {index, selected.destination};
 }
 } // namespace openings
 } // namespace sunrise::client::activity::mission_launch

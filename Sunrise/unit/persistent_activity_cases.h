@@ -16,14 +16,14 @@ void persistent_activity_cases() {
     CHECK(activity.update(14,true).populations.count==0);
     a::NativeActivityFrame frame;
     for(int i=0;i<4;++i) frame=activity.update(15,true);
-    CHECK(frame.placements.count==9 && frame.populations.count==2);
+    CHECK(frame.placements.count==10 && frame.populations.count==2);
     namespace placement_wire=sunrise::middleware::bap::activity_message::native::placement;
     for(std::uint16_t slot=0;slot<3;++slot) CHECK(placement_wire::find(frame.placements,0x2749BAAE,4,slot));
     for(std::uint16_t slot=3;slot<15;++slot) CHECK(!placement_wire::find(frame.placements,0x2749BAAE,4,slot));
     CHECK(frame.populations.entries[0].slot==1 && frame.populations.entries[0].source.looseRequested==1);
     CHECK(frame.populations.entries[1].source.registry==0x564C6ECE);
     const auto revision=activity.population().revision();
-    for(int i=0;i<100;++i) {frame=activity.update(15,true);CHECK(frame.placements.count==9);}
+    for(int i=0;i<100;++i) {frame=activity.update(15,true);CHECK(frame.placements.count==10);}
     CHECK(activity.population().revision()==revision);
     CHECK(activity.diagnostics().phase==c::Phase::complete);
     // Region departure must preserve the exact accepted source generations and
@@ -58,29 +58,36 @@ void persistent_activity_cases() {
     CHECK(cold.update(16,true).populations.count==0);
     CHECK(cold.update(16,true).placements.count==0);
     CHECK(activity.population().request({{42,{7}},revision,100,0x74337EDD,1,2,123},16)==a::population::Result::stale);
-    CHECK(activity.update(15,true).placements.count==9);
+    CHECK(activity.update(15,true).placements.count==10);
     CHECK(activity.population().revision()==revision);
     CHECK(activity.population().request({{42,{7}},revision,99,0x74337EDD,1,2,122},15)==a::population::Result::stale);
 
     // JSON alone changes selection, scheduling and population policy.
     auto edited=s::json::Reader(text).parse();
     field(field(edited,"parameters"),"pond_initial_count").number=2;
+    // This fixture renames Mercury's root graph. Disable the exact native rally probe whose
+    // retained dependency intentionally remains bound to the authored `lighthouse` graph.
+    field(field(edited,"parameters"),"public_event_rally_probe").number=0;
     auto& graphList=field(edited,"graphs");
     for(auto& pair:graphList.members) if(pair.first=="lighthouse") pair.first="renamed_zone";
     field(field(edited,"roles"),"persistent").text="renamed_zone";
-    auto& steps=field(graph(edited,"renamed_zone"),"steps").items;
-    field(steps[0],"commands").items.pop_back(); // Remove the side portal request.
     std::shared_ptr<const s::MissionDocument> changed=s::MissionDocument::parse(encode(edited),mercury::kProfile,error);
     CHECK(changed);CHECK(a::PersistentActivity::valid(mercury::kActivity,*changed));
     a::PersistentActivity second;CHECK(second.begin({99,{1}},mercury::kActivity,changed,124));
     for(int i=0;i<4;++i) frame=second.update(15,true);
-    CHECK(frame.placements.count==8 && frame.populations.entries[0].source.looseRequested==2);
-    CHECK(!sunrise::middleware::bap::activity_message::native::placement::find(frame.placements,0xF25B938B,4,5));
-    CHECK(activity.update(15,true).placements.count==9); // Old document stays pinned.
+    CHECK(frame.placements.count==9);
+    std::size_t editedPondIndex=frame.populations.count;
+    for(std::size_t i=0;i<frame.populations.count;++i)
+        if(frame.populations.entries[i].source.registry==0x74337EDD
+           && frame.populations.entries[i].slot==1) editedPondIndex=i;
+    CHECK(editedPondIndex<frame.populations.count
+          && frame.populations.entries[editedPondIndex].source.looseRequested==2);
+    CHECK(activity.update(15,true).placements.count==10); // Old document stays pinned.
 
     // A destination file can remove an Adventure beacon without changing the
     // native service or enabling its neighboring heroic/patrol/forge objects.
     auto flagsEdited=s::json::Reader(text).parse();
+    field(field(flagsEdited,"parameters"),"public_event_rally_probe").number=0;
     auto& flagSteps=field(graph(flagsEdited,"lighthouse"),"steps").items;
     for(auto& step:flagSteps) if(field(step,"id").text=="adventures") field(step,"commands").items.pop_back();
     std::shared_ptr<const s::MissionDocument> flagsDocument=s::MissionDocument::parse(encode(flagsEdited),mercury::kProfile,error);
@@ -91,7 +98,7 @@ void persistent_activity_cases() {
     CHECK(placement_wire::find(frame.placements,0x2749BAAE,4,0));
     CHECK(placement_wire::find(frame.placements,0x2749BAAE,4,1));
     CHECK(!placement_wire::find(frame.placements,0x2749BAAE,4,2));
-    CHECK(activity.update(15,true).placements.count==9);
+    CHECK(activity.update(15,true).placements.count==10);
 
     auto bad=s::json::Reader(text).parse();
     field(field(field(bad,"assets"),"landing_portal"),"slot").number=9;
@@ -113,6 +120,7 @@ void persistent_activity_cases() {
     alternateDefinition.publicEventInitials={}; // Their gates require those exact optional dependencies.
     bad=s::json::Reader(text).parse();field(bad,"mission").text="another_destination";
     field(bad,"profile").text="test.destination.v1";
+    field(field(bad,"parameters"),"public_event_rally_probe").number=0;
     std::shared_ptr<const s::MissionDocument> alternate=s::MissionDocument::parse(encode(bad),alternateProfile,error);
     CHECK(alternate);a::PersistentActivity reused;
     CHECK(reused.begin({100,{1}},alternateDefinition,alternate,125));

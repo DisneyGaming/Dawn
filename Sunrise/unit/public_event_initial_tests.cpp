@@ -37,7 +37,7 @@ int main(int argc,char** argv){
  check(normal.request_population({normalOwner,normal.population().revision(),normal.population().last_request()+1,0xC8229B2B,44,1,77},15)==rt::population::Result::unsupported,"disabled event source cannot bypass prerequisite owner");
  enable(text,"public_event_opening_probe");enable(text,"public_event_rally_probe");enable(text,"ambient_cabal_primary_probe_count");
  auto document=parse(text);check(rt::PersistentActivity::valid(mc::kActivity,*document),"combined rally/Cabal/initial profile validates");
- check(rt::ambient_population::optional_registries(mc::kActivity,*document,optional) && optional.count==4,"exact optional two Cabal, event and geometry registries");
+ check(rt::ambient_population::optional_registries(mc::kActivity,*document,optional) && optional.count==3,"exact optional Cabal owner, event and geometry registries");
  std::ofstream live(std::filesystem::path(argv[2])/"mercury-initial-test.json",std::ios::binary);live<<text;live.close();check(live.good(),"reviewable enabled JSON emitted");
  const rt::population::Owner owner{801,{2}};constexpr std::uint64_t boot=78;
  rt::PersistentActivity activity;check(activity.begin(owner,mc::kActivity,document,boot),"retained combined activity starts");

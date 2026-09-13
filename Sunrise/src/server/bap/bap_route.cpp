@@ -287,6 +287,9 @@ void report_matchmaking_retirement_failure(const Session& session,
                                        touchesScratch)) {
         response.size += deferred;
     }
+    if (session->accountMutationPublished) {
+        publish_account_mutation(*session);
+    }
     return true;
 }
 
@@ -309,10 +312,14 @@ void report_matchmaking_retirement_failure(const Session& session,
     if (session != nullptr) {
         detach_stale_borrowed_activity(*session);
     }
-    return session != nullptr && session->authenticated
-           && lifecycle::authentication_key_is_current(*session)
-           && encrypted::consume_deferred(
-               *session, g_scratch, request.response, response.size, touchesScratch);
+    const bool consumed = session != nullptr && session->authenticated
+                          && lifecycle::authentication_key_is_current(*session)
+                          && encrypted::consume_deferred(
+                              *session, g_scratch, request.response, response.size, touchesScratch);
+    if (consumed && session->accountMutationPublished) {
+        publish_account_mutation(*session);
+    }
+    return consumed;
 }
 
 /** One bounded cascade attempt, which may defer while a lineage row remains pinned. */

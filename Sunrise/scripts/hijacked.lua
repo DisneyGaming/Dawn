@@ -131,6 +131,5 @@ return mission{
     id="hijacked",graphs={composition,opening,cave,hunt,mind,surface,well,conflux,ending},
     roles={mission="composition"},entry="composition",modules={"mission"},observations={"mission.checked"},
     phases={"opening","cave","hunt","mind","surface","well","conflux","ending"},
-    observation_start="landing.tv_nessus_m_rumba_artifacts_edge_010_vo",
     conditions={tunnel,cleanup,patrol,drop,echoesEntry,small,large,visible,retreat1,retreat2},
 }

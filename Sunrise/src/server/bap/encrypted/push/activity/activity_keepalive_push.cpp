@@ -251,7 +251,8 @@ bool consume_activity_keepalive(Session& session,
                           && (now < session.activity.transitionUntilTick || omegaOpeningDue || towerWatchDue || nativePopulationDue || nativeCueDue)
                           && now >= session.activity.rosterDueTick;
     const bool endingMembershipDue=!session.activity.joinedForeignSession
-        && (state::activity::omega_ending::membership_due(session.activity.instance,
+        && (state::activity::strike_bond::ending_membership_due(now)
+            || state::activity::omega_ending::membership_due(session.activity.instance,
             state::activity::mission_run_generation(),now)
             || state::activity::beyond_infinity::transit::membership_due(session.activity.instance,
                 state::activity::mission_run_generation(),now));

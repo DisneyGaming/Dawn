@@ -1,6 +1,8 @@
 #include "mission_launch.h"
 #include "mission_launch_options.h"
 #include "campaign_openings.h"
+#include "campaign_dialogue.h"
+#include "nightfall_player.h"
 #include "../hooks/bootflow/mission_prelaunch.h"
 #include "mission_launch_testing.h"
 #include <Windows.h>
@@ -102,11 +104,19 @@ bool request_manual(std::uint16_t index, const forced::ForcedDestination& destin
     return true;
 }
 bool request_opening(std::size_t mission) noexcept {
-    const auto route = openings::resolve(mission, state::build_data::activities::entries());
+    return request_variant(mission, state::activity::strikes::Difficulty::standard);
+}
+bool request_variant(std::size_t mission, state::activity::strikes::Difficulty difficulty) noexcept {
+    return request_variant(mission, difficulty, state::activity::nightfall::defaults(difficulty));
+}
+bool request_variant(std::size_t mission, state::activity::strikes::Difficulty difficulty,
+                     state::activity::nightfall::Options options) noexcept {
+    const auto route = openings::resolve(mission, state::build_data::activities::entries(), difficulty);
     if (!route.valid()) { return false; }
     AcquireSRWLockExclusive(&g_lock);
     if (g_state.busy || g_state.inMission) { ReleaseSRWLockExclusive(&g_lock); return false; }
     g_state = {Status::requested, route.transport, true, true, route.destination, true};
+    g_state.nightfallOptions = state::activity::nightfall::sanitize(difficulty, options);
     g_requestedAt = now();
     ReleaseSRWLockExclusive(&g_lock);
     return true;
@@ -139,6 +149,16 @@ void poll() noexcept {
         g_state.status = Status::idle;
     }
     ReleaseSRWLockExclusive(&g_lock);
+    // Keep the native flag through loading and clear the lease once back in orbit.
+    if (inMission) {
+        (void)campaign_dialogue::select(actual.activityIndex);
+        const auto run = state::activity::mission_run_generation();
+        state::activity::nightfall::enter(sessionId, actual.activityIndex, run);
+        nightfall_player::poll(sessionId, run);
+    } else if (!state.busy && currentStep==29) {
+        (void)campaign_dialogue::select(-1);
+        state::activity::nightfall::leave();
+    }
     if (!state.busy) { return; }
     if (!step) { finish(Status::nativeUnavailable); return; }
     const auto rows = state::build_data::activities::entries();
@@ -146,7 +166,7 @@ void poll() noexcept {
         g_leftOrbit = g_leftOrbit || currentStep != 29;
         if (g_leftOrbit && inMission && sessionId != g_previousSession && state.index < rows.size()) {
             const auto expectedName = state.manual ? destination_name(state.destination) : rows[state.index].name();
-            const bool matches = (state.manual || actual.activityIndex == static_cast<std::int16_t>(state.index))
+            const bool matches = ((state.manual && !state.opening) || actual.activityIndex == static_cast<std::int16_t>(state.index))
                 && actual.packageNameLength == expectedName.size()
                 && std::memcmp(actual.packageName.data(), expectedName.data(), expectedName.size()) == 0
                 && (!state.manual || ((!state.destination.hasBubble || (actual.hasArrivalBubbleOverride
@@ -170,7 +190,7 @@ void poll() noexcept {
         finish(Status::entryUnavailable); return;
     }
     if (state.manual) {
-        if (!manual_transport_valid(state.index, state.destination, rows)
+        if ((!state.opening && !manual_transport_valid(state.index, state.destination, rows))
             || validate_manual(state.destination, g_manualScratch) != ManualError::none) {
             finish(Status::manualRejected); return;
         }
@@ -228,21 +248,24 @@ void poll() noexcept {
     std::memcpy(&destination, selection.data() + 4, sizeof(destination));
     if (source != index || destination != index || selection[0] != std::byte{}
         || !valid(selection.data())) { finish(Status::descriptorRejected); return; }
-    // The native manager installs these hooks asynchronously. Never submit the donor first:
-    // its selection publication can finish before the next manager update installs the redirect.
+    // Wait for the native opening support before publishing the exact selected activity.
     if (state.manual && !hooks::bootflow::prepare_mission_prelaunch(state.destination)) {
         finish(now() - started > 10000 ? Status::prelaunchUnavailable : Status::preparing);
         return;
     }
+    if (!campaign_dialogue::select(index)) {
+        finish(now()-started>10000 ? Status::prelaunchUnavailable : Status::preparing);
+        return;
+    }
     g_previousSession = state::activity::newest_joined_session();
     g_leftOrbit = false;
-    // Reuse the standalone override service only after all native readiness/descriptor checks.
-    // It retains its existing persistent effect and Homecoming/Chosen activation semantics.
-    // Re-arm a replay only after validation and native readiness checks have succeeded.
-    // Rejected requests must leave the existing override untouched.
-    if (state.opening) { forced::clear(); }
-    if (state.manual && !forced::publish(state.destination)) { finish(Status::manualRejected); return; }
+    // Coordinates are scoped to the activity we constructed. Its identity and opaque native
+    // launch descriptor remain intact, including campaign versus strike presentation.
+    if (state.opening) {
+        if (!forced::publish_direct(state.destination, index)) { finish(Status::manualRejected); return; }
+    } else if (state.manual && !forced::publish(state.destination)) { finish(Status::manualRejected); return; }
     clear();
+    state::activity::nightfall::arm(index, state.nightfallOptions);
     select(0, selection.data());
     commit(1);
     finish(Status::queued);
@@ -251,7 +274,7 @@ const char* description(Status status) noexcept {
     switch (status) {
     case Status::idle: return "Choose an activity, return to orbit, then launch.";
     case Status::requested: return "Checking the native launch request...";
-    case Status::queued: return "Submitted to the Director. Waiting for the native activity transition.";
+    case Status::queued: return "Launching the selected activity. Waiting for arrival.";
     case Status::arrived: return "In mission.";
     case Status::preparing: return "Preparing the mission opening...";
     case Status::prelaunchUnavailable: return "The mission opening could not be prepared. Wait in orbit and try again.";

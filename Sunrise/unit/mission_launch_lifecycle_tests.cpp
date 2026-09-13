@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 #include "client/activity/mission_launch.h"
+#include "client/activity/campaign_dialogue.h"
 #include "client/activity/mission_launch_options.h"
 #include "client/activity/campaign_openings.h"
 #include "client/activity/mission_launch_testing.h"
@@ -24,7 +25,8 @@ namespace destination = sunrise::state::activity::destination;
 unsigned g_checks{}, g_selects{}, g_commits{}, g_prepareCalls{};
 std::uint64_t g_now{1000}, g_session{1};
 std::int32_t g_step{29};
-bool g_hooksReady{}, g_wrongDestination{}, g_descriptorValid{true};
+bool g_hooksReady{}, g_wrongDestination{}, g_descriptorValid{true}, g_dialogueReady{true};
+std::int16_t g_dialogueActivity{-1};
 std::array<std::byte, 0x1C900> g_manager{};
 std::array<std::byte, 0xA40> g_record{};
 destination::DestinationSelection g_actual{}, g_submitted{};
@@ -48,27 +50,34 @@ std::uintptr_t __fastcall record(std::uint32_t member) {
     check(member == 0, "native primary member"); return reinterpret_cast<std::uintptr_t>(g_record.data());
 }
 void* __fastcall construct(void* buffer, std::uint32_t slot, std::int16_t index) {
-    check(slot == 0 && index == 282, "construct pinned donor");
+    check(slot == 0 && index == static_cast<std::int16_t>(launch::snapshot().index), "construct selected native activity");
     put(static_cast<std::byte*>(buffer), 2, index); put(static_cast<std::byte*>(buffer), 4, index); return buffer;
 }
 bool __fastcall valid(const void*) { return g_descriptorValid; }
-const char* __fastcall name(std::int16_t index) { check(index == 282, "native donor lookup"); return "mission_reunion"; }
+const char* __fastcall name(std::int16_t index) {
+    for(const auto& entry:launch::openings::kMissions) if(entry.activity==index) return entry.destination.packageName.data();
+    if (const auto* variant = sunrise::state::activity::strikes::find(index)) { return variant->package.data(); }
+    check(false,"only selected native activities are looked up");return "";
+}
 void __fastcall clear() {}
 void __fastcall select(std::uint8_t slot, const void* buffer) {
     ++g_selects; check(slot == 0, "native select slot");
+    check(g_dialogueReady && g_dialogueActivity==launch::snapshot().index,"dialogue policy is delivered before native selection");
     std::int16_t source{}, target{};
     std::memcpy(&source, static_cast<const std::byte*>(buffer) + 2, sizeof(source));
     std::memcpy(&target, static_cast<const std::byte*>(buffer) + 4, sizeof(target));
     forced::ForcedDestination selected{}; forced::snapshot(selected);
     check(forced::active(selected), "opening enabled before native selection");
-    g_submitted = descriptor(target, "mission_reunion");
-    const auto* profile = prelaunch::configured(selected);
-    if (profile) {
-        check(g_hooksReady, "donor cannot reach selection before both hooks are ready");
-        check(forced::commit_prelaunch_authored_selection(source, target, selected), "real prelaunch commit");
-        g_submitted = descriptor(profile->activity, profile->package);
-    }
-    check(forced::apply(g_submitted), "real forced destination applies to the native contract");
+    check(source==target && target==launch::snapshot().index,"selection retains its own source and target");
+    g_submitted = descriptor(target, name(target));
+    if(prelaunch::configured(selected)) check(g_hooksReady,"native publication waits for installed support");
+    const auto before=g_submitted;
+    check(forced::apply(g_submitted), "native selection receives authored arrival coordinates");
+    check(g_submitted.activityIndex==before.activityIndex && g_submitted.previousActivityIndex==before.previousActivityIndex
+        && g_submitted.packageName==before.packageName && g_submitted.descriptorBits==before.descriptorBits
+        && g_submitted.descriptorBitLength==before.descriptorBitLength,"native identity and descriptor are preserved");
+    auto handoff=descriptor(282,"mission_reunion");const auto untouched=handoff;
+    check(!forced::apply(handoff) && handoff.packageName==untouched.packageName && handoff.activityIndex==untouched.activityIndex,"an ending handoff is not redirected back to the opening");
     if (g_wrongDestination) { g_submitted = descriptor(282, "mission_reunion"); }
 }
 void __fastcall commit(std::int32_t enabled) { check(enabled == 1, "native commit enabled"); ++g_commits; }
@@ -85,6 +94,7 @@ void unchanged(const forced::ForcedDestination& expected) {
         && current.spawnSetHash == expected.spawnSetHash, "waiting or rejected launch preserves existing override");
 }
 }
+namespace sunrise::client::activity::campaign_dialogue { bool select(std::int16_t activity) noexcept { g_dialogueActivity=activity; return g_dialogueReady; } }
 namespace sunrise::state::runtime::storage { State g_state{}; SRWLOCK g_stateLock = SRWLOCK_INIT; }
 namespace sunrise::core::log { void write(Channel, Level, std::string_view) noexcept {} }
 namespace sunrise::state::activity {
@@ -162,12 +172,12 @@ int main(int argc, char** argv) {
 
     check(launch::request_opening(1), "Gateway request"); launch::poll();
     check(launch::snapshot().status == launch::Status::preparing && launch::snapshot().busy
-        && g_selects == 0 && g_commits == 0, "delayed hooks defer donor launch");
+        && g_selects == 0 && g_commits == 0, "delayed native publication readiness defers launch");
     unchanged(launch::openings::kOmegaOpening);
     check(!launch::request_opening(2), "preparing request immutable");
     g_now += 10001; launch::poll();
     check(launch::snapshot().status == launch::Status::prelaunchUnavailable && !launch::snapshot().busy
-        && g_selects == 0 && g_commits == 0, "missing hooks time out without submitting Chosen");
+        && g_selects == 0 && g_commits == 0, "missing support times out without submitting any activity");
     unchanged(launch::openings::kOmegaOpening);
     g_descriptorValid = false;
     check(launch::request_opening(1), "rejected descriptor request"); launch::poll();
@@ -175,6 +185,15 @@ int main(int argc, char** argv) {
         "invalid native descriptor never launches");
     unchanged(launch::openings::kOmegaOpening); g_descriptorValid = true;
 
+    g_dialogueReady=false;
+    check(launch::request_opening(5),"Tree campaign queues while dialogue flag is pending");launch::poll();
+    check(launch::snapshot().status==launch::Status::preparing && g_selects==0 && g_commits==0,
+        "campaign launch waits for evaluated native dialogue flag");
+    g_now+=10001;launch::poll();
+    check(launch::snapshot().status==launch::Status::prelaunchUnavailable && !launch::snapshot().busy
+        && g_selects==0,"unavailable flag cannot launch wrong conversation");
+    g_dialogueReady=true;orbit();
+    check(g_dialogueActivity==-1,"failed launch restores dialogue policy in orbit");
     for (std::size_t i = 0; i < launch::openings::kMissions.size(); ++i) {
         orbit(); g_hooksReady = false;
         check(launch::request_opening(i), "each opening can queue");
@@ -189,6 +208,7 @@ int main(int argc, char** argv) {
             "ready opening submits once");
         launch::poll(); check(g_selects == before + 1 && !launch::snapshot().inMission, "orbit does not imply arrival");
         arrive();
+        check(g_dialogueActivity==g_actual.activityIndex,"arrival keeps selected dialogue policy");
         const auto state = launch::snapshot();
         check(state.status == launch::Status::arrived && !state.busy && state.inMission
             && state.current_name() == launch::destination_name(launch::openings::kMissions[i].destination),
@@ -197,8 +217,32 @@ int main(int argc, char** argv) {
         check(!launch::request_opening(i), "in-mission launch blocked");
         orbit(); check(!launch::snapshot().inMission && launch::snapshot().status == launch::Status::idle,
             "return to orbit resets presence and arrival status");
+        check(g_dialogueActivity==-1,"each orbit return restores dialogue policy");
     }
     g_hooksReady = true; g_wrongDestination = true;
+    for (const auto& variant : sunrise::state::activity::strikes::kVariants) {
+        g_wrongDestination = false; orbit();
+        check(launch::request_variant(variant.package == "strike_pact" ? 9 : 10, variant.difficulty),
+            "strike difficulty queues after returning to orbit");
+        const auto before = g_selects; launch::poll();
+        check(g_selects == before + 1 && launch::snapshot().index == variant.activity,
+            "native descriptor uses exact difficulty activity");
+        arrive();
+        check(launch::snapshot().status == launch::Status::arrived
+            && launch::snapshot().currentIndex == variant.activity && g_dialogueActivity == variant.activity,
+            "difficulty survives descriptor publication and arrival");
+        check(!launch::request_variant(9, sunrise::state::activity::strikes::Difficulty::adept),
+            "difficulty switching requires return to orbit");
+    }
+    orbit();
+    check(launch::request_variant(9, sunrise::state::activity::strikes::Difficulty::grandmaster),
+        "Grandmaster queues for wrong-tier arrival check");
+    launch::poll();
+    g_submitted.activityIndex = 830;
+    arrive();
+    check(launch::snapshot().status == launch::Status::unexpectedDestination,
+        "same strike package at Adept cannot confirm a Grandmaster arrival");
+    orbit(); g_wrongDestination = true;
     check(launch::request_opening(1), "wrong destination scenario"); launch::poll(); arrive();
     check(launch::snapshot().status == launch::Status::unexpectedDestination && !launch::snapshot().busy
         && launch::snapshot().inMission && launch::snapshot().current_name() == "mission_reunion",

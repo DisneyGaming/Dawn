@@ -49,7 +49,7 @@ template<class Check> void run(Check check,const sunrise::state::activity::coo::
         }
         check(false,"native Past return volume has an interior point");
     };
-    enter(views.observationStart->asset);
+    if(views.observationStart) { enter(views.observationStart->asset); }
     std::uint64_t now=1000;controller.update(run,now,true);
     // This corridor was already visited on the first Forest traversal.
     controller.position(run,{-901.F,1073.F,-63.9F});

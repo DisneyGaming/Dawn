@@ -23,7 +23,7 @@ inline constexpr std::uint8_t kBubble=15;
 inline constexpr std::uint32_t kOpeningSpawnSet=0x0E1523FEU;
 // The dialogue bank handle is validated at dispatch time from the native component; the
 // adapter accepts the bank the strike's own type-53 component reports.
-inline constexpr std::uint32_t kBank=0U;
+inline constexpr std::uint32_t kBank=0x80F1FFB6U;
 
 struct Point final { float x,y,z; };
 struct Volume final { std::uint32_t registry; std::uint16_t slot; std::string_view name; Point min,max; };

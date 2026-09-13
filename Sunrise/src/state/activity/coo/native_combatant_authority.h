@@ -44,6 +44,8 @@ struct Source final {
     bool retireOwned{};
     /** Reserve population for a native scene or vehicle delivery request (logical mode 1). */
     bool sceneRequested{};
+    /** Zero-based installed native source-template variant. Build 86657 exposes rows 0..5. */
+    std::uint8_t variant{};
 };
 inline constexpr std::size_t kSourceBits = 641;
 inline constexpr std::size_t kTwoCategorySourceBits = 673;
@@ -60,6 +62,7 @@ template<class Writer>
     const bool objective=task.registry!=0;
     if(source.registry==0 || source.registry==0x811C9DC5U || source.hasRule || source.memberOwned
         || source.generation==0 || source.generation>0x7FFFFFFFU
+        || source.variant>5
         || (!source.hasSecondCategory && source.secondRequested!=0)
         || unsigned(source.looseRequested)+source.secondRequested>63
         || (objective ? (task.registry==0x811C9DC5U || task.slot>0x7FFFU || task.row<-1
@@ -81,7 +84,8 @@ template<class Writer>
         || !writer.write(source.hasSecondCategory?2U:1U,4)
         || !writer.write(0x80000000U+source.looseRequested,32)
         || (source.hasSecondCategory && !writer.write(0x80000000U+source.secondRequested,32))
-        || !writer.write(0,1) || !writer.write(1,1) || !writer.write(1,3)) { return false; }
+        || !writer.write(0,1) || !writer.write(1,1)
+        || !writer.write(static_cast<std::uint32_t>(source.variant)+1U,3)) { return false; }
     for(std::size_t i=0;i<profile.size();++i) {
         if(!writer.write(static_cast<unsigned>(profile[i])+1U,widths[i])) { return false; }
     }
@@ -101,6 +105,7 @@ template<class Writer>
 [[nodiscard]] bool write_source(Writer& writer,const Source& source) noexcept {
     if(source.registry==0 || source.registry==0x811C9DC5U
         || source.generation==0 || source.generation>0x7FFFFFFFU
+        || source.variant>5
         || (source.hasRule && source.ruleSlot>0x7FFFU) || source.looseRequested>63
         || source.secondRequested>63
         || (!source.hasSecondCategory && source.secondRequested!=0)
@@ -126,9 +131,10 @@ template<class Writer>
         && writer.write(0x80000000U+source.looseRequested,32)
         && (!source.hasSecondCategory || writer.write(0x80000000U+source.secondRequested,32))
         && writer.write(1,1) && writer.write(0,4)
-        // Variant 0 is required. -1 would index before six native template arrays.
-        // Name tier 0 selects the authored display name; other overrides are absent.
-        && writer.write(1,1) && writer.write(1,3)
+        // Bias one maps logical variants 0..5 to wire values 1..6. Wire zero is -1 and would
+        // index before the installed six-template array. Name tier 0 remains authored.
+        && writer.write(1,1)
+        && writer.write(static_cast<std::uint32_t>(source.variant)+1U,3)
         && writer.write(1,2) && writer.write(0,8)
         && writer.write(1,1) && writer.write(source.generation,31)
         && writer.write(1,1) && writer.write(0,32)

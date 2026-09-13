@@ -1,4 +1,5 @@
 #pragma once
+#include "../coo/campaign_scan.h"
 #include "../coo/dialogue_service.h"
 #include "../coo/objective_service.h"
 #include "../coo/lifecycle_service.h"
@@ -8,9 +9,16 @@ namespace sunrise::state::activity::strike_pact {
 struct BossPublication final {
     std::uint32_t sceneGeneration{},laserRevision{1};
     std::uint8_t room{},fights{},retreated{},cleared{},arrived{},laserRooms{},laserHighRooms{},laserObjects{};
-    bool prepared{},sceneFinished{},immune{},dead{};
+    bool prepared{},sceneFinished{},immune{},dead{},healthObserved{};
+    bool minotaurSpawned{},minotaurDead{};
+    float health{1.F};
+};
+struct BossRequest final {
+    coo::Generation owner{};EnemyReceipt enemy{};
+    std::uint8_t stage{};std::uint32_t revision{};bool requested{};
 };
 struct Frame final {
+    bool campaign{};coo::CampaignScan scan{};
     bool enabled{},checked{},finished{},populationFault{},services{};
     /** Index into the mission's authored phase list: opening, forest, chase, ledge/boss. */
     std::uint8_t section{};
@@ -29,6 +37,8 @@ struct Frame final {
     /** Shared native activity-clock ticks; timer epochs use exactly this clock domain. */
     std::uint64_t activityTime{},endEpoch{};
     std::uint8_t musicCandidate{255};
+    /** Frozen source-template selector copied from the exact launch activity. */
+    std::uint8_t enemyVariant{};
     std::uint16_t region{120};
     /** A death respawns on the lifetime's spawn set, and the destination's own arrival set belongs
      * to the opening. Each region the mission holds names its own, so the roster override follows

@@ -8,6 +8,7 @@
 #include "catalog_chase.h"
 #include "catalog_ledge.h"
 #include "catalog_boss.h"
+#include "../nightfall/enemy_variants.h"
 namespace sunrise::state::activity::strike_pact {
 
 // sq_prefight_skirmish[0..5] (sources 40..45) are in both section catalogs, because the proven
@@ -46,6 +47,45 @@ inline constexpr std::size_t kAllSpawnCount=
     return out;
 }
 inline constexpr auto kAllSpawns=build_all_spawns();
+
+// Installed source descriptor variant 5 replaces these exact categories on
+// Grandmaster. A source may also contain an unchanged category, so callers
+// must retain the selected entity before treating an individual death as the
+// substituted enemy. Source identity alone is only a scheduling candidate.
+inline constexpr std::array<nightfall::EnemySubstitution,18> kGrandmasterEnemySubstitutions{{
+    {0xA5F083B5U,4,0x6FC008B5U,0x80C1ACAFU,0x8161FED1U},
+    {0xA5F083B5U,19,0xDFD659ACU,0x80C1A8E4U,0x8161FED1U},
+    {0xA5F083B5U,38,0xA21827B6U,0x80C0D298U,0x8157862EU},
+    {0xA5F083B5U,42,0x7817E226U,0x80C1A8E4U,0x8161FED1U},
+    {0xA5F083B5U,44,0x6116E417U,0x80C0D09FU,0x81578798U},
+    {0xA5F083B5U,56,0x7817E226U,0x80C1A8E4U,0x8161FED1U},
+    {0xA5F083B5U,57,0xA21827B6U,0x80C0D298U,0x8157862EU},
+    {0xA5F083B5U,65,0xA21827B6U,0x80C0D298U,0x8157862EU},
+    {0xA5F083B5U,73,0x6116E417U,0x80C0D09FU,0x81578798U},
+    {0xA5F083B5U,74,0x6116E417U,0x80C0D09FU,0x81578798U},
+    {0xA5F083B5U,80,0x6116E417U,0x80C0D09FU,0x81578798U},
+    {0xA5F083B5U,81,0x6116E417U,0x80C0D09FU,0x81578798U},
+    {0x588E5FB9U,2,0xD3D162D4U,0x80C19B1FU,0x8161FED1U},
+    {0x588E5FB9U,2,0x0EA2CE68U,0x80C19B1FU,0x8161FED1U},
+    {0x588E5FB9U,20,0xB4009D19U,0x80C0D0BFU,0x81578798U},
+    {0x588E5FB9U,25,0xBF95E58CU,0x80C0FA98U,0x8161FED1U},
+    {0x588E5FB9U,27,0xBF95E58CU,0x80C0FA98U,0x8161FED1U},
+    {0xCC7A090DU,14,0xBF95E58CU,0x80C0FA98U,0x8161FED1U},
+}};
+static_assert([]{for(const auto& value:kGrandmasterEnemySubstitutions)
+    if(!nightfall::valid(value))return false;
+    else {bool found{};for(const auto& source:kAllSpawns)
+        found=found || (source.registry==value.registry && source.source==value.source);
+        if(!found)return false;}
+    return true;}());
+[[nodiscard]] constexpr bool grandmaster_substitution_source(
+    std::uint32_t registry,std::uint16_t source) noexcept {
+    return nightfall::substitution_source(kGrandmasterEnemySubstitutions,registry,source);
+}
+[[nodiscard]] constexpr const nightfall::EnemySubstitution* grandmaster_substitution(
+    std::uint32_t registry,std::uint16_t source,std::uint32_t category,std::uint32_t entity) noexcept {
+    return nightfall::substitution(kGrandmasterEnemySubstitutions,registry,source,category,entity);
+}
 
 // A repeated (registry, source) pair would make the ledger admit an actor into whichever row it
 // reached first and then wait forever on the other, so it is refused at compile time.

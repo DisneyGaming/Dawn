@@ -56,6 +56,14 @@ public:
         sceneWait.asset={0xBA0B27A0U,0x80F46DDDU,1,4};visit(kSpawns.size()+3,sceneWait);
     }
     template<class Visit> void pending_enemies(Visit visit) const noexcept { population_.pending(visit); }
+    [[nodiscard]] EnemyReceipt marcher(std::uint32_t actor) const noexcept {
+        EnemyReceipt result{};
+        if(frame_.enabled && frame_.marchers && !frame_.finished) population_.living([&](const EnemyReceipt& receipt) noexcept {
+            const auto* source=spawn(receipt.registry,receipt.source);
+            if(receipt.actor==actor && source && source->cohort==0) result=receipt;
+        });
+        return result;
+    }
     bool object(std::size_t index,const coo::ObjectReceipt& receipt,bool applied,float position,std::int16_t revision) noexcept;
     [[nodiscard]] const Frame& frame() const noexcept { return frame_; }
     coo::StallDetail missing(const coo::CommandSpec&) const noexcept;
@@ -84,7 +92,7 @@ private:
     const coo::script::Views* views_{};
     std::uint64_t run_{},now_{};
     std::uint32_t publicationGeneration_{}; // Retained across resets, including a reused run.
-    bool started_{},landingSeen_{},vanceRequested_{},greetingRequested_{};
+    bool started_{},landingSeen_{},vanceRequested_{},greetingRequested_{},forestXReached_{},hydraDefeated_{};
     std::bitset<32> deathCohorts_{};
     std::array<std::uint64_t,16> voiceEnds_{};
     coo::LifecycleService lifecycle_{};
@@ -96,7 +104,7 @@ private:
     void project_services() noexcept;
     std::bitset<16> dialogueSubmitted_{};
     std::uint8_t prepared_{};
-    coo::PopulationService<EnemyReceipt,kSpawns.size(),2> population_;
+    coo::PopulationService<EnemyReceipt,kSpawns.size(),3> population_;
     coo::MissionRuntime composition_;
     coo::Executor executor_;
     coo::DialogueService<16> dialogue_;

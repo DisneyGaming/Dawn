@@ -538,7 +538,7 @@ void call_publication_state0(SelectionPublicationState0 state0,
     return true;
 }
 
-/** Corrects only the selected Chosen record immediately before Destiny copies it for launch. */
+/** Preserve a direct native selection; redirect only an explicitly configured legacy donor launch. */
 __declspec(noinline) std::byte* __fastcall selection_launch_state_accessor(
     std::byte* context) noexcept {
     hooking::CallGate::Scope call(g_callGate);
@@ -560,13 +560,16 @@ __declspec(noinline) std::byte* __fastcall selection_launch_state_accessor(
     const std::int16_t destinationBefore = safe_read<std::int16_t>(
         state + kSelectionDestinationOffset, static_cast<std::int16_t>(-1));
     state::activity::forced::ForcedDestination forced{};
-    if (!prelaunch::donor(source, destinationBefore)
-        || !state::activity::forced::commit_prelaunch_authored_selection(
-            source, destinationBefore, forced)) {
+    state::activity::forced::snapshot(forced);
+    const auto* profile = prelaunch::configured(forced);
+    const bool direct = profile && source == profile->activity && destinationBefore == profile->activity
+        && state::activity::forced::override_active();
+    if (!direct && (!prelaunch::donor(source, destinationBefore)
+        || !state::activity::forced::commit_prelaunch_authored_selection(source, destinationBefore, forced))) {
         return state;
     }
-    const auto* profile = prelaunch::configured(forced);
-    const bool corrected = profile != nullptr && correct_selection_record(state, *profile);
+    profile = prelaunch::configured(forced);
+    const bool corrected = profile != nullptr && (direct || correct_selection_record(state, *profile));
     if (corrected) {
         g_prelaunchPublicationPending.store(profile, std::memory_order_release);
         g_directContractPublished.store(false, std::memory_order_release);
@@ -580,7 +583,7 @@ __declspec(noinline) std::byte* __fastcall selection_launch_state_accessor(
         "source_before=%d source_after=%d destination_before=%d destination_after=%d "
         "package=%.*s contract=self_contained",
         profile != nullptr ? profile->event : "mission_prelaunch",
-        corrected ? "corrected" : "failed",
+        corrected ? (direct ? "native_identity_preserved" : "corrected") : "failed",
         static_cast<unsigned long long>(caller - image),
         static_cast<int>(source),
         corrected ? static_cast<int>(profile->activity) : static_cast<int>(source),

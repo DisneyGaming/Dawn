@@ -1,5 +1,5 @@
 -- Native bindings supply identities and authentic observations. Lua owns the
--- landing latch, traversal fallbacks, encounter gates, phases, and completion.
+-- traversal fallbacks, encounter gates, phases, and completion.
 local overpass = condition("overpass.arrived", any_of("overpass.entered",
     "overpass.dropship", "overpass.fallback", "overpass.directive", "overpass.waypoint"))
 local choke = condition("choke.arrived", any_of("choke.entered", "overpass.arrived"))
@@ -18,8 +18,8 @@ local composition = graph("composition", "A Deadly Trial", sequence(
 ))
 
 local opening = graph("opening", "A Deadly Trial opening", {
-    step("arrival", "landing.entered"),
-    step("coordinates", parallel("objective.coordinates", "dialogue.0"), {after={"arrival"}}),
+    -- The runtime starts this graph on confirmed mission arrival.
+    step("coordinates", parallel("objective.coordinates", "dialogue.0")),
     step("square", "square.entered", {after={"coordinates"}}),
     step("square_fallen", "square.fallen", {after={"square"}}),
     step("pikes", parallel("objective.pike", "square.pikes"), {after={"square_fallen"}}),
@@ -35,6 +35,8 @@ local opening = graph("opening", "A Deadly Trial opening", {
     -- generic event pump, even while roadblock dialogue is unsubmitted.
     step("walker_death", "walker.cleared", {after={"overpass"}}),
     step("tower_enable", "tower.enable", {after={"walker_death"}}),
+    step("tower_clear", command("tower.cleared", {id="tower.deaths_for_lair"}), {after={"tower_enable"}}),
+    step("lair_prepare", "lair.enable", {after={"tower_clear"}}),
     step("barrier", parallel("barrier.open", "objective.temple", "overpass.pikes"), {after={"roadblock", "walker_death"}}),
     step("trial", "trial.arrived", {after={"barrier"}}),
     step("survival", "dialogue.2", {after={"trial"}}),
@@ -65,7 +67,6 @@ return mission{
     graphs = {composition, opening, ending},
     roles = {mission="composition", opening="opening", ending="ending"},
     phases = {"opening", "ending"},
-    observation_start = "landing.entered",
     conditions = {overpass, choke, streets, followers, tower, tunnel, cliff, trial, revive, revival, finish},
     entry = "composition",
     modules = {"opening"},

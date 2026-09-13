@@ -5,11 +5,38 @@
 #include <string_view>
 #include "../coo/executor.h"
 #include "../coo/dialogue_service.h"
+#include "../nightfall/enemy_variants.h"
 namespace sunrise::state::activity::strike_bond {
 inline constexpr std::uint32_t kScenario=0x80F5426EU,kRoot=0xBC279389U,kBank=0x80F1FEC2U;
 inline constexpr std::string_view kPackage="strike_bond";
 struct AssetBinding {std::string_view name;coo::Asset asset;std::uint32_t offset,component,sense,authority;};
 inline constexpr AssetBinding kAssets[]{
+    {"ending.safety_platform_center_device",{0xB9395B1BU,0x80F4745FU,23,0},0x278U,0x80804F45U,0x80804F47U,0x80804F48U},
+    {"ending.safety_platform_entry_device",{0xB9395B1BU,0x80F47462U,23,1},0x278U,0x80804F45U,0x80804F47U,0x80804F48U},
+    {"ending.machine_step_01_left_device",{0xB9395B1BU,0x80F47465U,23,2},0x278U,0x80804F45U,0x80804F47U,0x80804F48U},
+    {"ending.machine_step_01_right_device",{0xB9395B1BU,0x80F47468U,23,3},0x278U,0x80804F45U,0x80804F47U,0x80804F48U},
+    {"ending.machine_step_02_left_device",{0xB9395B1BU,0x80F4746BU,23,4},0x278U,0x80804F45U,0x80804F47U,0x80804F48U},
+    {"ending.machine_step_02_right_device",{0xB9395B1BU,0x80F4746EU,23,5},0x278U,0x80804F45U,0x80804F47U,0x80804F48U},
+    {"ending.machine_step_03_left_device",{0xB9395B1BU,0x80F47471U,23,6},0x278U,0x80804F45U,0x80804F47U,0x80804F48U},
+    {"ending.machine_step_03_right_device",{0xB9395B1BU,0x80F47474U,23,7},0x278U,0x80804F45U,0x80804F47U,0x80804F48U},
+    {"ending.machine_step_04_device",{0xB9395B1BU,0x80F47477U,23,8},0x278U,0x80804F45U,0x80804F47U,0x80804F48U},
+    {"ending.mancannon_push_object",{0xB9395B1BU,0x80F4747AU,4,9},0x4C8U,0x80809927U,0x8080992EU,0x8080992FU},
+    {"ending.m_engagement_sensor",{0xB9395B1BU,0x80F4747DU,70,10},0x358U,0x808094EEU,0x808094F0U,0x808094F1U},
+    {"ending.closing_interact_ghost_link",{0xC80A735BU,0x80F4748CU,65,0},0x258U,0x80804D31U,0x80804D3EU,0x80804D3FU},
+    {"ending.ghost_interact_sensor",{0xC80A735BU,0x80F4748FU,23,1},0x278U,0x80804F45U,0x80804F47U,0x80804F48U},
+    {"ending.vex_probability_tree_object",{0xC80A735BU,0x80F47492U,4,2},0x4C8U,0x80809927U,0x8080992EU,0x8080992FU},
+    {"ending.ghost_mounted_object",{0xC80A735BU,0x80F47495U,4,3},0x4C8U,0x80809927U,0x8080992EU,0x8080992FU},
+    {"ending.sagira_fx_prop",{0xC80A735BU,0x80F47498U,4,4},0x4C8U,0x80809927U,0x8080992EU,0x8080992FU},
+    {"ending.osiris_echo_scene",{0xC80A735BU,0x80F4749BU,43,5},0x368U,0x80806382U,0x8080626AU,0x8080626BU},
+    {"ending.sagira_fx_prop_scene",{0xC80A735BU,0x80F4749EU,43,6},0x368U,0x80806382U,0x8080626AU,0x8080626BU},
+    {"ending.panoptes_squad",{0xC80A735BU,0x80F474A2U,1,7},0x878U,0x80809A3BU,0x80807ECCU,0x80807EC9U},
+    {"ending.panoptes_squad__panoptes",{0xC80A735BU,0x80F474A5U,2,8},0xB58U,0x8080834EU,0x80807DA2U,0x80807DA1U},
+    {"ending.osiris_echo_front_squad",{0xC80A735BU,0x80F474A8U,1,9},0x878U,0x80809A3BU,0x80807ECCU,0x80807EC9U},
+    {"ending.osiris_echo_back_squad",{0xC80A735BU,0x80F474ABU,1,10},0x878U,0x80809A3BU,0x80807ECCU,0x80807EC9U},
+    {"ending.vex_probability_tree_device",{0xC80A735BU,0x80F474AEU,23,11},0x278U,0x80804F45U,0x80804F47U,0x80804F48U},
+    {"ending.m_engagement_sensor",{0xC80A735BU,0x80F474B1U,70,12},0x358U,0x808094EEU,0x808094F0U,0x808094F1U},
+    {"ending.closing_interact_proximity_player_trigger",{0xC80A735BU,0x80F474B4U,31,13},0x218U,0x80809522U,0xFFFFFFFFU,0x80809524U},
+    {"ending.machine_top_entry_player_trigger",{0xC80A735BU,0x80F474B7U,31,14},0x218U,0x80809522U,0xFFFFFFFFU,0x80809524U},
     {"spire.t_kv_upper",{0x2CB86C0FU,0x80F54A88U,32,292},0x208U,0x80809556U,0xFFFFFFFFU,0x8080955AU},
     {"mission.m_directive_sensor",{0xBC279389U,0x80F54AC8U,68,0},0xB88U,0x80804F53U,0xFFFFFFFFU,0x80804F67U},
     {"mission.m_music_sensor",{0xBC279389U,0x80F54ACBU,11,1},0x648U,0x80804E8EU,0xFFFFFFFFU,0x80804F58U},
@@ -880,8 +907,53 @@ inline constexpr Spawn kSpawns[]{
     {{0x2CB86C0FU,0x80F549A1U,1,206},393,0,1,1,19,true}, // spire.pf_golem[4].sq_golem
     {{0x2CB86C0FU,0x80F549B9U,1,214},403,0,1,1,19,true}, // spire.pf_golem[5].sq_golem
     {{0x2CB86C0FU,0x80F54A13U,1,244},447,2,1,1,17,true}, // spire.pf_tower_golem.sq_golem
+    {{0xC80A735BU,0x80F474A2U,1,7},65535,0,1,1,0,true},
+    {{0xC80A735BU,0x80F474A8U,1,9},65535,0,1,1,0,true},
+    {{0xC80A735BU,0x80F474ABU,1,10},65535,0,1,1,0,true},
 };
 inline constexpr std::size_t spawn_index(coo::Asset a) noexcept {for(std::size_t i=0;i<std::size(kSpawns);++i) if(kSpawns[i].asset==a) return i;return std::size(kSpawns);}
+// Exact installed category replacements selected by source descriptor variant
+// 5. Some sources retain other ordinary categories, so source identity is a
+// candidate only; an individual death requires the selected entity identity.
+inline constexpr std::array<nightfall::EnemySubstitution,23> kGrandmasterEnemySubstitutions{{
+    {0xC95ECB1AU,16,0x19C57E66U,0x80F58985U,0x8157862EU},
+    {0xC95ECB1AU,26,0x19C57E65U,0x80F587BDU,0x81578798U},
+    {0xC95ECB1AU,28,0x19C57E65U,0x80F587BDU,0x81578798U},
+    {0xC95ECB1AU,42,0x19C57E65U,0x80F587BDU,0x81578798U},
+    {0xC95ECB1AU,46,0x19C57E65U,0x80F58985U,0x8157862EU},
+    {0xC95ECB1AU,48,0x19C57E65U,0x80F587BDU,0x81578798U},
+    {0xC95ECB1AU,49,0x19C57E65U,0x80F587BDU,0x81578798U},
+    {0xC95ECB1AU,50,0x19C57E65U,0x80F587BDU,0x81578798U},
+    {0xC95ECB1AU,52,0x19C57E65U,0x80F58985U,0x8157862EU},
+    {0xC95ECB1AU,57,0x19C57E65U,0x80F58985U,0x8157862EU},
+    {0xC95ECB1AU,58,0x19C57E65U,0x80F58985U,0x8157862EU},
+    {0xC95ECB1AU,59,0x19C57E65U,0x80F58985U,0x8157862EU},
+    {0xC95ECB1AU,60,0x19C57E65U,0x80F58985U,0x8157862EU},
+    {0xC95ECB1AU,61,0x19C57E65U,0x80F587BDU,0x81578798U},
+    {0x2CB86C0FU,39,0x19C57E66U,0x80F587BDU,0x81578798U},
+    {0x2CB86C0FU,41,0x19C57E66U,0x80F58985U,0x8157862EU},
+    {0x2CB86C0FU,44,0x19C57E66U,0x80F58985U,0x8157862EU},
+    {0x2CB86C0FU,46,0x19C57E65U,0x80F58985U,0x8157862EU},
+    {0x2CB86C0FU,50,0x19C57E65U,0x80F587BDU,0x81578798U},
+    {0x2CB86C0FU,51,0x19C57E65U,0x80F587BDU,0x81578798U},
+    {0x2CB86C0FU,54,0x19C57E65U,0x80F587BDU,0x81578798U},
+    {0x2CB86C0FU,56,0x19C57E66U,0x80F58985U,0x8157862EU},
+    {0x2CB86C0FU,57,0x19C57E66U,0x80F58985U,0x8157862EU},
+}};
+static_assert([]{for(const auto& value:kGrandmasterEnemySubstitutions)
+    if(!nightfall::valid(value))return false;
+    else {bool found{};for(const auto& source:kSpawns)
+        found=found || (source.asset.registry==value.registry && source.asset.slot==value.source);
+        if(!found)return false;}
+    return true;}());
+[[nodiscard]] constexpr bool grandmaster_substitution_source(
+    std::uint32_t registry,std::uint16_t source) noexcept {
+    return nightfall::substitution_source(kGrandmasterEnemySubstitutions,registry,source);
+}
+[[nodiscard]] constexpr const nightfall::EnemySubstitution* grandmaster_substitution(
+    std::uint32_t registry,std::uint16_t source,std::uint32_t category,std::uint32_t entity) noexcept {
+    return nightfall::substitution(kGrandmasterEnemySubstitutions,registry,source,category,entity);
+}
 struct Scene {coo::Asset asset;std::uint32_t selector,graph;std::int64_t graphOffset;std::span<const coo::Asset> cast;};
 inline constexpr coo::Asset kCast0[]{{0xC95ECB1AU,0x80F54473U,1,105},{0xC95ECB1AU,0x80F54485U,4,111}};
 inline constexpr coo::Asset kCast1[]{{0xC95ECB1AU,0x80F544A3U,1,121},{0xC95ECB1AU,0x80F544B5U,4,127}};
@@ -895,6 +967,8 @@ inline constexpr coo::Asset kCast8[]{{0x2CB86C0FU,0x80F54989U,1,198},{0x2CB86C0F
 inline constexpr coo::Asset kCast9[]{{0x2CB86C0FU,0x80F549A1U,1,206},{0x2CB86C0FU,0x80F549B3U,4,212}};
 inline constexpr coo::Asset kCast10[]{{0x2CB86C0FU,0x80F549B9U,1,214},{0x2CB86C0FU,0x80F549CBU,4,220}};
 inline constexpr coo::Asset kCast11[]{{0x2CB86C0FU,0x80F54A13U,1,244},{0x2CB86C0FU,0x80F54A25U,4,250}};
+inline constexpr coo::Asset kCampaignCast0[]{{0xC80A735BU,0x80F474A8U,1,9},{0xC80A735BU,0x80F474ABU,1,10},{0xC80A735BU,0x80F474A2U,1,7}};
+inline constexpr coo::Asset kCampaignCast1[]{{0xC80A735BU,0x80F47498U,4,4}};
 inline constexpr Scene kScenes[]{
     {{0xC95ECB1AU,0x80F54482U,43,110},0x80F45CABU,0x80F45CAAU,0x24F8,kCast0},
     {{0xC95ECB1AU,0x80F544B2U,43,126},0x80F45CABU,0x80F45CAAU,0x24F8,kCast1},
@@ -908,6 +982,8 @@ inline constexpr Scene kScenes[]{
     {{0x2CB86C0FU,0x80F549B0U,43,211},0x80F45CABU,0x80F45CAAU,0x24F8,kCast9},
     {{0x2CB86C0FU,0x80F549C8U,43,219},0x80F45CABU,0x80F45CAAU,0x24F8,kCast10},
     {{0x2CB86C0FU,0x80F54A22U,43,249},0x80F45CABU,0x80F45CAAU,0x24F8,kCast11},
+    {{0xC80A735BU,0x80F4749BU,43,5},0x80F44F12U,0x80F44F11U,0x4458,kCampaignCast0},
+    {{0xC80A735BU,0x80F4749EU,43,6},0x80EC0ACDU,0x80EC0ACCU,0xC58,kCampaignCast1},
 };
 inline constexpr std::size_t scene_index(coo::Asset a) noexcept {for(std::size_t i=0;i<std::size(kScenes);++i) if(kScenes[i].asset==a) return i;return std::size(kScenes);}
 inline constexpr coo::DialogueRow kDialogueRows[]{

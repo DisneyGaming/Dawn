@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -95,8 +96,50 @@ struct PendingProfileItemAcquisition {
     /** True only for installed profile mod/shader rows materialized as Family-4 residents. */
     bool actionSource{};
     bool appended{};
+    /** True for a server-authored free currency credit rather than a Collections purchase. */
+    bool rewardGrant{};
     bool prepared{};
 };
+
+/** Result of preparing a bounded server-authored profile currency credit. */
+enum class ProfileCurrencyGrantResult : std::uint8_t {
+    prepared,
+    capped,
+    rejected,
+};
+
+/** @return Positive credited headroom, or zero for invalid/capped inputs. */
+[[nodiscard]] constexpr std::int32_t profile_currency_credit(
+    std::int32_t previous,
+    std::int32_t maximum,
+    std::int32_t requested) noexcept {
+    return previous < 0 || maximum <= 0 || previous >= maximum || requested <= 0
+               ? 0
+               : (std::min)(requested, maximum - previous);
+}
+
+/** @return True when a reward after-image changes only its one credited profile row. */
+[[nodiscard]] constexpr bool profile_currency_grant_after_image_exact(
+    const PendingProfileItemAcquisition& mutation) noexcept {
+    if (!mutation.rewardGrant
+        || (mutation.appended
+            && (mutation.afterItemCount != mutation.expectedItemCount + 1U
+                || mutation.profileIndex != mutation.expectedItemCount))
+        || (!mutation.appended && mutation.afterItemCount != mutation.expectedItemCount)) {
+        return false;
+    }
+    for (std::size_t index = 0; index < mutation.afterItems.size(); ++index) {
+        if (index == mutation.profileIndex) continue;
+        const auto& before = mutation.beforeItems[index];
+        const auto& after = mutation.afterItems[index];
+        if (before.instanceSoid != after.instanceSoid
+            || before.definitionHash != after.definitionHash || before.quantity != after.quantity
+            || before.mutationSerial != after.mutationSerial) {
+            return false;
+        }
+    }
+    return true;
+}
 
 /** One profile material actually credited by a prepared dismantle. */
 struct DismantleReward {
@@ -336,6 +379,15 @@ prepare_profile_item_acquisition(std::uint16_t collectibleIndex,
  */
 [[nodiscard]] bool
 commit_profile_item_acquisition(PendingProfileItemAcquisition& mutation) noexcept;
+
+/**
+ * Prepares one free credit into the definition's sole profile-bucket stack.
+ * Existing quantity is saturated at the installed max; a capped stack is a successful no-op.
+ */
+[[nodiscard]] ProfileCurrencyGrantResult
+prepare_profile_currency_grant(std::uint32_t definitionHash,
+                               std::int32_t quantity,
+                               PendingProfileItemAcquisition& mutation) noexcept;
 
 /**
  * Prepares removal of one unequipped instance from the selected character.

@@ -134,11 +134,19 @@ bool find_spawn_sets(std::string_view name, std::span<spawn_sets::NameHash> valu
 namespace sunrise::client::activity::mission_launch {
 Snapshot snapshot() noexcept { return g_launchState; }
 bool request_opening(std::size_t mission) noexcept {
+    return request_variant(mission, state::activity::strikes::Difficulty::standard);
+}
+bool request_variant(std::size_t mission, state::activity::strikes::Difficulty difficulty) noexcept {
+    return request_variant(mission,difficulty,state::activity::nightfall::defaults(difficulty));
+}
+bool request_variant(std::size_t mission, state::activity::strikes::Difficulty difficulty,
+    state::activity::nightfall::Options options) noexcept {
     if (g_launchState.busy) { return false; }
-    const auto route = openings::resolve(mission, state::build_data::activities::entries());
+    const auto route = openings::resolve(mission, state::build_data::activities::entries(), difficulty);
     if (!route.valid()) { return false; }
     ++g_requests; g_requestedMission = mission;
     g_launchState = {Status::requested, route.transport, true, true, route.destination, true};
+    g_launchState.nightfallOptions = state::activity::nightfall::sanitize(difficulty,options);
     return true;
 }
 const char* description(Status status) noexcept { return status == Status::unexpectedDestination ? "The selected opening did not load. Return to orbit and try again." : "Launching mission opening..."; }
@@ -199,8 +207,8 @@ int main(int argc, char** argv) {
         frame(); frame();
         const auto before = g_requests;
         frame(1500, 1000, row_id(i)); frame(); frame();
-        check(g_requests == before + 1 && g_requestedMission == i && g_launchState.index == 282,
-            "each mission row launches its own opening through Chosen");
+        check(g_requests == before + 1 && g_requestedMission == i && g_launchState.index == openings::kMissions[i].activity,
+            "each mission and strike row launches its own native activity");
         frame(1500, 1000, row_id(i)); frame();
         check(g_requests == before + 1, "busy mission rows cannot double-launch");
     }
@@ -246,6 +254,52 @@ int main(int argc, char** argv) {
     check(content != nullptr, "content surface found");
     frame(1500, 1000, content->GetID("Curse of Osiris")); frame(); frame();
     check(panel::g_campaign == 1, "Curse of Osiris tab switches campaigns");
+    frame(1500, 1000, content->GetID("Strikes")); frame(); frame();
+    check(panel::g_campaign == 2, "Strikes tab switches to strikes");
+    screenshot(screens / "dawn-strikes.ppm");
+    frame(1500, 1000, content->GetID("Nightfalls")); frame(); frame();
+    check(panel::g_campaign == 3, "dedicated Nightfalls tab opens");
+    g_launchState = {}; panel::g_difficulty = panel::strikes::Difficulty::adept;
+    frame(); frame(); frame(1500, 1000, row_id(9)); frame();
+    panel::g_difficulty = panel::strikes::Difficulty::master;
+    check(std::string_view(panel::mission_action(9, g_launchState)) == "LAUNCHING"
+        && g_launchState.index == 830, "picker changes preserve actual pending tier status");
+    g_launchState.busy = false; g_launchState.inMission = true; g_launchState.currentIndex = 830;
+    constexpr std::string_view treeStrike = "strike_pact";
+    std::copy(treeStrike.begin(), treeStrike.end(), g_launchState.currentPackage.begin());
+    g_launchState.currentPackageLength = static_cast<std::uint8_t>(treeStrike.size());
+    check(std::string_view(panel::mission_action(9, g_launchState)) == "IN MISSION",
+        "picker changes preserve actual in-mission tier status");
+    for (const auto tier : {panel::strikes::Difficulty::adept, panel::strikes::Difficulty::master,
+                           panel::strikes::Difficulty::grandmaster}) {
+        panel::g_difficulty = tier; g_launchState = {}; frame(); frame();
+        const auto requests = g_requests;
+        frame(1500, 1000, row_id(9)); frame();
+        check(g_requests == requests + 1 && g_launchState.index == panel::selected_route(9).transport,
+            "Nightfall row sends its selected difficulty identity");
+    }
+    g_launchState = {}; frame(); frame(); screenshot(screens / "dawn-nightfalls-gm.ppm");
+    const auto modifiersButton=mission_window()->ParentWindow->GetID("Challenge modifiers...");
+    frame(1500,1000,modifiersButton);for(unsigned i=0;i<12;++i)frame();
+    auto* modifiersWindow=ImGui::FindWindowByName("Nightfall modifiers");
+    check(modifiersWindow && modifiersWindow->Active,"GM modifier window opens from selection page");
+    check(!modifiersWindow->Hidden,"GM modifier window is rendered");
+    screenshot(screens / "dawn-gm-modifiers.ppm");
+    panel::g_modifiers[2].startingRevives=2; panel::g_modifiers[2].reviveMinutes=30; panel::g_modifiers[2].powerDelta=35;
+    ImGui::GetIO().AddMousePosEvent(modifiersWindow->Pos.x+modifiersWindow->Size.x/2,
+        modifiersWindow->Pos.y+modifiersWindow->Size.y-ImGui::GetStyle().WindowPadding.y-16.0F);
+    ImGui::GetIO().AddMouseButtonEvent(0,true);frame();
+    ImGui::GetIO().AddMouseButtonEvent(0,false);frame();frame();
+    check(!modifiersWindow->Active,"Done returns to strike selection");
+    panel::g_campaign = 2; panel::g_nightfall = true; frame(); frame();
+    const auto strikeVariantRequests = g_requests;
+    frame(1500, 1000, row_id(10)); frame();
+    check(g_requests == strikeVariantRequests + 1 && g_launchState.index == 813,
+        "Strikes tab also launches the Garden Grandmaster variant");
+    check(g_launchState.nightfallOptions.startingRevives==2 && g_launchState.nightfallOptions.reviveMinutes==30
+        && g_launchState.nightfallOptions.powerDelta==35,"modifier window selection copied into exact GM launch");
+    g_launchState = {}; panel::g_nightfall = false;
+    panel::g_campaign=1;panel::g_resetScroll=true;frame();frame();
     const auto before = g_requests;
     g_missingContent = true; ++g_revision; frame(); frame();
     check(std::none_of(panel::g_ready.begin(), panel::g_ready.end(), [](bool ready) { return ready; }), "missing content disables all launch rows");
@@ -275,6 +329,6 @@ int main(int argc, char** argv) {
     check(g_gpu->Release() == 0, "GPU resources released");
     const auto stats = ui::memory::snapshot();
     check(stats.outstandingAllocations == 0 && ui::memory::shutdown(), "fixed arena released");
-    std::cout << "PASS: Dawn production layout, " << openings::kMissions.size() << " launch buttons, preparing/in-mission/wrong-destination/busy/unavailable states, 2 campaign tabs, DPI and close/reopen; zero ImGui errors; "
+    std::cout << "PASS: Dawn production layout, " << openings::kMissions.size() << " launch buttons, preparing/in-mission/wrong-destination/busy/unavailable states, 2 campaign tabs and Strikes tab, DPI and close/reopen; zero ImGui errors; "
         << stats.highWaterBytes << "/" << stats.capacityBytes << " arena high water\n";
 }

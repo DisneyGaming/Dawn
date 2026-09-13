@@ -2,6 +2,7 @@
 #include "runtime.h"
 #include "controller.h"
 #include "../runtime.h"
+#include "../nightfall/rules.h"
 #include "../../../core/logging/log.h"
 #include <cstdio>
 #include <mutex>
@@ -14,7 +15,7 @@ coo::StallDiagnostics stalled,background;
 std::uint64_t nextPublication{};
 std::uint32_t publishedRevision{UINT32_MAX};
 std::uint64_t selectedRun{};
-std::unique_ptr<coo::script::MissionDocument> document;
+std::array<std::unique_ptr<coo::script::MissionDocument>,2> documents;
 std::bitset<kAllVolumes.size()> loggedVolumes;
 std::uint32_t loggedActive{UINT32_MAX},loggedTimeouts{};
 std::uint8_t loggedSection{UINT8_MAX};
@@ -23,9 +24,10 @@ bool loggedBank{};
 void log(std::string_view message) noexcept {
     core::log::write(core::log::Channel::server,core::log::Level::info,message);
 }
-bool load() noexcept {
-    static std::once_flag once;
-    std::call_once(once,[] {
+bool load(bool campaign) noexcept {
+    auto& document=documents[campaign?1:0];
+    static std::array<std::once_flag,2> once;
+    std::call_once(once[campaign?1:0],[&] {
         std::string error;
         try {
             HMODULE module{};std::array<wchar_t,32768> path{};
@@ -33,14 +35,14 @@ bool load() noexcept {
                 reinterpret_cast<LPCWSTR>(&load),&module)!=FALSE;
             const auto size=found?GetModuleFileNameW(module,path.data(),static_cast<DWORD>(path.size())):0;
             if(size==0 || size>=path.size()) { error="cannot resolve DLL-relative script path"; }
-            else { document=coo::script::MissionDocument::read(std::filesystem::path(path.data()).parent_path()/L"Sunrise"/L"scripts"/L"strike_pact.lua",kProfile,error); }
+            else { document=coo::script::MissionDocument::read(std::filesystem::path(path.data()).parent_path()/L"Sunrise"/L"scripts"/(campaign?L"mission_pact.lua":L"strike_pact.lua"),kProfile,error); }
             if(document && !valid_document(document->views())) { document.reset();error="strike_pact native binding validation failed"; }
         } catch(const std::exception& exception) { error=exception.what(); }
         std::array<char,768> line{};
         if(document) {
-            std::snprintf(line.data(),line.size(),"ev=coo_script mission=strike_pact result=loaded format=lua fnv1a64=%016llX path=Sunrise/scripts/strike_pact.lua scope=mission reload=next_process",
-                static_cast<unsigned long long>(document->fingerprint()));
-        } else { std::snprintf(line.data(),line.size(),"ev=coo_script mission=strike_pact result=failed reason=\"%.*s\"",static_cast<int>((std::min)(error.size(),std::size_t{500})),error.data()); }
+            std::snprintf(line.data(),line.size(),"ev=coo_script mission=%s result=loaded format=lua fnv1a64=%016llX path=Sunrise/scripts/%s.lua scope=mission reload=next_process",
+                campaign?"mission_pact":"strike_pact",static_cast<unsigned long long>(document->fingerprint()),campaign?"mission_pact":"strike_pact");
+        } else { std::snprintf(line.data(),line.size(),"ev=coo_script mission=%s result=failed reason=\"%.*s\"",campaign?"mission_pact":"strike_pact",static_cast<int>((std::min)(error.size(),std::size_t{500})),error.data()); }
         log(line.data());
     });
     return document!=nullptr;
@@ -50,7 +52,8 @@ void reset_diagnostics() noexcept {
     loggedVolumes.reset();loggedActive=UINT32_MAX;loggedSection=UINT8_MAX;loggedTimeouts=0;loggedPhase=coo::Phase::idle;loggedBank=false;
 }
 }
-bool prepare(std::uint64_t run,bool selected) noexcept {
+bool prepare(std::uint64_t run,bool selected,bool campaign) noexcept {
+    const auto& document=documents[campaign?1:0];
     const std::lock_guard lock(mutex);
     if(run!=mission_run_generation()) { return false; }
     if(!selected) {
@@ -61,7 +64,7 @@ bool prepare(std::uint64_t run,bool selected) noexcept {
         }
         controller.reset();readinessSchedule.reset();reset_diagnostics();selectedRun=0;return false;
     }
-    if(!load()) { return false; }
+    if(!load(campaign)) { return false; }
     if(run!=selectedRun) { reset_diagnostics(); }
     if(!controller.select(document->views(),run)) { return false; }
     selectedRun=run;return true;
@@ -146,12 +149,24 @@ std::uint64_t native_run() noexcept {
     if(!mission_seed_armed() || world_phase()!=WorldPhase::arrived) { return 0; }
     const std::lock_guard lock(mutex);return selectedRun==mission_run_generation()?selectedRun:0;
 }
+BossRequest boss_request() noexcept {
+    if(!mission_seed_armed() || world_phase()!=WorldPhase::arrived) {return {};}
+    const std::lock_guard lock(mutex);
+    return selectedRun==mission_run_generation()?controller.boss_request():BossRequest{};
+}
+bool observe_health(const EnemyReceipt& enemy,float fraction) noexcept {
+    if(!mission_seed_armed() || world_phase()!=WorldPhase::arrived) {return false;}
+    const std::lock_guard lock(mutex);
+    return enemy.run==selectedRun && selectedRun==mission_run_generation() && controller.health(enemy,fraction);
+}
 bool observe_enemy(const EnemyReceipt& receipt,bool death) noexcept {
     if(!mission_seed_armed() || world_phase()!=WorldPhase::arrived) { return false; }
     const std::lock_guard lock(mutex);
     if(receipt.run!=selectedRun || receipt.run!=mission_run_generation()) { return false; }
+    const bool boss = receipt == controller.boss_request().enemy;
     const bool accepted=death?controller.died(receipt):controller.admitted(receipt);
     if(accepted) {
+        if (death) nightfall::enemy_defeated(receipt.run,false,boss);
         std::array<char,256> line{};
         std::snprintf(line.data(),line.size(),"ev=strike_pact stage=%s run=%llu registry=%08X source=%u actor=%08X owner=%08X generation=%u evidence=native_%s",
             death?"death":"admission",static_cast<unsigned long long>(receipt.run),receipt.registry,receipt.source,receipt.actor,receipt.owner,receipt.generation,death?"health_death":"actor_creation");log(line.data());
@@ -226,7 +241,7 @@ void observe_submission(std::uint64_t run,std::uint32_t definition,std::int64_t 
     std::uint32_t bank,std::uint8_t row,std::uint32_t generation) noexcept {
     if(offset!=0x1408 || row>=32 || run!=mission_run_generation() || !mission_seed_armed() || world_phase()!=WorldPhase::arrived) { return; }
     const std::lock_guard lock(mutex);
-    if(run!=selectedRun) { return; }
+    if(run!=selectedRun || bank!=kBank || definition!=(controller.frame().campaign?0x80F47507U:0x80F55226U)) { return; }
     if(!loggedBank) {
         loggedBank=true;std::array<char,240> line{};
         std::snprintf(line.data(),line.size(),"ev=strike_pact stage=dialogue_component run=%llu definition=%08X bank=%08X evidence=native_dispatch",
@@ -236,5 +251,11 @@ void observe_submission(std::uint64_t run,std::uint32_t definition,std::int64_t 
     std::array<char,240> line{};
     std::snprintf(line.data(),line.size(),"ev=strike_pact stage=dialogue_submitted run=%llu bank=%08X row=%u generation=%u evidence=native_dispatch",
         static_cast<unsigned long long>(run),bank,row,generation);log(line.data());
+}
+coo::CampaignScanRequest scan_request() noexcept {
+    const std::lock_guard lock(mutex);return selectedRun==mission_run_generation() && mission_seed_armed() && world_phase()==WorldPhase::arrived?controller.scan_request():coo::CampaignScanRequest{};
+}
+void observe_scan(coo::Generation owner,std::uint32_t handle,std::uint32_t serial,coo::ScanPlayback playback,bool participant) noexcept {
+    const std::lock_guard lock(mutex);if(owner.run==selectedRun && owner.run==mission_run_generation() && controller.scan_observation(owner,handle,serial,playback,participant)) log(controller.frame().scan.complete?"ev=campaign_scan mission=mission_pact stage=complete":"ev=campaign_scan mission=mission_pact stage=started");
 }
 } // namespace sunrise::state::activity::strike_pact

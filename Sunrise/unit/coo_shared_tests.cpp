@@ -224,6 +224,25 @@ void alternate_dialogue_contracts() {
     service.discard_before(2);CHECK(state.activeRow==0); // Retain an offered row in flight.
     service.advance(policy,21,2499,false,state,revision);CHECK(service.timed_out()==0);
     service.advance(policy,21,2500,false,state,revision);CHECK(service.timed_out()==1 && state.activeRow==coo::kNoDialogue);
+    // Required speech survives missing native authority without a new generation
+    // or an invented acknowledgement, then releases the next line exactly once.
+    service={};state={};revision=0;
+    service.objective(policy,555,state,revision);
+    service.enqueue(policy,0,3000,0,1,revision);service.enqueue(policy,1,3000,0,1,revision);
+    service.advance(policy,22,3000,false,state,revision,true);
+    const auto generation=state.generations[0];
+    for(const auto now:{3500ULL,4000ULL,65000ULL}) {
+        service.advance(policy,22,now,false,state,revision,true);
+        CHECK(state.activeRow==0 && state.generations[0]==generation);
+    }
+    CHECK(service.timed_out()==3 && state.generations[1]==0);
+    CHECK(!service.submitted(policy,988,0,generation,65001,state,revision));
+    CHECK(!service.submitted(policy,987,0,generation+1,65001,state,revision));
+    CHECK(service.submitted(policy,987,0,generation,65001,state,revision));
+    CHECK(!service.submitted(policy,987,0,generation,65001,state,revision));
+    service.advance(policy,22,65131,false,state,revision,true);CHECK(state.activeRow==1);
+    service.silence(state,revision);service.advance(policy,22,90000,false,state,revision,true);
+    CHECK(state.activeRow==coo::kNoDialogue);
 }
 
 void compare_presentation(const present::Run& a,const frozen::Run& b,std::uint64_t now) {

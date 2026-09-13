@@ -126,13 +126,13 @@ struct Retirement final {
     [[nodiscard]] bool valid() const noexcept { return owner!=0; }
 };
 [[nodiscard]] inline bool retirement_owner(const Source& source,std::uintptr_t context,
-                                           Retirement& result) noexcept {
+                                           Retirement& result,std::uint32_t expectedScenario=0x80F47522U) noexcept {
     if(context<0x11208) { return false; }
     const auto owner=context-0x11208;
     std::uint32_t handle{},back{},scenario{},mirrorScenario{};
     std::uint8_t active{};std::uintptr_t parent{};std::uint64_t identity{};
     if(!read(source,context,handle) || handle==UINT32_MAX
-        || !read(source,context+4,mirrorScenario) || mirrorScenario!=0x80F47522U
+        || !read(source,context+4,mirrorScenario) || mirrorScenario!=expectedScenario
         || !read(source,owner+0x848,back) || back!=handle
         || resolve(source,handle).address!=owner
         || !read(source,owner+0x24,scenario) || scenario!=mirrorScenario
@@ -141,9 +141,9 @@ struct Retirement final {
         || !read(source,owner+0x18,identity)) { return false; }
     result={owner,context,parent,identity,handle,0};return true;
 }
-[[nodiscard]] inline bool same_retirement_owner(const Source& source,const Retirement& prior) noexcept {
+[[nodiscard]] inline bool same_retirement_owner(const Source& source,const Retirement& prior,std::uint32_t expectedScenario=0x80F47522U) noexcept {
     Retirement now{};
-    return prior.valid() && retirement_owner(source,prior.context,now)
+    return prior.valid() && retirement_owner(source,prior.context,now,expectedScenario)
         && now.owner==prior.owner && now.parent==prior.parent
         && now.identity==prior.identity && now.handle==prior.handle;
 }

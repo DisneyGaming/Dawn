@@ -39,9 +39,11 @@ class NativePopulationLedger final {
 public:
     [[nodiscard]] bool begin(PopulationOwner owner) noexcept {
         if(!owner.valid() || failed_ || (phase_!=PopulationPhase::idle && phase_!=PopulationPhase::retired)) { return false; }
-        if(phase_!=PopulationPhase::idle && owner.incarnation<=owner_.incarnation) { return false; }
-        if(phase_!=PopulationPhase::idle && owner.activity==owner_.activity && owner.run==owner_.run
-            && owner.source==owner_.source && owner.generation<=owner_.generation) { return false; }
+        if(phase_!=PopulationPhase::idle) {
+            const bool sameLifetime=owner.activity==owner_.activity && owner.run==owner_.run
+                && owner.incarnation==owner_.incarnation && owner.source==owner_.source;
+            if(sameLifetime ? owner.generation<=owner_.generation : owner.incarnation<=owner_.incarnation)return false;
+        }
         owner_=owner;actors_={};used_=0;sourceRetired_=false;phase_=PopulationPhase::active;return true;
     }
     [[nodiscard]] PopulationIntake admitted(PopulationActor actor) noexcept {
@@ -72,6 +74,18 @@ public:
         auto* item=find(actor);if(!item) { return PopulationIntake::unknown; }
         if(item->retired) { return PopulationIntake::duplicate; }
         item->retired=true;settle_retirement();return PopulationIntake::accepted;
+    }
+    // Recurring sources keep the same native object and advance only their
+    // generation. The bridge calls this after it has atomically excluded old
+    // queued and provisional births. This is a lease rollover, not a native
+    // source-stop receipt, so sourceRetired is deliberately not asserted.
+    [[nodiscard]] bool renew(PopulationOwner prior,PopulationOwner next) noexcept {
+        if(prior!=owner_ || phase_!=PopulationPhase::active || sourceRetired_ || failed_ || !next.valid()
+            || next.activity!=prior.activity || next.run!=prior.run || next.incarnation!=prior.incarnation
+            || next.source!=prior.source || prior.generation==0x7FFFFFFFU
+            || next.generation!=prior.generation+1 || !used_) return false;
+        for(std::size_t i=0;i<used_;++i) if(!actors_[i].dead || !actors_[i].retired) return false;
+        owner_=next;actors_={};used_=0;sourceRetired_=false;phase_=PopulationPhase::active;return true;
     }
     // Call only after the server/native service has accepted a retirement request.
     // In-flight births still belong to this source and must be accounted for.

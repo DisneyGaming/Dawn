@@ -377,8 +377,8 @@ constexpr std::size_t kSpawnKeyCount = 32;
  */
 [[nodiscard]] bool write_lifetime(bits::Writer& writer, const Snapshot& snapshot,
                                   bool crownRestricted) noexcept {
-    const bool completed=snapshot.missionCompletion.valid();
-    bool encoded = writer.write((completed?6U:std::uint32_t{snapshot.lifetime}) + 1, 4) && writer.write(completed?2U:1U, 3)
+    const bool completed=!snapshot.nightfallFailed && snapshot.missionCompletion.valid();
+    bool encoded = writer.write((snapshot.nightfallFailed?8U:completed?6U:std::uint32_t{snapshot.lifetime}) + 1, 4) && writer.write(completed?2U:1U, 3)
                    && writer.write(0, kPresenceWidth) && writer.write(kSignedZero, 32)
                    && writer.write(0, 32)
                    && writer.write(kSignedZero + (crownRestricted ? crown::kLairScenarioOrdinal : 0U), 32)

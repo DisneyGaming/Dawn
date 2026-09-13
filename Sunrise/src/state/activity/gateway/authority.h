@@ -89,7 +89,7 @@ template<class Writer> bool write_body(Writer& writer,const Frame& frame,std::ui
     }
     if(type==1) {
         const auto& s=*spawn(key,slot);
-        coo::native_combatant::Source source{key,frame.spawnGeneration,s.rule,1,{},static_cast<std::uint8_t>(s.categories==2?1U:0U),s.categories==2,s.rule!=UINT16_MAX};
+        coo::native_combatant::Source source{key,frame.spawnGeneration,s.rule,coo::population_size::first(s.count,s.categories),{},static_cast<std::uint8_t>(s.categories==2?1U:0U),s.categories==2,s.rule!=UINT16_MAX};
         source.tactical=tactical_group(s);
         return coo::native_combatant::write_source(writer,source);
     }

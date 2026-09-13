@@ -23,7 +23,7 @@ template<class Check> void run(Check check,const sunrise::state::activity::coo::
         }
         check(false,"Well queue crossing has an interior point");
     };
-    enter(views.observationStart->asset);
+    if(views.observationStart) { enter(views.observationStart->asset); }
     std::uint64_t now=1000;bool destroyed{};
     // Cross each physical trigger while the first scene's audio submission is
     // deliberately withheld. Animation must not depend on that acknowledgement.

@@ -11,9 +11,11 @@
 
 #include "omega_rescue_scene_receipts.h"
 #include "gateway_vance_native_path.h"
+#include "strike_bond_ending_scene_path.h"
 #include "beyond_infinity_native_receipts.h"
 #include "beyond_infinity_future_cast.h"
 #include "../../../state/activity/beyond_infinity/runtime.h"
+#include "../../../state/activity/strike_bond/runtime.h"
 #include "../../../state/activity/gateway/runtime.h"
 #include "omega_enemy_native_reference.h"
 #include "../../hooking/call_gate.h"
@@ -383,6 +385,7 @@ void complete_gateway_scene(Read& read,std::uintptr_t component,const GatewaySce
     if(complete) { gateway::observe_scene(capture.receipt,true); }
 }
 #include "beyond_infinity_scene_receipts.inl"
+#include "strike_bond_ending_scene_receipts.inl"
 __declspec(noinline) void __fastcall tick(void* raw) noexcept {
     hooking::CallGate::Scope gate(g_gate);
     const auto original=hooking::await_original(g_original);
@@ -413,6 +416,7 @@ __declspec(noinline) void __fastcall tick(void* raw) noexcept {
         }
     }
     original(raw);
+    if(gate.accepts_side_effects()) observe_garden_ending_speech(component);
     if(beyondOwned && gate.accepts_side_effects()) { finish_beyond_scene(beyondRead,component,beyondBefore,beyondOwner); }
     if(gatewayOwned && gate.accepts_side_effects()) { complete_gateway_scene(gatewayRead,component,gatewayCapture); }
     if(!observing || !gate.accepts_side_effects()) {return;}

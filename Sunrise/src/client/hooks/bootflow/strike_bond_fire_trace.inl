@@ -1,3 +1,4 @@
+#include "strike_bond_ending_animation.inl"
 // Included in omega_enemy_lair_receipts.cpp inside its private namespace.
 // Diagnostic observers never clear suppression or override eligibility. The
 // update boundary also releases the exact retained startup selector natively.
@@ -137,6 +138,7 @@ __declspec(noinline) std::uint8_t __fastcall update_hook(void* character,const v
     const auto before=scope.accepts_side_effects()?begin(character,false):Capture{};
     Inputs inputs;if(before.valid) {gateway_native::Read read{g_image};(void)read.value(reinterpret_cast<std::uintptr_t>(frame)+0x10,inputs.argumentBits);}
     const auto result=hooking::await_original(update)(character,frame);
+    if(scope.accepts_side_effects()) garden_ending_animation::after_update(character);
     if(scope.accepts_side_effects() && before.valid) {
         garden_intro::after_update(character);
         garden_carriage::after_update(character);

@@ -8,6 +8,7 @@
 #include "../../middleware/datagen/family4/loadout/loadout_resolver.h"
 #include "../../middleware/web_service/messages/opcode1901.h"
 #include "../build_data/runtime.h"
+#include "../activity/nightfall/rules.h"
 #include "runtime.h"
 #include "state_account_transaction_helpers.h"
 #include "storage/internal.h"
@@ -26,6 +27,7 @@ bool prepare_socket_plug(std::uint64_t targetInstanceSoid,
                          std::uint16_t plugDefinitionIndex,
                          PendingSocketPlug& mutation) noexcept {
     mutation = {};
+    if (activity::nightfall::equipment_locked()) return false;
     const AccountState snapshot = account_snapshot();
     std::size_t characterIndex = snapshot.characterCount;
     if (targetInstanceSoid != 0 && account::valid(snapshot)) {
@@ -266,6 +268,8 @@ bool preview_socket_plug(const PendingSocketPlug& mutation, AccountState& after)
 bool commit_socket_plug(PendingSocketPlug& mutation) noexcept {
     const PendingSocketPlug prepared = mutation;
     mutation = {};
+    const activity::nightfall::EquipmentMutation nightfallGuard;
+    if (!nightfallGuard.allowed()) return false;
     const auto fail = [&prepared](std::string_view reason) noexcept {
         report_socket_plug("commit",
                            "fail",

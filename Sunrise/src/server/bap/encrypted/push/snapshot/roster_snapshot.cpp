@@ -6,6 +6,7 @@
 #include "../../../../../middleware/datagen/family3/family3_roster.h"
 #include "../../../../../middleware/datagen/family4/loadout/loadout_resolver.h"
 #include "../../../../../state/equipment/light/resolution/configured_equipment_light_resolver.h"
+#include "../../../../../state/activity/nightfall/native_power.h"
 #include "../../../../../state/runtime/runtime.h"
 #include "internal.h"
 #include "snapshot_storage.h"
@@ -32,12 +33,17 @@ namespace character_record = middleware::datagen::character_record;
                                             std::size_t& compressedExtent,
                                             Prepared& staged,
                                             std::size_t& objectCount) noexcept {
+    const std::uint64_t selected = state::account::selected_character_soid(account);
+    const auto projection = state::activity::nightfall::current_native_power_projection();
     for (std::size_t index = 0; index < account.characterCount; ++index) {
         middleware::datagen::family4::loadout::ResolvedInstances instances{};
         std::int32_t light = 0;
         if (!middleware::datagen::family4::loadout::resolve_instances(account, index, instances)
             || !state::equipment::light::resolution::character_light(account, index, light)) {
             return false;
+        }
+        if (account.characters[index].soid == selected) {
+            light = state::activity::nightfall::cap_player_power(light, projection);
         }
         if (rawExtent > scratch.plaintext.size()
             || scratch.plaintext.size() - rawExtent < character_record::kFamily3RecordSize
@@ -150,6 +156,8 @@ bool prepare_roster_appearance_refresh(Scratch& scratch,
         || !state::equipment::light::resolution::character_light(account, characterIndex, light)) {
         return false;
     }
+    light = state::activity::nightfall::cap_player_power(
+        light, state::activity::nightfall::current_native_power_projection());
 
     const std::size_t rosterSize =
         refresh.includeRoster ? middleware::datagen::family3::kRosterSize : 0U;

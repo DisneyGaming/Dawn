@@ -18,7 +18,7 @@ TESTS = (
     "coo_combat_tests", "coo_combat_runtime_tests", "coo_ending_tests",
     "coo_ending_runtime_tests", "beyond_infinity_catalog_tests", "beyond_infinity_tests",
     "deep_storage_catalog_tests", "deep_storage_tests",
-    "hijacked_catalog_tests", "hijacked_tests", "strike_bond_tests",
+    "hijacked_catalog_tests", "hijacked_tests", "strike_bond_tests", "campaign_variants_tests",
 )
 
 NATIVE_TESTS = (

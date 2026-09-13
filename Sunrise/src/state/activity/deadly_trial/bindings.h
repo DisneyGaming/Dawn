@@ -8,6 +8,7 @@ inline constexpr coo::script::Capability kCapabilities[]{
     {"pike.mounted","*",{coo::Operation::observation,kModule,10U,coo::Wait::observed}},
     {"walker.enable","*",{coo::Operation::population,kModule,4U,coo::Wait::requested}},
     {"tower.enable","*",{coo::Operation::population,kModule,8U,coo::Wait::requested}},
+    {"lair.enable","*",{coo::Operation::population,kModule,9U,coo::Wait::requested}},
     {"walker.cleared","*",{coo::Operation::observation,kModule,4U,coo::Wait::observed}},
     {"tower.cleared","*",{coo::Operation::observation,kModule,8U,coo::Wait::observed}},
     {"lair.cleared","*",{coo::Operation::observation,kModule,9U,coo::Wait::observed}},

@@ -40,7 +40,7 @@ int main() {
     auto lua=s::MissionDocument::read("Sunrise/scripts/deadly_trial.lua",trial::kProfile,error);
     if(!lua) { std::fprintf(stderr,"%s\n",error.c_str()); }CHECK(lua);CHECK(error.empty());
     const auto expected=mission_test::semantics(lua->views());
-    CHECK(lua->views().phases.size()==2);CHECK(lua->views().observationStart);CHECK(!lua->views().conditions.empty());
+    CHECK(lua->views().phases.size()==2);CHECK(!lua->views().observationStart);CHECK(!lua->views().conditions.empty());
     CHECK(s::authorized(lua->views(),trial::kProfile));
     // File loading is Lua-only and checks extensions before any source fallback.
     for(const auto* path:{"legacy.json","misleading.lua.json","mission.txt","extensionless"}) {

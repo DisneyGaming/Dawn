@@ -69,8 +69,8 @@ std::atomic_uint32_t g_towerfallDeliveryReports{};
     std::span<std::byte> response,std::size_t& written) noexcept {
     const bool hijacked=name=="adventure_rumba" && snapshot.hijacked.enabled;
     const bool deep=name=="adventure_whisk" && snapshot.deep_storage.enabled;
-    const bool strike=name=="strike_pact" && snapshot.strike_pact.enabled;
-    const bool garden=name=="strike_bond" && snapshot.strike_bond.enabled;
+    const bool strike=(name=="strike_pact" || name=="mission_pact") && snapshot.strike_pact.enabled;
+    const bool garden=(name=="strike_bond" || name=="mission_bond") && snapshot.strike_bond.enabled;
     if(!garden && !hijacked && !deep && !strike && (name!="adventure_vod" || !snapshot.beyond_infinity.enabled)) { return true; }
     namespace beyond=state::activity::beyond_infinity;
     namespace clock=middleware::bap::activity_message::clock_state;

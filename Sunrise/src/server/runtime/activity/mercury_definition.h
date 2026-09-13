@@ -50,6 +50,16 @@ inline constexpr coo::script::ParameterCapability kParameters[]{
     {"pond_initial_count",1,4,1,false},{"vance_count",1,1,1,false},
     {"ambient_vex_probe_count",0,1,0,false},
     {"ambient_cabal_primary_probe_count",0,1,0,false},
+    {"freeroam_population_enabled",0,1,1,false},
+    {"freeroam_respawn_ms",1000,3600000,30000,false},
+    {"freeroam_normal_patrol_count",1,21,3,false},
+    {"freeroam_large_patrol_count",1,16,4,false},
+    {"faction_war_enabled",0,1,1,false},
+    {"faction_war_interwave_ms",1000,300000,8000,false},
+    {"faction_war_wave_1_count",1,5,2,false},
+    {"faction_war_wave_2_count",1,5,3,false},
+    {"faction_war_wave_3_count",1,5,4,false},
+    {"faction_war_wave_4_count",1,5,5,false},
     {"public_event_rally_probe",0,1,0,false},
     {"public_event_opening_probe",0,1,0,false},
     {"public_event_intro_delay_ms",0,30000,5250,false},
@@ -65,7 +75,7 @@ inline constexpr coo::script::ParameterCapability kParameters[]{
     {"host.tick_hz",1,120,30,false},
 };
 inline constexpr std::array<ambient_population::InitialBinding,2> kAmbientInitial{{
-    ambient::probe::binding(3),ambient::cabal_probe::binding(4),
+    ambient::probe::binding(7),ambient::cabal_probe::binding(22),
 }};
 // Authored native bubble scope15; not an endpoint or event revision.
 inline constexpr std::array<public_event::RallyBinding,1> kPublicEventRallies{{
@@ -73,8 +83,10 @@ inline constexpr std::array<public_event::RallyBinding,1> kPublicEventRallies{{
 }};
 inline const coo::script::Profile kProfile{"mercury.freeroam.native.v1","nativeOtherActivities",
     coo::Schema::otherMissions,kScriptCapabilities,kModules,{}, {}, {}, {}, {},{},kParameters};
-inline constexpr std::array<ambient_population::RegistryBinding,4> kOptionalRegistries{{
-    ambient::cabal_probe::kOptionalRegistries[0],ambient::cabal_probe::kOptionalRegistries[1],
+inline constexpr std::array<ambient_population::RegistryBinding,3> kOptionalRegistries{{
+    // The primary probe's placement owner is external; its 2571C34D source
+    // registry is already part of the always-admitted patrol profile.
+    ambient::cabal_probe::kOptionalRegistries[0],
     {&public_events::kRegistries[1],"public_event_opening_probe"},
     {&public_events::kRegistries[2],"public_event_opening_probe"}
 }};

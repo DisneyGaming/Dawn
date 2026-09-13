@@ -1,5 +1,6 @@
 #pragma once
 #include "frame.h"
+#include "ending_presentation.h"
 #include "../coo/native_activity_clock.h"
 #include "../coo/population_service.h"
 #include "../coo/mission_runtime.h"
@@ -14,6 +15,43 @@ namespace sunrise::state::activity::strike_bond {
 bool contains(const Volume&,Point) noexcept;
 class Controller final : private coo::Services,private coo::MissionPorts<Frame> {
 public:
+    bool claim_ending_animation(coo::Generation token,EndingActor actor) noexcept {
+        const bool accepted=frame_.campaign && frame_.enabled && frame_.endingFlow.claim(token,actor);
+        if(accepted) ++frame_.revision;return accepted;
+    }
+    bool ending_animation(coo::Generation token,EndingActor actor,bool active,std::uint64_t now) noexcept {
+        const bool accepted=frame_.campaign && frame_.endingFlow.animation(token,actor,active,now);
+        if(accepted) ++frame_.revision;return accepted;
+    }
+    bool ending_playback(coo::Generation token,EndingActor actor,std::uint32_t biped,EndingAnimationPhase phase) noexcept {
+        const bool accepted=frame_.campaign && frame_.enabled && frame_.endingFlow.playback(token,actor,biped,phase);
+        if(accepted) ++frame_.revision;return accepted;
+    }
+    bool ending_retirement(coo::Generation token) noexcept {
+        const bool accepted=frame_.endingFlow.cleanup(token);if(accepted) ++frame_.revision;return accepted;
+    }
+    void ending_arrival(coo::Generation token) noexcept {
+        if(token==owner() && frame_.endingFlow.retired && !frame_.endingFlow.arrived) {
+            frame_.endingFlow.arrived=true;++frame_.revision;
+        }
+    }
+    bool ending_movie(coo::Generation token,std::uint32_t self,std::uint32_t resource,std::uint32_t revision,bool active) noexcept {
+        const bool accepted=frame_.endingFlow.movie(token,self,resource,revision,active);
+        if(accepted) ++frame_.revision;return accepted;
+    }
+    coo::CampaignScanRequest scan_request() const noexcept {
+        return frame_.campaign && frame_.enabled && !frame_.finished
+            ?coo::CampaignScanRequest{lifecycle_.owner(),{0xC80A735BU,0x80F4748CU,65,0},frame_.spawnGeneration+1U,frame_.scan}
+            :coo::CampaignScanRequest{};
+    }
+    bool scan_observation(coo::Generation owner,std::uint32_t handle,std::uint32_t serial,coo::ScanPlayback playback,bool participant) noexcept {
+        const auto request=scan_request();
+        if(!request.enabled() || request.owner!=owner || !frame_.scan.observe(request.generation,handle,serial,playback,participant)) return false;
+        ++frame_.revision;return true;
+    }
+    bool ending_speech(const EndingSpeechReceipt&,std::uint8_t) noexcept;
+    bool sagira_delay(const EndingSpeechReceipt&,bool fired) noexcept;
+    bool ending_scene_cue(const EndingSpeechReceipt&,bool closing) noexcept;
     void reset() noexcept;
     bool select(const coo::script::Views&,std::uint64_t) noexcept;
     Frame update(std::uint64_t,std::uint64_t,bool,int) noexcept;
@@ -84,6 +122,7 @@ private:
     Point lastPoint_{};bool hasPoint_{};
     std::uint64_t nextPlatform_{},nextCover_{};std::uint32_t coverSeed_{};std::uint8_t coverGroup_{UINT8_MAX};
     bool platformForward_{true};PlatformTravel platformTravel_{};
+    EndingPresentation endingPresentation_{};
     coo::MissionRuntime composition_{};coo::Executor executor_{};Frame frame_{};
 };
 }

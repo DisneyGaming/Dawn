@@ -28,7 +28,7 @@ template<class Check> void run(Check check,const sunrise::state::activity::coo::
         } }
         check(false,"entry-latch volume has an interior point");
     };
-    enter(views.observationStart->asset);
+    if(views.observationStart) { enter(views.observationStart->asset); }
     std::uint64_t now=1000,beholdAt{};
     bool jumped{},speechHeld{},beholdDone{},tutorial{},secondSeeded{},secondReset{};
     for(unsigned iteration=0;iteration<700 && !secondReset;++iteration) {

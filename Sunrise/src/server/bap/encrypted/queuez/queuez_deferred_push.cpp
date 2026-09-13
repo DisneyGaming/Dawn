@@ -1,11 +1,14 @@
-﻿#include <Windows.h>
+#include <Windows.h>
 
 #include <algorithm>
 #include <array>
 #include <cstdio>
 
 #include "../../../../core/logging/log.h"
+#include "../../../../middleware/secure_channel/runtime.h"
 #include "../../../../state/account/account_state.h"
+#include "../../../../state/activity/nightfall/rules.h"
+#include "../../../../state/activity/nightfall/completion_reward.h"
 #include "../../../../state/runtime/runtime.h"
 #include "../internal.h"
 #include "../push/activity/activity_keepalive_push.h"
@@ -16,6 +19,92 @@ namespace {
 
 /** Widest re-push report, sized for the fields below. */
 constexpr std::size_t kRepushReportLimit = 96;
+
+/** Publishes and commits one exact Dawn-authored Nightfall currency debt. */
+[[nodiscard]] bool consume_completion_reward(Session& session,
+                                             Scratch& scratch,
+                                             std::span<std::byte> response,
+                                             std::size_t& written,
+                                             bool& touchesScratch) noexcept {
+    namespace reward = state::activity::nightfall::rewards;
+    if (!static_cast<bool>(session.activity.instance) || !session.queuez.family4Active) {
+        return false;
+    }
+    const state::AccountState account = state::account_snapshot();
+    if (!reward::account_matches(account.primarySoid, session.queuez.family4RootSoid)) {
+        return false;
+    }
+    reward::Ticket ticket{};
+    if (!reward::claim(session.activity.instance.sessionId, ticket)) {
+        return false;
+    }
+    state::PendingProfileItemAcquisition mutation{};
+    const auto prepared =
+        state::prepare_profile_currency_grant(ticket.definitionHash, ticket.quantity, mutation);
+    if (prepared == state::ProfileCurrencyGrantResult::capped) {
+        (void)reward::finish(ticket, 0);
+        core::log::write(core::log::Channel::server,
+                         core::log::Level::info,
+                         "ev=nightfall_reward result=ok credited=0 reason=currency_cap");
+        return false;
+    }
+    if (prepared != state::ProfileCurrencyGrantResult::prepared) {
+        reward::release(ticket);
+        return false;
+    }
+
+    queuez::ProfileItemAcquisition acquisition{};
+    if (mutation.accountSoid != session.queuez.family4RootSoid
+        || !queuez::stage_profile_item_acquisition(session.queuez,
+                                                   mutation.accountSoid,
+                                                   mutation.acquiredInstanceSoid,
+                                                   mutation.actionSource,
+                                                   mutation.appended,
+                                                   acquisition)) {
+        reward::release(ticket);
+        return false;
+    }
+    touchesScratch = true;
+    auto nextSendNonce = session.sendNonce;
+    std::size_t framedSize = 0;
+    if (!push::append_profile_item_acquisition_notification(scratch,
+                                                            acquisition,
+                                                            mutation,
+                                                            state::bap().sessionKey,
+                                                            nextSendNonce,
+                                                            scratch.framed,
+                                                            framedSize)
+        || framedSize == 0 || framedSize > response.size()) {
+        reward::release(ticket);
+        return false;
+    }
+    middleware::secure_channel::advance_nonce(nextSendNonce);
+    std::copy_n(scratch.framed.begin(), framedSize, response.begin());
+    const std::int32_t credited = mutation.acquiredQuantity - mutation.previousQuantity;
+    if (credited <= 0 || credited > ticket.quantity
+        || !state::commit_profile_item_acquisition(mutation)) {
+        reward::release(ticket);
+        return false;
+    }
+    session.sendNonce = nextSendNonce;
+    session.queuez = acquisition.after;
+    session.accountMutationPublished = true;
+    written = framedSize;
+    (void)reward::finish(ticket, credited);
+    std::array<char, kRepushReportLimit> line{};
+    const int count = std::snprintf(line.data(),
+                                    line.size(),
+                                    "ev=nightfall_reward result=ok run=%llu credited=%d bytes=%zu",
+                                    static_cast<unsigned long long>(ticket.run),
+                                    credited,
+                                    framedSize);
+    if (count > 0) {
+        core::log::write(core::log::Channel::server,
+                         core::log::Level::info,
+                         {line.data(), static_cast<std::size_t>(count)});
+    }
+    return true;
+}
 
 /**
  * Logs one delayed re-push with its framed size, so it can be compared to the first copy.
@@ -33,13 +122,25 @@ void report_repush(const char* stage, std::size_t bytes) noexcept {
     }
 }
 
-/** Publishes the current account graph to a peer invalidated by another connection. */
+/** Publishes the current account graph after account or native power state invalidates it. */
 [[nodiscard]] bool consume_account_resync(Session& session,
                                           Scratch& scratch,
                                           std::span<std::byte> response,
                                           std::size_t& written,
                                           bool& touchesScratch) noexcept {
-    if (!session.accountResyncArmed || session.accountResyncGeneration == 0) {
+    const bool accountPending =
+        session.accountResyncArmed && session.accountResyncGeneration != 0;
+    const std::uint64_t powerRevision = state::activity::nightfall::power_revision();
+    if ((powerRevision & 1U) != 0) {
+        return false;
+    }
+    const bool powerPending = session.nightfallPowerRevision != powerRevision;
+    if (!accountPending && !powerPending) {
+        return false;
+    }
+    // A power edge can precede the account subscription. Its initial snapshot already reads the
+    // current projection, and this mismatch remains available for a later versioned refresh.
+    if (!accountPending && !session.queuez.family4Active) {
         return false;
     }
     touchesScratch = true;
@@ -90,6 +191,16 @@ void report_repush(const char* stage, std::size_t bytes) noexcept {
         }
         currentQueuez = rosterAfter;
     }
+    // The three family builders read the lock-free projection independently. Reject the entire
+    // staged bundle if launch or orbit changed it at any point, so one peer never observes mixed
+    // capped and uncapped records from a single refresh.
+    const std::uint64_t finalPowerRevision = state::activity::nightfall::power_revision();
+    if ((finalPowerRevision & 1U) != 0 || finalPowerRevision != powerRevision) {
+        core::log::write(core::log::Channel::server,
+                         core::log::Level::warn,
+                         "ev=queuez stage=power_resync result=retry reason=revision");
+        return false;
+    }
     if (framedSize == 0 || framedSize > response.size() || !queuez::valid(currentQueuez)) {
         core::log::write(core::log::Channel::server,
                          core::log::Level::warn,
@@ -100,9 +211,13 @@ void report_repush(const char* stage, std::size_t bytes) noexcept {
     written = framedSize;
     session.sendNonce = nextSendNonce;
     session.queuez = currentQueuez;
-    session.accountGeneration = session.accountResyncGeneration;
-    session.accountResyncArmed = false;
-    report_repush("peer_resync", framedSize);
+    if (accountPending) {
+        session.accountGeneration = session.accountResyncGeneration;
+        session.accountResyncArmed = false;
+    }
+    // The matching even revision proves that every builder saw one complete cap publication.
+    session.nightfallPowerRevision = powerRevision;
+    report_repush(accountPending ? "peer_resync" : "power_resync", framedSize);
     return true;
 }
 
@@ -197,6 +312,9 @@ bool consume_deferred(Session& session,
     // A failed resync remains armed and blocks unrelated deferred output until it can be retried.
     if (session.accountResyncArmed) {
         return false;
+    }
+    if (consume_completion_reward(session, scratch, response, written, touchesScratch)) {
+        return true;
     }
     if (!session.family4RepushArmed || session.family4RepushRoot == 0
         || GetTickCount64() < session.family4RepushDueTick) {

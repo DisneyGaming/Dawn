@@ -1,5 +1,6 @@
 #include "server/runtime/activity/faction_battle_service.h"
 #include "server/runtime/activity/mercury_faction_battle_evidence.h"
+#include "server/runtime/activity/mercury_freeroam_runtime.h"
 #include <cstdio>
 #include <cstdlib>
 
@@ -156,4 +157,172 @@ static void resident_budget() {
     auto late=actor(service,0,100);CHECK(service.observe(token,late)==c::PopulationIntake::accepted);
     CHECK(service.diagnostics().phase==f::Phase::failed); // extra old-wave birth invalidates accounting
 }
-int main() {validation();progression();failures();source_conflicts();resident_budget();std::printf("Faction battle: %u checks passed\n",checks);}
+struct FakeLedger final {
+    c::PopulationCounts value{};
+    [[nodiscard]] c::PopulationCounts counts() const noexcept {return value;}
+};
+static void consumed(p::Service& service,std::size_t capability,std::uint32_t revision) {
+    namespace sense=sunrise::middleware::bap::activity_message::sense_update;
+    namespace m=sunrise::server::runtime::activity::mercury;
+    const auto projected=service.project(15);const auto& cap=m::kPopulations[capability];
+    const p::wire::Request* request{};
+    for(std::size_t i=0;i<projected.count;++i)
+        if(projected.entries[i].source.registry==cap.registry->key && projected.entries[i].slot==cap.slot)
+            request=&projected.entries[i];
+    CHECK(request!=nullptr);if(!request)return;
+    sense::SenseObject value{};value.registryKey=cap.registry->key;value.slotIndex=cap.slot;
+    value.slotType=1;value.hasNativeSchema=true;value.nativeSchema=0x80807ECC;
+    value.hasRootDelta=true;value.nativeRevision=revision;value.sourceDelta.present=1;
+    value.sourceDelta.scalar[0]=request->source.generation;
+    value.sourceDelta.consumedPresent=true;value.sourceDelta.consumedCount=1;
+    value.sourceDelta.consumed[0]=request->source.looseRequested;
+    CHECK(service.observe(15,value)!=nullptr);CHECK(service.consumed(capability));
+}
+static void mercury_schedule_and_patrols() {
+    namespace m=sunrise::server::runtime::activity::mercury;
+    namespace fr=m::freeroam;
+    for(unsigned minute=0;minute<60;++minute)
+        CHECK(fr::join_window(static_cast<std::uint8_t>(minute))==(minute%15<3));
+    CHECK(!fr::join_window(60));
+    CHECK(m::kPopulations.size()==23);CHECK(fr::kPatrols.size()==16);
+    for(const auto& capability:m::kPopulations)CHECK(p::valid(capability));
+    CHECK(fr::valid({}) && !fr::valid({0,8000,{2,3,4,5},3,4,true,true}));
+    CHECK(!fr::valid({30000,8000,{2,3,4,6},3,4,true,true}));
+    CHECK(!fr::valid({30000,8000,{2,3,4,5},22,4,true,true}));
+    CHECK(!fr::valid({30000,8000,{2,3,4,5},3,17,true,true}));
+    CHECK(fr::valid({30000,8000,{2,3,4,5},5,4,true,true}));
+    CHECK(!fr::valid({30000,8000,{2,3,4,5},6,4,true,true}));
+    CHECK(fr::valid({30000,8000,{2,3,4,5},21,16,false,true}));
+    std::size_t largeAreas{};
+    for(const auto& patrol:fr::kPatrols) {
+        largeAreas+=patrol.largeArea?1U:0U;
+        const auto& capability=m::kPopulations[patrol.capability];
+        const auto* group=sunrise::state::activity::coo::mercury::ambient::find(capability.registry->key);
+        CHECK(group && !group->sources.empty());
+        if(group->sources.size()==1) {
+            CHECK(capability.slot==group->sources[0].slot);
+            CHECK(capability.rule==group->sources[0].fallbackRule);
+        } else {
+            CHECK(capability.slot==group->sources[1].slot);
+            CHECK(capability.rule==group->sources[1].fallbackRule);
+        }
+    }
+    CHECK(largeAreas==8);
+
+    p::Service service;const p::Owner owner{900,{7}};
+    CHECK(service.begin(owner,m::kPopulations,0x1234));
+    std::array<FakeLedger,m::kPopulations.size()> ledgers{};
+    std::array<std::uint8_t,m::kPopulations.size()> nativePending{};
+    fr::Director director;CHECK(director.begin(owner,0x1234,3));
+    CHECK(director.update(100,15,true,service,std::span<const FakeLedger>(ledgers),nativePending));
+    CHECK(service.project(15).count==fr::kPatrols.size());
+    CHECK(director.diagnostics().war==fr::WarPhase::unavailable);
+    for(const auto& patrol:fr::kPatrols)
+        CHECK(service.target(patrol.capability)==(patrol.largeArea?4:3));
+    std::uint32_t revision=10;
+    for(const auto& patrol:fr::kPatrols) {
+        const auto admitted=service.target(patrol.capability);
+        ledgers[patrol.capability].value={admitted,0,admitted,0,false,false};
+        consumed(service,patrol.capability,revision++);
+    }
+    CHECK(director.update(200,15,true,service,std::span<const FakeLedger>(ledgers),nativePending));
+    CHECK(director.update(30199,15,true,service,std::span<const FakeLedger>(ledgers),nativePending));
+    CHECK(service.target(fr::kPatrols[0].capability)==4);
+    CHECK(director.update(30200,15,true,service,std::span<const FakeLedger>(ledgers),nativePending));
+    for(const auto& patrol:fr::kPatrols)CHECK(service.renewal(patrol.capability).pending);
+    // A provisional birth that arrives while the bridge reports busy cancels
+    // the ticket. Its real death/retirement starts a fresh 30-second timer.
+    const auto lateCapability=fr::kPatrols[0].capability;
+    ledgers[lateCapability].value={5,1,4,1,false,false};service.cancel_renewal(lateCapability);
+    CHECK(director.update(30201,15,true,service,std::span<const FakeLedger>(ledgers),nativePending));
+    CHECK(!service.renewal(lateCapability).pending);
+    ledgers[lateCapability].value={5,0,5,0,false,false};
+    CHECK(director.update(30202,15,true,service,std::span<const FakeLedger>(ledgers),nativePending));
+    CHECK(director.update(60201,15,true,service,std::span<const FakeLedger>(ledgers),nativePending));
+    CHECK(!service.renewal(lateCapability).pending);
+    CHECK(director.update(60202,15,true,service,std::span<const FakeLedger>(ledgers),nativePending));
+    CHECK(service.renewal(lateCapability).pending);
+    // A new source generation accepts its own mirror and rejects the old one.
+    for(const auto& patrol:fr::kPatrols) {
+        const auto renewal=service.renewal(patrol.capability);
+        CHECK(renewal.nextTarget==(patrol.largeArea?4:3));
+        CHECK(service.commit_renewal(patrol.capability));
+        CHECK(service.target(patrol.capability)==(patrol.largeArea?4:3));
+    }
+    std::uint64_t cycleAt=60203;
+    for(unsigned cycle=0;cycle<2;++cycle) {
+        for(const auto& patrol:fr::kPatrols) {
+            const auto admitted=service.target(patrol.capability);
+            ledgers[patrol.capability].value={admitted,0,admitted,0,false,false};
+            consumed(service,patrol.capability,revision++);
+        }
+        CHECK(director.update(cycleAt,15,true,service,std::span<const FakeLedger>(ledgers),nativePending));
+        CHECK(director.update(cycleAt+30000,15,true,service,std::span<const FakeLedger>(ledgers),nativePending));
+        for(const auto& patrol:fr::kPatrols) {
+            CHECK(service.renewal(patrol.capability).nextTarget==(patrol.largeArea?4:3));
+            CHECK(service.commit_renewal(patrol.capability));
+        }
+        cycleAt+=30001;
+    }
+}
+static void mercury_escalation() {
+    namespace m=sunrise::server::runtime::activity::mercury;
+    namespace fr=m::freeroam;
+    p::Service service;const p::Owner owner{901,{8}};
+    CHECK(service.begin(owner,m::kPopulations,0x5678));
+    std::array<FakeLedger,m::kPopulations.size()> ledgers{};
+    std::array<std::uint8_t,m::kPopulations.size()> nativePending{};
+    fr::Director director;CHECK(director.begin(owner,0x5678,45));
+    std::uint32_t incident{};CHECK(director.take_announcement(incident));CHECK(incident==fr::kAnnouncementIncident);
+    CHECK(!director.take_announcement(incident));CHECK(!director.announcement_observed(0x8753E5BA));
+    CHECK(director.update(1000,15,true,service,std::span<const FakeLedger>(ledgers),nativePending));
+    CHECK(director.diagnostics().war==fr::WarPhase::active && director.diagnostics().wave==0);
+    CHECK(service.project(15).count==fr::kPatrols.size());
+    for(const auto capability:fr::kWaves[0].capabilities)CHECK(service.target(capability)==6);
+    std::uint32_t revision=100;
+    for(std::size_t wave=0;wave<fr::kWarWaveCount;++wave) {
+        for(const auto capability:fr::kWaves[wave].capabilities) {
+            // One native request may admit an authored group of several actors.
+            const auto admitted=service.target(capability);
+            ledgers[capability].value={admitted,0,admitted,0,false,false};
+            consumed(service,capability,revision++);
+        }
+        const auto clearAt=1002+wave*10000;
+        nativePending[fr::kWaves[wave].capabilities[0]]=1;
+        CHECK(director.update(clearAt-1,15,true,service,std::span<const FakeLedger>(ledgers),nativePending));
+        CHECK(director.diagnostics().war==fr::WarPhase::active && !director.wave_clear_pending());
+        nativePending[fr::kWaves[wave].capabilities[0]]=0;
+        CHECK(director.update(clearAt,15,true,service,std::span<const FakeLedger>(ledgers),nativePending));
+        CHECK(director.diagnostics().war==fr::WarPhase::active && director.wave_clear_pending());
+        CHECK(director.commit_wave_clear());CHECK(!director.commit_wave_clear());
+        CHECK(director.diagnostics().war==fr::WarPhase::intermission);
+        std::size_t futureRenewal=SIZE_MAX;
+        if(wave==0) {
+            futureRenewal=fr::kWaves[wave+1].capabilities[0];
+            ledgers[futureRenewal].value={4,0,4,0,false,false};
+            consumed(service,futureRenewal,revision++);
+            const auto& capability=m::kPopulations[futureRenewal];
+            const p::Command command{owner,service.revision(),service.last_request()+1,
+                capability.registry->key,capability.slot,4,0x5678};
+            CHECK(service.renew(command,15)==p::Result::accepted);
+        }
+        CHECK(director.update(clearAt+7999,15,true,service,std::span<const FakeLedger>(ledgers),nativePending));
+        CHECK(director.diagnostics().war==fr::WarPhase::intermission);
+        CHECK(director.update(clearAt+8000,15,true,service,std::span<const FakeLedger>(ledgers),nativePending));
+        if(futureRenewal!=SIZE_MAX) {
+            CHECK(director.diagnostics().war==fr::WarPhase::intermission);
+            CHECK(service.commit_renewal(futureRenewal));ledgers[futureRenewal].value={};
+            CHECK(director.update(clearAt+8001,15,true,service,std::span<const FakeLedger>(ledgers),nativePending));
+        }
+        CHECK(director.diagnostics().war==(wave+1==fr::kWarWaveCount?fr::WarPhase::complete:fr::WarPhase::active));
+        if(wave+1<fr::kWarWaveCount)for(const auto capability:fr::kWaves[wave+1].capabilities)
+            CHECK(service.target(capability)==4+fr::Configuration{}.waveRequests[wave+1]);
+    }
+    CHECK(director.announcement_observed(fr::kAnnouncementIncident));
+    CHECK(!director.announcement_observed(fr::kAnnouncementIncident));
+}
+int main() {
+    validation();progression();failures();source_conflicts();resident_budget();
+    mercury_schedule_and_patrols();mercury_escalation();
+    std::printf("Faction battle: %u checks passed\n",checks);
+}

@@ -146,6 +146,11 @@ std::uint64_t native_run() noexcept {
     if(!mission_seed_armed() || world_phase()!=WorldPhase::arrived) { return 0; }
     const std::lock_guard lock(mutex);return selectedRun==mission_run_generation()?selectedRun:0;
 }
+EnemyReceipt marcher(std::uint32_t actor) noexcept {
+    if(!mission_seed_armed() || world_phase()!=WorldPhase::arrived) return {};
+    const std::lock_guard lock(mutex);
+    return selectedRun && selectedRun==mission_run_generation()?controller.marcher(actor):EnemyReceipt{};
+}
 EndingRequest ending_request() noexcept {
     if(!mission_seed_armed() || world_phase()!=WorldPhase::arrived) { return {}; }
     const std::lock_guard lock(mutex);

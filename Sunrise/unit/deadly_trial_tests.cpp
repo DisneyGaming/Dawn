@@ -15,9 +15,11 @@
 #include <memory>
 #include <algorithm>
 #include <map>
+#include <vector>
 #include <limits>
 #include "client/hooks/bootflow/coo_native_player_mount.h"
 #include "fixtures/deadly_trial_lifetime_fixture.h"
+#include "fixtures/deadly_trial_presentation_fixture.h"
 namespace t=sunrise::state::activity::deadly_trial;
 namespace c=sunrise::state::activity::coo;
 namespace r=sunrise::server::bap::encrypted::push::activity::deadly_trial_roster;
@@ -25,6 +27,53 @@ namespace wire=sunrise::middleware::bap::activity_message::sensor_auth_update;
 namespace bits=sunrise::middleware::encoding::bits;
 unsigned checks{};
 #define CHECK(x) do { ++checks;if(!(x)) { std::fprintf(stderr,"FAIL line %d: %s\n",__LINE__,#x);std::exit(1); } } while(false)
+void presentation_binding() {
+    namespace binding=sunrise::client::hooks::bootflow::deadly_trial_lifetime;
+    using F=TrialPresentationFixture;
+    F f;const auto nativeBody=f.get<std::uint32_t>(F::life+0x180);
+    CHECK(binding::repair_presentation(f,f,F::roster)==binding::Result::repaired);
+    CHECK(f.writes==3);CHECK(f.get<std::uint32_t>(F::root+0x1C)==F::owner);
+    CHECK(f.get<std::uint32_t>(F::life+0x170)==F::sync);
+    CHECK(f.get<std::uint32_t>(F::objective+0x170)==F::objectiveSync);
+    CHECK(f.get<std::uint32_t>(F::life+0x180)==nativeBody);
+    CHECK(f.get<std::uint32_t>(F::objective+0x180)==0xDA95AE49U);
+    CHECK(binding::repair_presentation(f,f,F::roster)==binding::Result::unchanged);CHECK(f.writes==3);
+    f.set(F::root+0x1C,UINT32_MAX);
+    CHECK(binding::repair_presentation(f,f,F::roster)==binding::Result::repaired);CHECK(f.writes==4);
+    f.set(F::objective+0x170,UINT32_MAX);
+    CHECK(binding::repair_presentation(f,f,F::roster)==binding::Result::repaired);
+    for(unsigned variant=0;variant<18;++variant) {
+        F bad;
+        switch(variant) {
+        case 0:bad.set(F::activity+0x24,0x80F46DB0U);break;
+        case 1:bad.set(F::root+0x1C,7U);break;
+        case 2:bad.set(F::life+0x170,7U);break;
+        case 3:bad.set(F::objective+0x170,7U);break;
+        case 4:bad.set(F::life+4,0x80804F4DU);break;
+        case 5:bad.set(F::objective+8,std::int64_t{0xB89});break;
+        case 6:bad.set(F::life+0x48,F::objectiveComponent);break;
+        case 7:bad.set(F::record+0x80,1U);break;
+        case 8:bad.set(F::record+0x88+12,0x80804F77U);break;
+        case 9:bad.active=false;break;
+        case 10:bad.found=false;break;
+        case 11:bad.race=true;break;
+        case 12:bad.set(F::pool+0x18,4097U);break;
+        case 13:bad.set(F::root+0xC,4U);break;
+        case 14:bad.set(F::pool+0x18,3U);
+            bad.set(F::record+2*0x88,binding::Identity{0xC9BC773AU,53,0,2});break;
+        case 15:bad.set(F::root+8,2U);
+            bad.set(F::root+0xC+24,bad.get<std::array<std::uint32_t,6>>(F::root+0xC));break;
+        case 16:bad.set(F::pool+0x18,1U);break;
+        case 17:bad.set(F::pool+0x34,0x40000393U);break;
+        }
+        const auto before=bad.bytes;
+        CHECK(binding::repair_presentation(bad,bad,F::roster)==binding::Result::unavailable);
+        CHECK(bad.writes==0);CHECK(bad.bytes==before);
+    }
+    F changed;changed.ownerChanged=true;
+    CHECK(binding::repair_presentation(changed,changed,F::roster)==binding::Result::unavailable);
+    CHECK(changed.writes==0);CHECK(changed.get<std::uint32_t>(F::root+0x1C)==7U);
+}
 void lifetime_binding() {
     namespace binding=sunrise::client::hooks::bootflow::deadly_trial_lifetime;
     using F=LifetimeFixture;
@@ -320,14 +369,29 @@ void post_walker_route(const c::script::Views& views) {
         foreign=direct.enemy(i);++foreign.owner;CHECK(!direct.controller.died(foreign));
     }
     CHECK((direct.controller.frame().cohorts&(1U<<8))==0);
-    for(unsigned i=0;i<20 && !direct.controller.frame().barrierOpen;++i) { direct.tick(true,false,false,false); }
+    for(unsigned i=0;i<20 && !direct.controller.frame().barrierOpen;++i) { direct.tick(true,false,false,false,false); }
     CHECK(direct.controller.frame().barrierOpen);CHECK(direct.controller.frame().cohorts&(1U<<8));
     CHECK((direct.controller.frame().cohorts&0xC0U)==0);
     CHECK(direct.controller.missing(capability("trial.entered")).missing==c::Missing::observation);
-    direct.tick(true,false,false,false);
+    direct.tick(true,false,false,false,false);
     unsigned towerSources{};
     for(std::size_t i=0;i<t::kSpawns.size();++i) if(t::kSpawns[i].cohort==8) { ++towerSources;CHECK(direct.admitted[i]); }
     CHECK(towerSources==15);CHECK(!direct.controller.frame().reviveEnabled);
+    // The last tower death places the lower-room Marauders at this callback,
+    // without a drop, a lair position, or downstream dialogue submissions.
+    CHECK((direct.controller.frame().cohorts&(1U<<9))==0);
+    CHECK(direct.controller.missing(authored(views,"lair.entered")).missing==c::Missing::observation);
+    std::vector<t::EnemyReceipt> towerActors;
+    for(std::size_t i=0;i<t::kSpawns.size();++i) if(t::kSpawns[i].cohort==8) {
+        for(unsigned n=0;n<t::kSpawns[i].count;++n) { auto receipt=direct.enemy(i);receipt.actor+=n;towerActors.push_back(receipt); }
+    }
+    for(std::size_t i=0;i<towerActors.size();++i) {
+        CHECK((direct.controller.frame().cohorts&(1U<<9))==0);
+        auto stale=towerActors[i];++stale.generation;CHECK(!direct.controller.died(stale));
+        CHECK(direct.controller.died(towerActors[i]));CHECK(!direct.controller.died(towerActors[i]));
+    }
+    CHECK(direct.controller.frame().cohorts&(1U<<9));CHECK(!direct.controller.frame().reviveEnabled);
+    CHECK(direct.dialogueSubmissions[4]==0);
     // A retained tower arrival before the Walker dies cannot open its barrier
     // or enable any post-Walker cohort; then a real death releases the route.
     Harness h(views);
@@ -520,7 +584,20 @@ int main(int argc,char** argv) {
     CHECK(forced::prelaunch::configured(forced::profiles::kDeadlyTrialOpening)==&forced::prelaunch::kDeadlyTrial);
     CHECK(forced::prelaunch::kDeadlyTrial.activity==293);CHECK(forced::profiles::kDeadlyTrialOpening.sliceSet==408);
     CHECK(forced::prelaunch::kGateway.activity==292);CHECK(forced::profiles::kGatewayOpening.sliceSet==120);
-    // A far-away position cannot arm the opening, or synthesize enemy deaths.
+    // Confirmed arrival publishes the opening without any position sample.
+    Harness delayed(doc->views());CHECK(!delayed.controller.update(41,1000,false).enabled);
+    auto opening=delayed.controller.update(41,1000,true);
+    CHECK(opening.objective==3961616249U);CHECK(opening.activeRow==0);
+    const auto openingGeneration=opening.generations[0];
+    for(const auto now:{17000ULL,33000ULL,65000ULL}) {
+        opening=delayed.controller.update(41,now,true);
+        CHECK(opening.activeRow==0 && opening.generations[0]==openingGeneration);
+        CHECK(opening.cohorts==0 && !opening.barrierOpen);
+    }
+    CHECK(!delayed.controller.submitted(42,t::kBank,0,openingGeneration,65001));
+    CHECK(delayed.controller.submitted(41,t::kBank,0,openingGeneration,65001));
+    CHECK(!delayed.controller.submitted(41,t::kBank,0,openingGeneration,65001));
+    // A far-away position cannot synthesize encounter entry or enemy deaths.
     Harness h(doc->views());h.controller.position(41,{1400,585,175});auto initial=h.controller.update(41,1000,true);CHECK(initial.cohorts==0);CHECK(!initial.barrierOpen);
     for(unsigned i=0;i<1600 && !(h.controller.frame().cohorts&(1U<<4));++i) { h.tick(false,false,false); }
     CHECK(h.controller.frame().cohorts&(1U<<4));for(unsigned i=0;i<30;++i) { h.tick(false,false,false); }CHECK(!h.controller.frame().barrierOpen);
@@ -558,5 +635,5 @@ int main(int argc,char** argv) {
         auto writer=bits::Writer::measuring();CHECK(t::write_body(writer,f,g.key,s.type,s.index));CHECK(writer.bit_count()==expected);
         f.enabled=false;CHECK(t::body_bits(f,g.key,s.type,s.index)==0);
     }
-    presentation_and_overpass(doc->views());post_walker_route(doc->views());roster();lifetime_binding();std::printf("A Deadly Trial: %u checks passed\n",checks);
+    presentation_and_overpass(doc->views());post_walker_route(doc->views());roster();lifetime_binding();presentation_binding();std::printf("A Deadly Trial: %u checks passed\n",checks);
 }

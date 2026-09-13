@@ -23,11 +23,24 @@ void native_population_cases() {
     CHECK(ledger.actor_retired(second)==Intake::accepted); // despawn need not be a kill
     CHECK(ledger.counts().dead==1);CHECK(ledger.counts().resident==0);
     CHECK(ledger.phase()==c::PopulationPhase::retired);CHECK(!ledger.begin(owner));
-    auto next=owner;++next.generation;++next.incarnation;
+    auto sameRun=owner;++sameRun.generation;CHECK(ledger.begin(sameRun));
+    CHECK(ledger.retiring(sameRun));CHECK(ledger.source_retired(sameRun)==Intake::accepted);
+    auto next=sameRun;++next.generation;++next.incarnation;
     CHECK(ledger.begin(next));CHECK(ledger.died(first)==Intake::unrelated);CHECK(ledger.actor_retired(second)==Intake::unrelated);
     CHECK(ledger.counts().admitted==0);CHECK(ledger.retiring(next));CHECK(ledger.source_retired(next)==Intake::accepted);
     CHECK(ledger.phase()==c::PopulationPhase::retired);
     CHECK(!ledger.begin(owner)); // an older generation cannot be resurrected
+    c::NativePopulationLedger<3> recurring;
+    CHECK(recurring.begin(owner));CHECK(!recurring.renew(owner,sameRun)); // no admitted cohort
+    CHECK(recurring.admitted(first)==Intake::accepted);
+    CHECK(!recurring.renew(owner,sameRun)); // live and resident
+    CHECK(recurring.died(first)==Intake::accepted);CHECK(!recurring.renew(owner,sameRun));
+    CHECK(recurring.actor_retired(first)==Intake::accepted);
+    auto skipped=sameRun;++skipped.generation;CHECK(!recurring.renew(owner,skipped));
+    CHECK(recurring.renew(owner,sameRun));
+    CHECK(recurring.owner()==sameRun && recurring.phase()==c::PopulationPhase::active);
+    CHECK(recurring.counts().admitted==0 && !recurring.counts().sourceRetired);
+    CHECK(recurring.admitted({sameRun,0x11001,0x21001})==Intake::accepted);
     // A long session may renew native source generations only after native
     // source quiescence AND actor retirement. This is not a fixed respawn limit.
     for(unsigned i=0;i<500;++i) {

@@ -16,6 +16,7 @@
 #include "../../hooking/detour.h"
 #include "../../patterns/image_scan.h"
 #include "../../player/player_settings_store.h"
+#include "../../../state/activity/nightfall/rules.h"
 
 namespace sunrise::client::hooks::infinite_ammo {
 namespace {
@@ -65,7 +66,7 @@ std::array<hooking::detour::Handle, kHandleCount> g_handles{};
 
 /** @return True while the feature is on. */
 [[nodiscard]] bool enabled() noexcept {
-    return client::player::get().infiniteAmmoEnabled;
+    return !state::activity::nightfall::infinite_ammo_blocked() && client::player::get().infiniteAmmoEnabled;
 }
 
 /**

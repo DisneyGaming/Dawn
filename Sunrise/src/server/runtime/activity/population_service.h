@@ -86,7 +86,27 @@ public:
             for(std::size_t j=0;j<i;++j)
                 if(definitions[i].registry->key==definitions[j].registry->key && definitions[i].slot==definitions[j].slot) return false;
         }
-        owner_=owner;capabilities_=definitions;revision_=1;boot_=boot;return true;
+        owner_=owner;capabilities_=definitions;revision_=1;boot_=boot;
+        for(std::size_t i=0;i<definitions.size();++i)generations_[i]=static_cast<std::uint32_t>(owner.incarnation.value);
+        return true;
+    }
+    // Internal recurring-source renewal. The native consumed mirror proves the
+    // old cumulative quota was drained. The caller must separately prove all
+    // actors died and produced retirement receipts before publishing this.
+    [[nodiscard]] Result renew(const Command& command,std::uint32_t bubble) noexcept {
+        if(!owner_ || command.boot!=boot_ || command.owner!=owner_ || command.expectedRevision!=revision_)return Result::stale;
+        if(!command.request || command.request<=lastRequest_)return Result::duplicate;
+        if(!command.requested || command.requested>63)return Result::invalid;
+        for(std::size_t i=0;i<capabilities_.size();++i) {
+            const auto& capability=capabilities_[i];
+            if(command.registry!=capability.registry->key || command.slot!=capability.slot)continue;
+            if(bubble!=capability.registry->bubble)return Result::stale;
+            if(!targets_[i] || !consumed(i) || renewals_[i].pending
+                || generations_[i]>=0x7FFFFFFFU || revision_==UINT64_MAX)return Result::exhausted;
+            renewals_[i]={command.request,generations_[i],targets_[i],command.requested,true};lastRequest_=command.request;
+            return Result::accepted;
+        }
+        return Result::unsupported;
     }
     [[nodiscard]] Result request(const Command& command,std::uint32_t bubble) noexcept {
         if(!owner_ || command.boot!=boot_ || command.owner!=owner_ || command.expectedRevision!=revision_) return Result::stale;
@@ -96,6 +116,7 @@ public:
             const auto& capability=capabilities_[i];
             if(command.registry!=capability.registry->key || command.slot!=capability.slot) continue;
             if(bubble!=capability.registry->bubble) return Result::stale;
+            if(renewals_[i].pending) return Result::exhausted;
             if(command.requested<targets_[i]) return Result::decrease;
             if(command.requested==targets_[i]) return Result::unchanged;
             if(revision_==UINT64_MAX) return Result::exhausted;
@@ -110,7 +131,7 @@ public:
             if(!targets_[i] || capability.registry->bubble!=bubble) continue;
             auto& row=batch.entries[batch.count++];
             row.bubble=capability.registry->bubble;row.slot=capability.slot;
-            row.source={capability.registry->key,static_cast<std::uint32_t>(owner_.incarnation.value),
+            row.source={capability.registry->key,generations_[i],
                 capability.rule,targets_[i],capability.tactical};
             row.source.hasSpawnRule=capability.hasRule;
         }
@@ -133,7 +154,7 @@ public:
                 || object.nativeRevision-mirror.revision>=0x80000000U)) return nullptr;
             const auto& delta=object.sourceDelta;
             if(object.hasRootDelta && (delta.present&1U)) {
-                if(delta.scalar[0]!=owner_.incarnation.value) return nullptr;
+                if(delta.scalar[0]!=generations_[i]) return nullptr;
             } else if(!(mirror.known&1U)) return nullptr;
             if(delta.consumedCount>delta.consumed.size() || (delta.present&0xC0U)) return nullptr;
             mirror.seen=true;mirror.revision=object.nativeRevision;
@@ -151,12 +172,42 @@ public:
     }
     [[nodiscard]] std::uint64_t revision() const noexcept { return revision_; }
     [[nodiscard]] std::uint64_t last_request() const noexcept { return lastRequest_; }
+    [[nodiscard]] std::uint8_t target(std::size_t index) const noexcept {
+        return index<capabilities_.size()?targets_[index]:0;
+    }
+    [[nodiscard]] bool consumed(std::size_t index) const noexcept {
+        if(index>=capabilities_.size() || !targets_[index])return false;
+        const auto& mirror=observations_[index];
+        return mirror.seen && mirror.consumedKnown && mirror.consumedCount==1
+            && mirror.consumed[0]>=static_cast<std::int32_t>(targets_[index]);
+    }
+    struct Renewal final {
+        std::uint64_t request{};std::uint32_t generation{};
+        std::uint8_t target{},nextTarget{};bool pending{};
+    };
+    [[nodiscard]] Renewal renewal(std::size_t index) const noexcept {
+        return index<capabilities_.size()?renewals_[index]:Renewal{};
+    }
+    // The runtime commits only after the receipt bridge proves the old lease
+    // quiescent and accepts the next generation. Until then project() retains
+    // the old source identity.
+    [[nodiscard]] bool commit_renewal(std::size_t index) noexcept {
+        if(index>=capabilities_.size())return false;const auto ticket=renewals_[index];
+        if(!ticket.pending || !ticket.request || ticket.generation!=generations_[index]
+            || ticket.target!=targets_[index] || !ticket.nextTarget
+            || generations_[index]>=0x7FFFFFFFU || revision_==UINT64_MAX)return false;
+        ++generations_[index];targets_[index]=ticket.nextTarget;observations_[index]={};
+        ++revision_;renewals_[index]={};return true;
+    }
+    void cancel_renewal(std::size_t index) noexcept {if(index<capabilities_.size())renewals_[index]={};}
 private:
     Owner owner_{};
     // Registered capabilities have static lifetime. Dynamic definitions must
     // retain their owning revision lease before using this service.
     std::span<const Capability> capabilities_{};
     std::array<std::uint8_t,32> targets_{};
+    std::array<std::uint32_t,32> generations_{};
+    std::array<Renewal,32> renewals_{};
     std::array<Observation,32> observations_{};
     std::uint64_t revision_{},lastRequest_{},boot_{};
 };

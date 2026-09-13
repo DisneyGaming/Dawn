@@ -23,6 +23,54 @@ inline constexpr Lens kLenses[]{
 };
 inline constexpr std::size_t lens_index(coo::Asset a) noexcept {for(std::size_t i=0;i<std::size(kLenses);++i) if(kLenses[i].source==a || kLenses[i].device==a) return i;return std::size(kLenses);}
 inline constexpr coo::script::Capability kCapabilities[]{
+    {"ending.safety_platform_center_device.on","ending",{coo::Operation::device,{0xB9395B1BU,0x80F4745FU,23,0},1U,coo::Wait::requested}},
+    {"ending.safety_platform_center_device.off","ending",{coo::Operation::device,{0xB9395B1BU,0x80F4745FU,23,0},0U,coo::Wait::requested}},
+    {"ending.safety_platform_entry_device.on","ending",{coo::Operation::device,{0xB9395B1BU,0x80F47462U,23,1},1U,coo::Wait::requested}},
+    {"ending.safety_platform_entry_device.off","ending",{coo::Operation::device,{0xB9395B1BU,0x80F47462U,23,1},0U,coo::Wait::requested}},
+    {"ending.machine_step_01_left_device.on","ending",{coo::Operation::device,{0xB9395B1BU,0x80F47465U,23,2},1U,coo::Wait::requested}},
+    {"ending.machine_step_01_left_device.off","ending",{coo::Operation::device,{0xB9395B1BU,0x80F47465U,23,2},0U,coo::Wait::requested}},
+    {"ending.machine_step_01_right_device.on","ending",{coo::Operation::device,{0xB9395B1BU,0x80F47468U,23,3},1U,coo::Wait::requested}},
+    {"ending.machine_step_01_right_device.off","ending",{coo::Operation::device,{0xB9395B1BU,0x80F47468U,23,3},0U,coo::Wait::requested}},
+    {"ending.machine_step_02_left_device.on","ending",{coo::Operation::device,{0xB9395B1BU,0x80F4746BU,23,4},1U,coo::Wait::requested}},
+    {"ending.machine_step_02_left_device.off","ending",{coo::Operation::device,{0xB9395B1BU,0x80F4746BU,23,4},0U,coo::Wait::requested}},
+    {"ending.machine_step_02_right_device.on","ending",{coo::Operation::device,{0xB9395B1BU,0x80F4746EU,23,5},1U,coo::Wait::requested}},
+    {"ending.machine_step_02_right_device.off","ending",{coo::Operation::device,{0xB9395B1BU,0x80F4746EU,23,5},0U,coo::Wait::requested}},
+    {"ending.machine_step_03_left_device.on","ending",{coo::Operation::device,{0xB9395B1BU,0x80F47471U,23,6},1U,coo::Wait::requested}},
+    {"ending.machine_step_03_left_device.off","ending",{coo::Operation::device,{0xB9395B1BU,0x80F47471U,23,6},0U,coo::Wait::requested}},
+    {"ending.machine_step_03_right_device.on","ending",{coo::Operation::device,{0xB9395B1BU,0x80F47474U,23,7},1U,coo::Wait::requested}},
+    {"ending.machine_step_03_right_device.off","ending",{coo::Operation::device,{0xB9395B1BU,0x80F47474U,23,7},0U,coo::Wait::requested}},
+    {"ending.machine_step_04_device.on","ending",{coo::Operation::device,{0xB9395B1BU,0x80F47477U,23,8},1U,coo::Wait::requested}},
+    {"ending.machine_step_04_device.off","ending",{coo::Operation::device,{0xB9395B1BU,0x80F47477U,23,8},0U,coo::Wait::requested}},
+    {"ending.mancannon_push_object.on","ending",{coo::Operation::device,{0xB9395B1BU,0x80F4747AU,4,9},1U,coo::Wait::requested}},
+    {"ending.mancannon_push_object.off","ending",{coo::Operation::device,{0xB9395B1BU,0x80F4747AU,4,9},0U,coo::Wait::requested}},
+    {"ending.ghost_interact_sensor.on","ending",{coo::Operation::device,{0xC80A735BU,0x80F4748FU,23,1},1U,coo::Wait::requested}},
+    {"ending.ghost_interact_sensor.off","ending",{coo::Operation::device,{0xC80A735BU,0x80F4748FU,23,1},0U,coo::Wait::requested}},
+    {"ending.vex_probability_tree_object.on","ending",{coo::Operation::device,{0xC80A735BU,0x80F47492U,4,2},1U,coo::Wait::requested}},
+    {"ending.vex_probability_tree_object.off","ending",{coo::Operation::device,{0xC80A735BU,0x80F47492U,4,2},0U,coo::Wait::requested}},
+    {"ending.ghost_mounted_object.on","ending",{coo::Operation::device,{0xC80A735BU,0x80F47495U,4,3},1U,coo::Wait::requested}},
+    {"ending.ghost_mounted_object.off","ending",{coo::Operation::device,{0xC80A735BU,0x80F47495U,4,3},0U,coo::Wait::requested}},
+    {"ending.sagira_fx_prop.on","ending",{coo::Operation::device,{0xC80A735BU,0x80F47498U,4,4},1U,coo::Wait::requested}},
+    {"ending.sagira_fx_prop.off","ending",{coo::Operation::device,{0xC80A735BU,0x80F47498U,4,4},0U,coo::Wait::requested}},
+    {"ending.osiris_echo_scene.start","ending",{coo::Operation::scene,{0xC80A735BU,0x80F4749BU,43,5},1U,coo::Wait::requested}},
+    {"ending.osiris_echo_scene.finished","ending",{coo::Operation::observation,{0xC80A735BU,0x80F4749BU,43,5},2U,coo::Wait::observed}},
+    {"ending.sagira_fx_prop_scene.start","ending",{coo::Operation::scene,{0xC80A735BU,0x80F4749EU,43,6},1U,coo::Wait::requested}},
+    {"ending.sagira_fx_prop_scene.finished","ending",{coo::Operation::observation,{0xC80A735BU,0x80F4749EU,43,6},2U,coo::Wait::observed}},
+    {"ending.vex_probability_tree_device.on","ending",{coo::Operation::device,{0xC80A735BU,0x80F474AEU,23,11},1U,coo::Wait::requested}},
+    {"ending.vex_probability_tree_device.off","ending",{coo::Operation::device,{0xC80A735BU,0x80F474AEU,23,11},0U,coo::Wait::requested}},
+    {"ending.approach","ending",{coo::Operation::observation,{0xC80A735BU,0x80F474B7U,31,14},1U,coo::Wait::observed}},
+    {"ending.osiris_echo_scene.scan","ending",{coo::Operation::mechanic,{0xC80A735BU,0x80F4749BU,43,5},0xDF677EBCU,coo::Wait::requested}},
+    {"ending.panoptes.appeared","ending",{coo::Operation::observation,{0xC80A735BU,0x80F4749BU,43,5},0x325934D5U,coo::Wait::observed}},
+    {"ending.tree.cue","ending",{coo::Operation::observation,kModule,83U,coo::Wait::observed}},
+    {"ending.wipe","*",{coo::Operation::mechanic,kModule,84U,coo::Wait::requested}},
+    {"ending.retire","*",{coo::Operation::mechanic,kModule,85U,coo::Wait::requested}},
+    {"ending.wipe.finished","*",{coo::Operation::observation,kModule,87U,coo::Wait::observed}},
+    {"ending.sagira.ready","*",{coo::Operation::observation,kModule,88U,coo::Wait::observed}},
+    {"ending.movie.finished","*",{coo::Operation::observation,kModule,86U,coo::Wait::observed}},
+    {"scan.arm","ending",{coo::Operation::mechanic,kModule,80U,coo::Wait::requested}},
+    {"scan.started","ending",{coo::Operation::observation,kModule,81U,coo::Wait::observed}},
+    {"scan.complete","ending",{coo::Operation::observation,kModule,82U,coo::Wait::observed}},
+    {"objective.locate","ending",{coo::Operation::objective,kObjectiveAsset,0x3E2FBC5AU,coo::Wait::requested}},
+
     {"arena.cover.start","*",{coo::Operation::mechanic,kModule,70U,coo::Wait::requested}},
     {"arena.cover.stop","*",{coo::Operation::mechanic,kModule,71U,coo::Wait::requested}},
     {"checkpoint.past","*",{coo::Operation::mechanic,kModule,60U,coo::Wait::requested}},
@@ -55,6 +103,7 @@ inline constexpr coo::script::Capability kCapabilities[]{
     {"dialogue.0.finished","*",{coo::Operation::observation,kDialogueAsset,0U,coo::Wait::observed}},
     {"dialogue.1","*",{coo::Operation::dialogue,kDialogueAsset,1U,coo::Wait::requested}},
     {"dialogue.1.finished","*",{coo::Operation::observation,kDialogueAsset,1U,coo::Wait::observed}},
+    {"dialogue.2","*",{coo::Operation::dialogue,kDialogueAsset,2U,coo::Wait::requested}},
     {"dialogue.3","*",{coo::Operation::dialogue,kDialogueAsset,3U,coo::Wait::requested}},
     {"dialogue.3.finished","*",{coo::Operation::observation,kDialogueAsset,3U,coo::Wait::observed}},
     {"dialogue.4","*",{coo::Operation::dialogue,kDialogueAsset,4U,coo::Wait::requested}},
@@ -1285,7 +1334,7 @@ inline constexpr coo::script::Capability kCapabilities[]{
 };
 inline constexpr coo::script::ModuleCapability kModules[]{{"mission",{kModule,1}}};
 inline constexpr coo::script::FactCapability kFacts[]{{"mission.checked",0}};
-inline constexpr std::uint32_t kObjectives[]{0x4E11E907U,0xF150883CU,0x0864173FU,0x2D67AB51U,0x2A7ABBFBU,0x6D15E881U,0xE6933775U,0x921AE90FU,0x82271EEAU,0x304AC854U,0x665C1E1CU};
+inline constexpr std::uint32_t kObjectives[]{0x3E2FBC5AU,0x4E11E907U,0xF150883CU,0x0864173FU,0x2D67AB51U,0x2A7ABBFBU,0x6D15E881U,0xE6933775U,0x921AE90FU,0x82271EEAU,0x304AC854U,0x665C1E1CU};
 // Native marker targets, addressable by name from strike_bond.lua's presentation{markers=...}.
 //
 // Garden published no markers at all: Controller::publish called objectives_.set(event) with no
@@ -1299,6 +1348,7 @@ inline constexpr std::uint32_t kObjectives[]{0x4E11E907U,0xF150883CU,0x0864173FU
 // unused slot must be the sentinel and NOT zero.
 inline constexpr std::array<std::uint32_t,4> kAbsentLocator{0x811C9DC5U,0x811C9DC5U,0x811C9DC5U,0x811C9DC5U};
 inline constexpr coo::script::MarkerCapability kMarkers[]{
+    {"source_algorithm",{{0x92E280A2U,0x80F474BEU,47,0},kAbsentLocator}},
     {"tunnel_portal",      {{0x42B697DBU,0xFFFFFFFFU,47,7},  kAbsentLocator}},
     {"forest_gateway",     {{0x45B69C3CU,0xFFFFFFFFU,47,2},  kAbsentLocator}},
     {"forest_exit",        {{0x0CEDD4ADU,0xFFFFFFFFU,47,6},  kAbsentLocator}},

@@ -222,8 +222,8 @@ constexpr std::size_t kSpawnKeyCount = 32;
     if (scenarioOrdinal && *scenarioOrdinal > kMaximumGrantBubble) { return false; }
     const auto ordinal=restrictionOrdinal?restrictionOrdinal:scenarioOrdinal.value_or(0U);
     // Shared terminal publication: native mission-complete phase 6 / success 1.
-    const bool completed=snapshot.missionCompletion.valid();
-    const auto lifetime=completed?std::uint32_t{snapshot.missionCompletion.state}:std::uint32_t{snapshot.lifetime};
+    const bool completed=!snapshot.nightfallFailed && snapshot.missionCompletion.valid();
+    const auto lifetime=snapshot.nightfallFailed?8U:completed?std::uint32_t{snapshot.missionCompletion.state}:std::uint32_t{snapshot.lifetime};
     bool encoded = writer.write(lifetime + 1, 4) && writer.write(completed?2U:1U, 3)
                    && writer.write(0, kPresenceWidth) && writer.write(kSignedZero, 32)
                    && writer.write(0, 32) && writer.write(kSignedZero+ordinal, 32)

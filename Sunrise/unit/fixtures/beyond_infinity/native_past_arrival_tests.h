@@ -26,7 +26,7 @@ template<class Check> void run(Check check,const sunrise::state::activity::coo::
         }
         check(false,"native Past replay volume has an interior point");
     };
-    enter(views.observationStart->asset);std::uint64_t now=1000;
+    if(views.observationStart) { enter(views.observationStart->asset); }std::uint64_t now=1000;
     controller.update(run,now,true);
     // A previous visit cannot satisfy the newly active current-occupancy wait.
     controller.position(run,{740.F,711.F,7.7F});controller.position(run,{0,0,0});

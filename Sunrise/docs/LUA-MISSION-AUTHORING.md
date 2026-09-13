@@ -16,6 +16,12 @@ These binding files are compiled C++ manifests, not another mission scripting la
 
 ## Loading
 
+Opening objectives and briefing requests start on the first confirmed mission-arrival update, with no extra timer or player-position prerequisite. Keep the runtime's authenticated run, seed-ready and world-arrived checks. A location gate belongs on the encounter, interaction or later story beat that actually requires it. Shipped opening graphs omit `observation_start`; optional custom observation latches remain supported.
+
+Gateway requests the shelf and final-platform initial populations when both first-platform cohorts clear, and requests both mainland defense populations when the final platform clears. Reinforcements retain their authored trigger/death conditions. Deadly Trial requests lower-room Marauders on the final tower death, independently of tower dialogue and the player's drop; revival still requires both populations dead and the real interaction.
+
+Deadly Trial also retains required unsubmitted dialogue across dispatch timeouts with the same generation. At native roster decode, its presentation binding repair reconnects the existing dialogue/objective records if public-activity retirement cleared their associations. It validates the current activity, definitions, self handles, schemas and allocated salted records before writing associations; native dispatch and packet application still own acknowledgement and presentation bodies.
+
 The DLL loads the five mission `.lua` files relative to its own directory. Missing or invalid scripts fail selection. Logs record `format=lua`, the path, and a source fingerprint. Edits apply in the next game process; there is no live reload.
 
 The mission JSON loader and shipped mission JSON files are removed. Lua produces a neutral owned definition tree directly, without serializing JSON. Deploy the matching DLL and scripts together. Historical rollback archives retain older scripts for their matching DLLs.

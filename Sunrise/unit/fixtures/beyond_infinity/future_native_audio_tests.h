@@ -98,7 +98,7 @@ template<class Check> void run(Check check,const sunrise::state::activity::coo::
         }
         check(false,"native Future replay volume has an interior point");
     };
-    enter(views.observationStart->asset);std::uint64_t now=1000;
+    if(views.observationStart) { enter(views.observationStart->asset); }std::uint64_t now=1000;
     controller.update(run,now,true);
     const auto corridor=spec("escape.mercury_m_vod_future_060_filter.occupied").asset;
     enter(corridor);const auto corridorPoint=lastPosition;

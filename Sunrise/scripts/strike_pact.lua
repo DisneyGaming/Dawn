@@ -11,7 +11,6 @@ local composition = graph("composition", "Tree of Probabilities", {
 
 local forestDefenseReached = condition("forest.defense.reached",
     any_of("forest.load_post", "forest.portal.seen", "forest.portal.reached"))
-local openingArrived = condition("opening.arrived", any_of("landing.entered", "gate.entered"))
 local openingDeparted = condition("opening.departed", any_of("tunnel.entered", "region.forest"))
 local forestExitReached = condition("forest.exit.reached",
     any_of("forest.portal.seen", "forest.portal.reached", "region.chase"))
@@ -21,9 +20,8 @@ local sparrowReached = condition("chase.sparrow.reached", any_of("chase.sparrow"
 -- The Lighthouse. Approach the gateway, clear the local defense, take the portal.
 local opening = graph("opening", "Lighthouse gateway", {
     step("arrival", parallel("objective.approach", "shield.raise", "opening.stage1")),
-    step("landing", "opening.arrived", {after={"arrival"}}),
     -- Ikora's briefing and the vanguard formation.
-    step("briefing", parallel("dialogue.intro", "opening.stage2"), {after={"landing"}}),
+    step("briefing", parallel("dialogue.intro", "opening.stage2"), {after={"arrival"}}),
     step("gate", "gate.entered", {after={"briefing"}}),
     -- The Red Legion survivors line accompanies the gateway defense.
     step("defense", parallel("dialogue.gate", "opening.stage3"), {after={"gate"}}),
@@ -115,7 +113,7 @@ return mission{
     roles = {mission="composition", opening="opening", ending="boss"},
     entry = "composition", modules = {"opening"}, observations = {"opening.checked"},
     phases = {"opening", "forest", "chase", "boss"},
-    conditions = {forestDefenseReached, openingArrived, openingDeparted, forestExitReached,
+    conditions = {forestDefenseReached, openingDeparted, forestExitReached,
         forestDeparted, sparrowReached},
     presentation = presentation{binding_tables={
         route={traversal=array{}, objectives=array{}, dialogue={

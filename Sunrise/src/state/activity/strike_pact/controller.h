@@ -23,6 +23,18 @@ class Controller final : private coo::Services, private coo::MissionPorts<Frame>
 public:
     void generator(std::uint64_t run,std::uint32_t registry,std::uint16_t slot,
                    std::uint32_t seed,std::uint32_t completed) noexcept;
+    coo::CampaignScanRequest scan_request() const noexcept {
+        return frame_.campaign && frame_.enabled && !frame_.finished
+            ?coo::CampaignScanRequest{lifecycle_.owner(),{0x547F6321U,0x80F474E4U,65,0},frame_.spawnGeneration+1U,frame_.scan}
+            :coo::CampaignScanRequest{};
+    }
+    bool scan_observation(coo::Generation owner,std::uint32_t handle,std::uint32_t serial,coo::ScanPlayback playback,bool participant) noexcept {
+        const auto request=scan_request();
+        if(!request.enabled() || request.owner!=owner || !frame_.scan.observe(request.generation,handle,serial,playback,participant)) return false;
+        ++frame_.revision;return true;
+    }
+    BossRequest boss_request() const noexcept;
+    bool health(const EnemyReceipt&,float) noexcept;
     void reset() noexcept;
     [[nodiscard]] bool select(const coo::script::Views& views,std::uint64_t run) noexcept;
     void position(std::uint64_t run,Point point) noexcept;
@@ -81,6 +93,7 @@ private:
     struct SceneOwner final { coo::Token token{};bool valid() const noexcept { return token.run!=0 && token.incarnation!=0; } };
     coo::SceneService<SceneCommand,SceneOwner,1> bossScene_;
     coo::CombatantState bossActor_{};
+    EnemyReceipt bossEnemy_{};
     bool bossSeen_{},bossRemoved_{},bossEnded_{};
     std::uint32_t bossAlive_{};
     std::uint64_t laserDeadline_{};

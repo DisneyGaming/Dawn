@@ -36,7 +36,7 @@ inline constexpr std::uint32_t kMechanicShipArrival=42,kMechanicShipDelivery=43,
 inline constexpr coo::Asset kBossMechanic{kBoss,kBossTag,2,kBossActor};
 inline constexpr std::uint32_t kBossBegin=46,kBossRoom1Start=47,kBossRoom2Start=48,
     kBossRoom3Start=49,kBossRetreat2=50,kBossRetreat3=51,kBossDeath=52,
-    kBossRoom1Exit=53,kBossRoom2Exit=54;
+    kBossRoom1Exit=53,kBossRoom2Exit=54,kBossMinotaurSpawned=55,kBossMinotaurDead=56;
 inline constexpr std::uint32_t kMechanicCheckpointBase=64;   // + the region's own index
 
 /** One checkpoint the mission can select, as a mechanic argument the controller decodes. */
@@ -45,6 +45,12 @@ inline constexpr std::uint32_t kMechanicCheckpointBase=64;   // + the region's o
 }
 
 inline constexpr coo::script::Capability kCapabilities[]{
+    {"scan.arm","boss",{coo::Operation::mechanic,kMissionAsset,80U,coo::Wait::requested}},
+    {"scan.started","boss",{coo::Operation::observation,kMissionAsset,81U,coo::Wait::observed}},
+    {"scan.complete","boss",{coo::Operation::observation,kMissionAsset,82U,coo::Wait::observed}},
+    {"dialogue.scan","boss",{coo::Operation::dialogue,kDialogueAsset,29U,coo::Wait::requested}},
+    {"dialogue.scan.finished","boss",{coo::Operation::observation,kDialogueAsset,29U,coo::Wait::observed}},
+
     {"forest.first_complete","*",{coo::Operation::observation,{kForest,kForestTag,37,kMapGenerator},0U,coo::Wait::observed}},
     {"dialogue.forest_first","*",{coo::Operation::dialogue,kDialogueAsset,6U,coo::Wait::requested}},
     {"boss.reveal","*",{coo::Operation::mechanic,kBossMechanic,kBossBegin,coo::Wait::completed}},
@@ -57,6 +63,8 @@ inline constexpr coo::script::Capability kCapabilities[]{
     {"boss.retreat3","*",{coo::Operation::observation,kBossMechanic,kBossRetreat3,coo::Wait::observed}},
     {"boss.exit1","*",{coo::Operation::observation,kBossMechanic,kBossRoom1Exit,coo::Wait::observed}},
     {"boss.exit2","*",{coo::Operation::observation,kBossMechanic,kBossRoom2Exit,coo::Wait::observed}},
+    {"boss.minotaur.spawned","*",{coo::Operation::observation,kBossMechanic,kBossMinotaurSpawned,coo::Wait::observed}},
+    {"boss.minotaur.dead","*",{coo::Operation::observation,kBossMechanic,kBossMinotaurDead,coo::Wait::observed}},
     {"boss.death","*",{coo::Operation::observation,kBossMechanic,kBossDeath,coo::Wait::observed}},
     {"opening.module","composition",{coo::Operation::mechanic,kModule,kMechanicModule,coo::Wait::requested}},
     {"opening.checked","composition",{coo::Operation::observation,{0,0,0,0},0U,coo::Wait::observed}},
@@ -99,6 +107,7 @@ inline constexpr coo::script::Capability kCapabilities[]{
     {"forest.cleared","*",{coo::Operation::population,kModule,forest_cohort(1),coo::Wait::completed}},
     {"forest.load_post","*",{coo::Operation::observation,{kForest,kForestTag,60,45},0U,coo::Wait::observed}},
     {"forest.entered","*",{coo::Operation::observation,{kForest,kForestTag,60,46},0U,coo::Wait::observed}},
+    {"forest.started","*",{coo::Operation::observation,{kForestArea,kForestAreaTag,60,7},0U,coo::Wait::observed}},
     {"forest.portal.seen","*",{coo::Operation::observation,{kForestArea,kForestAreaTag,60,3},0U,coo::Wait::observed}},
     {"forest.portal.reached","*",{coo::Operation::observation,{kForestArea,kForestAreaTag,60,6},0U,coo::Wait::observed}},
     {"forest.leaving","*",{coo::Operation::observation,{kForestExit,kForestExitTag,60,2},0U,coo::Wait::observed}},
@@ -170,6 +179,7 @@ inline constexpr coo::script::FactCapability kFacts[]{{"opening.checked",0}};
 // The four unused locator hashes must carry the packaged absent sentinel: a zero reads as a
 // supplied locator and produces false origin candidates in the native marker selector.
 inline constexpr coo::script::MarkerCapability kMarkers[]{
+    {"map_terminal",{{0x89CAE96BU,0x80F474F2U,47,0},presentation::kAbsentLocator}},
     {"forest_portal",{kForestPortalPoint,{0x811C9DC5U,0x811C9DC5U,0x811C9DC5U,0x811C9DC5U}}},
     {"forest_barrier",presentation::marker(presentation::kNavPoints[1])},
     {"forest_exit",presentation::marker(presentation::kNavPoints[2])},
@@ -186,8 +196,16 @@ inline constexpr coo::DialogueBinding kRouteDialogue[]{
     {{kChaseTriggers,kChaseTriggersTag,60,11},13,0},
     {{kBossRoomPoints,kBossRoomPointsTag,60,3},19,0},
 };
+// Campaign traversal uses the same native monitors with its own authored cues.
+inline constexpr coo::DialogueBinding kCampaignRouteDialogue[]{
+    {{kLighthouse,kLighthouseTag,60,5},5,0},
+    {{kForestArea,kForestAreaTag,60,7},4,0},
+    {{kChaseEntry,kChaseEntryTag,60,2},10,0},
+    {{kBossApproach,kBossApproachTag,60,4},19,0},
+};
 inline constexpr coo::script::PresentationTable kPresentationTables[]{
     {"route",{coo::Schema::otherMissions,{},{},kRouteDialogue}},
+    {"campaign_route",{coo::Schema::otherMissions,{},{},kCampaignRouteDialogue}},
 };
 inline constexpr coo::script::Profile kNativeBindings{"strike_pact.v1","otherMissions",
     coo::Schema::otherMissions,kCapabilities,kModules,kFacts,presentation::kDialogue,presentation::kObjectives,{},kPresentationTables,kMarkers};

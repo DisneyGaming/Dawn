@@ -35,6 +35,8 @@
 #include "beyond_infinity_lens_damage.h"
 #include "deep_storage_lens_damage.h"
 #include "hijacked_boss_damage.h"
+#include "strike_pact_boss_damage.h"
+#include "../../../state/activity/strike_pact/runtime.h"
 #include "strike_bond_boss_damage.h"
 #include "../../../state/activity/gateway/runtime.h"
 #include "../../../state/activity/deadly_trial/runtime.h"
@@ -932,13 +934,16 @@ void quiesce_omega_arc_charge_receipts() noexcept { g_gate.quiesce(); }
 bool uninstall_omega_arc_charge_receipts() noexcept {
     quiesce_omega_arc_charge_receipts();
     if (!g_handles[0].attached) { return true; }
-    const std::array<hooking::detour::ProtectedCodeEntry, 36> protectedCode{{
+    const std::array<hooking::detour::ProtectedCodeEntry, 41> protectedCode{{
         {reinterpret_cast<void*>(&gateway_damage_hook)}, {reinterpret_cast<void*>(&gateway_damage_gate_hook)},
         {reinterpret_cast<void*>(&gateway_damage_summary_hook)}, {reinterpret_cast<void*>(&gateway_damage_receipt)},
         {reinterpret_cast<void*>(&gateway_damage_blocked)},
         {reinterpret_cast<void*>(&hijacked_damage::current)}, {reinterpret_cast<void*>(&hijacked_damage::query)},
         {reinterpret_cast<void*>(&hijacked_damage::immune)}, {reinterpret_cast<void*>(&hijacked_damage::before)},
         {reinterpret_cast<void*>(&hijacked_damage::after)},
+        {reinterpret_cast<void*>(&strike_pact_damage::current)}, {reinterpret_cast<void*>(&strike_pact_damage::query)},
+        {reinterpret_cast<void*>(&strike_pact_damage::immune)}, {reinterpret_cast<void*>(&strike_pact_damage::before)},
+        {reinterpret_cast<void*>(&strike_pact_damage::after)},
         {reinterpret_cast<void*>(&gateway_sense_hook)}, {reinterpret_cast<void*>(&observe_gateway_module)},
         {reinterpret_cast<void*>(&observe_beyond_object)},
         {reinterpret_cast<void*>(&beyond_plate_tick_hook)}, {reinterpret_cast<void*>(&drive_plate)},

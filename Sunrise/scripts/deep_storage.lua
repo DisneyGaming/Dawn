@@ -6,10 +6,9 @@ local function request(name) return "pyramidion.sq_"..name..".request" end
 local function dead(name) return "pyramidion.sq_"..name..".cleared" end
 local composition=graph("composition","Deep Storage",{step("mission",parallel("mission.module","mission.checked"))})
 local opening=graph("opening","Enter the Pyramidion",{
-    step("arrival","entry_route.tv_io_m_whisk_therupture_010_vo"),
-    step("briefing",parallel("objective.0","dialogue.0.queued"),{after={"arrival"}}),
+    step("briefing",parallel("objective.0","dialogue.0.queued")),
     step("entry_devices",parallel("entry.d_pyramidion_vault_door.off","entry.d_dustbowl_whisk_conflux.off","descent_exit.sec2_energy_wall_device.off",
-        "entry.pf_sync_plate.o_altar.on","entry.o_dustbowl_whisk_block01.on","entry.o_dustbowl_whisk_block02.on"),{after={"arrival"}}),
+        "entry.pf_sync_plate.o_altar.on","entry.o_dustbowl_whisk_block01.on","entry.o_dustbowl_whisk_block02.on")),
     step("arm_plate","entry.plate.arm",{after={"entry_devices"}}),
     step("plate_charged","entry.plate.charged",{after={"arm_plate"}}),
     step("conflux",parallel("entry.o_dustbowl_whisk_conflux.on","entry.d_dustbowl_whisk_conflux.on","objective.1"),{after={"plate_charged"}}),
@@ -139,6 +138,5 @@ return mission{
     id="deep_storage",graphs={composition,opening,descent,warpgate,corridor,cyclops,map,ending},
     roles={mission="composition"},entry="composition",modules={"mission"},observations={"mission.checked"},
     phases={"opening","descent","warpgate","corridor","cyclops","map_room","ending"},
-    observation_start="entry_route.tv_io_m_whisk_therupture_010_vo",
     conditions={gateHydra,gateMiddle,gateArena,gateApproach,cyclopsFront,cyclopsMiddle,cyclopsApproach,firstPlate},
 }

@@ -56,7 +56,8 @@ template<class Storage,class FindGroup>
                         FindGroup find,Report& report) noexcept {
     report={};
     if(layout.nameLength>layout.name.size()
-        || std::string_view(layout.name.data(),layout.nameLength)!="strike_pact"
+        || (std::string_view(layout.name.data(),layout.nameLength)!="strike_pact"
+            && std::string_view(layout.name.data(),layout.nameLength)!="mission_pact")
         || layout.bubbleCount>layouts::kBubbleCapacity
         || layout.rosterGroupCount>layout.rosterGroups.size()
         || layout.bubbleGroupCount>layout.bubbleGroups.size()) { return false; }
@@ -113,7 +114,11 @@ template<class Storage,class FindGroup>
         }
     }
     // Validate the mission's known identities without removing the other authored objects.
-    for(const auto& expected:kGroups) {
+    for(auto expected:kGroups) {
+        if(std::string_view(layout.name.data(),layout.nameLength)=="mission_pact") {
+            if(expected.key==native::kRoot) { expected.key=0x0F0A7E94U;expected.tag=0x80F4750AU; }
+            if(expected.key==0xF29221F5U) { expected.key=0x4786C0E0U;expected.tag=0x80FEB3DCU; }
+        }
         bool found=false;
         for(std::size_t i=0;i<count;++i) {
             if(!matches(storage.rosterGroups[i],expected)) { continue; }

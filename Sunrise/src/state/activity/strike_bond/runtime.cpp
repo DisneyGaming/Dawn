@@ -2,6 +2,7 @@
 #include "runtime.h"
 #include "controller.h"
 #include "../runtime.h"
+#include "../nightfall/rules.h"
 #include "../../../core/logging/log.h"
 #include <cstdio>
 #include <cmath>
@@ -11,10 +12,13 @@ namespace sunrise::state::activity::strike_bond {
 namespace {
 std::mutex mutex;
 Controller controller;
+EndingTransit endingTransit;
+ActivityInstanceKey endingActivity{};
+std::uint64_t endingMember{},endingPublication{};
 struct PlatformObservation {EnemyReceipt enemy{};coo::ObjectReceipt platform{};PlatformMotion motion{};bool pending{};};
 PlatformObservation platformObservation{};
 coo::ReadinessSchedule readinessSchedule;
-std::unique_ptr<coo::script::MissionDocument> document;
+std::array<std::unique_ptr<coo::script::MissionDocument>,2> documents;
 std::uint64_t selectedRun{},nextPublication{};
 std::bitset<std::size(kVolumes)> loggedVolumes{};bool loggedFault{};coo::StallDiagnostics stalled;
 std::bitset<std::size(kLenses)> refusedLenses{};
@@ -23,9 +27,10 @@ std::uint32_t lastActive{UINT32_MAX},lastComplete{UINT32_MAX};
 std::uint8_t lastSection{UINT8_MAX},lastBossStage{UINT8_MAX};bool lastBossFighting{};
 bool current() noexcept { return selectedRun && selectedRun==mission_run_generation() && mission_seed_armed() && world_phase()==WorldPhase::arrived; }
 void log(std::string_view text) noexcept { core::log::write(core::log::Channel::server,core::log::Level::info,text); }
-bool load() noexcept {
-    static std::once_flag once;
-    std::call_once(once,[] {
+bool load(bool campaign) noexcept {
+    auto& document=documents[campaign?1:0];
+    static std::array<std::once_flag,2> once;
+    std::call_once(once[campaign?1:0],[&] {
         std::string error;
         try {
             HMODULE module{};std::array<wchar_t,32768> path{};
@@ -33,22 +38,23 @@ bool load() noexcept {
                 reinterpret_cast<LPCWSTR>(&load),&module)!=FALSE;
             const auto size=found?GetModuleFileNameW(module,path.data(),static_cast<DWORD>(path.size())):0;
             if(!size || size>=path.size()) { error="cannot resolve DLL-relative script path"; }
-            else { document=coo::script::MissionDocument::read(std::filesystem::path(path.data()).parent_path()/L"Sunrise"/L"scripts"/L"strike_bond.lua",kProfile,error); }
+            else { document=coo::script::MissionDocument::read(std::filesystem::path(path.data()).parent_path()/L"Sunrise"/L"scripts"/(campaign?L"mission_bond.lua":L"strike_bond.lua"),kProfile,error); }
             if(document && !valid_document(document->views())) { document.reset();error="Garden World native profile mismatch"; }
         } catch(const std::exception& e) { error=e.what(); }
         std::array<char,768> line{};
-        if(document) { std::snprintf(line.data(),line.size(),"ev=coo_script mission=strike_bond result=loaded format=lua fnv1a64=%016llX path=Sunrise/scripts/strike_bond.lua reload=next_process",static_cast<unsigned long long>(document->fingerprint())); }
-        else { std::snprintf(line.data(),line.size(),"ev=coo_script mission=strike_bond result=failed reason=\"%.*s\"",static_cast<int>((std::min)(error.size(),std::size_t{500})),error.data()); }
+        if(document) { std::snprintf(line.data(),line.size(),"ev=coo_script mission=%s result=loaded format=lua fnv1a64=%016llX path=Sunrise/scripts/%s.lua reload=next_process",campaign?"mission_bond":"strike_bond",static_cast<unsigned long long>(document->fingerprint()),campaign?"mission_bond":"strike_bond"); }
+        else { std::snprintf(line.data(),line.size(),"ev=coo_script mission=%s result=failed reason=\"%.*s\"",campaign?"mission_bond":"strike_bond",static_cast<int>((std::min)(error.size(),std::size_t{500})),error.data()); }
         log(line.data());
     });
     return document!=nullptr;
 }
 }
-bool prepare(std::uint64_t run,bool selected) noexcept {
+bool prepare(std::uint64_t run,bool selected,bool campaign) noexcept {
+    const auto& document=documents[campaign?1:0];
     const std::lock_guard lock(mutex);if(run!=mission_run_generation()) {return false;}
-    if(!selected) {controller.reset();platformObservation={};readinessSchedule.reset();selectedRun=nextPublication=0;stalled.reset();return false;}
-    if(!load() || !controller.select(document->views(),run)) {return false;}
-    if(selectedRun!=run) {platformObservation={};readinessSchedule.reset();loggedVolumes.reset();loggedFault=false;lastActive=lastComplete=UINT32_MAX;lastSection=lastBossStage=UINT8_MAX;lastBossFighting=false;stalled.reset();refusedLenses.reset();lastObjective=UINT32_MAX;lastMarker={};}
+    if(!selected) {endingTransit={};endingActivity={};endingMember=endingPublication=0;controller.reset();platformObservation={};readinessSchedule.reset();selectedRun=nextPublication=0;stalled.reset();return false;}
+    if(!load(campaign) || !controller.select(document->views(),run)) {return false;}
+    if(selectedRun!=run) {endingTransit={};endingActivity={};endingMember=endingPublication=0;platformObservation={};readinessSchedule.reset();loggedVolumes.reset();loggedFault=false;lastActive=lastComplete=UINT32_MAX;lastSection=lastBossStage=UINT8_MAX;lastBossFighting=false;stalled.reset();refusedLenses.reset();lastObjective=UINT32_MAX;lastMarker={};}
     selectedRun=run;return true;
 }
 namespace {
@@ -154,6 +160,52 @@ Frame snapshot(std::uint64_t run,std::uint64_t now,bool ready,int region) noexce
         }
     }return f;
 }
+bool claim_ending_animation(coo::Generation owner,EndingActor actor) noexcept {
+    const std::lock_guard lock(mutex);return current() && controller.claim_ending_animation(owner,actor);
+}
+void observe_ending_animation(coo::Generation owner,EndingActor actor,bool active,std::uint64_t now) noexcept {
+    const std::lock_guard lock(mutex);
+    if(current() && controller.ending_animation(owner,actor,active,now)) log_receipt("ending_wipe_active",owner.run,actor.entity);
+}
+void observe_ending_retirement(coo::Generation owner) noexcept {
+    const std::lock_guard lock(mutex);
+    if(current() && controller.ending_retirement(owner)) log_receipt("ending_native_cleanup",owner.run,owner.value);
+}
+void observe_ending_movie(coo::Generation owner,std::uint32_t self,std::uint32_t resource,std::uint32_t revision,bool active) noexcept {
+    const std::lock_guard lock(mutex);
+    if(current() && controller.ending_movie(owner,self,resource,revision,active))
+        log_receipt(active?"ending_movie_active":"ending_movie_ready_or_finished",owner.run,revision);
+}
+omega_ending_transit::Authority ending_transit(ActivityInstanceKey activity,std::uint64_t run,std::uint64_t member,
+    bool exact,omega_ending_transit::Observation native) noexcept {
+    const std::lock_guard lock(mutex);const auto& f=controller.frame();
+    if(!exact || !current() || selectedRun!=run || !activity || !f.campaign || !f.endingFlow.retired) return {};
+    if(endingActivity && (endingActivity!=activity || endingMember!=member)) return {};
+    const auto owner=controller.owner();
+    const auto result=endingTransit.project(owner,member,native);if(!result.publish)return {};
+    endingActivity=activity;endingMember=member;
+    if(result.arrived && !f.endingFlow.arrived) {controller.ending_arrival(owner);log_receipt("ending_native_arrival",run,kEndingRegion);}
+    return result;
+}
+bool ending_membership_due(std::uint64_t now) noexcept {
+    const std::lock_guard lock(mutex);const auto& f=controller.frame();
+    if(!current() || !f.campaign || !f.endingFlow.retire || now<endingPublication) return false;
+    endingPublication=now+500;return true;
+}
+void observe_ending_scene_cue(const EndingSpeechReceipt& receipt,bool closing) noexcept {
+    const std::lock_guard lock(mutex);
+    if(current() && controller.ending_scene_cue(receipt,closing))
+        log_receipt("ending_closing_cue",receipt.owner.run,receipt.generation);
+}
+void observe_ending_playback(coo::Generation owner,EndingActor actor,std::uint32_t biped,EndingAnimationPhase phase) noexcept {
+    const std::lock_guard lock(mutex);
+    if(current() && controller.ending_playback(owner,actor,biped,phase))
+        log_receipt(phase==EndingAnimationPhase::finished?"ending_wipe_finished":"ending_wipe_playing",owner.run,biped);
+}
+void observe_ending_speech(const EndingSpeechReceipt& receipt,std::uint8_t state) noexcept {const std::lock_guard lock(mutex);if(current()) static_cast<void>(controller.ending_speech(receipt,state));}
+bool sagira_delay(const EndingSpeechReceipt& receipt,bool fired) noexcept {
+    const std::lock_guard lock(mutex);return current() && controller.sagira_delay(receipt,fired);
+}
 Request request() noexcept {const std::lock_guard lock(mutex);return current()?Request{controller.owner(),controller.frame()}:Request{};}
 std::uint64_t native_run() noexcept {const std::lock_guard lock(mutex);return current()?selectedRun:0;}
 bool publication_due(std::uint64_t now) noexcept {const std::lock_guard lock(mutex);return current() && controller.frame().enabled && now>=nextPublication;}
@@ -175,7 +227,9 @@ void observe_position(float x,float y,float z) noexcept {
     }
 }
 void observe_submission(std::uint64_t run,std::uint32_t definition,std::int64_t offset,std::uint32_t bank,std::uint8_t row,std::uint32_t generation) noexcept {
-    if(definition!=kDialogueAsset.definition || offset!=0x1408 || bank!=kBank || row>=std::size(kDialogueRows)) {return;}const std::lock_guard lock(mutex);
+    if(offset!=0x1408 || bank!=kBank || row>=std::size(kDialogueRows)) return;
+    const std::lock_guard lock(mutex);
+    if(definition!=(controller.frame().campaign?0x80F474C6U:kDialogueAsset.definition)) return;
     if(current() && controller.submitted(run,bank,row,generation,GetTickCount64())) {log_receipt("dialogue_submitted",run,row);}
 }
 void observe_prepared(coo::Generation owner,coo::Asset a) noexcept {const std::lock_guard lock(mutex);if(current()) {static_cast<void>(controller.prepared(owner,a));}}
@@ -186,7 +240,13 @@ bool observe_admission(const EnemyReceipt& r) noexcept {
     const std::lock_guard lock(mutex);const bool ok=current() && controller.admitted(r);
     if(ok) {log_receipt("enemy_admitted",r.run,r.source);}return ok;
 }
-bool observe_death(const EnemyReceipt& r) noexcept {const std::lock_guard lock(mutex);const bool ok=current() && controller.died(r);if(ok) {log_receipt("enemy_died",r.run,r.source);}return ok;}
+bool observe_death(const EnemyReceipt& r) noexcept {
+    const std::lock_guard lock(mutex);
+    const bool boss = r == controller.boss_enemy();
+    const bool ok=current() && controller.died(r);
+    if(ok) {log_receipt("enemy_died",r.run,r.source);nightfall::enemy_defeated(r.run,false,boss);}
+    return ok;
+}
 EnemyReceipt boss_enemy() noexcept {const std::lock_guard lock(mutex);return current()?controller.boss_enemy():EnemyReceipt{};}
 BossRequest boss_request() noexcept {const std::lock_guard lock(mutex);return current()?BossRequest{controller.owner(),controller.boss_enemy(),controller.frame(),controller.boss_platform()}:BossRequest{};}
 EnemyReceipt guardian_enemy(std::uint32_t registry,std::uint16_t source) noexcept {
@@ -237,4 +297,10 @@ void observe_generator(std::uint64_t run,std::uint32_t key,std::uint16_t slot,st
 void observe_scene(std::uint64_t run,std::uint32_t key,std::uint16_t slot,const middleware::bap::activity_message::scene_sense::Output& r) noexcept {const std::lock_guard lock(mutex);if(current()) controller.scene(run,key,slot,r);}
 void observe_squad(std::uint64_t run,std::uint32_t key,std::uint16_t slot,const middleware::bap::activity_message::squad_sense::Output& r) noexcept {const std::lock_guard lock(mutex);if(current()) controller.squad(run,key,slot,r);}
 void observe_combatant(std::uint64_t run,std::uint32_t key,std::uint16_t slot,const middleware::bap::activity_message::combatant_sense::Output& r) noexcept {const std::lock_guard lock(mutex);if(current()) controller.combatant(run,key,slot,r);}
+coo::CampaignScanRequest scan_request() noexcept {
+    const std::lock_guard lock(mutex);return current()?controller.scan_request():coo::CampaignScanRequest{};
+}
+void observe_scan(coo::Generation owner,std::uint32_t handle,std::uint32_t serial,coo::ScanPlayback playback,bool participant) noexcept {
+    const std::lock_guard lock(mutex);if(current() && controller.scan_observation(owner,handle,serial,playback,participant)) log(controller.frame().scan.complete?"ev=campaign_scan mission=mission_bond stage=complete":"ev=campaign_scan mission=mission_bond stage=started");
+}
 }

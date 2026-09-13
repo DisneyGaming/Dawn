@@ -1,3 +1,5 @@
+#include "garden_ending_native.h"
+#include "../../../state/activity/strike_bond/ending_wipe.h"
 #include <Windows.h>
 
 #include <array>
@@ -1419,17 +1421,20 @@ __declspec(noinline) void observe_combat_graph(std::span<const std::byte> bytes,
     report_combat("combat_graph_receipt",outcome.token,static_cast<unsigned>(outcome.milestone));
 }
 
+#include "garden_ending_wipe_native.inl"
 __declspec(noinline) char __fastcall graph_update_hook(float dt,void* context,void* controller,
                                                        char* transitioned) noexcept {
     const hooking::CallGate::Scope call(g_gate);
     const auto result=hooking::await_original(g_updateGraph)(dt,context,controller,transitioned);
-    if(!call.accepts_side_effects() || (!g_waitingIntroIdle.load(std::memory_order_acquire)
+    if(!call.accepts_side_effects()) { return result; }
+    std::array<std::byte,0xB8> bytes{};
+    if(!copy(controller,bytes) || at<std::uint32_t>(bytes.data()+0x10)!=0x80F45178U) { return result; }
+    observe_garden_wipe(bytes,result);
+    if(!g_waitingIntroIdle.load(std::memory_order_acquire)
         && !g_waitingIntroFlight.load(std::memory_order_acquire)
         && !g_waitingIntroSummon.load(std::memory_order_acquire)
         && !g_waitingCrown.load(std::memory_order_acquire)
-        && !g_waitingCombat.load(std::memory_order_acquire))) { return result; }
-    std::array<std::byte,0xB8> bytes{};
-    if(!copy(controller,bytes) || at<std::uint32_t>(bytes.data()+0x10)!=0x80F45178U) { return result; }
+        && !g_waitingCombat.load(std::memory_order_acquire)) { return result; }
     observe_crown_graph(bytes);
     observe_combat_graph(bytes,result);
     if(!g_waitingIntroIdle.load(std::memory_order_acquire)
@@ -1674,6 +1679,14 @@ void finish_summon_lease(std::uint64_t run,std::uint32_t actor,std::uint32_t gen
  * retained and no native field, camera/HUD flag, or component authority bit is patched. */
 __declspec(noinline) void observe(void* instance,bool immediate) noexcept {
     if(!g_gate.accepting()) { return; }
+    std::array<std::byte,0x10> gardenPrefix{};
+    if(copy(instance,gardenPrefix) && identity(gardenPrefix.data(),state::activity::strike_bond::kEndingMovieSource,0x80804F07U,0x2e8)) {
+        omega_teardown_native::Source source{};source.tablesSlot=g_image+0x2439C70;
+        source.read=[](void*,std::uintptr_t address,std::span<std::byte> out) noexcept {return copy(reinterpret_cast<void*>(address),out);};
+        const auto lookup=g_lookup.load(std::memory_order_acquire);const std::uint32_t selector=state::activity::strike_bond::kEndingMovieSelector;
+        if(lookup) garden_ending_native::movie(source,reinterpret_cast<std::uintptr_t>(instance),reinterpret_cast<std::uintptr_t>(lookup(&selector)));
+        return;
+    }
     const auto navigation=p::navigation();
     if(!navigation.enabled) { return; }
     std::array<std::byte,0x10> prefix{};

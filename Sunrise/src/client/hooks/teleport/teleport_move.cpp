@@ -19,6 +19,7 @@
 #include "../../../state/runtime/runtime.h"
 #include "../../input/window_focus.h"
 #include "../../movement/movement_settings_store.h"
+#include "../../../state/activity/nightfall/rules.h"
 #include "../polled_input/runtime.h"
 #include "internal.h"
 #include "runtime.h"
@@ -324,6 +325,7 @@ void set_vertical_velocity(std::byte* body, float value) noexcept {
  * @return True when the body was found and its position was written.
  */
 [[nodiscard]] bool perform_move(std::byte* component) noexcept {
+    if (state::activity::nightfall::movement_blocked()) return false;
     std::byte* const body = body_of(component);
     if (body == nullptr) {
         report_skip("no_body");
@@ -344,6 +346,7 @@ void set_vertical_velocity(std::byte* body, float value) noexcept {
  * @return True when the body was found and its position was written.
  */
 [[nodiscard]] bool perform_hop(std::byte* component, std::uint32_t setHash) noexcept {
+    if (state::activity::nightfall::movement_blocked()) return false;
     std::byte* const body = body_of(component);
     if (body == nullptr) {
         report_skip("hop_no_body");
@@ -433,6 +436,7 @@ void clear_targets() noexcept {
 
 /** Publishes the camera forward vector for the physics tick that follows. */
 void capture_forward(std::uint32_t playerIndex) noexcept {
+    if (state::activity::nightfall::movement_blocked()) g_faceFrames.store(0,std::memory_order_release);
     if (playerIndex == kInvalidHandle || g_cameraSingleton == nullptr) {
         return;
     }
@@ -473,6 +477,14 @@ void capture_forward(std::uint32_t playerIndex) noexcept {
 void poll_request() noexcept {
     end_press();
     expire_request();
+    if (state::activity::nightfall::movement_blocked()) {
+        g_requested.store(false,std::memory_order_release);
+        g_absolutePending.store(false,std::memory_order_release);
+        g_hopSetHash.store(0,std::memory_order_release);
+        g_active.store(false,std::memory_order_relaxed);
+        g_keyDown.store(false,std::memory_order_relaxed);
+        return;
+    }
     const client::movement::Settings settings = client::movement::get();
     const bool usable = settings.enabled && settings.virtualKey != client::movement::kNoKey;
     g_active.store(usable, std::memory_order_relaxed);
@@ -497,6 +509,12 @@ void poll_request() noexcept {
 
 /** Moves the local player if a request is pending and this component owns them. */
 void apply_pending(void* component) noexcept {
+    if (state::activity::nightfall::movement_blocked()) {
+        g_requested.store(false,std::memory_order_release);
+        g_absolutePending.store(false,std::memory_order_release);
+        g_hopSetHash.store(0,std::memory_order_release);
+        return;
+    }
     const bool hopPending = g_absolutePending.load(std::memory_order_acquire)
                             || g_hopSetHash.load(std::memory_order_acquire) != 0;
     if ((!g_active.load(std::memory_order_relaxed) && !hopPending) || component == nullptr
@@ -529,6 +547,7 @@ void apply_pending(void* component) noexcept {
 
 /** Runs the move for a request no physics tick collected. */
 void force_pending() noexcept {
+    if (state::activity::nightfall::movement_blocked()) {g_requested.store(false,std::memory_order_release);return;}
     if (!g_requested.load(std::memory_order_acquire)
         || !g_forwardValid.load(std::memory_order_acquire)
         || g_requestAge.load(std::memory_order_relaxed) < kForceAfterFrames) {
@@ -613,11 +632,13 @@ bool write_velocity(void* component, const Vector& velocity) noexcept {
 
 /** Reports the camera forward vector published this frame. */
 void request_absolute_move(const Vector& target) noexcept {
+    if (state::activity::nightfall::movement_blocked()) return;
     g_absoluteTarget = target;
     g_absolutePending.store(true, std::memory_order_release);
 }
 
 void request_move_to_spawn_set(std::uint32_t setHash) noexcept {
+    if (state::activity::nightfall::movement_blocked()) return;
     g_hopSetHash.store(setHash, std::memory_order_release);
 }
 

@@ -99,10 +99,9 @@ inline constexpr std::uint32_t kSceneMinotaurStoryConfigTag=0x80F54D6BU;
 inline constexpr std::uint16_t kHopOnInvincible=166;
 inline constexpr std::uint8_t kHopOnInvincibleType=26;
 
-// boss.lua check_gate: Thuun retreats at these fractions of the room he is currently fighting
-// in, and never while the hop-on shield is attached. boss.lua's own comment: "Preserve the
-// existing reconstruction's thresholds; these are not recovered retail constants."
-inline constexpr float kBossGateRoom1=0.66F, kBossGateRoom2=0.33F;
+// Each room consumes one third of full health. The native damage boundary clamps
+// heavy hits to these floors and the controller retains immunity through each crossing.
+inline constexpr float kBossGateRoom1=2.F/3.F, kBossGateRoom2=1.F/3.F;
 
 // ---------------------------------------------------------------------------------------
 // 3. The three rooms

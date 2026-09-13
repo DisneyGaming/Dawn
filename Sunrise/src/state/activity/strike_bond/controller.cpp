@@ -5,7 +5,7 @@
 
 namespace sunrise::state::activity::strike_bond {
 bool valid_document(const coo::script::Views& v) noexcept {
-    return v.valid && v.missionId=="strike_bond" && v.profileId==kProfile.id && !v.phases.empty()
+    return v.valid && (v.missionId=="strike_bond" || v.missionId=="mission_bond") && v.profileId==kProfile.id && !v.phases.empty()
         && v.mission.modules.size()==1 && v.mission.modules[0].asset==kModule && v.mission.modules[0].id==1
         && v.role("ending") && coo::script::authorized(v,kProfile);
 }
@@ -22,20 +22,20 @@ bool contains(const Volume& v,Point p) noexcept {
 }
 void Controller::reset() noexcept {
     executor_.cancel(*this);composition_.reset();lifecycle_.reset();views_=nullptr;run_=now_=0;started_=landed_=false;
-    clock_.reset();objects_={};population_={};costs_={};lenses_={};scenes_={};boss_={};bossEnemy_={};bossFraction_=1.F;hasBossHealth_=false;
+    endingPresentation_={};clock_.reset();objects_={};population_={};costs_={};lenses_={};scenes_={};boss_={};bossEnemy_={};bossFraction_=1.F;hasBossHealth_=false;
     lastPoint_={};hasPoint_=false;platformForward_=true;platformTravel_={};nextPlatform_=nextCover_=0;coverSeed_=0;coverGroup_=UINT8_MAX;dialogue_={};objectives_={};submitted_.reset();voiceEnd_={};seen_.reset();regions_.reset();frame_={};
 }
 bool Controller::select(const coo::script::Views& v,std::uint64_t run) noexcept {
     if(!run || !valid_document(v)) {reset();return false;}
     if(run==run_) return views_==&v;
     reset();if(!lifecycle_.begin(run,128) || !objects_.begin(owner(),kObjectBindings)) return false;
-    views_=&v;run_=run;frame_.spawnGeneration=owner().value;return true;
+    views_=&v;run_=run;frame_.spawnGeneration=owner().value;frame_.campaign=v.missionId=="mission_bond";return true;
 }
 void Controller::position(std::uint64_t run,Point p) noexcept {
     if(!views_ || run!=run_ || !std::isfinite(p.x) || !std::isfinite(p.y) || !std::isfinite(p.z)) return;
     if(frame_.region<0) return;
-    // Arrival is already qualified by the composition. The first real player sample
-    // permits presentation; a pending destination or origin camera cannot do so.
+    // Positions feed route observations. Default opening presentation is released
+    // by the composition's native world-arrival gate.
     lastPoint_=p;hasPoint_=true;
     if(!views_->observationStart) landed_=true;
     for(std::size_t i=0;i<std::size(kVolumes);++i) {
@@ -50,6 +50,10 @@ bool Controller::entered(coo::Asset a) const noexcept {
 }
 bool Controller::player_trigger(std::uint64_t run,std::uint32_t key,std::uint16_t slot) noexcept {
     if(run!=run_ || !frame_.enabled) return false;
+    if(frame_.campaign && frame_.bossDead && frame_.region==136 && key==kEndingApproach.registry && slot==kEndingApproach.slot) {
+        if(endingPresentation_.approached) return false;
+        endingPresentation_.approached=true;++frame_.revision;return true;
+    }
     for(const auto& trigger:kTriggers) {
         if(trigger.asset.registry!=key || trigger.asset.slot!=slot) continue;
         for(std::size_t i=0;i<std::size(kVolumes);++i) {
@@ -257,7 +261,37 @@ void Controller::scene(std::uint64_t run,std::uint32_t key,std::uint16_t slot,co
     const auto* a=find(key,43,slot);if(!a) return;
     const auto i=scene_index(a->asset);
     if(i==std::size(kScenes) || !scenes_.requested(i) || r.generationWire!=0x80000000U+scenes_.commands()[i].generation) return;
-    scenes_.mark(i,r.completed?3:1);++frame_.revision;
+    scenes_.mark(i,r.completed?3:1);
+    if(frame_.campaign && frame_.ending && a->asset==kEndingScene && frame_.scan.started
+        && r.eventCount<=r.events.size()) {
+        for(std::size_t n=0;n<r.eventCount;++n) if(r.events[n]==kPanoptesAppears) endingPresentation_.appearance(now_);
+    }
+    ++frame_.revision;
+}
+bool Controller::ending_speech(const EndingSpeechReceipt& receipt,std::uint8_t state) noexcept {
+    const auto i=scene_index(kEndingScene);
+    if(!frame_.campaign || !frame_.enabled || !frame_.ending || frame_.finished || !frame_.scan.started
+        || receipt.owner!=owner() || !scenes_.requested(i) || scenes_.commands()[i].stop
+        || receipt.generation!=scenes_.commands()[i].generation) return false;
+    if(!endingPresentation_.speech(receipt,state,now_)) return false;
+    ++frame_.revision;return true;
+}
+bool Controller::sagira_delay(const EndingSpeechReceipt& receipt,bool fired) noexcept {
+    const auto i=scene_index(kEndingScene);
+    if(!frame_.campaign || !frame_.enabled || !frame_.ending || frame_.finished || !frame_.scan.started
+        || receipt.owner!=owner() || !scenes_.requested(i) || scenes_.commands()[i].stop
+        || receipt.generation!=scenes_.commands()[i].generation)return false;
+    return endingPresentation_.reaction(receipt,fired,now_);
+}
+bool Controller::ending_scene_cue(const EndingSpeechReceipt& receipt,bool closing) noexcept {
+    const auto i=scene_index(kEndingScene);
+    if(!frame_.campaign || !frame_.enabled || !frame_.ending || frame_.finished || !frame_.scan.started
+        || receipt.owner!=owner() || !scenes_.requested(i) || scenes_.commands()[i].stop
+        || receipt.generation!=scenes_.commands()[i].generation
+        || !endingPresentation_.gotHimStarted || receipt.weak!=endingPresentation_.weak
+        || receipt.serial!=endingPresentation_.serial) return false;
+    if(!frame_.endingFlow.scene_cue(closing)) return false;
+    ++frame_.revision;return true;
 }
 void Controller::combatant(std::uint64_t run,std::uint32_t key,std::uint16_t slot,const middleware::bap::activity_message::combatant_sense::Output& r) noexcept {
     if(run!=run_ || key!=kBossActor.registry || slot!=kBossActor.slot || !frame_.enabled) return;
@@ -360,7 +394,10 @@ bool Controller::publish(const coo::Command& command) noexcept {
     if(!views_ || !graph() || !coo::script::valid_token(graph()->definition,executor_,command)) return false;
     const auto& s=command.spec;
     switch(s.operation) {
-    case coo::Operation::population:case coo::Operation::device:return request(s.asset,s.argument!=0);
+    case coo::Operation::population:case coo::Operation::device:
+        // A delayed reveal can never restore the tree after Panoptes interrupts.
+        if(s.asset==kProbabilityTreeDevice && s.argument && endingPresentation_.panoptes) return true;
+        return request(s.asset,s.argument!=0);
     // ObjectiveService::set OVERWRITES state_.marker with its second argument. Passing nothing, as
     // this did, wiped the waypoint on every directive change - so a marker published by the
     // standalone .marker mechanic survived only until the next objective, and the strike ran with
@@ -383,6 +420,26 @@ bool Controller::publish(const coo::Command& command) noexcept {
         break;
     }
     case coo::Operation::mechanic:
+        if(s.asset==kModule && s.argument==84) {
+            if(!frame_.campaign || !endingPresentation_.panoptes || !frame_.endingFlow.begin(owner())) return false;
+            break;
+        }
+        if(s.asset==kModule && s.argument==85) {
+            if(!frame_.campaign || !frame_.scan.complete || !frame_.endingFlow.retire_scene()) return false;
+            break;
+        }
+        if(s.asset==kEndingScene && s.argument==kEndingScanInput) {
+            const auto i=scene_index(kEndingScene);
+            if(!frame_.campaign || !frame_.ending || !frame_.scan.started || !scenes_.requested(i)
+                || scenes_.commands()[i].stop
+                || scenes_.event(i,kEndingApproachInput)!=coo::SceneEvent::accepted
+                || scenes_.event(i,kEndingScanInput)!=coo::SceneEvent::accepted) return false;
+            break;
+        }
+        if(s.asset==kModule && s.argument==80) {
+            if(!frame_.campaign || !frame_.bossDead) return false;
+            frame_.scan.armed=true;++frame_.revision;break;
+        }
         if(s.asset==kModule && (s.argument==70 || s.argument==71)) return cover(s.argument==70);
         // 80F45CAA holds native AI until input 33E63A8B. All guardians release
         // that hold on arrival; their independent type-26 shield still follows
@@ -448,13 +505,17 @@ bool Controller::publish(const coo::Command& command) noexcept {
             if(!frame_.lensExposed[i]) {if(!revise(kLenses[i].device)) return false;lenses_[i].expose();frame_.lensExposed.set(i);}break;
         }return false;
     case coo::Operation::complete:
-        if(!frame_.bossDead || !lifecycle_.complete_timed(owner(),now_)) return false;
+        if(!frame_.bossDead) return false;
+        if(frame_.campaign) {
+            if(!frame_.endingFlow.finished || !lifecycle_.complete_to_orbit(owner())) return false;
+        } else if(!lifecycle_.complete_timed(owner(),now_,30000U)) return false;
         frame_.finished=true;frame_.restricted=false;frame_.endEpoch=frame_.gameplayClockTicks;objectives_.clear();break;
     case coo::Operation::observation:break;
     default:return false;
     }++frame_.revision;return true;
 }
 bool Controller::observed(const coo::CommandSpec& s) const noexcept {
+    if(s.asset==kModule && s.argument==88)return endingPresentation_.capture_ready(now_);
     if(views_ && views_->condition(s)) return views_->evaluate(s,[this](const auto& child){return observed(child);});
     if(s.asset==kRegion) return s.argument/8<regions_.size() && regions_[s.argument/8];
     if(s.asset==kGenerator) return frame_.forestGenerated;
@@ -467,6 +528,13 @@ bool Controller::observed(const coo::CommandSpec& s) const noexcept {
     if(s.asset==kBossActor && (s.argument==32 || s.argument==33))
         return frame_.bossFighting && hasBossHealth_ && bossEnemy_.valid()
             && bossFraction_<=(s.argument==32?2.F/3.F:1.F/3.F);
+    if(s.asset==kEndingApproach) return frame_.campaign && (endingPresentation_.approached || frame_.scan.started);
+    if(s.asset==kEndingScene && s.argument==kPanoptesAppears) return endingPresentation_.panoptes;
+    if(s.asset==kModule && s.argument==83) return endingPresentation_.tree_ready(now_) || endingPresentation_.panoptes;
+    if(s.asset==kModule && s.argument==81) return frame_.scan.started;
+    if(s.asset==kModule && s.argument==82) return frame_.scan.complete;
+    if(s.asset==kModule && s.argument==86) return frame_.campaign && frame_.endingFlow.finished;
+    if(s.asset==kModule && s.argument==87) return frame_.campaign && frame_.endingFlow.retire_due();
     if(s.asset==kDialogueAsset) return s.argument<std::size(kDialogueRows) && submitted_[s.argument] && now_>=voiceEnd_[s.argument];
     if(s.asset.type==1) {const auto i=spawn_index(s.asset);return i<std::size(kSpawns) && (s.argument==1?population_.ready(i,kSpawns[i].count):population_.cleared(i,kSpawns[i].count));}
     if(s.asset.type==43) {const auto i=scene_index(s.asset);return i<std::size(kScenes) && scenes_.seen(i,s.argument==1?1:2);}
@@ -499,6 +567,9 @@ coo::StallDetail Controller::missing(const coo::CommandSpec& s) const noexcept {
 void Controller::update_module(std::uint32_t id,const coo::MissionInput& input,Frame& output) noexcept {
     if(id!=1 || !views_ || input.run!=run_) return;
     now_=input.now;frame_.region=input.region;if(input.region>=0 && input.region/8<64) regions_.set(input.region/8);frame_.gameplayClockTicks=clock_.sample(now_);
+    // The composition already requires native world arrival. Default openings
+    // must not wait for a player-position callback; custom spatial starts still do.
+    if(!views_->observationStart) landed_=true;
     if(!landed_) {output=frame_;return;}
     if(raise_music(frame_,music_for_region(frame_.region))) ++frame_.revision;
     frame_.enabled=!frame_.populationFault;
@@ -536,6 +607,8 @@ void Controller::update_module(std::uint32_t id,const coo::MissionInput& input,F
         if(started_) executor_.update(*this);
         ++frame_.revision;
     }
+    // Publish newly requested dialogue in this update, including the first arrival.
+    dialogue_.advance(views_->dialogue,frame_.spawnGeneration-1U,now_,false,frame_,frame_.revision);
     if(lifecycle_.advance(now_)) ++frame_.revision;
     frame_.enabled=!frame_.populationFault && executor_.diagnostics().phase!=coo::Phase::failed;
     frame_.scenes=scenes_.commands();frame_.checked=frame_.finished;frame_.presentation=objectives_.state();frame_.completion=lifecycle_.publication();output=frame_;

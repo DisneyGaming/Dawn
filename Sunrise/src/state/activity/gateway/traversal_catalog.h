@@ -1,4 +1,5 @@
 #pragma once
+#include "../coo/population_size.h"
 #include <array>
 #include <cstdint>
 namespace sunrise::state::activity::gateway {
@@ -7,7 +8,7 @@ inline constexpr std::uint32_t kMainlandRegistry=0x4B946B28U;
 inline constexpr std::uint8_t kLastCohort=14;
 struct Spawn final { std::uint16_t source; std::uint32_t registry,definition,offset; std::uint16_t rule; std::uint8_t count,categories,cohort; bool required; };
 // Native identities/categories/rules from gateway-authored-bindings.json. Counts and wave grouping are reconstruction policy.
-inline constexpr std::array<Spawn,126> kSpawns{{
+inline constexpr std::array<Spawn,126> kBaseSpawns{{
     {16,kTraversalRegistry,0x80F47118U,0x728U,298,1,1,0,false}, // vex_marching_with_phase_blocks_a.center_back_squad
     {18,kTraversalRegistry,0x80F4711EU,0x728U,298,1,1,0,false}, // vex_marching_with_phase_blocks_a.center_front_squad
     {20,kTraversalRegistry,0x80F47124U,0x728U,298,1,1,0,false}, // vex_marching_with_phase_blocks_a.left_back_squad
@@ -135,6 +136,15 @@ inline constexpr std::array<Spawn,126> kSpawns{{
     {105,kMainlandRegistry,0x80F47004U,0x728U,370,1,1,14,true}, // tower_finale_wave_3_support_f_squad
     {106,kMainlandRegistry,0x80F47007U,0x728U,370,1,1,14,true}, // tower_finale_wave_3_support_g_squad
 }};
+inline constexpr auto kSpawns=[] {
+    auto rows=kBaseSpawns;
+    for(auto& s:rows) {
+        // Only the three platform reinforcement sets. Return/finale waves stay authored.
+        if(!(s.cohort==2 || s.cohort==4 || s.cohort==6)) continue;
+        s.count=coo::population_size::total(s.categories);
+    }
+    return rows;
+}();
 [[nodiscard]] constexpr const Spawn* spawn(std::uint32_t registry,std::uint16_t slot) noexcept { for(const auto& s:kSpawns) { if(s.registry==registry && s.source==slot) { return &s; } } return nullptr; }
 struct EnemyReceipt final { std::uint64_t run{}; std::uint32_t actor{},owner{},generation{}; std::uint16_t source{}; std::uint32_t registry{}; bool valid() const noexcept { return run!=0 && actor!=UINT32_MAX && owner!=UINT32_MAX && generation!=0 && (registry==kTraversalRegistry || registry==kMainlandRegistry); } friend bool operator==(const EnemyReceipt&,const EnemyReceipt&)=default; };
 }

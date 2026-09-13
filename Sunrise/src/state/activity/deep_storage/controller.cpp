@@ -229,6 +229,8 @@ void Controller::update_module(std::uint32_t id,const coo::MissionInput& input,F
     frame_.checked=frame_.finished;frame_.presentation=objectives_.state();frame_.completion=lifecycle_.publication();output=frame_;
 }
 Frame Controller::update(std::uint64_t run,std::uint64_t now,bool ready) noexcept {
-    if(!views_ || run!=run_ || !ready) {return {};}return composition_.update(views_->mission,{run,now,0,false,true},*this);
+    if(!views_ || run!=run_ || !ready) {return {};}
+    if(!views_->observationStart) {arrived_=true;}
+    return composition_.update(views_->mission,{run,now,0,false,true},*this);
 }
 }

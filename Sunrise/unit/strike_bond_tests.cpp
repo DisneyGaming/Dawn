@@ -1,4 +1,6 @@
+#include "../src/middleware/bap/activity_message/garden_ending_encoder.h"
 #include "../src/state/activity/strike_bond/controller.h"
+#include "../src/state/activity/strike_bond/ending_wipe.h"
 #include "../src/state/activity/strike_bond/authority.h"
 #include "../src/state/activity/strike_bond/boss_damage.h"
 #include "../src/client/activity/campaign_openings.h"
@@ -11,6 +13,7 @@
 #include "strike_bond_boss_shield_tests.h"
 #include "strike_bond_boss_retirement_tests.h"
 #include "../src/client/hooks/bootflow/strike_bond_boss_cycle.h"
+#include "../src/client/hooks/bootflow/strike_bond_ending_scene_path.h"
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -24,12 +27,13 @@ static unsigned checks{};
 static void check(bool ok,const char* message) {
     ++checks;if(!ok) {std::fprintf(stderr,"FAIL: %s\n",message);std::exit(1);}
 }
+#include "campaign_ordering_test_helpers.h"
 static std::unique_ptr<coo::script::MissionDocument> parse(std::string_view text) {
     std::string error;auto d=coo::script::MissionDocument::parse_lua(text,m::kProfile,error);
     if(!d) std::fprintf(stderr,"Lua: %s\n",error.c_str());return d;
 }
-static std::string shipped() {
-    std::ifstream in(std::filesystem::path(__FILE__).parent_path().parent_path()/"scripts"/"strike_bond.lua");
+static std::string shipped(const char* name="strike_bond.lua") {
+    std::ifstream in(std::filesystem::path(__FILE__).parent_path().parent_path()/"scripts"/name);
     std::ostringstream s;s<<in.rdbuf();check(in.good() || in.eof(),"read shipped mission");return s.str();
 }
 static m::Point inside(const m::Volume& v) {
@@ -49,7 +53,7 @@ struct Wire {
     }
 };
 struct Replay {
-    std::unique_ptr<coo::script::MissionDocument> document=parse(shipped());
+    std::unique_ptr<coo::script::MissionDocument> document;
     m::Controller c;
     std::uint64_t run{91},now{1000};
     int region{120};
@@ -60,11 +64,17 @@ struct Replay {
     std::bitset<8> sections;
     bool delayTethers{},rapidDamage{};
     bool checkedFakeDeath{},checkedReadiness{},checkedImmune{},checkedCannon{},checkedPastCannons{},checkedClosing{},checkedShields{};
-    explicit Replay(bool delayed=false,bool rapid=false) : delayTethers(delayed),rapidDamage(rapid) {
+    explicit Replay(bool delayed=false,bool rapid=false,bool campaign=false) : document(parse(shipped(campaign?"mission_bond.lua":"strike_bond.lua"))),delayTethers(delayed),rapidDamage(rapid) {
         check(document!=nullptr,"shipped Lua parses");
         check(m::valid_document(document->views()),"registered native profile");
         check(c.select(document->views(),run),"select mission");
-        tick();c.position(run,{123.5F,255.5F,89.5F});tick();
+        check(!c.update(run,now,false,region).enabled,"loading cannot publish the opening");
+        check(!c.update(run+1,now,true,region).enabled,"another run cannot release this opening");
+        tick();
+        check(!c.has_point() && c.landed() && c.frame().enabled,"arrival starts before the first position sample");
+        check(c.frame().objective==1309796615U,"arrival publishes the opening objective");
+        check(c.frame().activeRow==0 && c.frame().generations[0]!=0,"arrival offers opening dialogue in the same update");
+        c.position(run,{123.5F,255.5F,89.5F});tick();
     }
     void tick() {
         now+=100;c.update(run,now,true,region);sections.set(c.frame().section);
@@ -208,6 +218,61 @@ struct Replay {
         if(const auto* condition=document->views().condition(s)) {
             for(const auto& node:condition->nodes) if(node.kind==coo::script::ConditionNode::Kind::observation) {satisfy(node.native);break;}
             return;
+        }
+        if(s.asset==m::kEndingApproach) {
+            check(!c.player_trigger(run+1,m::kEndingApproach.registry,m::kEndingApproach.slot),"stale arrival cannot start ending cast");
+            check(c.player_trigger(run,m::kEndingApproach.registry,m::kEndingApproach.slot),"native scanner approach starts Bingo before handoff");return;
+        }
+        if(s.asset==m::kModule && s.argument==81) {
+            const auto q=c.scan_request();check(q.enabled() && c.frame().bossDead,"campaign scan becomes available after real boss death");
+            check(c.frame().objective==0x3E2FBC5AU && !c.frame().finished,"Locate Panoptes remains active until scan and scene end");
+            Wire link;check(m::write_body(link,c.frame(),q.link.registry,65,0) && link.bits==65 && link.at(32,1)==1,"native Ghost link enabled");
+            coo::ScanPlayback playing{q.generation,2,1,1.F,4.F},done{q.generation,2,0,4.F,4.F};
+            check(!c.scan_observation(q.owner,71,81,done,true),"completion before a real scan starts rejected");
+            check(!c.scan_observation({q.owner.run+1,q.owner.value},71,81,playing,true),"old mission cannot start a scan");
+            check(!c.scan_observation(q.owner,71,81,playing,false),"scan without attached Ghost rejected");
+            check(c.scan_observation(q.owner,71,81,playing,true),"native Ghost starts the scan");
+            check(!c.scan_observation(q.owner,71,82,done,true),"reused controller handle cannot complete a scan");
+            check(!c.frame().finished,"scan start does not finish campaign");return;
+        }
+        if(s.asset==m::kModule && s.argument==82) {
+            for(unsigned n=0;n<3 && c.frame().scenes[m::scene_index(m::kEndingScene)].eventCount!=2;++n) tick();
+            const auto q=c.scan_request();const auto& scene=c.frame().scenes[m::scene_index(m::kEndingScene)];
+            check(q.state.started && !q.state.complete && scene.eventCount==2
+                && scene.events[0]==m::kEndingApproachInput && scene.events[1]==m::kEndingScanInput,
+                "scan-start inputs are delivered before native scan completion");
+            check(c.frame().scenes[13].generation==0,"interruption streak cannot start at the scan handoff");
+            coo::ScanPlayback done{q.generation,2,0,4.F,4.F};
+            check(c.scan_observation(q.owner,71,81,done,false),"same native controller completes the scan");
+            check(!c.scan_observation(q.owner,71,81,done,false),"duplicate scan completion ignored");
+            return;
+        }
+        if(s.asset==m::kModule && s.argument==83) {
+            const auto gen=c.frame().scenes[m::scene_index(m::kEndingScene)].generation;
+            m::EndingSpeechReceipt receipt{c.owner(),gen,0x12F90101U,991};
+            auto stale=receipt;++stale.owner.run;check(!c.ending_speech(stale,1),"old run cannot reveal the tree");
+            stale=receipt;++stale.generation;check(!c.ending_speech(stale,1),"old scene generation cannot reveal the tree");
+            check(!c.ending_speech(receipt,0),"pending speech is not a reveal cue");
+            check(c.ending_speech(receipt,1),"native got-him speech anchors the reveal clock");
+            stale=receipt;++stale.owner.run;check(!c.sagira_delay(stale,false),"old run cannot hold speech");
+            stale=receipt;++stale.generation;check(!c.sagira_delay(stale,false),"old scene cannot hold speech");
+            stale=receipt;++stale.weak;check(!c.sagira_delay(stale,false),"foreign scene instance cannot hold speech");
+            check(c.sagira_delay(receipt,false),"authenticated native interruption input can be held");
+            check(!c.ending_speech(receipt,1),"duplicate speech cannot restart the reveal clock");
+            now+=m::EndingPresentation::kGotHimPhraseMs;tick();tick();return;
+        }
+        if(s.asset==m::kEndingScene && s.argument==m::kPanoptesAppears) {
+            sense::scene_sense::Output output{};output.delta=true;output.generationWire=0x80000000U+c.frame().scenes[m::scene_index(m::kEndingScene)].generation;
+            output.eventCount=1;output.events[0]=m::kPanoptesAppears;
+            c.scene(run+1,m::kEndingScene.registry,m::kEndingScene.slot,output);tick();
+            check(c.frame().scenes[13].generation==0,"stale entrance event cannot play the streak");
+            c.scene(run,m::kEndingScene.registry,m::kEndingScene.slot,output);tick();tick();
+            check(!c.frame().native[m::asset_index(m::kProbabilityTreeDevice)].active && !c.frame().scenes[13].generation,
+                "native Panoptes entrance shuts down tree while Sagira capture waits");return;
+        }
+        if(s.asset==m::kModule && s.argument==88) {
+            now+=m::EndingPresentation::kInterruptionDelayMs;tick();tick();
+            check(c.frame().scenes[13].generation!=0,"Sagira capture starts after its six-second wait");return;
         }
         if(s.asset==m::kRegion) {region=static_cast<int>(s.argument);tick();return;}
         if(s.asset==m::kDialogueAsset) {now+=m::kDialogueRows[s.argument].durationMs+500;return;}
@@ -358,6 +423,47 @@ struct Replay {
             }
             return;
         }
+        if(s.asset==m::kModule && s.argument==87) {
+            const m::EndingActor actor{501,502,503,504};
+            const auto index=m::scene_index(m::kEndingScene);
+            const m::EndingSpeechReceipt cue{c.owner(),c.frame().scenes[index].generation,0x12F90101U,991};
+            check(c.frame().endingFlow.wipe,"Panoptes entrance requests the wipe");
+            check(!c.claim_ending_animation({run+1,c.owner().value},actor),"stale actor cannot claim wipe");
+            check(c.claim_ending_animation(c.owner(),actor),"native actor claims wipe once");
+            check(!c.claim_ending_animation(c.owner(),actor),"duplicate delivery cannot restart wipe");
+            check(!c.ending_animation(c.owner(),actor,false,now),"inactive selector cannot acknowledge playback");
+            check(c.ending_animation(c.owner(),actor,true,now),"native wipe selection observed");
+            check(!c.ending_playback(c.owner(),actor,505,m::EndingAnimationPhase::finished),"idle before actual wipe cannot authorize cleanup");
+            now+=60000;c.update(run,now,true,region);
+            check(!c.frame().endingFlow.retire,"elapsed selector time cannot cut off animation");
+            auto stale=cue;++stale.generation;
+            check(!c.ending_scene_cue(stale,true),"old scene generation cannot authorize cleanup");
+            stale=cue;++stale.serial;
+            check(!c.ending_scene_cue(stale,true),"recycled native scene cannot authorize cleanup");
+            check(c.ending_scene_cue(cue,true),"native closing branch acknowledges dialogue completion");
+            check(c.ending_playback(c.owner(),actor,505,m::EndingAnimationPhase::wipe),"actual wipe clip observed on claimed biped");
+            now+=60000;c.update(run,now,true,region);
+            check(!c.frame().endingFlow.retire,"finished dialogue and arbitrary time cannot truncate playing wipe");
+            check(!c.ending_playback({run+1,c.owner().value},actor,505,m::EndingAnimationPhase::finished),"stale completion cannot retire current cast");
+            check(!c.ending_playback(c.owner(),actor,506,m::EndingAnimationPhase::finished),"other biped idle cannot complete wipe");
+            check(c.ending_playback(c.owner(),actor,505,m::EndingAnimationPhase::finished),"same biped reaching terminal idle completes wipe");
+            c.update(run,now,true,region);
+            for(const auto& scene:c.frame().scenes)for(std::size_t e=0;e<scene.eventCount;++e)
+                check(scene.events[e]!=0x8EF744BEU,"handoff never requests an extra screen fade");
+            check(!finished[index],"lingering Osiris child deliberately keeps whole scene incomplete");
+            return;
+        }
+        if(s.asset==m::kModule && s.argument==86) {
+            check(c.frame().endingFlow.retire && !c.frame().finished,"movie must follow actual scene teardown");
+            check(!c.ending_retirement({run+1,c.owner().value}),"stale cleanup receipt cannot travel");
+            check(c.ending_retirement(c.owner()),"native roster cleanup permits cinematic transit");
+            c.ending_arrival(c.owner());
+            check(c.ending_movie(c.owner(),801,802,0,false),"registered movie is offered after arrival");
+            check(!c.ending_movie(c.owner(),801,802,1,false),"inactive movie cannot finish before playing");
+            check(c.ending_movie(c.owner(),801,802,1,true),"actual native playback starts movie");
+            check(!c.frame().finished,"active cutscene cannot return to orbit");
+            check(c.ending_movie(c.owner(),801,802,1,false),"native completion releases orbit");return;
+        }
         if(s.asset.type==43 && s.argument==2) {
             const auto n=m::scene_index(s.asset);
             if(m::kScenes[n].graph==0x80F45CAAU) return; // service requires the actual exit event
@@ -395,9 +501,20 @@ struct Replay {
             && retiredMember.at(32,2)==1 && retiredMember.at(37,1)==0,"completion retains explicit named-owner teardown");
         if(!(early?sections[6]:sections.all())) std::fprintf(stderr,"sections=%s early=%d graph=%.*s\n",sections.to_string().c_str(),early,int(c.graph()->id.size()),c.graph()->id.data());
         check(early?sections[6]:sections.all(),"all required route and boss phases visited");
+        if(!c.frame().campaign) {
         for(const auto row:{0,1,3,4,5,6,7,8,9,10,11,12,13,14}) if(!early || row==14) {if(!spoken[row]) std::fprintf(stderr,"Missing dialogue row %u early=%u\n",row,early);check(spoken[row],"required strike exchange dispatched");}
         check(!spoken[2],"campaign-only dialogue excluded");
         for(unsigned row=15;row<24;++row) check(!spoken[row],"campaign scanner and Panoptes ending stay out of strike");
+        } else {
+            check(c.frame().scan.complete && spoken[2],"campaign includes departure dialogue and confirmed scan");
+            for(const auto row:{0,1,2,3,4,12,13,14})check(spoken[row],"all requested Garden campaign cues dispatched");
+            for(const auto row:{5,6,7,8,9,10,11}) check(!spoken[row],"strike repeat-run dialogue excluded from campaign");
+            const auto closing=m::scene_index(m::find(0xC80A735BU,43,5)->asset);
+            check(started[closing] && !finished[closing] && c.frame().endingFlow.wipeFinished && c.frame().endingFlow.finished,
+                "movie completes after the closing branch even while whole-scene completion stays false");
+            const auto finishTime=now;now=finishTime+9999;tick();
+            check(c.frame().completion.state==8,"completed campaign movie requests native orbit without a results delay");
+        }
         check(checkedFakeDeath && checkedReadiness && checkedImmune && checkedCannon && checkedPastCannons && checkedClosing && checkedShields,"critical regression scenarios exercised");
         check(c.frame().checkpointSliceSet==136 && c.frame().checkpointSpawnSet==0x2EA8FB98U,"Spire native respawn set retained");
         if(!early) {
@@ -491,7 +608,8 @@ static void cover_regressions() {
         Wire wire;check(m::write_body(wire,f,a.registry,23,a.slot) && wire.bits==147,"device position authority remains complete");
         const bool cover=a.registry==0x2CB86C0FU && a.slot>=76 && a.slot<=169 && (a.slot-76)%3==0;
         const bool mount=a.registry==0x2CB86C0FU && a.slot==173;
-        check(wire.fields[2]==std::pair<std::uint64_t,unsigned>{cover || mount?0U:1U,1},"rooftop cover and Dendron mount interpolate; other devices preserve snap policy");
+        const bool endingPlatform=a.registry==0xB9395B1BU && a.slot<=8;
+        check(wire.fields[2]==std::pair<std::uint64_t,unsigned>{cover || mount || endingPlatform || a==m::kProbabilityTreeDevice?0U:1U,1},"cover, Dendron mount, ending platforms and tree interpolate; other devices preserve snap policy");
         if(cover) ++covers;
     }
     check(covers==32,"all 32 authored cover blocks receive smooth movement");
@@ -753,6 +871,16 @@ static void boss_regressions() {
     }
 }
 static void catalogue() {
+    check(m::kGrandmasterEnemySubstitutions.size()==23,"23 installed Garden GM category substitutions");
+    for(const auto& value:m::kGrandmasterEnemySubstitutions) {
+        check(m::grandmaster_substitution_source(value.registry,value.source),"Garden GM source candidate lookup");
+        check(m::grandmaster_substitution(
+                  value.registry,value.source,value.category,value.grandmasterEntity)==&value,
+            "Garden GM entity lookup keeps category identity");
+    }
+    check(!m::grandmaster_substitution_source(0xC95ECB1AU,4)
+        && !m::grandmaster_substitution(0xC95ECB1AU,16,0x19C57E66U,0x80F58985U),
+        "ordinary source and standard entity are not GM substitutions");
     auto doc=parse(shipped());check(doc && m::valid_document(doc->views()),"shipped document is authorized");
     for(const auto& graph:doc->views().graphs) {
         check(graph.definition.steps.size()<=32,"native graph step budget");
@@ -765,15 +893,252 @@ static void catalogue() {
     namespace openings=sunrise::client::activity::mission_launch::openings;
     unsigned garden{};
     for(const auto& row:openings::kMissions) if(std::string_view(row.title)=="A Garden World") {
-        ++garden;check(row.campaign==1,"Garden World belongs to Curse of Osiris");
-        check(std::string_view(row.destination.packageName.data(),row.destination.packageNameLength)=="strike_bond","launcher selects strike package");
-        check(row.destination.bubble==15 && row.destination.sliceSet==120 && row.destination.spawnSetHash==0x0232EBCEU,"native Lighthouse opening");
+        ++garden;check(row.campaign==1 || row.campaign==2,"Garden World campaign and strike tabs");
+        check(std::string_view(row.destination.packageName.data(),row.destination.packageNameLength)==(row.campaign==1?"mission_bond":"strike_bond") && row.activity==(row.campaign==1?298:229),"launcher selects distinct native campaign and strike activities");
+        check(row.destination.bubble==15 && row.destination.sliceSet==120 && row.destination.spawnSetHash==0xB09FB979U,"native Lighthouse opening");
     }
-    check(garden==1,"exactly one Garden World launcher entry");
+    check(garden==2,"exactly one campaign and one strike Garden World entry");
+    auto campaign=parse(shipped("mission_bond.lua"));check(campaign && m::valid_document(campaign->views()),"campaign document parses and is authorized");
+    namespace t=campaign_ordering;using coo::Operation;const auto& v=campaign->views();
+    check(t::has(t::step(v,"opening","briefing"),Operation::dialogue,0)&&t::after(v,"opening","briefing","arrive"),"Ikora and Sagira opening exchange follows arrival");
+    check(t::has(t::step(v,"opening","explanation"),Operation::dialogue,1)&&t::after(v,"opening","explanation","tunnel"),"reality-engine cue belongs to Forest transition");
+    check(t::condition(v,"past.hallway",m::find(0x0CEDD4ADU,60,1)->asset)&&!t::condition(v,"past.hallway",m::find(0x2763EC90U,60,27)->asset),"Ghost farewell waits for hallway instead of gateway approach");
+    check(t::has(t::step(v,"forest","farewell"),Operation::dialogue,2)&&t::after(v,"forest","farewell","hallway"),"farewell follows the hallway trigger");
+    check(t::has(t::step(v,"past","arrival_objective"),Operation::dialogue,3),"algorithm cue plays at Past arrival");
+    check(t::condition(v,"past.first_cube",m::find(0xC95ECB1AU,60,237)->asset)&&t::condition(v,"past.first_cube",m::find(0xC95ECB1AU,60,233)->asset),"countermeasure cue uses first cube approach volumes");
+    check(t::has(t::step(v,"past","countermeasures"),Operation::dialogue,4)&&t::after(v,"past","countermeasures","cube_approach"),"countermeasure explanation waits for cube approach");
+    check(t::condition(v,"spire.landed",m::find(0x5938C7C6U,60,3)->asset)&&!t::condition(v,"spire.landed",m::find(0x5938C7C6U,60,2)->asset),"We are in waits until landing instead of cannon flight");
+    check(t::has(t::step(v,"intro","power_cut"),Operation::dialogue,13)&&t::after(v,"intro","power_cut","destroyed"),"shutdown cue waits for actual Dendron cube destruction");
+    check(t::has(t::step(v,"ending","access"),Operation::dialogue,14)&&t::after(v,"ending","access","defeated"),"victory cue waits for native delayed death");
+    for(std::uint16_t slot=0;slot<9;++slot) {
+        const auto asset=m::find(0xB9395B1BU,23,slot)->asset;
+        m::Frame live{};live.enabled=live.campaign=true;live.spawnGeneration=1;
+        auto& state=live.native[m::asset_index(asset)];state.managed=state.desired=state.active=true;state.generation=1;state.position=1.F;
+        Wire wire;check(m::write_body(wire,live,asset.registry,23,slot)&&wire.bits==147&&wire.at(48,1)==0,
+            "every ending platform phases in through native animation instead of snapping invisible");
+    }
+    check(!m::animated_position(m::find(0xC80A735BU,23,1)->asset),"ending interaction sensor retains its own snap policy");
+    const auto& ready=t::step(v,"ending","scan_ready");bool jumpPad{};
+    for(const auto& cmd:ready.commands)jumpPad|=cmd.operation==Operation::device&&cmd.asset==m::find(0xB9395B1BU,4,9)->asset&&cmd.argument==1;
+    check(jumpPad,"campaign ending requests the real jump pad beside the platform route");
+    check(t::after(v,"ending","closing","handoff") && !t::after(v,"ending","closing","scanned"),"scanning dialogue follows handoff rather than completed scan");
+    check(t::after(v,"ending","interrupted","panoptes"),"streak waits for the native Panoptes appearance cue");
+    check(t::after(v,"ending","tree","tree_cue"),"tree reveal waits for the spoken got-him phrase");
+    check(v.dialogue.rows[0].durationMs==24486&&v.dialogue.rows[12].durationMs==4124&&v.dialogue.rows[14].durationMs==2803,"Garden campaign queue uses its own branch lengths");
+    for(const auto row:{5,8,9,10,11})check(v.dialogue.rows[row].durationMs==0,"empty Garden campaign branches cannot stall later cues");
     namespace route=sunrise::server::bap::encrypted::activity_message::membership;
     check(route::retains_held_region("strike_bond"),"Garden retains real held-region transitions");
 }
+static void campaign_tree_and_stop_regressions() {
+    m::EndingPresentation presentation{};m::EndingSpeechReceipt speech{{7,1},1,91,92};
+    check(!presentation.tree_ready(90000) && !presentation.speech(speech,0,1000),"unstarted native speech cannot reveal tree");
+    check(presentation.speech(speech,1,1000) && !presentation.tree_ready(2999) && presentation.tree_ready(3000),"tree phrase delay starts at native speech, with exact boundary");
+    check(!presentation.speech(speech,1,4000) && presentation.tree_ready(3000),"repeated native ticks cannot move the reveal deadline");
+    check(!presentation.capture_ready(90000),"capture cannot precede Panoptes");
+    presentation.appearance(4000);presentation.appearance(5000);
+    check(!presentation.capture_ready(9999) && presentation.capture_ready(10000),"capture delay is six seconds from first appearance");
+    check(!presentation.reaction(speech,true,4000),"unheld native input cannot be released");
+    check(presentation.reaction(speech,false,4000),"matching native speech can be held");
+    check(!presentation.reaction(speech,true,5000),"native interruption input starts the wait");
+    check(!presentation.reaction(speech,true,10999) && presentation.reaction(speech,true,11000),"native reaction waits exactly six seconds without restarting its clock");
+    auto stale=speech;++stale.serial;
+    check(!presentation.reaction(stale,true,90000),"recycled scene cannot release delayed speech");
+    presentation={};check(!presentation.tree_ready(90000),"new ending clears previous reveal cue");
+    check(!presentation.capture_ready(90000) && !presentation.reaction(speech,true,90000),"reset clears pending capture and speech");
+    for(const auto slot:{2,4}) {
+        const auto source=m::find(0xC80A735BU,4,static_cast<std::uint16_t>(slot))->asset;
+        m::NativeState desired{};desired.generation=2;desired.managed=desired.desired=desired.prepared=desired.active=true;
+        m::ending_object::Component component{slot==2?0x80C7069BU:0x80FCD6C9U,m::ending_object::kind(source),99,100,slot==2?0xA78U:0x2158U};
+        check(m::ending_object::retained({7,1},source,desired,2,1,100,component),"exact package-linked retained ending object is acknowledged");
+        check(!m::ending_object::retained({7,2},source,desired,2,1,100,component),"retained object cannot cross generation leases");
+        auto wrong=component;++wrong.entity;check(!m::ending_object::retained({7,1},source,desired,2,1,100,wrong),"other entity cannot acknowledge ending FX");
+        wrong=component;++wrong.definition;check(!m::ending_object::retained({7,1},source,desired,2,1,100,wrong),"wrong component cannot acknowledge ending FX");
+        desired.active=false;check(!m::ending_object::retained({7,1},source,desired,2,1,100,component),"inactive retained cast cannot be resurrected by a receipt");
+    }
+    m::Frame f{};f.enabled=f.campaign=true;f.spawnGeneration=1;
+    const auto tree=m::kProbabilityTreeDevice;
+    auto& state=f.native[m::asset_index(tree)];
+    check(m::device_position(f,tree)==0.F && m::body_bits(f,tree.registry,23,tree.slot)==0,
+        "unrequested tree remains hidden and publishes no command");
+    state.managed=state.active=state.desired=true;state.generation=2;state.position=1.F;
+    Wire visible;check(m::write_body(visible,f,tree.registry,23,tree.slot)
+        && visible.at(0,32)==0x3F000000U && visible.at(48,1)==0,
+        "tree reveal sends native half-position with interpolation");
+    state.active=state.desired=false;++state.generation;
+    Wire shutdown;check(m::write_body(shutdown,f,tree.registry,23,tree.slot)
+        && shutdown.at(0,32)==0x3F800000U && shutdown.at(48,1)==0,
+        "tree shutdown sends the final native phase instead of rewinding to hidden");
+    check(!m::animated_position({tree.registry,tree.definition,4,tree.slot}),
+        "tree motion policy cannot apply to an object source");
+    const auto scene=m::find(0xC80A735BU,43,6)->asset;
+    const auto index=m::scene_index(scene);auto& command=f.scenes[index];
+    f.native[m::asset_index(scene)].managed=true;command.generation=2;
+    check(m::body_bits(f,scene.registry,43,scene.slot)==0,"scene start waits for created cast");
+    const auto cast=m::kScenes[index].cast[0];auto& participant=f.native[m::asset_index(cast)];
+    participant.active=participant.acknowledged=true;
+    command.eventCount=1;command.events[0]=0x12345678U;
+    Wire start;check(m::write_body(start,f,scene.registry,43,scene.slot) && start.at(32,1)==0,
+        "normal scene publication keeps native stop clear");
+    command.stop=true;
+    Wire stop;check(m::write_body(stop,f,scene.registry,43,scene.slot) && stop.at(32,1)==1,
+        "server scene stop reaches the native stop field");
+    check(start.bits==stop.bits && start.fields.size()==stop.fields.size(),"stop preserves scene packet shape");
+    for(std::size_t i=0;i<start.fields.size();++i)if(i!=1)
+        check(start.fields[i]==stop.fields[i],"stop retains exact generation, participant and event identities");
+    participant.active=participant.acknowledged=false;
+    Wire lateStop;check(m::write_body(lateStop,f,scene.registry,43,scene.slot) && lateStop.fields==stop.fields,
+        "scene stop remains publishable after its cast becomes inactive");
+    Wire legacy;check(coo::native_scene::cast_scene(legacy,2,m::participants(m::kScenes[index]).view())
+        && legacy.at(32,1)==0,"other mission callers retain the default running scene encoding");
+}
+struct EndingSceneRead {
+    std::array<std::byte,0x4500> bytes{};
+    template<class T> bool value(std::uintptr_t address,T& out) const noexcept {
+        if(address<0x10000)return false;
+        const auto at=address-0x10000;
+        if(at>bytes.size() || sizeof(T)>bytes.size()-at)return false;
+        std::memcpy(&out,bytes.data()+at,sizeof(T));return true;
+    }
+    template<class T> void put(std::uintptr_t at,const T& value) noexcept {std::memcpy(bytes.data()+at,&value,sizeof(T));}
+};
+static void ending_scene_cue_regressions() {
+    namespace path=sunrise::client::hooks::bootflow::garden_ending_scene_path;
+    EndingSceneRead read;constexpr std::uint32_t handle=0x49F9F614U;
+    read.put(0,path::Ref{0x80F44F11U,0x80806384U,0x4458});
+    read.put(0x24,handle);read.put(0x2c,std::uint32_t{79});read.put(0x38,std::uint64_t{22});
+    for(const auto n:path::nodes) {
+        read.put(n.offset,path::Ref{0x80F44F11U,n.kind,n.definition});
+        read.put(n.offset+0x28,handle);read.put(n.offset+0x2c,n.kind-1U);read.put(n.offset+0x30,n.offset);
+        read.put(n.offset+0x98,std::uint32_t{2});
+    }
+    // Captured live root: all terminal nodes done while Osiris child stays active.
+    read.put(0x1D70+0x98,std::uint32_t{1});
+    auto cue=path::probe(read,0x10000,handle);
+    check(cue.valid && cue.closing,"live stalled-child layout admits terminal cues");
+    read.put(0x1760+0x98,std::uint32_t{1});
+    check(!path::probe(read,0x10000,handle).closing,"active final speech cannot authorize cleanup");
+    read.put(0x1760+0x98,std::uint32_t{2});read.put(0x1930+0x98,std::uint32_t{1});
+    check(!path::probe(read,0x10000,handle).closing,"native closing delay must finish");
+    read.put(0x1930+0x98,std::uint32_t{2});
+    for(const auto n:path::nodes) {
+        read.put(n.offset+0x28,handle+1);
+        check(!path::probe(read,0x10000,handle).valid,"foreign node parent cannot report a cue");
+        read.put(n.offset+0x28,handle);
+        read.put(n.offset+0x98,std::uint32_t{3});
+        check(!path::probe(read,0x10000,handle).valid,"out-of-range native node state rejected");
+        read.put(n.offset+0x98,std::uint32_t{2});
+    }
+    read.put(0x38,std::uint64_t{21});
+    check(!path::probe(read,0x10000,handle).valid,"different graph shape rejected");
+}
+static void sagira_callback_regressions() {
+    namespace path=sunrise::client::hooks::bootflow::garden_ending_scene_path;
+    EndingSceneRead read;constexpr std::uint32_t handle=0x49F9F614U;
+    // Verified against graph 80F44F11, input16 and the relocated native callback.
+    read.put(0,path::Ref{0x80F44F11U,0x80806384U,0x4458});read.put(0x24,handle);
+    read.put(0x1590,path::Ref{0x80F44F11U,0x808062F6U,0x4D38});
+    read.put(0x15B8,handle);read.put(0x15BC,std::uint32_t{0x808062F5U});read.put(0x15C0,std::uint64_t{0x1590});
+    read.put(0x68,std::uint32_t{26});read.put(0x70,std::int64_t{0x2800});
+    read.put(0x2980,path::Ref{handle,0x80806388U,0x1660});
+    read.put(0x1680,std::array<std::uint32_t,6>{0x80806342U,0,handle,0x808062F5U,0x1590,0});
+    read.put(0x16B0,UINT32_MAX);
+    check(path::reaction(read,0x10000,handle)==path::Reaction::arm,"only pending authored interruption callback can be held");
+    const auto valid=read;
+    for(const auto offset:{0x24,0x1590,0x1594,0x1598,0x15B8,0x15BC,0x15C0,0x1628,0x2980,0x2984,0x2988,0x1680,0x1684,0x168C,0x1690,0x1694,0x16B0}) {
+        auto wrong=valid;wrong.bytes[offset]^=std::byte{1};
+        check(path::reaction(wrong,0x10000,handle)==path::Reaction::unavailable,"wrong callback, node, state or native input cannot be changed");
+    }
+    read.put(0x1688,UINT32_MAX);
+    check(path::reaction(read,0x10000,handle)==path::Reaction::unavailable,"holding callback does not invent an input");
+    read.put(0x16C0,std::uint32_t{1});
+    check(path::reaction(read,0x10000,handle)==path::Reaction::held,"consumed native input is eligible for server delay");
+    read.put(0x1688,handle);read.put(0x16C0,std::uint32_t{2});
+    check(path::reaction(read,0x10000,handle)==path::Reaction::unavailable,"restored input is never replayed twice");
+}
+static void ending_wipe_regressions() {
+    using Phase=m::EndingAnimationPhase;const coo::Generation owner{9,3};
+    const m::EndingActor actor{0x10000501U,502,0x11000503U,0x12000504U};constexpr std::uint32_t biped=0x13000505U;
+    const auto fixture=[&](std::uint32_t node,std::uint32_t row,float duration,unsigned flags) {
+        std::array<std::byte,0xB8> bytes{};
+        const auto put=[&]<class T>(std::size_t at,T value){std::memcpy(bytes.data()+at,&value,sizeof(value));};
+        put(0,actor.entity);put(4,actor.controller);put(8,0U);put(0xC,7U);put(0x10,0x80F45178U);
+        put(0x14,biped);put(0x18,actor.entity);put(0x1C,biped);bytes[0x20]=std::byte(flags);bytes[0x21]=std::byte{1};
+        put(0x30,row);put(0x38,duration);put(0x3C,0.01F);put(0xA4,node);put(0xA8,6U);put(0xB0,node);put(0xB4,6U);
+        return bytes;
+    };
+    const auto flight=fixture(2,5,8.700000762939453F,0),wipe=fixture(1,9,15.133334159851074F,0),idle=fixture(0,1,10.000000953674316F,0);
+    check(m::ending_wipe::phase(flight,actor,biped,1)==Phase::flight,"authored flight is not wipe completion");
+    check(m::ending_wipe::phase(wipe,actor,biped,1)==Phase::wipe,"loaded native wipe clip decodes");
+    check(m::ending_wipe::phase(idle,actor,biped,1)==Phase::finished,"native non-looping terminal idle releases completed wipe");
+    auto looping=idle;looping[0x20]=std::byte{1};
+    check(m::ending_wipe::phase(looping,actor,biped,1)==Phase::unavailable,"looping pose is not Garden terminal receipt");
+    check(m::ending_wipe::phase(wipe,actor,biped,0)==Phase::unavailable,"failed native update is not a receipt");
+    auto nativeFlags=wipe;nativeFlags[0x20]|=std::byte{2};
+    check(m::ending_wipe::phase(nativeFlags,actor,biped,1)==Phase::wipe,"unrelated native playback flag cannot hide actual wipe");
+    check(m::ending_wipe::phase(std::span(wipe).first(0xB7),actor,biped,1)==Phase::unavailable,"truncated graph is rejected");
+    for(const std::size_t offset:{0U,4U,8U,0xCU,0x10U,0x14U,0x18U,0x1CU,0x20U,0x21U,0x30U,0xA4U,0xA8U,0xB0U,0xB4U}) {
+        auto wrong=wipe;wrong[offset]^=std::byte{1};
+        check(m::ending_wipe::phase(wrong,actor,biped,1)==Phase::unavailable,"mismatched native graph identity or node cannot advance ending");
+    }
+    for(float elapsed:{-1.F,16.F,std::numeric_limits<float>::quiet_NaN()}) {
+        auto wrong=wipe;std::memcpy(wrong.data()+0x3C,&elapsed,sizeof(elapsed));
+        check(m::ending_wipe::phase(wrong,actor,biped,1)==Phase::unavailable,"invalid playback clock rejected");
+    }
+    m::EndingFlow flow;check(flow.begin(owner)&&flow.claim(owner,actor)&&flow.animation(owner,actor,true,1000),"fresh actor owns ending");
+    check(!flow.playback(owner,actor,biped,Phase::finished),"idle cannot finish unobserved wipe");
+    check(flow.playback(owner,actor,biped,Phase::wipe),"actual wipe starts completion tracking");
+    check(flow.playback(owner,actor,biped,Phase::finished)&&!flow.retire_due(),"animation completing first still waits for closing dialogue");
+    check(flow.scene_cue(true)&&flow.retire_scene(),"both native receipts release cleanup without a fade timer");
+    check(!flow.playback(owner,actor,biped,Phase::finished),"duplicate terminal ticks cannot repeat cleanup");
+}
+static void ending_handoff_regressions() {
+    namespace tr=sunrise::state::activity::omega_ending_transit;
+    m::EndingTransit transit;const coo::Generation owner{9,3};
+    tr::Observation local{{0,255,-1,0},136,true,true};
+    auto offered=transit.project(owner,77,local);
+    check(offered.publish && offered.host.token==1 && offered.host.state==1,"ending wraps token without publishing zero");
+    check(!transit.project({9,4},77,local).publish && !transit.project(owner,78,local).publish,"transit rejects other owner or member");
+    local.local={3,2,25,m::kEndingSpawn};local.currentRegion=25;
+    check(!transit.project(owner,77,local).arrived,"wrong native token cannot release cutscene");
+    local.local.token=1;local.currentRegion=136;
+    check(!transit.project(owner,77,local).arrived,"old arena report cannot acknowledge arrival");
+    local.currentRegion=25;local.local.state=2;
+    auto waiting=transit.project(owner,77,local);
+    check(tr::host_synchronization_ready(waiting,local,true,1,true,25),"native destination and D4 synchronization release host wait");
+    check(!tr::host_synchronization_ready(waiting,local,true,2,true,25),"different synchronization token cannot release wait");
+    check(!waiting.arrived,"sync readiness is not a native arrival receipt");
+    local.local.state=3;check(transit.project(owner,77,local).arrived,"real local3 arrival releases movie preparation");
+    local.local.state=0;check(transit.project(owner,77,local).complete,"native idle completes teleport");
+    local.local.state=1;check(transit.project(owner,77,local).host.state==0,"delayed native request cannot replay completed teleport");
+    m::EndingFlow flow;check(flow.begin(owner),"begin ending flow");
+    flow.arrived=true;check(flow.movie(owner,11,12,0,false),"exact ready resource offers movie");
+    check(!flow.movie(owner,11,12,2,true),"different movie revision is rejected");
+    check(flow.movie(owner,11,12,1,true),"native active movie accepted");
+    check(!flow.movie(owner,13,12,1,false) && !flow.movie(owner,11,14,1,false),"replaced native component cannot finish movie");
+    check(flow.movie(owner,11,12,1,false) && flow.finished && !flow.play,"same active-to-inactive movie completes once");
+    check(!flow.movie(owner,11,12,2,false),"duplicate inactive callback cannot repeat orbit completion");
+    namespace wire=sense::sensor_auth_update;
+    wire::Snapshot snapshot{};snapshot.stateSequence=3;
+    std::array<std::uint32_t,4> arena{0x2CB86C0FU,0xA1F8CD1CU,0xB9395B1BU,0xC80A735BU};
+    std::array<std::uint8_t,4> states{129,130,131,132},presence{1,1,1,1};
+    std::array<std::uint32_t,1> other{0x11111111};
+    std::array<wire::BubbleSubBlock,2> blocks{{{10,other},{17,arena,presence,states}}};
+    snapshot.roster.bubbleSubBlocks=blocks;
+    wire::garden_ending::RosterProjection projection;
+    check(projection.prepare(snapshot),"terminal roster projects verified arena");
+    check(projection.roster.bubbleSubBlocks.size()==3 && projection.blocks[2].bubble==3,"bookend appends after existing bubble ordinals");
+    for(unsigned k=0;k<4;++k) check(projection.blocks[1].keys[k]==arena[k] && projection.blocks[1].states[k]==states[k]
+        && projection.blocks[1].presence[k]==0,"cleanup preserves each arena key/state and clears only presence");
+    check(projection.blocks[2].keys[0]==m::kEndingMovieRegistry && projection.blocks[2].presence[0]==1,"movie group stays admitted through cleanup");
+    arena[0]=1;wire::garden_ending::RosterProjection invalid;
+    check(!invalid.prepare(snapshot),"unexpected arena roster cannot be retired");
+}
 int main() {
+    sagira_callback_regressions();
+    ending_wipe_regressions();
+    ending_scene_cue_regressions();
+    ending_handoff_regressions();
+    campaign_tree_and_stop_regressions();
     check(strike_bond_boss_retirement_contracts(),"detached Dendron entity retirement identity contracts");
     check(strike_bond_carriage_contracts(),"Dendron animated plate attachment contracts");
     check(strike_bond_target_binding_contracts(),"Dendron primary target binding contracts");
@@ -784,6 +1149,7 @@ int main() {
         replay=std::make_unique<Replay>();replay->run_all(true);
         replay=std::make_unique<Replay>(true);replay->run_all();
         replay=std::make_unique<Replay>(false,true);replay->run_all();
+        replay=std::make_unique<Replay>(false,false,true);replay->run_all();
     }
     std::printf("PASS: %u Garden World route, ownership, shield, native death, dialogue and launcher checks\n",checks);
 }

@@ -44,36 +44,36 @@ inline constexpr std::size_t kDirectiveBits=4802,kDialogueBits=19767,kMusicBits=
 // ---------------------------------------------------------------------------------------------
 inline constexpr std::uint32_t kRowMs=7000;
 inline constexpr coo::DialogueRow kDialogueRows[]{
-    {0xB35F543CU,kRowMs,0,false}, // 0  strike_pact.lua start_dialogue - opening, first pt_initial_spawns/pt_near_gate entry
-    {0x94358F13U,kRowMs,0,false}, // 1  strike_pact.lua "pact.dialogue.gate" - opening, pt_near_gate
+    {0xB35F543CU,22201U,0,false}, // 0  strike_pact.lua start_dialogue - opening, first pt_initial_spawns/pt_near_gate entry
+    {0x94358F13U,9644U,0,false}, // 1  strike_pact.lua "pact.dialogue.gate" - opening, pt_near_gate
     {0,0,0,false},                // 2  unauthored
     {0,0,0,false},                // 3  unauthored
-    {0xC04A5765U,kRowMs,0,false}, // 4  strike_pact.lua "pact.dialogue.tunnel" - opening, pt_enter_tunnel
-    {0x6A30D732U,kRowMs,0,false}, // 5  strike_pact.lua "pact.dialogue.forest" - Forest, pt_begin
-    {0xC18E182AU,kRowMs,0,false}, // 6  strike_pact.lua on_event_generator_state - Forest, first generated area completed
+    {0xC04A5765U,11076U,0,false}, // 4  strike_pact.lua "pact.dialogue.tunnel" - opening, pt_enter_tunnel
+    {0x6A30D732U,13067U,0,false}, // 5  strike_pact.lua "pact.dialogue.forest" - Forest, pt_begin
+    {0xC18E182AU,13467U,0,false}, // 6  strike_pact.lua on_event_generator_state - Forest, first generated area completed
     {0,0,0,false},                // 7  unauthored
     {0,0,0,false},                // 8  unauthored
     {0,0,0,false},                // 9  unauthored
-    {0x81D654A2U,kRowMs,0,false}, // 10 route.lua stage "enter_chase"
-    {0x110D4DBFU,kRowMs,0,false}, // 11 route.lua firstroom_cleared
+    {0x81D654A2U,9262U,0,false}, // 10 route.lua stage "enter_chase"
+    {0x110D4DBFU,9258U,0,false}, // 11 route.lua firstroom_cleared
     {0,0,0,false},                // 12 unauthored
-    {0x4B4B0C95U,kRowMs,0,false}, // 13 route.lua stage "sparrow_jump"
+    {0x4B4B0C95U,2253U,0,false}, // 13 route.lua stage "sparrow_jump"
     {0,0,0,false},                // 14 unauthored
     {0,0,0,false},                // 15 unauthored
-    {0x5276621BU,kRowMs,0,false}, // 16 authored; the proven graph never plays it
-    {0x274C8AD6U,kRowMs,0,false}, // 17 route.lua route.initialize - ledge arrival (region 0)
-    {0x52AE09A9U,kRowMs,0,false}, // 18 route.lua stage "ledge_final" (PM_LEDGE_FINAL)
-    {0xA40140B4U,kRowMs,0,false}, // 19 route.lua stage "see_tree"
-    {0x84D90F6BU,kRowMs,0,false}, // 20 boss.lua reveal - Minotaur scene activation
-    {0xCE4E6824U,kRowMs,0,false}, // 21 boss.lua on_scene_finished
-    {0xE5B7C166U,kRowMs,0,false}, // 22 boss.lua start_room1
+    {0x5276621BU,5823U,0,false}, // 16 authored; the proven graph never plays it
+    {0x274C8AD6U,16540U,0,false}, // 17 route.lua route.initialize - ledge arrival (region 0)
+    {0x52AE09A9U,3786U,0,false}, // 18 route.lua stage "ledge_final" (PM_LEDGE_FINAL)
+    {0xA40140B4U,10497U,0,false}, // 19 route.lua stage "see_tree"
+    {0x84D90F6BU,4121U,0,false}, // 20 boss.lua reveal - Minotaur scene activation
+    {0xCE4E6824U,2368U,0,false}, // 21 boss.lua on_scene_finished
+    {0xE5B7C166U,9319U,0,false}, // 22 boss.lua start_room1
     {0,0,0,false},                // 23 unauthored
-    {0xE10541E0U,kRowMs,0,false}, // 24 boss.lua retreat into room 2
-    {0x56B56FBCU,kRowMs,0,false}, // 25 boss.lua rooms[2].cue - the room-2 gauntlet
-    {0xED18D16AU,kRowMs,0,false}, // 26 boss.lua rooms[3].cue - retreat into room 3
-    {0xD1DD2887U,kRowMs,0,false}, // 27 boss.lua defeat
-    {0xB61406F2U,kRowMs,0,false}, // 28 authored; the proven graph never plays it
-    {0x8C046411U,kRowMs,0,false}, // 29 authored; the proven graph never plays it
+    {0xE10541E0U,2646U,0,false}, // 24 boss.lua retreat into room 2
+    {0x56B56FBCU,6612U,0,false}, // 25 boss.lua rooms[2].cue - the room-2 gauntlet
+    {0xED18D16AU,2423U,0,false}, // 26 boss.lua rooms[3].cue - retreat into room 3
+    {0xD1DD2887U,16010U,0,false}, // 27 boss.lua defeat
+    {0xB61406F2U,3588U,0,false}, // 28 authored; the proven graph never plays it
+    {0x8C046411U,16599U,0,false}, // 29 authored; the proven graph never plays it
 };
 inline constexpr std::size_t kDialogueRowCount=std::size(kDialogueRows);
 // mission.DialogueCue maps CUE_n -> n, so a cue ordinal is already this array's index.

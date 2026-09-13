@@ -62,10 +62,14 @@ public:
     }
     template<class Presentation>
     void advance(const DialogueDefinition& policy, std::uint64_t run, std::uint64_t now,
-                 bool blocked, Presentation& presentation, std::uint32_t& revision) noexcept {
+                 bool blocked, Presentation& presentation, std::uint32_t& revision,
+                 bool retainUnsubmitted=false) noexcept {
         if (presentation.activeRow != kNoDialogue) {
             // Keep a publication in flight until its acknowledgement or timeout.
             if (now - offeredAt_ < policy.dispatchTimeoutMs) { return; }
+            // Required mission speech stays offered across a temporary native
+            // ownership loss. Keep its generation so recovery cannot replay it.
+            if (retainUnsubmitted) { offeredAt_=now;++timedOut_;++revision;return; }
             presentation.activeRow = kNoDialogue; ++timedOut_; ++revision;
         }
         if (now < voiceUntil_ || blocked) { return; }

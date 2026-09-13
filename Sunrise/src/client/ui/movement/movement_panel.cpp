@@ -14,6 +14,7 @@
 #include "../../../core/ui/components/label/ui_label_component.h"
 #include "../../../core/ui/components/toggle/ui_toggle_component.h"
 #include "../../movement/movement_settings_store.h"
+#include "../../../state/activity/nightfall/rules.h"
 
 namespace sunrise::client::ui::movement {
 namespace {
@@ -130,6 +131,13 @@ key_picker(const char* id, CaptureTarget target, std::uint32_t& virtualKey, floa
 void draw() noexcept {
     client::movement::Settings settings = client::movement::get();
     bool changed = false;
+    const bool gm = state::activity::nightfall::movement_blocked();
+    if (gm) {
+        ImGui::TextWrapped("Teleport and noclip are disabled during Grandmaster runs.");
+        if (g_capturing == CaptureTarget::teleport || g_capturing == CaptureTarget::noclip)
+            g_capturing = CaptureTarget::none;
+    }
+    ImGui::BeginDisabled(gm);
 
     ImGui::TextUnformatted("Teleport");
     ImGui::Separator();
@@ -190,6 +198,7 @@ void draw() noexcept {
 
     ImGui::Spacing();
     ImGui::Spacing();
+    ImGui::EndDisabled();
     ImGui::TextUnformatted("Fly");
     ImGui::Separator();
     ImGui::TextWrapped("Fly with your movement keys.");

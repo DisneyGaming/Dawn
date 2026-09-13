@@ -14,6 +14,7 @@
 # Build output; tools/build contains project scripts and stays tracked.
 /build/
 /Sunrise/build/
+/Sunrise/unit/build/
 *.exe
 *.dll
 *.obj
@@ -27,6 +28,7 @@
 
 # Runtime caches, logs, local tools, and editor state
 /.sunrise/
+/.dawn/
 /.codex-tools/
 /.codex/
 /Sunrise/cache/

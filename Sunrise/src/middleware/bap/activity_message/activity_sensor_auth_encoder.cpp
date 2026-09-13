@@ -2,6 +2,7 @@
 
 #include "sensor_auth_update.h"
 #include "native/roster_lifetime_wire.h"
+#include "../../../state/activity/coo/native_presentation_authority.h"
 #include "../../../state/activity/omega_intro_rules.h"
 #include "../../../state/activity/omega_portal_entry.h"
 #include "../../../state/activity/omega_crown_respawn_authority.h"
@@ -744,6 +745,16 @@ constexpr std::uint32_t kMaximumRegion = 0x7FFFFFFF;
 bool encode_sensor_auth_update(const Snapshot& snapshot,
                                std::span<std::byte> output,
                                std::size_t& written) noexcept {
+    written = 0;
+    // A zero-width invalid dialogue must reject the entire packet; otherwise
+    // the object filter silently omits the required mission speech.
+    const auto validDialogue=[](const auto& frame) noexcept {
+        return !frame.enabled || state::activity::coo::native_presentation::dialogue_bits(frame.generations,frame.activeRow)!=0;
+    };
+    if(!validDialogue(snapshot.deadly_trial) || !validDialogue(snapshot.gateway)
+        || !validDialogue(snapshot.beyond_infinity) || !validDialogue(snapshot.deep_storage)
+        || !validDialogue(snapshot.hijacked) || !validDialogue(snapshot.strike_bond)
+        || !validDialogue(snapshot.strike_pact)) { return false; }
     if (!snapshot.archiveOmega) { return legacy_encode_sensor_auth_update(snapshot, output, written); }
 
     written = 0;

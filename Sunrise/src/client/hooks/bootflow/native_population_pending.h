@@ -8,6 +8,7 @@ namespace events=state::activity::native_population;
 struct Birth final {
     events::Event event{};
     std::uint32_t parent{UINT32_MAX};
+    events::Receipt receipt{};
 };
 enum class Intake { accepted, duplicate, invalid, conflict, overflow };
 template<std::size_t Capacity> class Queue final {
@@ -21,13 +22,14 @@ public:
             const auto& previous=items_[i];
             if(previous.event.lease==birth.event.lease && previous.event.actor.actor==birth.event.actor.actor) {
                 return previous.parent==birth.parent && previous.event.sourceHandle==birth.event.sourceHandle
-                    ?Intake::duplicate:Intake::conflict;
+                    && previous.receipt==birth.receipt?Intake::duplicate:Intake::conflict;
             }
         }
         if(used_==Capacity) return Intake::overflow;
         items_[used_++]=birth;return Intake::accepted;
     }
     std::size_t size() const noexcept {return used_;}
+    bool full() const noexcept {return used_==Capacity;}
     const Birth& operator[](std::size_t index) const noexcept {return items_[index];}
     void erase(std::size_t index) noexcept {
         for(std::size_t i=index+1;i<used_;++i) items_[i-1]=items_[i];
