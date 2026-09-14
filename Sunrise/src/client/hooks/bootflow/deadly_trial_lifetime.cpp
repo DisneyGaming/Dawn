@@ -39,11 +39,11 @@ void reconnect(std::uintptr_t roster) noexcept {
     if(!run) { return; }
     const auto expectedScenario=hijackedRun?state::activity::hijacked::kScenario:0x80B2E043U;
     gateway_native::Read read{image};Native native;
-    if(!hijackedRun && repair_presentation(read,native,roster)==Result::repaired) {
+    if(repair_presentation(read,native,roster,expectedScenario)==Result::repaired) {
         std::array<char,192> line{};
         const auto n=std::snprintf(line.data(),line.size(),
-            "ev=deadly_trial stage=presentation_rebound run=%llu boundary=4D7380 authority=native_packet",
-            static_cast<unsigned long long>(run));
+            "ev=%s stage=presentation_rebound run=%llu boundary=4D7380 authority=native_packet",
+            hijackedRun?"hijacked":"deadly_trial",static_cast<unsigned long long>(run));
         if(n>0 && static_cast<std::size_t>(n)<line.size()) {
             core::log::write(core::log::Channel::client,core::log::Level::info,{line.data(),static_cast<std::size_t>(n)});
         }

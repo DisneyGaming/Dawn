@@ -7,6 +7,7 @@
 #include "../src/state/activity/hijacked/boss_damage.h"
 #include "../src/state/activity/hijacked/route_geometry.h"
 #include "hijacked_lifetime_tests.h"
+#include "hijacked_presentation_binding_tests.h"
 #include "hijacked_boss_damage_tests.h"
 #include "../src/server/bap/region_lineage.h"
 #include "../src/server/bap/encrypted/activity_message/membership/activity_membership_route.h"
@@ -793,6 +794,7 @@ int main() {
     held_region_routing();native_survivor_hierarchy();
     check(hijacked_boss_damage_contracts(),"Hijacked native damage contracts");
     check(hijacked_lifetime_binding(),"Hijacked native lifetime binding");
+    check(hijacked_presentation_binding(),"Hijacked native presentation binding");
     presentation_records();clock_ownership();native_contracts();auto doc=parse(shipped());check(doc && ds::valid_document(doc->views()),"shipped Lua compiles against recovered bindings");
     mists_bypass_and_boss_gates(doc->views());opening_tunnel_bypass(doc->views());exterior_streaming_survivors(doc->views());all_exterior_streaming_survivors(doc->views());cleanup_at_user_location(doc->views());late_well_arrival(doc->views());incremental_platforms(doc->views());Replay normal(doc->views(),false);normal.run_all();Replay early(doc->views(),true);early.run_all();Replay adjustedInitial(doc->views(),false,true);adjustedInitial.run_all();
     check(adjustedInitial.moves[0]==0 && adjustedInitial.moves[1]>0 && adjustedInitial.moves[2]>0,"initial relocation proximity cannot block genuine health retreats");
