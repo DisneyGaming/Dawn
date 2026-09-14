@@ -97,7 +97,6 @@ bool initialize(void* module) noexcept {
         ReleaseSRWLockExclusive(&g_runtimeLock);
         return false;
     }
-    state::unlocks::publish(settings::get().initialUnlocks);
     // One stage per step, so a boot failure names the step instead of the whole expression.
     const char* stage = nullptr;
     if (!log::initialize(module, settings::get().logging)) {

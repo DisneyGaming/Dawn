@@ -18,6 +18,7 @@
 #include "state.h"
 #include "state_account_transaction_helpers.h"
 #include "storage/internal.h"
+#include "../persistence/persistence.h"
 
 namespace sunrise::state {
 namespace runtime::detail {
@@ -79,52 +80,13 @@ constexpr std::uint64_t kFirstGeneratedItemSoid = 0x4000000000000001ULL;
 /** Finds a fresh deterministic item-instance SOID without sharing any other identity key. */
 [[nodiscard]] bool next_item_instance_soid(const AccountState& account,
                                            std::uint64_t& output) noexcept {
-    std::uint64_t candidate = kFirstGeneratedItemSoid;
-    for (std::size_t characterIndex = 0; characterIndex < account.characterCount;
-         ++characterIndex) {
-        const CharacterState& character = account.characters[characterIndex];
-        for (const auto& item : character.equipment.slots) {
-            if (!item.has_value() || item->instanceSoid < candidate) {
-                continue;
-            }
-            if (item->instanceSoid == (std::numeric_limits<std::uint64_t>::max)()) {
-                return false;
-            }
-            candidate = item->instanceSoid + 1U;
-        }
-        for (std::size_t index = 0; index < character.inventory.count; ++index) {
-            const std::uint64_t instanceSoid = character.inventory.values[index].instanceSoid;
-            if (instanceSoid < candidate) {
-                continue;
-            }
-            if (instanceSoid == (std::numeric_limits<std::uint64_t>::max)()) {
-                return false;
-            }
-            candidate = instanceSoid + 1U;
-        }
-    }
-    while (account_owns_soid(account, candidate)) {
-        if (candidate == (std::numeric_limits<std::uint64_t>::max)()) {
-            return false;
-        }
-        ++candidate;
-    }
-    output = candidate;
-    return output != 0;
+    return persistence::next_item_instance_soid(account, output);
 }
 
 /** Finds a collision-free SOID for one newly appended profile stack. */
 [[nodiscard]] bool next_profile_item_instance_soid(const AccountState& account,
                                                    std::uint64_t& output) noexcept {
-    std::uint64_t candidate = authored_inventory::kFirstProfileItemInstanceSoid;
-    while (account_owns_soid(account, candidate)) {
-        if (candidate == (std::numeric_limits<std::uint64_t>::max)()) {
-            return false;
-        }
-        ++candidate;
-    }
-    output = candidate;
-    return output != 0;
+    return persistence::next_profile_item_instance_soid(account, output);
 }
 
 /** @return True when an account or character identity already owns the candidate object key. */

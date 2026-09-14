@@ -22,9 +22,13 @@ namespace character = sunrise::middleware::datagen::family4::character;
 
 namespace sunrise::state::unlocks {
 
-const Table& get() noexcept {
-    static const Table empty{};
-    return empty;
+ScopedTable snapshot() noexcept {
+    return {};
+}
+
+bool find_character(const ScopedTable&, std::uint64_t, CharacterTable& output) noexcept {
+    output = {};
+    return false;
 }
 
 } // namespace sunrise::state::unlocks
@@ -32,6 +36,8 @@ const Table& get() noexcept {
 namespace sunrise::middleware::datagen::family4::progression {
 
 bool key_bank(state::build_data::progressions::Scope,
+              std::uint64_t,
+              const state::unlocks::ScopedTable&,
               std::span<layout::Entry> bank) noexcept {
     for (layout::Entry& entry : bank) {
         entry = {};

@@ -36,14 +36,17 @@ constexpr std::size_t kRepushReportLimit = 96;
         return false;
     }
     reward::Ticket ticket{};
-    if (!reward::claim(session.activity.instance.sessionId, ticket)) {
+    if (!reward::claim(session.activity.instance.sessionId, account.primarySoid, ticket)) {
         return false;
     }
     state::PendingProfileItemAcquisition mutation{};
     const auto prepared =
         state::prepare_profile_currency_grant(ticket.definitionHash, ticket.quantity, mutation);
     if (prepared == state::ProfileCurrencyGrantResult::capped) {
-        (void)reward::finish(ticket, 0);
+        if (!reward::finish_durable(ticket, 0)) {
+            reward::release(ticket);
+            return false;
+        }
         core::log::write(core::log::Channel::server,
                          core::log::Level::info,
                          "ev=nightfall_reward result=ok credited=0 reason=currency_cap");
@@ -83,7 +86,7 @@ constexpr std::size_t kRepushReportLimit = 96;
     std::copy_n(scratch.framed.begin(), framedSize, response.begin());
     const std::int32_t credited = mutation.acquiredQuantity - mutation.previousQuantity;
     if (credited <= 0 || credited > ticket.quantity
-        || !state::commit_profile_item_acquisition(mutation)) {
+        || !state::commit_profile_item_reward(mutation, ticket.debtId, credited)) {
         reward::release(ticket);
         return false;
     }

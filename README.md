@@ -82,9 +82,9 @@ cd dawn
 | `-NoLaunch` | deploy without starting the game |
 | `-Restore` | roll back to the last backup it made |
 
-Backups land in `<GAME_ROOT>\.dawn\backup\<timestamp>\` and cover both DLL locations, both
-`settings.json` files and every mission script. The pristine Steam DLL the Sunrise installer saved
-at `.sunrise\original\steam_api64.dll` is never touched.
+Backups land in `<GAME_ROOT>\.dawn\backup\<timestamp>\` and cover both DLL locations, local runtime
+settings, player databases, and every mission script. The pristine Steam DLL the Sunrise installer
+saved at `.sunrise\original\steam_api64.dll` is never touched.
 
 Read [Setup](#setup) anyway — the script automates those steps but the reasoning behind them is
 what you will need when something goes wrong.
@@ -133,8 +133,12 @@ launch the game and ask it:
 Get-Process destiny2 | % { $_.Modules | ? { $_.ModuleName -like 'steam_api64*' } | select FileName }
 ```
 
-Whatever path that prints is the one that matters. The `Sunrise/` runtime tree — `scripts/`,
-`settings.json`, `logs/` — must sit **beside that DLL**, not beside the other one.
+Whatever path that prints is the one that matters. The `Sunrise/` runtime tree must be a child of
+that DLL's directory. Its `scripts/`, `settings.json`, `player-state.db`, and `logs/` entries live
+inside that tree.
+
+See [Player persistence](Sunrise/docs/PERSISTENCE.md) for first-run JSON migration, backups, and
+the current mission-resume limits.
 
 If you are unsure, deploy to both locations in step 4 and let this command arbitrate.
 

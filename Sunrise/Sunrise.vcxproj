@@ -187,6 +187,14 @@
     <ClCompile Include="src\state\runtime\state_account_profile_runtime.cpp" />
     <ClCompile Include="src\state\runtime\state_account_socket_runtime.cpp" />
     <ClCompile Include="src\state\runtime\state_account_item_action_runtime.cpp" />
+    <ClCompile Include="src\state\persistence\persistence.cpp" />
+    <ClCompile Include="src\state\activity\progress\mission_progress.cpp" />
+    <ClCompile Include="src\state\activity\nightfall\completion_reward.cpp" />
+    <ClCompile Include="vendor\sqlite\sqlite3.c">
+      <CompileAs>CompileAsC</CompileAs>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <PreprocessorDefinitions>SQLITE_THREADSAFE=1;SQLITE_DQS=0;SQLITE_DEFAULT_FOREIGN_KEYS=1;SQLITE_OMIT_LOAD_EXTENSION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="src\core\ui\busy\ui_busy_overlay.cpp" />
     <ClCompile Include="src\core\ui\busy\ui_busy_state.cpp" />
     <ClCompile Include="src\core\ui\notice\ui_notice_overlay.cpp" />

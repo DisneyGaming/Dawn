@@ -13,12 +13,14 @@ inline constexpr std::size_t kUnlockOverrideCapacity = 100;
 struct UnlockFlagOverride {
     std::uint16_t slot{};
     std::uint8_t value{};
+    friend bool operator==(const UnlockFlagOverride&, const UnlockFlagOverride&) = default;
 };
 
 /** One logical signed unlock value stored by slot. */
 struct UnlockValueOverride {
     std::uint16_t slot{};
     std::int32_t value{};
+    friend bool operator==(const UnlockValueOverride&, const UnlockValueOverride&) = default;
 };
 
 /** Global family-5 object and its bounded account overrides. */
@@ -33,6 +35,7 @@ struct Family5State {
     // for each publication; settings do not author its value or presence.
     std::int64_t timeSeconds{};
     bool hasTime{};
+    friend bool operator==(const Family5State&, const Family5State&) = default;
 };
 
 /** Account-wide evaluated content state. */

@@ -12,6 +12,7 @@
 #include "runtime.h"
 #include "state_account_transaction_helpers.h"
 #include "storage/internal.h"
+#include "../persistence/persistence.h"
 
 namespace sunrise::state {
 
@@ -371,6 +372,10 @@ bool commit_socket_plug(PendingSocketPlug& mutation) noexcept {
         ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
         return fail("account_or_resolve");
     }
+    if (!persistence::commit_account(runtime::storage::g_state.account, candidate)) {
+        ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
+        return fail("persistence");
+    }
     runtime::storage::g_state.account = candidate;
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
 
@@ -498,6 +503,10 @@ bool commit_item_state(PendingItemState& mutation) noexcept {
         || !family4_loadout::resolve(candidate, prepared.characterIndex, checked)) {
         ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
         return fail("account_or_resolve");
+    }
+    if (!persistence::commit_account(runtime::storage::g_state.account, candidate)) {
+        ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
+        return fail("persistence");
     }
     runtime::storage::g_state.account = candidate;
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);

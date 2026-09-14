@@ -163,21 +163,24 @@ bool encode(const state::CharacterState& state,
     for (inventory::layout::Entry& item : object.inventoryItems) {
         item.definitionIndex = kEmptyDefinitionIndex;
     }
-    // Acquired flags and objective progress are authored policy, published once per process.
-    const state::unlocks::Table& unlocks = state::unlocks::get();
+    const state::unlocks::ScopedTable scopedUnlocks = state::unlocks::snapshot();
+    state::unlocks::CharacterTable unlocks{};
+    static_cast<void>(state::unlocks::find_character(scopedUnlocks, state.soid, unlocks));
     for (std::size_t index = 0; index < object.acquiredFlags.size(); ++index) {
         object.acquiredFlags[index] = static_cast<std::byte>(
-            index < unlocks.characterObjectFlags.size() ? unlocks.characterObjectFlags[index]
+            index < unlocks.objectFlags.size() ? unlocks.objectFlags[index]
                                                         : std::uint8_t{});
     }
     for (std::size_t index = 0; index < object.objectiveValues.size(); ++index) {
         object.objectiveValues[index] =
-            index < unlocks.characterObjectValues.size() ? unlocks.characterObjectValues[index] : 0;
+            index < unlocks.objectValues.size() ? unlocks.objectValues[index] : 0;
     }
     if (!build_equipment_summary(effectiveLight, object.equipmentSummary)) {
         return false;
     }
     if (!progression::key_bank(state::build_data::progressions::Scope::character,
+                               state.soid,
+                               scopedUnlocks,
                                object.progressions)) {
         return false;
     }

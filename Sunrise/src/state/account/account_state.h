@@ -18,6 +18,7 @@ inline constexpr std::size_t kDismantleRewardPolicyCapacity = 8;
 struct DismantleRewardPolicy {
     std::uint32_t definitionHash{};
     std::int32_t quantity{};
+    friend bool operator==(const DismantleRewardPolicy&, const DismantleRewardPolicy&) = default;
 };
 
 /** Stable character race values authored independently of package definition mappings. */
@@ -103,6 +104,7 @@ struct CharacterState {
     account::inventory::CharacterItems inventory;
     /** Next row generation; equip transactions consume two values for the two moved items. */
     std::uint32_t nextInventorySerial{};
+    friend bool operator==(const CharacterState&, const CharacterState&) = default;
 };
 
 /** Account identity shared by backend object families. */
@@ -118,6 +120,7 @@ struct AccountState {
     std::array<CharacterState, kCharacterCapacity> characters{};
     std::size_t characterCount{};
     account::settings::AccountSettings settings;
+    friend bool operator==(const AccountState&, const AccountState&) = default;
 };
 
 namespace account {

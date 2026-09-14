@@ -33,6 +33,15 @@
 /.codex/
 /Sunrise/cache/
 /Sunrise/logs/
+# Local runtime state. Tracked seed documents live under Sunrise/resources/.
+/Sunrise/player-state.db
+/Sunrise/player-state.db-wal
+/Sunrise/player-state.db-shm
+/Sunrise/player-state.db-journal
+/Sunrise/settings.json
+/Sunrise/hud.json
+/Sunrise/movement.json
+/Sunrise/player.json
 __pycache__/
 *.py[cod]
 *.log

@@ -14,9 +14,12 @@
 #include "../../core/settings/settings.h"
 #include "../activity/defaults/activity_defaults_validation.h"
 #include "../activity/nightfall/completion_reward.h"
+#include "../activity/progress/mission_progress.h"
 #include "../investment/investment_clock.h"
+#include "../unlocks/unlocks_runtime.h"
 #include "../build_data/runtime.h"
 #include "equipment/configured_equipment_identity.h"
+#include "../persistence/persistence.h"
 #include "runtime.h"
 #include "state.h"
 #include "storage/internal.h"
@@ -173,6 +176,17 @@ template <std::size_t Size>
     return account::valid(accountState);
 }
 
+[[nodiscard]] bool same_profile_identities(const AccountState& left,
+                                           const AccountState& right) noexcept {
+    if (left.profileItemCount != right.profileItemCount) return false;
+    for (std::size_t index = 0; index < left.profileItemCount; ++index) {
+        if (left.profileItems[index].instanceSoid != right.profileItems[index].instanceSoid) {
+            return false;
+        }
+    }
+    return true;
+}
+
 } // namespace
 
 /**
@@ -200,16 +214,35 @@ bool initialize(void* module,
         || !activity::defaults::valid(activityDefaults)) {
         return false;
     }
+    AccountState persistedAccount{};
+    unlocks::ScopedTable persistedUnlocks{};
+    Family5State persistedFamily5{};
+    if (!persistence::initialize(module,
+                                 runtimeAccount,
+                                 core::settings::get().initialUnlocks,
+                                 core::settings::get().initialFamily5,
+                                 persistedAccount,
+                                 persistedUnlocks,
+                                 persistedFamily5)) {
+        return false;
+    }
+    runtimeAccount = persistedAccount;
     if (!build_data::initialize(module, runtime::equipment::configured_hash(runtimeAccount))) {
+        persistence::shutdown();
         return false;
     }
     // A cache hit already has the complete plug relation, so publish canonical profile identities
     // in the first State image.  On a first cache build, snapshot preparation repeats this step
     // after package extraction has published the relation.
-    if (build_data::socket_plug_rules_ready()
-        && !canonicalize_profile_item_identities(runtimeAccount)) {
-        build_data::shutdown();
-        return false;
+    if (build_data::socket_plug_rules_ready()) {
+        const AccountState beforeCanonicalization = runtimeAccount;
+        if (!canonicalize_profile_item_identities(runtimeAccount)
+            || (!same_profile_identities(beforeCanonicalization, runtimeAccount)
+                && !persistence::commit_account(beforeCanonicalization, runtimeAccount))) {
+            persistence::shutdown();
+            build_data::shutdown();
+            return false;
+        }
     }
     {
         // The account key is authored, and a truncated one is consistent enough to go unnoticed.
@@ -232,6 +265,7 @@ bool initialize(void* module,
         || !randomize(initialized.signOn.sessionToken) || !randomize(initialized.bap.nonce)
         || !randomize(initialized.bap.sessionKey) || !randomize(initialized.bap.envelopeIv)) {
         SecureZeroMemory(&initialized, sizeof initialized);
+        persistence::shutdown();
         build_data::shutdown();
         return false;
     }
@@ -243,11 +277,10 @@ bool initialize(void* module,
     initialized.activity.defaults = activityDefaults;
     initialized.investment.family5.objectSoid = kGlobalFamily5Soid;
     // Only the override lists come from settings. Identity and gate stay owned by State.
-    const Family5State& authored = core::settings::get().initialFamily5;
-    initialized.investment.family5.flags = authored.flags;
-    initialized.investment.family5.flagCount = authored.flagCount;
-    initialized.investment.family5.values = authored.values;
-    initialized.investment.family5.valueCount = authored.valueCount;
+    initialized.investment.family5.flags = persistedFamily5.flags;
+    initialized.investment.family5.flagCount = persistedFamily5.flagCount;
+    initialized.investment.family5.values = persistedFamily5.values;
+    initialized.investment.family5.valueCount = persistedFamily5.valueCount;
     // The arm is account-wide and rides the first ws-503, which goes out before any pick. Nothing
     // is selected at boot, so it is armed when any authored character carries the bypass. The
     // per-character objB byte is the other half, and it still decides which character it opens.
@@ -263,11 +296,14 @@ bool initialize(void* module,
         std::chrono::system_clock::now().time_since_epoch()).count();
     if (!clock.begin(utcSeconds, GetTickCount64())) {
         SecureZeroMemory(&initialized, sizeof initialized);
+        persistence::shutdown();
         build_data::shutdown();
         return false;
     }
     // Publish one complete State and its clock only after every generated secret is valid.
     activity::nightfall::rewards::clear();
+    activity::progress::reset();
+    unlocks::publish(persistedUnlocks);
     AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
     runtime::storage::g_state = initialized;
     investmentClock = clock;
@@ -279,6 +315,8 @@ bool initialize(void* module,
 /** Securely erases State, including activity destinations and matchmaking descriptors. */
 void shutdown() noexcept {
     activity::nightfall::rewards::clear();
+    activity::progress::reset();
+    persistence::shutdown();
     AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
     SecureZeroMemory(&runtime::storage::g_state, sizeof runtime::storage::g_state);
     investmentClock = {};
@@ -296,11 +334,14 @@ bool ensure_profile_item_identities() noexcept {
     AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
     AccountState candidate = runtime::storage::g_state.account;
     const bool ready = canonicalize_profile_item_identities(candidate);
-    if (ready) {
+    const bool committed = ready
+        && (same_profile_identities(runtime::storage::g_state.account, candidate)
+            || persistence::commit_account(runtime::storage::g_state.account, candidate));
+    if (committed) {
         runtime::storage::g_state.account = candidate;
     }
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
-    return ready;
+    return committed;
 }
 
 /**

@@ -5,6 +5,7 @@
 #include <cstdint>
 
 #include "../build_data/progressions/definition.h"
+#include "../account/account_state.h"
 
 namespace sunrise::state::unlocks {
 
@@ -50,6 +51,37 @@ struct Table {
     ProgressionBank accountProgressions{};
     /** Lanes published into the selected-character object's progression bank. */
     ProgressionBank characterProgressions{};
+    friend bool operator==(const Table&, const Table&) = default;
 };
+
+/** Durable banks owned by one playable character. */
+struct CharacterTable {
+    std::uint64_t characterSoid{};
+    std::array<std::uint8_t, kCharacterFlagCapacity> flags{};
+    std::array<std::uint8_t, kCharacterObjectFlagCapacity> objectFlags{};
+    std::array<std::int32_t, kCharacterObjectValueCapacity> objectValues{};
+    ProgressionBank progressions{};
+    friend bool operator==(const CharacterTable&, const CharacterTable&) = default;
+};
+
+/** Runtime unlock state with character-owned banks separated by stable character SOID. */
+struct ScopedTable {
+    std::uint64_t accountSoid{};
+    std::array<std::uint8_t, kAccountFlagCapacity> accountFlags{};
+    std::array<std::uint8_t, kProfileFlagCapacity> profileFlags{};
+    std::array<std::int32_t, kObjectiveValueCapacity> objectiveValues{};
+    ProgressionBank accountProgressions{};
+    std::array<CharacterTable, kCharacterCapacity> characters{};
+    std::size_t characterCount{};
+    friend bool operator==(const ScopedTable&, const ScopedTable&) = default;
+};
+
+/** Expands the legacy shared character seed into one independently owned bank per character. */
+[[nodiscard]] ScopedTable expand(const Table& seed, const AccountState& account) noexcept;
+
+/** Finds one character in an already captured scoped snapshot. */
+[[nodiscard]] bool find_character(const ScopedTable& table,
+                                  std::uint64_t characterSoid,
+                                  CharacterTable& output) noexcept;
 
 } // namespace sunrise::state::unlocks

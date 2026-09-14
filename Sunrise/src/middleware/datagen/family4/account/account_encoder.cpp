@@ -90,13 +90,17 @@ bool encode(const state::AccountState& state, std::span<std::byte> output) noexc
         return false;
     }
 
-    // Acquired flags and objective progress are authored policy, published once per process.
-    const state::unlocks::Table& unlocks = state::unlocks::get();
+    const state::unlocks::ScopedTable unlocks = state::unlocks::snapshot();
     object.acquiredFlags = unlocks.accountFlags;
     object.profileUnlockFlags = unlocks.profileFlags;
     object.objectiveValues = unlocks.objectiveValues;
-    for (layout::CharacterUnlockBlock& block : object.characterUnlocks) {
-        block.flags = unlocks.characterFlags;
+    for (std::size_t index = 0; index < object.characterUnlocks.size(); ++index) {
+        state::unlocks::CharacterTable characterUnlocks{};
+        if (index < state.characterCount
+            && state::unlocks::find_character(
+                unlocks, state.characters[index].soid, characterUnlocks)) {
+            object.characterUnlocks[index].flags = characterUnlocks.flags;
+        }
     }
     object.publicityExpiries.fill(kSuppressedPublicityDeadline);
     object.seenMessages.fill(kSeenMessageByte);
@@ -107,6 +111,8 @@ bool encode(const state::AccountState& state, std::span<std::byte> output) noexc
         item.definitionIndex = kEmptyDefinitionIndex;
     }
     if (!progression::key_bank(state::build_data::progressions::Scope::account,
+                               state.primarySoid,
+                               unlocks,
                                object.progressions)) {
         return false;
     }

@@ -124,6 +124,30 @@ inline void complete(std::uint64_t run, std::uint64_t now) noexcept {
     p.outcome = Outcome::completed; p.finishedAt = now;
     if (variant) (void)rewards::offer(p.session, p.run, variant->difficulty);
 }
+/**
+ * Accepts a production completion only after its reward debt and mission completion are durable.
+ * This overload keeps the test-only, memory mailbox path above independent of SQLite.
+ */
+[[nodiscard]] inline bool complete(std::uint64_t run,
+                                   std::uint64_t now,
+                                   std::uint64_t accountSoid,
+                                   std::uint64_t characterSoid,
+                                   std::uint32_t missionHash,
+                                   std::int64_t updatedUtc) noexcept {
+    const std::unique_lock guard(detail::mutex);
+    auto& p = detail::progress;
+    if (!detail::armed || p.run != run || p.outcome == Outcome::failed) return false;
+    const auto* variant = strikes::find(detail::activity);
+    if (!variant || variant->difficulty == strikes::Difficulty::standard) return false;
+    if (p.outcome != Outcome::running && p.outcome != Outcome::completed) return false;
+    if (!rewards::offer(accountSoid, characterSoid, p.session, p.run, missionHash,
+                        variant->difficulty, updatedUtc)) return false;
+    if (p.outcome == Outcome::running) {
+        p.outcome = Outcome::completed;
+        p.finishedAt = now;
+    }
+    return true;
+}
 // The current host publishes exactly one participant per activity membership.
 // A qualified death of that participant is therefore a complete fireteam wipe.
 // Missing/retired components are never submitted as death observations.

@@ -28,8 +28,8 @@ $BackupDir  = Join-Path $GameRoot '.sunrise\backup'
 function Step($m) { Write-Host "==> $m" -ForegroundColor Cyan }
 function Warn($m) { Write-Host "!!  $m" -ForegroundColor Yellow }
 
-# The game must not be running for anything that touches its folder - the DLL is
-# locked and the mod rewrites settings.json on exit. Pure builds are exempt.
+# The game must not be running for anything that touches its folder: the DLL is
+# locked and SQLite may have an open player-state database. Pure builds are exempt.
 function Assert-GameClosed {
     if (Get-Process destiny2 -ErrorAction SilentlyContinue) {
         throw 'destiny2.exe is running. Close the game first.'

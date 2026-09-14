@@ -11,6 +11,7 @@
 #include "runtime.h"
 #include "state_account_transaction_helpers.h"
 #include "storage/internal.h"
+#include "../persistence/persistence.h"
 
 namespace sunrise::state {
 
@@ -272,6 +273,10 @@ bool commit_item_acquisition(PendingItemAcquisition& mutation) noexcept {
         || checkedRow != prepared.inventoryRow || checkedSlot != prepared.equipmentSlot) {
         ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
         return fail("resolve");
+    }
+    if (!persistence::commit_account(runtime::storage::g_state.account, candidate)) {
+        ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
+        return fail("persistence");
     }
     runtime::storage::g_state.account = candidate;
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
@@ -652,13 +657,15 @@ bool commit_profile_item_acquisition(PendingProfileItemAcquisition& mutation) no
     AccountState candidate{};
     const bool ready =
         materialize_profile_acquisition(runtime::storage::g_state.account, prepared, candidate);
-    if (ready) {
+    const bool committed = ready
+        && persistence::commit_account(runtime::storage::g_state.account, candidate);
+    if (committed) {
         runtime::storage::g_state.account = candidate;
     }
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
     report_profile_acquisition("commit",
-                               ready ? "ok" : "fail",
-                               ready ? "published" : "stale_or_invalid",
+                               committed ? "ok" : "fail",
+                               committed ? "published" : "stale_invalid_or_not_durable",
                                prepared.acquiredDefinitionHash,
                                prepared.accountSoid,
                                prepared.acquiredInstanceSoid,
@@ -668,7 +675,43 @@ bool commit_profile_item_acquisition(PendingProfileItemAcquisition& mutation) no
                                prepared.previousQuantity,
                                prepared.acquiredQuantity,
                                prepared.appended);
-    return ready;
+    return committed;
+}
+
+/** Commits one completion credit and its durable debt as a single SQLite transaction. */
+bool commit_profile_item_reward(PendingProfileItemAcquisition& mutation,
+                                std::uint64_t debtId,
+                                std::int32_t credited) noexcept {
+    const PendingProfileItemAcquisition prepared = mutation;
+    mutation = {};
+    if (!valid_profile_mutation_shape(prepared) || !prepared.rewardGrant || debtId == 0
+        || credited <= 0 || credited != prepared.acquiredQuantity - prepared.previousQuantity) {
+        report_profile_acquisition("reward_commit", "fail", "mutation_or_debt",
+                                   prepared.acquiredDefinitionHash, prepared.accountSoid,
+                                   prepared.acquiredInstanceSoid, prepared.bucketId,
+                                   prepared.profileIndex, prepared.afterItemCount,
+                                   prepared.previousQuantity, prepared.acquiredQuantity,
+                                   prepared.appended);
+        return false;
+    }
+
+    AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
+    AccountState candidate{};
+    const bool ready =
+        materialize_profile_acquisition(runtime::storage::g_state.account, prepared, candidate);
+    const bool committed = ready
+        && persistence::commit_account_and_reward(runtime::storage::g_state.account, candidate,
+                                                  debtId, credited);
+    if (committed) runtime::storage::g_state.account = candidate;
+    ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
+    report_profile_acquisition("reward_commit", committed ? "ok" : "fail",
+                               committed ? "published" : "stale_invalid_or_not_durable",
+                               prepared.acquiredDefinitionHash, prepared.accountSoid,
+                               prepared.acquiredInstanceSoid, prepared.bucketId,
+                               prepared.profileIndex, prepared.afterItemCount,
+                               prepared.previousQuantity, prepared.acquiredQuantity,
+                               prepared.appended);
+    return committed;
 }
 
 } // namespace sunrise::state

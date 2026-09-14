@@ -22,17 +22,24 @@ static_assert(std::is_same_v<layout::Values, state::unlocks::ProgressionLanes>);
  * @param scope Replicated object owning the bank.
  * @return Lanes addressed by definition index.
  */
-[[nodiscard]] const state::unlocks::ProgressionBank&
-authored_lanes(state::build_data::progressions::Scope scope) noexcept {
-    const state::unlocks::Table& table = state::unlocks::get();
-    return scope == state::build_data::progressions::Scope::account ? table.accountProgressions
-                                                                    : table.characterProgressions;
+[[nodiscard]] state::unlocks::ProgressionBank
+authored_lanes(state::build_data::progressions::Scope scope,
+               std::uint64_t ownerSoid,
+               const state::unlocks::ScopedTable& table) noexcept {
+    if (scope == state::build_data::progressions::Scope::account) {
+        return table.accountProgressions;
+    }
+    state::unlocks::CharacterTable character{};
+    static_cast<void>(state::unlocks::find_character(table, ownerSoid, character));
+    return character.progressions;
 }
 
 } // namespace
 
 /** Keys one object's progression bank and fills each keyed row from the authored lanes. */
 bool key_bank(state::build_data::progressions::Scope scope,
+              std::uint64_t ownerSoid,
+              const state::unlocks::ScopedTable& unlocks,
               std::span<layout::Entry> bank) noexcept {
     for (layout::Entry& entry : bank) {
         entry = layout::Entry{};
@@ -43,13 +50,19 @@ bool key_bank(state::build_data::progressions::Scope scope,
     if (!state::build_data::find_progression_slots(scope, slots, count) || count > bank.size()) {
         return false;
     }
-    const state::unlocks::ProgressionBank& lanes = authored_lanes(scope);
+    const state::unlocks::ProgressionBank lanes = authored_lanes(scope, ownerSoid, unlocks);
     for (std::size_t slot = 0; slot < count; ++slot) {
         // The definition catalog is dense, so every key it hands out addresses the authored bank.
         bank[slot].definitionIndex = slots[slot];
         bank[slot].values = lanes[slots[slot]];
     }
     return true;
+}
+
+bool key_bank(state::build_data::progressions::Scope scope,
+              std::uint64_t ownerSoid,
+              std::span<layout::Entry> bank) noexcept {
+    return key_bank(scope, ownerSoid, state::unlocks::snapshot(), bank);
 }
 
 } // namespace sunrise::middleware::datagen::family4::progression

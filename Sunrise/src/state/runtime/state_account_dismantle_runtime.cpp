@@ -7,6 +7,7 @@
 #include "runtime.h"
 #include "state_account_transaction_helpers.h"
 #include "storage/internal.h"
+#include "../persistence/persistence.h"
 
 namespace sunrise::state {
 
@@ -102,13 +103,15 @@ bool commit_item_dismantle(PendingItemDismantle& mutation) noexcept {
     AccountState candidate{};
     const bool ready =
         materialize_item_dismantle(runtime::storage::g_state.account, prepared, candidate);
-    if (ready) {
+    const bool committed = ready
+        && persistence::commit_account(runtime::storage::g_state.account, candidate);
+    if (committed) {
         runtime::storage::g_state.account = candidate;
     }
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
 
-    if (!ready) {
-        return fail("stale_or_invalid");
+    if (!committed) {
+        return fail("stale_invalid_or_not_durable");
     }
 
     report_dismantle("commit_end",

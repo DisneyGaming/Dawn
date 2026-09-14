@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../strike_variants.h"
-
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -30,6 +29,9 @@ inline constexpr std::uint32_t kGlimmerDefinitionHash = 0xBC53E66EU;
 
 /** Exact claim on one queued completion. */
 struct Ticket {
+    std::uint64_t debtId{};
+    std::uint64_t accountSoid{};
+    std::uint64_t characterSoid{};
     std::uint64_t session{};
     std::uint64_t run{};
     std::uint64_t nonce{};
@@ -43,7 +45,7 @@ struct Ticket {
 namespace detail {
 enum class Status : std::uint8_t { empty, pending, claimed, delivered };
 struct Entry {
-    std::uint64_t session{}, run{}, nonce{}, sequence{};
+    std::uint64_t debtId{}, accountSoid{}, characterSoid{}, session{}, run{}, nonce{}, sequence{};
     std::uint32_t definitionHash{};
     std::int32_t quantity{}, credited{};
     Status status{};
@@ -81,7 +83,7 @@ inline bool offer(std::uint64_t session,
         }
     }
     if (selected == detail::entries.size()) return false;
-    detail::entries[selected] = {session, run, 0, detail::nextSequence++, kGlimmerDefinitionHash,
+    detail::entries[selected] = {0, 0, 0, session, run, 0, detail::nextSequence++, kGlimmerDefinitionHash,
                                  quantity, 0, detail::Status::pending};
     if (!detail::nextSequence) detail::nextSequence = 1;
     return true;
@@ -98,18 +100,35 @@ inline bool claim(std::uint64_t session, Ticket& ticket) noexcept {
         entry.nonce = detail::nextNonce++;
         if (!detail::nextNonce) detail::nextNonce = 1;
         entry.status = detail::Status::claimed;
-        ticket = {entry.session, entry.run, entry.nonce, entry.definitionHash, entry.quantity};
+        ticket = {entry.debtId, entry.accountSoid, entry.characterSoid, entry.session, entry.run,
+                  entry.nonce, entry.definitionHash, entry.quantity};
         return true;
     }
     return false;
 }
+
+/** Persists a reward debt and mission completion before runtime publishes the terminal. */
+[[nodiscard]] bool offer(std::uint64_t accountSoid,
+                         std::uint64_t characterSoid,
+                         std::uint64_t session,
+                         std::uint64_t run,
+                         std::uint32_t missionHash,
+                         strikes::Difficulty difficulty,
+                         std::int64_t updatedUtc) noexcept;
+
+/** Claims the oldest durable pending debt for the authenticated account, including after restart. */
+[[nodiscard]] bool claim(std::uint64_t session,
+                         std::uint64_t accountSoid,
+                         Ticket& ticket) noexcept;
 
 /** Makes a failed synchronous delivery attempt retryable. */
 inline void release(Ticket ticket) noexcept {
     if (!ticket) return;
     const std::lock_guard guard(detail::mutex);
     for (auto& entry : detail::entries)
-        if (entry.status == detail::Status::claimed && entry.session == ticket.session
+        if (entry.status == detail::Status::claimed && entry.debtId == ticket.debtId
+            && entry.accountSoid == ticket.accountSoid
+            && entry.characterSoid == ticket.characterSoid && entry.session == ticket.session
             && entry.run == ticket.run && entry.nonce == ticket.nonce
             && entry.definitionHash == ticket.definitionHash && entry.quantity == ticket.quantity) {
             entry.status = detail::Status::pending; entry.nonce = 0; return;
@@ -121,7 +140,9 @@ inline bool finish(Ticket ticket, std::int32_t credited) noexcept {
     if (!ticket || credited < 0 || credited > ticket.quantity) return false;
     const std::lock_guard guard(detail::mutex);
     for (auto& entry : detail::entries)
-        if (entry.status == detail::Status::claimed && entry.session == ticket.session
+        if (entry.status == detail::Status::claimed && entry.debtId == ticket.debtId
+            && entry.accountSoid == ticket.accountSoid
+            && entry.characterSoid == ticket.characterSoid && entry.session == ticket.session
             && entry.run == ticket.run && entry.nonce == ticket.nonce
             && entry.definitionHash == ticket.definitionHash && entry.quantity == ticket.quantity
             && credited <= entry.quantity) {
@@ -129,5 +150,8 @@ inline bool finish(Ticket ticket, std::int32_t credited) noexcept {
         }
     return false;
 }
+
+/** Durably resolves a capped reward, then clears its process-local claim. */
+[[nodiscard]] bool finish_durable(Ticket ticket, std::int32_t credited) noexcept;
 
 } // namespace sunrise::state::activity::nightfall::rewards

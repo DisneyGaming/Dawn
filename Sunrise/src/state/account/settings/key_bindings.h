@@ -79,6 +79,7 @@ inline constexpr std::size_t kActionCount = static_cast<std::size_t>(Action::cou
 struct Binding {
     std::optional<std::uint16_t> primary;
     std::optional<std::uint16_t> secondary;
+    friend bool operator==(const Binding&, const Binding&) = default;
 };
 
 /** Fixed authored input table independent of the native packed account representation. */
@@ -86,6 +87,7 @@ struct KeyBindings {
     std::array<Binding, kActionCount> values;
     /** True only when configuration supplied every supported action. */
     bool configured{};
+    friend bool operator==(const KeyBindings&, const KeyBindings&) = default;
 };
 
 } // namespace sunrise::state::account::settings::bindings

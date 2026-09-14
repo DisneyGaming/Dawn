@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <string_view>
@@ -25,6 +26,7 @@
 #include "../../../../../state/activity/membership/activity_membership_query.h"
 #include "../../../../../state/activity/runtime.h"
 #include "../../../../../state/activity/nightfall/rules.h"
+#include "../../../../../state/activity/progress/mission_progress.h"
 #include "../../../../../state/activity/omega_presentation.h"
 #include "../../../../../state/activity/coo/omega_projection.h"
 #include "../../../../../state/activity/coo/omega_opening_projection.h"
@@ -90,6 +92,12 @@ constexpr std::uint16_t kNoRosterGroup = 0xFFFFU;
 std::atomic_uint64_t g_lastTowerfallLayoutTrace{UINT64_MAX};
 std::atomic_uint64_t g_lastTowerfallBuilderTrace{UINT64_MAX};
 
+[[nodiscard]] std::int64_t utc_seconds() noexcept {
+    return std::chrono::duration_cast<std::chrono::seconds>(
+               std::chrono::system_clock::now().time_since_epoch())
+        .count();
+}
+
 static_assert(message::kGroupCapacity == layouts::kDestinationWireGroupCapacity);
 
 /**
@@ -99,11 +107,12 @@ static_assert(message::kGroupCapacity == layouts::kDestinationWireGroupCapacity)
  * @param joinCharacter Character id the join request carried, or zero when it carried none.
  * @return Authored SOID of the named character, or of the selected character when nothing matches.
  */
-[[nodiscard]] std::uint64_t roster_player_key(std::uint64_t joinCharacter) noexcept {
-    const state::AccountState account = state::account_snapshot();
+[[nodiscard]] std::uint64_t roster_player_key(const state::AccountState& account,
+                                              std::uint64_t joinCharacter,
+                                              bool allowSelectedFallback) noexcept {
     const std::uint64_t selected = state::account::selected_character_soid(account);
     if (joinCharacter == 0) {
-        return selected;
+        return allowSelectedFallback ? selected : 0;
     }
     for (std::size_t index = 0; index < account.characterCount; ++index) {
         const std::uint64_t soid = account.characters[index].soid;
@@ -111,7 +120,7 @@ static_assert(message::kGroupCapacity == layouts::kDestinationWireGroupCapacity)
             return soid;
         }
     }
-    return selected;
+    return allowSelectedFallback ? selected : 0;
 }
 
 [[nodiscard]] bool
@@ -499,6 +508,12 @@ RosterOutcome build_roster_snapshot(Session& session,
     layouts::Definition layout{};
     const std::string_view name(reinterpret_cast<const char*>(selection.packageName.data()),
                                 selection.packageNameLength);
+    // Persistence must remain bound to this authenticated connection's character. Resolve its
+    // short join identity against one captured account snapshot; never re-read mutable selection
+    // state from a delayed mission callback.
+    const state::AccountState rosterAccount = state::account_snapshot();
+    const std::uint64_t missionCharacterSoid =
+        roster_player_key(rosterAccount, session.activity.characterSoid, false);
     const bool omegaDestination = name == "mission_scot";
     // Mission ownership survives ordinary z-legs (including 120 -> 128). Using the
     // current region here resets the controller and removes its roster on the return
@@ -709,6 +724,13 @@ RosterOutcome build_roster_snapshot(Session& session,
             inputs.sourceMembership.currentRegion.index>=0
                 ?inputs.sourceMembership.currentRegion.index:inputs.regionIndex);
         if(snapshot.eater_of_worlds.enabled) {
+            if (!state::activity::progress::observe(
+                    missionCharacterSoid, name, selection.activityIndex,
+                    snapshot.eater_of_worlds.checkpointSpawnSet,
+                    snapshot.eater_of_worlds.checkpointSliceSet,
+                    snapshot.eater_of_worlds.section, snapshot.eater_of_worlds.finished)) {
+                return RosterOutcome::noGroups;
+            }
             snapshot.missionCompletion=snapshot.eater_of_worlds.completion;
             snapshot.gameplayClockTicks=snapshot.eater_of_worlds.gameplayClockTicks;
         }
@@ -796,7 +818,12 @@ RosterOutcome build_roster_snapshot(Session& session,
         if(!admitted) { return RosterOutcome::noGroups; }
         snapshot.gateway=state::activity::gateway::snapshot(state::activity::mission_run_generation(),
             GetTickCount64(),state::activity::mission_seed_armed());
-        if(snapshot.gateway.enabled) { snapshot.missionCompletion=snapshot.gateway.completion; }
+        if(snapshot.gateway.enabled) {
+            if (!state::activity::progress::observe(missionCharacterSoid, name,
+                    selection.activityIndex, 0, -1, snapshot.gateway.section,
+                    snapshot.gateway.finished)) return RosterOutcome::noGroups;
+            snapshot.missionCompletion=snapshot.gateway.completion;
+        }
     }
     if(trialPrepared) {
         std::uint32_t failedKey{};
@@ -816,7 +843,12 @@ RosterOutcome build_roster_snapshot(Session& session,
         if(!admitted) { return RosterOutcome::noGroups; }
         snapshot.deadly_trial=state::activity::deadly_trial::snapshot(state::activity::mission_run_generation(),
             GetTickCount64(),state::activity::mission_seed_armed());
-        if(snapshot.deadly_trial.enabled) { snapshot.missionCompletion=snapshot.deadly_trial.completion; }
+        if(snapshot.deadly_trial.enabled) {
+            if (!state::activity::progress::observe(missionCharacterSoid, name,
+                    selection.activityIndex, 0, -1, snapshot.deadly_trial.section,
+                    snapshot.deadly_trial.finished)) return RosterOutcome::noGroups;
+            snapshot.missionCompletion=snapshot.deadly_trial.completion;
+        }
     }
     if(beyondPrepared) {
         std::uint32_t failedKey{};
@@ -828,6 +860,9 @@ RosterOutcome build_roster_snapshot(Session& session,
         }
         snapshot.beyond_infinity=state::activity::beyond_infinity::snapshot(state::activity::mission_run_generation(),GetTickCount64(),state::activity::mission_seed_armed());
         if(snapshot.beyond_infinity.enabled) {
+            if (!state::activity::progress::observe(missionCharacterSoid, name,
+                    selection.activityIndex, 0, -1, snapshot.beyond_infinity.section,
+                    snapshot.beyond_infinity.finished)) return RosterOutcome::noGroups;
             snapshot.missionCompletion=snapshot.beyond_infinity.completion;
             snapshot.gameplayClockTicks=snapshot.beyond_infinity.gameplayClockTicks;
         }
@@ -842,6 +877,9 @@ RosterOutcome build_roster_snapshot(Session& session,
         }
         snapshot.deep_storage=state::activity::deep_storage::snapshot(state::activity::mission_run_generation(),GetTickCount64(),state::activity::mission_seed_armed());
         if(snapshot.deep_storage.enabled) {
+            if (!state::activity::progress::observe(missionCharacterSoid, name,
+                    selection.activityIndex, 0, -1, snapshot.deep_storage.section,
+                    snapshot.deep_storage.finished)) return RosterOutcome::noGroups;
             snapshot.missionCompletion=snapshot.deep_storage.completion;
             snapshot.gameplayClockTicks=snapshot.deep_storage.gameplayClockTicks;
         }
@@ -930,6 +968,17 @@ RosterOutcome build_roster_snapshot(Session& session,
         // mutable UI or global difficulty state.
         snapshot.strike_bond.enemyVariant = selection.activityIndex==813 ? 5U : 0U;
         if(snapshot.strike_bond.enabled) {
+            const auto* rewardVariant=state::activity::strikes::find(selection.activityIndex);
+            const bool durableReward=rewardVariant
+                && rewardVariant->difficulty!=state::activity::strikes::Difficulty::standard;
+            if (!state::activity::progress::observe(
+                    missionCharacterSoid, name, selection.activityIndex,
+                    snapshot.strike_bond.checkpointSpawnSet,
+                    snapshot.strike_bond.checkpointSliceSet,
+                    snapshot.strike_bond.section,
+                    snapshot.strike_bond.finished && !durableReward)) {
+                return RosterOutcome::noGroups;
+            }
             snapshot.missionCompletion=snapshot.strike_bond.completion;
             snapshot.gameplayClockTicks=snapshot.strike_bond.gameplayClockTicks;
         }
@@ -969,6 +1018,17 @@ RosterOutcome build_roster_snapshot(Session& session,
                 ?inputs.sourceMembership.currentRegion.index:inputs.regionIndex);
         snapshot.strike_pact.enemyVariant = selection.activityIndex==835 ? 5U : 0U;
         if(snapshot.strike_pact.enabled) {
+            const auto* rewardVariant=state::activity::strikes::find(selection.activityIndex);
+            const bool durableReward=rewardVariant
+                && rewardVariant->difficulty!=state::activity::strikes::Difficulty::standard;
+            if (!state::activity::progress::observe(
+                    missionCharacterSoid, name, selection.activityIndex,
+                    snapshot.strike_pact.checkpointSpawnSet,
+                    static_cast<std::int32_t>(snapshot.strike_pact.checkpointSliceSet),
+                    snapshot.strike_pact.section,
+                    snapshot.strike_pact.finished && !durableReward)) {
+                return RosterOutcome::noGroups;
+            }
             snapshot.missionCompletion=snapshot.strike_pact.completion;
             snapshot.gameplayClockTicks=snapshot.strike_pact.activityTime;
         }
@@ -983,6 +1043,9 @@ RosterOutcome build_roster_snapshot(Session& session,
         }
         snapshot.hijacked=state::activity::hijacked::snapshot(state::activity::mission_run_generation(),GetTickCount64(),state::activity::mission_seed_armed());
         if(snapshot.hijacked.enabled) {
+            if (!state::activity::progress::observe(missionCharacterSoid, name,
+                    selection.activityIndex, 0, -1, snapshot.hijacked.section,
+                    snapshot.hijacked.finished)) return RosterOutcome::noGroups;
             snapshot.missionCompletion=snapshot.hijacked.completion;
             snapshot.gameplayClockTicks=snapshot.hijacked.gameplayClockTicks;
         }
@@ -1139,7 +1202,7 @@ RosterOutcome build_roster_snapshot(Session& session,
     // The character the join named wins, resolved to its authored SOID. The client binds its
     // player by matching this value against the object registry, and the short form the join
     // carries matches nothing.
-    snapshot.playerKey = roster_player_key(session.activity.characterSoid);
+    snapshot.playerKey = roster_player_key(rosterAccount, session.activity.characterSoid, true);
     // The old encoder documents this key as message 12's member record `+16` while its own code
     // sends the character SOID. That field is the membership identity, so this sends it instead.
     if (defaults.rosterKeyFromIdentity) {
@@ -1154,8 +1217,16 @@ RosterOutcome build_roster_snapshot(Session& session,
     if (snapshot.strike_bond.enabled || snapshot.strike_pact.enabled) {
         const auto run = state::activity::mission_run_generation();
         snapshot.nightfallFailed = state::activity::nightfall::failed(run);
-        if (snapshot.missionCompletion.valid() && !snapshot.nightfallFailed)
-            state::activity::nightfall::complete(run,GetTickCount64());
+        if (snapshot.missionCompletion.valid() && !snapshot.nightfallFailed) {
+            const auto* rewardVariant=state::activity::strikes::find(selection.activityIndex);
+            if(rewardVariant
+                && rewardVariant->difficulty!=state::activity::strikes::Difficulty::standard
+                && !state::activity::nightfall::complete(
+                    run,GetTickCount64(),rosterAccount.primarySoid,missionCharacterSoid,
+                    state::activity::progress::mission_key(name),utc_seconds())) {
+                return RosterOutcome::noGroups;
+            }
+        }
         if (snapshot.nightfallFailed) snapshot.missionCompletion = {};
     }
     snapshot.keyOnEveryParticipationSlot = defaults.rosterKeyOnAllSlots;

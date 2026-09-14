@@ -27,6 +27,7 @@ struct Controls {
     bool mouseAimSmoothing{};
     float adsSensitivityModifier{};
     std::int8_t doublePressDelay{};
+    friend bool operator==(const Controls&, const Controls&) = default;
 };
 
 /** Authored voice and volume preferences. */
@@ -41,6 +42,7 @@ struct Audio {
     std::int8_t soundEffectsVolume{};
     std::int8_t dialogueVolume{};
     std::int8_t musicVolume{};
+    friend bool operator==(const Audio&, const Audio&) = default;
 };
 
 /** Authored screen and renderer preferences. */
@@ -52,6 +54,7 @@ struct Display {
     float calibrationPrimary{};
     /** Second unidentified renderer-calibration scalar. */
     float calibrationAlpha{};
+    friend bool operator==(const Display&, const Display&) = default;
 };
 
 /** Authored HUD, subtitle, reticle, and text presentation preferences. */
@@ -71,6 +74,7 @@ struct Interface {
     /** Kept text mode with no localized title in the target build. */
     std::int8_t reservedTextMode{};
     std::int8_t subtitleOptionsEntry{};
+    friend bool operator==(const Interface&, const Interface&) = default;
 };
 
 /** Authored matchmaking, identity, voice, and chat preferences. */
@@ -86,6 +90,7 @@ struct Social {
     std::int8_t localChatJoinMode{};
     std::int8_t clanChatJoinMode{};
     std::int8_t chatAutoHideMode{};
+    friend bool operator==(const Social&, const Social&) = default;
 };
 
 /** Complete authored account-setting values, independent of their native record layout. */
@@ -98,6 +103,7 @@ struct AccountSettings {
     bindings::KeyBindings keyBindings;
     /** True only when a settings object was supplied by configuration. */
     bool configured{};
+    friend bool operator==(const AccountSettings&, const AccountSettings&) = default;
 };
 
 /**

@@ -17,6 +17,8 @@
 #include "state.h"
 #include "state_account_transaction_helpers.h"
 #include "storage/internal.h"
+#include "../persistence/persistence.h"
+#include "../unlocks/unlocks_runtime.h"
 
 namespace sunrise::state {
 namespace runtime::detail {
@@ -127,7 +129,20 @@ bool set_primary_soid(std::uint64_t primarySoid) noexcept {
         ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
         return false;
     }
-    // Publish only after the settings and identity rules hold together.
+    if (!unlocks::rebind_account(runtime::storage::g_state.account,
+                                 runtime::storage::g_state.account)) {
+        ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
+        return false;
+    }
+    if (!persistence::commit_account(runtime::storage::g_state.account, candidate)) {
+        ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
+        return false;
+    }
+    if (!unlocks::rebind_account(runtime::storage::g_state.account, candidate)) {
+        ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
+        return false;
+    }
+    // Publish only after the settings, identity, and durable write hold together.
     runtime::storage::g_state.account = candidate;
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
     return true;
@@ -161,7 +176,11 @@ bool set_selected_character(std::uint64_t characterSoid, bool& changed) noexcept
         ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
         return false;
     }
-    // Publish only after the whole account still meets its identity rules.
+    if (!persistence::commit_account(runtime::storage::g_state.account, candidate)) {
+        ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
+        return false;
+    }
+    // Publish only after the whole account is valid and durable.
     runtime::storage::g_state.account = candidate;
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
     changed = !alreadySelected;
@@ -458,6 +477,10 @@ bool commit_equipment_swap(PendingEquipmentSwap& mutation) noexcept {
     if (!find_resolved_position(checkedAfter, prepared.requestedInstanceSoid, requestedPosition)
         || requestedPosition.equipmentSlot != prepared.nativeEquipmentSlot
         || requestedPosition.equipped != expectedEquipped) {
+        ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
+        return false;
+    }
+    if (!persistence::commit_account(runtime::storage::g_state.account, candidate)) {
         ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
         return false;
     }

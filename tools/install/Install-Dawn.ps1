@@ -245,7 +245,8 @@ function Backup-File ($absolute) {
 foreach ($dll in Get-DllTargets $root) { Backup-File $dll }
 foreach ($dll in Get-DllTargets $root) { Backup-File ([IO.Path]::ChangeExtension($dll, '.pdb')) }
 foreach ($tree in Get-RuntimeTrees $root) {
-    foreach ($name in @('settings.json', 'hud.json', 'movement.json', 'player.json')) {
+    foreach ($name in @('settings.json', 'hud.json', 'movement.json', 'player.json',
+                        'player-state.db', 'player-state.db-wal', 'player-state.db-shm')) {
         Backup-File (Join-Path $tree $name)
     }
     $scriptDir = Join-Path $tree 'scripts'
@@ -291,7 +292,7 @@ foreach ($tree in Get-RuntimeTrees $root) {
     # file is absent - but a tester who never gets them runs on those defaults instead of Dawn's
     # tuning. Seed them only when missing, so an existing tester's own settings survive.
     foreach ($name in @('hud.json', 'movement.json', 'player.json')) {
-        $src = Join-Path $RepoRoot "Sunrise\$name"
+        $src = Join-Path $RepoRoot "Sunrise\resources\default_$name"
         $dst = Join-Path $tree $name
         if ((Test-Path $src) -and -not (Test-Path $dst)) {
             Copy-Item $src $dst -Force

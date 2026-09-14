@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cstdint>
 #include <span>
 
 #include "../../../../state/build_data/progressions/definition.h"
+#include "../../../../state/unlocks/definition.h"
 #include "layout.h"
 
 namespace sunrise::middleware::datagen::family4::progression {
@@ -15,6 +17,16 @@ namespace sunrise::middleware::datagen::family4::progression {
  * @param bank Fixed progression rows to key.
  * @return True when the definition table is ready and every keyed slot fits the bank.
  */
+[[nodiscard]] bool key_bank(state::build_data::progressions::Scope scope,
+                            std::uint64_t ownerSoid,
+                            const state::unlocks::ScopedTable& unlocks,
+                            std::span<layout::Entry> bank) noexcept;
+
+[[nodiscard]] bool key_bank(state::build_data::progressions::Scope scope,
+                            std::uint64_t ownerSoid,
+                            std::span<layout::Entry> bank) noexcept;
+
+/** Compatibility entry point supplied by isolated encoder tests. */
 [[nodiscard]] bool key_bank(state::build_data::progressions::Scope scope,
                             std::span<layout::Entry> bank) noexcept;
 

@@ -47,6 +47,7 @@ struct Sockets {
     SocketPolicy policy{SocketPolicy::nativeDefaults};
     std::array<std::optional<std::uint32_t>, kPlugCapacity> plugs{};
     std::size_t plugCount{};
+    friend bool operator==(const Sockets&, const Sockets&) = default;
 };
 
 /** Account-wide stacks can occupy every row of the native 701-row profile inventory. */
@@ -75,6 +76,7 @@ struct ProfileItem {
     std::int32_t quantity{};
     /** Rising generation copied into the native row and matched by acquisition feedback. */
     std::int32_t mutationSerial{};
+    friend bool operator==(const ProfileItem&, const ProfileItem&) = default;
 };
 
 /** One authored equipment item without native table or wire-layout fields. */
@@ -88,17 +90,20 @@ struct Item {
     /** Native accumulated item-state bits such as the finisher favorite marker. */
     std::uint32_t flags{};
     Sockets sockets;
+    friend bool operator==(const Item&, const Item&) = default;
 };
 
 /** Ordered unequipped items placed into their native character-inventory bucket ranges. */
 struct CharacterItems {
     std::array<Item, kCharacterItemCapacity> values{};
     std::size_t count{};
+    friend bool operator==(const CharacterItems&, const CharacterItems&) = default;
 };
 
 /** One optional authored item for every semantic equipment slot. */
 struct Equipment {
     std::array<std::optional<Item>, kEquipmentSlotCount> slots{};
+    friend bool operator==(const Equipment&, const Equipment&) = default;
 };
 
 /**

@@ -380,6 +380,11 @@ prepare_profile_item_acquisition(std::uint16_t collectibleIndex,
 [[nodiscard]] bool
 commit_profile_item_acquisition(PendingProfileItemAcquisition& mutation) noexcept;
 
+/** Commits a prepared completion-reward credit and resolves its durable debt atomically. */
+[[nodiscard]] bool commit_profile_item_reward(PendingProfileItemAcquisition& mutation,
+                                              std::uint64_t debtId,
+                                              std::int32_t credited) noexcept;
+
 /**
  * Prepares one free credit into the definition's sole profile-bucket stack.
  * Existing quantity is saturated at the installed max; a capped stack is a successful no-op.
