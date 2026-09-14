@@ -5,7 +5,8 @@ void population_packet_cases() {
     namespace p=sunrise::server::runtime::activity::population;
     namespace m=sunrise::server::runtime::activity::mercury;
     namespace n=sunrise::middleware::bap::activity_message::native;
-    const auto check=[](bool ok){if(!ok){std::fprintf(stderr,"population packet failed\n");std::abort();}};
+    unsigned checkIndex{};
+    const auto check=[&](bool ok){++checkIndex;if(!ok){std::fprintf(stderr,"population packet failed at check %u\n",checkIndex);std::abort();}};
     std::array<std::array<std::uint8_t,16>,m::kRegistries.size()> types{},flags{};
     std::array<std::array<std::uint16_t,16>,m::kRegistries.size()> indices{};
     std::array<std::uint32_t,m::kRegistries.size()> keys{};
@@ -36,6 +37,15 @@ void population_packet_cases() {
     check(!placement::project(capabilities,15,outside) && outside.count==0);
     capabilities=m::kPlacements;capabilities[1]=capabilities[0];
     check(!placement::project(capabilities,15,outside) && outside.count==0);
+    auto oversized=snapshot;oversized.archiveOmega=true;packet.fill(std::byte{0xA5});active=99;
+    check(!wire::encode_sensor_auth_update(oversized,packet,active) && active==0
+        && packet[0]==std::byte{0xA5});
+    // The archived Omega encoder's roster-count field is four bits. Retain a
+    // valid archive-sized Mercury fixture while still covering both live populations.
+    constexpr auto archiveGroups=std::size_t{15};
+    static_assert(m::kRegistries.size()>archiveGroups);
+    snapshot.roster.groupCount=archiveGroups;
+    blocks[0].keys=std::span(keys).first(archiveGroups);
     for(const auto archive:{false,true}) {
         snapshot.archiveOmega=archive;
         check(wire::auth_body_bits(snapshot,keys[0],1,0,false)==641);
@@ -55,7 +65,7 @@ void population_packet_cases() {
         check(!wire::encode_sensor_auth_update(invalid,packet,active) && active==0 && packet[0]==std::byte{0xA5});
         invalid=snapshot;invalid.placements.entries[1]=invalid.placements.entries[0];
         check(!wire::encode_sensor_auth_update(invalid,packet,active));
-        invalid=snapshot;invalid.placements.count=33;
+        invalid=snapshot;invalid.placements.count=invalid.placements.entries.size()+1;
         check(!wire::encode_sensor_auth_update(invalid,packet,active));
         auto wrong=snapshot;wrong.region=112;
         packet.fill(std::byte{0xA5});
@@ -66,7 +76,7 @@ void population_packet_cases() {
         check(!wire::encode_sensor_auth_update(wrong,packet,active));
         wrong=snapshot;wrong.populations.entries[0].source.generation=0;
         check(!wire::encode_sensor_auth_update(wrong,packet,active));
-        wrong=snapshot;wrong.populations.count=33;
+        wrong=snapshot;wrong.populations.count=wrong.populations.entries.size()+1;
         check(!wire::encode_sensor_auth_update(wrong,packet,active));
     }
 }

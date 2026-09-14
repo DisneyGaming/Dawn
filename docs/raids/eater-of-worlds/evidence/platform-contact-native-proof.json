@@ -1,0 +1,73 @@
+{
+  "schema": "eater-platform-contact-native-proof-v1",
+  "clientImageSha256": "63d128f1c759b92d32b0f226bcbec828bc58cef193ee0df6fdd582bd0290ed1e",
+  "platformPhysics": {
+    "entity": "80F42FCD",
+    "buildOrdinal": 2,
+    "config": "80F42FA5",
+    "runtimeKind": "80808A0C",
+    "runtimeOffset": 888,
+    "configSha256": "0f8e9a1cd0d0564224db84e6567df13428ac841c6e08a805eaac7bb028046561"
+  },
+  "originalContactProducerRva": "18FAE30",
+  "emulatedRange": [
+    "18FAE8A",
+    "18FAFC8"
+  ],
+  "contactManagerRva": "127870",
+  "normalConvention": "B to A; manager receives the same ordered bodies and contact",
+  "cases": [
+    {
+      "aZ": 1.0,
+      "bZ": -1.0,
+      "normalZ": 1.0,
+      "positionZ": 0.0,
+      "distance": 0.0,
+      "managerReceivesSameBodyOrder": true,
+      "tolerance": 0.1,
+      "contactProduced": true
+    },
+    {
+      "aZ": -1.0,
+      "bZ": 1.0,
+      "normalZ": -1.0,
+      "positionZ": 0.0,
+      "distance": 0.0,
+      "managerReceivesSameBodyOrder": true,
+      "tolerance": 0.1,
+      "contactProduced": true
+    }
+  ],
+  "collisionTolerance": {
+    "worldVtableRva": "1BAAC28",
+    "worldInputOffset": "B8",
+    "inputToleranceOffset": "10",
+    "constructorRva": "107D50",
+    "getCinfoRva": "109220"
+  },
+  "toleranceCases": [
+    {
+      "aZ": 1.0625,
+      "bZ": -1.0,
+      "normalZ": 1.0,
+      "positionZ": 0.0,
+      "distance": 0.0625,
+      "managerReceivesSameBodyOrder": true,
+      "tolerance": 0.125,
+      "contactProduced": true
+    },
+    {
+      "aZ": 1.125,
+      "bZ": -1.0,
+      "tolerance": 0.125,
+      "contactProduced": false
+    },
+    {
+      "aZ": 1.25,
+      "bZ": -1.0,
+      "tolerance": 0.125,
+      "contactProduced": false
+    }
+  ],
+  "livePlayerPlatformContactVerified": false
+}

@@ -6,6 +6,7 @@
 #include "../../../state/activity/deadly_trial/runtime.h"
 #include "../../../state/activity/strike_pact/runtime.h"
 #include "../../../state/activity/strike_bond/runtime.h"
+#include "../../../state/activity/eater_of_worlds/runtime.h"
 #include <Windows.h>
 #include "deadly_trial_presentation.h"
 #include "hijacked_presentation.h"
@@ -1208,10 +1209,14 @@ __declspec(noinline) void __fastcall dialogue_dispatch(std::byte* component,
             state::activity::deadly_trial::observe_submission(gatewayDispatchRun,self,offset,bank,
                 static_cast<std::uint8_t>(index),generation);
             state::activity::strike_bond::observe_submission(gatewayDispatchRun,self,offset,bank,static_cast<std::uint8_t>(index),generation);
+            state::activity::eater_of_worlds::observe_submission(gatewayDispatchRun,self,offset,bank,
+                static_cast<std::uint8_t>(index),generation);
             state::activity::strike_pact::observe_submission(gatewayDispatchRun,self,offset,bank,
                 static_cast<std::uint8_t>(index),generation);
             if (bank != kDialogueBankHandle && bank != 0x80F1FC9EU && bank != 0x80F1F086U
-                && !beyondDispatch && state::activity::strike_bond::native_run()==0 && state::activity::strike_pact::native_run()==0) {
+                && !beyondDispatch && state::activity::strike_bond::native_run()==0
+                && state::activity::strike_pact::native_run()==0
+                && state::activity::eater_of_worlds::native_run()==0) {
                 // observe_submission() drops a foreign bank silently; say so once per row.
                 log_reject("dispatch_bank", component, static_cast<std::uint32_t>(index),
                            generation, bank);

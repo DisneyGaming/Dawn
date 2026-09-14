@@ -6,6 +6,7 @@
 #include "../src/server/runtime/activity/mercury_definition.h"
 #include "../src/state/activity/native_population_events.h"
 #include "fixtures/omega_native_sense_captures.h"
+#include "mission_parameter_fixture.h"
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -281,6 +282,8 @@ void persistent_integration_cases() {
     namespace events=sunrise::state::activity::native_population;
     std::ifstream file("Sunrise/scripts/mercury_freeroam.json",std::ios::binary);CHECK(file.good());
     std::string text((std::istreambuf_iterator<char>(file)),{}),error;
+    CHECK(mission_parameter_fixture::numeric(text,"ambient_vex_probe_count",0));
+    CHECK(mission_parameter_fixture::numeric(text,"public_event_rally_probe",0));
     std::shared_ptr<const coo::script::MissionDocument> disabled=coo::script::MissionDocument::parse(text,runtime::mercury::kProfile,error);
     CHECK(disabled && runtime::PersistentActivity::valid(runtime::mercury::kActivity,*disabled));
     runtime::PersistentActivity normal;CHECK(normal.begin({81,{1}},runtime::mercury::kActivity,disabled,17));
@@ -288,8 +291,7 @@ void persistent_integration_cases() {
     runtime::NativeActivityFrame frame{};
     for(int i=0;i<4;++i) frame=normal.update(15,true);
     CHECK(frame.populations.count==2); // shipped definition keeps the probe disabled
-    const auto offset=text.find("\"ambient_vex_probe_count\": 0");CHECK(offset!=std::string::npos);
-    text.replace(offset,std::string("\"ambient_vex_probe_count\": 0").size(),"\"ambient_vex_probe_count\": 1");
+    CHECK(mission_parameter_fixture::numeric(text,"ambient_vex_probe_count",1));
     std::shared_ptr<const coo::script::MissionDocument> enabled=coo::script::MissionDocument::parse(text,runtime::mercury::kProfile,error);
     CHECK(enabled && runtime::PersistentActivity::valid(runtime::mercury::kActivity,*enabled));
     runtime::PersistentActivity activity;const population::Owner owner{82,{2}};
@@ -365,6 +367,9 @@ void cabal_persistent_cases() {
     namespace probe=runtime::mercury::ambient::cabal_probe;
     std::ifstream file("Sunrise/scripts/mercury_freeroam.json",std::ios::binary);CHECK(file.good());
     std::string text((std::istreambuf_iterator<char>(file)),{}),error;
+    CHECK(mission_parameter_fixture::numeric(text,"ambient_vex_probe_count",0));
+    CHECK(mission_parameter_fixture::numeric(text,"public_event_rally_probe",0));
+    CHECK(mission_parameter_fixture::numeric(text,"ambient_cabal_primary_probe_count",0));
     auto disabled=coo::script::MissionDocument::parse(text,runtime::mercury::kProfile,error);CHECK(disabled);
     ambient::RegistryBatch registries{};
     CHECK(ambient::optional_registries(runtime::mercury::kActivity,*disabled,registries));CHECK(registries.count==0);
@@ -372,9 +377,7 @@ void cabal_persistent_cases() {
     CHECK(normal.begin(disabledOwner,runtime::mercury::kActivity,std::move(disabled),100));
     CHECK(normal.request_population({disabledOwner,1,1,0x2571C34D,0,1,100},15)==population::Result::unsupported);
     CHECK(!points::lookup(probe::kNamedDependency.list).binding.epoch);
-    const std::string parameter="\"ambient_cabal_primary_probe_count\": 0";
-    const auto offset=text.find(parameter);CHECK(offset!=std::string::npos);
-    text.replace(offset,parameter.size(),"\"ambient_cabal_primary_probe_count\": 1");
+    CHECK(mission_parameter_fixture::numeric(text,"ambient_cabal_primary_probe_count",1));
     auto enabled=coo::script::MissionDocument::parse(text,runtime::mercury::kProfile,error);
     CHECK(enabled && runtime::PersistentActivity::valid(runtime::mercury::kActivity,*enabled));
     CHECK(ambient::optional_registries(runtime::mercury::kActivity,*enabled,registries));CHECK(registries.count==1);

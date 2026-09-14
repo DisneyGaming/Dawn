@@ -13,7 +13,9 @@ namespace launch = client::activity::mission_launch;
 namespace openings = launch::openings;
 namespace strikes = state::activity::strikes;
 namespace nightfall = state::activity::nightfall;
+namespace contest = state::activity::eater_of_worlds::contest;
 unsigned g_campaign{1};
+contest::Mode g_raidMode{};
 bool g_nightfall{};
 strikes::Difficulty g_difficulty{strikes::Difficulty::adept};
 strikes::Difficulty g_refreshedDifficulty{strikes::Difficulty::standard};
@@ -30,6 +32,10 @@ bool g_resetScroll{}, g_scenariosReady{}, g_spawnsReady{};
 std::array<bool, openings::kMissions.size()> g_ready{};
 std::size_t g_layoutRevision{(std::numeric_limits<std::size_t>::max)()}, g_catalogRevision{};
 launch::ManualScratch g_validation{};
+
+unsigned selected_group() noexcept {
+    return g_campaign == 4 ? 4U : g_campaign >= 2 ? 2U : g_campaign;
+}
 
 strikes::Difficulty selected_difficulty() noexcept {
     return g_campaign == 3 || (g_campaign == 2 && g_nightfall)
@@ -60,9 +66,9 @@ void refresh() noexcept {
 }
 
 void campaign_tabs() noexcept {
-    constexpr std::array<const char*, 4> names{"Red War", "Curse of Osiris", "Strikes", "Nightfalls"};
+    constexpr std::array<const char*, 5> names{"Red War", "Curse of Osiris", "Strikes", "Nightfalls", "Raids"};
     const float scale = card_scale();
-    const unsigned columns = ImGui::GetContentRegionAvail().x < 560.0F * scale ? 2U : 4U;
+    const unsigned columns = ImGui::GetContentRegionAvail().x < 700.0F * scale ? 2U : 5U;
     const float width = (std::max)(1.0F, (ImGui::GetContentRegionAvail().x
         - ImGui::GetStyle().ItemSpacing.x * static_cast<float>(columns - 1)) / static_cast<float>(columns));
     for (unsigned i = 0; i < names.size(); ++i) {
@@ -84,6 +90,24 @@ void campaign_tabs() noexcept {
 void variant_controls() noexcept {
     if (g_campaign < 2) { return; }
     ImGui::Spacing();
+    if (g_campaign == 4) {
+        const auto status = launch::snapshot();
+        const auto displayedMode = status.inMission && status.currentIndex == contest::kActivity
+            ? (contest::enabled() ? contest::Mode::contest : contest::Mode::standard)
+            : status.busy && status.index == contest::kActivity ? status.raidMode : g_raidMode;
+        int mode = displayedMode == contest::Mode::contest ? 1 : 0;
+        ImGui::TextDisabled("DIFFICULTY");
+        ImGui::BeginDisabled(status.busy || status.inMission);
+        ImGui::SetNextItemWidth((std::min)(260.0F * card_scale(), ImGui::GetContentRegionAvail().x));
+        if (ImGui::Combo("##raid_difficulty", &mode, "Standard\0Contest\0")) {
+            g_raidMode = mode == 1 ? contest::Mode::contest : contest::Mode::standard;
+        }
+        ImGui::EndDisabled();
+        if (mode == 1) {
+            ImGui::TextWrapped("Your Power is capped 20 below enemies.");
+        }
+        return;
+    }
     if (g_campaign == 2) {
         int variant = g_nightfall ? 1 : 0;
         ImGui::SetNextItemWidth((std::min)(260.0F * card_scale(), ImGui::GetContentRegionAvail().x));
@@ -210,8 +234,12 @@ bool mission_row(std::size_t index, unsigned ordinal, const launch::Snapshot& st
         : status.busy && status.opening && matches_mission(index, static_cast<std::int16_t>(status.index))
             ? static_cast<std::int16_t>(status.index) : -1);
     if (actualVariant) { shownDifficulty = actualVariant->difficulty; }
+    const auto shownRaidMode = active ? (contest::enabled() ? contest::Mode::contest : contest::Mode::standard)
+        : status.busy && status.index == mission.activity ? status.raidMode : g_raidMode;
+    const char* difficultyName = mission.campaign == 2 ? strikes::name(shownDifficulty)
+        : mission.campaign == 4 ? (shownRaidMode == contest::Mode::contest ? "Contest" : "Standard") : "";
     (void)std::snprintf(subtitle.data(), subtitle.size(), "%s%s%s", mission.location,
-        mission.campaign == 2 ? " / " : "", mission.campaign == 2 ? strikes::name(shownDifficulty) : "");
+        difficultyName[0] ? " / " : "", difficultyName);
     draw->AddText({a.x + inset, a.y + 30.0F * scale}, ImGui::GetColorU32(ImGuiCol_TextDisabled), subtitle.data());
     draw->PopClipRect();
     draw->AddText({b.x - actionWidth - 16.0F * scale, a.y + 19.0F * scale},
@@ -242,21 +270,26 @@ void draw() noexcept {
     }
     const auto icon = g_campaign == 0 ? state::build_data::activities::Icon::redWar
                                      : g_campaign == 1 ? state::build_data::activities::Icon::osiris
+                                     : g_campaign == 4 ? state::build_data::activities::Icon::raid
                                      : state::build_data::activities::Icon::strike;
     const float extent = (table ? 84.0F : 42.0F) * scale;
     (void)draw_icon(icon, ImGui::GetCursorScreenPos(), extent);
     ImGui::Dummy({extent, extent});
     if (!table) { ImGui::SameLine(); }
     ImGui::BeginGroup();
-    ImGui::TextDisabled(g_campaign == 0 ? "CAMPAIGN 01" : g_campaign == 1 ? "CAMPAIGN 02" : "VANGUARD");
+    ImGui::TextDisabled(g_campaign == 0 ? "CAMPAIGN 01" : g_campaign == 1 ? "CAMPAIGN 02"
+                                                               : g_campaign == 4 ? "RAIDS" : "VANGUARD");
     ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * (table ? 1.9F : 1.5F));
     ImGui::TextWrapped("%s", g_campaign == 0 ? "The Red War" : g_campaign == 1 ? "Curse of Osiris"
+        : g_campaign == 4 ? "Raids"
         : selected_difficulty() == strikes::Difficulty::standard ? "Strikes" : "Nightfalls");
     ImGui::PopFont();
     ImGui::EndGroup();
     ImGui::Spacing();
     ImGui::TextWrapped("%s", g_campaign == 0 ? "Take back the Light. Revisit the fall of the Last City."
                                             : g_campaign == 1 ? "Find Osiris. Step into the Infinite Forest."
+                                            : g_campaign == 4
+                                                ? "Descend into the Leviathan and face its Vex world-eater alone."
                                             : selected_difficulty() == strikes::Difficulty::standard
                                                 ? "Take on the threats within the Infinite Forest."
                                                 : "Challenge Tree of Probabilities and A Garden World at your chosen difficulty.");
@@ -268,8 +301,9 @@ void draw() noexcept {
         ImGui::TableNextColumn();
     }
     const auto count = static_cast<unsigned>(std::count_if(openings::kMissions.begin(), openings::kMissions.end(),
-        [](const auto& mission) { return mission.campaign == (g_campaign >= 2 ? 2 : g_campaign); }));
-    ImGui::TextDisabled("%u %s%s", count, g_campaign >= 2 ? "STRIKE" : "MISSION", count == 1 ? "" : "S");
+        [](const auto& mission) { return mission.campaign == selected_group(); }));
+    const char* kind = g_campaign == 4 ? "RAID" : g_campaign >= 2 ? "STRIKE" : "MISSION";
+    ImGui::TextDisabled("%u %s%s", count, kind, count == 1 ? "" : "S");
     ImGui::Spacing();
     const float height = (std::max)(60.0F * scale,
         (table ? remaining - ImGui::GetTextLineHeightWithSpacing() : ImGui::GetContentRegionAvail().y) - footer);
@@ -278,9 +312,10 @@ void draw() noexcept {
         const auto status = launch::snapshot();
         unsigned ordinal{};
         for (std::size_t i = 0; i < openings::kMissions.size(); ++i) {
-            if (openings::kMissions[i].campaign != (g_campaign >= 2 ? 2 : g_campaign)) { continue; }
+            if (openings::kMissions[i].campaign != selected_group()) { continue; }
             if (mission_row(i, ++ordinal, status)) {
-                (void)launch::request_variant(i, selected_difficulty(), selected_modifiers());
+                if (openings::kMissions[i].campaign == 4) (void)launch::request_raid(i, g_raidMode);
+                else (void)launch::request_variant(i, selected_difficulty(), selected_modifiers());
             }
         }
     }

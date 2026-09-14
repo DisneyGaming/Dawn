@@ -1,8 +1,14 @@
 #pragma once
 
 #include "../hooks/teleport/runtime.h"
+#include <cstdint>
 
 namespace sunrise::client::player::position {
+
+using PhysicsObserver=void(*)(void*,std::uint32_t,std::uint64_t) noexcept;
+/** Register a read-only observer of qualified local physics samples. Replacing
+ * the observer waits for an in-flight callback to finish. */
+void set_physics_observer(PhysicsObserver observer) noexcept;
 
 /** The local player's world position, or nothing when they have not been seen. */
 struct Snapshot {

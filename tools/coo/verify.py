@@ -20,8 +20,13 @@ def build(project, configuration, variant='local', source=None, *, compile_only=
     directory = OUT / f'{name}-{variant}' / configuration
     directory.mkdir(parents=True, exist_ok=True)
     log = directory / 'build.log'
+    # The full item catalog can exhaust compiler memory when several Sunrise
+    # translation units instantiate its large arrays concurrently. Keep the
+    # compiler host explicitly 64-bit and serialize only the DLL's compile work.
+    compiler_jobs = 1 if name == 'Sunrise' else 4
     args = [str(MSBUILD), str(project), '/nologo', '/m:2', '/v:minimal',
-            f'/p:Configuration={configuration}', '/p:Platform=x64', '/p:CL_MPCount=4',
+            f'/p:Configuration={configuration}', '/p:Platform=x64',
+            '/p:PreferredToolArchitecture=x64', f'/p:CL_MPCount={compiler_jobs}',
             f'/p:OutDir={directory}\\', f'/p:IntDir={directory / "obj"}\\']
     if source:
         args += [f'/p:OmegaSourceRoot={source}']

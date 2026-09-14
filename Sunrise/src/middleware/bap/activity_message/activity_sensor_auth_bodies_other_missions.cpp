@@ -8,6 +8,7 @@
 #include "../../../state/activity/deadly_trial/authority.h"
 #include "../../../state/activity/strike_pact/authority.h"
 #include "../../../state/activity/strike_bond/authority.h"
+#include "../../../state/activity/eater_of_worlds/authority.h"
 
 #include "sensor_auth_update.h"
 #include "../../../state/activity/omega/omega_progression.h"
@@ -762,6 +763,7 @@ legacy_auth_body_bits(const Snapshot& snapshot,
     if(const auto count=state::activity::beyond_infinity::body_bits(snapshot.beyond_infinity,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::deep_storage::body_bits(snapshot.deep_storage,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::strike_bond::body_bits(snapshot.strike_bond,key,slotType,slotIndex)) { return count; }
+    if(const auto count=state::activity::eater_of_worlds::body_bits(snapshot.eater_of_worlds,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::strike_pact::body_bits(snapshot.strike_pact,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::hijacked::body_bits(snapshot.hijacked,key,slotType,slotIndex)) { return count; }
     if(const auto* request=native::engagement::find(snapshot.engagements,key,slotType,slotIndex)) return native::engagement::body_bits(*request);
@@ -910,6 +912,9 @@ bool legacy_write_auth_body(bits::Writer& writer,
     if(state::activity::strike_bond::body_bits(snapshot.strike_bond,key,slotType,slotIndex)) {
         return state::activity::strike_bond::write_body(writer,snapshot.strike_bond,key,slotType,slotIndex);
     }
+    if(state::activity::eater_of_worlds::body_bits(snapshot.eater_of_worlds,key,slotType,slotIndex)) {
+        return state::activity::eater_of_worlds::write_body(writer,snapshot.eater_of_worlds,key,slotType,slotIndex);
+    }
     if(state::activity::strike_pact::body_bits(snapshot.strike_pact,key,slotType,slotIndex)) {
         return state::activity::strike_pact::write_body(writer,snapshot.strike_pact,key,slotType,slotIndex);
     }
@@ -989,10 +994,15 @@ bool legacy_write_auth_body(bits::Writer& writer,
     } else if (slotType == kSlotTypeParticipation && carriesPlayerKey) {
         encoded = write_participation(writer, snapshot);
     } else if (slotType == kSlotTypeLifetime) {
-        encoded = write_lifetime(writer, snapshot,key==0x4786C0E0U && slotIndex==3
+        const bool sharedLifetime=key==0x4786C0E0U && slotIndex==3;
+        const bool eaterLifetime=snapshot.eaterOfWorldsLifetime
+            && key==0x24C67333U && slotIndex==3;
+        if(eaterLifetime && (!snapshot.lifetimeScenarioOrdinal
+            || *snapshot.lifetimeScenarioOrdinal>=8)) { return false; }
+        encoded = write_lifetime(writer, snapshot,sharedLifetime
             ?(snapshot.strike_bond.enabled && snapshot.strike_bond.restricted?17U:snapshot.hijacked.enabled && snapshot.hijacked.restricted?40U:snapshot.deep_storage.enabled && snapshot.deep_storage.restricted?19U:
               snapshot.omegaMission.generation && snapshot.omegaMission.restriction?14U:0U):0U,
-            key==0x4786C0E0U && slotIndex==3 ? snapshot.lifetimeScenarioOrdinal : std::nullopt);
+            sharedLifetime || eaterLifetime ? snapshot.lifetimeScenarioOrdinal : std::nullopt);
     } else if (slotType == kSlotTypeActivityScript && kInitializeActivityScript
                && (snapshot.initializeMissionAuthorityRuntime
                    || snapshot.publishOmegaOpeningTransition

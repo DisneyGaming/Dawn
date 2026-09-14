@@ -137,7 +137,7 @@ function mission(options)
     assert(not built, 'a script must define exactly one mission')
     built = true
     fields(options, {id=true, graphs=true, roles=true, entry=true, modules=true,
-        observations=true, presentation=true, phases=true, conditions=true, observation_start=true})
+        observations=true, presentation=true, phases=true, conditions=true, observation_start=true, parameters=true})
     local graphs = mark({})
     for _, value in ipairs(list(options.graphs)) do
         fields(value, {id=true, definition=true})
@@ -163,7 +163,8 @@ function mission(options)
         bindings=native.bindings, graphs=graphs, roles=options.roles or {},
         entry=options.entry, modules=list(options.modules or {}),
         phases=list(options.phases or {}), conditions=conditions, observation_start=options.observation_start,
-        observations=observations, presentation=options.presentation or native.presentation})
+        observations=observations, presentation=options.presentation or native.presentation,
+        parameters=options.parameters})
 end
 )lua";
 }

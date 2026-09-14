@@ -202,6 +202,15 @@ bool publish_direct(const ForcedDestination& value, std::int16_t activity) noexc
     return true;
 }
 
+std::int16_t direct_snapshot(ForcedDestination& value) noexcept {
+    AcquireSRWLockShared(&runtime::storage::g_stateLock);
+    const auto suspended = g_omegaCompletionSuspended;
+    value = suspended ? ForcedDestination{} : runtime::storage::g_state.activity.forced;
+    const auto activity = suspended ? destination::kAbsentActivityIndex : g_directActivity;
+    ReleaseSRWLockShared(&runtime::storage::g_stateLock);
+    return activity;
+}
+
 /** Copies the operator's raw stored panel selection, empty until the panel sets one. */
 void stored(ForcedDestination& value) noexcept {
     AcquireSRWLockShared(&runtime::storage::g_stateLock);

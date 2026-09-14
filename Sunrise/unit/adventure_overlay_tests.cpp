@@ -137,8 +137,9 @@ int main(int argc,char**argv){
         const auto validIndex=plan->groups[0].slotIndices[1];plan->groups[0].slotIndices[1]=plan->groups[0].slotIndices[0];
         check(overlay::append(*plan,*storage,roster)==overlay::Result::invalid && roster.groupCount==2,"malformed plan duplicate slot rejects before writes");
         plan->groups[0].slotIndices[1]=validIndex;
-        roster=baseline(*storage,fixture);roster.groupCount=19;
-        check(overlay::append(*plan,*storage,roster)==overlay::Result::capacity && roster.groupCount==19,"capacity failure has no partial writes");
+        roster=baseline(*storage,fixture);roster.groupCount=roster.groups.size()-1;
+        const auto capacityCount=roster.groupCount;
+        check(overlay::append(*plan,*storage,roster)==overlay::Result::capacity && roster.groupCount==capacityCount,"capacity failure has no partial writes");
         roster=baseline(*storage,fixture);std::array<std::uint8_t,1> removal{0};storage->rosterSubBlocks[0].presence=removal;
         check(overlay::append(*plan,*storage,roster)==overlay::Result::conflict && roster.groupCount==2,"explicit native removal state is preserved");
         roster=baseline(*storage,fixture);roster.groups[1]=expose(plan->groups[1]);

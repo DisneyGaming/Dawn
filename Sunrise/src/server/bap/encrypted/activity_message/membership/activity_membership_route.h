@@ -10,7 +10,7 @@ namespace sunrise::server::bap::encrypted::activity_message::membership {
 
 [[nodiscard]] constexpr bool retains_held_region(std::string_view destination) noexcept {
     return destination == "mission_bond" || destination == "mission_pact" || destination == "strike_bond" || destination == "strike_pact" || destination == "mercury_freeroam"
-        || destination == "adventure_rumba";
+        || destination == "adventure_rumba" || destination == "raid_envy_v310";
 }
 
 /** Maps parsed membership fields without changing legacy destination routing. */

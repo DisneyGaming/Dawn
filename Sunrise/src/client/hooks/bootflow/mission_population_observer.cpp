@@ -7,6 +7,7 @@
 #include "../../../state/activity/hijacked/runtime.h"
 #include "../../../state/activity/strike_pact/runtime.h"
 #include "../../../state/activity/strike_bond/runtime.h"
+#include "../../../state/activity/eater_of_worlds/runtime.h"
 #include "../../../state/activity/deadly_trial/runtime.h"
 
 namespace sunrise::client::hooks::bootflow {
@@ -63,6 +64,13 @@ void poll_mission_population_readiness(std::uintptr_t image,std::uint64_t now) n
         missions::strike_pact::observe_capacity(pact.run,coo_native::capacity(read,image+0x1F9D7F0));
     }
     sample(image,missions::strike_bond::readiness_request(now),missions::strike_bond::observe_readiness);
+    const auto eater=missions::eater_of_worlds::readiness_request(now);
+    sample(image,eater,missions::eater_of_worlds::observe_readiness);
+    if(eater.run) {
+        gateway_native::Read read{image};
+        missions::eater_of_worlds::observe_capacity(
+            eater.run,coo_native::capacity(read,image+0x1F9D7F0));
+    }
     sample(image,missions::deadly_trial::readiness_request(now),missions::deadly_trial::observe_readiness);
     sample(image,missions::deep_storage::readiness_request(now),missions::deep_storage::observe_readiness);
     sample(image,missions::hijacked::readiness_request(now),missions::hijacked::observe_readiness);

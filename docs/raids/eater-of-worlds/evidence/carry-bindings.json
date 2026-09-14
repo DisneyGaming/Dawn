@@ -1,0 +1,969 @@
+{
+  "schema": "eater-cranium-carry-bindings-v1",
+  "runtimeBindingsSha256": "684991fcc307d11aa70336d1eebfcdc38e5cc7a16f99aee40b44747f359ed6fa",
+  "runtimeSubtype": "0x80803E70",
+  "runtimeInterface": "0x80803F6A",
+  "runtimeKind": "0x80804221",
+  "bindings": [
+    {
+      "registry": "0x91264981",
+      "slot": 116,
+      "source": "0x80C43442",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 117,
+      "source": "0x80C4345F",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 118,
+      "source": "0x80C4347A",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 119,
+      "source": "0x80C43483",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 120,
+      "source": "0x80C43486",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 121,
+      "source": "0x80C4348F",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 122,
+      "source": "0x80C434AC",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 123,
+      "source": "0x80C434DF",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 124,
+      "source": "0x80C434E9",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 125,
+      "source": "0x80C43506",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 126,
+      "source": "0x80C43516",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 127,
+      "source": "0x80C43519",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 128,
+      "source": "0x80C43533",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 129,
+      "source": "0x80C43550",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 130,
+      "source": "0x80C43560",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 131,
+      "source": "0x80C4356A",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 132,
+      "source": "0x80C4357E",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 133,
+      "source": "0x80C43598",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 134,
+      "source": "0x80C435A2",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 135,
+      "source": "0x80C435A5",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 136,
+      "source": "0x80C435A8",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 137,
+      "source": "0x80C435F0",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 138,
+      "source": "0x80C43606",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 139,
+      "source": "0x80C43609",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 140,
+      "source": "0x80C4360C",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 141,
+      "source": "0x80C4362F",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 142,
+      "source": "0x80C43632",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 143,
+      "source": "0x80C4363C",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 144,
+      "source": "0x80C4363F",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 145,
+      "source": "0x80C43644",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 146,
+      "source": "0x80C43647",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 147,
+      "source": "0x80C4365D",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 148,
+      "source": "0x80C43666",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 149,
+      "source": "0x80C43669",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 150,
+      "source": "0x80C43670",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 151,
+      "source": "0x80C43676",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 152,
+      "source": "0x80C4367B",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 153,
+      "source": "0x80C4367E",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 154,
+      "source": "0x80C43692",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 155,
+      "source": "0x80C43695",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 156,
+      "source": "0x80C43699",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 157,
+      "source": "0x80C4369C",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 158,
+      "source": "0x80C436A0",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 159,
+      "source": "0x80C436A3",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 160,
+      "source": "0x80C436A7",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 161,
+      "source": "0x80C436AA",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 162,
+      "source": "0x80C436AE",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 163,
+      "source": "0x80C436B1",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 164,
+      "source": "0x80C436B5",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 165,
+      "source": "0x80C436B9",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 166,
+      "source": "0x80C436BC",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 167,
+      "source": "0x80C436C0",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 168,
+      "source": "0x80C436C3",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 169,
+      "source": "0x80C436C7",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 170,
+      "source": "0x80C436CB",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 171,
+      "source": "0x80C436D0",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 172,
+      "source": "0x80C436D4",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 173,
+      "source": "0x80C436D9",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 174,
+      "source": "0x80C436DD",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0x91264981",
+      "slot": 175,
+      "source": "0x80C436E2",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 158,
+      "source": "0x80C4289F",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 159,
+      "source": "0x80C428A5",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 160,
+      "source": "0x80C428AA",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 161,
+      "source": "0x80C428B0",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 162,
+      "source": "0x80C428B5",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 163,
+      "source": "0x80C428B9",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 164,
+      "source": "0x80C428BF",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 165,
+      "source": "0x80C428C5",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 166,
+      "source": "0x80C428CA",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 167,
+      "source": "0x80C428D0",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 168,
+      "source": "0x80C428D5",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 169,
+      "source": "0x80C428D9",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 170,
+      "source": "0x80C428DF",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 171,
+      "source": "0x80C428E3",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 172,
+      "source": "0x80C428E9",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 173,
+      "source": "0x80C428EE",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 174,
+      "source": "0x80C428F4",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 175,
+      "source": "0x80C428F9",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 176,
+      "source": "0x80C428FE",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 177,
+      "source": "0x80C42902",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 178,
+      "source": "0x80C42908",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 179,
+      "source": "0x80C4290E",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 180,
+      "source": "0x80C42912",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 181,
+      "source": "0x80C42917",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 182,
+      "source": "0x80C4291C",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 183,
+      "source": "0x80C42920",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 184,
+      "source": "0x80C42925",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 185,
+      "source": "0x80C42929",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 186,
+      "source": "0x80C4292E",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 187,
+      "source": "0x80C42932",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 188,
+      "source": "0x80C42938",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 189,
+      "source": "0x80C42945",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 190,
+      "source": "0x80C4295B",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 191,
+      "source": "0x80C42961",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 192,
+      "source": "0x80C42979",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 193,
+      "source": "0x80C4297C",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 194,
+      "source": "0x80C4298A",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 195,
+      "source": "0x80C429AB",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 196,
+      "source": "0x80C429D7",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 197,
+      "source": "0x80C429E0",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 198,
+      "source": "0x80C429E3",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 199,
+      "source": "0x80C429E6",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 200,
+      "source": "0x80C429E9",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 201,
+      "source": "0x80C429EC",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 202,
+      "source": "0x80C429EF",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 203,
+      "source": "0x80C429F4",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 204,
+      "source": "0x80C429F8",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 205,
+      "source": "0x80C429FC",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 206,
+      "source": "0x80C42A00",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 207,
+      "source": "0x80C42A03",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 208,
+      "source": "0x80C42A08",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 209,
+      "source": "0x80C42A18",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 210,
+      "source": "0x80C42A39",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 211,
+      "source": "0x80C42A3C",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 212,
+      "source": "0x80C42A40",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 213,
+      "source": "0x80C42A44",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 214,
+      "source": "0x80C42A48",
+      "entity": "0x80F42EFE",
+      "config": "0x80F42EEB",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 215,
+      "source": "0x80C42A4C",
+      "entity": "0x80F42EDC",
+      "config": "0x80F42EA4",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 216,
+      "source": "0x80C42A52",
+      "entity": "0x80F42F3A",
+      "config": "0x80F42F0B",
+      "offset": "0x598"
+    },
+    {
+      "registry": "0xE8D290A0",
+      "slot": 217,
+      "source": "0x80C42A68",
+      "entity": "0x80F42E8A",
+      "config": "0x80F42E86",
+      "offset": "0x598"
+    }
+  ]
+}

@@ -2,8 +2,39 @@
 
 Date: 13 September 2026  
 Target: Destiny 2 build 86657, Sunrise, `raid_envy_v310`  
-Status: planning and package research; no Eater gameplay acceptance is claimed  
-Working identifier: `eater_of_worlds` (proposed implementation name)
+Status: implementation in progress; no Eater gameplay acceptance is claimed
+Implementation identifier: `eater_of_worlds`
+
+Current source, acceptance limits and remaining execution gaps are recorded in
+[IMPLEMENTATION.md](IMPLEMENTATION.md).
+
+Latest implementation scope: doubled crossing enemies (30 actors), nine Loyalists
+at the large final platform, retained/opened reactor hatch, and the full underbelly
+door sequence. All twelve crossing sources load at darkness activation and persist
+across checkpoints. Argos appears encased in six debris sections with his shield;
+the 23 boss platforms remain unrequested during the intro. One hoop crossing plus
+the authored Argos arrival trigger publishes **Break the barrier** and enables the
+darkness zone. The user explicitly chose this trigger policy instead of a physical
+ground-support check. Barrier execution remains pending for later implementation.
+See [the arrival delivery record](ARRIVAL-DOORS-DENSITY-20260913.md). Historical
+delivery checkpoints below describe earlier candidates.
+
+Delivery checkpoint: the Release load-crash fix was installed with a backup after
+78 Release build/test jobs and reached the world in the user's test. The follow-up
+door, area tracking and 56-platform policy changes are in source. A production
+standing-contact adapter is now implemented against the exact platform physics
+component and original collision ABI. Installed reactor testing, barrier/Argos
+cycles and complete raid retry acceptance remain open. See
+[the first-platform record](LIVE-FIRST-PLATFORM-20260913.md) for current evidence.
+
+Implementation records: [runtime catalog](evidence/runtime-bindings.json) links all 19 groups,
+891 client descriptors, 75 squad sources, 73 volume definitions and 32 native trigger links.
+`tools/coo/extract_eater_bindings.py` reproduces those records from installed packages and
+checks each overlapping cached descriptor. The controller, seven-phase Lua graph, Raids GUI
+entry and exact-route startup ID fix are implemented in source. Native reactor, cranium,
+barrier and Argos control/receipt bindings are still being completed; compiling this graph
+does not establish a playable raid. The test suite deliberately rejects elapsed-time
+completion, unadmitted deaths, stale monitor generations and reused object identities.
 
 Inspection update: [reactor findings](LIVE-REACTOR-20260913.md) prove successful bubble-7 / slice-56 arrivals at the first-path goal (`0x1E8DBF89`) and reactor approach (`0xAD98065D`), with geometry joins for the four path goals and start trigger. The [barrier/Argos capture](LIVE-ARGOS-20260913.md) proves bubble-6 / slice-48 arrival at `0x68C397B7` and readable authored definitions for all 335 Argos, 301 barrier, and 22 belly-traversal descriptors. Combined availability coverage is 886/891 known client descriptors; the five remaining belong to the outer entrance. This initial collection pass is complete, with no separate traversal load needed for descriptor coverage. Original entrance acceptance, active encounter controls, host-only scheduling, and gameplay acceptance remain open. The user operates all computer controls; further investigation uses files, logs, and read-only game data.
 
@@ -29,7 +60,11 @@ For each section, follow **recover -> bind -> implement -> test offline -> insta
 
 This document is the detailed execution plan. [AUTHORING-PLAN.md](AUTHORING-PLAN.md) remains the original research handoff; [evidence/native-inventory.json](evidence/native-inventory.json) remains the extracted identity source. This plan does not turn an unknown field into a recovered binding.
 
-The current request authorizes writing this plan. The commands, source changes, installation, and live experiments below are future implementation work. On continuation, use the user's actual implementation instructions and existing session authorization; do not invent recurring approval gates for routine work already authorized.
+The current request authorizes implementation of the full plan, GUI integration, the entrance
+ID fix, code review and testing. Later encounter implementation can proceed in parallel with
+verification of earlier sections. Gameplay acceptance still requires the real observations
+listed below. The user retains all computer/game controls; this authorization does not allow
+UI takeover or a claimed playthrough based on unit tests.
 
 ## 2. Navigation
 

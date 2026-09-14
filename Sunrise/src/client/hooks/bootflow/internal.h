@@ -220,6 +220,17 @@ void arm_omega_forest_route_trace() noexcept;
 /** Detaches the scoped stale activity-provider mapping guard. */
 void uninstall_activity_provider_stale_mapping_guard() noexcept;
 
+/**
+ * Keeps a bounded native-owned entity-ID allowance through Eater's exact entrance startup burst.
+ */
+[[nodiscard]] bool install_eater_entity_id_startup() noexcept;
+
+/** Stops new Eater startup profile substitutions while retail maintenance keeps forwarding. */
+void quiesce_eater_entity_id_startup() noexcept;
+
+/** Protected detach; a live callback retains the hook and its native trampolines. */
+[[nodiscard]] bool uninstall_eater_entity_id_startup() noexcept;
+
 /** Attaches read-only Omega mission-runner and behaviour-condition diagnostics. */
 [[nodiscard]] bool install_activity_behavior_condition_probe() noexcept;
 

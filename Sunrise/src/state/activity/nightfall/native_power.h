@@ -8,6 +8,7 @@
 #include "../../equipment/light/definition.h"
 #include "../strike_variants.h"
 #include "rules.h"
+#include "../eater_of_worlds/contest.h"
 
 namespace sunrise::state::activity::nightfall {
 
@@ -25,14 +26,22 @@ struct NativePowerProjection final {
     std::uint8_t delta{};
 
     [[nodiscard]] constexpr explicit operator bool() const noexcept {
-        return (activity == 813 || activity == 835)
+        const bool grandmaster = (activity == 813 || activity == 835)
                && difficultySettings == kGrandmasterDifficultySettings
-               && authoredPower == kGrandmasterActivityPower && delta >= 30
-               && effectiveCap == authoredPower - static_cast<std::int32_t>(delta);
+               && authoredPower == kGrandmasterActivityPower && delta >= 30 && delta <= 50;
+        const bool eater = activity == eater_of_worlds::contest::kActivity
+               && difficultySettings == eater_of_worlds::contest::kDifficultySettings
+               && authoredPower == eater_of_worlds::contest::kActivityPower
+               && delta == eater_of_worlds::contest::kPowerDelta;
+        return (grandmaster || eater) && effectiveCap == authoredPower - static_cast<std::int32_t>(delta);
     }
 
     [[nodiscard]] bool operator==(const NativePowerProjection&) const noexcept = default;
 };
+
+namespace detail {
+inline thread_local const NativePowerProjection* publicationPower{};
+}
 
 /**
  * Resolves only the two installed direct Grandmaster identities. The native activity row remains
@@ -55,9 +64,29 @@ native_power_projection(std::int16_t activity, std::uint8_t requestedDelta) noex
 
 /** Resolves one coherent lock-free rules snapshot into its exact native projection. */
 [[nodiscard]] inline NativePowerProjection current_native_power_projection() noexcept {
+    if (detail::publicationPower) return *detail::publicationPower;
+    if (eater_of_worlds::contest::enabled()) {
+        return {eater_of_worlds::contest::kActivity, eater_of_worlds::contest::kDifficultySettings,
+                eater_of_worlds::contest::kActivityPower, eater_of_worlds::contest::kPlayerPowerCap,
+                eater_of_worlds::contest::kPowerDelta};
+    }
     const Selection selected = selection();
     return native_power_projection(selected.activity, selected.options.powerDelta);
 }
+
+/** One outgoing subscription burst uses the same cap for character, items, roster and banner. */
+class PowerPublication final {
+public:
+    PowerPublication() noexcept : captured_(current_native_power_projection()), previous_(detail::publicationPower) {
+        detail::publicationPower = &captured_;
+    }
+    ~PowerPublication() { detail::publicationPower = previous_; }
+    PowerPublication(const PowerPublication&) = delete;
+    PowerPublication& operator=(const PowerPublication&) = delete;
+private:
+    NativePowerProjection captured_;
+    const NativePowerProjection* previous_;
+};
 
 /** Caps one player-owned published light without raising a lower-power character. */
 [[nodiscard]] constexpr std::int32_t

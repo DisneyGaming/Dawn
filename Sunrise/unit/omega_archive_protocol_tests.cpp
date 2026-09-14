@@ -26,7 +26,7 @@ int main() {
         0xF4D0E0B2U, 0x95FB2E01U, 0x99BD2FEBU, 0x0040BF06U, 0x0040BF05U,
         0x0040BF03U, 0x3A6CE17AU, 0x30A025E8U, 0xC40F2AF4U, 0x9D8076E4U};
     constexpr std::array<std::uint8_t, 15> types{1, 2, 4, 6, 11, 13, 17, 18, 23, 30, 35, 37, 43, 68, 70};
-    std::array<std::byte, 8192> buffer{};
+    std::array<std::byte, 65536> buffer{};
     unsigned nonempty{}, packets{}, fullPackets{};
     for (std::uint8_t phase = 0; phase < 12; ++phase) {
         wire::Snapshot s{};

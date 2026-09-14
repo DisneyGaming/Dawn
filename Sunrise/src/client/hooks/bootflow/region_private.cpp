@@ -8,8 +8,10 @@
 
 #include "../../../core/logging/log.h"
 #include "../../../core/settings/settings.h"
+#include "../../../state/activity/forced/activity_forced_destination.h"
 #include "../../hooking/detour.h"
 #include "internal.h"
+#include "region_private_policy.h"
 
 namespace sunrise::client::hooks::bootflow {
 namespace {
@@ -112,8 +114,9 @@ void report(std::uint32_t sliceSet, bool forced) noexcept {
 /**
  * Reports a bubble as private, for the region transition's own call only.
  * A public region holds its slice-set switch until a public activity host connects.
- * `client.region_private` off keeps the public answer, so the embedded citizen join can run even
- * when the destination itself came from the activity-override UI.
+ * `client.region_private` off keeps the public answer for ordinary launches. The Raid-panel Eater
+ * run is the one scoped exception: its direct activity and package keep all eight raid slices on
+ * the one-player path.
  * @return False on the starter's call, otherwise the reader's own answer.
  */
 __declspec(noinline) bool __fastcall reader(std::uint32_t sliceSet) noexcept {
@@ -129,7 +132,13 @@ __declspec(noinline) bool __fastcall reader(std::uint32_t sliceSet) noexcept {
     if (caller != g_returnSite.load(std::memory_order_acquire)) {
         return true;
     }
-    const bool forced = core::settings::get().client.regionPrivate;
+    state::activity::forced::ForcedDestination destination{};
+    const auto directActivity = state::activity::forced::direct_snapshot(destination);
+    const bool forced = region_private_policy::force_private(
+        core::settings::get().client.regionPrivate,
+        directActivity,
+        destination,
+        sliceSet);
     report(sliceSet, forced);
     return !forced;
 }

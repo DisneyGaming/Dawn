@@ -1,6 +1,7 @@
 #include "server/runtime/activity/mercury_definition.h"
 #include "server/runtime/activity/persistent_activity.h"
 #include "middleware/encoding/bit_reader.h"
+#include "mission_parameter_fixture.h"
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -14,7 +15,7 @@ namespace bits=sunrise::middleware::encoding::bits;
 unsigned checks{};
 void check(bool v,const char* label){++checks;if(!v){std::cerr<<"FAIL "<<label<<'\n';std::exit(1);}}
 std::shared_ptr<const coo::script::MissionDocument> parse(const std::string& text){std::string error;auto d=coo::script::MissionDocument::parse(text,mc::kProfile,error);if(!d)std::cerr<<error<<'\n';check(bool(d),"real Mercury document parses");return d;}
-void enable(std::string& text,const char* name){const std::string token=std::string("\"")+name+"\": 0";const auto pos=text.find(token);check(pos!=text.npos,"default-off parameter explicit");text[pos+token.size()-1]='1';}
+void enable(std::string& text,const char* name){check(mission_parameter_fixture::numeric(text,name,1),"fixture parameter is unique numeric value");}
 void clear(rt::population::Owner owner){pe::participant_bridge::release(owner);pe::keys::bridge::release(owner);pe::deferred_bridge::release(owner);pe::engagement_bridge::release(owner);rt::adventure::native_bridge::release(owner);pe::native_bridge::release(owner);rt::adventure::dialogue_bridge::release(owner);}
 std::uint64_t testMs{};
 rt::NativeActivityFrame tick(rt::PersistentActivity& activity,std::uint32_t bubble,bool arrived,
@@ -25,6 +26,8 @@ rt::NativeActivityFrame tick(rt::PersistentActivity& activity,std::uint32_t bubb
 }
 int main(int argc,char** argv){
  check(argc==3,"usage Mercury-json output-directory");std::ifstream file(argv[1],std::ios::binary);check(bool(file),"source json opens");std::string text((std::istreambuf_iterator<char>(file)),{});
+ check(mission_parameter_fixture::numeric(text,"public_event_rally_probe",0),"fixture disables rally independently of saved settings");
+ check(mission_parameter_fixture::numeric(text,"ambient_vex_probe_count",0),"fixture disables ambient probe independently of saved settings");
  auto defaults=parse(text);check(rt::PersistentActivity::valid(mc::kActivity,*defaults),"all retained profile capabilities validate");
  for(const auto& registry:mc::public_events::kRegistries) {
   check(coo::mercury::public_events::required(registry.scenario,registry.objectTag,registry.key,1ULL<<registry.bubble),"every optional event registry is eligible for runtime extraction");

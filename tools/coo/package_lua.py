@@ -11,7 +11,7 @@ import verify_lua
 import native_test_inputs
 
 ROOT = verify.ROOT
-SCRIPTS = ('omega.lua', 'deadly_trial.lua', 'gateway.lua', 'beyond_infinity.lua', 'deep_storage.lua', 'hijacked.lua', 'strike_pact.lua', 'strike_bond.lua', 'mission_pact.lua', 'mission_bond.lua', 'mercury_freeroam.json', 'infinite_abyss.json')
+SCRIPTS = ('omega.lua', 'deadly_trial.lua', 'gateway.lua', 'beyond_infinity.lua', 'deep_storage.lua', 'hijacked.lua', 'strike_pact.lua', 'strike_bond.lua', 'mission_pact.lua', 'mission_bond.lua', 'eater_of_worlds.lua', 'mercury_freeroam.json', 'infinite_abyss.json')
 
 
 def require(condition, message):
@@ -22,7 +22,10 @@ def require(condition, message):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--validation', type=Path, required=True)
-    parser.add_argument('--mission', choices=('hijacked', 'deep_storage', 'mercury_freeroam'), help='Require only the named mission suites and the Release DLL.')
+    scope = parser.add_mutually_exclusive_group()
+    scope.add_argument('--mission', choices=('hijacked', 'deep_storage', 'mercury_freeroam', 'eater_of_worlds', 'eater_contest'), help='Require only the named mission suites and the Release DLL.')
+    scope.add_argument('--configuration', choices=('Release',),
+                       help='Require the complete validation job set for this configuration.')
     args = parser.parse_args()
     out = args.validation.resolve()
     require(out.is_relative_to(ROOT / 'build/coo'), 'Validation must be inside build/coo.')
@@ -35,10 +38,18 @@ def main():
         'hijacked': ('hijacked-release', ('hijacked_tests', 'hijacked_catalog_tests', 'Sunrise')),
         'deep_storage': ('deep-storage-release', ('deep_storage_tests', 'Sunrise')),
         'mercury_freeroam': ('mercury-reentry-release', ('retained_authority_scope_tests', 'Sunrise')),
+        'eater_of_worlds': ('eater-reactor-release', ('eater_of_worlds_tests', 'eater_of_worlds_roster_tests',
+                                                   'player_position_tests', 'other_mission_protocol_tests', 'Sunrise')),
+        'eater_contest': ('eater-contest-release', ('eater_of_worlds_tests', 'eater_of_worlds_roster_tests',
+                         'player_position_tests', 'other_mission_protocol_tests', 'native_nightfall_power_tests',
+                         'nightfall_rules_tests', 'mission_launch_lifecycle_tests', 'mission_launch_visual_tests', 'Sunrise')),
     }
     if args.mission:
         scope, projects = mission_scopes[args.mission]
         expected = {(name, 'Release') for name in projects}
+    elif args.configuration:
+        scope = 'full-lua-release'
+        expected = set(verify_lua.validation_jobs(configurations=(args.configuration,)))
     else:
         scope, expected = 'full-lua', set(verify_lua.validation_jobs())
     require(len(results) == len(expected) and {(r['project'], r['configuration']) for r in results} == expected,
@@ -69,6 +80,7 @@ def main():
     manifest = {
         'format': 1, 'createdUtc': datetime.now(timezone.utc).isoformat(),
         'buildsAndTests': len(results), 'compilerWarnings': 0, 'validationScope': scope,
+        'validationJobs': sorted(f"{r['project']}|{r['configuration']}" for r in results),
         'sourceManifestSha256': verify.digest(out / 'source-manifest.json'),
         'unavailableHistoricalProofs': native_test_inputs.CAPTURE_ONLY if not args.mission else {},
         'files': expected_payload,

@@ -6,6 +6,7 @@
 #include "state/activity/omega/omega_transit_authority.h"
 #include "state/activity/omega_arc_charge_authority.h"
 #include "state/activity/deadly_trial/authority.h"
+#include "state/activity/eater_of_worlds/authority.h"
 #include "client/hooks/bootflow/omega_arc_charge_native.h"
 #include <array>
 #include <cstdio>
@@ -16,6 +17,7 @@
 namespace omega=sunrise::state::activity::omega;
 namespace charge=sunrise::state::activity::omega_arc_charge;
 namespace trial=sunrise::state::activity::deadly_trial;
+namespace eater=sunrise::state::activity::eater_of_worlds;
 namespace device=sunrise::state::activity::coo::native_device;
 namespace hook=sunrise::client::hooks::bootflow::omega_arc_charge_native;
 namespace {
@@ -104,10 +106,34 @@ void mission_test() {
     for(const auto generation:{0U,charge::kMaximumGeneration}) {ArcOverrideBits stream;const charge::Authority invalid{generation,1,true,false,true};check(!charge::write_authority(stream,{&charge::kCycles[0],charge::Object::sink},invalid) && stream.bits.empty(),"invalid generation refuses publication");}
     ArcOverrideBits invalid;check(!device::object(invalid,1,true,nullptr,static_cast<device::interaction::Mode>(3)) && invalid.bits.empty(),"invalid interaction mode rejected without partial output");
 }
+void eater_station_test() {
+    eater::Frame frame{};frame.enabled=true;frame.spawnGeneration=9;
+    for(const auto& binding:eater::kStationBindings) {
+        auto& state=frame.native[eater::asset_index(binding.source)];
+        state.managed=true;state.generation=9;
+        for(bool active:{false,true}) for(bool acknowledged:{false,true}) {
+            state.active=active;state.acknowledged=acknowledged;
+            MissionBits stream;
+            check(eater::write_body(stream,frame,binding.source.registry,4,binding.source.slot),"exact Eater station source encodes");
+            check(stream.bits.size()==eater::body_bits(frame,binding.source.registry,4,binding.source.slot),"Eater station reported width equals actual wire");
+            verify_source(stream,active,acknowledged,state.generation);
+        }
+        state.managed=false;
+        MissionBits missing;
+        check(!eater::write_body(missing,frame,binding.source.registry,4,binding.source.slot) && missing.bits.empty(),"unmanaged Eater station refuses authority");
+    }
+    for(const auto& binding:eater::kCraniumBindings) {
+        auto& state=frame.native[eater::asset_index(binding.source)];
+        state.managed=true;state.active=true;state.acknowledged=true;state.generation=11;
+        MissionBits stream;
+        check(eater::write_body(stream,frame,binding.source.registry,4,binding.source.slot),"Eater cranium source encodes");
+        verify_source(stream,true,false,state.generation);
+    }
+}
 }
 int main(int argc,char** argv) {
     if(argc!=2) {std::fprintf(stderr,"usage: native_mission_interaction_tests native-image\n");return 2;}
-    verify_image(argv[1]);image=allocate(0x6270000);arc_unlock_native_test(argv[1]);mission_test();
+    verify_image(argv[1]);image=allocate(0x6270000);arc_unlock_native_test(argv[1]);mission_test();eater_station_test();
     std::printf("Native mission interaction: %u checks, 0 failures; original F32820/9FA4B0/9F9B30/F33930 instructions\n",checks);
     for(auto* p:allocations) {VirtualFree(p,0,MEM_RELEASE);}return 0;
 }

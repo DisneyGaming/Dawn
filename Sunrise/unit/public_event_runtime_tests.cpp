@@ -1,5 +1,6 @@
 #include "server/runtime/activity/mercury_definition.h"
 #include "server/runtime/activity/persistent_activity.h"
+#include "mission_parameter_fixture.h"
 #include <cstdio>
 #include <fstream>
 #include <thread>
@@ -91,6 +92,8 @@ std::shared_ptr<const coo::script::MissionDocument> parse(const std::string& tex
 void real_profile(const char* combinedOutput) {
     std::ifstream file("Sunrise/scripts/mercury_freeroam.json",std::ios::binary);CHECK(file.good());
     std::string text((std::istreambuf_iterator<char>(file)),{});
+    CHECK(mission_parameter_fixture::numeric(text,"public_event_rally_probe",0));
+    CHECK(mission_parameter_fixture::numeric(text,"ambient_vex_probe_count",0));
     const auto disabled=parse(text);if(!disabled)return;
     CHECK(disabled->views().parameter("public_event_rally_probe")->value==0);
     CHECK(runtime::PersistentActivity::valid(mercury::kActivity,*disabled));
@@ -100,8 +103,7 @@ void real_profile(const char* combinedOutput) {
     CHECK(frame.placements.count==9 && frame.populations.count==2);
     CHECK(!normal.rally().enabled() && normal.rally().diagnostics().phase==pe::Phase::idle);
     CHECK(!bridge::lookup_definition(mercury::public_events::kRallyFlag.definition).epoch);
-    const auto at=text.find("\"public_event_rally_probe\": 0");CHECK(at!=std::string::npos);if(at==std::string::npos)return;
-    text[at+std::string("\"public_event_rally_probe\": ").size()]='1';
+    CHECK(mission_parameter_fixture::numeric(text,"public_event_rally_probe",1));
     const auto enabled=parse(text);if(!enabled)return;
     CHECK(runtime::PersistentActivity::valid(mercury::kActivity,*enabled));
     const runtime::population::Owner owner{501,{2}};
@@ -147,9 +149,7 @@ void real_profile(const char* combinedOutput) {
     bridge::release(next);
     // Reviewable next-build definition enables both bounded probes. A native
     // monitor observation gates the new source independently of flag readiness.
-    auto combined=text;const auto ambientAt=combined.find("\"ambient_vex_probe_count\": 0");
-    CHECK(ambientAt!=std::string::npos);if(ambientAt==std::string::npos)return;
-    combined[ambientAt+std::string("\"ambient_vex_probe_count\": ").size()]='1';
+    auto combined=text;CHECK(mission_parameter_fixture::numeric(combined,"ambient_vex_probe_count",1));
     const auto combinedDocument=parse(combined);if(!combinedDocument)return;
     CHECK(runtime::PersistentActivity::valid(mercury::kActivity,*combinedDocument));
     runtime::PersistentActivity together;const runtime::population::Owner both{502,{4}};
@@ -185,7 +185,7 @@ void real_profile(const char* combinedOutput) {
     bound=mercury::kPublicEventRallies[0];auto copy=*bound.placement.registry;bound.placement.registry=&copy;
     CHECK(!runtime::PersistentActivity::valid(bad,*enabled));
     bound=mercury::kPublicEventRallies[0];bad.placements={&bound.placement,1};CHECK(!runtime::PersistentActivity::valid(bad,*enabled));
-    auto invalid=text;const auto flag=invalid.find("\"public_event_rally_probe\": 1");invalid[flag+std::string("\"public_event_rally_probe\": ").size()]='2';
+    auto invalid=text;CHECK(mission_parameter_fixture::numeric(invalid,"public_event_rally_probe",2));
     std::string error;CHECK(!coo::script::MissionDocument::parse(invalid,mercury::kProfile,error));
     // The separate state-layer admission roster must exactly match every recovered descriptor.
     const auto& state=mercury::kRegistries[5];const auto& recovered=mercury::public_events::kRegistries[0];

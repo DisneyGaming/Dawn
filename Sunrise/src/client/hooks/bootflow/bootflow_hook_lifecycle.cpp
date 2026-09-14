@@ -25,6 +25,7 @@
 #include "deadly_trial_revival.h"
 #include "deadly_trial_lifetime.h"
 #include "gateway_patrol.h"
+#include "eater_reinforcements.h"
 
 namespace sunrise::client::hooks::bootflow {
 namespace {
@@ -226,6 +227,7 @@ bool install() noexcept {
     const bool activityScriptEvents = !kEnableLegacyUnsafeObserverBundle;
     const bool activityScriptUpstream = !kEnableUnsafeActivityScriptUpstreamProbe;
     const bool activityProviderStaleMapping = install_activity_provider_stale_mapping_guard();
+    const bool eaterEntityIdStartup = install_eater_entity_id_startup();
     const bool activityBehaviorConditions = !kEnableLegacyUnsafeObserverBundle;
     const bool activitySpawnerChainInstalled = kEnableActivitySpawnerChainProbe
                                                && install_activity_spawner_chain_probe();
@@ -266,6 +268,7 @@ bool install() noexcept {
     const bool trialRevival = deadly_trial_revival::install();
     const bool trialLifetime = deadly_trial_lifetime::install();
     const bool gatewayPatrol = gateway_patrol::install();
+    const bool eaterReinforcements = eater_reinforcements::install();
     const bool hijackedPlacements = hijacked_placements::install();
     const bool omegaLatticeProbe = omega_vex_lattice_probe::install();
     const bool prologueFiller = install_prologue_filler_ready();
@@ -276,13 +279,14 @@ bool install() noexcept {
     const bool fade = install_fade_release();
     const bool anyFix = hold || sliceSet || skip || composition || handoff || joinReady || ownerSlot
                         || activityHostInstalled || activityProviderStaleMapping
+                        || eaterEntityIdStartup
                         || activitySpawnerChainInstalled
                         || omegaIkoraOriginInstalled
                         || omegaDirectivePresentationInstalled
                         || omegaSceneRetirementInstalled
                         || type31CaptureInstalled || dialogueDispatchProbe || omegaNavigation || omegaLairCinematic
                         || omegaLairReceipts || vanceContactInstalled || ambientNamedPoints || nativeCapture || replicationObserver || omegaCannonReceipt || omegaArcCharge || publicEventParticipant || omegaRescueScenes || trialRevival || trialLifetime || hijackedPlacements
-                        || omegaLatticeProbe || gatewayPatrol
+                        || omegaLatticeProbe || gatewayPatrol || eaterReinforcements
                         || featureFlagInstalled
                         || prologueFiller || regionPrivate
                         || worldStep || spawn || towerfallExecutor || fade;
@@ -298,7 +302,7 @@ bool install() noexcept {
                               && omegaNavigation && omegaLairCinematic
                               && omegaLairReceipts && vanceContact && ambientNamedPoints && nativeCapture && omegaCannonReceipt && omegaArcCharge && publicEventParticipant && omegaRescueScenes && trialRevival && trialLifetime && hijackedPlacements
                               && featureFlag && prologueFiller && regionPrivate
-                              && worldStep && spawn && towerfallExecutor && fade && gatewayPatrol;
+                              && worldStep && spawn && towerfallExecutor && fade && gatewayPatrol && eaterReinforcements;
     // Admission opens only for this fresh lifecycle and before its installed publication. The
     // exclusive lock keeps retail callbacks from observing either half of that publication.
     g_acceptLateInstalls.store(anyFix, std::memory_order_release);
@@ -315,6 +319,7 @@ void quiesce() noexcept {
     g_acceptLateInstalls.store(false, std::memory_order_release);
     ReleaseSRWLockExclusive(&g_lateInstallLock);
 
+    quiesce_eater_entity_id_startup();
     hijacked_placements::quiesce();
     quiesce_spawn_hold();
     quiesce_towerfall_executor_bootstrap();
@@ -334,6 +339,7 @@ void quiesce() noexcept {
     deadly_trial_revival::quiesce();
     deadly_trial_lifetime::quiesce();
     gateway_patrol::quiesce();
+    eater_reinforcements::quiesce();
     omega_vex_lattice_probe::quiesce();
 
     quiesce_type31_objective_capture();
@@ -411,7 +417,14 @@ bool uninstall() noexcept {
     if (!deadly_trial_revival::uninstall()) { return false; }
     if (!deadly_trial_lifetime::uninstall()) { return false; }
     if (!gateway_patrol::uninstall()) { return false; }
+    if (!eater_reinforcements::uninstall()) { return false; }
     if (!omega_vex_lattice_probe::uninstall()) { return false; }
+    if (!uninstall_eater_entity_id_startup()) {
+        core::log::write(core::log::Channel::client,
+                         core::log::Level::warn,
+                         "ev=bootflow stage=uninstall result=retained owner=eater_entity_ids");
+        return false;
+    }
     uninstall_omega_dialogue_dispatch_probe();
     uninstall_activity_spawner_chain_probe();
     uninstall_activity_provider_stale_mapping_guard();

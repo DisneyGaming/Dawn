@@ -17,7 +17,12 @@ struct Body { std::uint32_t owner; t::Vector position;bool readable{true},replac
 std::uint32_t controlled=0x08FAA000U;
 void* fallback{};
 unsigned identitySamples{},identityInvalidations{};bool identityPresent{};
-unsigned publications{},trialPublications{},deepPublications{},hijackedPublications{},gardenPublications{};t::Vector trialPosition{},deepPosition{},hijackedPosition{},gardenPosition{};
+unsigned publications{},trialPublications{},deepPublications{},hijackedPublications{},gardenPublications{},eaterPublications{};t::Vector trialPosition{},deepPosition{},hijackedPosition{},gardenPosition{},eaterPosition{};
+unsigned physicsPublications{};void* physicsComponent{};std::uint32_t physicsPlayer{UINT32_MAX};
+void physics_observer(void* component,std::uint32_t player,std::uint64_t at) noexcept {
+    CHECK(component);CHECK(player==controlled);CHECK(at>0);
+    ++physicsPublications;physicsComponent=component;physicsPlayer=player;
+}
 g::Controller* mission{};
 namespace sunrise::client::hooks::teleport {
 bool read_local_player_entity(void* component,std::uint32_t& entity) noexcept {
@@ -36,6 +41,7 @@ bool read_position(void* component,Vector& position) noexcept {
 namespace sunrise::client::hooks::bootflow::public_event_participant_observer {
 void poll_local_identity() noexcept { ++identitySamples;identityPresent=true; }
 }
+namespace sunrise::client::activity::eater_player_health { void poll() noexcept {} }
 namespace sunrise::server::runtime::activity::public_event::participant_bridge {
 void invalidate_local_identity() noexcept { ++identityInvalidations;identityPresent=false; }
 }
@@ -44,6 +50,7 @@ std::uint64_t mission_run_generation() noexcept { return 1; }
 namespace deep_storage { void observe_position(float x,float y,float z) noexcept {++deepPublications;deepPosition={x,y,z};} }
 namespace hijacked { void observe_position(float x,float y,float z) noexcept {++hijackedPublications;hijackedPosition={x,y,z};} }
 namespace strike_bond { void observe_position(float x,float y,float z) noexcept {++gardenPublications;gardenPosition={x,y,z};} }
+namespace eater_of_worlds { void observe_player(std::uint32_t) noexcept {} void observe_position(float x,float y,float z) noexcept {++eaterPublications;eaterPosition={x,y,z};} }
 namespace beyond_infinity { void observe_position(float,float,float) noexcept {} }
 namespace deadly_trial { void observe_position(float x,float y,float z) noexcept { ++trialPublications;trialPosition={x,y,z}; } }
 namespace gateway { void observe_position(float x,float y,float z) noexcept { ++publications;if(mission) { mission->position(1,{x,y,z}); } } }
@@ -52,6 +59,7 @@ namespace omega_first_lair { Status status(std::uint64_t) noexcept { return {}; 
 }
 namespace sunrise::core::log { void write(Channel,Level,std::string_view) noexcept {} }
 int main() {
+    p::set_physics_observer(&physics_observer);
     // The captured stale component had owner0, while retail controlled getter returned08FAA000.
     CHECK((controlled&0x1FFFU)==0);CHECK(!t::identity::current(controlled,0,controlled));
     CHECK(!t::identity::current(controlled,controlled-0x2000U,controlled));
@@ -88,11 +96,15 @@ int main() {
     CHECK(deepPublications==publications);CHECK(deepPosition==b.position);
     CHECK(hijackedPublications==publications);CHECK(hijackedPosition==b.position);
     CHECK(gardenPublications==publications);CHECK(gardenPosition==b.position);
+    CHECK(eaterPublications==publications);CHECK(eaterPosition==b.position);
     CHECK(trialPublications==publications);CHECK(trialPosition==b.position);
     CHECK(identitySamples==publications);
+    CHECK(physicsPublications==publications);CHECK(physicsComponent==&b);CHECK(physicsPlayer==controlled);
     // An observed body loss retires the participant identity immediately.
     b.readable=false;p::observe(&b);CHECK(!p::snapshot().present);CHECK(!identityPresent);
     b.readable=true;p::observe(&b);CHECK(identityPresent);
+    const auto priorPhysics=physicsPublications;
+    p::set_physics_observer(nullptr);p::poll();CHECK(physicsPublications==priorPhysics);
     p::reset();CHECK(!p::snapshot().present);CHECK(!identityPresent);CHECK(identityInvalidations>0);
     std::printf("Player position: %u checks; live stale-slot fixture, cache reacquisition, body loss, salt changes and Gateway traversal entry passed\n",checks);
 }

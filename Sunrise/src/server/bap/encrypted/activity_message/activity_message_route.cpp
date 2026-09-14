@@ -33,6 +33,7 @@
 #include "../../../../state/activity/runtime.h"
 #include "../../../../state/activity/strike_pact/runtime.h"
 #include "../../../../state/activity/strike_bond/runtime.h"
+#include "../../../../state/activity/eater_of_worlds/runtime.h"
 #include "../../../../state/activity/coo/native_player_trigger.h"
 #include "../../../../state/activity/omega/omega_progression.h"
 #include "../../../../state/build_data/scenarios/cue_graph_manifest_exporter.h"
@@ -613,6 +614,24 @@ void report_sense_update(Session& session, const service::Request& request) noex
             state::activity::strike_bond::observe_costs(object.registryKey, object.slotIndex, costs);
         }
     }
+    if (parsed && handleBound && session.activityPatchEpochSeen
+        && same_epoch(update.epoch, session.activityPatchEpoch)
+        && state::activity::eater_of_worlds::native_run() != 0) {
+        for (std::size_t index = 0; index < update.objectCount; ++index) {
+            const auto& object = update.objects[index];
+            if (!object.hasSquadOutput) { continue; }
+            state::activity::coo::TaskCosts costs{};
+            costs.mask = object.squadOutput.costMask;
+            costs.revision = object.squadOutput.revision;
+            costs.hasRevision = object.squadOutput.hasRevision;
+            costs.initialized = object.squadOutput.initialized;
+            for (std::size_t group = 0; group < costs.cost.size(); ++group) {
+                costs.cost[group] = object.squadOutput.cost[group];
+            }
+            state::activity::eater_of_worlds::observe_costs(
+                object.registryKey, object.slotIndex, costs);
+        }
+    }
     const bool omegaSelected = handleBound && omega_destination(session.activity.instance);
     const bool towerfallSelected = handleBound
                                    && towerfall_destination(session.activity.instance);
@@ -666,6 +685,31 @@ void report_sense_update(Session& session, const service::Request& request) noex
                 if(object.slotType==2 && object.hasCombatantOutput) {
                     state::activity::strike_bond::observe_combatant(run,object.registryKey,
                         object.slotIndex,object.combatantOutput);
+                }
+            }
+        }
+    }
+    if(handleBound && epochBound) {
+        const auto run=state::activity::eater_of_worlds::native_run();
+        if(run!=0) {
+            for(std::size_t index=0;index<update.objectCount;++index) {
+                const auto& object=update.objects[index];
+                if(object.slotType==43 && object.hasSceneOutput) {
+                    state::activity::eater_of_worlds::observe_scene(
+                        run,object.registryKey,object.slotIndex,object.sceneOutput);
+                }
+                if(object.slotType==1 && object.hasSquadOutput) {
+                    state::activity::eater_of_worlds::observe_squad(
+                        run,object.registryKey,object.slotIndex,object.squadOutput);
+                }
+                if(object.slotType==2 && object.hasCombatantOutput) {
+                    state::activity::eater_of_worlds::observe_combatant(
+                        run,object.registryKey,object.slotIndex,object.combatantOutput);
+                }
+                if(object.slotType==30 && object.hasMonitorOutput) {
+                    const auto& monitor=object.monitorOutput;
+                    state::activity::eater_of_worlds::observe_monitor(
+                        object.registryKey,object.slotIndex,monitor.any,monitor.count,monitor.value);
                 }
             }
         }
@@ -1128,6 +1172,16 @@ void report_incident(const service::Request& request,bool liveBinding) noexcept 
         if(run!=0 && player_trigger::decode(std::span(parsed.payload).first(parsed.payloadLength),receipt)) {
             state::activity::strike_pact::observe_player_trigger(run,receipt.registry,
                 static_cast<std::uint16_t>(receipt.slot));
+        }
+    }
+    if(liveBinding && verdict==incident::Verdict::accepted && parsed.hasPayload
+        && parsed.primaryTarget==player_trigger::kIncident) {
+        const auto run=state::activity::eater_of_worlds::native_run();
+        player_trigger::Receipt receipt{};
+        if(run!=0 && player_trigger::decode(
+            std::span(parsed.payload).first(parsed.payloadLength),receipt)) {
+            state::activity::eater_of_worlds::observe_player_trigger(
+                run,receipt.registry,static_cast<std::uint16_t>(receipt.slot));
         }
     }
     if(liveBinding && verdict==incident::Verdict::accepted && parsed.hasPayload

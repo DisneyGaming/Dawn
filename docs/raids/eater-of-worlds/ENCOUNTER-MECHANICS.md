@@ -115,8 +115,20 @@ Regular arena squads use entity candidate `0x80C0D038`, anchors use `0x80C0D298`
 
 The two type-43 descriptors are:
 
-- `boss_manager.scene_boss_alpha_strike_facing_1`, source `0x80C421A1` offset 872, reaching scene graph `0x80F444FB`.
-- `boss_manager.scene_boss_intro_animation`, source `0x80C424FF` offset 872, reaching scene graph `0x80F44500`.
+- `boss_manager.scene_boss_alpha_strike_facing_1`, source `0x80C421A1` offset 872,
+  selects entity `0x80F444FB` (`0x80809C0F`). Its sole Scene graph is `0x80F444FA`
+  at offset 6632. The ordered cast is the host-only object reference
+  `0xE8D290A0` / type 48 / slot 473, followed by `boss_manager.sq_boss`
+  (`0xE8D290A0` / type 1 / slot 3). Its non-default event nodes are `0x5F38EAC3`
+  and `0x8CC06D96`.
+- `boss_manager.scene_boss_intro_animation`, source `0x80C424FF` offset 872,
+  selects entity `0x80F44500` (`0x80809C0F`). Its sole Scene graph is `0x80F444FF`
+  at offset 3800. Its cast contains only `boss_manager.sq_boss` (type 1 / slot 3),
+  and the graph has no non-default event node.
+
+These package facts establish cast membership and graph identity. They do not establish when the
+host should request either scene, what the two alpha-strike events mean, or a completion receipt.
+Those behaviors remain dormant until their native producers and observations are recovered.
 
 The type-6 reveal descriptor is `specops_envy_boss_reveal.boss_intro_cinematic._cinematic`, source `0x8155C01E` offset 744. The two scene graph tags do not supply their event prerequisites or cast contract by themselves.
 
@@ -130,4 +142,3 @@ Dialogue bank `0x80F1F9A5`, class `0x80808D54`, has six selector rows:
 - `0x74F16395`, 11,628 ms: Loyalists stand down and repeat-run variants.
 
 The JSON preserves every recovered text alternative. Selector order in the bank is not story order. Scene-owned and host-owned dialogue must be distinguished before authoring to avoid duplicate playback.
-

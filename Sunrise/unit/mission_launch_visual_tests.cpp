@@ -136,6 +136,11 @@ Snapshot snapshot() noexcept { return g_launchState; }
 bool request_opening(std::size_t mission) noexcept {
     return request_variant(mission, state::activity::strikes::Difficulty::standard);
 }
+bool request_raid(std::size_t mission, state::activity::eater_of_worlds::contest::Mode mode) noexcept {
+    if (!request_opening(mission)) return false;
+    g_launchState.raidMode = mode;
+    return true;
+}
 bool request_variant(std::size_t mission, state::activity::strikes::Difficulty difficulty) noexcept {
     return request_variant(mission,difficulty,state::activity::nightfall::defaults(difficulty));
 }
@@ -298,6 +303,26 @@ int main(int argc, char** argv) {
         "Strikes tab also launches the Garden Grandmaster variant");
     check(g_launchState.nightfallOptions.startingRevives==2 && g_launchState.nightfallOptions.reviveMinutes==30
         && g_launchState.nightfallOptions.powerDelta==35,"modifier window selection copied into exact GM launch");
+    g_launchState = {};
+    frame(1500,1000,content->GetID("Raids"));frame();frame();
+    check(panel::g_campaign==4 && panel::selected_difficulty()==panel::strikes::Difficulty::standard
+        && panel::selected_route(11).transport==536,"Raids tab selects exact Eater route despite saved Grandmaster settings");
+    screenshot(screens / "dawn-raids.ppm");
+    frame(760,720);frame(760,720);screenshot(screens / "dawn-raids-narrow.ppm");
+    frame();frame();
+    const auto raidRequests=g_requests;
+    frame(1500,1000,row_id(11));frame();
+    check(g_requests==raidRequests+1 && g_requestedMission==11 && g_launchState.index==536,
+        "Raids tab launches Eater through the production row with an isolated request");
+    check(g_launchState.raidMode == panel::contest::Mode::standard, "Eater defaults to Standard");
+    g_launchState = {}; panel::g_raidMode = panel::contest::Mode::contest;
+    frame(); frame(); screenshot(screens / "dawn-raids-contest.ppm");
+    frame(760,720); frame(760,720); screenshot(screens / "dawn-raids-contest-narrow.ppm");
+    frame(); frame(); frame(1500,1000,row_id(11)); frame();
+    check(g_requests==raidRequests+2 && g_launchState.index==536
+        && g_launchState.raidMode==panel::contest::Mode::contest,
+        "Contest row passes exact Eater mode without inheriting Nightfall modifiers");
+    check(g_launchState.nightfallOptions.powerDelta == 0, "Contest does not arm GM options");
     g_launchState = {}; panel::g_nightfall = false;
     panel::g_campaign=1;panel::g_resetScroll=true;frame();frame();
     const auto before = g_requests;
@@ -329,6 +354,6 @@ int main(int argc, char** argv) {
     check(g_gpu->Release() == 0, "GPU resources released");
     const auto stats = ui::memory::snapshot();
     check(stats.outstandingAllocations == 0 && ui::memory::shutdown(), "fixed arena released");
-    std::cout << "PASS: Dawn production layout, " << openings::kMissions.size() << " launch buttons, preparing/in-mission/wrong-destination/busy/unavailable states, 2 campaign tabs and Strikes tab, DPI and close/reopen; zero ImGui errors; "
+    std::cout << "PASS: Dawn production layout, " << openings::kMissions.size() << " launch buttons, preparing/in-mission/wrong-destination/busy/unavailable states, campaign/Strikes/Nightfalls/Raids tabs, isolated Eater launch, DPI and close/reopen; zero ImGui errors; "
         << stats.highWaterBytes << "/" << stats.capacityBytes << " arena high water\n";
 }

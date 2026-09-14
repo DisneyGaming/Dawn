@@ -8,6 +8,7 @@
 #include "../../../../middleware/secure_channel/runtime.h"
 #include "../../../../state/account/account_state.h"
 #include "../../../../state/activity/nightfall/rules.h"
+#include "../../../../state/activity/eater_of_worlds/contest.h"
 #include "../../../../state/activity/nightfall/completion_reward.h"
 #include "../../../../state/runtime/runtime.h"
 #include "../internal.h"
@@ -131,10 +132,12 @@ void report_repush(const char* stage, std::size_t bytes) noexcept {
     const bool accountPending =
         session.accountResyncArmed && session.accountResyncGeneration != 0;
     const std::uint64_t powerRevision = state::activity::nightfall::power_revision();
-    if ((powerRevision & 1U) != 0) {
+    const std::uint64_t raidPowerRevision = state::activity::eater_of_worlds::contest::power_revision();
+    if (((powerRevision | raidPowerRevision) & 1U) != 0) {
         return false;
     }
-    const bool powerPending = session.nightfallPowerRevision != powerRevision;
+    const bool powerPending = session.nightfallPowerRevision != powerRevision
+        || session.raidPowerRevision != raidPowerRevision;
     if (!accountPending && !powerPending) {
         return false;
     }
@@ -195,7 +198,9 @@ void report_repush(const char* stage, std::size_t bytes) noexcept {
     // staged bundle if launch or orbit changed it at any point, so one peer never observes mixed
     // capped and uncapped records from a single refresh.
     const std::uint64_t finalPowerRevision = state::activity::nightfall::power_revision();
-    if ((finalPowerRevision & 1U) != 0 || finalPowerRevision != powerRevision) {
+    const std::uint64_t finalRaidPowerRevision = state::activity::eater_of_worlds::contest::power_revision();
+    if (((finalPowerRevision | finalRaidPowerRevision) & 1U) != 0 || finalPowerRevision != powerRevision
+        || finalRaidPowerRevision != raidPowerRevision) {
         core::log::write(core::log::Channel::server,
                          core::log::Level::warn,
                          "ev=queuez stage=power_resync result=retry reason=revision");
@@ -217,6 +222,7 @@ void report_repush(const char* stage, std::size_t bytes) noexcept {
     }
     // The matching even revision proves that every builder saw one complete cap publication.
     session.nightfallPowerRevision = powerRevision;
+    session.raidPowerRevision = raidPowerRevision;
     report_repush(accountPending ? "peer_resync" : "power_resync", framedSize);
     return true;
 }
@@ -312,6 +318,13 @@ bool consume_deferred(Session& session,
     // A failed resync remains armed and blocks unrelated deferred output until it can be retried.
     if (session.accountResyncArmed) {
         return false;
+    }
+    if (session.queuez.family4Active
+        && (session.nightfallPowerRevision != state::activity::nightfall::power_revision()
+            || session.raidPowerRevision != state::activity::eater_of_worlds::contest::power_revision())) {
+        // A failed power refresh retries before lower-priority account images. Activity
+        // keepalives are independent and must not be starved by a temporarily unavailable image.
+        return push::activity::consume_activity_keepalive(session, scratch, response, written, touchesScratch);
     }
     if (consume_completion_reward(session, scratch, response, written, touchesScratch)) {
         return true;

@@ -16,28 +16,47 @@ $receiptPath = Join-Path $validation 'installation.json'
 if (Test-Path -LiteralPath $receiptPath) { throw 'This candidate has an installation receipt; preserve that evidence.' }
 $manifest = Get-Content -Raw -LiteralPath (Join-Path $validation 'package.json') | ConvertFrom-Json
 $names = @('steam_api64.dll', 'steam_api64.pdb', 'Lua_LICENSE.txt',
-    'Sunrise/scripts/omega.lua', 'Sunrise/scripts/deadly_trial.lua', 'Sunrise/scripts/gateway.lua', 'Sunrise/scripts/beyond_infinity.lua', 'Sunrise/scripts/deep_storage.lua', 'Sunrise/scripts/hijacked.lua', 'Sunrise/scripts/strike_pact.lua', 'Sunrise/scripts/strike_bond.lua', 'Sunrise/scripts/mercury_freeroam.json', 'Sunrise/scripts/infinite_abyss.json')
+    'Sunrise/scripts/omega.lua', 'Sunrise/scripts/deadly_trial.lua', 'Sunrise/scripts/gateway.lua', 'Sunrise/scripts/beyond_infinity.lua', 'Sunrise/scripts/deep_storage.lua', 'Sunrise/scripts/hijacked.lua', 'Sunrise/scripts/strike_pact.lua', 'Sunrise/scripts/strike_bond.lua', 'Sunrise/scripts/mission_pact.lua', 'Sunrise/scripts/mission_bond.lua', 'Sunrise/scripts/eater_of_worlds.lua', 'Sunrise/scripts/mercury_freeroam.json', 'Sunrise/scripts/infinite_abyss.json')
 $scopeProperty = $manifest.PSObject.Properties['validationScope']
 $validationScope = if ($scopeProperty) { [string]$scopeProperty.Value } else { 'full-lua' }
 $expectedCount = switch ($validationScope) {
-    'full-lua' { 109 }
+    'full-lua' { 119 }
+    'full-lua-release' { 78 }
     'hijacked-release' { 3 }
     'deep-storage-release' { 2 }
     'mercury-reentry-release' { 2 }
+    'eater-reactor-release' { 5 }
+    'eater-contest-release' { 9 }
     default { throw 'Unknown validation scope.' }
 }
 if ($manifest.format -ne 1 -or @($manifest.files.PSObject.Properties).Count -ne $names.Count -or $manifest.buildsAndTests -ne $expectedCount) {
     throw 'Package does not match its declared validation scope.'
 }
-if ($validationScope -in @('hijacked-release', 'deep-storage-release', 'mercury-reentry-release')) {
+$results = @(Get-Content -Raw -LiteralPath (Join-Path $validation 'results.json') | ConvertFrom-Json)
+$failures = @(Get-Content -Raw -LiteralPath (Join-Path $validation 'failures.json') | ConvertFrom-Json)
+$expectedJobs = @($manifest.validationJobs)
+if ($results.Count -ne $expectedCount -or $failures.Count -ne 0 -or $expectedJobs.Count -ne $expectedCount) {
+    throw 'Mission validation is incomplete or failed.'
+}
+$actualJobs = @($results | ForEach-Object { [string]$_.project + '|' + [string]$_.configuration } | Sort-Object -Unique)
+if ($actualJobs.Count -ne $expectedCount -or (Compare-Object -ReferenceObject @($expectedJobs | Sort-Object) -DifferenceObject $actualJobs)) {
+    throw 'Validation result identities do not match the packaged scope.'
+}
+if ($validationScope -eq 'full-lua-release') {
+    $nonReleaseResults = @($results | Where-Object { $_.configuration -ne 'Release' })
+    $nonReleaseJobs = @($expectedJobs | Where-Object { $_ -notmatch '\|Release$' })
+    if ($nonReleaseResults.Count -ne 0 -or $nonReleaseJobs.Count -ne 0) {
+        throw 'Release-only validation contains a non-Release job.'
+    }
+}
+if ($validationScope -in @('hijacked-release', 'deep-storage-release', 'mercury-reentry-release', 'eater-reactor-release', 'eater-contest-release')) {
     $missionProjects = switch ($validationScope) {
         'hijacked-release' { @('hijacked_tests', 'hijacked_catalog_tests', 'Sunrise') }
         'deep-storage-release' { @('deep_storage_tests', 'Sunrise') }
         'mercury-reentry-release' { @('retained_authority_scope_tests', 'Sunrise') }
+        'eater-reactor-release' { @('eater_of_worlds_tests', 'eater_of_worlds_roster_tests', 'player_position_tests', 'other_mission_protocol_tests', 'Sunrise') }
+        'eater-contest-release' { @('eater_of_worlds_tests', 'eater_of_worlds_roster_tests', 'player_position_tests', 'other_mission_protocol_tests', 'native_nightfall_power_tests', 'nightfall_rules_tests', 'mission_launch_lifecycle_tests', 'mission_launch_visual_tests', 'Sunrise') }
     }
-    $results = @(Get-Content -Raw -LiteralPath (Join-Path $validation 'results.json') | ConvertFrom-Json)
-    $failures = @(Get-Content -Raw -LiteralPath (Join-Path $validation 'failures.json') | ConvertFrom-Json)
-    if ($results.Count -ne $expectedCount -or $failures.Count -ne 0) { throw 'Mission validation is incomplete or failed.' }
     foreach ($project in $missionProjects) {
         if (@($results | Where-Object { $_.project -eq $project -and $_.configuration -eq 'Release' }).Count -ne 1) {
             throw "Missing or duplicate mission Release result: $project"

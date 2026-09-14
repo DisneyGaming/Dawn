@@ -4,12 +4,14 @@
 #include "../../state/activity/deep_storage/runtime.h"
 #include "../../state/activity/hijacked/runtime.h"
 #include "../../state/activity/strike_bond/runtime.h"
+#include "../../state/activity/eater_of_worlds/runtime.h"
 /**
  * The local player's published world position.
  * The game threads write it and the interface reads it, so a seqlock guards the vector.
  */
 
 #include "player_position.h"
+#include "../activity/eater_player_health.h"
 #include "../../state/activity/omega_presentation.h"
 #include "../../state/activity/omega_first_lair_runtime.h"
 #include "../../state/activity/omega_crown_transit_geometry.h"
@@ -18,9 +20,11 @@
 #include "../hooks/bootflow/public_event_participant_observer.h"
 
 #include <atomic>
+#include <Windows.h>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <mutex>
 
 namespace {
 std::atomic_uint64_t g_crownRouteRejectRun{};
@@ -44,6 +48,8 @@ std::atomic_bool g_present{false};
  * while the teleport feature is switched on.
  */
 std::atomic<void*> g_component{nullptr};
+std::mutex g_physicsObserverMutex;
+PhysicsObserver g_physicsObserver{};
 
 /** Native local-player route observations; geometry never moves the player or
  * manufactures pickup/dunk. The encounter owner deduplicates salted tokens. */
@@ -151,11 +157,22 @@ void observe_crown_route(void* component,const teleport::Vector& position) noexc
     state::activity::deep_storage::observe_position(position[0],position[1],position[2]);
     state::activity::hijacked::observe_position(position[0],position[1],position[2]);
     state::activity::strike_bond::observe_position(position[0],position[1],position[2]);
+    state::activity::eater_of_worlds::observe_player(before);
+    state::activity::eater_of_worlds::observe_position(position[0],position[1],position[2]);
+    {
+        const std::lock_guard lock(g_physicsObserverMutex);
+        if(g_physicsObserver) g_physicsObserver(component,before,GetTickCount64());
+    }
     observe_crown_route(component,position);
     return true;
 }
 
 } // namespace
+
+void set_physics_observer(PhysicsObserver observer) noexcept {
+    const std::lock_guard lock(g_physicsObserverMutex);
+    g_physicsObserver=observer;
+}
 
 /** Publishes the position of the component the physics sync is running for. */
 void observe(void* component) noexcept {
@@ -182,6 +199,7 @@ void observe(void* component) noexcept {
 
 /** Refreshes the position for a player at rest, and drops a component that is no longer theirs. */
 void poll() noexcept {
+    activity::eater_player_health::poll();
     void* component = g_component.load(std::memory_order_relaxed);
     if (component == nullptr) {
         // The teleport hook keeps one too whenever its own feature is on.

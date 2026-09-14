@@ -1,6 +1,6 @@
 # Mission scripts
 
-The mission runtime loads `omega.lua`, `deadly_trial.lua`, `gateway.lua`, `beyond_infinity.lua`, `deep_storage.lua`, `hijacked.lua`, and `strike_pact.lua`. Each returns one definition through the shared Lua builders. C++ validates it and the universal executor runs the compiled graph. Beyond Infinity is an integrated reconstruction in progress; its native Forest traversal and full playthrough are not yet accepted. See [its implementation checkpoint](../docs/BEYOND-INFINITY-IMPLEMENTATION.md).
+The mission runtime loads `omega.lua`, `deadly_trial.lua`, `gateway.lua`, `beyond_infinity.lua`, `deep_storage.lua`, `hijacked.lua`, `strike_pact.lua`, `strike_bond.lua`, `mission_pact.lua`, `mission_bond.lua`, and `eater_of_worlds.lua`. Each returns one definition through the shared Lua builders. C++ validates it and the universal executor runs the compiled graph. Beyond Infinity and Eater of Worlds are reconstructions in progress; their full native playthroughs are not yet accepted. See [the Beyond Infinity implementation checkpoint](../docs/BEYOND-INFINITY-IMPLEMENTATION.md) and [the Eater of Worlds plan](../../docs/raids/eater-of-worlds/PLAN.md).
 
 Edit the script beside the installed DLL, validate it, and restart Destiny. Scripts load once per process; mission restarts and death keep the loaded definition. Logs in `Sunrise/logs/sunrise.log` identify the mission, `format=lua`, path, and source fingerprint. Missing or invalid files block executor selection.
 

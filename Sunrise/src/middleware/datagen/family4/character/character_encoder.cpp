@@ -133,9 +133,17 @@ bool encode(const state::CharacterState& state,
             const loadout::ResolvedLoadout& resolvedLoadout,
             const state::equipment::light::Evaluation& lightEvaluation,
             std::span<std::byte> output) noexcept {
+    return encode(state, resolvedLoadout, lightEvaluation, output,
+                  state::activity::nightfall::current_native_power_projection());
+}
+bool encode(const state::CharacterState& state,
+            const loadout::ResolvedLoadout& resolvedLoadout,
+            const state::equipment::light::Evaluation& lightEvaluation,
+            std::span<std::byte> output,
+            const state::activity::nightfall::NativePowerProjection& power) noexcept {
     state::equipment::light::Evaluation effectiveLight = lightEvaluation;
     const auto powerResult = state::activity::nightfall::cap_equipment_summary(
-        effectiveLight, state::activity::nightfall::current_native_power_projection());
+        effectiveLight, power);
     if (!valid(state) || !valid(resolvedLoadout)
         || powerResult == state::activity::nightfall::NativePowerApplyResult::invalid
         || !summary_matches_loadout(resolvedLoadout, effectiveLight)

@@ -20,6 +20,57 @@ struct Cursor {
         return liveQualified;
     }
 };
+inline constexpr std::uint64_t kMaximumComponentOffset=0x400000;
+struct HealthView {
+    std::uintptr_t address{};
+    std::uint32_t self{UINT32_MAX};
+    bool dead{};
+};
+[[nodiscard]] inline bool component_address(std::uintptr_t group,std::int64_t offset,
+                                             std::uintptr_t& address) noexcept {
+    if(group<0x10000 || offset < -static_cast<std::int64_t>(kMaximumComponentOffset)
+        || offset > static_cast<std::int64_t>(kMaximumComponentOffset)) return false;
+    if(offset>=0) {
+        const auto amount=static_cast<std::uint64_t>(offset);
+        if(amount>UINTPTR_MAX-group) return false;
+        address=group+static_cast<std::uintptr_t>(amount);
+    } else {
+        const auto amount=static_cast<std::uint64_t>(-offset);
+        if(amount>group) return false;
+        address=group-static_cast<std::uintptr_t>(amount);
+    }
+    return address>=0x10000 && address<=UINTPTR_MAX-0x339;
+}
+// Original 557470 returns a group handle plus a signed component offset. The
+// component's own self handle is the lease retained across a spectator switch.
+template<class Read>
+[[nodiscard]] bool health_from_reference(Read& read,native::Ref reference,
+                                         std::uint32_t player,HealthView& out) noexcept {
+    out={};
+    if(reference.handle==UINT32_MAX || reference.kind!=0x80804BEEU
+        || player==UINT32_MAX) return false;
+    std::uintptr_t group{},health{};
+    if(!read.resolve(reference.handle,group)
+        || !component_address(group,reference.offset,health)) return false;
+    native::Ref definition{};std::uint32_t self{},owner{};std::uint8_t flags{};
+    std::uintptr_t resolvedSelf{};
+    if(!read.value(health,definition) || definition.kind!=0x80804B8AU
+        || !read.value(health+0x24,self) || self==UINT32_MAX
+        || !read.resolve(self,resolvedSelf) || resolvedSelf!=health
+        || !read.value(health+0x2C,owner) || owner!=player
+        || !read.value(health+0x338,flags)) return false;
+    std::uintptr_t finalGroup{},finalHealth{},finalSelf{};native::Ref finalDefinition{};
+    std::uint32_t finalSelfHandle{},finalOwner{};std::uint8_t finalFlags{};
+    if(!read.resolve(reference.handle,finalGroup) || finalGroup!=group
+        || !component_address(finalGroup,reference.offset,finalHealth) || finalHealth!=health
+        || !read.value(finalHealth,finalDefinition) || finalDefinition.handle!=definition.handle
+        || finalDefinition.kind!=definition.kind || finalDefinition.offset!=definition.offset
+        || !read.value(finalHealth+0x24,finalSelfHandle) || finalSelfHandle!=self
+        || !read.resolve(finalSelfHandle,finalSelf) || finalSelf!=health
+        || !read.value(finalHealth+0x2C,finalOwner) || finalOwner!=owner
+        || !read.value(finalHealth+0x338,finalFlags) || finalFlags!=flags) return false;
+    out={health,self,(flags&1U)!=0};return true;
+}
 // Use the same native entity/interface lookup as the Ghost binding. The health
 // flag is shared with the qualified enemy death observer; no actor count,
 // position disappearance or streaming retirement is interpreted as death.
@@ -34,8 +85,9 @@ inline bool capture(std::uintptr_t image, Observation& out) noexcept {
         || !read.value(image+0x351C90,third) || third!=weakPrefix) return false;
     const auto local=reinterpret_cast<void(__fastcall*)(std::uint32_t*)>(image+0x4B2260);
     const auto query=reinterpret_cast<bool(__fastcall*)(std::uintptr_t,std::uint32_t,void*,std::uint32_t)>(image+0x557470);
-    std::uint32_t player{UINT32_MAX}, again{UINT32_MAX}, stride{}, actual{}, flags{}, self{}, owner{};
-    std::uintptr_t table{}, health{}, base{};
+    std::uint32_t player{UINT32_MAX}, again{UINT32_MAX}, finalPlayer{UINT32_MAX};
+    std::uint32_t stride{}, actual{}, flags{}, self{}, owner{};
+    std::uintptr_t table{}, health{};
     __try {
         local(&player);
         if (player==UINT32_MAX || !read.value(image+0x1F93428,table) || !read.value(image+0x1F93430,stride)
@@ -44,23 +96,26 @@ inline bool capture(std::uintptr_t image, Observation& out) noexcept {
         if (!read.value(row+12,actual) || actual!=player || !read.value(row+4,flags) || (flags&4U)) return false;
         alignas(16) std::array<std::byte,0x40> result{};
         if (!query(row,0x80804BEEU,result.data(),0)) return false;
-        const auto handle=native::at<std::uint32_t>(result.data()+0x18);
-        const auto offset=native::at<std::int64_t>(result.data()+0x20);
-        if (offset!=0 || !read.resolve(handle,base)) return false;
-        health=base;
-        native::Ref definition{}; std::uint8_t healthFlags{};
-        if (!read.value(health,definition) || definition.kind!=0x80804B8AU
-            || !read.value(health+0x24,self) || self!=handle
-            || !read.value(health+0x2C,owner) || owner!=player
-            || !read.value(health+0x338,healthFlags)
+        const auto reference=native::at<native::Ref>(result.data()+0x18);
+        HealthView view{};
+        if (!health_from_reference(read,reference,player,view)) return false;
+        health=view.address;self=view.self;
+        if (!read.value(health+0x2C,owner) || owner!=player
             || !read.value(row+12,actual) || actual!=player
             || !read.value(row+4,flags) || (flags&4U)) return false;
         local(&again);
         if (again!=player) return false;
         native::Weak weak{};
-        reinterpret_cast<void(__fastcall*)(native::Weak*,std::uint32_t)>(image+0x351C90)(&weak,handle);
-        if (weak.handle!=handle || !read.weak(weak)) return false;
-        out={player,(healthFlags&1U)!=0,weak}; return true;
+        reinterpret_cast<void(__fastcall*)(native::Weak*,std::uint32_t)>(image+0x351C90)(&weak,self);
+        HealthView finalView{};
+        if (weak.handle!=self || !read.weak(weak)
+            || !health_from_reference(read,reference,player,finalView)
+            || finalView.address!=view.address || finalView.self!=view.self
+            || !read.value(row+12,actual) || actual!=player
+            || !read.value(row+4,flags) || (flags&4U)) return false;
+        local(&finalPlayer);
+        if(finalPlayer!=player || !read.weak(weak)) return false;
+        out={player,finalView.dead,weak}; return true;
     } __except(EXCEPTION_EXECUTE_HANDLER) { return false; }
 }
 inline bool retained(std::uintptr_t image, const Observation& previous, bool& dead) noexcept {

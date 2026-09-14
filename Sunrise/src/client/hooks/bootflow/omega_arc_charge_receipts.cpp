@@ -18,6 +18,11 @@
 #include "native_hook_ownership.h"
 #include "native_capture_observer.h"
 #include "public_event_deferred_placement_observer.h"
+#include "eater_cranium_deferred.h"
+#include "eater_platform_contact_native.h"
+#include "eater_platform_binding_cache.h"
+#include "eater_door_native.h"
+#include "../../player/player_position.h"
 #include "omega_arc_charge_native.h"
 #include "gateway_native_read.h"
 #include "gateway_module_native_path.h"
@@ -28,6 +33,9 @@
 #include "../../../state/activity/hijacked/controller.h"
 #include "../../../state/activity/hijacked/plate_presentation.h"
 #include "../../../state/activity/strike_bond/runtime.h"
+#include "../../../state/activity/eater_of_worlds/runtime.h"
+#include "../../../state/activity/eater_of_worlds/carry_bindings.h"
+#include "../../../state/activity/eater_of_worlds/station_bindings.h"
 #include "../../../state/activity/deep_storage/controller.h"
 #include "../../../state/activity/deep_storage/plate_presentation.h"
 #include "../../../state/activity/deep_storage/hologram_owner.h"
@@ -709,6 +717,11 @@ void after_trial_use(void* component,const TrialUse& before) noexcept {
 #include "hijacked_object_receipts.inl"
 #include "strike_bond_tethers.inl"
 #include "strike_bond_object_receipts.inl"
+#include "eater_of_worlds_carry_receipts.inl"
+void reset_eater_platform_contacts() noexcept;
+void reset_eater_door_receipts() noexcept;
+#include "eater_of_worlds_station_receipts.inl"
+#include "eater_of_worlds_object_receipts.inl"
 #include "gateway_module_receipts.inl"
 #include "gateway_module_damage_hooks.inl"
 
@@ -721,6 +734,7 @@ __declspec(noinline) void __fastcall carry_hook(void* component, std::uint8_t st
         && prefix(before.data(),at<std::uint32_t>(before.data()),0x80804221,0x598))
         key=eventKeys::bridge::carrier(at<std::uint32_t>(before.data()),at<std::uint32_t>(before.data()+0x2C));
     hooking::await_original(g_carry)(component, state, holder);
+    if(scope.accepts_side_effects()) observe_eater_cranium_carry(component,holder);
     if (scope.accepts_side_effects() && nav.enabled) { observe_carry(component, nav.run); }
     if(scope.accepts_side_effects() && key.epoch) {
         std::array<std::byte,0x480> after{};
@@ -801,11 +815,14 @@ __declspec(noinline) void __fastcall dunk_hook(void* component) noexcept {
     const auto trialUse=scope.accepts_side_effects()?before_trial_use(component):TrialUse{};
     const auto rally=scope.accepts_side_effects()?before_rally(component):PendingRally{};
     const auto key=scope.accepts_side_effects()?before_event_key(component):PendingEventKey{};
+    const auto eaterStation=scope.accepts_side_effects()?before_eater_station_use(component):eater_station_native::Pending{};
     const bool previous = g_dunkInFlight;
     g_dunkInFlight = pending.proof.held.valid() || key.use.state.epoch!=0;
+    const auto eaterStationScope=begin_eater_cranium_station_use(eaterStation.valid());
     hooking::await_original(g_dunk)(component);
     g_dunkInFlight = previous;
-    if (scope.accepts_side_effects()) { after_dunk(component, pending);after_trial_use(component,trialUse);after_rally(component,rally);after_event_key(component,key); }
+    if (scope.accepts_side_effects()) { after_dunk(component, pending);after_trial_use(component,trialUse);after_rally(component,rally);after_event_key(component,key);after_eater_station_use(component,eaterStation); }
+    finish_eater_cranium_station_use(eaterStationScope);
 }
 __declspec(noinline) bool __fastcall create_hook(void* component) noexcept {
     const hooking::CallGate::Scope scope{g_gate};
@@ -925,16 +942,22 @@ bool install_omega_arc_charge_receipts() noexcept {
     hooking::publish_original(g_moduleDamageGate, reinterpret_cast<ModuleDamageGate>(g_handles[6].original));
     hooking::publish_original(g_moduleDamageSummary, reinterpret_cast<ModuleDamageSummary>(g_handles[7].original));
     hooking::publish_original(g_plateTick,reinterpret_cast<PlateTick>(g_handles[8].original));
+    reset_eater_of_worlds_native_receipts();
+    state::activity::eater_of_worlds::set_reset_receipts(&reset_eater_of_worlds_native_receipts);
+    client::player::position::set_physics_observer(&observe_eater_platform_contacts);
     g_gate.accept();
     core::log::write(core::log::Channel::client, core::log::Level::info,
                     "ev=omega_charge stage=install result=ok carry=D99620 dunk=F36640 create=9EFFC0 interaction=F32CD0 gateway_module_damage=B804E0 gate=CDCB60 summary=B7E3C0 mutation=native_source_interaction_authority_with_observed_receipts");
     return true;
 }
-void quiesce_omega_arc_charge_receipts() noexcept { g_gate.quiesce(); }
+void quiesce_omega_arc_charge_receipts() noexcept {
+    client::player::position::set_physics_observer(nullptr);
+    g_gate.quiesce();
+}
 bool uninstall_omega_arc_charge_receipts() noexcept {
     quiesce_omega_arc_charge_receipts();
     if (!g_handles[0].attached) { return true; }
-    const std::array<hooking::detour::ProtectedCodeEntry, 41> protectedCode{{
+    const std::array<hooking::detour::ProtectedCodeEntry, 57> protectedCode{{
         {reinterpret_cast<void*>(&gateway_damage_hook)}, {reinterpret_cast<void*>(&gateway_damage_gate_hook)},
         {reinterpret_cast<void*>(&gateway_damage_summary_hook)}, {reinterpret_cast<void*>(&gateway_damage_receipt)},
         {reinterpret_cast<void*>(&gateway_damage_blocked)},
@@ -946,6 +969,22 @@ bool uninstall_omega_arc_charge_receipts() noexcept {
         {reinterpret_cast<void*>(&strike_pact_damage::after)},
         {reinterpret_cast<void*>(&gateway_sense_hook)}, {reinterpret_cast<void*>(&observe_gateway_module)},
         {reinterpret_cast<void*>(&observe_beyond_object)},
+        {reinterpret_cast<void*>(&observe_eater_of_worlds_object)},
+        {reinterpret_cast<void*>(&observe_eater_platform_pose)},
+        {reinterpret_cast<void*>(&observe_eater_platform_physics)},
+        {reinterpret_cast<void*>(&observe_eater_platform_contacts)},
+        {reinterpret_cast<void*>(&reset_eater_platform_contacts)},
+        {reinterpret_cast<void*>(&observe_eater_cranium_source)},
+        {reinterpret_cast<void*>(&observe_eater_cranium_carry)},
+        {reinterpret_cast<void*>(&reset_eater_cranium_receipts)},
+        {reinterpret_cast<void*>(&observe_eater_station_source)},
+        {reinterpret_cast<void*>(&before_eater_station_use)},
+        {reinterpret_cast<void*>(&after_eater_station_use)},
+        {reinterpret_cast<void*>(&reset_eater_station_receipts)},
+        {reinterpret_cast<void*>(&reset_eater_of_worlds_native_receipts)},
+        {reinterpret_cast<void*>(&current_eater_cranium_holder)},
+        {reinterpret_cast<void*>(&begin_eater_cranium_station_use)},
+        {reinterpret_cast<void*>(&finish_eater_cranium_station_use)},
         {reinterpret_cast<void*>(&beyond_plate_tick_hook)}, {reinterpret_cast<void*>(&drive_plate)},
         {reinterpret_cast<void*>(&plate_consumed)}, {reinterpret_cast<void*>(&plate_addresses)},
         {reinterpret_cast<void*>(&same_plate_request)},
@@ -964,6 +1003,8 @@ bool uninstall_omega_arc_charge_receipts() noexcept {
         {reinterpret_cast<void*>(&hooking::call_gate_detail::leave)},
     }};
     if (hooking::detour::uninstall(g_handles, protectedCode, idle) != hooking::detour::UninstallResult::removed) { return false; }
+    state::activity::eater_of_worlds::set_reset_receipts(nullptr);
+    reset_eater_of_worlds_native_receipts();
     g_carry.store(nullptr, std::memory_order_release); g_dunk.store(nullptr, std::memory_order_release);
     g_create.store(nullptr, std::memory_order_release);
     g_gatewaySense.store(nullptr, std::memory_order_release);g_gatewayModuleLines=0;

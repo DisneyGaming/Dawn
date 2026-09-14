@@ -14,6 +14,7 @@
 #include <cstdlib>
 
 namespace nightfall = sunrise::state::activity::nightfall;
+namespace contest = sunrise::state::activity::eater_of_worlds::contest;
 namespace light = sunrise::state::equipment::light;
 namespace combatant = sunrise::state::activity::coo::native_combatant;
 namespace bits = sunrise::middleware::encoding::bits;
@@ -223,6 +224,20 @@ void production_character_encoder_caps_every_incremental_image() {
     CHECK(standard.equipmentSummary.character[0].score == 1100);
     CHECK(standard.equipmentSummary.total == 1100);
     CHECK(standard.equipmentSummary.light == 1100);
+
+    contest::arm(536, contest::Mode::contest);
+    CHECK(character::encode(selected, loadout, raw, bytes));
+    const auto& raid = *reinterpret_cast<const character::layout::Object*>(bytes.data());
+    CHECK(raid.equipmentSummary.character[0].score == 730);
+    CHECK(raid.equipmentSummary.total == 730 && raid.equipmentSummary.light == 730);
+    CHECK(raid.equipmentSummary.lightScalar == 730.0F);
+    const auto capturedContest = nightfall::current_native_power_projection();
+    contest::leave();
+    CHECK(character::encode(selected, loadout, raw, bytes, capturedContest));
+    CHECK(reinterpret_cast<const character::layout::Object*>(bytes.data())->equipmentSummary.light == 730);
+    CHECK(nightfall::project_selected_item_level(110, true, capturedContest) == 73);
+    CHECK(character::encode(selected, loadout, raw, bytes));
+    CHECK(reinterpret_cast<const character::layout::Object*>(bytes.data())->equipmentSummary.light == 1100);
 }
 
 void native_source_variant_wire_is_biased_and_bounded() {
@@ -273,6 +288,73 @@ void grandmaster_variant_scope_is_package_allowlisted() {
         0x588E5FB9U, 3));
 }
 
+void eater_contest_is_launch_scoped() {
+    nightfall::leave(); contest::leave();
+    const auto originalRevision = contest::power_revision();
+    CHECK((originalRevision & 1U) == 0);
+    contest::arm(536, contest::Mode::standard);
+    CHECK(!nightfall::current_native_power_projection());
+    CHECK(contest::power_revision() == originalRevision);
+    contest::arm(536, contest::Mode::contest);
+    const auto projection = nightfall::current_native_power_projection();
+    CHECK(projection && projection.activity == 536 && projection.authoredPower == 750);
+    CHECK(projection.delta == 20 && projection.effectiveCap == 730);
+    CHECK(contest::power_revision() == originalRevision + 2);
+    CHECK(nightfall::cap_player_power(1100, projection) == 730);
+    CHECK(nightfall::cap_player_power(720, projection) == 720);
+    CHECK(nightfall::project_selected_item_level(110, true, projection) == 73);
+    CHECK(nightfall::project_selected_item_level(110, false, projection) == 110);
+    auto effective = summary(1100);
+    CHECK(nightfall::cap_equipment_summary(effective, projection) == nightfall::NativePowerApplyResult::applied);
+    CHECK(effective.average == 730 && effective.total == 1460 && effective.character[0]->score == 730);
+    CHECK(effective.profile[0]->score == 1100);
+    CHECK(!nightfall::equipment_locked() && !nightfall::movement_blocked() && !nightfall::active());
+    contest::enter(91, 536);
+    CHECK(contest::enabled());
+    contest::enter(91, 536); // Same session death/retry keeps difficulty.
+    CHECK(contest::enabled());
+    CHECK(contest::power_revision() == originalRevision + 2);
+    contest::enter(92, 536); // Another launch cannot inherit the lease.
+    CHECK(!contest::enabled());
+    CHECK(!nightfall::current_native_power_projection());
+    CHECK(contest::power_revision() == originalRevision + 4);
+    for (const auto activity : {537, 538, 813, 835, -1}) {
+        contest::arm(static_cast<std::int16_t>(activity), contest::Mode::contest);
+        CHECK(!contest::enabled());
+    }
+    contest::arm(536, contest::Mode::contest);
+    contest::enter(93, 299);
+    CHECK(!contest::enabled());
+    contest::arm(536, contest::Mode::contest);
+    contest::leave();
+    CHECK(nightfall::cap_player_power(1100, nightfall::current_native_power_projection()) == 1100);
+}
+
+void publication_retains_one_power_projection() {
+    contest::arm(536, contest::Mode::contest);
+    const auto before = contest::power_revision();
+    {
+        const nightfall::PowerPublication burst;
+        CHECK(nightfall::current_native_power_projection().effectiveCap == 730);
+        contest::leave(); // Model an orbit edge between roster and its item/banner companions.
+        CHECK(!contest::enabled() && contest::power_revision() != before);
+        CHECK(nightfall::current_native_power_projection().effectiveCap == 730);
+        {
+            const nightfall::PowerPublication nested;
+            CHECK(nightfall::current_native_power_projection().effectiveCap == 730);
+        }
+        CHECK(nightfall::current_native_power_projection().effectiveCap == 730);
+    }
+    CHECK(!nightfall::current_native_power_projection());
+    {
+        const nightfall::PowerPublication standardBurst;
+        contest::arm(536, contest::Mode::contest);
+        CHECK(!nightfall::current_native_power_projection());
+    }
+    CHECK(nightfall::current_native_power_projection().effectiveCap == 730);
+    contest::leave();
+}
+
 } // namespace
 
 int main() {
@@ -286,6 +368,8 @@ int main() {
     production_character_encoder_caps_every_incremental_image();
     native_source_variant_wire_is_biased_and_bounded();
     grandmaster_variant_scope_is_package_allowlisted();
+    eater_contest_is_launch_scoped();
+    publication_retains_one_power_projection();
     std::printf("native nightfall power: %u checks passed\n", checks);
     return 0;
 }

@@ -31,6 +31,7 @@ int main(int argc, char** argv) {
     check(rows[20].hash == 0xE8ABA41BU && rows[20].name() == "city_tower_social_d2", "Tower identity");
     check(rows[266].hash == 0x62D85FB3U && rows[266].name() == "mission_towerfall", "Homecoming identity");
     check(rows[299].hash == 0x87AC2003U && rows[299].name() == "mission_scot", "Omega identity");
+    check(rows[536].hash == 0xB8218A8CU && rows[536].name() == "raid_envy_v310", "Eater of Worlds identity");
     check(rows[29].name() == "mercury_freeroam", "Mercury identity");
     check(model::matches(rows[299], model::kUnresolvedContent, 1, "MISSION_SCOT"), "unresolved title uses exact package, case-insensitive DLC and native type");
     check(model::matches(rows[299], 0, 0, "87ac2003"), "hash search");
@@ -40,6 +41,8 @@ int main(int argc, char** argv) {
     check(!model::matches(rows[299], model::kUnresolvedContent, 2, ""), "mission excluded from strike filter");
     check(rows[0].name().empty(), "missing direct destination retained honestly");
     check(model::activity_type(rows[229]) == 2, "strike classification");
+    check(model::activity_type(rows[536]) == 4 && model::activity_icon(rows[536]) == state::build_data::activities::Icon::raid,
+        "Eater of Worlds retains native raid classification and artwork");
     check(model::content_group(rows[30]) == model::kUnresolvedContent, "Mars destination does not invent DLC without metadata");
     check(model::content_group(rows[40]) == model::kUnresolvedContent, "Reef destination does not invent DLC without metadata");
     check(model::content_group(rows[157]) == model::kUnresolvedContent, "Moon destination does not invent DLC without metadata");

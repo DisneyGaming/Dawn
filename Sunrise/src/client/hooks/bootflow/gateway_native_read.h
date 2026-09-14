@@ -32,16 +32,21 @@ struct Read {
         base=omega_enemy_native_reference::corrected_base(element,relocation,at<std::int32_t>(row.data()+0x34));
         if(allocation) { *allocation=element; }return base>=0x10000;
     }
-    bool weak(Weak ref) noexcept {
-        if(ref.handle==UINT32_MAX) { return false; }
+    bool make_weak(std::uint32_t handle,Weak& out) noexcept {
+        out={};
+        if(handle==UINT32_MAX) { return false; }
         std::uintptr_t directory{},registry{},metadata{},head{},elements{};std::int32_t ds{};
         if(!value(image+0x2439C70,directory) || !value(directory,registry) || !value(directory+0x10,ds) || ds<=0 || ds>0x1000) { return false; }
-        const auto index=((static_cast<std::int32_t>(ref.handle)>>31&0x3C00U)|0x3FFU)&(ref.handle>>13)&0xFFFFU;
+        const auto index=((static_cast<std::int32_t>(handle)>>31&0x3C00U)|0x3FFU)&(handle>>13)&0xFFFFU;
         std::uint16_t count{};std::uint32_t offset{},stride{},serial{};
         return value(registry+static_cast<std::uintptr_t>(index)*ds+0x10,metadata) && value(metadata,head)
-            && value(metadata+8,elements) && value(head+0x1C,count) && (ref.handle&0x1FFFU)<count
+            && value(metadata+8,elements) && value(head+0x1C,count) && (handle&0x1FFFU)<count
             && value(metadata+0x1C,offset) && value(metadata+0x20,stride) && stride>0 && stride<=0x100000
-            && value(elements+offset+static_cast<std::uintptr_t>(ref.handle&0x1FFFU)*stride,serial) && serial==ref.serial;
+            && value(elements+offset+static_cast<std::uintptr_t>(handle&0x1FFFU)*stride,serial)
+            && (out={serial,handle},true);
+    }
+    bool weak(Weak ref) noexcept {
+        Weak current{};return make_weak(ref.handle,current) && current==ref;
     }
     bool entity_row(Weak entity,std::uintptr_t& row) noexcept {
         std::uintptr_t table{};std::uint32_t stride{},flags{};

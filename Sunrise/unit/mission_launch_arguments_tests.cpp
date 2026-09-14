@@ -6,6 +6,7 @@
 #include "client/activity/campaign_openings.h"
 #include "client/activity/campaign_dialogue.h"
 #include "client/activity/mission_launch_options.h"
+#include "client/hooks/bootflow/region_private_policy.h"
 #include "core/logging/log.h"
 #include "middleware/content/packages/tables/activity_table.h"
 
@@ -14,6 +15,7 @@ namespace launch = sunrise::client::activity::mission_launch;
 namespace forced = sunrise::state::activity::forced;
 namespace build = sunrise::state::build_data;
 namespace tables = sunrise::middleware::content::packages::tables;
+namespace private_policy = sunrise::client::hooks::bootflow::region_private_policy;
 unsigned g_checks{}, g_publishes{}, g_clears{}, g_dialogueSelections{};
 build::scenarios::Definition g_layout{};
 void check(bool value, const char* message) {
@@ -133,13 +135,13 @@ int main(int argc, char** argv) {
         "ordinary request clears prior manual payload and retains exact variant identity");
     launch::poll();
     namespace openings = launch::openings;
-    constexpr std::array<const char*, 11> packages{"mission_towerfall", "mission_abs", "adventure_ginger",
-        "adventure_vod", "adventure_whisk", "mission_pact", "adventure_rumba", "mission_bond", "mission_scot", "strike_pact", "strike_bond"};
-    constexpr std::array<unsigned, 11> bubblesExpected{9, 15, 51, 15, 4, 15, 13, 15, 15, 15, 15};
-    constexpr std::array<unsigned, 11> slicesExpected{72, 120, 408, 120, 32, 120, 104, 120, 120, 120, 120};
-    constexpr std::array<std::uint32_t, 11> spawnsExpected{0, 0x69F52B3E, 0x43954D08, 0x26B11B02,
-        0x3AE5AC33, 0x0E1523FE, 0x1BD69720, 0xB09FB979, 0x4AB3287A, 0x0E1523FE, 0xB09FB979};
-    constexpr std::array<unsigned,11> nativeIds{266,292,293,294,295,296,297,298,299,230,229};
+    constexpr std::array<const char*, 12> packages{"mission_towerfall", "mission_abs", "adventure_ginger",
+        "adventure_vod", "adventure_whisk", "mission_pact", "adventure_rumba", "mission_bond", "mission_scot", "strike_pact", "strike_bond", "raid_envy_v310"};
+    constexpr std::array<unsigned, 12> bubblesExpected{9, 15, 51, 15, 4, 15, 13, 15, 15, 15, 15, 2};
+    constexpr std::array<unsigned, 12> slicesExpected{72, 120, 408, 120, 32, 120, 104, 120, 120, 120, 120, 16};
+    constexpr std::array<std::uint32_t, 12> spawnsExpected{0, 0x69F52B3E, 0x43954D08, 0x26B11B02,
+        0x3AE5AC33, 0x0E1523FE, 0x1BD69720, 0xB09FB979, 0x4AB3287A, 0x0E1523FE, 0xB09FB979, 0x8BA80878};
+    constexpr std::array<unsigned,12> nativeIds{266,292,293,294,295,296,297,298,299,230,229,536};
     for (std::size_t i = 0; i < packages.size(); ++i) {
         check(launch::request_opening(i), "opening queues its own installed activity");
         const auto opening = launch::snapshot();
@@ -179,6 +181,32 @@ int main(int argc, char** argv) {
     }
     check(!launch::request_variant(5, strikes::Difficulty::grandmaster), "campaign cannot borrow strike Nightfall difficulty");
     check(!launch::request_variant(9, static_cast<strikes::Difficulty>(255)), "invalid difficulty is rejected");
+    check(!sunrise::state::activity::forced::prelaunch::configured(openings::kMissions[11].destination),
+        "Eater direct launch does not inherit the Chosen donor prelaunch contract");
+    check(openings::kMissions[11].investmentHash == 0xB8218A8CU
+        && openings::kMissions[11].campaign == 4, "Eater keeps exact raid identity and Raids grouping");
+    check(private_policy::force_private(false, forced::profiles::kEaterOfWorldsActivity,
+            forced::profiles::kEaterOfWorldsOpening,
+            forced::profiles::kEaterOfWorldsOpeningSlice),
+        "Eater direct entrance requests the private one-player region path");
+    check(private_policy::force_private(false, forced::profiles::kEaterOfWorldsActivity,
+            forced::profiles::kEaterOfWorldsOpening, 56)
+            && private_policy::force_private(false, forced::profiles::kEaterOfWorldsActivity,
+                forced::profiles::kEaterOfWorldsOpening, 48),
+        "Eater reactor and Argos transitions retain the one-player region path");
+    check(!private_policy::force_private(false, forced::profiles::kEaterOfWorldsActivity,
+                forced::profiles::kEaterOfWorldsOpening, 64)
+            && !private_policy::force_private(false, 537,
+                forced::profiles::kEaterOfWorldsOpening,
+                forced::profiles::kEaterOfWorldsOpeningSlice),
+        "solo region policy rejects slices outside Eater and other raid activities");
+    auto otherDestination = forced::profiles::kEaterOfWorldsOpening;
+    otherDestination.packageName[0] = 'x';
+    check(!private_policy::force_private(false, forced::profiles::kEaterOfWorldsActivity,
+            otherDestination, forced::profiles::kEaterOfWorldsOpeningSlice),
+        "stale aligned slice in another destination remains public");
+    check(private_policy::force_private(true, 537, {}, 48),
+        "operator private-region setting remains authoritative");
     check(!openings::resolve(0, {}).valid(), "empty activity catalog fails closed");
     auto donor = activities[266];
     activities[282].package[0] = 'x';

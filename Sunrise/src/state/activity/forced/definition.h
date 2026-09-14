@@ -174,6 +174,20 @@ constexpr ForcedDestination hijacked_opening() noexcept {
 }
 inline constexpr ForcedDestination kHijackedOpening=hijacked_opening();
 static_assert(active(kHijackedOpening));
+
+// Eater of Worlds native entrance. This is a direct raid selection: activity 536 supplies its
+// own launch descriptor, while these fields select the recovered solo entrance arrival.
+inline constexpr std::int16_t kEaterOfWorldsActivity = 536;
+inline constexpr std::uint16_t kEaterOfWorldsOpeningSlice = 16;
+inline constexpr std::array<std::uint16_t, 8> kEaterOfWorldsSlices{0, 8, 16, 24, 32, 40, 48, 56};
+constexpr ForcedDestination eater_of_worlds_opening() noexcept {
+    ForcedDestination v{};constexpr char name[]="raid_envy_v310";
+    for(std::size_t i=0;i<sizeof(name)-1;++i) {v.packageName[i]=name[i];}
+    v.packageNameLength=sizeof(name)-1;v.bubble=2;v.sliceSet=kEaterOfWorldsOpeningSlice;v.spawnSetHash=0x8BA80878U;
+    v.hasBubble=v.hasSliceSet=v.hasSpawnSetHash=v.enabled=true;return v;
+}
+inline constexpr ForcedDestination kEaterOfWorldsOpening=eater_of_worlds_opening();
+static_assert(active(kEaterOfWorldsOpening));
 } // namespace profiles
 
 static_assert(active(profiles::kTowerfallOpening));

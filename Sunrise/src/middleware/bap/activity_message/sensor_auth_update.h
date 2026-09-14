@@ -27,6 +27,7 @@
 #include "native/adventure_dialogue_authority.h"
 #include "native/adventure_player_predicates.h"
 #include "../../../state/activity/strike_bond/frame.h"
+#include "../../../state/activity/eater_of_worlds/frame.h"
 #include "../../../state/activity/omega/omega_mission_state.h"
 #include "../../../state/activity/omega_crown_respawn_authority.h"
 #include "../../../state/activity/omega_rescue_scene_authority.h"
@@ -174,6 +175,9 @@ struct Snapshot final {
     state::activity::deadly_trial::Frame deadly_trial{};
     state::activity::strike_pact::Frame strike_pact{};
     state::activity::strike_bond::Frame strike_bond{};
+    state::activity::eater_of_worlds::Frame eater_of_worlds{};
+    /** Exact Eater roster admission, available before its in-world Frame is enabled. */
+    bool eaterOfWorldsLifetime{};
     state::activity::coo::CompletionPublication missionCompletion{};
     /** Terminal native phase8, with no success result, after a qualified Nightfall failure. */
     bool nightfallFailed{};
@@ -198,8 +202,10 @@ struct Snapshot final {
     std::uint32_t spawnSetHash{};
     std::uint32_t spawnSliceSet{};
     std::uint8_t lifetime{};
-    /** Admitted global4786C0E0/17/3 authority+C scenario ordinal (0..63).
-     * Absent preserves existing policy; this is not a packed region or spawn override. */
+    /** Admitted lifetime authority+C scenario ordinal (0..63; selected Eater requires 0..7).
+     * Global4786C0E0/17/3 and selected Eater24C67333/17/3 consume this value.
+     * Absent preserves existing policy except for selected Eater, where it rejects publication.
+     * This is not a packed region or spawn override. */
     std::optional<std::uint32_t> lifetimeScenarioOrdinal{};
     /** Diagnostic slot-35 startup flags. Only the low two bits are encoded. */
     std::uint8_t missionDirectorVariant{};

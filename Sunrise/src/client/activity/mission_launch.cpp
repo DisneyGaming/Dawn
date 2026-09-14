@@ -17,6 +17,7 @@
 #include "../../core/logging/log.h"
 
 namespace sunrise::client::activity::mission_launch {
+namespace contest = state::activity::eater_of_worlds::contest;
 namespace {
 SRWLOCK g_lock{SRWLOCK_INIT};
 Snapshot g_state{};
@@ -64,17 +65,21 @@ void finish(Status status) noexcept {
     g_state.busy = status == Status::queued || status == Status::preparing;
     const auto state = g_state;
     ReleaseSRWLockExclusive(&g_lock);
+    if (status != Status::queued && status != Status::arrived && status != Status::preparing) {
+        contest::leave();
+    }
     std::array<char, 512> line{};
     const int size = state.manual ? std::snprintf(line.data(), line.size(),
-        "ev=mission_launch activity=%u manual=1 destination=%.*s bubble=%u slice=%u spawn=%08X current_destination=%.*s current_activity=%d in_mission=%u status=%u detail=%s",
+        "ev=mission_launch activity=%u manual=1 destination=%.*s bubble=%u slice=%u spawn=%08X current_destination=%.*s current_activity=%d in_mission=%u mode=%s status=%u detail=%s",
         state.index, static_cast<int>(destination_name(state.destination).size()), state.destination.packageName.data(),
         state.destination.bubble, state.destination.sliceSet,
         state.destination.hasSpawnSetHash ? state.destination.spawnSetHash : forced::kAbsentSpawnSetHash,
         static_cast<int>(state.currentPackageLength), state.currentPackage.data(),
         static_cast<int>(state.currentIndex), static_cast<unsigned>(state.inMission),
+        state.raidMode == contest::Mode::contest ? "contest" : "standard",
         static_cast<unsigned>(status), description(status))
-        : std::snprintf(line.data(), line.size(), "ev=mission_launch activity=%u status=%u detail=%s", state.index,
-            static_cast<unsigned>(status), description(status));
+        : std::snprintf(line.data(), line.size(), "ev=mission_launch activity=%u mode=%s status=%u detail=%s", state.index,
+            state.raidMode == contest::Mode::contest ? "contest" : "standard", static_cast<unsigned>(status), description(status));
     if (size > 0 && static_cast<std::size_t>(size) < line.size()) {
         core::log::write(core::log::Channel::client, core::log::Level::info,
             {line.data(), static_cast<std::size_t>(size)});
@@ -105,6 +110,19 @@ bool request_manual(std::uint16_t index, const forced::ForcedDestination& destin
 }
 bool request_opening(std::size_t mission) noexcept {
     return request_variant(mission, state::activity::strikes::Difficulty::standard);
+}
+bool request_raid(std::size_t mission, contest::Mode mode) noexcept {
+    if (mission >= openings::kMissions.size() || openings::kMissions[mission].activity != contest::kActivity
+        || (mode != contest::Mode::standard && mode != contest::Mode::contest)) return false;
+    const auto route = openings::resolve(mission, state::build_data::activities::entries());
+    if (!route.valid() || route.transport != contest::kActivity) return false;
+    AcquireSRWLockExclusive(&g_lock);
+    if (g_state.busy || g_state.inMission) { ReleaseSRWLockExclusive(&g_lock); return false; }
+    g_state = {Status::requested, route.transport, true, true, route.destination, true};
+    g_state.raidMode = mode;
+    g_requestedAt = now();
+    ReleaseSRWLockExclusive(&g_lock);
+    return true;
 }
 bool request_variant(std::size_t mission, state::activity::strikes::Difficulty difficulty) noexcept {
     return request_variant(mission, difficulty, state::activity::nightfall::defaults(difficulty));
@@ -154,10 +172,15 @@ void poll() noexcept {
         (void)campaign_dialogue::select(actual.activityIndex);
         const auto run = state::activity::mission_run_generation();
         state::activity::nightfall::enter(sessionId, actual.activityIndex, run);
+        const std::string_view actualPackage{reinterpret_cast<const char*>(actual.packageName.data()), actual.packageNameLength};
+        // A queued launch can briefly expose the previous world. Bind only after its new
+        // session and exact destination pass the arrival checks below.
+        if (!state.busy) contest::enter(sessionId, actualPackage == "raid_envy_v310" ? actual.activityIndex : -1);
         nightfall_player::poll(sessionId, run);
     } else if (!state.busy && currentStep==29) {
         (void)campaign_dialogue::select(-1);
         state::activity::nightfall::leave();
+        contest::leave();
     }
     if (!state.busy) { return; }
     if (!step) { finish(Status::nativeUnavailable); return; }
@@ -176,6 +199,7 @@ void poll() noexcept {
                     && (!state.destination.hasBubble || (actual.hasSpawnSetOverride
                         && actual.spawnSetOverride == (state.destination.hasSpawnSetHash
                             ? state.destination.spawnSetHash : forced::kAbsentSpawnSetHash)))));
+            if (matches) contest::enter(sessionId, actual.activityIndex);
             finish(matches ? Status::arrived : Status::unexpectedDestination); return;
         }
         if (now() - started > 120000) { finish(Status::timedOut); }
@@ -266,6 +290,7 @@ void poll() noexcept {
     } else if (state.manual && !forced::publish(state.destination)) { finish(Status::manualRejected); return; }
     clear();
     state::activity::nightfall::arm(index, state.nightfallOptions);
+    contest::arm(index, state.opening ? state.raidMode : contest::Mode::standard);
     select(0, selection.data());
     commit(1);
     finish(Status::queued);

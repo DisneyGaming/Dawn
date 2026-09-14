@@ -4,6 +4,7 @@
 #include "native_hook_ownership.h"
 #include "ambient_population_named_observer.h"
 #include "gateway_native_read.h"
+#include "eater_source_retirement.h"
 #include "../graphics/hijacked_frame_timing.h"
 #include "../../hooking/call_gate.h"
 #include "../../hooking/detour.h"
@@ -12,6 +13,7 @@
 #include "../../../state/activity/hijacked/retirement_identity.h"
 #include "../../../state/activity/hijacked/backtracking_identity.h"
 #include "../../../state/activity/hijacked/retirement_unload.h"
+#include "../../../state/activity/eater_of_worlds/runtime.h"
 #include "../../../core/logging/log.h"
 #include <atomic>
 #include <cstdio>
@@ -153,6 +155,7 @@ bool retirement_allocator_ready() noexcept {
 #include "hijacked_retirement_cleanup.inl"
 #include "hijacked_backtracking.inl"
 #include "hijacked_retirement_unload.inl"
+#include "eater_source_retirement.inl"
 bool descriptor(const mission::Placement& p,std::uintptr_t& address) noexcept {
     Read read{image};std::uintptr_t table{};std::uint32_t count{};std::int64_t relative{};
     if(!read.resolve(p.table,table) || !read.value(table+8,count) || count>4096 || p.record>=count
@@ -292,6 +295,7 @@ __declspec(noinline) void __fastcall retire_source(std::uintptr_t address) noexc
             }
         }
         retire_strike_bond_boss(address,retirement_allocator_ready());
+        capture_eater_source_retirement(address);
         // Every path forwards native retirement, including missing TLS and
         // unrelated sources. Keep reentrant cleanup disabled across this call.
         fn(address);return;
@@ -368,6 +372,8 @@ bool uninstall() noexcept {
         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&retirement_capture)},
         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&retirement_dispatch)},
         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&retire_source)},
+        hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&capture_eater_source_retirement)},
+        hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&poll_eater_source_retirements)},
         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&unload_region)},
         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&find_component)},
         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&retain_enemy)},
@@ -379,7 +385,7 @@ bool uninstall() noexcept {
     create.store(nullptr,std::memory_order_release);retireSource.store(nullptr,std::memory_order_release);
     unloadRegion.store(nullptr,std::memory_order_release);findComponent.store(nullptr,std::memory_order_release);
     hooks={};context=nullptr;authority=nullptr;find=nullptr;backtrackingNativeReady=false;backtrackingReturns={};backtrackingHasReturns=false;
-    image=0;gameThread=0;owner={};nextPoll=0;lastStatus={};return true;
+    clear_eater_retirements();image=0;gameThread=0;owner={};nextPoll=0;lastStatus={};return true;
 }
 void retain_enemy(std::uint64_t run,std::uint16_t slot,std::uint32_t sourceHandle,std::uint32_t actor) noexcept {
     const hooking::CallGate::Scope scope(gate);
@@ -396,6 +402,6 @@ void retain_enemy(std::uint64_t run,std::uint16_t slot,std::uint32_t sourceHandl
 }
 void poll() noexcept {
     const hooking::CallGate::Scope scope(gate);if(!scope.accepts_side_effects()) {return;}
-    gameThread.store(GetCurrentThreadId(),std::memory_order_release);update();
+    gameThread.store(GetCurrentThreadId(),std::memory_order_release);update();poll_eater_source_retirements();
 }
 }

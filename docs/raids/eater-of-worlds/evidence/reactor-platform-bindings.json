@@ -1,0 +1,1133 @@
+{
+  "schema": "eater-reactor-platform-bindings-v1",
+  "input": {
+    "nativeInventorySha256": "c35ec163bdd14aa67a2d74f60d08f0c5c1f0169fa67aa16c767664130acf0a75",
+    "clientImageSha256": "63d128f1c759b92d32b0f226bcbec828bc58cef193ee0df6fdd582bd0290ed1e"
+  },
+  "registry": "0x686321C8",
+  "genericDevice": {
+    "entity": "0x80F42FCD",
+    "entityClass": "0x80809C0F",
+    "entitySha256": "02ea387dc83dd4669a6552f1cbf86310a2c68ec0d0cf8beefacb2a0311d4c6f3",
+    "definition": "0x80C3EE24",
+    "definitionClass": "0x80809C36",
+    "definitionSha256": "8c45d5e40879bc682efb2aa24e8db5c88db683beebfdad035eb9e1607159b818",
+    "buildOrdinal": 6,
+    "definitionSubtype": "0x8080390E",
+    "declaredRuntimeBytes": 144,
+    "runtimeKind": "0x80803910",
+    "runtimeOffset": 2680,
+    "dynamicAuthSchema": "0x80805063"
+  },
+  "platformCount": 56,
+  "pathLengths": [
+    13,
+    11,
+    13,
+    19
+  ],
+  "platforms": [
+    {
+      "path": 0,
+      "index": 0,
+      "name": "u_falling_platforms_first_path[0].o_platform",
+      "sourceTag": "0x80C43DAD",
+      "sourceSlot": 38,
+      "sourceOffset": 1224,
+      "position": [
+        9.5,
+        210.5,
+        -795.7500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_first_path[0].of_all_players",
+        "sourceTag": "0x8155C324",
+        "slot": 115,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 0,
+      "index": 1,
+      "name": "u_falling_platforms_first_path[1].o_platform",
+      "sourceTag": "0x80C43DB3",
+      "sourceSlot": 39,
+      "sourceOffset": 1224,
+      "position": [
+        9.75,
+        197.5,
+        -795.7500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_first_path[1].of_all_players",
+        "sourceTag": "0x8155C327",
+        "slot": 116,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 0,
+      "index": 2,
+      "name": "u_falling_platforms_first_path[2].o_platform",
+      "sourceTag": "0x80C43DB8",
+      "sourceSlot": 40,
+      "sourceOffset": 1224,
+      "position": [
+        9.5,
+        184.0,
+        -795.75
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_first_path[2].of_all_players",
+        "sourceTag": "0x8155C32A",
+        "slot": 117,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 0,
+      "index": 3,
+      "name": "u_falling_platforms_first_path[3].o_platform",
+      "sourceTag": "0x80C43DBC",
+      "sourceSlot": 41,
+      "sourceOffset": 1224,
+      "position": [
+        23.74999237060547,
+        184.0,
+        -795.75
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_first_path[3].of_all_players",
+        "sourceTag": "0x8155C32D",
+        "slot": 118,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 0,
+      "index": 4,
+      "name": "u_falling_platforms_first_path[4].o_platform",
+      "sourceTag": "0x80C43DC2",
+      "sourceSlot": 42,
+      "sourceOffset": 1224,
+      "position": [
+        23.5,
+        171.5,
+        -795.7500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_first_path[4].of_all_players",
+        "sourceTag": "0x8155C330",
+        "slot": 119,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 0,
+      "index": 5,
+      "name": "u_falling_platforms_first_path[5].o_platform",
+      "sourceTag": "0x80C43DC7",
+      "sourceSlot": 43,
+      "sourceOffset": 1224,
+      "position": [
+        37.25,
+        171.5,
+        -795.7500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_first_path[5].of_all_players",
+        "sourceTag": "0x8155C333",
+        "slot": 120,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 0,
+      "index": 6,
+      "name": "u_falling_platforms_first_path[6].o_platform",
+      "sourceTag": "0x80C43DCD",
+      "sourceSlot": 44,
+      "sourceOffset": 1224,
+      "position": [
+        44.75,
+        184.0,
+        -795.75
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_first_path[6].of_all_players",
+        "sourceTag": "0x8155C336",
+        "slot": 121,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 0,
+      "index": 7,
+      "name": "u_falling_platforms_first_path[7].o_platform",
+      "sourceTag": "0x80C43DD2",
+      "sourceSlot": 45,
+      "sourceOffset": 1224,
+      "position": [
+        48.0,
+        178.0,
+        -795.75
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_first_path[7].of_all_players",
+        "sourceTag": "0x8155C339",
+        "slot": 122,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 0,
+      "index": 8,
+      "name": "u_falling_platforms_first_path[8].o_platform",
+      "sourceTag": "0x80C43DD7",
+      "sourceSlot": 46,
+      "sourceOffset": 1224,
+      "position": [
+        59.0,
+        171.5,
+        -795.7500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_first_path[8].of_all_players",
+        "sourceTag": "0x8155C33C",
+        "slot": 123,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 0,
+      "index": 9,
+      "name": "u_falling_platforms_first_path[9].o_platform",
+      "sourceTag": "0x80C43DDB",
+      "sourceSlot": 47,
+      "sourceOffset": 1224,
+      "position": [
+        69.25,
+        177.75,
+        -795.75
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_first_path[9].of_all_players",
+        "sourceTag": "0x8155C33F",
+        "slot": 124,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 0,
+      "index": 10,
+      "name": "u_falling_platforms_first_path[10].o_platform",
+      "sourceTag": "0x80C43DE1",
+      "sourceSlot": 48,
+      "sourceOffset": 1224,
+      "position": [
+        78.5,
+        168.75,
+        -795.7500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_first_path[10].of_all_players",
+        "sourceTag": "0x8155C342",
+        "slot": 125,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 0,
+      "index": 11,
+      "name": "u_falling_platforms_first_path[11].o_platform",
+      "sourceTag": "0x80C43DE7",
+      "sourceSlot": 49,
+      "sourceOffset": 1224,
+      "position": [
+        85.75,
+        158.25,
+        -795.75
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_first_path[11].of_all_players",
+        "sourceTag": "0x8155C345",
+        "slot": 126,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 0,
+      "index": 12,
+      "name": "u_falling_platforms_first_path[12].o_platform",
+      "sourceTag": "0x80C43DED",
+      "sourceSlot": 50,
+      "sourceOffset": 1224,
+      "position": [
+        85.75,
+        144.25,
+        -795.75
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_first_path[12].of_all_players",
+        "sourceTag": "0x8155C348",
+        "slot": 127,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 1,
+      "index": 0,
+      "name": "u_falling_platforms_second_path[0].o_platform",
+      "sourceTag": "0x80C43DF1",
+      "sourceSlot": 51,
+      "sourceOffset": 1224,
+      "position": [
+        48.0,
+        139.000244140625,
+        -796.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_second_path[0].of_all_players",
+        "sourceTag": "0x8155C34B",
+        "slot": 128,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 1,
+      "index": 1,
+      "name": "u_falling_platforms_second_path[1].o_platform",
+      "sourceTag": "0x80C43DF5",
+      "sourceSlot": 52,
+      "sourceOffset": 1224,
+      "position": [
+        59.0,
+        106.5,
+        -796.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_second_path[1].of_all_players",
+        "sourceTag": "0x8155C34E",
+        "slot": 129,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 1,
+      "index": 2,
+      "name": "u_falling_platforms_second_path[2].o_platform",
+      "sourceTag": "0x80C43DFA",
+      "sourceSlot": 53,
+      "sourceOffset": 1224,
+      "position": [
+        33.5,
+        139.000244140625,
+        -796.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_second_path[2].of_all_players",
+        "sourceTag": "0x8155C351",
+        "slot": 130,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 1,
+      "index": 3,
+      "name": "u_falling_platforms_second_path[3].o_platform",
+      "sourceTag": "0x80C43E03",
+      "sourceSlot": 55,
+      "sourceOffset": 1224,
+      "position": [
+        44.5,
+        93.5,
+        -796.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_second_path[3].of_all_players",
+        "sourceTag": "0x8155C354",
+        "slot": 131,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 1,
+      "index": 4,
+      "name": "u_falling_platforms_second_path[4].o_platform",
+      "sourceTag": "0x80C43DFE",
+      "sourceSlot": 54,
+      "sourceOffset": 1224,
+      "position": [
+        30.5,
+        93.5,
+        -796.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_second_path[4].of_all_players",
+        "sourceTag": "0x8155C357",
+        "slot": 132,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 1,
+      "index": 5,
+      "name": "u_falling_platforms_second_path[5].o_platform",
+      "sourceTag": "0x80C43E09",
+      "sourceSlot": 56,
+      "sourceOffset": 1224,
+      "position": [
+        16.0,
+        132.500244140625,
+        -796.2500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_second_path[5].of_all_players",
+        "sourceTag": "0x8155C35A",
+        "slot": 133,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 1,
+      "index": 6,
+      "name": "u_falling_platforms_second_path[6].o_platform",
+      "sourceTag": "0x80C43E0D",
+      "sourceSlot": 57,
+      "sourceOffset": 1224,
+      "position": [
+        16.5,
+        106.5,
+        -796.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_second_path[6].of_all_players",
+        "sourceTag": "0x8155C35D",
+        "slot": 134,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 1,
+      "index": 7,
+      "name": "u_falling_platforms_second_path[7].o_platform",
+      "sourceTag": "0x80C43E12",
+      "sourceSlot": 58,
+      "sourceOffset": 1224,
+      "position": [
+        2.5,
+        132.500244140625,
+        -796.2500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_second_path[7].of_all_players",
+        "sourceTag": "0x8155C360",
+        "slot": 135,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 1,
+      "index": 8,
+      "name": "u_falling_platforms_second_path[8].o_platform",
+      "sourceTag": "0x80C43E17",
+      "sourceSlot": 59,
+      "sourceOffset": 1224,
+      "position": [
+        -4.75,
+        106.5,
+        -796.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_second_path[8].of_all_players",
+        "sourceTag": "0x8155C363",
+        "slot": 136,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 1,
+      "index": 9,
+      "name": "u_falling_platforms_second_path[9].o_platform",
+      "sourceTag": "0x80C43E1D",
+      "sourceSlot": 60,
+      "sourceOffset": 1224,
+      "position": [
+        -4.5,
+        119.5,
+        -796.2500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_second_path[9].of_all_players",
+        "sourceTag": "0x8155C366",
+        "slot": 137,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 1,
+      "index": 10,
+      "name": "u_falling_platforms_second_path[10].o_platform",
+      "sourceTag": "0x80C43E22",
+      "sourceSlot": 61,
+      "sourceOffset": 1224,
+      "position": [
+        -18.5,
+        130.798583984375,
+        -796.2500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_second_path[10].of_all_players",
+        "sourceTag": "0x8155C369",
+        "slot": 138,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 2,
+      "index": 0,
+      "name": "u_falling_platforms_third_path[0].o_platform",
+      "sourceTag": "0x80C43E27",
+      "sourceSlot": 62,
+      "sourceOffset": 1224,
+      "position": [
+        -60.5,
+        145.5,
+        -796.2500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_third_path[0].of_all_players",
+        "sourceTag": "0x8155C36C",
+        "slot": 139,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 2,
+      "index": 1,
+      "name": "u_falling_platforms_third_path[1].o_platform",
+      "sourceTag": "0x80C43E2C",
+      "sourceSlot": 63,
+      "sourceOffset": 1224,
+      "position": [
+        -67.5,
+        145.5,
+        -796.2500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_third_path[1].of_all_players",
+        "sourceTag": "0x8155C36F",
+        "slot": 140,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 2,
+      "index": 2,
+      "name": "u_falling_platforms_third_path[2].o_platform",
+      "sourceTag": "0x80C43E31",
+      "sourceSlot": 64,
+      "sourceOffset": 1224,
+      "position": [
+        -74.5,
+        145.5,
+        -796.2500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_third_path[2].of_all_players",
+        "sourceTag": "0x8155C372",
+        "slot": 141,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 2,
+      "index": 3,
+      "name": "u_falling_platforms_third_path[3].o_platform",
+      "sourceTag": "0x80C43E37",
+      "sourceSlot": 65,
+      "sourceOffset": 1224,
+      "position": [
+        -74.5,
+        132.500244140625,
+        -796.2500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_third_path[3].of_all_players",
+        "sourceTag": "0x8155C375",
+        "slot": 142,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 2,
+      "index": 4,
+      "name": "u_falling_platforms_third_path[4].o_platform",
+      "sourceTag": "0x80C43E3D",
+      "sourceSlot": 66,
+      "sourceOffset": 1224,
+      "position": [
+        -84.75,
+        126.0,
+        -796.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_third_path[4].of_all_players",
+        "sourceTag": "0x8155C378",
+        "slot": 143,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 2,
+      "index": 5,
+      "name": "u_falling_platforms_third_path[5].o_platform",
+      "sourceTag": "0x80C43E43",
+      "sourceSlot": 67,
+      "sourceOffset": 1224,
+      "position": [
+        -84.5,
+        113.0,
+        -796.2499389648438
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_third_path[5].of_all_players",
+        "sourceTag": "0x8155C37B",
+        "slot": 144,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 2,
+      "index": 6,
+      "name": "u_falling_platforms_third_path[6].o_platform",
+      "sourceTag": "0x80C43E48",
+      "sourceSlot": 68,
+      "sourceOffset": 1224,
+      "position": [
+        -77.25000762939453,
+        100.0,
+        -796.2499389648438
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_third_path[6].of_all_players",
+        "sourceTag": "0x8155C37E",
+        "slot": 145,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 2,
+      "index": 7,
+      "name": "u_falling_platforms_third_path[7].o_platform",
+      "sourceTag": "0x80C43E4D",
+      "sourceSlot": 69,
+      "sourceOffset": 1224,
+      "position": [
+        -60.5,
+        132.5,
+        -796.2500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_third_path[7].of_all_players",
+        "sourceTag": "0x8155C381",
+        "slot": 146,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 2,
+      "index": 8,
+      "name": "u_falling_platforms_third_path[8].o_platform",
+      "sourceTag": "0x80C43E52",
+      "sourceSlot": 70,
+      "sourceOffset": 1224,
+      "position": [
+        -60.5,
+        119.5,
+        -796.2500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_third_path[8].of_all_players",
+        "sourceTag": "0x8155C384",
+        "slot": 147,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 2,
+      "index": 9,
+      "name": "u_falling_platforms_third_path[9].o_platform",
+      "sourceTag": "0x80C43E58",
+      "sourceSlot": 71,
+      "sourceOffset": 1224,
+      "position": [
+        -60.5,
+        106.5,
+        -796.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_third_path[9].of_all_players",
+        "sourceTag": "0x8155C387",
+        "slot": 148,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 2,
+      "index": 10,
+      "name": "u_falling_platforms_third_path[10].o_platform",
+      "sourceTag": "0x80C43E5C",
+      "sourceSlot": 72,
+      "sourceOffset": 1224,
+      "position": [
+        -60.500003814697266,
+        93.5,
+        -796.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_third_path[10].of_all_players",
+        "sourceTag": "0x8155C38A",
+        "slot": 149,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 2,
+      "index": 11,
+      "name": "u_falling_platforms_third_path[11].o_platform",
+      "sourceTag": "0x80C43E61",
+      "sourceSlot": 73,
+      "sourceOffset": 1224,
+      "position": [
+        -53.000003814697266,
+        79.750244140625,
+        -796.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_third_path[11].of_all_players",
+        "sourceTag": "0x8155C38D",
+        "slot": 150,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 2,
+      "index": 12,
+      "name": "u_falling_platforms_third_path[12].o_platform",
+      "sourceTag": "0x80C43E66",
+      "sourceSlot": 74,
+      "sourceOffset": 1224,
+      "position": [
+        -53.0,
+        66.750244140625,
+        -796.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_third_path[12].of_all_players",
+        "sourceTag": "0x8155C390",
+        "slot": 151,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 3,
+      "index": 0,
+      "name": "u_falling_platforms_fourth_path[0].o_platform",
+      "sourceTag": "0x80C43E6A",
+      "sourceSlot": 75,
+      "sourceOffset": 1224,
+      "position": [
+        -46.25000762939453,
+        53.75,
+        -796.5
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_fourth_path[0].of_all_players",
+        "sourceTag": "0x8155C393",
+        "slot": 152,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 3,
+      "index": 1,
+      "name": "u_falling_platforms_fourth_path[1].o_platform",
+      "sourceTag": "0x80C43E84",
+      "sourceSlot": 76,
+      "sourceOffset": 1224,
+      "position": [
+        -35.75000762939453,
+        47.5,
+        -796.2500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_fourth_path[1].of_all_players",
+        "sourceTag": "0x8155C396",
+        "slot": 153,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 3,
+      "index": 2,
+      "name": "u_falling_platforms_fourth_path[2].o_platform",
+      "sourceTag": "0x80C43E8A",
+      "sourceSlot": 77,
+      "sourceOffset": 1224,
+      "position": [
+        -35.75000762939453,
+        34.5,
+        -796.2500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_fourth_path[2].of_all_players",
+        "sourceTag": "0x8155C399",
+        "slot": 154,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 3,
+      "index": 3,
+      "name": "u_falling_platforms_fourth_path[3].o_platform",
+      "sourceTag": "0x80C43E91",
+      "sourceSlot": 78,
+      "sourceOffset": 1224,
+      "position": [
+        -21.750003814697266,
+        34.5,
+        -796.2500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_fourth_path[3].of_all_players",
+        "sourceTag": "0x8155C39C",
+        "slot": 155,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 3,
+      "index": 4,
+      "name": "u_falling_platforms_fourth_path[4].o_platform",
+      "sourceTag": "0x80C43E9A",
+      "sourceSlot": 79,
+      "sourceOffset": 1224,
+      "position": [
+        -21.750003814697266,
+        47.5,
+        -796.2500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_fourth_path[4].of_all_players",
+        "sourceTag": "0x8155C39F",
+        "slot": 156,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 3,
+      "index": 5,
+      "name": "u_falling_platforms_fourth_path[5].o_platform",
+      "sourceTag": "0x80C43EA7",
+      "sourceSlot": 80,
+      "sourceOffset": 1224,
+      "position": [
+        -11.250007629394531,
+        54.0,
+        -796.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_fourth_path[5].of_all_players",
+        "sourceTag": "0x8155C3A2",
+        "slot": 157,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 3,
+      "index": 6,
+      "name": "u_falling_platforms_fourth_path[6].o_platform",
+      "sourceTag": "0x80C43EAA",
+      "sourceSlot": 81,
+      "sourceOffset": 1224,
+      "position": [
+        -11.250007629394531,
+        28.0,
+        -796.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_fourth_path[6].of_all_players",
+        "sourceTag": "0x8155C3A5",
+        "slot": 158,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 3,
+      "index": 7,
+      "name": "u_falling_platforms_fourth_path[7].o_platform",
+      "sourceTag": "0x80C43EAE",
+      "sourceSlot": 82,
+      "sourceOffset": 1224,
+      "position": [
+        -11.250007629394531,
+        41.0,
+        -796.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_fourth_path[7].of_all_players",
+        "sourceTag": "0x8155C3A8",
+        "slot": 159,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 3,
+      "index": 8,
+      "name": "u_falling_platforms_fourth_path[8].o_platform",
+      "sourceTag": "0x80C43EBC",
+      "sourceSlot": 83,
+      "sourceOffset": 1224,
+      "position": [
+        -0.7500076293945312,
+        34.5,
+        -796.2500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_fourth_path[8].of_all_players",
+        "sourceTag": "0x8155C3AB",
+        "slot": 160,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 3,
+      "index": 9,
+      "name": "u_falling_platforms_fourth_path[9].o_platform",
+      "sourceTag": "0x80C43F34",
+      "sourceSlot": 84,
+      "sourceOffset": 1224,
+      "position": [
+        -0.7500076293945312,
+        47.5,
+        -796.2500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_fourth_path[9].of_all_players",
+        "sourceTag": "0x8155C3AE",
+        "slot": 161,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 3,
+      "index": 10,
+      "name": "u_falling_platforms_fourth_path[10].o_platform",
+      "sourceTag": "0x80C43F38",
+      "sourceSlot": 85,
+      "sourceOffset": 1224,
+      "position": [
+        6.25,
+        60.5,
+        -796.2500610351562
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_fourth_path[10].of_all_players",
+        "sourceTag": "0x8155C3B1",
+        "slot": 162,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 3,
+      "index": 11,
+      "name": "u_falling_platforms_fourth_path[11].o_platform",
+      "sourceTag": "0x80C43F3B",
+      "sourceSlot": 86,
+      "sourceOffset": 1224,
+      "position": [
+        9.749992370605469,
+        41.0,
+        -796.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_fourth_path[11].of_all_players",
+        "sourceTag": "0x8155C3B4",
+        "slot": 163,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 3,
+      "index": 12,
+      "name": "u_falling_platforms_fourth_path[12].o_platform",
+      "sourceTag": "0x80C43F3E",
+      "sourceSlot": 87,
+      "sourceOffset": 1224,
+      "position": [
+        16.75,
+        54.0,
+        -796.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_fourth_path[12].of_all_players",
+        "sourceTag": "0x8155C3B7",
+        "slot": 164,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 3,
+      "index": 13,
+      "name": "u_falling_platforms_fourth_path[13].o_platform",
+      "sourceTag": "0x80C43F41",
+      "sourceSlot": 88,
+      "sourceOffset": 1224,
+      "position": [
+        16.75,
+        67.5,
+        -796.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_fourth_path[13].of_all_players",
+        "sourceTag": "0x8155C3BA",
+        "slot": 165,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 3,
+      "index": 14,
+      "name": "u_falling_platforms_fourth_path[14].o_platform",
+      "sourceTag": "0x80C43F44",
+      "sourceSlot": 89,
+      "sourceOffset": 1224,
+      "position": [
+        30.75,
+        67.0,
+        -796.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_fourth_path[14].of_all_players",
+        "sourceTag": "0x8155C3BD",
+        "slot": 166,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 3,
+      "index": 15,
+      "name": "u_falling_platforms_fourth_path[15].o_platform",
+      "sourceTag": "0x80C43F47",
+      "sourceSlot": 90,
+      "sourceOffset": 1224,
+      "position": [
+        44.74998474121094,
+        67.0,
+        -793.9999389648438
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_fourth_path[15].of_all_players",
+        "sourceTag": "0x8155C3C0",
+        "slot": 167,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 3,
+      "index": 16,
+      "name": "u_falling_platforms_fourth_path[16].o_platform",
+      "sourceTag": "0x80C43F4A",
+      "sourceSlot": 91,
+      "sourceOffset": 1224,
+      "position": [
+        44.74998474121094,
+        53.999755859375,
+        -793.2499389648438
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_fourth_path[16].of_all_players",
+        "sourceTag": "0x8155C3C3",
+        "slot": 168,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 3,
+      "index": 17,
+      "name": "u_falling_platforms_fourth_path[17].o_platform",
+      "sourceTag": "0x80C43F4D",
+      "sourceSlot": 92,
+      "sourceOffset": 1224,
+      "position": [
+        34.5,
+        47.5,
+        -793.25
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_fourth_path[17].of_all_players",
+        "sourceTag": "0x8155C3C6",
+        "slot": 169,
+        "sourceOffset": 904
+      }
+    },
+    {
+      "path": 3,
+      "index": 18,
+      "name": "u_falling_platforms_fourth_path[18].o_platform",
+      "sourceTag": "0x80C43F50",
+      "sourceSlot": 93,
+      "sourceOffset": 1224,
+      "position": [
+        51.75,
+        41.0,
+        -792.2499389648438
+      ],
+      "playerCollection": {
+        "name": "u_falling_platforms_fourth_path[18].of_all_players",
+        "sourceTag": "0x8155C3C9",
+        "slot": 170,
+        "sourceOffset": 904
+      }
+    }
+  ],
+  "positiveBehaviorGates": [
+    {
+      "root": "0x80F42FAA",
+      "ownerConfig": "0x81558181",
+      "rootSha256": "c810aa2baac7e3d7d6b2468975acfe99c2aa5bfcb4c53ecbe1ae4278822eef2e",
+      "condition": "device_position > 0",
+      "channelHash": "0x6D408B83",
+      "comparisonMode": 5,
+      "targetHash": "0x05F911E1",
+      "operation": "increment"
+    },
+    {
+      "root": "0x80F42FAC",
+      "ownerConfig": "0x81558182",
+      "rootSha256": "f725c29a2ac767682252fa7cf20dd093fb69712edaab4b389080fde09a5b4b21",
+      "condition": "device_position > 0",
+      "channelHash": "0x6D408B83",
+      "comparisonMode": 5,
+      "targetHash": "0xD5ACFF36",
+      "operation": "set_one"
+    },
+    {
+      "root": "0x80F42FAE",
+      "ownerConfig": "0x81558183",
+      "rootSha256": "f74f23786b441edd4c7466c3f509d56b7d6a24b3fb1f7207f0939f78870e2c6c",
+      "condition": "device_position > 0",
+      "channelHash": "0x6D408B83",
+      "comparisonMode": 5,
+      "targetHash": "0x5650B4C4",
+      "operation": "set_one"
+    }
+  ],
+  "provedOutput": "A fresh type-4 optional 0x80805063 position record reaches the spawned platform entity's exact 0x8080390E generic-device component. Any positive device_position satisfies all three recovered authored behavior predicates.",
+  "openBoundaries": [
+    "The intended final motion endpoint is not recovered; a positive predicate does not name a presentation mode.",
+    "Type-34 of_all_players entries are authority-only and have no proved native occupancy producer.",
+    "Publishing or retaining a player in type-34 is not justified by this evidence."
+  ]
+}

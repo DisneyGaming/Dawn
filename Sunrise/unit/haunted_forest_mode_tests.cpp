@@ -8,6 +8,7 @@
 #include <iterator>
 #include <filesystem>
 #include <vector>
+#include "mission_parameter_fixture.h"
 
 namespace a=sunrise::server::runtime::activity;
 namespace hf=a::haunted_forest::mode;
@@ -262,7 +263,12 @@ int main(int argc,char** argv) {
     CHECK(activity.generator().revision()==2 && activity.generator().last_request()==1);
 
     // No bindings leaves established Mercury behavior unchanged.
-    const auto mercury=load("Sunrise/scripts/mercury_freeroam.json",a::mercury::kProfile);
+    std::ifstream mercuryInput("Sunrise/scripts/mercury_freeroam.json",std::ios::binary);CHECK(mercuryInput.good());
+    std::string mercuryText((std::istreambuf_iterator<char>(mercuryInput)),{});
+    CHECK(mission_parameter_fixture::numeric(mercuryText,"public_event_rally_probe",0));
+    CHECK(mission_parameter_fixture::numeric(mercuryText,"ambient_vex_probe_count",0));
+    std::string mercuryError;auto parsedMercury=c::script::MissionDocument::parse(mercuryText,a::mercury::kProfile,mercuryError);CHECK(parsedMercury);
+    std::shared_ptr<const c::script::MissionDocument> mercury=std::move(parsedMercury);
     CHECK(a::PersistentActivity::valid(a::mercury::kActivity,*mercury));
     a::PersistentActivity prior;CHECK(prior.begin({99,{1}},a::mercury::kActivity,mercury,999));
     for(int i=0;i<4;++i)frame=prior.update(15,true);

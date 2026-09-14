@@ -4,6 +4,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 import json
 import os
+import subprocess
+import sys
 from pathlib import Path
 import verify
 import native_test_inputs
@@ -19,6 +21,8 @@ TESTS = (
     "coo_ending_runtime_tests", "beyond_infinity_catalog_tests", "beyond_infinity_tests",
     "deep_storage_catalog_tests", "deep_storage_tests",
     "hijacked_catalog_tests", "hijacked_tests", "strike_bond_tests", "campaign_variants_tests",
+    "eater_of_worlds_tests",
+    "eater_of_worlds_roster_tests",
 )
 
 NATIVE_TESTS = (
@@ -37,6 +41,7 @@ NATIVE_TESTS = (
     'adventure_tests',
     'ambient_cabal_probe_tests',
     'ambient_population_tests',
+    'eater_entity_id_startup_tests',
     'bap_transport_tests',
     'faction_battle_tests',
     'forest_generator_progress_tests',
@@ -55,6 +60,7 @@ NATIVE_TESTS = (
     'native_capture_authority_tests',
     'native_capture_feedback_tests',
     'native_clock_protocol_tests',
+    'native_mission_interaction_tests',
     'native_npc_animation_tests',
     'native_roster_lifetime_tests',
     'native_roster_lifetime_wire_tests',
@@ -88,6 +94,15 @@ NATIVE_TESTS = (
 )
 ALL_TESTS = TESTS + NATIVE_TESTS
 TESTS = tuple(name for name in ALL_TESTS if name not in native_test_inputs.CAPTURE_ONLY)
+EATER_OFFLINE_CHECKS = (
+    'extract_eater_bindings.py',
+    'extract_eater_health_bindings.py',
+    'extract_eater_carry_bindings.py',
+    'extract_eater_station_bindings.py',
+    'verify_eater_reactor_platform_bindings.py',
+    'verify_eater_platform_contact_native.py',
+    'verify_eater_platform_volume_native.py',
+)
 
 def validation_jobs(names=None, configurations=None):
     """Only request configurations declared by each project; native suites may be Release-only."""
@@ -138,6 +153,17 @@ def main():
         raise SystemExit("Preserve installed-build evidence; choose a new --out directory.")
     verify.OUT.mkdir(parents=True, exist_ok=True)
     names = args.project or list(TESTS) + ([] if args.tests_only else ["Sunrise"])
+    if not args.project or any(name == 'Sunrise' or name.startswith('eater_') for name in names):
+        checks = []
+        for script in EATER_OFFLINE_CHECKS:
+            result = subprocess.run([sys.executable, str(ROOT / 'tools/coo' / script), '--check'],
+                                    cwd=ROOT, text=True, capture_output=True)
+            checks.append({'script': script, 'exitCode': result.returncode,
+                           'stdout': result.stdout, 'stderr': result.stderr})
+            if result.returncode:
+                (verify.OUT / 'eater-offline-checks.json').write_text(json.dumps(checks, indent=2))
+                raise SystemExit(f'Eater offline binding check failed: {script}\n{result.stdout}{result.stderr}')
+        (verify.OUT / 'eater-offline-checks.json').write_text(json.dumps(checks, indent=2))
     configurations = args.configuration or ("Debug", "Release")
     jobs = validation_jobs(names, configurations)
     unavailable = {name: reason for name, reason in native_test_inputs.CAPTURE_ONLY.items()

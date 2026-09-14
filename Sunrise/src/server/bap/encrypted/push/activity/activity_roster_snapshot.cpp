@@ -56,6 +56,8 @@
 #include "../../../../runtime/activity/adventure_opening_publication.h"
 #include "strike_bond_roster.h"
 #include "../../../../../state/activity/strike_bond/runtime.h"
+#include "../../../../../state/activity/eater_of_worlds/runtime.h"
+#include "eater_of_worlds_roster.h"
 #include "../../../../../middleware/bap/activity_message/tower_watch_cue_manifest.h"
 
 namespace sunrise::server::bap::encrypted::push::activity {
@@ -525,6 +527,11 @@ RosterOutcome build_roster_snapshot(Session& session,
     const bool hijackedDestination=name=="adventure_rumba" && !session.activity.joinedForeignSession;
     const bool hijackedPrepared=!session.activity.joinedForeignSession && state::activity::hijacked::prepare(state::activity::mission_run_generation(),hijackedDestination);
     if(hijackedDestination && !hijackedPrepared) { return RosterOutcome::noGroups; }
+    const bool eaterDestination=name=="raid_envy_v310" && selection.activityIndex==536
+        && !session.activity.joinedForeignSession;
+    const bool eaterPrepared=state::activity::eater_of_worlds::prepare(
+        state::activity::mission_run_generation(),eaterDestination);
+    if(eaterDestination && !eaterPrepared) { return RosterOutcome::noGroups; }
     const auto& omegaExperiments = core::settings::get().omegaExperiments;
     const bool syntheticOmega = omegaDestination;
     // Forest-D's native encounter classifier requires the selected race global
@@ -660,7 +667,7 @@ RosterOutcome build_roster_snapshot(Session& session,
     // hold zero groups; a zero-group row otherwise vetoes the whole periodic bundle and the
     // client starves into the activity-host timeout. Publish the global participation group
     // alone, which is part of every activity launch and safe in every slice set.
-    if (layout.rosterGroupCount == 0) {
+    if (layout.rosterGroupCount == 0 && !eaterPrepared) {
         const bool amended = state::build_data::amend_participation_fallback(layout);
         static std::atomic<std::uint32_t> s_lastFallback{0xFFFFFFFFU};
         const std::uint32_t observed = (layout.tag << 1) | (amended ? 1U : 0U);
@@ -679,8 +686,32 @@ RosterOutcome build_roster_snapshot(Session& session,
         }
     }
     if (inputs.regionIndex < 0
-        || !fill_roster(layout, scratch, snapshot.roster, inputs.regionIndex)) {
+        || (!eaterPrepared && !fill_roster(layout, scratch, snapshot.roster, inputs.regionIndex))) {
         return RosterOutcome::noGroups;
+    }
+    if(eaterPrepared) {
+        if(!eater_of_worlds_roster::admit(layout,scratch,snapshot.roster)) {
+            core::log::write(core::log::Channel::server,core::log::Level::error,
+                "ev=eater_of_worlds stage=roster result=failed");
+            return RosterOutcome::noGroups;
+        }
+        // Native lifetime apply resolves authority+C as (ordinal & 63) << 3. Publishing the
+        // generic zero here looks up region 0 instead of the loaded entrance region 16, then
+        // dereferences a null runtime handle. The current region is transition-qualified and must replace the
+        // original arrival as the raid moves through reactor and Argos bubbles.
+        const auto lifetimeScenario=eater_of_worlds_roster::lifetime_scenario(inputs.regionIndex);
+        if(!lifetimeScenario) { return RosterOutcome::noGroups; }
+        snapshot.eaterOfWorldsLifetime=true;
+        snapshot.lifetimeScenarioOrdinal=lifetimeScenario;
+        snapshot.eater_of_worlds=state::activity::eater_of_worlds::snapshot(
+            state::activity::mission_run_generation(),GetTickCount64(),
+            state::activity::mission_seed_armed(),
+            inputs.sourceMembership.currentRegion.index>=0
+                ?inputs.sourceMembership.currentRegion.index:inputs.regionIndex);
+        if(snapshot.eater_of_worlds.enabled) {
+            snapshot.missionCompletion=snapshot.eater_of_worlds.completion;
+            snapshot.gameplayClockTicks=snapshot.eater_of_worlds.gameplayClockTicks;
+        }
     }
     if (name == "mission_scot") {
         const auto admission = omega_lair::admit(layout, scratch, snapshot.roster,
@@ -1157,6 +1188,12 @@ RosterOutcome build_roster_snapshot(Session& session,
         && snapshot.strike_pact.checkpointSpawnSet != message::kAbsentSpawnSetHash) {
         snapshot.spawnSliceSet = snapshot.strike_pact.checkpointSliceSet;
         snapshot.spawnSetHash = snapshot.strike_pact.checkpointSpawnSet;
+        snapshot.hasSpawnOverride = true;
+    }
+    if (snapshot.eater_of_worlds.enabled && snapshot.eater_of_worlds.checkpointSpawnSet != 0
+        && snapshot.eater_of_worlds.checkpointSliceSet >= 0) {
+        snapshot.spawnSliceSet = snapshot.eater_of_worlds.checkpointSliceSet;
+        snapshot.spawnSetHash = snapshot.eater_of_worlds.checkpointSpawnSet;
         snapshot.hasSpawnOverride = true;
     }
     // The archived opening packages need one registration-only packet on the primary/private

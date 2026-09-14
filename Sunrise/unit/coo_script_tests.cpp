@@ -3,6 +3,7 @@
 #include "state/activity/coo/omega_forest.h"
 #include "state/activity/coo/omega_definition.h"
 #include "state/activity/coo/omega_ending_controller.h"
+#include "state/activity/eater_of_worlds/profile.h"
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -68,6 +69,12 @@ int main(int argc,char** argv) {
     }
     std::ifstream file("Sunrise/scripts/omega.lua",std::ios::binary);CHECK(file.good());
     std::string text((std::istreambuf_iterator<char>(file)),{});text.erase(std::remove(text.begin(),text.end(),'\r'),text.end());std::string error;
+    auto eater=sc::MissionDocument::read("Sunrise/scripts/eater_of_worlds.lua",
+        sunrise::state::activity::eater_of_worlds::kProfile,error);
+    if(!eater) { std::fprintf(stderr,"eater_of_worlds: %s\n",error.c_str()); }
+    CHECK(eater);CHECK(eater->views().valid);
+    CHECK(eater->views().missionId=="eater_of_worlds");
+    CHECK(eater->views().profileId==sunrise::state::activity::eater_of_worlds::kProfile.id);
     auto document=sc::Document::parse_lua(text,error);CHECK(document);CHECK(error.empty());
     const auto& views=document->views();CHECK(views.valid);CHECK(views.graphs.size()==14);CHECK(sc::current()==nullptr);
     for(const auto& graph:views.graphs) {

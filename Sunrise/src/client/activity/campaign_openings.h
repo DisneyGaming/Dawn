@@ -33,7 +33,7 @@ inline constexpr auto kOmegaOpening = [] {
     return value;
 }();
 
-inline constexpr std::array<Mission, 11> kMissions{{
+inline constexpr std::array<Mission, 12> kMissions{{
     {"Homecoming", "THE LAST CITY", "Return to the Tower as the Red Legion attacks the Last City.", 0, 266, 0x62D85FB3U, forced::profiles::kTowerfallOpening},
     {"Gateway", "MERCURY", "Follow Ikora to Mercury and begin the search for Osiris.", 1, 292, 0x5A2E3FF4U, forced::profiles::kGatewayOpening},
     {"A Deadly Trial", "EUROPEAN DEAD ZONE", "Track a lead through the EDZ in search of a way into the Infinite Forest.", 1, 293, 0x87D9CA16U, forced::profiles::kDeadlyTrialOpening},
@@ -45,6 +45,7 @@ inline constexpr std::array<Mission, 11> kMissions{{
     {"Omega", "MERCURY", "Return to the Infinite Forest and confront Panoptes with Osiris.", 1, 299, 0x87AC2003U, kOmegaOpening},
     {"Tree of Probabilities", "MERCURY", "Pursue Valus Thuun through the Infinite Forest.", 2, 230, 0x9FFC7326U, forced::profiles::kStrikePactOpening},
     {"A Garden World", "MERCURY", "Climb the spire and defeat Dendron, Root Mind.", 2, 229, 0x99BDAB3DU, forced::profiles::kStrikeBondOpening},
+    {"Eater of Worlds \xE2\x80\x94 Solo", "LEVIATHAN", "Venture deep into the Leviathan and confront Argos, Planetary Core.", 4, forced::profiles::kEaterOfWorldsActivity, 0xB8218A8CU, forced::profiles::kEaterOfWorldsOpening},
 }};
 
 struct Route {

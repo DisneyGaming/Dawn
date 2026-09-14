@@ -5,6 +5,7 @@
 #include "../../../../../middleware/datagen/definitions.h"
 #include "../../../../../middleware/secure_channel/runtime.h"
 #include "../../../../../state/runtime/runtime.h"
+#include "../../../../../state/activity/nightfall/native_power.h"
 #include "../../queuez/queuez_state_validation.h"
 #include "../snapshot/snapshot.h"
 #include "queuez_push_reporting.h"
@@ -143,6 +144,7 @@ void append_queuez_notification(Scratch& scratch,
                                 queuez::SessionState& after,
                                 bool& armsRepush,
                                 bool& armsBannerRepush) noexcept {
+    const state::activity::nightfall::PowerPublication powerPublication;
     after = before;
     armsRepush = false;
     armsBannerRepush = false;

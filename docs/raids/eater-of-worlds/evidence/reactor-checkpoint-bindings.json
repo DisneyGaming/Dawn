@@ -1,0 +1,77 @@
+{
+  "method": "Exact native inventory identities joined to package-recovered goal volumes and spawn points. Runtime validation is stated separately from offline geometry.",
+  "sourceEvidence": [
+    {
+      "path": "reactor-geometry-20260913.json",
+      "sha256": "9fc557d635a8fdfdcb95d6938a81d117293a7da84ba95340420dbcc8124c1c05"
+    },
+    {
+      "path": "runtime-bindings.json",
+      "sha256": "8ef954ab9a9704212f58684ee488a4e8db7fb815fffc6272ba162e560f22ec03"
+    }
+  ],
+  "region": {
+    "bubble": 7,
+    "sliceSet": 56,
+    "registry": "0x686321C8"
+  },
+  "approach": {
+    "spawnSet": "0xAD98065D",
+    "successfulLiveArrivalObserved": true,
+    "insideEncounterStart": false
+  },
+  "paths": [
+    {
+      "path": 1,
+      "monitor": {"source": "0x8155C468", "type": 30, "slot": 107},
+      "goalVolume": {"source": "0x8155C3FC", "type": 60, "slot": 235, "name": "tv_first_path_goal"},
+      "spawnSet": "0x1E8DBF89",
+      "spawnPointCount": 6,
+      "allSpawnPointsInsideGoal": true,
+      "successfulLiveArrivalObserved": true
+    },
+    {
+      "path": 2,
+      "monitor": {"source": "0x8155C46B", "type": 30, "slot": 108},
+      "goalVolume": {"source": "0x8155C3FC", "type": 60, "slot": 236, "name": "tv_second_path_goal"},
+      "spawnSet": "0xC4FDE8CD",
+      "spawnPointCount": 6,
+      "allSpawnPointsInsideGoal": true,
+      "successfulLiveArrivalObserved": false
+    },
+    {
+      "path": 3,
+      "monitor": {"source": "0x8155C46E", "type": 30, "slot": 109},
+      "goalVolume": {"source": "0x8155C3FC", "type": 60, "slot": 237, "name": "tv_third_path_goal"},
+      "spawnSet": "0xFD39D01C",
+      "spawnPointCount": 6,
+      "allSpawnPointsInsideGoal": true,
+      "successfulLiveArrivalObserved": false
+    },
+    {
+      "path": 4,
+      "monitor": {"source": "0x8155C471", "type": 30, "slot": 110},
+      "goalVolume": {"source": "0x8155C3FC", "type": 60, "slot": 238, "name": "tv_fourth_path_goal"},
+      "spawnSet": "0x10BB2205",
+      "spawnPointCount": 6,
+      "allSpawnPointsInsideGoal": true,
+      "successfulLiveArrivalObserved": false
+    }
+  ],
+  "lights": [
+    {"name": "d_klaxon_light_trigger", "source": "0x80C43F70", "type": 23, "slot": 100},
+    {"name": "d_checkpoint_light_trigger_1", "source": "0x80C43F73", "type": 23, "slot": 101},
+    {"name": "d_checkpoint_light_trigger_2", "source": "0x80C43F76", "type": 23, "slot": 102},
+    {"name": "d_checkpoint_light_trigger_3", "source": "0x80C43F79", "type": 23, "slot": 103}
+  ],
+  "policyInference": {
+    "mapping": "Klaxon at encounter start; numbered checkpoint light N after path N for paths 1 through 3; path 4 has no separately named checkpoint-light device.",
+    "basis": "Authored names and contiguous native slot order only.",
+    "packageEventEdgeProved": false
+  },
+  "limits": [
+    "Only the approach and path-one spawn sets have successful live arrival evidence.",
+    "Offline package geometry proves that every path-two through path-four spawn point is inside its matching goal volume, but does not prove that a live respawn accepts those hashes.",
+    "The light identities are exact; their solo presentation timing is policy rather than a recovered original-host event edge."
+  ]
+}

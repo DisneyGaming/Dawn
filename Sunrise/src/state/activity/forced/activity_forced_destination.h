@@ -15,6 +15,8 @@ namespace sunrise::state::activity::forced {
 [[nodiscard]] bool publish(const ForcedDestination& value) noexcept;
 /** Apply opening coordinates only to this activity's own native selection; preserve its descriptor. */
 [[nodiscard]] bool publish_direct(const ForcedDestination& value, std::int16_t activity) noexcept;
+/** Atomically copies the direct destination and returns its exact native activity. */
+[[nodiscard]] std::int16_t direct_snapshot(ForcedDestination& value) noexcept;
 
 /**
  * Copies the effective operator configuration. It is empty while the completed

@@ -6,6 +6,8 @@
 #include "../../../../state/equipment/light/definition.h"
 #include "../loadout/definition.h"
 
+namespace sunrise::state::activity::nightfall { struct NativePowerProjection; }
+
 namespace sunrise::middleware::datagen::family4::character {
 
 /**
@@ -20,5 +22,11 @@ namespace sunrise::middleware::datagen::family4::character {
                           const loadout::ResolvedLoadout& resolvedLoadout,
                           const state::equipment::light::Evaluation& lightEvaluation,
                           std::span<std::byte> output) noexcept;
+/** Full snapshots share one captured power projection with all equipped item instances. */
+[[nodiscard]] bool encode(const state::CharacterState& state,
+                          const loadout::ResolvedLoadout& resolvedLoadout,
+                          const state::equipment::light::Evaluation& lightEvaluation,
+                          std::span<std::byte> output,
+                          const state::activity::nightfall::NativePowerProjection& power) noexcept;
 
 } // namespace sunrise::middleware::datagen::family4::character

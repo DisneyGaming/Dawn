@@ -252,6 +252,44 @@ int main(int argc, char** argv) {
     check(launch::snapshot().status == launch::Status::arrived, "Gateway replay commits a fresh opening");
     orbit();
     // A Director launch has no Dawn request but must still publish presence.
+    namespace contest = sunrise::state::activity::eater_of_worlds::contest;
+    check(!launch::request_raid(1, contest::Mode::contest), "Contest cannot target a campaign mission");
+    check(!launch::request_raid(999, contest::Mode::contest), "Contest rejects missing mission");
+    check(launch::request_raid(11, contest::Mode::contest), "Contest Eater queues");
+    check(!contest::enabled(), "GUI selection alone does not enable Contest");
+    check(!launch::request_raid(11, contest::Mode::standard), "queued Contest mode cannot be replaced");
+    launch::poll();
+    check(contest::enabled() && launch::snapshot().index == 536, "validated launch arms Contest on Eater identity");
+    g_actual = descriptor(536, "raid_envy_v310"); g_step = 38;
+    launch::poll(); // Same pre-launch session must not consume the pending Contest lease.
+    check(contest::enabled() && launch::snapshot().status == launch::Status::queued,
+        "stale pre-launch Eater session does not bind the Contest lease");
+    arrive();
+    check(contest::enabled(), "confirmed Eater arrival retains Contest power");
+    check(!launch::request_raid(11, contest::Mode::standard), "in-mission mode immutable");
+    orbit();
+    check(!contest::enabled(), "orbit clears Contest");
+    check(launch::request_raid(11, contest::Mode::standard), "Standard Eater queues after Contest");
+    launch::poll(); arrive();
+    check(!contest::enabled(), "Standard Eater retains original power");
+    orbit();
+    g_descriptorValid = false;
+    check(launch::request_raid(11, contest::Mode::contest), "invalid Contest descriptor queues for validation");
+    launch::poll();
+    check(!contest::enabled() && launch::snapshot().status == launch::Status::descriptorRejected,
+        "rejected native descriptor never applies Contest");
+    g_descriptorValid = true;
+    check(launch::request_raid(11, contest::Mode::contest), "Contest timeout test queues");
+    launch::poll(); g_now += 120001; launch::poll();
+    check(!contest::enabled() && launch::snapshot().status == launch::Status::timedOut,
+        "missing arrival cancels Contest power lease");
+    orbit();
+    g_wrongDestination = true;
+    check(launch::request_raid(11, contest::Mode::contest), "Contest wrong-world test queues");
+    launch::poll(); arrive();
+    check(!contest::enabled() && launch::snapshot().status == launch::Status::unexpectedDestination,
+        "wrong destination clears Contest immediately");
+    orbit(); g_wrongDestination = false;
     g_actual = descriptor(292, "mission_abs"); ++g_session; g_step = 38; launch::poll();
     check(launch::snapshot().inMission && launch::snapshot().current_name() == "mission_abs"
         && !launch::snapshot().busy, "Director launch tracks current mission");

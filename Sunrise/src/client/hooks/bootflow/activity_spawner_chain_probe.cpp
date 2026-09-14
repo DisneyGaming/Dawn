@@ -14,7 +14,9 @@
 #include <span>
 #include <string_view>
 
+#include "../../content/handles/handle_resolver.h"
 #include "../../../core/logging/log.h"
+#include "../../../state/activity/eater_of_worlds/runtime.h"
 #include "../../../state/activity/forced/activity_forced_destination.h"
 #include "../../hooking/detour.h"
 #include "internal.h"
@@ -1388,6 +1390,13 @@ template <typename Value>
     } __except (EXCEPTION_EXECUTE_HANDLER) {
         return false;
     }
+}
+
+[[nodiscard]] bool process_memory_read(void*,
+                                       std::uintptr_t address,
+                                       std::span<std::byte> output) noexcept {
+    return address >= 0x10000U && !output.empty()
+           && safe_copy(output.data(), reinterpret_cast<const void*>(address), output.size());
 }
 
 /**

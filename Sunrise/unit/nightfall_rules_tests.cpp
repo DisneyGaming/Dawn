@@ -2,16 +2,79 @@
 #include "state/runtime/runtime.h"
 #include "client/activity/nightfall_player.h"
 #include <chrono>
+#include <array>
+#include <cstring>
 #include <cstdlib>
 #include <future>
 #include <iostream>
+#include <unordered_map>
 namespace nf = sunrise::state::activity::nightfall;
 namespace strikes = sunrise::state::activity::strikes;
 unsigned checks{};
 void check(bool value, const char* label) {
     ++checks; if (!value) { std::cerr << "FAIL: " << label << '\n'; std::exit(1); }
 }
+struct HealthMemory {
+    static constexpr std::uintptr_t base=0x100000;
+    std::array<std::byte,0x3000> bytes{};
+    std::unordered_map<std::uint32_t,std::uintptr_t> handles{};
+    std::uint32_t changingHandle{UINT32_MAX};unsigned changingReads{};
+    template<class T> void put(std::uintptr_t address,const T& value) noexcept {
+        std::memcpy(bytes.data()+(address-base),&value,sizeof value);
+    }
+    template<class T> bool value(std::uintptr_t address,T& value) noexcept {
+        if(address<base || address-base>bytes.size() || sizeof value>bytes.size()-(address-base)) return false;
+        std::memcpy(&value,bytes.data()+(address-base),sizeof value);return true;
+    }
+    bool resolve(std::uint32_t handle,std::uintptr_t& address) noexcept {
+        const auto found=handles.find(handle);if(found==handles.end()) return false;
+        address=found->second;
+        if(handle==changingHandle && ++changingReads>1) address+=0x100;
+        return true;
+    }
+};
+void health_reference_tests() {
+    namespace player=sunrise::client::activity::nightfall_player;
+    namespace native=sunrise::client::hooks::bootflow::gateway_native;
+    constexpr std::uint32_t groupHandle=0x73F9E104U,selfHandle=0x4DF9E0AAU,owner=0x5DFAA015U;
+    constexpr std::uintptr_t group=HealthMemory::base,health=group+0xE00;
+    const auto populate=[&](HealthMemory& memory) {
+        memory.handles[groupHandle]=group;memory.handles[selfHandle]=health;
+        memory.put(health,native::Ref{0x8161D5EEU,0x80804B8AU,0xD50});
+        memory.put(health+0x24,selfHandle);memory.put(health+0x2C,owner);
+        memory.put<std::uint8_t>(health+0x338,0);
+    };
+    HealthMemory memory{};populate(memory);player::HealthView view{};
+    check(player::health_from_reference(memory,{groupHandle,0x80804BEEU,0xE00},owner,view)
+        && view.address==health && view.self==selfHandle && !view.dead,
+        "captured player health resolves group plus E00 and retains component self");
+    HealthMemory direct{};populate(direct);direct.handles[selfHandle]=health;
+    check(player::health_from_reference(direct,{selfHandle,0x80804BEEU,0},owner,view)
+        && view.address==health,"zero-offset self-handle health remains supported");
+    HealthMemory negative{};populate(negative);negative.handles[groupHandle]=health+0x100;
+    check(player::health_from_reference(negative,{groupHandle,0x80804BEEU,-0x100},owner,view)
+        && view.address==health,"bounded negative group-relative health offset supported");
+    check(!player::health_from_reference(memory,{groupHandle,0x80804BEEU,0x400001},owner,view)
+        && !player::health_from_reference(memory,{groupHandle,0x80804BEEU,-0x400001},owner,view),
+        "oversize signed component offsets rejected");
+    std::uintptr_t address{};
+    check(!player::component_address(UINTPTR_MAX-0x20,0x40,address)
+        && !player::component_address(0x10000,-1,address),
+        "group-relative component arithmetic cannot wrap or cross the readable floor");
+    auto recycled=memory;recycled.put(health+0x2C,owner+0x2000U);
+    check(!player::health_from_reference(recycled,{groupHandle,0x80804BEEU,0xE00},owner,view),
+        "recycled salted player owner rejected");
+    auto wrongSelf=memory;wrongSelf.handles[selfHandle]=health+0x100;
+    check(!player::health_from_reference(wrongSelf,{groupHandle,0x80804BEEU,0xE00},owner,view),
+        "health self handle must resolve back to component");
+    auto moved=memory;moved.changingHandle=groupHandle;
+    check(!player::health_from_reference(moved,{groupHandle,0x80804BEEU,0xE00},owner,view),
+        "group relocation during observation rejected");
+    check(!player::health_from_reference(memory,{groupHandle,0x80804BEDU,0xE00},owner,view),
+        "wrong health interface rejected");
+}
 int main() {
+    health_reference_tests();
     check(nf::rewards::amount(strikes::Difficulty::standard)==0
         && nf::rewards::amount(strikes::Difficulty::adept)==1000
         && nf::rewards::amount(strikes::Difficulty::master)==2500
