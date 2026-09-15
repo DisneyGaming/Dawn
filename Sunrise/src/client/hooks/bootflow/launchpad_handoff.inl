@@ -66,8 +66,8 @@ inline void poll() noexcept {
     if(state.phase==tower::Phase::failed || state.phase==tower::Phase::idle) {exit={};return;}
     const auto base=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
     if(exit.pending) {
-        const auto target=state.phase==tower::Phase::approachLoading?2:
-            state.phase==tower::Phase::towerLoading?84:-1;
+        const auto target=state.phase==tower::Phase::approachLoading?tower::kApproachActivity:
+            state.phase==tower::Phase::towerLoading?tower::kTowerActivity:-1;
         if(target<0 || exit.index!=target || exit.run!=state.run
             || exit.run!=state::activity::mission_run_generation()) {exit={};return;}
         std::uintptr_t session{};std::uint8_t flags{};std::uint16_t index{};std::uint64_t nonce{};native::Effective effective{};
@@ -90,8 +90,8 @@ inline void poll() noexcept {
         core::log::write(core::log::Channel::client,core::log::Level::info,line.data());
         leave(native::kCleanupStep,native::kBenignExitReason);return;
     }
-    const std::int16_t target=state.phase==tower::Phase::approachRequested?2:
-        state.phase==tower::Phase::towerRequested && state.host.state==0?84:-1;
+    const std::int16_t target=state.phase==tower::Phase::approachRequested?tower::kApproachActivity:
+        state.phase==tower::Phase::towerRequested && state.host.state==0?tower::kTowerActivity:-1;
     if(target<0 || state.run!=state::activity::mission_run_generation()) {return;}
     static std::uint64_t next{};if(now<next) {return;}next=now+250;
     const auto sessionReady=native::resolve<native::Ready>(base,0x1788810,{0x83,0xB9,0x6C,0x08,0x00,0x00,0x00,0x0F});
@@ -107,7 +107,7 @@ inline void poll() noexcept {
     std::uintptr_t session{};std::int32_t member{};
     if(!native::fireteam_session(base,session) || !sessionReady(session) || !memberReady(session)
         || !native::read(session+0xE93C,member) || member<0 || member>=12
-        || !named(name,target,target==2?"cine_110_twr":"city_tower_social_d2")) {return;}
+        || !named(name,target,target==tower::kApproachActivity?"cine_110_twr":"city_tower_social_d2")) {return;}
     const auto current=record(static_cast<std::uint32_t>(member));std::uint8_t launch{};
     if(!current || !native::read(current+0xA33,launch) || launch>=3) {return;}
     alignas(16) std::array<std::byte,0x120> selection{};
@@ -117,7 +117,7 @@ inline void poll() noexcept {
     if(from!=target || to!=target || selection[0]!=std::byte{} || !valid(selection.data())
         || !native::fireteam_transition_nonce(session,nonce)) {return;}
     std::memcpy(selection.data()+0x10,&nonce,sizeof nonce);
-    if(!valid(selection.data()) || (target==2 && !state::activity::forced::suspend_launchpad_for_completed_run(state.run))
+    if(!valid(selection.data()) || (target==tower::kApproachActivity && !state::activity::forced::suspend_launchpad_for_completed_run(state.run))
         || !tower::queued(state.run,target,now)) {return;}
     clear();select(0,selection.data());commit(1);exit={state.run,nonce,session,target,true};
     std::array<char,144> line{};std::snprintf(line.data(),line.size(),"ev=launchpad stage=handoff result=queued run=%llu activity=%d",static_cast<unsigned long long>(state.run),target);
