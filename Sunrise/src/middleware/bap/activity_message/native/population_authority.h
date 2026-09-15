@@ -5,7 +5,10 @@
 #include <span>
 
 namespace sunrise::middleware::bap::activity_message::native::population {
-inline constexpr std::size_t kSourceCapacity = 256;
+// The largest package-pinned open-world definition is Nessus: 234 ordinary
+// sources plus 131 Lost Sector sources. The 9-bit wire count permits up to 511;
+// 384 keeps bounded headroom while matching server, binding and client storage.
+inline constexpr std::size_t kSourceCapacity = 384;
 // Server-owned values only. No destination names, file IO, actor pointers or
 // policy selection in this envelope. The descriptor admission layer verifies
 // schema provenance before a service can construct these requests.

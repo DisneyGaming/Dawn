@@ -239,11 +239,11 @@ class InstalledBindingChecks(unittest.TestCase):
         for name, contents in scripts.items():
             self.assertEqual(contents, (ROOT / "Sunrise/scripts" / name).read_text())
         # Counts follow the user policy; native selection and width stay pinned.
-        self.assertEqual(len(re.findall(r"PopulationKind::patrol,true,", header)), 719)
+        self.assertEqual(len(re.findall(r"PopulationKind::patrol,true,", header)), 722)
         reviewed = [identity for target in gen.TARGETS for identity in target.two_category_sources]
-        self.assertEqual(len(reviewed), 72)
-        self.assertEqual(len(set(reviewed)), 72)
-        self.assertEqual(len(re.findall(r"PopulationKind::patrol,true,\d+,[1-9]\d*,\d+,[12]\}", header)), 701)
+        self.assertEqual(len(reviewed), 73)
+        self.assertEqual(len(set(reviewed)), 73)
+        self.assertEqual(len(re.findall(r"PopulationKind::patrol,true,\d+,[1-9]\d*,\d+,[12]\}", header)), 704)
         self.assertEqual(len(re.findall(r"PopulationKind::patrol,true,8,1,0,2\}", header)), 4)
         dreaming_city = header.split("namespace dreaming_city {", 1)[1].split("} // namespace dreaming_city", 1)[0]
         self.assertNotRegex(dreaming_city, r"PopulationKind::(?:patrol|npc),(?:true|false),\d+,0,0,2\}")

@@ -131,7 +131,7 @@ void busy_retry_join() {
     CHECK(output.member == value.member && diagnostic.size() == 0);
 }
 void exact_catalog() {
-    CHECK(members::kSources.size() == 746);
+    CHECK(members::kSources.size() == 749);
     std::size_t choices{};
     for (const auto& source : members::kSources) {
         CHECK(source.first == choices && source.count > 0 && source.count <= 192);
@@ -146,7 +146,7 @@ void exact_catalog() {
         }
         choices += source.count;
     }
-    CHECK(choices == members::kChoices.size() && choices == 6102);
+    CHECK(choices == members::kChoices.size() && choices == 6126);
 }
 void terminal_and_superseded() {
     auto authorityStorage = std::make_unique<events::Mailbox>();

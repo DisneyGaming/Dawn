@@ -16,9 +16,10 @@ inline void open_world_cases() {
         "Sunrise/scripts/polaris_freeroam.json","Sunrise/scripts/planet_x_freeroam.json",
         "Sunrise/scripts/tangled_shore_freeroam.json","Sunrise/scripts/dreaming_city_freeroam.json",
     }};
-    constexpr std::array<std::size_t,6> populations{{137,90,105,234,140,21}};
+    constexpr std::array<std::size_t,6> populations{{137,93,105,234,140,21}};
+    constexpr std::array<std::size_t,6> lostSectorPopulations{{68,81,52,126,106,0}};
     constexpr std::array<std::size_t,6> npcs{{1,1,1,1,1,3}};
-    constexpr std::array<std::size_t,6> twoCategorySources{{16,16,6,30,4,0}};
+    constexpr std::array<std::size_t,6> twoCategorySources{{16,17,6,30,4,0}};
     constexpr std::array<std::size_t,6> placements{{3,3,2,2,1,3}};
     constexpr std::array<std::size_t,6> adventures{{3,3,2,2,6,3}};
     CHECK(profiles::kActivities.size()==scripts.size());
@@ -28,26 +29,36 @@ inline void open_world_cases() {
         const auto& destination=*definition.openWorld->authored;
         CHECK(definition.activity==destination.activity);CHECK(definition.bubble==destination.primaryBubble);
         CHECK(definition.registries.data()==destination.registries.data());
-        CHECK(definition.registries.size()+5<=sunrise::middleware::bap::activity_message::sensor_auth_update::kGroupCapacity);
-        CHECK(definition.populations.size()==populations[world]);
+        CHECK(definition.registries.size()+definition.lostSectorRegistries.size()+5
+            <=sunrise::middleware::bap::activity_message::sensor_auth_update::kGroupCapacity);
+        CHECK(definition.populations.size()<=activity::population::kSourceCapacity);
+        CHECK(definition.populations.size()==populations[world]+lostSectorPopulations[world]);
         CHECK(destination.populations.size()==populations[world]);
+        const auto ordinary=definition.populations.first(destination.populations.size());
+        CHECK(definition.lostSectorRegistries.empty()==(world==5));
+        CHECK((definition.lostSectors!=nullptr)==(world!=5));
+        if(definition.lostSectors) {
+            const auto base=definition.lostSectors->capabilityBase;
+            CHECK(base==ordinary.size());
+            CHECK(activity::lost_sector::valid(*definition.lostSectors,definition.populations.subspan(base)));
+        }
         CHECK(definition.placements.size()==placements[world]);
         CHECK(definition.startRoutes.size()==adventures[world]);
         CHECK(destination.adventures.size()==adventures[world]);
         CHECK(definition.publicEventRallies.empty());CHECK(definition.publicEventInitials.empty());
         CHECK(definition.adventureOpenings.empty());
         std::size_t npcCount{},twoCategoryCount{};
-        for(std::size_t i=0;i<definition.populations.size();++i) {
-            CHECK(activity::population::valid(definition.populations[i]));
+        for(std::size_t i=0;i<ordinary.size();++i) {
+            CHECK(activity::population::valid(ordinary[i]));
             const auto& binding=destination.populations[i];
             CHECK(binding.tacticalRows<=24);
             const bool solariumLeader=definition.activity=="fleet_freeroam"
-                && definition.populations[i].registry->key==0x1EE02F73U;
+                && ordinary[i].registry->key==0x1EE02F73U;
             const bool countedPatrol=world!=5 && binding.kind==authored::PopulationKind::patrol;
             CHECK(countedPatrol?(binding.requestOverride>=1 && binding.requestOverride<=9):binding.requestOverride==0);
             if(solariumLeader) {
                 CHECK(binding.tactical==3 && binding.tacticalRows==8);
-                CHECK(definition.populations[i].registry->bubble==11);
+                CHECK(ordinary[i].registry->bubble==11);
                 if(binding.source==0) {
                     CHECK(binding.rule==25 && binding.categories==2);
                     CHECK(binding.requestOverride==1 && binding.secondRequestOverride==0);
@@ -62,7 +73,7 @@ inline void open_world_cases() {
             CHECK(binding.categories==2?binding.secondRequestOverride<=9:binding.secondRequestOverride==0);
             CHECK(binding.categories==1 || binding.categories==2);
             if(binding.categories==2)++twoCategoryCount;
-            CHECK(definition.populations[i].taskMask==(binding.tacticalRows?(1U<<binding.tacticalRows)-1U:0U));
+            CHECK(ordinary[i].taskMask==(binding.tacticalRows?(1U<<binding.tacticalRows)-1U:0U));
             if(destination.populations[i].kind==authored::PopulationKind::npc)++npcCount;
         }
         CHECK(npcCount==npcs[world]);
@@ -97,10 +108,10 @@ inline void open_world_cases() {
         CHECK(activity::open_world::configure(*document,configuration));
         CHECK(configuration.patrolRequests==1 && configuration.npcRequests==1);
         activity::open_world::Director director;
-        CHECK(director.begin(owner,boot,*definition.openWorld,definition.populations,configuration));
+        CHECK(director.begin(owner,boot,*definition.openWorld,ordinary,configuration));
         std::array<sunrise::state::activity::coo::NativePopulationLedger<64>,activity::population::kSourceCapacity> ledgers{};
         std::array<std::uint8_t,activity::population::kSourceCapacity> pending{};std::array<bool,64> bubbles{};
-        for(const auto& capability:definition.populations)bubbles[capability.registry->bubble]=true;
+        for(const auto& capability:ordinary)bubbles[capability.registry->bubble]=true;
         std::uint64_t now=1000;std::size_t started{};
         for(std::size_t bubble=0;bubble<bubbles.size();++bubble)if(bubbles[bubble]) {
             CHECK(director.update(now++,static_cast<std::uint32_t>(bubble),true,service,
@@ -108,7 +119,7 @@ inline void open_world_cases() {
                 std::span<const std::uint8_t>(pending)));
             const auto projected=service.project(static_cast<std::uint32_t>(bubble));
             std::size_t expected{};
-            for(const auto& capability:definition.populations)
+            for(const auto& capability:ordinary)
                 if(capability.registry->bubble==bubble)++expected;
             CHECK(projected.count==expected);
             started+=expected;
@@ -134,11 +145,12 @@ inline void open_world_cases() {
                 CHECK(after.source.tactical.revision==before.source.tactical.revision);
             }
         }
-        for(std::size_t i=0;i<definition.populations.size();++i) {
+        for(std::size_t i=0;i<ordinary.size();++i) {
             CHECK(service.target(i)==(destination.populations[i].requestOverride?destination.populations[i].requestOverride:1U));
             CHECK(service.second_target(i)==destination.populations[i].secondRequestOverride);
         }
-        CHECK(service.project_retained().count==definition.populations.size());
+        for(std::size_t i=ordinary.size();i<definition.populations.size();++i)CHECK(service.target(i)==0);
+        CHECK(service.project_retained().count==ordinary.size());
 
         if(world==1) {
             // Solarium's complete reviewed source set is one alternative
@@ -150,7 +162,7 @@ inline void open_world_cases() {
             };
             activity::population::Service solariumService;CHECK(solariumService.begin(owner,definition.populations,boot));
             activity::open_world::Director solariumDirector;
-            CHECK(solariumDirector.begin(owner,boot,*definition.openWorld,definition.populations,configuration));
+            CHECK(solariumDirector.begin(owner,boot,*definition.openWorld,ordinary,configuration));
             std::array<Ledger,activity::population::kSourceCapacity> solariumLedgers{};
             std::array<std::uint8_t,activity::population::kSourceCapacity> solariumPending{};
             const auto tick=[&](std::uint64_t time,std::uint32_t bubble) {
@@ -160,8 +172,8 @@ inline void open_world_cases() {
             CHECK(tick(100,11));const auto before=solariumService.project_retained();CHECK(before.count==9);
             CHECK(tick(101,63));const auto away=solariumService.project_retained();CHECK(away.count==9);
             std::array<std::size_t,3> members{};std::size_t memberCount{};
-            for(std::size_t i=0;i<definition.populations.size();++i) {
-                const auto& cap=definition.populations[i];
+            for(std::size_t i=0;i<ordinary.size();++i) {
+                const auto& cap=ordinary[i];
                 if(cap.registry->key!=0x1EE02F73U)continue;
                 CHECK(memberCount<members.size());members[memberCount++]=i;
                 sunrise::middleware::bap::activity_message::sense_update::SenseObject consumed{};
@@ -227,8 +239,8 @@ inline void open_world_cases() {
                 && total*9<=activity::open_world::kEventBurstCapacity);
             for(const auto& row:expected) {
                 std::size_t matches{};
-                for(std::size_t i=0;i<definition.populations.size();++i) {
-                    const auto& cap=definition.populations[i];
+                for(std::size_t i=0;i<ordinary.size();++i) {
+                    const auto& cap=ordinary[i];
                     if(cap.registry->key!=row.key || cap.slot!=row.slot)continue;
                     ++matches;CHECK(destination.populations[i].rule==row.rule);
                     CHECK(service.target(i)==row.first && service.second_target(i)==row.second);
@@ -240,9 +252,9 @@ inline void open_world_cases() {
                 sunrise::state::activity::coo::PopulationCounts value{};
                 [[nodiscard]] sunrise::state::activity::coo::PopulationCounts counts() const noexcept {return value;}
             };
-            activity::population::Service cohortService;CHECK(cohortService.begin(owner,definition.populations,boot));
+            activity::population::Service cohortService;CHECK(cohortService.begin(owner,ordinary,boot));
             activity::open_world::Director cohortDirector;
-            CHECK(cohortDirector.begin(owner,boot,*definition.openWorld,definition.populations,configuration));
+            CHECK(cohortDirector.begin(owner,boot,*definition.openWorld,ordinary,configuration));
             std::array<Ledger,activity::population::kSourceCapacity> cohortLedgers{};
             std::array<std::uint8_t,activity::population::kSourceCapacity> cohortPending{};
             const auto tick=[&](std::uint64_t time,std::uint32_t bubble) {
@@ -252,9 +264,9 @@ inline void open_world_cases() {
             constexpr std::array<std::uint32_t,6> marsBubbles{{0,1,5,7,9,10}};
             for(const auto bubble:marsBubbles)CHECK(tick(100+bubble,bubble));
             const auto before=cohortService.project_retained();CHECK(before.count==105);
-            for(std::size_t i=0;i<definition.populations.size();++i) {
+            for(std::size_t i=0;i<ordinary.size();++i) {
                 if(destination.populations[i].kind==authored::PopulationKind::npc)continue;
-                const auto& cap=definition.populations[i];
+                const auto& cap=ordinary[i];
                 sunrise::middleware::bap::activity_message::sense_update::SenseObject consumed{};
                 consumed.registryKey=cap.registry->key;consumed.slotIndex=cap.slot;consumed.slotType=1;
                 consumed.hasNativeSchema=true;consumed.nativeSchema=0x80807ECC;consumed.nativeRevision=1;
@@ -272,7 +284,7 @@ inline void open_world_cases() {
             CHECK(tick(202+configuration.respawnMilliseconds,63));
             // All previously started ordinary Mars patrols mature while away;
             // NPCs remain outside the patrol-renewal lifecycle.
-            for(std::size_t i=0;i<definition.populations.size();++i) {
+            for(std::size_t i=0;i<ordinary.size();++i) {
                 const auto& binding=destination.populations[i];
                 const auto renewal=cohortService.renewal(i);
                 if(binding.kind==authored::PopulationKind::npc)CHECK(!renewal.pending);
@@ -282,7 +294,7 @@ inline void open_world_cases() {
             CHECK(tick(203+configuration.respawnMilliseconds,1));
             CHECK(tick(204+configuration.respawnMilliseconds,5));
             std::size_t renewals{};
-            for(std::size_t i=0;i<definition.populations.size();++i) {
+            for(std::size_t i=0;i<ordinary.size();++i) {
                 const auto& binding=destination.populations[i];
                 if(binding.kind==authored::PopulationKind::npc) {CHECK(!cohortService.renewal(i).pending);continue;}
                 CHECK(cohortService.renewal(i).pending);
@@ -324,7 +336,7 @@ inline void open_world_cases() {
                 if(bindings[i].kind==authored::PopulationKind::npc || bindings[i].categories!=2)continue;
                 for(std::size_t j=i+1;j<destination.populations.size();++j)
                     if(bindings[j].kind==authored::PopulationKind::patrol
-                        && definition.populations[i].registry->bubble==definition.populations[j].registry->bubble) {
+                        && ordinary[i].registry->bubble==ordinary[j].registry->bubble) {
                         first=i;second=j;break;
                     }
                 if(first!=SIZE_MAX)break;
@@ -345,24 +357,24 @@ inline void open_world_cases() {
             // budget while exercising distinct per-source overrides.
             auto overrideConfiguration=configuration;overrideConfiguration.patrolRequests=1;
             activity::population::Service overriddenService;
-            CHECK(overriddenService.begin(overriddenOwner,definition.populations,boot));
+            CHECK(overriddenService.begin(overriddenOwner,ordinary,boot));
             activity::open_world::Director overriddenDirector;
-            CHECK(overriddenDirector.begin(overriddenOwner,boot,overriddenDefinition,definition.populations,overrideConfiguration));
+            CHECK(overriddenDirector.begin(overriddenOwner,boot,overriddenDefinition,ordinary,overrideConfiguration));
             struct Ledger final {
                 sunrise::state::activity::coo::PopulationCounts value{};
                 [[nodiscard]] sunrise::state::activity::coo::PopulationCounts counts() const noexcept {return value;}
             };
             std::array<Ledger,activity::population::kSourceCapacity> overrideLedgers{};
             std::array<std::uint8_t,activity::population::kSourceCapacity> overridePending{};
-            const auto overriddenBubble=definition.populations[first].registry->bubble;
+            const auto overriddenBubble=ordinary[first].registry->bubble;
             CHECK(overriddenDirector.update(100,overriddenBubble,true,overriddenService,
                 std::span<const Ledger>(overrideLedgers),std::span<const std::uint8_t>(overridePending)));
             CHECK(overriddenService.target(first)==2 && overriddenService.second_target(first)==3
                 && overriddenService.target(second)==3 && overriddenService.second_target(second)==0);
-            for(std::size_t i=0;i<definition.populations.size();++i)
-                if(definition.populations[i].registry->bubble==overriddenBubble && i!=first && i!=second)
+            for(std::size_t i=0;i<ordinary.size();++i)
+                if(ordinary[i].registry->bubble==overriddenBubble && i!=first && i!=second)
                     CHECK(overriddenService.target(i)==1U);
-            CHECK(overriddenDirector.update(101,definition.populations[unchanged].registry->bubble,true,overriddenService,
+            CHECK(overriddenDirector.update(101,ordinary[unchanged].registry->bubble,true,overriddenService,
                 std::span<const Ledger>(overrideLedgers),std::span<const std::uint8_t>(overridePending)));
             CHECK(overriddenService.target(unchanged)==1);
             const auto beforeCrossing=overriddenService.project_retained();
@@ -377,8 +389,8 @@ inline void open_world_cases() {
             }
 
             sunrise::middleware::bap::activity_message::sense_update::SenseObject consumed{};
-            consumed.registryKey=definition.populations[first].registry->key;
-            consumed.slotIndex=definition.populations[first].slot;consumed.slotType=1;
+            consumed.registryKey=ordinary[first].registry->key;
+            consumed.slotIndex=ordinary[first].slot;consumed.slotType=1;
             consumed.hasNativeSchema=true;consumed.nativeSchema=0x80807ECC;consumed.nativeRevision=1;
             consumed.hasRootDelta=true;consumed.sourceDelta.present=1;
             std::uint32_t firstGeneration{};
@@ -389,7 +401,7 @@ inline void open_world_cases() {
                     firstGeneration=retainedSources.entries[i].source.generation;
             CHECK(firstGeneration);consumed.sourceDelta.scalar[0]=firstGeneration;
             consumed.sourceDelta.consumedPresent=true;
-            consumed.sourceDelta.consumedCount=definition.populations[first].categories;
+            consumed.sourceDelta.consumedCount=ordinary[first].categories;
             consumed.sourceDelta.consumed[0]=2;consumed.sourceDelta.consumed[1]=3;
             CHECK(overriddenService.observe(overriddenBubble,consumed));
             overrideLedgers[first].value={1,0,1,0,false,false};
@@ -404,13 +416,13 @@ inline void open_world_cases() {
             bool foundRenewed{},foundSecond{};
             for(std::size_t i=0;i<renewedSources.count;++i) {
                 const auto& row=renewedSources.entries[i];
-                if(row.source.registry==definition.populations[first].registry->key
-                    && row.slot==definition.populations[first].slot) {
+                if(row.source.registry==ordinary[first].registry->key
+                    && row.slot==ordinary[first].slot) {
                     CHECK(row.source.looseRequested==2 && row.source.secondRequested==3
                         && row.source.hasSecondCategory && row.source.generation==firstGeneration+1);foundRenewed=true;
                 }
-                if(row.source.registry==definition.populations[second].registry->key
-                    && row.slot==definition.populations[second].slot) {
+                if(row.source.registry==ordinary[second].registry->key
+                    && row.slot==ordinary[second].slot) {
                     CHECK(row.source.looseRequested==3);foundSecond=true;
                 }
             }
@@ -420,27 +432,27 @@ inline void open_world_cases() {
             invalidBindings[first].requestOverride=22;
             overriddenDestination.populations=std::span<const authored::PopulationBinding>(invalidBindings.data(),destination.populations.size());
             activity::open_world::Director invalidOverride;
-            CHECK(!invalidOverride.begin(overriddenOwner,boot,overriddenDefinition,definition.populations,overrideConfiguration));
+            CHECK(!invalidOverride.begin(overriddenOwner,boot,overriddenDefinition,ordinary,overrideConfiguration));
             invalidBindings=bindings;invalidBindings[npc].requestOverride=2;
             overriddenDestination.populations=std::span<const authored::PopulationBinding>(invalidBindings.data(),destination.populations.size());
             activity::open_world::Director invalidNpc;
-            CHECK(!invalidNpc.begin(overriddenOwner,boot,overriddenDefinition,definition.populations,overrideConfiguration));
+            CHECK(!invalidNpc.begin(overriddenOwner,boot,overriddenDefinition,ordinary,overrideConfiguration));
             invalidBindings=bindings;invalidBindings[unchanged].secondRequestOverride=1;
             overriddenDestination.populations=std::span<const authored::PopulationBinding>(invalidBindings.data(),destination.populations.size());
             activity::open_world::Director invalidSecondCategory;
-            CHECK(!invalidSecondCategory.begin(overriddenOwner,boot,overriddenDefinition,definition.populations,overrideConfiguration));
+            CHECK(!invalidSecondCategory.begin(overriddenOwner,boot,overriddenDefinition,ordinary,overrideConfiguration));
             invalidBindings=bindings;
             for(std::size_t i=0;i<destination.populations.size();++i)
                 if(invalidBindings[i].categories==2)invalidBindings[i].secondRequestOverride=21;
             overriddenDestination.populations=std::span<const authored::PopulationBinding>(invalidBindings.data(),destination.populations.size());
             activity::open_world::Director secondCategoryOverBudget;
-            CHECK(!secondCategoryOverBudget.begin(overriddenOwner,boot,overriddenDefinition,definition.populations,overrideConfiguration));
+            CHECK(!secondCategoryOverBudget.begin(overriddenOwner,boot,overriddenDefinition,ordinary,overrideConfiguration));
             invalidBindings=bindings;invalidBindings[npc].requestOverride=1;
             overriddenDestination.populations=std::span<const authored::PopulationBinding>(invalidBindings.data(),destination.populations.size());
             activity::open_world::Director unchangedNpc;
-            CHECK(unchangedNpc.begin(overriddenOwner,boot,overriddenDefinition,definition.populations,overrideConfiguration));
-            activity::population::Service npcService;CHECK(npcService.begin(overriddenOwner,definition.populations,boot));
-            CHECK(unchangedNpc.update(200,definition.populations[npc].registry->bubble,true,npcService,
+            CHECK(unchangedNpc.begin(overriddenOwner,boot,overriddenDefinition,ordinary,overrideConfiguration));
+            activity::population::Service npcService;CHECK(npcService.begin(overriddenOwner,ordinary,boot));
+            CHECK(unchangedNpc.update(200,ordinary[npc].registry->bubble,true,npcService,
                 std::span<const Ledger>(overrideLedgers),std::span<const std::uint8_t>(overridePending)));
             CHECK(npcService.target(npc)==1);
             invalidBindings=bindings;
@@ -448,7 +460,7 @@ inline void open_world_cases() {
                 if(invalidBindings[i].kind==authored::PopulationKind::patrol)invalidBindings[i].requestOverride=21;
             overriddenDestination.populations=std::span<const authored::PopulationBinding>(invalidBindings.data(),destination.populations.size());
             activity::open_world::Director retainedOverBudget;
-            CHECK(!retainedOverBudget.begin(overriddenOwner,boot,overriddenDefinition,definition.populations,overrideConfiguration));
+            CHECK(!retainedOverBudget.begin(overriddenOwner,boot,overriddenDefinition,ordinary,overrideConfiguration));
         }
         // The retained-policy budget rejects this aggregate overload, whether
         // or not the currently occupied bubble alone would fit.
@@ -462,8 +474,8 @@ inline void open_world_cases() {
         auto defaultDestination=destination;
         defaultDestination.populations=std::span<const authored::PopulationBinding>(defaultBindings.data(),destination.populations.size());
         auto defaultDefinition=*definition.openWorld;defaultDefinition.authored=&defaultDestination;
-        const auto worstRequests=(definition.populations.size()-npcCount)*21+npcCount;
-        CHECK(overBudget.begin(owner,boot,defaultDefinition,definition.populations,configuration)
+        const auto worstRequests=(ordinary.size()-npcCount)*21+npcCount;
+        CHECK(overBudget.begin(owner,boot,defaultDefinition,ordinary,configuration)
             ==(worstRequests<=activity::open_world::kRetainedRequestCapacity));
 
         // The source's own cost reports may move its existing actors between
@@ -472,7 +484,7 @@ inline void open_world_cases() {
         while(adaptiveIndex<destination.populations.size()
             && destination.populations[adaptiveIndex].tacticalRows<2)++adaptiveIndex;
         CHECK(adaptiveIndex<destination.populations.size());
-        const std::array<activity::population::Capability,1> adaptiveCapabilities{{definition.populations[adaptiveIndex]}};
+        const std::array<activity::population::Capability,1> adaptiveCapabilities{{ordinary[adaptiveIndex]}};
         activity::population::Service adaptive;CHECK(adaptive.begin(owner,adaptiveCapabilities,boot));
         const auto& first=adaptiveCapabilities.front();const auto bubble=first.registry->bubble;
         CHECK(adaptive.request({owner,1,1,first.registry->key,first.slot,1,boot},bubble)

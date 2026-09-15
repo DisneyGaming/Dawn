@@ -604,9 +604,37 @@ static void mercury_escalation() {
     CHECK(director.announcement_observed(fr::kAnnouncementIncident));
     CHECK(!director.announcement_observed(fr::kAnnouncementIncident));
 }
+static void mercury_patrol_prefetch() {
+    namespace m=sunrise::server::runtime::activity::mercury;
+    namespace fr=m::freeroam;
+    const p::Owner owner{0x901,{1}};
+    p::Service service;CHECK(service.begin(owner,m::kPopulations,0x902));
+    fr::Director director;CHECK(director.begin(owner,0x902,0));
+    std::array<FakeLedger,m::kPopulations.size()> ledgers{};
+    std::array<std::uint8_t,m::kPopulations.size()> pending{};
+    const auto tick=[&](std::uint64_t now,std::uint32_t hint) {
+        return director.update(now,16,false,service,std::span<const FakeLedger>(ledgers),pending,hint);
+    };
+    CHECK(tick(1,UINT32_MAX));CHECK(service.project_retained().count==0);
+    CHECK(tick(2,16));CHECK(service.project_retained().count==0);
+    CHECK(tick(3,15));CHECK(service.project(15).count==fr::kPatrols.size());
+    unsigned total{};
+    for(const auto& patrol:fr::kPatrols) {
+        const auto expected=fr::patrol_target(patrol,fr::Configuration{});
+        CHECK(service.target(patrol.capability)==expected);total+=expected;
+        CHECK(!service.renewal(patrol.capability).pending);
+    }
+    CHECK(total==53 && director.diagnostics().war==fr::WarPhase::announcement);
+    const auto revision=service.revision(),request=service.last_request();
+    CHECK(tick(30003,15));CHECK(tick(60003,UINT32_MAX));
+    CHECK(service.revision()==revision && service.last_request()==request);
+    CHECK(director.diagnostics().war==fr::WarPhase::announcement);
+    CHECK(director.update(60004,15,true,service,std::span<const FakeLedger>(ledgers),pending,15));
+    CHECK(director.diagnostics().war==fr::WarPhase::active);
+}
 int main() {
     validation();progression();failures();source_conflicts();resident_budget();
     mercury_schedule_and_patrols();mercury_cannon_tower_cohort();
-    mercury_partial_replenishment();mercury_escalation();
+    mercury_partial_replenishment();mercury_escalation();mercury_patrol_prefetch();
     std::printf("Faction battle: %u checks passed\n",checks);
 }

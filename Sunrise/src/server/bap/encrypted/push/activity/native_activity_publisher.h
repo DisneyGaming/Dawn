@@ -9,6 +9,21 @@ namespace wire = middleware::bap::activity_message::sensor_auth_update;
 using Definition = server::runtime::activity::NativeActivityDefinition;
 enum class Role : std::uint8_t { invalid, creator, derived };
 
+// Roster publication may point at the next prefetched region while the client
+// still occupies the held/current region. Native activity policy must follow
+// the occupied region so an outgoing prefetch cannot activate the wrong
+// bubble before the player has actually crossed the boundary.
+[[nodiscard]] constexpr std::int32_t runtime_region(
+    std::int32_t publicationRegion,std::int32_t currentRegion) noexcept {
+    return currentRegion>=0?currentRegion:publicationRegion;
+}
+
+[[nodiscard]] constexpr std::uint32_t population_prefetch_bubble(
+    std::int32_t publicationRegion) noexcept {
+    return publicationRegion>=0 && publicationRegion<64*8 && publicationRegion%8==0
+        ?static_cast<std::uint32_t>(publicationRegion/8):UINT32_MAX;
+}
+
 // A derived activity borrows region reports, not the creator's native objects.
 // The caller also validates that this lineage still belongs to the live binding.
 [[nodiscard]] constexpr Role role(state::activity::ActivityInstanceKey instance,
@@ -21,6 +36,7 @@ enum class Role : std::uint8_t { invalid, creator, derived };
 
 [[nodiscard]] inline bool owns_key(const Definition& definition, std::uint32_t key) noexcept {
     for (const auto& registry : definition.registries) if (registry.key == key) return true;
+    for (const auto& registry : definition.lostSectorRegistries) if (registry.key == key) return true;
     // Disabled options must not leave a second descriptor behind for later activation.
     for (const auto& binding : definition.optionalRegistries)
         if (binding.registry && binding.registry->key == key) return true;

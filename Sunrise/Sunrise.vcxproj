@@ -31,6 +31,7 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
   <PropertyGroup>
     <TargetName>steam_api64</TargetName>
     <OutDir>$(ProjectDir)..\build\$(Platform)\$(Configuration)\</OutDir>
@@ -114,6 +115,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\dllmain.cpp" />
+    <ClCompile Include="src\client\hooks\bootflow\native_cleanup_owner_guard.cpp"><ObjectFileName>$(IntDir)native_cleanup_owner_guard_cpp.obj</ObjectFileName></ClCompile>
+    <ClCompile Include="src\client\hooks\bootflow\native_property_list_guard.cpp" />
+    <ClCompile Include="src\client\hooks\bootflow\local_reconnect.cpp" />
     <ClCompile Include="src\state\activity\coo\omega_script.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\state\activity\gateway\runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\state\activity\gateway\controller.cpp" />
@@ -1628,4 +1632,8 @@
     <ClInclude Include="src\middleware\bap\activity_message\native\generic_device_authority.h" />
     <ClInclude Include="src\server\runtime\activity\mission_device_pose_service.h" />
   </ItemGroup>
+  <ItemGroup>
+    <MASM Include="src\client\hooks\bootflow\native_cleanup_owner_guard.asm" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
 </Project>

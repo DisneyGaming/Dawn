@@ -381,6 +381,12 @@ void open_world_held_region_route() {
         const auto current=state::transactions::merge({},update);
         CHECK(current.region.index==128 && current.currentRegion.index<0);
     }
+    namespace publisher=sunrise::server::bap::encrypted::push::activity::native_publisher;
+    // Titan launch evidence: region56 remained the exact held/current Rig
+    // report while publication prefetched region16. Patrol runtime must stay in
+    // bubble7 until the client confirms the crossing.
+    CHECK(publisher::runtime_region(16,56)==56);
+    CHECK(publisher::runtime_region(16,-1)==16);
 }
 
 int main() {

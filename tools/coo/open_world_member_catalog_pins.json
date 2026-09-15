@@ -18660,6 +18660,267 @@
     {
       "activity": "fleet_freeroam",
       "origin": "generic",
+      "resource": "80BF0512",
+      "registry": "AFB2B3C7",
+      "source": 0,
+      "resourceClass": "80809C36",
+      "definitionClass": "8080948F",
+      "resourceSha256": "63fd50e19a668f135700185b0c0239b6778f1f10421b265b37efbfc4226ad968",
+      "categoryCount": 2,
+      "positiveChoiceCount": 12,
+      "choiceDigestSha256": "cf2a776dbc4de6dfac31a4808743e82b62999ae31979a357e07e20a1a73ae9a0",
+      "choices": [
+        {
+          "memberOffset": 504,
+          "categoryKey": "19C57E65",
+          "entity": "80BF9223",
+          "weight": 1,
+          "category": 0,
+          "variant": 0,
+          "choice": 0
+        },
+        {
+          "memberOffset": 824,
+          "categoryKey": "19C57E65",
+          "entity": "80BF9223",
+          "weight": 1,
+          "category": 0,
+          "variant": 1,
+          "choice": 0
+        },
+        {
+          "memberOffset": 1144,
+          "categoryKey": "19C57E65",
+          "entity": "80BF9223",
+          "weight": 1,
+          "category": 0,
+          "variant": 2,
+          "choice": 0
+        },
+        {
+          "memberOffset": 1464,
+          "categoryKey": "19C57E65",
+          "entity": "80BF9223",
+          "weight": 1,
+          "category": 0,
+          "variant": 3,
+          "choice": 0
+        },
+        {
+          "memberOffset": 1784,
+          "categoryKey": "19C57E65",
+          "entity": "80BF9223",
+          "weight": 1,
+          "category": 0,
+          "variant": 4,
+          "choice": 0
+        },
+        {
+          "memberOffset": 2104,
+          "categoryKey": "19C57E65",
+          "entity": "80BF9223",
+          "weight": 1,
+          "category": 0,
+          "variant": 5,
+          "choice": 0
+        },
+        {
+          "memberOffset": 2424,
+          "categoryKey": "19C57E66",
+          "entity": "80BF8A8B",
+          "weight": 1,
+          "category": 1,
+          "variant": 0,
+          "choice": 0
+        },
+        {
+          "memberOffset": 2744,
+          "categoryKey": "19C57E66",
+          "entity": "80BF8A8B",
+          "weight": 1,
+          "category": 1,
+          "variant": 1,
+          "choice": 0
+        },
+        {
+          "memberOffset": 3064,
+          "categoryKey": "19C57E66",
+          "entity": "80BF8A8B",
+          "weight": 1,
+          "category": 1,
+          "variant": 2,
+          "choice": 0
+        },
+        {
+          "memberOffset": 3384,
+          "categoryKey": "19C57E66",
+          "entity": "80BF8A8B",
+          "weight": 1,
+          "category": 1,
+          "variant": 3,
+          "choice": 0
+        },
+        {
+          "memberOffset": 3704,
+          "categoryKey": "19C57E66",
+          "entity": "80BF8A8B",
+          "weight": 1,
+          "category": 1,
+          "variant": 4,
+          "choice": 0
+        },
+        {
+          "memberOffset": 4024,
+          "categoryKey": "19C57E66",
+          "entity": "80BF8A8B",
+          "weight": 1,
+          "category": 1,
+          "variant": 5,
+          "choice": 0
+        }
+      ]
+    },
+    {
+      "activity": "fleet_freeroam",
+      "origin": "generic",
+      "resource": "80BF0518",
+      "registry": "AFB2B3C7",
+      "source": 1,
+      "resourceClass": "80809C36",
+      "definitionClass": "8080948F",
+      "resourceSha256": "38049b1391bfcc52fe7bc552e77ec78c092785c24414b8f4f47a273458ef49d4",
+      "categoryCount": 1,
+      "positiveChoiceCount": 6,
+      "choiceDigestSha256": "da1a2d90ab50ded293c2ba1367777fd4dd23f04642c09757fb7f0cd01b141289",
+      "choices": [
+        {
+          "memberOffset": 392,
+          "categoryKey": "19C57E65",
+          "entity": "80BF8A8B",
+          "weight": 1,
+          "category": 0,
+          "variant": 0,
+          "choice": 0
+        },
+        {
+          "memberOffset": 712,
+          "categoryKey": "19C57E65",
+          "entity": "80BF8A8B",
+          "weight": 1,
+          "category": 0,
+          "variant": 1,
+          "choice": 0
+        },
+        {
+          "memberOffset": 1032,
+          "categoryKey": "19C57E65",
+          "entity": "80BF8A8B",
+          "weight": 1,
+          "category": 0,
+          "variant": 2,
+          "choice": 0
+        },
+        {
+          "memberOffset": 1352,
+          "categoryKey": "19C57E65",
+          "entity": "80BF8A8B",
+          "weight": 1,
+          "category": 0,
+          "variant": 3,
+          "choice": 0
+        },
+        {
+          "memberOffset": 1672,
+          "categoryKey": "19C57E65",
+          "entity": "80BF8A8B",
+          "weight": 1,
+          "category": 0,
+          "variant": 4,
+          "choice": 0
+        },
+        {
+          "memberOffset": 1992,
+          "categoryKey": "19C57E65",
+          "entity": "80BF8A8B",
+          "weight": 1,
+          "category": 0,
+          "variant": 5,
+          "choice": 0
+        }
+      ]
+    },
+    {
+      "activity": "fleet_freeroam",
+      "origin": "generic",
+      "resource": "80BF051B",
+      "registry": "AFB2B3C7",
+      "source": 2,
+      "resourceClass": "80809C36",
+      "definitionClass": "8080948F",
+      "resourceSha256": "a596a9b314908d60a38e463ccfe3dc1958e408a289175069c3a20580c4d6fb33",
+      "categoryCount": 1,
+      "positiveChoiceCount": 6,
+      "choiceDigestSha256": "da1a2d90ab50ded293c2ba1367777fd4dd23f04642c09757fb7f0cd01b141289",
+      "choices": [
+        {
+          "memberOffset": 392,
+          "categoryKey": "19C57E65",
+          "entity": "80BF8A8B",
+          "weight": 1,
+          "category": 0,
+          "variant": 0,
+          "choice": 0
+        },
+        {
+          "memberOffset": 712,
+          "categoryKey": "19C57E65",
+          "entity": "80BF8A8B",
+          "weight": 1,
+          "category": 0,
+          "variant": 1,
+          "choice": 0
+        },
+        {
+          "memberOffset": 1032,
+          "categoryKey": "19C57E65",
+          "entity": "80BF8A8B",
+          "weight": 1,
+          "category": 0,
+          "variant": 2,
+          "choice": 0
+        },
+        {
+          "memberOffset": 1352,
+          "categoryKey": "19C57E65",
+          "entity": "80BF8A8B",
+          "weight": 1,
+          "category": 0,
+          "variant": 3,
+          "choice": 0
+        },
+        {
+          "memberOffset": 1672,
+          "categoryKey": "19C57E65",
+          "entity": "80BF8A8B",
+          "weight": 1,
+          "category": 0,
+          "variant": 4,
+          "choice": 0
+        },
+        {
+          "memberOffset": 1992,
+          "categoryKey": "19C57E65",
+          "entity": "80BF8A8B",
+          "weight": 1,
+          "category": 0,
+          "variant": 5,
+          "choice": 0
+        }
+      ]
+    },
+    {
+      "activity": "fleet_freeroam",
+      "origin": "generic",
       "resource": "80B997CF",
       "registry": "C04C28F6",
       "source": 0,

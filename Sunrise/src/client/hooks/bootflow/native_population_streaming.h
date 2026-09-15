@@ -3,7 +3,7 @@
 #include <cstdint>
 
 namespace sunrise::client::hooks::bootflow::native_population_streaming {
-inline constexpr std::size_t kSourceCapacity=320;
+inline constexpr std::size_t kSourceCapacity=384;
 // Only server-qualified one- or two-category free-roam sources opt in. The
 // requested population and native AI mode are never changed. Preserve each
 // category's consumption observed before native deactivation fills its budget.

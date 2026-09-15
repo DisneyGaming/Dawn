@@ -26,6 +26,9 @@ TESTS = (
 )
 
 NATIVE_TESTS = (
+    'native_cleanup_owner_tests',
+    'native_property_list_tests',
+    'local_reconnect_tests',
     "native_activity_policy_tests",
     'native_population_bridge_tests',
     'open_world_census_tests',

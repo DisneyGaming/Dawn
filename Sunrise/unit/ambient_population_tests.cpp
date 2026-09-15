@@ -287,7 +287,10 @@ void persistent_integration_cases() {
     CHECK(mission_parameter_fixture::numeric(text,"public_event_rally_probe",0));
     std::shared_ptr<const coo::script::MissionDocument> disabled=coo::script::MissionDocument::parse(text,runtime::mercury::kProfile,error);
     CHECK(disabled && runtime::PersistentActivity::valid(runtime::mercury::kActivity,*disabled));
-    runtime::PersistentActivity normal;CHECK(normal.begin({81,{1}},runtime::mercury::kActivity,disabled,17));
+    // Production activities live in process-static Entry storage. Keep the
+    // several simultaneous test owners off the default 1 MiB thread stack.
+    auto normalStorage=std::make_unique<runtime::PersistentActivity>();auto& normal=*normalStorage;
+    CHECK(normal.begin({81,{1}},runtime::mercury::kActivity,disabled,17));
     CHECK(normal.ambient().size()==0);
     runtime::NativeActivityFrame frame{};
     for(int i=0;i<4;++i) frame=normal.update(15,true);
@@ -295,7 +298,8 @@ void persistent_integration_cases() {
     CHECK(mission_parameter_fixture::numeric(text,"ambient_vex_probe_count",1));
     std::shared_ptr<const coo::script::MissionDocument> enabled=coo::script::MissionDocument::parse(text,runtime::mercury::kProfile,error);
     CHECK(enabled && runtime::PersistentActivity::valid(runtime::mercury::kActivity,*enabled));
-    runtime::PersistentActivity activity;const population::Owner owner{82,{2}};
+    auto activityStorage=std::make_unique<runtime::PersistentActivity>();auto& activity=*activityStorage;
+    const population::Owner owner{82,{2}};
     CHECK(activity.begin(owner,runtime::mercury::kActivity,enabled,18));
     CHECK(activity.ambient().size()==1 && activity.ambient().policy(0)->development);
     for(int i=0;i<4;++i) frame=activity.update(15,true);
@@ -354,7 +358,8 @@ void persistent_integration_cases() {
     CHECK(ledger.counts().resident==0 && !ledger.counts().sourceRetired);
     CHECK(activity.update(15,true).populations.count==3 && activity.population().revision()==revision);
     mailbox->release(owner);CHECK(!mailbox->submit({lease,actor,0x345678,events::Kind::died},mailbox->epoch()));
-    runtime::PersistentActivity reentry;const population::Owner newOwner{82,{3}};
+    auto reentryStorage=std::make_unique<runtime::PersistentActivity>();auto& reentry=*reentryStorage;
+    const population::Owner newOwner{82,{3}};
     CHECK(reentry.begin(newOwner,runtime::mercury::kActivity,enabled,18));
     CHECK(reentry.ambient().state(0)==ambient::InitialState::awaitingMonitor);
     CHECK(reentry.ambient().observe(owner,18,15,report(0xEB1E8934,3,5,1))==0);
@@ -375,7 +380,8 @@ void cabal_persistent_cases() {
     auto disabled=coo::script::MissionDocument::parse(text,runtime::mercury::kProfile,error);CHECK(disabled);
     ambient::RegistryBatch registries{};
     CHECK(ambient::optional_registries(runtime::mercury::kActivity,*disabled,registries));CHECK(registries.count==0);
-    runtime::PersistentActivity normal;const population::Owner disabledOwner{300,{1}};
+    auto normalStorage=std::make_unique<runtime::PersistentActivity>();auto& normal=*normalStorage;
+    const population::Owner disabledOwner{300,{1}};
     CHECK(normal.begin(disabledOwner,runtime::mercury::kActivity,std::move(disabled),100));
     // The shipped profile now owns source0 as an ordinary fallback escort.
     // It does not need the diagnostic primary-rule named-point owner.
@@ -392,11 +398,13 @@ void cabal_persistent_cases() {
         runtime::mercury::ambient::probe::binding(7),probe::binding(22)}};
     auto probeDefinition=runtime::mercury::kActivity;
     probeDefinition.populations=probePopulations;probeDefinition.ambientInitial=probeBindings;
+    probeDefinition.lostSectorRegistries={};probeDefinition.lostSectors=nullptr;
     CHECK(mission_parameter_fixture::numeric(text,"ambient_cabal_primary_probe_count",1));
     auto enabled=coo::script::MissionDocument::parse(text,runtime::mercury::kProfile,error);
     CHECK(enabled && runtime::PersistentActivity::valid(probeDefinition,*enabled));
     CHECK(ambient::optional_registries(probeDefinition,*enabled,registries));CHECK(registries.count==1);
-    runtime::PersistentActivity activity;const population::Owner owner{301,{2}};
+    auto activityStorage=std::make_unique<runtime::PersistentActivity>();auto& activity=*activityStorage;
+    const population::Owner owner{301,{2}};
     CHECK(activity.begin(owner,probeDefinition,std::move(enabled),101));
     CHECK(activity.ambient().size()==1 && activity.ambient().policy(0)->source->registry->key==0x2571C34D);
     runtime::NativeActivityFrame frame{};
@@ -432,11 +440,16 @@ void freeroam_profile_cases() {
     const auto document=coo::script::MissionDocument::parse(text,runtime::mercury::kProfile,error);
     CHECK(document && runtime::PersistentActivity::valid(runtime::mercury::kActivity,*document));
     CHECK(runtime::mercury::kActivity.registries.size()==20);
-    CHECK(runtime::mercury::kActivity.populations.size()==32);
+    CHECK(runtime::mercury::kPopulations.size()==32);
+    CHECK(runtime::mercury::kActivity.populations.size()==54);
+    CHECK(runtime::mercury::kActivity.lostSectors
+        && runtime::mercury::kActivity.lostSectors->capabilityBase==32);
     CHECK(runtime::mercury::kActivity.ambientInitial.size()==1);
     for(const auto& capability:runtime::mercury::kActivity.populations) {
         CHECK(population::valid(capability));bool registered{};
         for(const auto& registry:runtime::mercury::kActivity.registries)
+            if(capability.registry==&registry)registered=true;
+        for(const auto& registry:runtime::mercury::kActivity.lostSectorRegistries)
             if(capability.registry==&registry)registered=true;
         for(const auto& binding:runtime::mercury::kActivity.optionalRegistries)
             if(capability.registry==binding.registry)registered=true;

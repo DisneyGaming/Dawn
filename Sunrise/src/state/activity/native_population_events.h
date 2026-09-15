@@ -8,7 +8,7 @@
 #include <span>
 
 namespace sunrise::state::activity::native_population {
-inline constexpr std::size_t kBindingCapacity=320;
+inline constexpr std::size_t kBindingCapacity=384;
 inline constexpr std::size_t kCreationCapacity=1152;
 inline constexpr std::size_t kProvisionalCapacity=1152;
 inline constexpr std::size_t kEventCapacity=3456;

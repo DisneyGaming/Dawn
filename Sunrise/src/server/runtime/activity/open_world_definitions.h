@@ -2,6 +2,7 @@
 
 #include "native_activity_definition.h"
 #include "open_world_definition.h"
+#include "lost_sector_catalog.h"
 #include <array>
 
 namespace sunrise::server::runtime::activity::open_world::profiles {
@@ -62,11 +63,14 @@ struct Data final {
     inline static constexpr Definition runtime{&Destination};
 };
 
-#define SUNRISE_OPEN_WORLD_PROFILE(NAME,AUTHORED_NS,SCRIPT_FILE,PROFILE_ID) \
+#define SUNRISE_OPEN_WORLD_PROFILE(NAME,AUTHORED_NS,LOST_NS,SCRIPT_FILE,PROFILE_ID) \
 namespace NAME { \
 namespace authored=catalog::AUTHORED_NS; \
+namespace lost=lost_sector::catalog::LOST_NS; \
 using Storage=Data<authored::kDestination,authored::kRegistries,authored::kPopulations, \
     authored::kPlacements,authored::kAdventures>; \
+inline constexpr auto kPopulations=lost_sector::catalog::concat(Storage::populations,lost::kCapabilities); \
+inline constexpr auto kLostSectorDefinition=lost::definition(static_cast<std::uint16_t>(Storage::populations.size())); \
 inline constexpr coo::ModuleBinding kPersistentModule{ \
     {authored::kDestination.scenario,authored::kDestination.scenario,0,0},1}; \
 inline constexpr coo::script::Capability kCapabilities[]{ \
@@ -87,17 +91,18 @@ inline constexpr coo::script::ParameterCapability kParameters[]{ \
 inline const coo::script::Profile kProfile{PROFILE_ID,"nativeOtherActivities", \
     coo::Schema::otherMissions,kCapabilities,kModules,{}, {}, {}, {}, {},{},kParameters}; \
 inline const NativeActivityDefinition kActivity{authored::kDestination.activity,SCRIPT_FILE, \
-    authored::kDestination.primaryBubble,&kProfile,authored::kRegistries,Storage::populations, \
+    authored::kDestination.primaryBubble,&kProfile,authored::kRegistries,kPopulations, \
     Storage::placements,kActions,kPersistentModule,{},Storage::routes,{},{},{},{},{},{}, \
-    "host.tick_hz",{},{},{},{},{},{},true,&Storage::runtime}; \
+    "host.tick_hz",{},{},{},{},{},{},true,&Storage::runtime,lost::kRegistries, \
+    lost::kSectors.empty()?nullptr:&kLostSectorDefinition}; \
 }
 
-SUNRISE_OPEN_WORLD_PROFILE(io,io,L"eden_freeroam.json","io.freeroam.native.v1")
-SUNRISE_OPEN_WORLD_PROFILE(titan,titan,L"fleet_freeroam.json","titan.freeroam.native.v1")
-SUNRISE_OPEN_WORLD_PROFILE(mars,mars,L"polaris_freeroam.json","mars.freeroam.native.v1")
-SUNRISE_OPEN_WORLD_PROFILE(nessus,nessus,L"planet_x_freeroam.json","nessus.freeroam.native.v1")
-SUNRISE_OPEN_WORLD_PROFILE(tangled_shore,tangled_shore,L"tangled_shore_freeroam.json","tangled_shore.freeroam.native.v1")
-SUNRISE_OPEN_WORLD_PROFILE(dreaming_city,dreaming_city,L"dreaming_city_freeroam.json","dreaming_city.freeroam.native.v1")
+SUNRISE_OPEN_WORLD_PROFILE(io,io,io,L"eden_freeroam.json","io.freeroam.native.v1")
+SUNRISE_OPEN_WORLD_PROFILE(titan,titan,titan,L"fleet_freeroam.json","titan.freeroam.native.v1")
+SUNRISE_OPEN_WORLD_PROFILE(mars,mars,mars,L"polaris_freeroam.json","mars.freeroam.native.v1")
+SUNRISE_OPEN_WORLD_PROFILE(nessus,nessus,nessus,L"planet_x_freeroam.json","nessus.freeroam.native.v1")
+SUNRISE_OPEN_WORLD_PROFILE(tangled_shore,tangled_shore,tangled_shore,L"tangled_shore_freeroam.json","tangled_shore.freeroam.native.v1")
+SUNRISE_OPEN_WORLD_PROFILE(dreaming_city,dreaming_city,none,L"dreaming_city_freeroam.json","dreaming_city.freeroam.native.v1")
 
 #undef SUNRISE_OPEN_WORLD_PROFILE
 

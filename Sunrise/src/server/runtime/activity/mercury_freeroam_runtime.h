@@ -204,11 +204,17 @@ public:
     template<class Ledger>
     [[nodiscard]] bool update(std::uint64_t now,std::uint32_t bubble,bool arrived,
         population::Service& service,std::span<const Ledger> ledgers,
-        std::span<const std::uint8_t> nativePending) noexcept {
+        std::span<const std::uint8_t> nativePending,
+        std::uint32_t prefetchBubble=UINT32_MAX) noexcept {
         if(!owner_ || service.owner()!=owner_ || service.boot()!=boot_
             || ledgers.size()<kPopulations.size() || nativePending.size()<kPopulations.size()
             || (lastNow_ && now<lastNow_))return fail();
-        lastNow_=now;if(!arrived || bubble!=15)return true;
+        lastNow_=now;
+        // Prewarm native patrol sources while their area is streaming in.
+        // This hint does not advance faction waves or alter casualty clocks.
+        if(prefetchBubble==15 && configuration_.populations
+            && !start_patrols(service,15))return fail();
+        if(!arrived || bubble!=15)return true;
         if(configuration_.populations && !start_patrols(service,bubble))return fail();
         if(phase_==WarPhase::announcement && wave_ready(service,nativePending,0)
             && !publish_wave(service,ledgers,0,bubble))return fail();

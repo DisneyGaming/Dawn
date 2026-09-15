@@ -6,7 +6,11 @@
 #include "adventure_mercury_start_routes.h"
 #include "adventure_mercury_openings.h"
 #include "mercury_public_event_definition.h"
+#include "lost_sector_catalog.h"
 namespace sunrise::server::runtime::activity::mercury {
+namespace lost=lost_sector::catalog::mercury;
+inline constexpr auto kActivityPopulations=lost_sector::catalog::concat(kPopulations,lost::kCapabilities);
+inline constexpr auto kLostSectorDefinition=lost::definition(static_cast<std::uint16_t>(kPopulations.size()));
 inline constexpr coo::ModuleBinding kPersistentModule{{0x80F4696A,0x80F4696A,0,0},1};
 inline constexpr coo::script::Capability kScriptCapabilities[]{
     {"persistent.start","composition",{coo::Operation::mechanic,kPersistentModule.asset,1,coo::Wait::requested}},
@@ -93,7 +97,8 @@ inline constexpr std::array<ambient_population::RegistryBinding,3> kOptionalRegi
     {&public_events::kRegistries[2],"public_event_opening_probe"}
 }};
 inline const NativeActivityDefinition kActivity{"mercury_freeroam",L"mercury_freeroam.json",15,
-    &kProfile,kRegistries,kPopulations,kPlacements,kActions,kPersistentModule,kVanceAnimationCapabilities,
+    &kProfile,kRegistries,kActivityPopulations,kPlacements,kActions,kPersistentModule,kVanceAnimationCapabilities,
     adventure::mercury::kStartRoutes,kAmbientInitial,kPublicEventRallies,adventure::mercury::kOpenings,
-    {},{},kOptionalRegistries,"host.tick_hz",{},{},{},{},{},public_events::kInitialDefinitions,true};
+    {},{},kOptionalRegistries,"host.tick_hz",{},{},{},{},{},public_events::kInitialDefinitions,true,
+    nullptr,lost::kRegistries,&kLostSectorDefinition};
 }

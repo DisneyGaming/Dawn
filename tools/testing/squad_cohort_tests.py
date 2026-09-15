@@ -176,9 +176,9 @@ class TitanSolariumCohort(unittest.TestCase):
 
     def test_exact_three_source_conservative_cohort(self):
         targets = self.resolve()
-        self.assertEqual(len(self.rows), 28)
-        self.assertEqual(len(targets), 89)
-        self.assertEqual(sum(sum(v) for v in targets.values()), 121)
+        self.assertEqual(len(self.rows), 29)
+        self.assertEqual(len(targets), 92)
+        self.assertEqual(sum(sum(v) for v in targets.values()), 124)
         solarium = {identity: vector for identity, vector in targets.items() if identity[0] == 0x1EE02F73}
         self.assertEqual(solarium, {(0x1EE02F73, 0): (1, 0),
                                    (0x1EE02F73, 1): (1, 0),
@@ -189,6 +189,19 @@ class TitanSolariumCohort(unittest.TestCase):
                          [(0, 25, "80B986B7", "80B986B1"),
                           (1, 24, "80B986BA", "80B986AA"),
                           (2, 6, "80B986BD", "80B986A1")])
+
+    def test_phase_duplicate_must_remain_byte_equivalent(self):
+        original = gen.package_read.read
+        def read(tag):
+            cls, raw = original(tag)
+            if tag == 0x80F33662:
+                raw = bytearray(raw)
+                at = gen.array_rows(raw, 8, 144, 0x808099D8)[169]
+                raw[at + 32] ^= 1
+            return cls, raw
+        with patch.object(gen.package_read, "read", side_effect=read):
+            with self.assertRaisesRegex(ValueError, "non-equivalent duplicates"):
+                self.resolve()
 
     def test_unknown_primary_and_secondary_safeguards_are_enforced(self):
         row = copy.deepcopy(self.rows[0])
@@ -241,7 +254,7 @@ class AllDestinationExpansion(unittest.TestCase):
     def test_exact_source_sets_whole_squad_budgets_and_retained_capacity(self):
         pins_by_world = json.loads((ROOT / "tools/coo/open_world_spawn_selections.json").read_text())["destinations"]
         rows_by_world = json.loads((ROOT / "tools/coo/open_world_squad_cohorts.json").read_text())["destinations"]
-        expected = {"eden_freeroam": (136, 63, 250), "fleet_freeroam": (89, 28, 122),
+        expected = {"eden_freeroam": (136, 63, 250), "fleet_freeroam": (92, 29, 125),
                     "polaris_freeroam": (104, 35, 160), "planet_x_freeroam": (233, 74, 322),
                     "tangled_shore_freeroam": (139, 50, 201)}
         for target in gen.TARGETS:
@@ -282,7 +295,7 @@ class AllDestinationExpansion(unittest.TestCase):
             # Titan's explicit alternate families, gated hangar/service/bridge
             # paths and unresolved selected-point owners remain disabled.
             "fleet_freeroam": {"FE8C4213", "3ED62BD8", "29B3C161", "0D1608A8", "5FEBBB4A",
-                                "BF42D6D7", "060C1E06", "AFB2B3C7", "7E4FD2C5"},
+                                "BF42D6D7", "060C1E06", "7E4FD2C5"},
             # Include every candidate dungeon/scripted owner even where its
             # English lost-sector name has not been decoded conclusively.
             "planet_x_freeroam": {"46CEE7B0", "5C01717F", "A9907097", "0ACD7A28", "F8CF1F86",
@@ -299,7 +312,7 @@ class AllDestinationExpansion(unittest.TestCase):
             self.assertFalse({p["registry"] for p in pins} & excluded.get(target.activity, set()))
             self.assertEqual(len(pins), len({(p["registry"], p["source"]) for p in pins}))
 
-    def test_every_expanded_native_cohort_has_unique_exact_selected_points(self):
+    def test_every_expanded_native_cohort_has_exact_physical_points(self):
         # resolve() re-reads owner state/lane, complete sibling membership,
         # task/provider identity and point-list/container bytes for every row.
         documents = json.loads((ROOT / "tools/coo/open_world_squad_cohorts.json").read_text())["destinations"]

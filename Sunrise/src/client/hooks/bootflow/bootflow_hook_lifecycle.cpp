@@ -227,6 +227,9 @@ bool install() noexcept {
     const bool activityScriptEvents = !kEnableLegacyUnsafeObserverBundle;
     const bool activityScriptUpstream = !kEnableUnsafeActivityScriptUpstreamProbe;
     const bool activityProviderStaleMapping = install_activity_provider_stale_mapping_guard();
+    const bool cleanupOwnerGuard = install_native_cleanup_owner_guard();
+    const bool propertyListGuard = install_native_property_list_guard();
+    const bool localReconnect = install_local_reconnect();
     const bool eaterEntityIdStartup = install_eater_entity_id_startup();
     const bool activityBehaviorConditions = !kEnableLegacyUnsafeObserverBundle;
     const bool activitySpawnerChainInstalled = kEnableActivitySpawnerChainProbe
@@ -288,12 +291,12 @@ bool install() noexcept {
                         || omegaLairReceipts || vanceContactInstalled || ambientNamedPoints || nativeCapture || replicationObserver || omegaCannonReceipt || omegaArcCharge || publicEventParticipant || omegaRescueScenes || trialRevival || trialLifetime || hijackedPlacements
                         || omegaLatticeProbe || gatewayPatrol || eaterReinforcements
                         || featureFlagInstalled
-                        || prologueFiller || regionPrivate
+                        || prologueFiller || regionPrivate || cleanupOwnerGuard || propertyListGuard || localReconnect
                         || worldStep || spawn || towerfallExecutor || fade;
     const bool allInstalled = hold && sliceSet && skip && composition && handoff && joinReady
                               && ownerSlot && activityHost && activitySelection
                               && activityTypeOneApply && activityScriptEvents
-                              && activityScriptUpstream && activityProviderStaleMapping
+                              && activityScriptUpstream && activityProviderStaleMapping && cleanupOwnerGuard && propertyListGuard && localReconnect
                               && activityBehaviorConditions && activitySpawnerChain
                               && activitySchemaDecode
                               && groupInitialUpdateDecode
@@ -320,6 +323,9 @@ void quiesce() noexcept {
     ReleaseSRWLockExclusive(&g_lateInstallLock);
 
     quiesce_eater_entity_id_startup();
+    quiesce_native_cleanup_owner_guard();
+    quiesce_native_property_list_guard();
+    quiesce_local_reconnect();
     hijacked_placements::quiesce();
     quiesce_spawn_hold();
     quiesce_towerfall_executor_bootstrap();
@@ -428,6 +434,9 @@ bool uninstall() noexcept {
     uninstall_omega_dialogue_dispatch_probe();
     uninstall_activity_spawner_chain_probe();
     uninstall_activity_provider_stale_mapping_guard();
+    if (!uninstall_native_cleanup_owner_guard()) { return false; }
+    if (!uninstall_native_property_list_guard()) { return false; }
+    if (!uninstall_local_reconnect()) { return false; }
     // The quarantined mutating legacy groups are unreachable in this lifecycle. Their detach
     // implementations discard individual failures, so teardown deliberately remains a no-op for
     // these statically asserted-never-attached owners.

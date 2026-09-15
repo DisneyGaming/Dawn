@@ -18,8 +18,8 @@ unsigned checks{};
 
 struct Fixture final {
     static constexpr std::size_t count=activity::population::kSourceCapacity;
-    static constexpr std::size_t groups=86;
-    std::array<std::array<sunrise::state::activity::coo::registry::Slot,3>,groups> slots{};
+    static constexpr std::size_t groups=96;
+    std::array<std::array<sunrise::state::activity::coo::registry::Slot,4>,groups> slots{};
     std::array<sunrise::state::activity::coo::registry::Definition,groups> registries{};
     std::array<activity::population::Capability,count> capabilities{};
     std::array<authored::PopulationBinding,count> bindings{};
@@ -54,12 +54,14 @@ events::Lease lease(std::uint16_t slot=0) {
 }
 
 int main() {
-    static_assert(native::population::kSourceCapacity==256);
+    static_assert(native::population::kSourceCapacity==384);
+    static_assert(sizeof(activity::open_world::Director)<4096,
+        "Per-source transaction state must remain off the publication stack");
     static_assert(activity::open_world::kRetainedRequestCapacity==384);
     static_assert(events::kCreationCapacity==1152 && events::kProvisionalCapacity==1152);
     static_assert(events::kEventCapacity==3456);
-    static_assert(events::kBindingCapacity==320);
-    static_assert(sunrise::client::hooks::bootflow::native_population_streaming::kSourceCapacity==320);
+    static_assert(events::kBindingCapacity==384);
+    static_assert(sunrise::client::hooks::bootflow::native_population_streaming::kSourceCapacity==384);
     static_assert(wire::kGroupCapacity==96);
     static_assert(sunrise::state::build_data::scenarios::kDestinationWireGroupCapacity==96);
 
@@ -77,8 +79,7 @@ int main() {
     activity::open_world::Director director;
     CHECK(director.begin(owner,99,fixture.definition,fixture.capabilities));
     auto budgetBindings=fixture.bindings;
-    for(std::size_t i=0;i<128;++i)budgetBindings[i].requestOverride=2;
-    for(std::size_t i=128;i<Fixture::count;++i)budgetBindings[i].requestOverride=1;
+    for(auto& binding:budgetBindings)binding.requestOverride=1;
     fixture.destination.populations=budgetBindings;
     activity::open_world::Director maximum;
     CHECK(maximum.begin(owner,99,fixture.definition,fixture.capabilities));
@@ -101,8 +102,8 @@ int main() {
     auto invalidBatch=batch;invalidBatch.count=invalidBatch.entries.size()+1;
     CHECK(native::population::find(invalidBatch,fixture.registries.front().key,1,0)==nullptr);
 
-    std::array<std::array<std::uint8_t,3>,Fixture::groups> types{},flags{};
-    std::array<std::array<std::uint16_t,3>,Fixture::groups> indices{};
+    std::array<std::array<std::uint8_t,4>,Fixture::groups> types{},flags{};
+    std::array<std::array<std::uint16_t,4>,Fixture::groups> indices{};
     std::array<std::uint32_t,Fixture::groups> keys{};
     wire::Snapshot snapshot{};snapshot.lifetime=3;snapshot.region=0;snapshot.hasRegion=true;
     snapshot.populations=batch;snapshot.roster.groupCount=Fixture::groups;

@@ -155,7 +155,22 @@ def native_evidence(gen, target, group, point_lists, point_containers, point_own
         for index, at in enumerate(gen.array_rows(raw, 8, 144, 0x808099D8)):
             guid = struct.unpack_from("<Q", raw, at + 112)[0]
             points.setdefault(guid, []).append([tag, index, hashlib.sha256(raw[at:at+144]).hexdigest()])
+
+    def physical_point(guid):
+        matches = points.get(guid, [])
+        if not matches:
+            raise ValueError("cohort source point GUID is missing")
+        # Some map phases publish distinct point-list assets containing the
+        # same physical record.  Preserve every pinned dependency, but treat
+        # exact record-byte duplicates as one point.  A coordinate-only match
+        # is insufficient: any byte drift remains an ambiguity and fails shut.
+        if len(matches) > 1:
+            if len({match[2] for match in matches}) != 1:
+                raise ValueError("cohort source point GUID has non-equivalent duplicates")
+            return {"equivalent_records": matches}
+        return matches[0]
     source_slots = [slot for slot in group["slots"] if slot["type"] == 1]
+    selected_roles = {}
     if evidence_mode is None:
         if selected_rules is not None or unresolved_primary_rules is not None:
             raise ValueError("full native evidence does not accept selected-role fields")
@@ -170,12 +185,28 @@ def native_evidence(gen, target, group, point_lists, point_containers, point_own
             if selected_rules[slot["index"]] != fallback or fallback == primary:
                 raise ValueError("selected-fallback proof requires a distinct authored fallback for every source")
         roles = ("fallback",)
+    elif evidence_mode == "selected_rules":
+        if not isinstance(selected_rules, dict) or set(selected_rules) != {slot["index"] for slot in source_slots}:
+            raise ValueError("selected-rule proof requires every enabled source rule")
+        for slot in source_slots:
+            matches = []
+            for role in ("primary", "fallback"):
+                try:
+                    if gen.source_spawn_rule(group, slot["index"], role) == selected_rules[slot["index"]]:
+                        matches.append(role)
+                except ValueError:
+                    pass
+            if not matches:
+                raise ValueError("selected source rule is not package authored")
+            selected_roles[slot["index"]] = "primary" if "primary" in matches else matches[0]
+        roles = ()
     else:
         raise ValueError("unsupported cohort native evidence mode")
 
     joins = []
     for slot in source_slots:
-        for role in roles:
+        source_roles = (selected_roles[slot["index"]],) if evidence_mode == "selected_rules" else roles
+        for role in source_roles:
             rule_index = gen.source_spawn_rule(group, slot["index"], role)
             rule = next(s for s in group["slots"] if s["type"] == 66 and s["index"] == rule_index)
             _, raw = read(rule["descriptor"], 0x80809C36)
@@ -184,12 +215,12 @@ def native_evidence(gen, target, group, point_lists, point_containers, point_own
                 raise ValueError("cohort source has no decoded authored rule points")
             for at in rule_points:
                 guid = struct.unpack_from("<Q", raw, at)[0]
-                matches = points.get(guid, [])
-                if len(matches) != 1:
-                    raise ValueError("cohort source point GUID is missing or ambiguous")
-                joins.append([slot["index"], role, rule_index, f"{guid:016X}", matches[0]])
+                joins.append([slot["index"], role, rule_index, f"{guid:016X}", physical_point(guid)])
     if evidence_mode is None:
         record = {"dependencies": dependencies, "owners": owner_records, "joins": joins}
+    elif evidence_mode == "selected_rules":
+        record = {"dependencies": dependencies, "owners": owner_records, "joins": joins,
+                  "evidence_mode": evidence_mode}
     else:
         actual = {}
         for slot in source_slots:

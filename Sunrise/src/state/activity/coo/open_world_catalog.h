@@ -1122,7 +1122,16 @@ inline constexpr std::array<registry::Slot,12> kSlots15{{
     {17,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF04E7U},
     {22,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF04EAU},
 }};
-inline constexpr std::array<registry::Slot,12> kSlots16{{
+inline constexpr std::array<registry::Slot,7> kSlots16{{
+    {0,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF0512U},
+    {1,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF0518U},
+    {2,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF051BU},
+    {3,3,0x80808348U,0x80807F04U,0x80807F0CU,0x80BF1F77U},
+    {4,70,0x808094EEU,0x808094F0U,0x808094F1U,0x80BF051EU},
+    {5,30,0x8080952FU,0x80809531U,0x80809532U,0x80BF0521U},
+    {13,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF0507U},
+}};
+inline constexpr std::array<registry::Slot,12> kSlots17{{
     {0,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF0549U},
     {1,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF054CU},
     {2,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF0554U},
@@ -1136,7 +1145,7 @@ inline constexpr std::array<registry::Slot,12> kSlots16{{
     {20,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF053AU},
     {27,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF0543U},
 }};
-inline constexpr std::array<registry::Slot,12> kSlots17{{
+inline constexpr std::array<registry::Slot,12> kSlots18{{
     {0,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF057BU},
     {1,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF057EU},
     {2,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF0581U},
@@ -1150,7 +1159,7 @@ inline constexpr std::array<registry::Slot,12> kSlots17{{
     {19,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF0571U},
     {26,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF0574U},
 }};
-inline constexpr std::array<registry::Slot,10> kSlots18{{
+inline constexpr std::array<registry::Slot,10> kSlots19{{
     {0,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF1045U},
     {1,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF1048U},
     {2,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF104BU},
@@ -1162,7 +1171,7 @@ inline constexpr std::array<registry::Slot,10> kSlots18{{
     {24,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF103CU},
     {25,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF103FU},
 }};
-inline constexpr std::array<registry::Slot,10> kSlots19{{
+inline constexpr std::array<registry::Slot,10> kSlots20{{
     {0,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF1067U},
     {1,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF106AU},
     {2,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF106DU},
@@ -1174,7 +1183,7 @@ inline constexpr std::array<registry::Slot,10> kSlots19{{
     {28,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF105EU},
     {29,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF1061U},
 }};
-inline constexpr std::array<registry::Slot,10> kSlots20{{
+inline constexpr std::array<registry::Slot,10> kSlots21{{
     {0,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF10C0U},
     {1,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF10C3U},
     {2,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF10C6U},
@@ -1186,7 +1195,7 @@ inline constexpr std::array<registry::Slot,10> kSlots20{{
     {21,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF10B7U},
     {22,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF10BAU},
 }};
-inline constexpr std::array<registry::Slot,10> kSlots21{{
+inline constexpr std::array<registry::Slot,10> kSlots22{{
     {0,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF10DEU},
     {1,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF10E1U},
     {2,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF10E4U},
@@ -1198,7 +1207,7 @@ inline constexpr std::array<registry::Slot,10> kSlots21{{
     {22,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF10D5U},
     {23,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF10D8U},
 }};
-inline constexpr std::array<registry::Slot,10> kSlots22{{
+inline constexpr std::array<registry::Slot,10> kSlots23{{
     {0,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF10FCU},
     {1,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF10FFU},
     {2,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF1102U},
@@ -1210,7 +1219,7 @@ inline constexpr std::array<registry::Slot,10> kSlots22{{
     {20,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF10F3U},
     {21,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF10F6U},
 }};
-inline constexpr std::array<registry::Slot,10> kSlots23{{
+inline constexpr std::array<registry::Slot,10> kSlots24{{
     {0,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF114AU},
     {1,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF1150U},
     {2,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF1153U},
@@ -1222,7 +1231,7 @@ inline constexpr std::array<registry::Slot,10> kSlots23{{
     {20,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF113AU},
     {21,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF113DU},
 }};
-inline constexpr std::array<registry::Slot,10> kSlots24{{
+inline constexpr std::array<registry::Slot,10> kSlots25{{
     {0,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF1179U},
     {1,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF117FU},
     {2,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80BF1185U},
@@ -1234,7 +1243,7 @@ inline constexpr std::array<registry::Slot,10> kSlots24{{
     {21,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF116CU},
     {22,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80BF116FU},
 }};
-inline constexpr std::array<registry::Slot,8> kSlots25{{
+inline constexpr std::array<registry::Slot,8> kSlots26{{
     {0,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80B9862BU},
     {1,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80B9862EU},
     {2,3,0x80808348U,0x80807F04U,0x80807F0CU,0x80BF05C9U},
@@ -1244,7 +1253,7 @@ inline constexpr std::array<registry::Slot,8> kSlots25{{
     {14,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80B98619U},
     {15,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80B9861EU},
 }};
-inline constexpr std::array<registry::Slot,12> kSlots26{{
+inline constexpr std::array<registry::Slot,12> kSlots27{{
     {0,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80B98683U},
     {1,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80B98686U},
     {2,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80B9868DU},
@@ -1258,7 +1267,7 @@ inline constexpr std::array<registry::Slot,12> kSlots26{{
     {29,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80B9867AU},
     {30,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80B9867DU},
 }};
-inline constexpr std::array<registry::Slot,14> kSlots27{{
+inline constexpr std::array<registry::Slot,14> kSlots28{{
     {0,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80B997CFU},
     {1,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80B997D2U},
     {2,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80B997D5U},
@@ -1274,13 +1283,13 @@ inline constexpr std::array<registry::Slot,14> kSlots27{{
     {27,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80B997C6U},
     {36,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80B997C9U},
 }};
-inline constexpr std::array<registry::Slot,4> kSlots28{{
+inline constexpr std::array<registry::Slot,4> kSlots29{{
     {0,1,0x80809A3BU,0x80807ECCU,0x80807EC9U,0x80B9997AU},
     {1,70,0x808094EEU,0x808094F0U,0x808094F1U,0x80B9997DU},
     {2,42,0x80809583U,0xFFFFFFFFU,0x80809586U,0x80BF16E2U},
     {3,66,0x808094CFU,0xFFFFFFFFU,0xFFFFFFFFU,0x80B99973U},
 }};
-inline constexpr std::array<registry::Slot,13> kSlots29{{
+inline constexpr std::array<registry::Slot,13> kSlots30{{
     {0,4,0x80809927U,0x8080992EU,0x8080992FU,0x80B99652U},
     {1,4,0x80809927U,0x8080992EU,0x8080992FU,0x80B99655U},
     {2,4,0x80809927U,0x8080992EU,0x8080992FU,0x80B99658U},
@@ -1295,7 +1304,7 @@ inline constexpr std::array<registry::Slot,13> kSlots29{{
     {11,4,0x80809927U,0x8080992EU,0x8080992FU,0x80B99E5DU},
     {12,70,0x808094EEU,0x808094F0U,0x808094F1U,0x80B99E7FU},
 }};
-inline constexpr std::array<registry::Slot,22> kSlots30{{
+inline constexpr std::array<registry::Slot,22> kSlots31{{
     {0,4,0x80809927U,0x8080992EU,0x8080992FU,0x80BF11A8U},
     {1,4,0x80809927U,0x8080992EU,0x8080992FU,0x80BF11ABU},
     {2,4,0x80809927U,0x8080992EU,0x8080992FU,0x80BF11AEU},
@@ -1319,7 +1328,7 @@ inline constexpr std::array<registry::Slot,22> kSlots30{{
     {20,4,0x80809927U,0x8080992EU,0x8080992FU,0x80BF11E7U},
     {21,70,0x808094EEU,0x808094F0U,0x808094F1U,0x80BF0C86U},
 }};
-inline constexpr std::array<registry::Definition,31> kRegistries{{
+inline constexpr std::array<registry::Definition,32> kRegistries{{
     {"fleet_freeroam",0x80B3E142U,0x1FD9CD4BU,0x80B99242U,0x4CF9B596U,2,kSlots0},
     {"fleet_freeroam",0x80B3E142U,0x002AC274U,0x80B9925FU,0x4CF9B596U,2,kSlots1},
     {"fleet_freeroam",0x80B3E142U,0x4860DBDEU,0x80BF1D72U,0xF089F7C0U,7,kSlots2},
@@ -1336,23 +1345,24 @@ inline constexpr std::array<registry::Definition,31> kRegistries{{
     {"fleet_freeroam",0x80B3E142U,0x9C55AD8AU,0x80B9942EU,0x4CF9B596U,2,kSlots13},
     {"fleet_freeroam",0x80B3E142U,0xC691626BU,0x80B99470U,0x4CF9B596U,2,kSlots14},
     {"fleet_freeroam",0x80B3E142U,0x56B27F78U,0x80BF088FU,0xC65A2A44U,5,kSlots15},
-    {"fleet_freeroam",0x80B3E142U,0x8D278555U,0x80BF08ACU,0xC65A2A44U,5,kSlots16},
-    {"fleet_freeroam",0x80B3E142U,0x3B91D561U,0x80BF08BCU,0xC65A2A44U,5,kSlots17},
-    {"fleet_freeroam",0x80B3E142U,0x74AE0CA8U,0x80BF1E6FU,0xF089F7C0U,7,kSlots18},
-    {"fleet_freeroam",0x80B3E142U,0x1D66B2B6U,0x80BF1E7CU,0xF089F7C0U,7,kSlots19},
-    {"fleet_freeroam",0x80B3E142U,0x456C6CF3U,0x80BF1E9CU,0xF089F7C0U,7,kSlots20},
-    {"fleet_freeroam",0x80B3E142U,0xC5A11199U,0x80BF1EA9U,0xF089F7C0U,7,kSlots21},
-    {"fleet_freeroam",0x80B3E142U,0x67EACF2BU,0x80BF1EB6U,0xF089F7C0U,7,kSlots22},
-    {"fleet_freeroam",0x80B3E142U,0xFA61517FU,0x80BF1F53U,0xF089F7C0U,7,kSlots23},
-    {"fleet_freeroam",0x80B3E142U,0xDACDA04BU,0x80BF1F70U,0xF089F7C0U,7,kSlots24},
-    {"fleet_freeroam",0x80B3E142U,0x678D75E9U,0x80B98608U,0x18B2F021U,11,kSlots25},
-    {"fleet_freeroam",0x80B3E142U,0xDE79615AU,0x80B98643U,0x18B2F021U,11,kSlots26},
-    {"fleet_freeroam",0x80B3E142U,0xC04C28F6U,0x80B98FB6U,0x137BD679U,1,kSlots27},
-    {"fleet_freeroam",0x80B3E142U,0x05324D75U,0x80B9922EU,0x4CF9B596U,2,kSlots28},
-    {"fleet_freeroam",0x80B3E142U,0xF2C8FA93U,0x80B99676U,0x4CF9B596U,2,kSlots29},
-    {"fleet_freeroam",0x80B3E142U,0x9B958891U,0x80BF11F3U,0xF089F7C0U,7,kSlots30},
+    {"fleet_freeroam",0x80B3E142U,0xAFB2B3C7U,0x80BF089CU,0xC65A2A44U,5,kSlots16},
+    {"fleet_freeroam",0x80B3E142U,0x8D278555U,0x80BF08ACU,0xC65A2A44U,5,kSlots17},
+    {"fleet_freeroam",0x80B3E142U,0x3B91D561U,0x80BF08BCU,0xC65A2A44U,5,kSlots18},
+    {"fleet_freeroam",0x80B3E142U,0x74AE0CA8U,0x80BF1E6FU,0xF089F7C0U,7,kSlots19},
+    {"fleet_freeroam",0x80B3E142U,0x1D66B2B6U,0x80BF1E7CU,0xF089F7C0U,7,kSlots20},
+    {"fleet_freeroam",0x80B3E142U,0x456C6CF3U,0x80BF1E9CU,0xF089F7C0U,7,kSlots21},
+    {"fleet_freeroam",0x80B3E142U,0xC5A11199U,0x80BF1EA9U,0xF089F7C0U,7,kSlots22},
+    {"fleet_freeroam",0x80B3E142U,0x67EACF2BU,0x80BF1EB6U,0xF089F7C0U,7,kSlots23},
+    {"fleet_freeroam",0x80B3E142U,0xFA61517FU,0x80BF1F53U,0xF089F7C0U,7,kSlots24},
+    {"fleet_freeroam",0x80B3E142U,0xDACDA04BU,0x80BF1F70U,0xF089F7C0U,7,kSlots25},
+    {"fleet_freeroam",0x80B3E142U,0x678D75E9U,0x80B98608U,0x18B2F021U,11,kSlots26},
+    {"fleet_freeroam",0x80B3E142U,0xDE79615AU,0x80B98643U,0x18B2F021U,11,kSlots27},
+    {"fleet_freeroam",0x80B3E142U,0xC04C28F6U,0x80B98FB6U,0x137BD679U,1,kSlots28},
+    {"fleet_freeroam",0x80B3E142U,0x05324D75U,0x80B9922EU,0x4CF9B596U,2,kSlots29},
+    {"fleet_freeroam",0x80B3E142U,0xF2C8FA93U,0x80B99676U,0x4CF9B596U,2,kSlots30},
+    {"fleet_freeroam",0x80B3E142U,0x9B958891U,0x80BF11F3U,0xF089F7C0U,7,kSlots31},
 }};
-inline constexpr std::array<PopulationBinding,90> kPopulations{{
+inline constexpr std::array<PopulationBinding,93> kPopulations{{
     {0,0,25,4,0,PopulationKind::patrol,true,7,2,0,1},
     {1,0,5,2,0,PopulationKind::patrol,true,4,2,0,1},
     {2,0,22,3,0,PopulationKind::patrol,true,7,1,0,1},
@@ -1400,59 +1410,62 @@ inline constexpr std::array<PopulationBinding,90> kPopulations{{
     {15,1,8,4,0,PopulationKind::patrol,true,6,2,1,2},
     {15,2,22,4,0,PopulationKind::patrol,true,6,2,0,2},
     {15,3,7,4,0,PopulationKind::patrol,true,6,1,0,1},
-    {16,0,27,4,0,PopulationKind::patrol,true,8,1,0,1},
-    {16,1,9,4,0,PopulationKind::patrol,true,8,1,0,1},
-    {16,2,8,4,0,PopulationKind::patrol,true,8,1,0,1},
-    {16,3,7,4,0,PopulationKind::patrol,true,8,1,0,1},
-    {17,0,26,4,0,PopulationKind::patrol,true,6,1,0,1},
-    {17,1,9,4,0,PopulationKind::patrol,true,6,1,0,1},
-    {17,2,8,4,0,PopulationKind::patrol,true,6,1,0,1},
-    {17,3,7,4,0,PopulationKind::patrol,true,6,1,0,1},
+    {16,0,13,3,0,PopulationKind::patrol,true,5,1,0,2},
+    {16,1,13,3,0,PopulationKind::patrol,true,5,1,0,1},
+    {16,2,13,3,0,PopulationKind::patrol,true,5,1,0,1},
+    {17,0,27,4,0,PopulationKind::patrol,true,8,1,0,1},
+    {17,1,9,4,0,PopulationKind::patrol,true,8,1,0,1},
+    {17,2,8,4,0,PopulationKind::patrol,true,8,1,0,1},
+    {17,3,7,4,0,PopulationKind::patrol,true,8,1,0,1},
+    {18,0,26,4,0,PopulationKind::patrol,true,6,1,0,1},
+    {18,1,9,4,0,PopulationKind::patrol,true,6,1,0,1},
+    {18,2,8,4,0,PopulationKind::patrol,true,6,1,0,1},
+    {18,3,7,4,0,PopulationKind::patrol,true,6,1,0,1},
     {3,1,18,3,0,PopulationKind::patrol,true,5,2,0,1},
     {3,2,6,3,0,PopulationKind::patrol,true,5,1,0,2},
-    {18,0,25,3,0,PopulationKind::patrol,true,8,1,1,2},
-    {18,1,24,3,0,PopulationKind::patrol,true,8,1,0,1},
-    {18,2,6,3,0,PopulationKind::patrol,true,8,1,0,1},
-    {19,0,29,3,0,PopulationKind::patrol,true,8,1,0,1},
-    {19,1,28,3,0,PopulationKind::patrol,true,8,1,0,1},
+    {19,0,25,3,0,PopulationKind::patrol,true,8,1,1,2},
+    {19,1,24,3,0,PopulationKind::patrol,true,8,1,0,1},
     {19,2,6,3,0,PopulationKind::patrol,true,8,1,0,1},
-    {20,0,22,3,0,PopulationKind::patrol,true,8,1,0,1},
-    {20,1,21,3,0,PopulationKind::patrol,true,8,1,0,1},
+    {20,0,29,3,0,PopulationKind::patrol,true,8,1,0,1},
+    {20,1,28,3,0,PopulationKind::patrol,true,8,1,0,1},
     {20,2,6,3,0,PopulationKind::patrol,true,8,1,0,1},
-    {21,0,23,3,0,PopulationKind::patrol,true,7,2,0,1},
-    {21,1,22,3,0,PopulationKind::patrol,true,7,2,0,2},
-    {21,2,6,3,0,PopulationKind::patrol,true,7,1,0,2},
-    {22,0,21,3,0,PopulationKind::patrol,true,7,1,0,1},
-    {22,1,20,3,0,PopulationKind::patrol,true,7,1,0,1},
+    {21,0,22,3,0,PopulationKind::patrol,true,8,1,0,1},
+    {21,1,21,3,0,PopulationKind::patrol,true,8,1,0,1},
+    {21,2,6,3,0,PopulationKind::patrol,true,8,1,0,1},
+    {22,0,23,3,0,PopulationKind::patrol,true,7,2,0,1},
+    {22,1,22,3,0,PopulationKind::patrol,true,7,2,0,2},
     {22,2,6,3,0,PopulationKind::patrol,true,7,1,0,2},
-    {23,0,21,3,0,PopulationKind::patrol,true,5,2,0,1},
-    {23,1,20,3,0,PopulationKind::patrol,true,5,2,0,1},
-    {23,2,6,3,0,PopulationKind::patrol,true,5,1,0,1},
-    {24,0,22,3,0,PopulationKind::patrol,true,7,2,0,1},
-    {24,1,21,3,0,PopulationKind::patrol,true,7,2,0,2},
-    {24,2,6,3,0,PopulationKind::patrol,true,7,1,0,1},
-    {25,0,15,2,0,PopulationKind::patrol,true,2,1,0,1},
-    {25,1,14,2,0,PopulationKind::patrol,true,2,1,0,1},
-    {26,0,29,4,0,PopulationKind::patrol,true,11,1,0,1},
-    {26,1,9,4,0,PopulationKind::patrol,true,11,1,0,1},
-    {26,2,30,4,0,PopulationKind::patrol,true,11,1,0,1},
-    {26,3,8,4,0,PopulationKind::patrol,true,11,1,0,1},
-    {27,0,11,5,0,PopulationKind::patrol,true,10,1,0,1},
-    {27,1,8,5,0,PopulationKind::patrol,true,10,1,0,1},
-    {27,2,36,5,0,PopulationKind::patrol,true,10,1,0,1},
-    {27,3,10,5,0,PopulationKind::patrol,true,10,1,0,1},
-    {27,4,9,5,0,PopulationKind::patrol,true,10,1,0,1},
-    {28,0,0,0,-1,PopulationKind::npc,false,0,0,0,1},
+    {23,0,21,3,0,PopulationKind::patrol,true,7,1,0,1},
+    {23,1,20,3,0,PopulationKind::patrol,true,7,1,0,1},
+    {23,2,6,3,0,PopulationKind::patrol,true,7,1,0,2},
+    {24,0,21,3,0,PopulationKind::patrol,true,5,2,0,1},
+    {24,1,20,3,0,PopulationKind::patrol,true,5,2,0,1},
+    {24,2,6,3,0,PopulationKind::patrol,true,5,1,0,1},
+    {25,0,22,3,0,PopulationKind::patrol,true,7,2,0,1},
+    {25,1,21,3,0,PopulationKind::patrol,true,7,2,0,2},
+    {25,2,6,3,0,PopulationKind::patrol,true,7,1,0,1},
+    {26,0,15,2,0,PopulationKind::patrol,true,2,1,0,1},
+    {26,1,14,2,0,PopulationKind::patrol,true,2,1,0,1},
+    {27,0,29,4,0,PopulationKind::patrol,true,11,1,0,1},
+    {27,1,9,4,0,PopulationKind::patrol,true,11,1,0,1},
+    {27,2,30,4,0,PopulationKind::patrol,true,11,1,0,1},
+    {27,3,8,4,0,PopulationKind::patrol,true,11,1,0,1},
+    {28,0,11,5,0,PopulationKind::patrol,true,10,1,0,1},
+    {28,1,8,5,0,PopulationKind::patrol,true,10,1,0,1},
+    {28,2,36,5,0,PopulationKind::patrol,true,10,1,0,1},
+    {28,3,10,5,0,PopulationKind::patrol,true,10,1,0,1},
+    {28,4,9,5,0,PopulationKind::patrol,true,10,1,0,1},
+    {29,0,0,0,-1,PopulationKind::npc,false,0,0,0,1},
 }};
 inline constexpr std::array<PlacementBinding,3> kPlacements{{
-    {29,0},
     {30,0},
-    {30,1},
+    {31,0},
+    {31,1},
 }};
 inline constexpr std::array<AdventureBinding,3> kAdventures{{
-    {29,0,1142,0x370CA375U,0x1DA883C6U,"adventure_outlaws_hive_bada"},
-    {30,0,1143,0x8667A946U,0x17108A3BU,"adventure_outlaws_hive_plda"},
-    {30,1,1144,0x8667A945U,0x0B163C3CU,"adventure_outlaws_hive_pldb"},
+    {30,0,1142,0x370CA375U,0x1DA883C6U,"adventure_outlaws_hive_bada"},
+    {31,0,1143,0x8667A946U,0x17108A3BU,"adventure_outlaws_hive_plda"},
+    {31,1,1144,0x8667A945U,0x0B163C3CU,"adventure_outlaws_hive_pldb"},
 }};
 inline constexpr Destination kDestination{"Titan","fleet_freeroam",0x80B3E142U,2,kRegistries,kPopulations,kPlacements,kAdventures};
 } // namespace titan

@@ -706,6 +706,53 @@
         ]
       },
       {
+        "registry": "AFB2B3C7",
+        "object": "80BF089C",
+        "bubble": 5,
+        "classification": "ordinary_ambient",
+        "evidence_grade": "strong_B",
+        "activation_policy": "inferred_registry_components",
+        "evidence": [
+          "Exact package whole-owner, complete source, tactical and authored rule identity",
+          "Both phase-compatible Sinking Docks point lists contain byte-identical records for every rule GUID"
+        ],
+        "unresolved": [
+          "Retail scenario selector scheduling is not decoded; simultaneous registry components are host reconstruction.",
+          "The two map-phase point lists are retained as separate pinned dependencies but represent one physical spawn per byte-identical record, never additive requests."
+        ],
+        "point_lists": [
+          "80F33660",
+          "80F33662"
+        ],
+        "point_containers": [
+          "80F33661",
+          "80F33663"
+        ],
+        "point_owner_objects": [],
+        "native_evidence_sha256": "44ad03e37f78f6b6f5ad879cf25e49cb69c1dc4f597442129da39cea549b86f2",
+        "members": [
+          {
+            "source": 0,
+            "targets": [
+              1,
+              0
+            ]
+          },
+          {
+            "source": 1,
+            "targets": [
+              1
+            ]
+          },
+          {
+            "source": 2,
+            "targets": [
+              1
+            ]
+          }
+        ]
+      },
+      {
         "registry": "8D278555",
         "object": "80BF08AC",
         "bubble": 5,

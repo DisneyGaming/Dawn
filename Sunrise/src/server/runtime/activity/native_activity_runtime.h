@@ -9,7 +9,7 @@ using Owner=population::Owner;
 // exact package registries. A sent frame is not a native readiness receipt.
 [[nodiscard]] NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
     const NativeActivityDefinition& definition,const adventure_start::wire::Request& selected={},
-    bool openingAdmissionReady=true) noexcept;
+    bool openingAdmissionReady=true,std::uint32_t populationPrefetchBubble=UINT32_MAX) noexcept;
 void observe(Owner owner,std::uint32_t bubble,
     const middleware::bap::activity_message::sense_update::SenseUpdate& update) noexcept;
 /** Read-only snapshot; never starts a script or executes an update tick. */

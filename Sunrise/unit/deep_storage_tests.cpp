@@ -16,8 +16,8 @@ static void check(bool ok,const char* what) {if(!ok) {std::fprintf(stderr,"FAIL:
 // already changed before mission receipt hooks can finish installing.
 static void shared_hook_ownership_checks() {
     namespace hooks=sunrise::client::hooks::bootflow::native_hook_ownership;
-    std::array<std::uintptr_t,16> sites{};
-    std::array<unsigned,16> owners{};std::size_t count{};
+    std::array<std::uintptr_t,19> sites{};
+    std::array<unsigned,19> owners{};std::size_t count{};
     const auto add=[&](const auto& targets,unsigned owner) {
         for(const auto target:targets) {
             check(target!=0 && count<sites.size(),"physical hook plan fits and has valid targets");
@@ -28,6 +28,9 @@ static void shared_hook_ownership_checks() {
     };
     add(hooks::kAmbientNamedPoints,1);add(hooks::kHijackedPlacements,2);
     add(hooks::kArcCharge,3);add(hooks::kNativeCapture,4);
+    add(hooks::kCleanupOwner,5);
+    add(hooks::kPropertyList,6);
+    add(hooks::kLocalReconnect,7);
     const auto owner_of=[&](std::uintptr_t target) {
         for(std::size_t i=0;i<count;++i)if(sites[i]==target)return owners[i];
         return 0U;
@@ -36,6 +39,7 @@ static void shared_hook_ownership_checks() {
     check(owner_of(0x575690)==2,"Hijacked owns shared object construction");
     check(owner_of(0x4E25D0)==1,"ambient owns shared point interface");
     check(owner_of(0x1006F20)==3,"arc-charge owns shared mission and capture timer");
+    check(owner_of(0xF9C150)==5,"cleanup owner guard has one physical detour");
 }
 static ds::Point point(const ds::Volume& v) {
     for(unsigned x=1;x<40;++x) for(unsigned y=1;y<40;++y) {

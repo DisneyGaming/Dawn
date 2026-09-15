@@ -27,17 +27,17 @@ class MemberCatalogTests(unittest.TestCase):
     def test_current_native_sources_match_reviewed_pins(self) -> None:
         catalog.validate_pins(self.actual, self.pinned)
         self.assertEqual(self.pin_text, catalog.canonical_json(self.pinned))
-        self.assertEqual(len(self.actual["sources"]), 746)
-        self.assertEqual(sum(row["positiveChoiceCount"] for row in self.actual["sources"]), 6102)
+        self.assertEqual(len(self.actual["sources"]), 749)
+        self.assertEqual(sum(row["positiveChoiceCount"] for row in self.actual["sources"]), 6126)
         self.assertEqual(
             {origin: sum(row["origin"] == origin for row in self.actual["sources"])
              for origin in ("generic", "mercury")},
-            {"generic": 719, "mercury": 27},
+            {"generic": 722, "mercury": 27},
         )
         self.assertEqual(
             {width: sum(row["categoryCount"] == width for row in self.actual["sources"])
              for width in (1, 2)},
-            {1: 670, 2: 76},
+            {1: 672, 2: 77},
         )
 
     def test_selected_source_identity_coverage_is_exact(self) -> None:
@@ -144,7 +144,7 @@ class MemberCatalogTests(unittest.TestCase):
             cwd=ROOT, check=False, capture_output=True, text=True,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("Checked 746 sources, 6102 positive choices", result.stdout)
+        self.assertIn("Checked 749 sources, 6126 positive choices", result.stdout)
 
 
 if __name__ == "__main__":

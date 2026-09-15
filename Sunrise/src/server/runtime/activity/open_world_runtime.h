@@ -6,6 +6,8 @@
 #include "placement_service.h"
 #include "../../../state/activity/coo/native_population_ledger.h"
 #include <array>
+#include <memory>
+#include <new>
 #include <span>
 #include <utility>
 
@@ -43,8 +45,9 @@ template<class Document>
     output=candidate;return true;
 }
 
-// Starts package-authored sources only in the currently arrived bubble. Patrol
-// renewal requires native consumed state plus real death and retirement receipts.
+// Starts package-authored sources in the arrived bubble, and prewarms patrols
+// in a separately announced incoming bubble. Renewal requires native consumed
+// state plus real death and retirement receipts.
 class Director final {
 public:
     [[nodiscard]] bool begin(population::Owner owner,std::uint64_t boot,
@@ -52,7 +55,7 @@ public:
         Configuration configuration={}) noexcept {
         if(owner_ || !owner || !boot || !valid(definition) || !valid(configuration)
             || capabilities.size()!=definition.authored->populations.size()
-            || capabilities.size()>states_.size())return false;
+            || capabilities.size()>population::kSourceCapacity)return false;
         for(std::size_t i=0;i<capabilities.size();++i) {
             const auto& binding=definition.authored->populations[i];
             if(binding.registry>=definition.authored->registries.size()
@@ -72,6 +75,9 @@ public:
             +=target(definition.authored->populations[i],configuration).total();
         std::size_t total{};for(const auto count:requests)total+=count;
         if(total>kRetainedRequestCapacity)return false;
+        std::unique_ptr<Workspace> workspace(new(std::nothrow) Workspace{});
+        if(!workspace)return false;
+        workspace_=std::move(workspace);
         owner_=owner;boot_=boot;definition_=&definition;capabilities_=capabilities;configuration_=configuration;
         return true;
     }
@@ -79,17 +85,34 @@ public:
     template<class Ledger>
     [[nodiscard]] bool update(std::uint64_t now,std::uint32_t bubble,bool arrived,
         population::Service& service,std::span<const Ledger> ledgers,
-        std::span<const std::uint8_t> nativePending) noexcept {
+        std::span<const std::uint8_t> nativePending,
+        std::uint32_t prewarmBubble=UINT32_MAX) noexcept {
         if(!definition_ || service.owner()!=owner_ || service.boot()!=boot_
             || ledgers.size()<capabilities_.size() || nativePending.size()<capabilities_.size()
             || (lastNow_ && now<lastNow_))return false;
-        lastNow_=now;if(!arrived)return true;
+        // Loading/visibility pauses are the useful prewarm window. A qualified
+        // publication hint may queue ordinary patrols there, but cannot start
+        // the not-yet-held bubble, renew casualties, or advance the clock.
+        if(!arrived)return prewarmBubble>=64 || start_bubble(service,prewarmBubble,true);
+        lastNow_=now;
         if(!start_bubble(service,bubble))return false;
-        return renew_patrols(now,bubble,service,ledgers,nativePending);
+        if(!renew_patrols(now,bubble,service,ledgers,nativePending))return false;
+        // Publication may announce an aligned incoming region before the held
+        // region changes. Prewarm only its ordinary patrol sources. This does
+        // not make the hint current, reset a visit, or move retained casualty
+        // clocks; the next actual bubble update remains authoritative.
+        return prewarmBubble>=64 || prewarmBubble==bubble
+            || start_bubble(service,prewarmBubble,true);
     }
 
 private:
     struct State final {std::uint64_t clearAt{};bool started{},cooling{};patrol_replenishment::Credits credits{};};
+    // At 384 sources either array exceeds 400 KiB. Allocate once per owner,
+    // never on the publication stack or on each tick. Failed transactions leave
+    // both the committed source service and committed director states intact.
+    struct Workspace final {
+        std::array<State,population::kSourceCapacity> states{},staged{};
+    };
 
     struct Targets final {
         std::uint8_t first{},second{};
@@ -117,22 +140,25 @@ private:
         return result==population::Result::accepted;
     }
 
-    [[nodiscard]] bool start_bubble(population::Service& service,std::uint32_t bubble) noexcept {
-        auto staged=service;auto states=states_;
+    [[nodiscard]] bool start_bubble(population::Service& service,std::uint32_t bubble,
+        bool patrolOnly=false) noexcept {
+        auto staged=service;auto& states=workspace_->staged;states=workspace_->states;
         for(std::size_t i=0;i<capabilities_.size();++i) {
-            if(capabilities_[i].registry->bubble!=bubble || states[i].started)continue;
+            if(capabilities_[i].registry->bubble!=bubble || states[i].started
+                || (patrolOnly && definition_->authored->populations[i].kind
+                    !=authored::PopulationKind::patrol))continue;
             if(staged.target(i))states[i].started=true;
             else if(!request(staged,i,target(i),bubble))return false;
             else states[i].started=true;
         }
-        service=std::move(staged);states_=states;return true;
+        service=std::move(staged);workspace_->states=states;return true;
     }
 
     template<class Ledger>
     [[nodiscard]] bool renew_patrols(std::uint64_t now,std::uint32_t,
         population::Service& service,std::span<const Ledger> ledgers,
         std::span<const std::uint8_t> nativePending) noexcept {
-        auto staged=service;auto states=states_;
+        auto staged=service;auto& states=workspace_->staged;states=workspace_->states;
         for(std::size_t i=0;i<capabilities_.size();++i) {
             auto& state=states[i];
             if(!state.started
@@ -167,12 +193,12 @@ private:
             if(!request(staged,i,target(i),sourceBubble,true))return false;
             state.cooling=false;
         }
-        service=std::move(staged);states_=states;return true;
+        service=std::move(staged);workspace_->states=states;return true;
     }
 
     population::Owner owner_{};std::uint64_t boot_{},lastNow_{};
     const Definition* definition_{};std::span<const population::Capability> capabilities_{};
-    Configuration configuration_{};std::array<State,population::kSourceCapacity> states_{};
+    Configuration configuration_{};std::unique_ptr<Workspace> workspace_{};
 };
 
 [[nodiscard]] inline bool append_placements(std::span<const placement::Capability> capabilities,
