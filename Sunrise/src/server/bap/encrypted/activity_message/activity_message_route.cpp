@@ -26,6 +26,7 @@
 #include "../../../../middleware/bap/activity_message/entity_authority.h"
 #include "../../../../middleware/bap/activity_message/entity_slots.h"
 #include "../../../../middleware/bap/activity_message/incident.h"
+#include "../../../../middleware/bap/activity_message/loot_pickup.h"
 #include "../../../../middleware/bap/activity_message/sense_update.h"
 #include "../../../../middleware/bap/activity_message/tower_watch_cue_manifest.h"
 #include "../../../../state/activity/destination/activity_destination_snapshot.h"
@@ -41,6 +42,9 @@
 #include "../diagnostics/omega_trace.h"
 #include "middleware/bap/activity_message/activity_entity_slot_request_parser.h"
 #include "patch_epoch/activity_patch_epoch_route.h"
+#include "festival_pickups.h"
+#include "forest_chest_rewards.h"
+#include "forest_loot_pickups.h"
 
 namespace sunrise::server::bap::encrypted::activity_message {
 namespace {
@@ -1159,12 +1163,69 @@ void report_accepted(std::uint32_t messageType,
     }
 }
 
-void report_incident(const service::Request& request,bool liveBinding) noexcept {
+/**
+ * Incident targets whose raw body is dumped verbatim, so a wire layout that Dawn cannot decode yet
+ * can still be read back from the log. 3539 is the native placed-loot report: its Haunted Forest
+ * arm is 82 bytes, two more than the Tower arm, and the extra 16 bits have not been located.
+ */
+constexpr std::array<std::uint32_t,1> kPayloadDumpTargets{
+    service::loot_pickup::kIncidentTarget};
+
+/**
+ * Dumps per activity incarnation.
+ * [owner] Not authored. One opened chest per branch is the expected rate, so eight covers a whole
+ * run while bounding the log growth of a debug-level hex dump.
+ */
+constexpr unsigned kPayloadDumpsPerRun = 8;
+
+/** Capped hex dump of one watched incident body. Never changes any retained state. */
+void report_incident_payload(const service::incident::Incident& parsed,
+    state::activity::ActivityInstanceKey owner) noexcept {
+    if(!parsed.hasPayload || parsed.payloadLength==0
+        || std::find(kPayloadDumpTargets.begin(),kPayloadDumpTargets.end(),parsed.primaryTarget)
+            ==kPayloadDumpTargets.end())return;
+    // BAP's route lock serializes every caller, exactly as the pickup rings assume.
+    static std::uint64_t dumpRun{};
+    static unsigned dumped{};
+    const std::uint64_t run=owner.incarnation.value;
+    if(dumpRun!=run) { dumpRun=run;dumped=0U; }
+    if(dumped>=kPayloadDumpsPerRun)return;
+    ++dumped;
+    std::array<char,core::log::kLineCapacity> line{};
+    const int header=std::snprintf(line.data(),line.size(),
+        "ev=activity stage=incident_payload target=%u bytes=%u hex=",
+        parsed.primaryTarget,parsed.payloadLength);
+    if(header<=0 || static_cast<std::size_t>(header)>=line.size())return;
+    auto cursor=static_cast<std::size_t>(header);
+    const auto bytes=(std::min)(static_cast<std::size_t>(parsed.payloadLength),
+        parsed.payload.size());
+    for(std::size_t index=0;index<bytes && cursor+3U<line.size();++index) {
+        const int step=std::snprintf(line.data()+cursor,line.size()-cursor,"%02X",
+            static_cast<unsigned>(static_cast<std::uint8_t>(parsed.payload[index])));
+        if(step<=0)break;
+        cursor+=static_cast<std::size_t>(step);
+    }
+    core::log::write(core::log::Channel::server,core::log::Level::debug,{line.data(),cursor});
+}
+
+void report_incident(const service::Request& request,bool liveBinding,
+    state::activity::ActivityInstanceKey owner,const Session& session) noexcept {
     namespace incident = service::incident;
     namespace ending = state::activity::omega_ending;
     incident::Incident parsed;
     const incident::Verdict verdict = incident::validate(request.payload, parsed);
     namespace player_trigger=state::activity::coo::native_player_trigger;
+    if(liveBinding && verdict==incident::Verdict::accepted && parsed.hasPayload
+        && parsed.primaryTarget==player_trigger::kIncident) {
+        player_trigger::Receipt receipt{};
+        if(player_trigger::decode(std::span(parsed.payload).first(parsed.payloadLength),receipt)
+            && owner) {
+            static_cast<void>(::sunrise::server::runtime::activity::native_activity::observe_player_trigger(owner,receipt));
+            // pf_reward_chest carries no interaction controller, so pt_reward_chest is the only
+            // authored "reached the chest" signal. Nothing is armed here; the trigger is native.
+            forest_chest_rewards::receive(session,owner,receipt);
+        }
+    }
     if(liveBinding && verdict==incident::Verdict::accepted && parsed.hasPayload
         && parsed.primaryTarget==player_trigger::kIncident) {
         const auto run=state::activity::strike_pact::native_run();
@@ -1193,6 +1254,7 @@ void report_incident(const service::Request& request,bool liveBinding) noexcept 
                 static_cast<std::uint16_t>(receipt.slot));
         }
     }
+    if(verdict==incident::Verdict::accepted)report_incident_payload(parsed,owner);
     // A skip prompt only raises this incident; playback stops when the host publishes the
     // stop authority, which the ending runtime does for a movie it is currently playing.
     const bool skipRequested = verdict == incident::Verdict::accepted
@@ -1524,8 +1586,16 @@ bool process(Session& session,
         }
         return true;
     } else if (request.messageType == service::incident::kMessageType) {
-        report_incident(request,hasBoundHandle && lifecycle::activity_binding_is_current(session)
-            && state::activity::contains(session.activity.instance) && session.activityPatchEpochSeen);
+        const bool liveBinding = hasBoundHandle && lifecycle::activity_binding_is_current(session)
+                                 && state::activity::contains(session.activity.instance)
+                                 && session.activityPatchEpochSeen;
+        if (liveBinding) {
+            festival_pickups::receive(session, request);
+            // Same guard, same message: the Forest arm of the same placed-loot report. The two
+            // rings are destination-exclusive, so exactly one of them can ever queue a claim.
+            forest_loot_pickups::receive(session, request);
+        }
+        report_incident(request, liveBinding, session.activity.instance, session);
         return true;
     } else if (request.messageType == authority::kRequestPurgeMessageType) {
         if (!report_request_purge(request)) {

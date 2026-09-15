@@ -107,6 +107,28 @@ inline constexpr std::uint32_t kGatewayOpeningSpawn = 0x69F52B3EU;
 }
 inline constexpr ForcedDestination kGatewayOpening = gateway_opening();
 
+/** Haunted Forest's furnished opening: bubble 13, slice set 104, and its authored spawn set. */
+inline constexpr char kHauntedForestPackageName[] = "infinite_abyss";
+inline constexpr std::uint8_t kHauntedForestOpeningBubble = 13;
+inline constexpr std::uint16_t kHauntedForestOpeningSlice = 104;
+inline constexpr std::uint32_t kHauntedForestOpeningSpawn = 0x79E3AB1FU;
+[[nodiscard]] constexpr ForcedDestination haunted_forest_opening() noexcept {
+    ForcedDestination value{};
+    for (std::size_t index = 0; index < sizeof kHauntedForestPackageName - 1; ++index) {
+        value.packageName[index] = kHauntedForestPackageName[index];
+    }
+    value.packageNameLength = sizeof kHauntedForestPackageName - 1;
+    value.bubble = kHauntedForestOpeningBubble;
+    value.sliceSet = kHauntedForestOpeningSlice;
+    value.spawnSetHash = kHauntedForestOpeningSpawn;
+    value.hasBubble = true;
+    value.hasSliceSet = true;
+    value.hasSpawnSetHash = true;
+    value.enabled = true;
+    return value;
+}
+inline constexpr ForcedDestination kHauntedForestOpening = haunted_forest_opening();
+
 
 // A Deadly Trial native town opening. Spawn is the recovered point set inside
 // the opening dialogue filter; final orientation requires a live run.
@@ -192,6 +214,7 @@ static_assert(active(kEaterOfWorldsOpening));
 
 static_assert(active(profiles::kTowerfallOpening));
 static_assert(active(profiles::kGatewayOpening));
+static_assert(active(profiles::kHauntedForestOpening));
 
 /**
  * Tests whether a candidate can be stored, complete or not.

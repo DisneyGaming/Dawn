@@ -49,7 +49,7 @@ int main(int argc,char** argv) {
         check(!beyond::body_bits(frame,0x8E70632BU,37,4),"Beyond foreign generator slot rejected");
     }
     auto request=garden::forest_request(12345);
-    check(request.topology==std::array<float,2>{0.F,0.F},"Garden server selects both solver inputs");
+    check(request.topology==generator::kAuthoredTopologies,"Garden retains authored solver inputs");
     check(request.values[0]==6 && request.selectAnchors && request.selectSeed,"existing recipe ownership retained");
     emit(directory,"garden.bin",request);
     auto disabled=request;disabled.enabled=false;emit(directory,"disabled.bin",disabled);

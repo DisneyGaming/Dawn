@@ -35,8 +35,20 @@ public:
     }
     [[nodiscard]] bool arm(std::size_t index,coo::Token token) noexcept {
         if(!owner_ || index>=bindings_.size() || !token.run || !token.incarnation
-            || token.run!=owner_.incarnation.value || states_[index].armed || states_[index].delivered)return false;
+            || token.run!=owner_.sessionId || states_[index].armed || states_[index].delivered)return false;
         states_[index].token=token;states_[index].armed=true;return true;
+    }
+    // A repeated platform uses a fresh CoO token while retaining the native
+    // monitor mirror. The old revision is consequently still rejected by
+    // Monitor::observe; only a delivered or explicitly cancelled wait may be
+    // rearmed.
+    [[nodiscard]] bool rearm(std::size_t index,coo::Token token) noexcept {
+        if(!owner_ || index>=bindings_.size() || !token.run || !token.incarnation
+            || token.run!=owner_.sessionId || states_[index].armed
+            || (!states_[index].delivered && !states_[index].cancelled)
+            || token==states_[index].token)return false;
+        states_[index].token=token;states_[index].armed=true;
+        states_[index].delivered=false;states_[index].cancelled=false;return true;
     }
     template<class Submit>
     [[nodiscard]] bool observe(population::Owner owner,std::uint64_t boot,std::uint32_t bubble,
@@ -53,16 +65,23 @@ public:
             // Owner calls this under its normal state mutex, outside update().
             // Executor still validates the exact active command token on intake.
             if(!submit(coo::Event{state.token,coo::Milestone::observed}))return false;
-            state.delivered=true;state.armed=false;return true;
+            state.delivered=true;state.armed=false;state.cancelled=false;return true;
         }
         return false;
     }
     void cancel(coo::Token token) noexcept {
-        for(auto& state:states_)if(state.token==token)state.armed=false;
+        for(auto& state:states_)if(state.token==token){state.armed=false;state.cancelled=true;}
+    }
+    // Presentation may read the authenticated mirror without arming a gameplay wait.
+    [[nodiscard]] bool occupied(std::size_t index) const noexcept {
+        return index<bindings_.size() && states_[index].monitor.occupied();
     }
     [[nodiscard]] bool armed(std::size_t index) const noexcept {return index<bindings_.size() && states_[index].armed;}
+    [[nodiscard]] bool delivered(std::size_t index) const noexcept {
+        return index<bindings_.size() && states_[index].delivered;
+    }
 private:
-    struct State {ambient_population::Monitor monitor{};coo::Token token{};bool armed{},delivered{};};
+    struct State {ambient_population::Monitor monitor{};coo::Token token{};bool armed{},delivered{},cancelled{};};
     population::Owner owner_{};std::uint64_t boot_{};
     std::span<const Binding> bindings_{};
     std::array<State,32> states_{};

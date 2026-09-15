@@ -19,6 +19,7 @@ struct Context final {
     Owner owner{};std::uint64_t boot{},definitionRevision{},selectionRevision{},event{};
     std::uint64_t clockTicks{UINT64_MAX};
     std::int16_t activity{-1};std::uint32_t bubble{UINT32_MAX};bool arrived{},admitted{};
+    std::uint8_t generation{1};
 };
 class Runtime final {
 public:
@@ -39,9 +40,9 @@ public:
     }
     [[nodiscard]] bool begin(const Definition& d,const Context& c) noexcept {
         if(definition_ || !valid(d) || !c.owner || !c.boot || !c.definitionRevision || !c.selectionRevision
-            || !c.event || c.clockTicks==UINT64_MAX || c.activity<0 || c.bubble!=d.registry->bubble
+            || !c.event || c.generation==255 || c.clockTicks==UINT64_MAX || c.activity<0 || c.bubble!=d.registry->bubble
             || !c.arrived || !c.admitted || !executor_.start(*d.graph,c.event))return false;
-        definition_=&d;owner_=c;request_={d.registry->key,d.slot,d.registry->bubble,1,c.clockTicks,UINT64_MAX};return true;
+        definition_=&d;owner_=c;request_={d.registry->key,d.slot,d.registry->bubble,c.generation,c.clockTicks,UINT64_MAX};return true;
     }
     [[nodiscard]] bool update(const Context& c) noexcept {
         if(!same(c) || failed_)return false;
@@ -68,7 +69,8 @@ public:
 private:
     [[nodiscard]] bool same(const Context& c) const noexcept {
         return definition_ && c.owner==owner_.owner && c.boot==owner_.boot && c.definitionRevision==owner_.definitionRevision
-            && c.selectionRevision==owner_.selectionRevision && c.event==owner_.event && c.activity==owner_.activity;
+            && c.selectionRevision==owner_.selectionRevision && c.event==owner_.event && c.activity==owner_.activity
+            && c.generation==owner_.generation;
     }
     struct Driver final:coo::Services {
         Runtime& owner;explicit Driver(Runtime& value):owner(value){}

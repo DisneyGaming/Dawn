@@ -21,7 +21,11 @@
 #include "../../../state/activity/deadly_trial/frame.h"
 #include "../../../state/activity/strike_pact/frame.h"
 #include "native/population_authority.h"
+#include "native/round_authority.h"
+#include "native/forest_switches.h"
+#include "native/status_effect_authority.h"
 #include "native/placement_authority.h"
+#include "../../../state/activity/coo/native_player_trigger.h"
 #include "native/native_npc_animation_authority.h"
 #include "native/adventure_cue_authority.h"
 #include "native/adventure_dialogue_authority.h"
@@ -165,7 +169,13 @@ struct Snapshot final {
     native::world_sequence::Batch sequences{};
     native::event_participant::Batch eventParticipants{};
     native::music::Batch music{};
+    native::status_effect::Batch statusEffects{};
+    state::activity::coo::native_player_trigger::Batch playerTriggers{};
     native::player_predicates::Set playerPredicates{};
+    /** Exact, server-owned generic round authority profile; inactive by default. */
+    native::round_authority::State nativeRound{};
+    /** Optional typed Forest lifetime switches owned by the active generic round. */
+    native::forest_switches::Batch nativeForestSwitches{};
     /** Selects the archive protocol only for mission_scot. */
     bool archiveOmega{};
     state::activity::gateway::Frame gateway{};
@@ -318,6 +328,8 @@ struct Snapshot final {
     bool hasGrant{};
     bool hasRegion{};
     bool hasSpawnOverride{};
+    bool preferSpawnHistory{};
+    bool nativeRespawnRestricted{};
     /** Hold the client's spawn while it loads by emitting `awaiting_client_sync`. */
     bool awaitClientSync{};
     /** Register the groups and seed no object. Separates no components from no auth state. */

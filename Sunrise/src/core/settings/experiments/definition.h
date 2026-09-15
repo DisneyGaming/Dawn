@@ -25,6 +25,17 @@ struct Omega final {
     bool unsafeDiagnostics{};
     /** Select the CoO adapter at the next Omega run; retain legacy by default. */
     bool cooExecutor{};
+    /**
+     * Haunted Forest candy drops: the client-side hook that writes the one pending-drop record the
+     * stripped reward sheets would have produced, so the native bauble spawns and reports 601.
+     */
+    bool forestCandyDrops{};
+    /**
+     * Haunted Forest reward coffers: publishes the five o_coffer placements (registry slots 63-67)
+     * alongside the end-of-run chest. Off until a live roster proves those slots carry the
+     * placement auth flag, because the rewards-phase placement frame is all-or-nothing.
+     */
+    bool forestRewardCoffers{};
 };
 
 } // namespace sunrise::core::settings::experiments

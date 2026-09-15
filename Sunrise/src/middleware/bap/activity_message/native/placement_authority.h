@@ -3,6 +3,7 @@
 #include "../../../encoding/bit_writer.h"
 #include "public_event_interaction_authority.h"
 #include "capture_controller_authority.h"
+#include "generic_device_authority.h"
 #include <array>
 #include <optional>
 #include <bit>
@@ -42,6 +43,7 @@ struct Request final {
     // Native auth+9 and cached XYZ at +20. With an absent reference this
     // replaces translation only; the authored rotation and W remain intact.
     std::optional<Position> position{};
+    std::optional<generic_device::State> pose{};
 };
 [[nodiscard]] constexpr std::size_t body_bits(const Request& request) noexcept {
     if(!interaction::valid(request.interactionMode) || !valid_generation(request.generation)
@@ -49,6 +51,10 @@ struct Request final {
         || (request.position && (!request.generation || !std::isfinite(request.position->x)
             || !std::isfinite(request.position->y) || !std::isfinite(request.position->z)))
         || (request.capture && (!request.generation || !capture_controller::valid(*request.capture))))return 0;
+    if(request.pose && (!request.generation || !generic_device::valid(*request.pose)))return 0;
+    if(request.pose)return kAuthoredActiveBits+generic_device::kRecordBits
+        +(request.capture?capture_controller::kRecordBits:0)
+        +(request.interactionMode==interaction::Mode::unchanged?0:1+interaction::kPayloadBits);
     if(request.capture)return kAuthoredActiveBits+capture_controller::kRecordBits
         +(request.interactionMode==interaction::Mode::unchanged?0:1+interaction::kPayloadBits);
     if(request.generation && request.interactionMode==interaction::Mode::unchanged)return kAuthoredActiveBits;
@@ -62,7 +68,7 @@ template<class Writer> [[nodiscard]] bool write(Writer& writer,const Request& re
         // raw wire0 decodes INT_MIN and can never advance a committed0 source.
         // Auth+9=false retains the candidate's authored transform (9EFBC0).
         const bool overrides=request.interactionMode!=interaction::Mode::unchanged;
-        const auto count=(overrides?1U:0U)+(request.capture?1U:0U);
+        const auto count=(overrides?1U:0U)+(request.capture?1U:0U)+(request.pose?1U:0U);
         return writer.write(0x80000000U+request.generation,32) && writer.write(0x80000000U,32)
             && writer.write(request.active?1U:0U,1) && writer.write(request.position?1U:0U,1) && writer.write(0x80000000U,32)
             && writer.write(0x811C9DC5U,32) && writer.write(0,7) && writer.write(32767,16)
@@ -71,7 +77,8 @@ template<class Writer> [[nodiscard]] bool write(Writer& writer,const Request& re
             && writer.write(request.position?std::bit_cast<std::uint32_t>(request.position->z):0U,32)
             && writer.write(0,1) && writer.write(count,2)
             && (!overrides || interaction::write_record(writer,request.interactionMode))
-            && (!request.capture || capture_controller::write_record(writer,*request.capture));
+            && (!request.capture || capture_controller::write_record(writer,*request.capture))
+            && (!request.pose || generic_device::write_record(writer,*request.pose));
     }
     return write_active(writer,request.interactionMode);
 }

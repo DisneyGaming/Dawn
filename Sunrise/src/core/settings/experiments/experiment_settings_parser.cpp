@@ -50,6 +50,8 @@ bool Parser::omega_experiment_settings(experiments::Omega& output) noexcept {
     bool hasSyntheticStageMachine = false;
     bool hasUnsafeDiagnostics = false;
     bool hasCooExecutor = false;
+    bool hasForestCandyDrops = false;
+    bool hasForestRewardCoffers = false;
     if (consume('}')) {
         return true;
     }
@@ -96,6 +98,12 @@ bool Parser::omega_experiment_settings(experiments::Omega& output) noexcept {
         } else if (key == "coo_executor") {
             if (hasCooExecutor || !boolean(candidate.cooExecutor)) { return false; }
             hasCooExecutor = true;
+        } else if (key == "forest_candy_drops") {
+            if (hasForestCandyDrops || !boolean(candidate.forestCandyDrops)) { return false; }
+            hasForestCandyDrops = true;
+        } else if (key == "forest_reward_coffers") {
+            if (hasForestRewardCoffers || !boolean(candidate.forestRewardCoffers)) { return false; }
+            hasForestRewardCoffers = true;
         } else if (key == "unsafe_diagnostics") {
             if (hasUnsafeDiagnostics || !boolean(candidate.unsafeDiagnostics)) {
                 return false;

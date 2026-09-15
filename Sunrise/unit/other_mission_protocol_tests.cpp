@@ -9,6 +9,9 @@
 
 #include "middleware/bap/activity_message/sensor_auth_update.h"
 #include "middleware/encoding/bit_reader.h"
+#include "server/runtime/activity/native_round_projection.h"
+#include "state/build_data/scenarios/definition.h"
+#include "state/activity/coo/authored_registry.h"
 #include "state/activity/strike_bond/authority.h"
 #include "state/activity/eater_of_worlds/authority.h"
 #include "state/activity/eater_of_worlds/doors.h"
@@ -16,9 +19,266 @@
 
 namespace wire = sunrise::middleware::bap::activity_message::sensor_auth_update;
 namespace bits = sunrise::middleware::encoding::bits;
+namespace round_wire = sunrise::middleware::bap::activity_message::native::round_authority;
+namespace status = sunrise::middleware::bap::activity_message::native::status_effect;
+namespace runtime = sunrise::server::runtime::activity;
+namespace coo = sunrise::state::activity::coo;
+namespace layouts = sunrise::state::build_data::scenarios;
+namespace forest_switches = sunrise::middleware::bap::activity_message::native::forest_switches;
 
 void check(bool value, const char* message) {
     if (!value) { std::fprintf(stderr, "%s\n", message); std::exit(1); }
+}
+
+struct SyntheticNativeDefinition final {
+    std::uint8_t bubble{};
+    std::span<const coo::registry::Definition> registries{};
+};
+
+struct SyntheticRoundDefinition final {
+    coo::Asset completionTimerAsset{};
+};
+
+void check_round_projection_and_wire() {
+    constexpr std::uint32_t registryKey = 0x4786C0E0U;
+    constexpr std::uint32_t localRegistryKey = 0x13572468U;
+    constexpr std::uint32_t timerDefinition = 0x8155018EU;
+    constexpr std::uint32_t lifetimeDefinition = 0x81550191U;
+    constexpr std::uint32_t directorDefinition = 0x81550123U;
+    constexpr std::uint8_t bubble = 7;
+    static constexpr coo::registry::Slot slots[]{
+        {2,18,0x80809918U,0x80809917U,0x80809919U,timerDefinition},
+        {5,17,0x80809915U,0xFFFFFFFFU,0x8080991AU,lifetimeDefinition},
+        {9,35,0x808099BEU,0x808099BDU,0x808099BFU,directorDefinition},
+    };
+    static constexpr coo::registry::Definition registry{
+        "synthetic-round",0x2468ACE0U,localRegistryKey,0x81550015U,0xDEADBEEFU,bubble,slots};
+    static constexpr std::array<coo::registry::Definition,1> registries{registry};
+    static constexpr SyntheticNativeDefinition definition{bubble,registries};
+    constexpr SyntheticRoundDefinition roundDefinition{{registryKey,timerDefinition,18,2}};
+
+    static constexpr auto resolvedTimerGroup = [] {
+        layouts::RosterGroup group{};
+        group.registryKey = 0x4786C0E0U;
+        group.objectTag = 0x81550015U;
+        group.slotCount = 3;
+        group.slotIndices[0] = 2;
+        group.slotIndices[1] = 5;
+        group.slotIndices[2] = 9;
+        group.slotTypes[0] = 18;
+        group.slotTypes[1] = 17;
+        group.slotTypes[2] = 35;
+        group.slotFlags[0] = group.slotFlags[1] = group.slotFlags[2] = 3;
+        group.descriptorTags[0] = 0x8155018EU;
+        group.descriptorTags[1] = 0x81550191U;
+        group.descriptorTags[2] = 0x81550123U;
+        group.authSchemas[0] = 0x80809919U;
+        group.authSchemas[1] = 0x8080991AU;
+        group.authSchemas[2] = 0x808099BFU;
+        return group;
+    }();
+    wire::Roster roster{};
+    roster.groups[0] = {registryKey,
+        std::span<const std::uint8_t>(resolvedTimerGroup.slotTypes).first(3),
+        std::span<const std::uint8_t>(resolvedTimerGroup.slotFlags).first(3),
+        std::span<const std::uint16_t>(resolvedTimerGroup.slotIndices).first(3)};
+    roster.groupCount = 1;
+    roster.topLevelGroupCount = 1;
+
+    runtime::activity_clock::Publication clock{};
+    clock.domain = {{1,{2}},3,7,registry.scenario,bubble};
+    clock.configuration = {false,1.0F};
+    clock.elapsedTicks = 1234;
+    const coo::CompletionPublication completion{{1,{4}},true,6};
+    const auto projected = runtime::native_round_projection::project(
+        definition,roundDefinition,roster,resolvedTimerGroup,registry.scenario,bubble,
+        clock,1234,true,completion);
+    check(projected.controlled,"admitted round projection is controlled");
+    check(projected.timer == roundDefinition.completionTimerAsset
+        && projected.lifetime.registry == registryKey
+        && projected.lifetime.type == 17 && projected.lifetime.slot == 5
+        && projected.lifetime.definition == lifetimeDefinition
+        && projected.director.type == 35 && projected.director.slot == 9
+        && projected.director.definition == directorDefinition,
+        "round projection resolves exact companion assets");
+    check(projected.completion.owner == completion.owner
+        && projected.completion.complete == completion.complete
+        && projected.completion.state == completion.state,
+        "round projection retains exact completion");
+
+    auto wrongLifetimeSchemaGroup = resolvedTimerGroup;
+    wrongLifetimeSchemaGroup.authSchemas[1] = 0x80809518U;
+    check(!runtime::native_round_projection::project(
+        definition,roundDefinition,roster,wrongLifetimeSchemaGroup,registry.scenario,bubble,
+        clock,1234,false).controlled,
+        "wrong lifetime authority schema is uncontrolled");
+
+    wire::Snapshot snapshot{};
+    snapshot.nativeRound = projected;
+    snapshot.missionCompletion = completion;
+    snapshot.lifetime = 3;
+    std::array<std::byte,65> bytes{};
+    bits::Writer timerWriter(bytes);
+    check(wire::legacy_auth_body_bits(snapshot,registryKey,18,2,false) == round_wire::kBodyBits,
+        "other-missions timer reports 386 bits");
+    check(wire::legacy_write_auth_body(timerWriter,snapshot,registryKey,18,2,false)
+        && timerWriter.bit_count() == 386,"other-missions timer writes 386 bits");
+    bits::Reader timerReader(std::span<const std::byte>(bytes).first((386U + 7U) / 8U));
+    std::uint64_t value{};
+    check(timerReader.read(1,value) && value == 1,"completed timer is running");
+    check(timerReader.skip(64 * 4) && timerReader.read(64,value) && value == 1234,
+        "timer carries the exact completion epoch");
+    check(timerReader.skip(32 + 1 + 32) && timerReader.remaining_bits() == 6,
+        "timer decoder consumes the real 386-bit body");
+
+    bits::Writer lifetimeWriter(bytes);
+    check(wire::legacy_auth_body_bits(snapshot,registryKey,17,5,false) == 520
+        && wire::legacy_write_auth_body(lifetimeWriter,snapshot,registryKey,17,5,false)
+            && lifetimeWriter.bit_count() == 520,
+        "other-missions lifetime writes its real 520-bit body");
+    bits::Writer directorWriter(bytes);
+    check(wire::legacy_auth_body_bits(snapshot,registryKey,35,9,false) == 359
+        && wire::legacy_write_auth_body(directorWriter,snapshot,registryKey,35,9,false)
+            && directorWriter.bit_count() == 359,
+        "other-missions director writes its real 359-bit body");
+
+    check(wire::legacy_auth_body_bits(snapshot,registryKey,18,3,false) == 0,
+        "unowned timer slot is not shadowed");
+    check(!runtime::native_round_projection::project(
+        definition,SyntheticRoundDefinition{{registryKey,timerDefinition ^ 1U,18,2}},roster,
+        resolvedTimerGroup,registry.scenario,bubble,clock,1234,false).controlled,
+        "mismatched timer descriptor is uncontrolled");
+    auto duplicateGroup = resolvedTimerGroup;
+    duplicateGroup.slotCount = 4;
+    duplicateGroup.slotIndices[3] = 11;
+    duplicateGroup.slotTypes[3] = 17;
+    duplicateGroup.slotFlags[3] = 3;
+    duplicateGroup.descriptorTags[3] = 0x81550192U;
+    duplicateGroup.authSchemas[3] = 0x8080991AU;
+    auto duplicateRoster = roster;
+    duplicateRoster.groups[0] = {registryKey,
+        std::span<const std::uint8_t>(duplicateGroup.slotTypes).first(4),
+        std::span<const std::uint8_t>(duplicateGroup.slotFlags).first(4),
+        std::span<const std::uint16_t>(duplicateGroup.slotIndices).first(4)};
+    check(!runtime::native_round_projection::project(
+        definition,roundDefinition,duplicateRoster,duplicateGroup,registry.scenario,bubble,
+        clock,1234,false).controlled,
+        "duplicate lifetime companion is uncontrolled");
+
+    auto localDuplicateRoster = roster;
+    localDuplicateRoster.topLevelGroupCount = 1;
+    localDuplicateRoster.groupCount = 2;
+    localDuplicateRoster.groups[1] = roster.groups[0];
+    check(!runtime::native_round_projection::project(
+        definition,roundDefinition,localDuplicateRoster,resolvedTimerGroup,registry.scenario,
+        bubble,clock,1234,false).controlled,
+        "global timer in a local roster group is uncontrolled");
+    std::array<std::uint32_t,1> duplicateKeys{registryKey};
+    const wire::BubbleSubBlock duplicateBlock{bubble,duplicateKeys};
+    auto subblockDuplicateRoster = roster;
+    subblockDuplicateRoster.bubbleSubBlocks = std::span(&duplicateBlock,1);
+    check(!runtime::native_round_projection::project(
+        definition,roundDefinition,subblockDuplicateRoster,resolvedTimerGroup,registry.scenario,
+        bubble,clock,1234,false).controlled,
+        "global timer in a bubble sub-block is uncontrolled");
+
+    wire::Snapshot forestSnapshot{};
+    forestSnapshot.nativeRound = projected;
+    forestSnapshot.nativeForestSwitches.count = 4;
+    forestSnapshot.nativeForestSwitches.entries[0] = {0x10000001U,0x20000001U};
+    forestSnapshot.nativeForestSwitches.entries[1] = {0x10000002U,0x20000002U};
+    forestSnapshot.nativeForestSwitches.entries[2] = {0x10000003U,0x20000003U};
+    forestSnapshot.nativeForestSwitches.entries[3] = {0x10000004U,0x20000004U};
+    std::array<std::byte,128> forestBytes{};
+    bits::Writer fourSwitches(forestBytes);
+    check(wire::legacy_auth_body_bits(forestSnapshot,registryKey,17,5,false)
+        == 520 + 4 * forest_switches::kSwitchBits
+        && wire::legacy_write_auth_body(fourSwitches,forestSnapshot,registryKey,17,5,false)
+        && fourSwitches.bit_count() == 520 + 4 * forest_switches::kSwitchBits,
+        "generic Forest batch reports and writes four exact selectors");
+    bits::Reader switchReader(forestBytes);
+    check(switchReader.skip(207), "generic Forest selector head boundary");
+    for (std::size_t i = 0; i < 4; ++i) {
+        check(switchReader.read(32,value) && value == forestSnapshot.nativeForestSwitches.entries[i].key
+            && switchReader.read(1,value) && value == 1
+            && switchReader.read(32,value) && value == forest_switches::kHashClass
+            && switchReader.read(32,value) && value == forestSnapshot.nativeForestSwitches.entries[i].value,
+            "generic Forest selector has exact key, presence, class and typed value");
+    }
+
+    wire::Snapshot legacySnapshot{};
+    legacySnapshot.strike_bond.enabled = true;
+    legacySnapshot.nativeForestSwitches = forestSnapshot.nativeForestSwitches;
+    std::array<std::byte,2048> legacyA{}, legacyB{};
+    bits::Writer legacyWriterA(legacyA), legacyWriterB(legacyB);
+    check(wire::legacy_auth_body_bits(legacySnapshot,registryKey,17,5,false)
+        == 520 + 4 * forest_switches::kSwitchBits
+        && wire::legacy_write_auth_body(legacyWriterA,legacySnapshot,registryKey,17,5,false),
+        "unowned empty round keeps legacy Forest selectors");
+    legacySnapshot.nativeForestSwitches = {};
+    check(wire::legacy_write_auth_body(legacyWriterB,legacySnapshot,registryKey,17,5,false)
+        && legacyWriterA.bit_count() == legacyWriterB.bit_count() && legacyA == legacyB,
+        "unowned native Forest batch does not alter legacy output");
+
+    auto invalidBatch = forestSnapshot;
+    invalidBatch.nativeForestSwitches.count = forest_switches::kCapacity + 1;
+    check(!forest_switches::valid(invalidBatch.nativeForestSwitches)
+        && wire::legacy_auth_body_bits(invalidBatch,registryKey,17,5,false) == 0,
+        "oversized owned Forest batch is denied before body sizing");
+    invalidBatch.nativeForestSwitches = forestSnapshot.nativeForestSwitches;
+    invalidBatch.nativeForestSwitches.entries[1].key = invalidBatch.nativeForestSwitches.entries[0].key;
+    check(!forest_switches::valid(invalidBatch.nativeForestSwitches)
+        && wire::legacy_auth_body_bits(invalidBatch,registryKey,17,5,false) == 0,
+        "duplicate owned Forest selector is denied before body sizing");
+    invalidBatch.nativeForestSwitches = forestSnapshot.nativeForestSwitches;
+    invalidBatch.nativeForestSwitches.entries[0].value = forest_switches::kAbsentHash;
+    bits::Writer closed(bytes);
+    check(!wire::legacy_write_auth_body(closed,invalidBatch,registryKey,17,5,false)
+        && closed.bit_count() == 0,
+        "invalid owned Forest batch fails body closed");
+}
+
+void check_status_effect_wire() {
+    constexpr std::uint32_t key = 0x13579BDFU;
+    constexpr std::uint16_t slot = 4;
+    constexpr std::uint8_t bubble = 0;
+    const std::array<std::uint8_t,1> types{status::kType};
+    const std::array<std::uint8_t,1> flags{3};
+    const std::array<std::uint16_t,1> indices{slot};
+    const std::array<std::uint32_t,1> keys{key};
+    wire::Snapshot snapshot{};
+    snapshot.region = 0;
+    snapshot.roster.groups[0] = {key,types,flags,indices};
+    snapshot.roster.groupCount = 1;
+    // Keep the backing sub-block alive for the checks below.
+    const wire::BubbleSubBlock subBlock{bubble,keys};
+    snapshot.roster.bubbleSubBlocks = std::span(&subBlock,1);
+    snapshot.statusEffects.count = 1;
+    snapshot.statusEffects.entries[0] = {key,slot,bubble,true};
+    std::array<std::byte,40> bytes{};
+    bits::Writer enabled(bytes);
+    check(wire::legacy_auth_body_bits(snapshot,key,status::kType,slot,false) == status::kActiveBits
+        && wire::legacy_write_auth_body(enabled,snapshot,key,status::kType,slot,false)
+        && enabled.bit_count() == status::kActiveBits,
+        "enabled type-26 status writes 251 bits");
+    bits::Reader enabledReader(bytes);
+    std::uint64_t value{};
+    check(enabledReader.skip(1) && enabledReader.read(1,value) && value == 0,
+        "enabled type-26 status has enabled discriminator");
+
+    snapshot.statusEffects.entries[0].enabled = false;
+    bits::Writer disabled(bytes);
+    check(wire::legacy_auth_body_bits(snapshot,key,status::kType,slot,false) == status::kInactiveBits
+        && wire::legacy_write_auth_body(disabled,snapshot,key,status::kType,slot,false)
+            && disabled.bit_count() == status::kInactiveBits,
+        "disabled type-26 status writes 186 bits");
+    bits::Reader disabledReader(bytes);
+    check(disabledReader.skip(1) && disabledReader.read(1,value) && value == 1,
+        "disabled type-26 status has disabled discriminator");
+
+    snapshot.statusEffects.entries[0].registry = key ^ 1U;
+    check(wire::legacy_auth_body_bits(snapshot,key,status::kType,slot,false) == 0,
+        "nonmatching status request falls through");
 }
 
 #ifdef OMEGA_PORT_LOCAL
@@ -208,6 +468,8 @@ void check_eater_outer_wire() {
 #endif
 
 int main() {
+    check_round_projection_and_wire();
+    check_status_effect_wire();
 #ifdef OMEGA_PORT_LOCAL
     check_gameplay_clock_transport();
     check_eater_outer_wire();

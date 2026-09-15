@@ -89,7 +89,7 @@ inline const coo::script::Profile kProfile{PROFILE_ID,"nativeOtherActivities", \
 inline const NativeActivityDefinition kActivity{authored::kDestination.activity,SCRIPT_FILE, \
     authored::kDestination.primaryBubble,&kProfile,authored::kRegistries,Storage::populations, \
     Storage::placements,kActions,kPersistentModule,{},Storage::routes,{},{},{},{},{},{}, \
-    "host.tick_hz",{},{},{},{},{},{},true,&Storage::runtime}; \
+    "host.tick_hz",{},{},{},{},{},{},true,{}, {}, false, {}, &Storage::runtime}; \
 }
 
 SUNRISE_OPEN_WORLD_PROFILE(io,io,L"eden_freeroam.json","io.freeroam.native.v1")

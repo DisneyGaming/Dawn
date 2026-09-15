@@ -2,6 +2,7 @@
 
 #include "../encoding/bit_writer.h"
 #include "../encoding/byte_order.h"
+#include "messages/opcode601/opcode601_codec.h"
 #include "status_fields.h"
 
 namespace sunrise::middleware::web_service {
@@ -35,6 +36,11 @@ bool encode_response(const Message& request,
 
     encoding::bits::Writer writer(output.subspan(kEnvelopeHeaderSize));
     bool encoded = sunrise::middleware::web_service::status::write_fields(writer, shape, status);
+    // The loot pickup reply is the status pair plus an echoed source tail; without the tail the
+    // 165-bit decoder under-runs, which is fatal for the BAP link.
+    if (request.opcode == messages::opcode601::kOpcode && shape == ResponseShape::statusPair) {
+        encoded = encoded && messages::opcode601::write_tail(writer, request);
+    }
     encoded = encoded && writer.write(0, kAbsentTrailerWidth);
 
     std::size_t payloadSize = 0;

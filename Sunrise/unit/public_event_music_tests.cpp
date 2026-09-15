@@ -33,6 +33,8 @@ struct Roster {
     std::array<Group, 2> groups{};
     std::size_t groupCount{}, topLevelGroupCount{};
     std::vector<Block> bubbleSubBlocks;
+    std::span<const std::uint32_t> topLevelKeys;
+    std::span<const std::uint8_t> topLevelPresence, topLevelStates;
 };
 int main(int argc, char **argv) {
     if (argc != 2)

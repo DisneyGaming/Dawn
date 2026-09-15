@@ -7,14 +7,11 @@
 #include "opcode901_codec.h"
 
 #include "../../../encoding/bit_reader.h"
+#include "../biased_field.h"
 
 namespace sunrise::middleware::web_service::messages::opcode901 {
 namespace {
 
-/** Both index fields are 16-bit signed values. */
-constexpr std::uint8_t kIndexWidth = 16;
-/** Their descriptor bias is the signed 16-bit midpoint. */
-constexpr std::int32_t kIndexBias = 0x8000;
 /** The optional clock is a 64-bit signed value with no bias. */
 constexpr std::uint8_t kClockWidth = 64;
 /** One presence bit precedes the clock. */
@@ -24,21 +21,6 @@ constexpr std::uint8_t kPresenceWidth = 1;
  * A whole byte left over is data, not padding.
  */
 constexpr std::size_t kPaddingLimit = 8;
-
-/**
- * Reads one biased index field.
- * @param reader Open reader.
- * @param output Receives the logical index.
- * @return True when the field was present.
- */
-[[nodiscard]] bool read_index(encoding::bits::Reader& reader, std::int16_t& output) noexcept {
-    std::uint64_t stored = 0;
-    if (!reader.read(kIndexWidth, stored)) {
-        return false;
-    }
-    output = static_cast<std::int16_t>(static_cast<std::int32_t>(stored) - kIndexBias);
-    return true;
-}
 
 } // namespace
 
@@ -50,7 +32,8 @@ bool parse_request(const Message& message, Request& output) noexcept {
     encoding::bits::Reader reader(message.payload);
     Request candidate{};
     std::uint64_t present = 0;
-    if (!read_index(reader, candidate.vendorIndex) || !read_index(reader, candidate.saleIndex)
+    if (!read_biased_index(reader, candidate.vendorIndex)
+        || !read_biased_index(reader, candidate.saleIndex)
         || !reader.read(kPresenceWidth, present)) {
         return false;
     }

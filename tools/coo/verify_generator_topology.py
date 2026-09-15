@@ -97,12 +97,16 @@ def replay(image,decoded,name):
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('directory',type=Path);args=parser.parse_args()
+    # Verify Garden publication independently of worker behavior.
+    garden_source=decode((args.directory/'garden.bin').read_bytes())
+    assert [[struct.unpack_from('<b',garden_source,offset)[0],struct.unpack_from('<b',garden_source,height)[0],struct.unpack_from('<f',garden_source,weight)[0],struct.unpack_from('<B',garden_source,active)[0]] for offset,height,weight,active in ((8,9,12,16),(17,18,20,24),(25,26,28,32),(33,34,36,40))]==[[-1,1,0.,0],[-1,0,0.,0],[1,2,1.,1],[1,0,0.,1]]
     image=(ROOT/'destiny2_unpacked.bin').read_bytes();assert hashlib.sha256(image).hexdigest()==PIN
     results=[]
     for name in ('garden','disabled','authored','tree','omega','beyond1','beyond2'):
         decoded=decode((args.directory/(name+'.bin')).read_bytes());result=replay(image,decoded,name);results.append(result)
     print(json.dumps(results,indent=2))
-    assert results[0]['solver']==[[0.0,0.0]] and results[0]['stored']==[0.0,0.0]
+    assert results[0]['solver']==results[2]['solver']==results[3]['solver'] and results[0]['solver']!=[[0.0,0.0]]
+    assert results[0]['stored']==results[2]['stored']==results[3]['stored']
     assert not results[1]['solver']
     assert results[2]['solver']==results[3]['solver'] and results[2]['solver']!=[[0.0,0.0]]
     assert all(x['ownerBitmap']==0 for x in results)

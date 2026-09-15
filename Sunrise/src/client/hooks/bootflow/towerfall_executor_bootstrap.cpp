@@ -559,6 +559,16 @@ __declspec(noinline) std::byte* __fastcall selection_launch_state_accessor(
         state + kSelectionSourceOffset, static_cast<std::int16_t>(-1));
     const std::int16_t destinationBefore = safe_read<std::int16_t>(
         state + kSelectionDestinationOffset, static_cast<std::int16_t>(-1));
+    const std::size_t nativePackageLength=bounded_package_length(
+        state+kSelectionPackageOffset,kSelectionPackageCapacity);
+    const std::string_view nativePackage(
+        reinterpret_cast<const char*>(state+kSelectionPackageOffset),nativePackageLength);
+    if (state::activity::forced::release_haunted_forest_for_native_selection(
+            source,destinationBefore,nativePackage)) {
+        core::log::write(core::log::Channel::client,core::log::Level::info,
+            "ev=haunted_forest_direct stage=native_selection override=released activity=78");
+        return state;
+    }
     state::activity::forced::ForcedDestination forced{};
     state::activity::forced::snapshot(forced);
     const auto* profile = prelaunch::configured(forced);

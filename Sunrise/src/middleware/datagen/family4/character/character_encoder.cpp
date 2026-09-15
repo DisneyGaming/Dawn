@@ -6,9 +6,12 @@
 #include <cstring>
 #include <limits>
 #include <optional>
+#include <utility>
 
-#include "../../../../state/activity/nightfall/native_power.h"
 #include "../../../../state/unlocks/unlocks_runtime.h"
+#include "../../../../state/account/festival_quest.h"
+#include "../../../../state/activity/events/activity_event_selection.h"
+#include "../../../../state/activity/nightfall/native_power.h"
 #include "../instance/layout.h"
 #include "../progression/progression_bank_keys.h"
 #include "abi.h"
@@ -159,6 +162,15 @@ bool encode(const state::CharacterState& state,
     object.lastOrbitedDestination = state.lastOrbitedDestination;
     object.previewMirrors.fill(state.previewAvailable ? kNativeTrue : kNativeFalse);
     object.contentBypass = state.contentBypass ? kNativeTrue : kNativeFalse;
+    const auto eva = state::account::festival_quest::available(
+        state, !state::activity::events::withheld(0x7C6DE64FU));
+    const std::array<std::pair<std::int16_t, bool>, 3> evaFlags{{
+        {20826, eva.intro}, {20829, eva.wearingMasks}, {20831, eva.finalStage}}};
+    object.flagOverrides.count = static_cast<std::uint32_t>(evaFlags.size());
+    for (std::size_t i = 0; i < evaFlags.size(); ++i) {
+        object.flagOverrides.rows[i].slot = evaFlags[i].first;
+        object.flagOverrides.rows[i].value = evaFlags[i].second ? 2 : 0;
+    }
     object.seenMessages.fill(kSeenMessageByte);
     for (inventory::layout::Entry& item : object.inventoryItems) {
         item.definitionIndex = kEmptyDefinitionIndex;

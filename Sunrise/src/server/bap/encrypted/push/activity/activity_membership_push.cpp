@@ -16,6 +16,7 @@
 #include "../../../../gameplay/gameplay_advertisement.h"
 #include "activity_arrival.h"
 #include "activity_notification_frame.h"
+#include "../../../../runtime/activity/native_activity_transit.h"
 
 namespace sunrise::server::bap::encrypted::push::activity {
 namespace {
@@ -81,6 +82,15 @@ make_wire_snapshot(state::activity::ActivityInstanceKey activity,
         state::activity::mission_run_generation(),snapshot.identity.memberKey,
         name=="adventure_vod" && layout.tag==state::activity::beyond_infinity::kScenario,nativeTransit);
     if(beyond.publish) { terminal=beyond; }
+    const auto generic = runtime::activity::native_activity_transit::project(
+        activity, snapshot.identity.memberKey, snapshot.hasTeleportReceipt,
+        {snapshot.teleport.state, snapshot.teleport.token, snapshot.teleport.sliceSetIndex,
+         snapshot.teleport.sliceSetHash}, reported);
+    if (generic.present && !terminal.publish) {
+        terminal = {{generic.host.state, generic.host.token, generic.host.sliceSetIndex,
+                     generic.host.sliceSetHash}, generic.present, generic.arrived,
+                    generic.released};
+    }
     if(terminal.publish) {
         wire.teleport={terminal.host.state,terminal.host.token,terminal.host.sliceSetIndex,
             terminal.host.sliceSetHash};

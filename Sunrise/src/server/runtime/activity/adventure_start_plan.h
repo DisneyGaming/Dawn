@@ -9,6 +9,7 @@
 namespace sunrise::server::runtime::activity::adventure_start {
 namespace wire=middleware::bap::activity_message::adventure_start;
 namespace placements=middleware::bap::activity_message::native::placement;
+namespace interaction=middleware::bap::activity_message::native::interaction;
 
 // Trusted activity data, not a message-controlled destination table.
 struct Route final {
@@ -77,7 +78,8 @@ enum class Result : std::uint8_t {
     for(std::size_t i=0;i<context.published.count;++i) {
         const auto& placement=context.published.entries[i];
         if(placement.registry==match->registry && placement.slot==match->slot
-           && placement.bubble==match->bubble) published=true;
+           && placement.bubble==match->bubble && placement.active
+           && placement.interactionMode!=interaction::Mode::disabled) published=true;
     }
     if(!published) return Result::placementUnavailable;
     output={context.owner,context.expectedRecordRevision,request,*match};

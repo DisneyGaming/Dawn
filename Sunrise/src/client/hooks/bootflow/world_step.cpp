@@ -11,6 +11,8 @@
 #include "bootflow_hook_lifecycle.h"
 #include "internal.h"
 #include "hijacked_placements.h"
+#include "forest_candy_drops.h"
+#include "native_round_player_probe.h"
 #include "../graphics/hijacked_frame_timing.h"
 #include "omega_enemy_lair_receipts.h"
 #include "../../activity/mission_launch.h"
@@ -131,6 +133,8 @@ void poll_world_step() noexcept {
     sample_omega_directive_presentation();
     omega_activity_handoff::poll();
     hijacked_placements::poll();
+    forest_candy_drops::poll();
+    native_round_player_probe::poll();
     poll_native_population_admissions();
     client::activity::mission_launch::poll();
 }

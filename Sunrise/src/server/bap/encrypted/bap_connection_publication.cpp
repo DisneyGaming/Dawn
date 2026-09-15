@@ -8,6 +8,7 @@
 
 #include "../../../core/logging/log.h"
 #include "../../../core/settings/settings.h"
+#include "../../../state/activity/events/activity_event_selection.h"
 #include "../../../state/activity/forced/activity_forced_destination.h"
 #include "push/activity/internal.h"
 
@@ -194,6 +195,7 @@ bool publish_connection_fields(Session& session,
         const std::uint64_t now = GetTickCount64();
         session.activity.keepaliveDueTick = now;
         session.activity.rosterDueTick = now;
+        state::activity::events::reload();
 
         std::array<char, core::log::kLineCapacity> line{};
         const int written = std::snprintf(

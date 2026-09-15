@@ -3,6 +3,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string_view>
 
 #include "../../middleware/datagen/family4/loadout/loadout_resolver.h"
@@ -110,6 +111,11 @@ apply_collection_materials(const AccountState& before,
                            const build_data::collectibles::Definition& collectible,
                            AccountState& after,
                            bool& changed) noexcept;
+[[nodiscard]] bool
+apply_authored_cost(const AccountState& before,
+                    std::span<const build_data::material_requirements::Requirement> cost,
+                    AccountState& after,
+                    bool& changed) noexcept;
 [[nodiscard]] bool
 valid_profile_mutation_shape(const PendingProfileItemAcquisition& mutation) noexcept;
 [[nodiscard]] bool materialize_profile_acquisition(const AccountState& current,

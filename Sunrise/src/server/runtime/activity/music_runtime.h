@@ -68,7 +68,7 @@ class Runtime final {
             return false;
         request_.registry = d.registry->key;
         request_.slot = d.slot;
-        request_.scope = d.registry->bubble;
+        request_.scope = d.registry->topLevel ? UINT32_MAX : d.registry->bubble;
         request_.candidateCount = static_cast<std::uint16_t>(d.candidates.size());
         if (!wire::valid(request_))
             return false;

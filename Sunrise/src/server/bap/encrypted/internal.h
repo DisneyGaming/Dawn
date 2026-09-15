@@ -56,12 +56,15 @@ struct ItemStateTransaction {
 struct ItemAcquisitionTransaction {
     state::PendingItemAcquisition pending{};
     queuez::ItemAcquisition update{};
+    std::uint16_t answeredVendor{state::vendors::kAbsentIndex};
 };
 
 /** Profile acquisition and its exact account/resident QueueZ after-image. */
 struct ProfileItemAcquisitionTransaction {
     state::PendingProfileItemAcquisition pending{};
+    web_service::forest_loot::PickupCommit pickup{};
     queuez::ProfileItemAcquisition update{};
+    std::uint16_t answeredVendor{state::vendors::kAbsentIndex};
 };
 
 /** Dismantle mutation and its exact QueueZ after-image. */

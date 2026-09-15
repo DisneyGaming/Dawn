@@ -2,7 +2,9 @@
 
 #include <Windows.h>
 
+#include <cstdint>
 #include <cstring>
+#include <limits>
 
 namespace sunrise::core::path {
 namespace {
@@ -63,6 +65,36 @@ bool artifact_directory(void* module, Buffer& output) noexcept {
     return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
 }
 
+bool artifact_file(std::wstring_view relative, Buffer& output) noexcept {
+    HMODULE self{};
+    if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS
+                               | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                           reinterpret_cast<LPCWSTR>(&artifact_file),
+                           &self)
+            == FALSE
+        || self == nullptr) {
+        return false;
+    }
+    if (!artifact_directory(self, output)) {
+        return false;
+    }
+    std::size_t start = 0;
+    for (std::size_t index = 0; index < relative.size(); ++index) {
+        if (relative[index] != L'\\') {
+            continue;
+        }
+        if (!append(output, L"\\") || !append(output, relative.substr(start, index - start))) {
+            return false;
+        }
+        if (CreateDirectoryW(output.chars.data(), nullptr) == FALSE
+            && GetLastError() != ERROR_ALREADY_EXISTS) {
+            return false;
+        }
+        start = index + 1;
+    }
+    return append(output, L"\\") && append(output, relative.substr(start));
+}
+
 /** Appends a path suffix without exceeding fixed storage. */
 bool append(Buffer& path, std::wstring_view suffix) noexcept {
     if (path.length + suffix.size() >= path.chars.size()) {
@@ -72,6 +104,57 @@ bool append(Buffer& path, std::wstring_view suffix) noexcept {
     path.length += suffix.size();
     path.chars[path.length] = L'\0';
     return true;
+}
+
+bool read_artifact_text(std::wstring_view relative, std::span<char> text) noexcept {
+    if (text.empty()) {
+        return false;
+    }
+    text[0] = '\0';
+    Buffer file{};
+    if (!artifact_file(relative, file)) {
+        return false;
+    }
+    const HANDLE handle = CreateFileW(file.chars.data(), GENERIC_READ, FILE_SHARE_READ, nullptr,
+                                      OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (handle == INVALID_HANDLE_VALUE) {
+        return false;
+    }
+    LARGE_INTEGER size{};
+    DWORD read = 0;
+    const bool measured = GetFileSizeEx(handle, &size) != FALSE;
+    const bool fits = measured && size.QuadPart >= 0
+                      && static_cast<std::uint64_t>(size.QuadPart) < text.size();
+    const bool ok = fits
+                    && ReadFile(handle, text.data(), static_cast<DWORD>(text.size() - 1), &read,
+                                nullptr) != FALSE;
+    (void)CloseHandle(handle);
+    if (!ok || read == 0) {
+        return false;
+    }
+    text[read] = '\0';
+    return true;
+}
+
+/** Writes one Sunrise-owned text file whole, replacing what was there. */
+bool write_artifact_text(std::wstring_view relative, std::string_view text) noexcept {
+    if (text.size() > (std::numeric_limits<DWORD>::max)()) {
+        return false;
+    }
+    Buffer file{};
+    if (!artifact_file(relative, file)) {
+        return false;
+    }
+    const HANDLE handle = CreateFileW(file.chars.data(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS,
+                                      FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (handle == INVALID_HANDLE_VALUE) {
+        return false;
+    }
+    DWORD written = 0;
+    const auto size = static_cast<DWORD>(text.size());
+    const bool complete = WriteFile(handle, text.data(), size, &written, nullptr) != FALSE
+                          && written == size;
+    return CloseHandle(handle) != FALSE && complete;
 }
 
 } // namespace sunrise::core::path

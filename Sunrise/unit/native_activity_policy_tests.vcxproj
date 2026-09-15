@@ -19,11 +19,13 @@
     <PreprocessorDefinitions Condition="'$(OmegaVariant)'!='reference'">OMEGA_PORT_LOCAL;WIN32;_WINDOWS;NOMINMAX;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
   </ClCompile><Link><SubSystem>Console</SubSystem><StackReserveSize>16777216</StackReserveSize><AdditionalDependencies>user32.lib;%(AdditionalDependencies)</AdditionalDependencies></Link></ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\state\activity\native_population_events.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="native_activity_policy_tests.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="..\src\state\activity\coo\mission_script.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="..\src\middleware\encoding\bit_writer.cpp" />
     <ClCompile Include="..\src\middleware\encoding\bit_reader.cpp" />
     <ClCompile Include="..\src\server\runtime\activity\adventure_native_bridge.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="..\src\server\runtime\activity\native_activity_transit.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="..\src\server\runtime\activity\public_event_native_bridge.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="..\src\server\runtime\activity\public_event_participant_bridge.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="..\src\server\runtime\activity\public_event_key_bridge.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>

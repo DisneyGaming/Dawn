@@ -107,7 +107,7 @@ inline constexpr std::array<registry::Slot,126> kStartSlots{{
     {100,34,0x80809568,0xFFFFFFFF,0x8080956A,0x81550030}, // of_victims
     {101,34,0x80809568,0xFFFFFFFF,0x8080956A,0x81550033}, // of_teleporter
     {102,31,0x80809522,0xFFFFFFFF,0x80809524,0x8155015E}, // pt_reward_space
-    {103,30,0x8080952F,0x80809531,0x80809532,0x81550161}, // unnamed
+    {103,30,0x8080952F,0x80809531,0x80809532,0x81550161}, // pm_pit
     {104,31,0x80809522,0xFFFFFFFF,0x80809524,0x81550164}, // pt_reward_chest
     {105,31,0x80809522,0xFFFFFFFF,0x80809524,0x81550167}, // pt_reward_chest_alt
     {106,30,0x8080952F,0x80809531,0x80809532,0x8155016A}, // pm_bonus_platform

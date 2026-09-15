@@ -341,6 +341,7 @@ bool process(const ServiceRoute& route,
                                                               itemAcquisition->acquiredInstanceSoid,
                                                               output.first(written));
                 transaction.pending = *itemAcquisition;
+                transaction.answeredVendor = webOutcome.answeredVendor;
             }
         }
         if (profileItemAcquisition != nullptr) {
@@ -380,6 +381,8 @@ bool process(const ServiceRoute& route,
                     profileItemAcquisition->acquiredQuantity,
                     output.first(written));
                 transaction.pending = *profileItemAcquisition;
+                transaction.pickup = webOutcome.pickup;
+                transaction.answeredVendor = webOutcome.answeredVendor;
             }
         }
         if (itemDismantle != nullptr) {

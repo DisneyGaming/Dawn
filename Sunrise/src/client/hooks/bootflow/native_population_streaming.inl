@@ -253,7 +253,7 @@ void prepare_source(void* instance) noexcept {
     auto* consumed=reinterpret_cast<volatile LONG*>(reinterpret_cast<std::uintptr_t>(instance)+0x268);
     if(InterlockedCompareExchange(consumed,saved,current.consumed)!=current.consumed)return;
     const nativeEvents::Event event{receipt.lease,{receipt.lease.source},identity.handle,
-        nativeEvents::Kind::sourceRecreated,previous->identity.handle};
+        nativeEvents::Kind::sourceRecreated,0,UINT32_MAX,previous->identity.handle};
     if(!nativeEvents::submit(event,receipt)) {
         InterlockedCompareExchange(consumed,current.consumed,saved);return;
     }

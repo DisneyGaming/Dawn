@@ -4,9 +4,11 @@
 
 namespace sunrise::server::runtime::activity::placement {
 namespace wire=middleware::bap::activity_message::native::placement;
+namespace interaction=middleware::bap::activity_message::native::interaction;
 struct Capability final {
     const registry::Definition* registry{};std::uint16_t slot{};
     std::uint32_t generation{};
+    interaction::Mode interactionMode{interaction::Mode::unchanged};
 };
 // Invoked only after the owning activity has admitted the exact registry.
 // Persistent placements keep the native activation tuple stable across refreshes.
@@ -15,7 +17,8 @@ struct Capability final {
     output={};wire::Batch result{};
     for(const auto& capability:definitions) {
         if(!capability.registry || !registry::valid(*capability.registry)
-            || !wire::valid_generation(capability.generation)) return false;
+            || !wire::valid_generation(capability.generation)
+            || !interaction::valid(capability.interactionMode)) return false;
         const auto& definition=*capability.registry;
         unsigned matches{};
         for(const auto& slot:definition.slots)
@@ -28,7 +31,7 @@ struct Capability final {
         if(result.count==result.entries.size()) return false;
         auto& request=result.entries[result.count++];
         request.registry=definition.key;request.slot=capability.slot;request.bubble=definition.bubble;
-        request.generation=capability.generation;
+        request.generation=capability.generation;request.interactionMode=capability.interactionMode;
     }
     output=result;return true;
 }

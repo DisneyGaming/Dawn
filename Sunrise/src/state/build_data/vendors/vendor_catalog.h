@@ -72,6 +72,10 @@ void clear() noexcept;
 [[nodiscard]] bool
 sale_rows(const Definition& definition, std::span<SaleRow> output, std::size_t& count) noexcept;
 
+/** Reads one sale row under the catalog lock. */
+[[nodiscard]] bool
+sale_row(const Definition& definition, std::size_t row, SaleRow& output) noexcept;
+
 /**
  * Copies the installed rows one definition owns, in row order.
  * @param definition Definition whose range is copied.
@@ -82,6 +86,10 @@ sale_rows(const Definition& definition, std::span<SaleRow> output, std::size_t& 
 [[nodiscard]] bool installed_rows(const Definition& definition,
                                   std::span<InstalledRow> output,
                                   std::size_t& count) noexcept;
+
+/** Reads one installed row under the catalog lock. */
+[[nodiscard]] bool
+installed_row(const Definition& definition, std::size_t row, InstalledRow& output) noexcept;
 
 /**
  * Copies every index row in ascending index order.

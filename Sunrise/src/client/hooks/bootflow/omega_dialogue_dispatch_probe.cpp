@@ -31,6 +31,7 @@
 #include "../../../state/activity/beyond_infinity/forest_selection.h"
 #include "omega_forest_scope.h"
 #include "omega_enemy_forest_receipts_runtime.h"
+#include "omega_enemy_lair_receipts.h"
 #include "omega_dialogue_bank.h"
 #include "adventure_cue_observer.h"
 #include "adventure_dialogue_observer.h"
@@ -1827,6 +1828,36 @@ void prepare_omega_forest(void* instance) noexcept {
     }
 }
 
+// Shared native activities register their exact worker definition, palette and
+// effective seed. Retain Dawn's existing owner-authority compatibility boundary
+// across worker recreation; do not special-case missions, branches or actors.
+void prepare_registered_forest(void* instance) noexcept {
+    const auto owner=registered_native_forest_owner(instance);
+    const auto setter=g_forestOwnerAuthoritySetter.load(std::memory_order_acquire);
+    const auto* image=reinterpret_cast<const std::byte*>(GetModuleHandleW(nullptr));
+    if(owner==UINT32_MAX || !setter || !image)return;
+    const auto retain=[&](std::uint32_t entity) noexcept {
+        const auto* word=image+kObjectAuthorityTableRva+((entity&0x1FFFU)>>5U)*4U;
+        if(!readable(word,4U) || (read_value<std::uint32_t>(word)&(1U<<(entity&31U))))return false;
+        setter(entity,1U);return true;
+    };
+    const bool repaired=retain(owner);
+    // FF9320 retires a gateway only while that gateway owns authority, then
+    // drops its weak reference unconditionally. Cover the worker's exact live
+    // children before the normal tick can queue that native cleanup.
+    std::array<std::uint32_t,128U*17U> gates{};
+    const auto count=registered_native_forest_gate_owners(instance,gates);
+    unsigned repairedGates{};
+    for(std::size_t i=0;i<count;++i)if(retain(gates[i]))++repairedGates;
+    if(!repaired && !repairedGates)return;
+    std::array<char,128> line{};
+    const auto size=std::snprintf(line.data(),line.size(),
+        "ev=forest stage=registered_owner_authority owner=%08X worker=%p gates=%u",owner,instance,repairedGates);
+    if(size>0 && static_cast<std::size_t>(size)<line.size())
+        core::log::write(core::log::Channel::client,core::log::Level::info,
+            {line.data(),static_cast<std::size_t>(size)});
+}
+
 __declspec(noinline) std::uint64_t __fastcall forest_worker_create_hook(void* instance,
                                                                         void* defRef) noexcept {
     const ForestPairFn original = g_forestWorkerCreateOriginal.load(std::memory_order_acquire);
@@ -1853,6 +1884,7 @@ __declspec(noinline) std::uint64_t __fastcall forest_worker_tick_hook(void* inst
     const bool beyondForest=beyond_forest_runtime::selected();
     if(beyondForest) { beyond_forest_runtime::prepare(instance); }
     garden_forest_runtime::prepare(instance);
+    prepare_registered_forest(instance);
     const bool legacyMutation = omega_forest_context();
     // Omega-only diagnostic ignition; generic native forest workers keep their authority input.
     // The worker reads the sensor authority record at instance+0x180 through
@@ -1989,6 +2021,9 @@ __declspec(noinline) std::uint64_t __fastcall forest_worker_tick_hook(void* inst
     if (omega_forest_worker(instance)) {
         omega_enemy_forest::observe(instance,state::activity::mission_run_generation());
     }
+    // Shared population admission uses the registered generator lease; it is
+    // independent of Omega's legacy recipe/authority intervention scope.
+    observe_native_generated_population(instance);
     const std::uint32_t count =
         g_forestWorkerTickCount.fetch_add(1, std::memory_order_relaxed) + 1U;
     const auto* stateByte = static_cast<const std::byte*>(instance) + kForestWorkerStateOffset;

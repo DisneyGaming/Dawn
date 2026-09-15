@@ -1,13 +1,13 @@
 #pragma once
-#include "../coo/campaign_scan.h"
 #include "bindings.h"
+#include "forest_binding.h"
 #include "tethers.h"
+#include "../coo/campaign_scan.h"
 #include "boss_cycle.h"
 #include "ending_flow.h"
 #include "../coo/lifecycle_service.h"
 #include "../coo/object_service.h"
 #include "../coo/objective_service.h"
-#include "../coo/native_generator_authority.h"
 #include <bitset>
 #include <optional>
 
@@ -132,15 +132,6 @@ inline float device_position(const Frame& f,coo::Asset a) noexcept {
     // Both 80F48031 (guardians) and 80F56863 (Dendron) have these native ranges.
     if(l<std::size(kLenses) && a.type==23) return f.lensDestroyed[l] || !f.native[i].active?0.F:f.lensExposed[l]?.75F:1.F;
     return f.native[i].position;
-}
-inline coo::native_generator::Request forest_request(std::uint32_t seed) noexcept {
-    coo::native_generator::Request out{};out.seed=seed;out.values[0]=6;out.topology={0.F,0.F};
-    // Forest C is a 3x3 grid: FF34A6/FF5C80 reject north column3.
-    // The measured fixed exit is at (-673.86,-947.09,-19.52). Its middle
-    // column1/height1 joins the native north connector; height2 is one tier
-    // too high. Preserve the other anchors, entrance and owner transform.
-    out.anchors={coo::native_generator::Anchor{1,1,0.F,true},{2,0,0.F,true},{1,1,1.F,true},{1,0,0.F,true}};
-    out.selectAnchors=true;return out;
 }
 // Exact prefab linkage recovered from the native selectors. Type 26 is the
 // actor shield effect; type 34 resolves its one authored Minotaur source.

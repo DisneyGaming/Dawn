@@ -7,6 +7,8 @@
 
 #include "../../middleware/web_service/messages/opcode206.h"
 #include "../../state/runtime/runtime.h"
+#include "../../state/vendors/answered_interactions.h"
+#include "forest_loot_pickups.h"
 
 namespace sunrise::server::web_service {
 
@@ -17,6 +19,8 @@ struct Outcome {
     /** An opcode-504 pick moved the selection and its Family-4 object still has to follow. */
     bool hasSelectedCharacter{};
     std::uint64_t selectedCharacterSoid{};
+    forest_loot::PickupCommit pickup{};
+    std::uint16_t answeredVendor{state::vendors::kAbsentIndex};
     /** A request prepares at most one State mutation; the alternative owns only that payload. */
     using Mutation = std::variant<std::monostate,
                                   state::PendingEquipmentSwap,

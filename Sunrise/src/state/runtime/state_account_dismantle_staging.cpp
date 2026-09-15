@@ -248,31 +248,6 @@ apply_dismantle_rewards(const AccountState& before,
         movedItemCount += static_cast<std::size_t>(beforeRow != afterRow);
     }
 
-    // The serial is signed on the wire, so it must stay inside the positive int32 range.
-    constexpr std::uint32_t kMaximumInventorySerial =
-        static_cast<std::uint32_t>((std::numeric_limits<std::int32_t>::max)());
-    if (after.nextInventorySerial > kMaximumInventorySerial
-        || movedItemCount > kMaximumInventorySerial - after.nextInventorySerial) {
-        return false;
-    }
-
-    for (std::size_t index = 0; index < after.inventory.count; ++index) {
-        const std::uint64_t survivorSoid = after.inventory.values[index].instanceSoid;
-        std::uint16_t beforeRow = 0;
-        std::uint16_t afterRow = 0;
-        std::uint8_t beforeSlot = 0;
-        std::uint8_t afterSlot = 0;
-        if (!find_unequipped_row(beforeLoadout, survivorSoid, beforeRow, beforeSlot)
-            || !find_unequipped_row(placedAfter, survivorSoid, afterRow, afterSlot)
-            || beforeSlot != afterSlot) {
-            return false;
-        }
-        if (beforeRow != afterRow) {
-            after.inventory.values[index].mutationSerial =
-                static_cast<std::int32_t>(after.nextInventorySerial++);
-        }
-    }
-
     candidate.characters[characterIndex] = after;
     family4_loadout::ResolvedLoadout checkedAfter{};
     if (!account::valid(candidate)
@@ -303,10 +278,13 @@ apply_dismantle_rewards(const AccountState& before,
         || dismantledDetail.definitionIndex != dismantledDefinition.definitionIndex
         || dismantledDetail.definitionHash != dismantledDefinition.definitionHash
         || dismantledDetail.bucketId != dismantledDefinition.bucketId
-        || dismantledDetail.instancedDefinitionState
-               != item_details::InstancedDefinitionState::instanced
-        || !dismantledDetail.equipmentSlot.has_value()
-        || static_cast<std::uint8_t>(*dismantledDetail.equipmentSlot) != dismantledSlot) {
+        || (dismantledDetail.instancedDefinitionState
+                != item_details::InstancedDefinitionState::instanced
+            && dismantledItem.quantity != 1)
+        || (dismantledDetail.equipmentSlot.has_value()
+                ? static_cast<std::uint8_t>(*dismantledDetail.equipmentSlot)
+                : std::uint8_t{0})
+               != dismantledSlot) {
         return false;
     }
 

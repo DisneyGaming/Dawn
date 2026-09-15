@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string_view>
+#include <span>
 #include <memory>
 #include <new>
 #include "native_roster_lifetime_projection.h"
@@ -22,6 +23,7 @@
 #include "../../../../../state/activity/bubble_authority/runtime.h"
 #include "../../../../../state/activity/destination/activity_destination_snapshot.h"
 #include "../../../../../state/activity/destination/activity_destination_spawn_binding.h"
+#include "../../../../../state/activity/events/activity_event_selection.h"
 #include "../../../../../state/activity/forced/activity_forced_destination.h"
 #include "../../../../../state/activity/membership/activity_membership_query.h"
 #include "../../../../../state/activity/runtime.h"
@@ -54,6 +56,8 @@
 #include "strike_pact_roster.h"
 #include "../../../../runtime/activity/native_activity_profiles.h"
 #include "../../../../runtime/activity/native_activity_runtime.h"
+#include "../../../../runtime/activity/native_round_projection.h"
+#include "../../../../runtime/activity/native_activity_transit.h"
 #include "../../../../runtime/activity/haunted_forest_lifetime_profile.h"
 #include "../../../../runtime/activity/adventure_opening_publication.h"
 #include "strike_bond_roster.h"
@@ -88,6 +92,10 @@ constexpr std::uint8_t kSlotTypeMissionDirector = 35;
 /** The join request names its character in the low half of the SOID, so compare on that half. */
 constexpr std::uint64_t kIdentityLowMask = 0xFFFFFFFFULL;
 constexpr std::uint16_t kNoRosterGroup = 0xFFFFU;
+/** Scenario whose authored Tower event groups are selected by the event configuration. */
+constexpr std::string_view kTowerScenarioName = "city_tower_social_d2";
+/** Actual Farm scenario name from the recovered activity catalog. */
+constexpr std::string_view kFarmScenarioName = "campaign_social_space_d2";
 
 std::atomic_uint64_t g_lastTowerfallLayoutTrace{UINT64_MAX};
 std::atomic_uint64_t g_lastTowerfallBuilderTrace{UINT64_MAX};
@@ -127,6 +135,172 @@ static_assert(message::kGroupCapacity == layouts::kDestinationWireGroupCapacity)
 load_group(std::uint16_t tableIndex, Scratch& scratch, std::size_t slot) noexcept {
     return slot < scratch.rosterGroups.size()
            && state::build_data::find_roster_group(tableIndex, scratch.rosterGroups[slot]);
+}
+
+/** @return True when the event roster selection applies to this destination. */
+[[nodiscard]] constexpr bool event_layout_destination(std::string_view name) noexcept {
+    return name == kTowerScenarioName || name == kFarmScenarioName;
+}
+
+enum class EventGroupDisposition : std::uint8_t { keep, remove, missing };
+
+/**
+ * Compacts resolved group indices while distinguishing an excluded event from a missing lookup.
+ * @param indices Group table indices, compacted in place.
+ * @param count Number of entries in indices, updated to the compacted count.
+ * @param classify Resolves one index and classifies its registry key.
+ * @return False when a referenced index could not be resolved.
+ */
+template <typename Classify>
+[[nodiscard]] constexpr bool compact_event_groups(std::span<std::uint16_t> indices,
+                                                   std::size_t& count,
+                                                   Classify&& classify) noexcept {
+    if (count > indices.size()) {
+        return false;
+    }
+    std::size_t kept = 0;
+    for (std::size_t index = 0; index < count; ++index) {
+        const EventGroupDisposition disposition = classify(indices[index]);
+        if (disposition == EventGroupDisposition::missing) {
+            return false;
+        }
+        if (disposition == EventGroupDisposition::remove) {
+            continue;
+        }
+        indices[kept++] = indices[index];
+    }
+    for (std::size_t index = kept; index < count; ++index) {
+        indices[index] = 0;
+    }
+    count = kept;
+    return true;
+}
+
+/** Compacts bubble group indices and their masks as one positional domain. */
+template <typename Classify>
+[[nodiscard]] constexpr bool compact_event_bubble_groups(
+    std::span<std::uint16_t> indices,
+    std::span<std::uint64_t> masks,
+    std::size_t& count,
+    Classify&& classify) noexcept {
+    if (count > indices.size() || count > masks.size()) {
+        return false;
+    }
+    std::size_t kept = 0;
+    for (std::size_t index = 0; index < count; ++index) {
+        const EventGroupDisposition disposition = classify(indices[index]);
+        if (disposition == EventGroupDisposition::missing) {
+            return false;
+        }
+        if (disposition == EventGroupDisposition::remove) {
+            continue;
+        }
+        indices[kept] = indices[index];
+        masks[kept] = masks[index];
+        ++kept;
+    }
+    for (std::size_t index = kept; index < count; ++index) {
+        indices[index] = 0;
+        masks[index] = 0;
+    }
+    count = kept;
+    return true;
+}
+
+/** Synthetic contract checks for the compaction invariants; no installed data is involved. */
+[[nodiscard]] constexpr bool synthetic_event_compaction_coverage() noexcept {
+    constexpr auto classify = [](std::uint16_t index) noexcept {
+        return index == 20 ? EventGroupDisposition::remove : EventGroupDisposition::keep;
+    };
+    std::array<std::uint16_t, 4> topLevel{10, 20, 30, 40};
+    std::size_t topLevelCount = topLevel.size();
+    if (!compact_event_groups(topLevel, topLevelCount, classify)
+        || topLevelCount != 3 || topLevel[0] != 10 || topLevel[1] != 30
+        || topLevel[2] != 40 || topLevel[3] != 0) {
+        return false;
+    }
+
+    std::array<std::uint16_t, 3> bubbleGroups{10, 20, 30};
+    std::array<std::uint64_t, 3> bubbleMasks{1, 2, 4};
+    std::size_t bubbleCount = bubbleGroups.size();
+    if (!compact_event_bubble_groups(bubbleGroups, bubbleMasks, bubbleCount, classify)
+        || bubbleCount != 2 || bubbleGroups[0] != 10 || bubbleGroups[1] != 30
+        || bubbleMasks[0] != 1 || bubbleMasks[1] != 4 || bubbleGroups[2] != 0
+        || bubbleMasks[2] != 0) {
+        return false;
+    }
+
+    std::array<std::uint16_t, 3> authored{10, 20, 99};
+    std::size_t authoredCount = authored.size();
+    if (!compact_event_groups(authored, authoredCount, classify)
+        || authoredCount != 2 || authored[0] != 10 || authored[1] != 99 || authored[2] != 0) {
+        return false;
+    }
+
+    std::array<std::uint16_t, 2> otherMission{10, 99};
+    std::size_t otherMissionCount = otherMission.size();
+    constexpr auto keep_all = [](std::uint16_t) noexcept { return EventGroupDisposition::keep; };
+    return !event_layout_destination("infinite_abyss")
+           && compact_event_groups(otherMission, otherMissionCount, keep_all)
+           && otherMissionCount == 2 && otherMission[0] == 10 && otherMission[1] == 99;
+}
+
+static_assert(synthetic_event_compaction_coverage());
+
+/**
+ * Filters one caller-owned scenario layout by the selected seasonal event keys.
+ * Every table index is resolved before it can be removed, so an unavailable row fails the layout
+ * rather than being mistaken for an unknown key. The three compacted domains keep their paired
+ * masks and per-bubble counts aligned with the surviving table indices.
+ * @param name Scenario package name.
+ * @param layout Caller-owned layout copy; the cached scenario definition is never passed here.
+ * @return True when the layout was unchanged or all referenced groups were resolved.
+ */
+[[nodiscard]] bool filter_event_layout(std::string_view name, layouts::Definition& layout) noexcept {
+    if (!event_layout_destination(name)) {
+        return true;
+    }
+    const auto classify = [name](std::uint16_t tableIndex) noexcept {
+        layouts::RosterGroup group{};
+        if (!state::build_data::find_roster_group(tableIndex, group)) {
+            std::array<char, core::log::kLineCapacity> line{};
+            const int written = std::snprintf(
+                line.data(), line.size(),
+                "ev=events stage=roster_filter result=missing_group dest=%.*s index=%u",
+                static_cast<int>(name.size()), name.data(), static_cast<unsigned>(tableIndex));
+            if (written > 0 && static_cast<std::size_t>(written) < line.size()) {
+                core::log::write(core::log::Channel::server,
+                                 core::log::Level::warn,
+                                 {line.data(), static_cast<std::size_t>(written)});
+            }
+            return EventGroupDisposition::missing;
+        }
+        // events::withheld only returns true for a mapped seasonal key; ordinary, root, player,
+        // and vendor groups therefore remain untouched even when the file contains other keys.
+        return state::activity::events::withheld(group.registryKey)
+                   ? EventGroupDisposition::remove
+                   : EventGroupDisposition::keep;
+    };
+    std::size_t rosterGroupCount = layout.rosterGroupCount;
+    if (!compact_event_groups(layout.rosterGroups, rosterGroupCount, classify)) {
+        return false;
+    }
+    layout.rosterGroupCount = static_cast<std::uint8_t>(rosterGroupCount);
+    std::size_t bubbleGroupCount = layout.bubbleGroupCount;
+    if (!compact_event_bubble_groups(
+            layout.bubbleGroups, layout.bubbleGroupMasks, bubbleGroupCount, classify)) {
+        return false;
+    }
+    layout.bubbleGroupCount = static_cast<std::uint8_t>(bubbleGroupCount);
+
+    for (std::size_t bubble = 0; bubble < layout.authoredGroups.size(); ++bubble) {
+        std::size_t authoredCount = layout.authoredGroupCounts[bubble];
+        if (!compact_event_groups(layout.authoredGroups[bubble], authoredCount, classify)) {
+            return false;
+        }
+        layout.authoredGroupCounts[bubble] = static_cast<std::uint8_t>(authoredCount);
+    }
+    return true;
 }
 
 void expose_group(const layouts::RosterGroup& group, message::Group& output) noexcept {
@@ -700,6 +874,9 @@ RosterOutcome build_roster_snapshot(Session& session,
             }
         }
     }
+    if (!filter_event_layout(name, layout)) {
+        return RosterOutcome::noGroups;
+    }
     if (inputs.regionIndex < 0
         || (!eaterPrepared && !fill_roster(layout, scratch, snapshot.roster, inputs.regionIndex))) {
         return RosterOutcome::noGroups;
@@ -1050,7 +1227,12 @@ RosterOutcome build_roster_snapshot(Session& session,
             snapshot.gameplayClockTicks=snapshot.hijacked.gameplayClockTicks;
         }
     }
-    const auto* nativeProfile=server::runtime::activity::native_activity_profile(name,selection.activityIndex);
+    const auto* nativeProfile =
+        (name == "city_tower_social_d2"
+         && state::activity::events::withheld(0x7C6DE64FU))
+            ? nullptr
+            : server::runtime::activity::native_activity_profile(name,selection.activityIndex);
+    bool nativeTraversalRespawn{};
     native_publisher::Role nativePublisher{native_publisher::Role::invalid};
     if(nativeProfile) {
         nativePublisher=native_publisher::prepare(*nativeProfile,session.activity.instance,
@@ -1112,8 +1294,9 @@ RosterOutcome build_roster_snapshot(Session& session,
         const auto frame=server::runtime::activity::native_activity::update(
             session.activity.lineage.source,static_cast<std::uint32_t>(inputs.regionIndex/8),
             state::activity::world_phase()==state::activity::WorldPhase::arrived,*nativeProfile,selected,
-            session.activity.rosterSends>=kWarmupSends);
+            session.activity.rosterSends>=kWarmupSends,omegaExperiments.forestRewardCoffers);
         snapshot.populations=frame.populations;snapshot.placements=frame.placements;
+        nativeTraversalRespawn=frame.nativeTraversalRespawn;
         snapshot.animations=frame.animations;
         snapshot.generators=frame.generators;
         snapshot.devices=frame.devices;
@@ -1123,9 +1306,28 @@ RosterOutcome build_roster_snapshot(Session& session,
         snapshot.sequences=frame.sequences;
         snapshot.eventParticipants=frame.eventParticipants;
         snapshot.music=frame.music;
+    snapshot.statusEffects=frame.statusEffects;
+    snapshot.playerTriggers=frame.playerTriggers;
+        snapshot.nativeForestSwitches=frame.nativeForestSwitches;
         if(frame.clock) {
             snapshot.activityClock=frame.clock.configuration;
             snapshot.activityElapsedTicks=frame.clock.elapsedTicks;
+        }
+        if (nativeProfile->rounds != nullptr) {
+            layouts::RosterGroup resolvedTimerGroup{};
+            const auto& roundDefinition = *nativeProfile->rounds;
+            const bool resolved = !nativeProfile->registries.empty()
+                && state::build_data::find_roster_group_by_key(
+                    roundDefinition.completionTimerAsset.registry, resolvedTimerGroup);
+            const auto projected = server::runtime::activity::native_round_projection::project(
+                *nativeProfile, roundDefinition, snapshot.roster, resolvedTimerGroup,
+                nativeProfile->registries.empty() ? 0U : nativeProfile->registries.front().scenario,
+                static_cast<std::uint8_t>(inputs.regionIndex / 8), frame.clock,
+                frame.endEpoch, frame.restricted, frame.completion);
+            if (resolved && projected.controlled) {
+                snapshot.nativeRound = projected;
+                if (frame.completion.valid()) snapshot.missionCompletion = frame.completion;
+            }
         }
         if(frame.opening.requested && frame.opening.binding) {
             const auto& binding=*frame.opening.binding->overlay;
@@ -1233,6 +1435,30 @@ RosterOutcome build_roster_snapshot(Session& session,
     // The participation record's `+0` latches only when the region index is known.
     snapshot.region = static_cast<std::uint32_t>(inputs.regionIndex);
     snapshot.hasRegion = true;
+    if (snapshot.statusEffects.count != 0) {
+        // A batch that fails the retained-authority scope is silently omitted from the auth block;
+        // report the transition so a never-applied effect can be told apart from a never-sent one.
+        namespace status_effect = middleware::bap::activity_message::native::status_effect;
+        const bool scoped = status_effect::valid(snapshot.statusEffects, snapshot.roster, snapshot.region);
+        const auto& first = snapshot.statusEffects.entries[0];
+        static std::uint64_t lastKey = UINT64_MAX;
+        const std::uint64_t key = (static_cast<std::uint64_t>(snapshot.region) << 32)
+            | (static_cast<std::uint64_t>(snapshot.statusEffects.count) << 16)
+            | (static_cast<std::uint64_t>(first.selectionRevision & 0xFFF) << 4)
+            | (first.enabled ? 2U : 0U) | (scoped ? 1U : 0U);
+        if (key != lastKey) {
+            lastKey = key;
+            core::log::writef(core::log::Channel::server,
+                              scoped ? core::log::Level::info : core::log::Level::warn,
+                              "ev=forest_transit stage=auth_scope region=%u effects=%zu valid=%u "
+                              "first_registry=%08X first_slot=%u first_bubble=%u enabled=%u once=%u "
+                              "selection_revision=%d",
+                              snapshot.region, snapshot.statusEffects.count, scoped ? 1U : 0U,
+                              first.registry, static_cast<unsigned>(first.slot),
+                              static_cast<unsigned>(first.bubble), first.enabled ? 1U : 0U,
+                              first.once ? 1U : 0U, first.selectionRevision);
+        }
+    }
     if (selection.activityIndex == 78 && name == "infinite_abyss") {
         const auto catalog = state::build_data::activities::entries();
         if (catalog.size() > 78U) {
@@ -1247,6 +1473,56 @@ RosterOutcome build_roster_snapshot(Session& session,
         state::activity::destination::attachable_spawn_set_hash(selection, fallback.spawnSetHash);
     snapshot.hasSpawnOverride =
         snapshot.spawnSetHash != 0 && snapshot.spawnSetHash != message::kAbsentSpawnSetHash;
+    // A membership teleport can change the spawn within the same slice set.
+    // Retaining the opening override here sends the client back to the opening
+    // even though its teleport receipt names the requested destination.
+    runtime::activity::native_activity_transit::Destination transitSpawn{};
+    if (runtime::activity::native_activity_transit::spawn_destination(
+        session.activity.lineage.source, transitSpawn)) {
+        snapshot.spawnSliceSet = transitSpawn.region;
+        snapshot.spawnSetHash = transitSpawn.spawn;
+        snapshot.hasSpawnOverride = true;
+    }
+    // During generated traversal, let the native safe-position history and
+    // spawn-point selection run. A retained platform override takes priority
+    // over that history and sends every death back to the branch's start.
+    // Entry, Terror and active membership travel keep their exact destination.
+    // nativeTraversalRespawn above is only assigned inside the creator/regionIndex%8==0 block,
+    // so any other roster publish for this same incarnation would publish hasSpawnOverride=true
+    // with whatever the fallback or the transit override produced - including during traversal.
+    // Ask the live round activity directly so every snapshot for one incarnation agrees.
+    const auto respawnState=server::runtime::activity::native_activity::respawn_state(
+        session.activity.lineage.source);
+    if(respawnState.valid) snapshot.nativeRespawnRestricted=respawnState.restricted;
+    if(respawnState.valid && respawnState.suppressed)nativeTraversalRespawn=true;
+    if(nativeTraversalRespawn) {
+        snapshot.hasSpawnOverride=true;
+        snapshot.preferSpawnHistory=true;
+        snapshot.spawnSliceSet=inputs.destinationArrival;
+        snapshot.spawnSetHash=message::kAbsentSpawnSetHash;
+    }
+    if(respawnState.valid) {
+        // Change-keyed exactly like log_transit_state: one line per distinct published state.
+        // Pass criterion for a control run: no has_override=1 spawn=0x8BC697B5 line while
+        // qualified=0. Nothing else in Dawn prints the override that is actually published.
+        const std::uint64_t respawnKey=
+            (static_cast<std::uint64_t>(static_cast<unsigned>(respawnState.phase)&0xFU)<<44)
+            |(static_cast<std::uint64_t>(snapshot.hasSpawnOverride?1U:0U)<<43)
+            |(static_cast<std::uint64_t>(respawnState.latched?1U:0U)<<42)
+            |(static_cast<std::uint64_t>(respawnState.travelArrivalQualified?1U:0U)<<41)
+            |(static_cast<std::uint64_t>(snapshot.spawnSliceSet&0xFFU)<<32)
+            |static_cast<std::uint64_t>(snapshot.spawnSetHash);
+        static std::atomic<std::uint64_t> lastRespawnKey{UINT64_MAX};
+        if(lastRespawnKey.exchange(respawnKey)!=respawnKey) {
+            core::log::writef(core::log::Channel::server,core::log::Level::debug,
+                "ev=forest_respawn stage=publish phase=%u has_override=%u slice=%u spawn=0x%08X "
+                "latched=%u qualified=%u",
+                static_cast<unsigned>(respawnState.phase),snapshot.hasSpawnOverride?1U:0U,
+                static_cast<unsigned>(snapshot.spawnSliceSet),
+                static_cast<unsigned>(snapshot.spawnSetHash),
+                respawnState.latched?1U:0U,respawnState.travelArrivalQualified?1U:0U);
+        }
+    }
     // The strike moves through four regions and each names its own respawn set. Its selected
     // checkpoint replaces the destination arrival, so a death after the Forest does not put the
     // player back at the Lighthouse. An unselected checkpoint leaves the destination's own set.
@@ -1620,6 +1896,15 @@ namespace {
     const auto beyond=state::activity::beyond_infinity::transit::project(activity,
         state::activity::mission_run_generation(),membership.identity.memberKey,validatedBeyond,nativeTransit);
     if(beyond.publish) { terminal=beyond; }
+    const auto generic = runtime::activity::native_activity_transit::project(
+        activity, membership.identity.memberKey, membership.hasTeleportReceipt,
+        {membership.teleport.state, membership.teleport.token, membership.teleport.sliceSetIndex,
+         membership.teleport.sliceSetHash}, membership.region.index);
+    if (generic.present && !terminal.publish) {
+        terminal = {{generic.host.state, generic.host.token, generic.host.sliceSetIndex,
+                     generic.host.sliceSetHash}, generic.present, generic.arrived,
+                    generic.released};
+    }
     if(terminal.publish) {
         wire.teleport={terminal.host.state,terminal.host.token,terminal.host.sliceSetIndex,
             terminal.host.sliceSetHash};

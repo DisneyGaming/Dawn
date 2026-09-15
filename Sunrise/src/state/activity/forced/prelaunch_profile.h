@@ -21,6 +21,8 @@ inline constexpr Profile kTowerfall{"mission_towerfall", 266, 0x62D85FB3U,
     0x9ACCB518U, 0x80B500ACU, 0x80FDB97FU, "towerfall_direct"};
 inline constexpr Profile kGateway{"mission_abs", 292, 0x5A2E3FF4U,
     0x986985D0U, 0x80F46D99U, 0x80F9FDD2U, "gateway_direct"};
+inline constexpr Profile kHauntedForest{"infinite_abyss", 78, 0x56B7B6A5U,
+    0x6DA20650U, 0x81550000U, 0x80F9FDD2U, "haunted_forest_direct"};
 
 inline constexpr Profile kDeadlyTrial{"adventure_ginger",293,0x87D9CA16U,
     0xC9BC773AU,0x80B2E004U,0x80FDB97FU,"deadly_trial_direct"};
@@ -37,6 +39,7 @@ inline constexpr Profile kHijacked{"adventure_rumba",297,0x83211FEDU,
 [[nodiscard]] constexpr const Profile* find(std::string_view package) noexcept {
     if (package == kTowerfall.package) { return &kTowerfall; }
     if (package == kGateway.package) { return &kGateway; }
+    if (package == kHauntedForest.package) { return &kHauntedForest; }
     if (package == kDeadlyTrial.package) { return &kDeadlyTrial; }
     if (package == kBeyondInfinity.package) { return &kBeyondInfinity; }
     if(package==kDeepStorage.package) {return &kDeepStorage;}
@@ -49,6 +52,11 @@ inline constexpr Profile kHijacked{"adventure_rumba",297,0x83211FEDU,
 }
 [[nodiscard]] constexpr bool donor(std::int16_t source, std::int16_t destination) noexcept {
     return source == kDonorActivity && destination == kDonorActivity;
+}
+[[nodiscard]] constexpr bool native_haunted_forest(std::int16_t source,
+    std::int16_t destination,std::string_view package) noexcept {
+    return source==kHauntedForest.activity && destination==kHauntedForest.activity
+        && package==kHauntedForest.package;
 }
 [[nodiscard]] constexpr bool matches(const Profile& profile, std::int16_t source,
     std::int16_t destination, std::string_view package) noexcept {
