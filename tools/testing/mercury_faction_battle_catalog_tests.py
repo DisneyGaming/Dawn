@@ -7,6 +7,7 @@ import struct
 import sys
 import unittest
 import json
+import re
 from pathlib import Path
 
 from mercury_faction_battle_catalog import CATALOG_KEYS, CHEST_SOURCES, catalog, source_choices, tactical_rows
@@ -179,6 +180,87 @@ class MercuryCatalogChecks(unittest.TestCase):
         self.assertLessEqual((4 + 5) * 3, 64)       # one large war source generation
         self.assertLessEqual((8 * 3 + 8 * 4) * 3, 256)  # simultaneous initial admissions
         self.assertLessEqual((8 * 3 + 8 * 4) * 3 * 3, 1024)  # birth/death/retirement burst
+
+    def test_selected_segmented_rank_sources_are_fixed_singletons(self):
+        """Prevent installed selector rank from drifting past the manual policy."""
+        root = Path(__file__).resolve().parents[2]
+        sys.path.insert(0, str(root / 'tools/coo'))
+        import spawn_count_policy as count_policy
+
+        runtime = (root / 'Sunrise/src/server/runtime/activity/mercury_freeroam_runtime.h').read_text()
+        ranges = {int(capability): (int(minimum), int(baseline), int(maximum))
+                  for capability, minimum, baseline, maximum in re.findall(
+                      r'\{(\d+),Faction::\w+,"[^"]+",(?:true|false),(\d+),(\d+),(\d+)\}', runtime)}
+        selected = {
+            # capability: (registry, native source slot)
+            1: ('74337EDD', 1), 7: ('EB1E8934', 0), 8: ('B3CBA385', 1),
+            9: ('2571C34D', 1), 10: ('9D083869', 1), 11: ('9692BB5E', 1),
+            12: ('1ED6087A', 1), 13: ('FB7F2889', 1), 14: ('1780D86F', 1),
+            15: ('90EFDE28', 1), 16: ('CF2196EA', 1), 17: ('8C756CC3', 1),
+            18: ('BBF1BA51', 1), 19: ('9B219BF3', 1), 20: ('CCF03E8D', 1),
+            21: ('0EFE61CB', 1), 23: ('9D083869', 0),
+            0: ('74337EDD', 0), 22: ('2571C34D', 0), 24: ('9692BB5E', 0),
+            25: ('1ED6087A', 0), 26: ('FB7F2889', 0), 27: ('1780D86F', 0),
+            28: ('CF2196EA', 0), 29: ('BBF1BA51', 0), 30: ('9B219BF3', 0),
+            31: ('0EFE61CB', 0),
+        }
+        sources = {}
+        for source in ambient_comparison(self.reader, installed_components(self.reader))['sources']:
+            raw = self.read(int(source['resource'], 16), 0x80809C36)
+            definition = source_choices(raw)['definition_offset']
+            slot = int.from_bytes(raw[definition + 54:definition + 56], 'little')
+            sources[(source['registry'], slot)] = source
+        singleton_hashes = {f'{count_policy.fnv1(rank):08X}' for rank in count_policy.SINGLETON_RANKS}
+        reviewed = 0
+        for capability, identity in selected.items():
+            source = sources[identity]
+            ranks = {attribute['value']
+                     # Mercury's added width-two source publishes zero to its
+                     # mixed-rank secondary; only the primary is enabled.
+                     for category in source['categories'][:1]
+                     for variant in category['variants']
+                     for choice in variant
+                     for attribute in choice['selector_attributes']
+                     if attribute['key'] == 'B10F785D'}
+            if ranks & singleton_hashes:
+                self.assertEqual(ranges[capability], (1, 1, 1),
+                                 f'capability {capability} permits multiple segmented-rank actors')
+                reviewed += 1
+        self.assertGreater(reviewed, 0)
+
+    def test_restored_siblings_preserve_joint_budgets_and_native_fallbacks(self):
+        root = Path(__file__).resolve().parents[2]
+        sys.path.insert(0, str(root / 'tools/coo'))
+        import generate_open_world_profiles as gen
+        import squad_cohort_policy as cohorts
+
+        # Maximum simultaneous requests, including all possible weighted
+        # alternatives. A second segmented-rank actor or fixed-one fails here.
+        budgets = {
+            '74337EDD': {0: [2], 1: [1]},
+            '2571C34D': {0: [4], 1: [2]},
+            '9692BB5E': {0: [4], 1: [2]},
+            '1ED6087A': {0: [3, 0], 1: [1]},
+            'FB7F2889': {0: [1], 1: [3]},
+            '1780D86F': {0: [2], 1: [4]},
+            'CF2196EA': {0: [3], 1: [1]},
+            'BBF1BA51': {0: [3], 1: [1]},
+            '9B219BF3': {0: [1], 1: [1]},
+            '0EFE61CB': {0: [3], 1: [1]},
+        }
+        inventory = installed_components(self.reader)
+        for key, vectors in budgets.items():
+            tag = next(tag for tag, obj in inventory['objects'].items() if obj['regkey'] == key)
+            group = gen.resolve_group(int(tag, 16))
+            self.assertEqual(group['mask'], 1 << 15)
+            self.assertEqual({s['index'] for s in group['slots'] if s['type'] == 1}, set(vectors))
+            choices = {s: gen.source_count_choices(group, s) for s in vectors}
+            widths = {s: gen.source_category_count(group, s) for s in vectors}
+            cohorts.validate_budget([{'source': s, 'targets': v} for s, v in vectors.items()], choices, widths)
+            for source in vectors:
+                rule = gen.source_spawn_rule(group, source, 'fallback')
+                self.assertTrue(any(s['index'] == rule and s['type'] == 66 for s in group['slots']))
+        self.assertEqual(budgets['1ED6087A'][0][1], 0)
 
     def test_adjacent_retreat_announcement_identity_without_completion_claim(self):
         result = incident_presentation(self.read(0x80B9E5BF, 0x80807C9B), 0x8753E5BA)

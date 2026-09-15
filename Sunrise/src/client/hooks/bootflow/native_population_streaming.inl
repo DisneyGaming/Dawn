@@ -27,7 +27,8 @@ struct Root final {
     Weak entity{},member{};bool retired{},closed{};
     Facet network{};
 };
-std::array<Source,128> sources{};
+static_assert(policy::kSourceCapacity==nativeEvents::kBindingCapacity);
+std::array<Source,policy::kSourceCapacity> sources{};
 std::array<Root,512> roots{};
 std::atomic_uint lines{};
 template<class... Args> void report(const char* format,Args... args) noexcept {
@@ -55,7 +56,9 @@ bool counters(void* instance,policy::Counters& result) noexcept {
     Ref definition{};std::uintptr_t resolved{};
     return read.value(address,definition) && read.resolve(definition,resolved)
         && read.value(resolved+0xA8,result.categories) && read.value(address+0x650,result.requested)
-        && read.value(address+0x268,result.consumed) && read.value(address+0x670,result.pending);
+        && read.value(address+0x268,result.consumed) && read.value(address+0x670,result.pending)
+        && (result.categories!=2 || (read.value(address+0x654,result.secondRequested)
+            && read.value(address+0x26C,result.secondConsumed) && read.value(address+0x674,result.secondPending)));
 }
 // The actor's root may attach after A0D510. Retry this from the normal admission
 // poll as well as immediately before native detachment.
@@ -249,18 +252,24 @@ void prepare_source(void* instance) noexcept {
     // Every earlier actor retirement must already be queued before rebinding.
     for(std::size_t i=0;i<g_admittedActors.size();++i)
         if(g_admittedActors[i].receipt==receipt && g_admittedActors[i].event.sourceHandle==previous->identity.handle)return;
-    const auto saved=previous->counters.consumed;
+    const auto saved=previous->counters.consumed;const auto savedSecond=previous->counters.secondConsumed;
     auto* consumed=reinterpret_cast<volatile LONG*>(reinterpret_cast<std::uintptr_t>(instance)+0x268);
     if(InterlockedCompareExchange(consumed,saved,current.consumed)!=current.consumed)return;
+    auto* secondConsumed=consumed+1;
+    if(current.categories==2
+        && InterlockedCompareExchange(secondConsumed,savedSecond,current.secondConsumed)!=current.secondConsumed) {
+        InterlockedCompareExchange(consumed,current.consumed,saved);return;
+    }
     const nativeEvents::Event event{receipt.lease,{receipt.lease.source},identity.handle,
         nativeEvents::Kind::sourceRecreated,previous->identity.handle};
     if(!nativeEvents::submit(event,receipt)) {
+        if(current.categories==2)InterlockedCompareExchange(secondConsumed,current.secondConsumed,savedSecond);
         InterlockedCompareExchange(consumed,current.consumed,saved);return;
     }
     report("ev=native_population_streaming stage=source_recreated registry=%08X slot=%u generation=%u previous=%08X source=%08X consumed=%d requested=%d",
         receipt.lease.source.source.registry,receipt.lease.source.source.slot,receipt.lease.source.generation,
         previous->identity.handle,identity.handle,saved,current.requested);
-    current.consumed=saved;*previous={receipt,identity,current};
+    current.consumed=saved;current.secondConsumed=savedSecond;*previous={receipt,identity,current};
 }
 __declspec(noinline) void dispatch_source(std::uint32_t* instance,std::uint32_t mode,
     const std::byte* authority,Dispatch original) noexcept {

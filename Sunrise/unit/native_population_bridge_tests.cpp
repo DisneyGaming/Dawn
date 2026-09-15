@@ -25,6 +25,7 @@ void provisional_blocks_renewal() {
     events::Mailbox mailbox;const auto a=lease(0x74337EDDU);CHECK(mailbox.bind(a));
     const auto creation=mailbox.begin_creation();CHECK(static_cast<bool>(creation));
     auto provisional=event(a,0x1001,events::Kind::admitted);
+    provisional.actor.birthNonce=creation.nonce;
     events::Receipt receipt;
     CHECK(mailbox.stage(creation,provisional,receipt)==events::StageResult::staged);
     CHECK(receipt && mailbox.provisional(receipt,provisional));
@@ -51,7 +52,7 @@ void unrelated_receipt_survives_renewal() {
 void complete_lifecycle() {
     events::Mailbox mailbox;const auto a=lease(0xEB1E8934U);CHECK(mailbox.bind(a));
     const auto creation=mailbox.begin_creation();CHECK(static_cast<bool>(creation));
-    const auto provisional=event(a,0x3101,events::Kind::admitted);
+    auto provisional=event(a,0x3101,events::Kind::admitted);provisional.actor.birthNonce=creation.nonce;
     events::Receipt receipt;CHECK(mailbox.stage(creation,provisional,receipt)==events::StageResult::staged);
     auto admission=provisional;admission.actor.entity=0x4101;
     CHECK(mailbox.admit(receipt,admission)==events::AdmitResult::admitted);
@@ -78,7 +79,8 @@ void aba_is_rejected() {
     const auto complete=event(a,0x5101,events::Kind::admitted,0x6101);
     CHECK(!mailbox.submit(complete,oldReceipt));
     events::Receipt staged;
-    CHECK(mailbox.stage(creation,event(a,0x5102,events::Kind::admitted),staged)==events::StageResult::ended);
+    auto provisional=event(a,0x5102,events::Kind::admitted);provisional.actor.birthNonce=creation.nonce;
+    CHECK(mailbox.stage(creation,provisional,staged)==events::StageResult::ended);
     CHECK(!staged && !mailbox.overflow() && !mailbox.pending_lease(a));
     CHECK(mailbox.submit(complete,fresh));
 }

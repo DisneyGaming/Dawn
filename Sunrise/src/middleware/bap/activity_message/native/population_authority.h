@@ -5,6 +5,7 @@
 #include <span>
 
 namespace sunrise::middleware::bap::activity_message::native::population {
+inline constexpr std::size_t kSourceCapacity = 256;
 // Server-owned values only. No destination names, file IO, actor pointers or
 // policy selection in this envelope. The descriptor admission layer verifies
 // schema provenance before a service can construct these requests.
@@ -14,7 +15,7 @@ struct Request final {
     std::uint8_t bubble{};
 };
 struct Batch final {
-    std::array<Request,32> entries{};
+    std::array<Request,kSourceCapacity> entries{};
     std::size_t count{};
 };
 [[nodiscard]] inline const Request* find(const Batch& batch,std::uint32_t key,

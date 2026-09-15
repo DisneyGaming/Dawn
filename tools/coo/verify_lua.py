@@ -27,6 +27,12 @@ TESTS = (
 
 NATIVE_TESTS = (
     "native_activity_policy_tests",
+    'native_population_bridge_tests',
+    'open_world_census_tests',
+    'open_world_member_observations_tests',
+    'patrol_replenishment_tests',
+    'open_world_source_capacity_tests',
+    'omega_experiment_settings_tests',
     'activity_clock_push_tests',
     'adventure_arrival_tests',
     'adventure_cancel_tests',

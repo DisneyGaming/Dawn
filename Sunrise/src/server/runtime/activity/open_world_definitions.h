@@ -18,7 +18,7 @@ template<std::size_t R,std::size_t P>
         result[i]={&registry,binding.source,binding.rule,
             binding.tacticalRow<0?population::codec::TacticalGroup{}
                 :population::codec::TacticalGroup{registry.key,binding.tactical,binding.tacticalRow},
-            binding.hasRule,binding.tacticalRows?(1U<<binding.tacticalRows)-1U:0U};
+            binding.hasRule,binding.tacticalRows?(1U<<binding.tacticalRows)-1U:0U,binding.categories};
     }
     return result;
 }

@@ -1493,10 +1493,16 @@
     <ClInclude Include="src\server\runtime\activity\registry_admission.h" />
     <ClInclude Include="src\server\runtime\activity\mercury_registries.h" />
     <ClInclude Include="src\server\runtime\activity\population_service.h" />
+    <ClInclude Include="src\server\runtime\activity\patrol_replenishment.h" />
     <ClInclude Include="src\server\runtime\activity\native_activity_runtime.h" />
+    <ClInclude Include="src\server\runtime\activity\open_world_census.h" />
+    <ClInclude Include="src\state\activity\open_world_member_observations.h" />
+    <ClInclude Include="src\state\activity\coo\open_world_member_catalog.h" />
     <ClInclude Include="src\server\runtime\activity\mercury_populations.h" />
     <ClCompile Include="src\state\activity\native_population_events.cpp" />
+    <ClCompile Include="src\state\activity\open_world_member_observations.cpp" />
     <ClCompile Include="src\server\runtime\activity\native_activity_runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="src\server\runtime\activity\open_world_census.cpp" />
     <ClCompile Include="src\server\runtime\activity\public_event_native_bridge.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\server\runtime\activity\ambient_population_named_points.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\server\runtime\activity\adventure_native_bridge.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>

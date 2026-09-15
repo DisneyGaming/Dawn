@@ -48,6 +48,8 @@
 #include "../../../state/activity/omega_first_lair_runtime.h"
 #include "../../../state/activity/omega_presentation.h"
 #include "../../../state/activity/native_population_events.h"
+#include "../../../state/activity/open_world_member_observations.h"
+#include "../../../state/activity/coo/open_world_member_catalog.h"
 
 namespace sunrise::client::hooks::bootflow {
 namespace {
@@ -638,7 +640,7 @@ __declspec(noinline) void observe_candidate(void* instance,std::uint32_t event,
 namespace nativeEvents=state::activity::native_population;
 namespace pending=native_population_pending;
 std::mutex g_pendingMutex;
-pending::Queue<256> g_pendingBirths;
+pending::Queue<state::activity::native_population::kProvisionalCapacity> g_pendingBirths;
 pending::Queue<8192> g_admittedActors;
 std::atomic_uint g_nativeLines{};
 template<class... Args> void native_report(const char* format,Args... args) noexcept {
@@ -710,7 +712,7 @@ void observe_native_admission(std::uint32_t parent,nativeEvents::Creation creati
     }
     lease=sourceReceipt.lease;
     std::lock_guard lock(g_pendingMutex);
-    const nativeEvents::Event provisional{lease,{lease.source,actorState.handle,actorState.entity},
+    const nativeEvents::Event provisional{lease,{lease.source,actorState.handle,actorState.entity,creation.nonce},
         actorState.source.handle,nativeEvents::Kind::admitted};
     nativeEvents::Receipt receipt;
     const auto staged=nativeEvents::stage(creation,provisional,receipt);
@@ -753,15 +755,28 @@ void finish_native_admissions(std::uint32_t onlyActor=UINT32_MAX) noexcept {
             continue;
         }
         const auto& lease=currentReceipt.lease;
-        const nativeEvents::Event complete{lease,{lease.source,current.handle,current.entity},
+        nativeEvents::Event complete{lease,{lease.source,current.handle,current.entity,expected.actor.birthNonce},
             current.source.handle,nativeEvents::Kind::admitted};
+        if(current.member.handle==lease.source.source.definition) {
+            const auto* member=state::activity::open_world_members::lookup(current.member.handle,
+                lease.source.source.registry,lease.source.source.slot,current.member.offset);
+            if(member)complete.memberCategory=member->category;
+        }
         // Keep the mailbox provisional until retirement tracking has room. This
         // makes local capacity pressure retryable and preserves the real actor.
         if(g_admittedActors.full()) {++i;continue;}
+        // Best-effort sidecar, captured before the authoritative event can be
+        // drained. A busy retry deduplicates the same exact receipt and actor.
+        // Failure here never changes native admission, renewal, or AI behavior.
+        state::activity::open_world_members::capture(birth.receipt,complete,
+            {current.member.handle,current.member.kind,current.member.offset});
         const auto admission=nativeEvents::admit(birth.receipt,complete);
         const bool accepted=admission==nativeEvents::AdmitResult::admitted;
         if(admission==nativeEvents::AdmitResult::busy) {++i;continue;}
-        if(!accepted) nativeEvents::observation_lost();
+        if(!accepted) {
+            state::activity::open_world_members::discard(birth.receipt,complete);
+            nativeEvents::observation_lost();
+        }
         else {
             const auto retained=g_admittedActors.add({complete,birth.parent,birth.receipt});
             if(retained!=pending::Intake::accepted && retained!=pending::Intake::duplicate) nativeEvents::observation_lost();
@@ -798,11 +813,14 @@ void observe_native_candidate(void* instance,std::uint32_t event) noexcept {
     // first under the same lock, then its independently qualified native death.
     std::lock_guard lock(g_pendingMutex);
     finish_native_admissions(actorState.handle);
-    bool admitted{};
-    for(std::size_t i=0;i<g_admittedActors.size();++i)
-        admitted|=g_admittedActors[i].receipt==receipt && g_admittedActors[i].event.actor.actor==actorState.handle;
-    if(admitted && !nativeEvents::submit({lease,{lease.source,actorState.handle,actorState.entity},
-        actorState.source.handle,nativeEvents::Kind::died},receipt)
+    bool admitted{};nativeEvents::Event death{};
+    for(std::size_t i=0;i<g_admittedActors.size();++i) {
+        const auto& saved=g_admittedActors[i];
+        if(saved.receipt!=receipt || saved.event.actor.actor!=actorState.handle
+            || saved.event.actor.entity!=actorState.entity || saved.event.sourceHandle!=actorState.source.handle)continue;
+        admitted=true;death=saved.event;death.kind=nativeEvents::Kind::died;break;
+    }
+    if(admitted && !nativeEvents::submit(death,receipt)
         && nativeEvents::capture(lease)==receipt) nativeEvents::observation_lost();
 }
 __declspec(noinline) std::uint64_t __fastcall admission_hook(void* instance,const void* context) noexcept {

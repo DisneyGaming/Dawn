@@ -3,12 +3,16 @@
 #include "native_activity_profiles.h"
 #include "mercury_freeroam_runtime.h"
 #include "open_world_runtime.h"
+#include "open_world_census.h"
 #include "../../../state/activity/native_population_events.h"
+#include "../../../state/activity/open_world_member_observations.h"
+#include "../../../state/activity/coo/open_world_member_catalog.h"
 #include "../../../core/filesystem/path.h"
 #include "../../../core/logging/log.h"
 #include "../../../state/activity/runtime.h"
 #include "../../../middleware/crypto/random_bytes.h"
 #include <cstdio>
+#include <memory>
 #include <mutex>
 
 namespace sunrise::server::runtime::activity::native_activity {
@@ -18,14 +22,15 @@ using population::Result;
 using population::parse;
 namespace {
 namespace nativeEvents=state::activity::native_population;
+namespace members=state::activity::open_world_members;
 struct Entry {
     PersistentActivity activity{};std::uint64_t nextPoll{},lastText{};
     activity_clock::Service clock{};
     // A loose request can create an authored group. The largest Mercury wave
     // raises one source by five requests before renewal, so retain a bounded
     // cohort rather than assuming one request equals one actor.
-    std::array<coo::NativePopulationLedger<64>,32> ledgers{};
-    std::array<std::uint32_t,32> sourceHandles{};
+    std::array<coo::NativePopulationLedger<64>,population::kSourceCapacity> ledgers{};
+    std::array<std::uint32_t,population::kSourceCapacity> sourceHandles{};
     mercury::freeroam::Director mercuryFreeroam{};
     open_world::Director openWorld{};
     std::uint8_t lastBubble{};
@@ -33,10 +38,63 @@ struct Entry {
     bool openWorldReady{};
     bool lastArrived{};
     bool observationFailure{};
+    struct CensusSource final {
+        std::uint32_t generation{},observationRevision{},tacticalRevision{};std::uint64_t renewalRequest{};
+        std::uint32_t first{},second{};std::int8_t tacticalRow{-1};bool seen{},observationSeen{};
+        bool renewalBusy{};
+    };
+    std::array<CensusSource,population::kSourceCapacity> censusSources{};
 };
 std::mutex mutex;
 std::array<Entry,16> entries{};
 std::uint64_t nextClockEpoch{};
+void reset_entry(Entry& entry) noexcept {
+    // Entry is process-static and now retains up to 256 actor ledgers. Rebuild it
+    // in its own storage so reset never needs a multi-megabyte stack temporary.
+    std::destroy_at(&entry);std::construct_at(&entry);
+}
+open_world_census::Record census_record(const NativeActivityDefinition& definition,
+    const Service& service,std::size_t index,std::uint32_t bubble,bool arrived,
+    open_world_census::Event event,std::string_view reason={}) noexcept {
+    open_world_census::Record record{};record.event=event;record.destination=definition.activity;
+    record.reason=reason;record.bubble=bubble;record.arrived=arrived;
+    if(index<definition.populations.size()) {
+        const auto& cap=definition.populations[index];record.scenario=cap.registry->scenario;
+        record.registry=cap.registry->key;record.sourceBubble=cap.registry->bubble;record.sourceSlot=cap.slot;
+        record.ruleSlot=cap.rule;record.hasRule=cap.hasRule;
+        record.generation=service.generation(index);record.requestSequence=service.source_request(index);
+        record.requestedFirst=service.target(index);record.requestedSecond=service.second_target(index);
+        const auto tactical=service.tactical(index);record.tacticalProvider=tactical.registry;
+        record.tacticalSlot=tactical.slot;record.tacticalRow=tactical.row;record.tacticalRevision=tactical.revision;
+        if(const auto* observation=service.observation(index);observation && observation->consumedKnown) {
+            record.consumedKnown=true;record.consumedFirst=observation->consumed[0];
+            record.consumedSecond=observation->consumedCount>1?observation->consumed[1]:0;
+        }
+    } else if(!definition.registries.empty())record.scenario=definition.registries.front().scenario;
+    return record;
+}
+void attach_member_census(open_world_census::Record& record,const nativeEvents::Event& event) noexcept {
+    if(!members::enabled() || event.kind!=nativeEvents::Kind::admitted)return;
+    record.member.evidence="not_captured";
+    members::Observation observation;
+    // The binding nonce protects release/identical-rebind ABA. The sidecar must
+    // also match both salted actor handles, source handle, and full source lease.
+    const auto taken=members::take(nativeEvents::capture(event.lease),event,observation);
+    if(taken==members::Take::busy){record.member.evidence="capture_contention_lost";return;}
+    if(taken!=members::Take::found)return;
+    if(observation.conflicted){record.member.evidence="capture_conflict";return;}
+    const auto& source=event.lease.source.source;
+    if(observation.member.resource!=source.definition) {
+        record.member.evidence="member_resource_mismatch";return;
+    }
+    const auto* choice=members::lookup(source.definition,source.registry,source.slot,observation.member.offset);
+    if(!choice){record.member.evidence="member_offset_unmatched";return;}
+    record.member.known=true;record.member.evidence="exact_native_member_offset";
+    record.member.category=choice->category;record.member.categoryKey=choice->categoryKey;
+    record.member.entity=choice->entity;record.member.variant=choice->variant;
+    record.member.choice=choice->choice;record.member.weight=choice->weight;
+    record.member.kind=observation.member.kind;record.member.offset=choice->memberOffset;
+}
 // Activity SOIDs and incarnation clocks may repeat after a process restart.
 // A random process token prevents an old mailbox file matching that new lifetime.
 std::uint64_t boot_token() noexcept {
@@ -183,8 +241,27 @@ void observe(Owner owner,std::uint32_t bubble,
                 }
             }
             const auto priorPopulationRevision=entry.activity.population().revision();
-            const auto* mirror=entry.activity.population().observe(bubble,object);
+            const auto* mirror=(entry.mercuryFreeroamReady || entry.openWorldReady)
+                ?entry.activity.population().observe_retained(object)
+                :entry.activity.population().observe(bubble,object);
             if(!mirror) continue;
+            const auto* definition=entry.activity.definition();
+            std::size_t censusIndex=definition?definition->populations.size():0;
+            if(definition)for(std::size_t candidate=0;candidate<definition->populations.size();++candidate) {
+                const auto& capability=definition->populations[candidate];
+                if(capability.registry->key==object.registryKey && capability.slot==object.slotIndex) {
+                    censusIndex=candidate;break;
+                }
+            }
+            if(definition && censusIndex<definition->populations.size()
+                && (!entry.censusSources[censusIndex].observationSeen
+                    || entry.censusSources[censusIndex].observationRevision!=mirror->revision)) {
+                auto record=census_record(*definition,entry.activity.population(),censusIndex,bubble,entry.lastArrived,
+                    open_world_census::Event::sourceObservation,"native_source_mirror");
+                open_world_census::emit(record);
+                entry.censusSources[censusIndex].observationRevision=mirror->revision;
+                entry.censusSources[censusIndex].observationSeen=true;
+            }
             if(entry.activity.population().revision()!=priorPopulationRevision) {
                 const auto populations=entry.activity.population().project_retained();
                 for(std::size_t sourceIndex=0;sourceIndex<populations.count;++sourceIndex) {
@@ -199,6 +276,9 @@ void observe(Owner owner,std::uint32_t bubble,
                     if(taskSize>0 && static_cast<std::size_t>(taskSize)<taskLine.size())
                         core::log::write(core::log::Channel::server,core::log::Level::info,
                             {taskLine.data(),static_cast<std::size_t>(taskSize)});
+                    if(definition && censusIndex<definition->populations.size())
+                        open_world_census::emit(census_record(*definition,entry.activity.population(),censusIndex,bubble,entry.lastArrived,
+                            open_world_census::Event::taskSelection,"native_cost_selection"));
                     break;
                 }
             }
@@ -225,6 +305,7 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
         // This is not a reusable native-source retirement acknowledgement.
         if(entry.activity.population().owner() && !state::activity::contains(entry.activity.population().owner())) {
             nativeEvents::release(entry.activity.population().owner());
+            members::release(entry.activity.population().owner());
             adventure::native_bridge::release(entry.activity.population().owner());
             adventure::dialogue_bridge::release(entry.activity.population().owner());
             ambient_population::named_points::release(entry.activity.population().owner());
@@ -233,7 +314,7 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
             public_event::deferred_bridge::release(entry.activity.population().owner());
             public_event::keys::bridge::release(entry.activity.population().owner());
             public_event::participant_bridge::release(entry.activity.population().owner());
-            public_event::engagement_bridge::release(entry.activity.population().owner());entry={};
+            public_event::engagement_bridge::release(entry.activity.population().owner());reset_entry(entry);
         }
         if(entry.activity.population().owner()==owner) current=&entry;
         if(!entry.activity.population().owner() && !empty) empty=&entry;
@@ -245,25 +326,43 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
             mercury::freeroam::Configuration configuration{};SYSTEMTIME local{};GetLocalTime(&local);
             if(!mercury::freeroam::configure(*document,configuration)
                 || !current->mercuryFreeroam.begin(owner,current->activity.population().boot(),
-                    static_cast<std::uint8_t>(local.wMinute),configuration)) {*current={};return {};}
+                    static_cast<std::uint8_t>(local.wMinute),configuration)) {reset_entry(*current);return {};}
             current->mercuryFreeroamReady=true;
         }
         if(definition.openWorld) {
             open_world::Configuration configuration{};
             if(!open_world::configure(*document,configuration)
                 || !current->openWorld.begin(owner,current->activity.population().boot(),
-                    *definition.openWorld,definition.populations,configuration)) {*current={};return {};}
+                    *definition.openWorld,definition.populations,configuration)) {reset_entry(*current);return {};}
             current->openWorldReady=true;
         }
         report(current->activity.population(),"ready");
+        open_world_census::emit(census_record(definition,current->activity.population(),definition.populations.size(),
+            bubble,arrived,open_world_census::Event::runStart,"activity_admitted"));
         if(current->activity.animation().owner()) report_animation(current->activity.animation(),"ready");
     }
     if(current->activity.definition()!=&definition) return {};
+    if(current->lastBubble!=bubble || current->lastArrived!=arrived) {
+        auto boundary=census_record(definition,current->activity.population(),definition.populations.size(),bubble,arrived,
+            open_world_census::Event::boundary,arrived?(current->lastArrived?"bubble_transition":"arrive_or_return"):"leave");
+        boundary.priorBubble=current->lastBubble;boundary.priorArrived=current->lastArrived;
+        open_world_census::emit(boundary);
+        for(std::size_t i=0;i<definition.populations.size();++i)if(current->activity.population().target(i)) {
+            auto snapshot=census_record(definition,current->activity.population(),i,bubble,arrived,
+                open_world_census::Event::sourceSnapshot,"boundary_retained_state");
+            snapshot.counts=current->ledgers[i].counts();snapshot.hasCounts=current->ledgers[i].owner().valid();
+            snapshot.failed=current->observationFailure;open_world_census::emit(snapshot);
+        }
+    }
     const bool populationLifecycleReady=current->mercuryFreeroamReady || current->openWorldReady;
     // Apply native observations before building this authority frame. Otherwise
     // an accepted death waits for another periodic snapshot to reach the HUD.
     std::array<nativeEvents::Event,64> native{};bool overflow{};
     const auto received=nativeEvents::drain(owner,native,overflow);current->observationFailure|=overflow;
+    if(overflow) {
+        auto failed=census_record(definition,current->activity.population(),definition.populations.size(),bubble,arrived,
+            open_world_census::Event::failure,"native_receipt_overflow");failed.failed=true;open_world_census::emit(failed);
+    }
     for(std::size_t e=0;e<received;++e) {
         const auto& event=native[e];
         for(std::size_t i=0;i<definition.populations.size();++i) {
@@ -277,7 +376,7 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
                 }
             } else if(current->sourceHandles[i]==0 || current->sourceHandles[i]==event.sourceHandle) {
                 if(event.kind==nativeEvents::Kind::admitted) {
-                    result=ledger.admitted(event.actor);
+                    result=ledger.admitted(event.actor,event.memberCategory);
                     if(result==coo::PopulationIntake::accepted) current->sourceHandles[i]=event.sourceHandle;
                 } else if(event.kind==nativeEvents::Kind::died) result=ledger.died(event.actor);
                 else result=ledger.actor_retired(event.actor);
@@ -295,6 +394,20 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
                 counts.dead,counts.resident,current->observationFailure?1U:0U);
             if(size>0 && static_cast<std::size_t>(size)<line.size())
                 core::log::write(core::log::Channel::server,core::log::Level::info,{line.data(),static_cast<std::size_t>(size)});
+            auto census=census_record(definition,current->activity.population(),i,bubble,arrived,
+                event.kind==nativeEvents::Kind::admitted?open_world_census::Event::actorAdmitted:
+                event.kind==nativeEvents::Kind::died?open_world_census::Event::actorDied:
+                event.kind==nativeEvents::Kind::sourceRecreated?open_world_census::Event::sourceRecreated:
+                open_world_census::Event::actorRetired,"native_receipt");
+            census.counts=counts;census.hasCounts=true;census.failed=current->observationFailure;
+            // Consume even a rejected/duplicate admission's sidecar, but only an
+            // accepted ledger transition below emits it as an admitted actor.
+            attach_member_census(census,event);
+            if(result==coo::PopulationIntake::accepted)open_world_census::emit(census);
+            if(result!=coo::PopulationIntake::accepted && result!=coo::PopulationIntake::duplicate) {
+                census.event=open_world_census::Event::failure;census.reason="native_receipt_rejected";census.failed=true;
+                open_world_census::emit(census);
+            }
         }
     }
     const auto prior=current->activity.population().revision();
@@ -341,7 +454,7 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
     }
     const auto local=public_event::participant_bridge::local_identity(GetTickCount64());
     auto frame=current->activity.update(bubble,arrived,selected,openingAdmissionReady,clock,local.identity);
-    std::array<std::uint8_t,32> nativePending{};
+    std::array<std::uint8_t,population::kSourceCapacity> nativePending{};
     if(populationLifecycleReady) {
         for(std::size_t i=0;i<definition.populations.size();++i) {
             const auto priorOwner=current->ledgers[i].owner();
@@ -357,6 +470,25 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
         if(!current->mercuryFreeroam.update(GetTickCount64(),bubble,arrived,current->activity.population(),
             std::span<const coo::NativePopulationLedger<64>>(current->ledgers),nativePending))return {};
     }
+    for(std::size_t i=0;i<definition.populations.size();++i) {
+        const auto generation=current->activity.population().generation(i);
+        const auto first=current->activity.population().target(i);
+        const auto second=current->activity.population().second_target(i);
+        const auto tactical=current->activity.population().tactical(i);
+        auto& priorSource=current->censusSources[i];
+        if(generation && first && (!priorSource.seen || priorSource.generation!=generation || priorSource.first!=first
+            || priorSource.second!=second || priorSource.tacticalRow!=tactical.row
+            || priorSource.tacticalRevision!=tactical.revision)) {
+            const auto reason=!priorSource.seen
+                ?(arrived && bubble==definition.populations[i].registry->bubble?"arrival_activation":"retained_authority")
+                :priorSource.generation!=generation?"renewal_generation"
+                :(priorSource.first!=first || priorSource.second!=second)?"target_changed":"tactical_selection";
+            open_world_census::emit(census_record(definition,current->activity.population(),i,bubble,arrived,
+                open_world_census::Event::sourceRequest,reason));
+            priorSource.seen=true;priorSource.generation=generation;priorSource.first=first;priorSource.second=second;
+            priorSource.tacticalRow=tactical.row;priorSource.tacticalRevision=tactical.revision;
+        }
+    }
     if(populationLifecycleReady) {
         // The Director only stages a ticket. Keep publishing the old source
         // until the native bridge can exclude queued, provisional and still
@@ -371,25 +503,51 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
                 owner.incarnation.value,asset,renewal.generation+1};
             if(!priorOwner.valid() || renewal.generation!=priorOwner.generation || !renewal.target
                 || counts.failed || counts.dead>counts.admitted) {
+                auto failed=census_record(definition,current->activity.population(),i,bubble,arrived,
+                    open_world_census::Event::failure,"renewal_precondition");failed.counts=counts;failed.hasCounts=true;failed.failed=true;
+                open_world_census::emit(failed);
                 current->observationFailure=true;return {};
+            }
+            auto renewalRecord=census_record(definition,current->activity.population(),i,bubble,arrived,
+                open_world_census::Event::renewalStarted,"director_ticket");renewalRecord.counts=counts;
+            renewalRecord.hasCounts=true;renewalRecord.priorGeneration=renewal.generation;
+            renewalRecord.nextGeneration=renewal.generation+1;renewalRecord.requestSequence=renewal.request;
+            if(current->censusSources[i].renewalRequest!=renewal.request) {
+                open_world_census::emit(renewalRecord);current->censusSources[i].renewalRequest=renewal.request;
+                current->censusSources[i].renewalBusy=false;
             }
             const bool settled=current->activity.population().consumed(i) && counts.admitted
                 && counts.dead==counts.admitted && !counts.alive && !counts.resident;
             // A provisional birth may finish after the Director staged this
             // ticket. Cancel it without failing the activity; the patrol will
             // require the new actor's real death/retirement and a fresh timer.
-            if(!settled) {current->activity.population().cancel_renewal(i);continue;}
+            if(!settled) {
+                renewalRecord.event=open_world_census::Event::renewalCancelled;renewalRecord.reason="source_not_quiescent";
+                open_world_census::emit(renewalRecord);current->activity.population().cancel_renewal(i);
+                current->censusSources[i].renewalRequest=0;current->censusSources[i].renewalBusy=false;continue;
+            }
             auto staged=ledger;
             if(!staged.renew(priorOwner,nextOwner)) {current->observationFailure=true;return {};}
             const auto result=nativeEvents::renew(
                 {owner,priorOwner,static_cast<std::uint8_t>(cap.registry->bubble),true},
                 {owner,nextOwner,static_cast<std::uint8_t>(cap.registry->bubble),true});
-            if(result==nativeEvents::RenewResult::busy)continue;
+            if(result==nativeEvents::RenewResult::busy) {
+                renewalRecord.event=open_world_census::Event::renewalBusy;renewalRecord.reason="native_mailbox_busy";
+                if(!current->censusSources[i].renewalBusy)open_world_census::emit(renewalRecord);
+                current->censusSources[i].renewalBusy=true;continue;
+            }
             if(result!=nativeEvents::RenewResult::renewed
                 || !current->activity.population().commit_renewal(i)) {
                 current->observationFailure=true;return {};
             }
             ledger=std::move(staged);current->sourceHandles[i]=0;
+            members::release_source(priorOwner);
+            renewalRecord=census_record(definition,current->activity.population(),i,bubble,arrived,
+                open_world_census::Event::renewalCommitted,"native_and_service_committed");
+            renewalRecord.counts=ledger.counts();renewalRecord.hasCounts=true;
+            renewalRecord.priorGeneration=renewal.generation;renewalRecord.nextGeneration=renewal.generation+1;
+            open_world_census::emit(renewalRecord);
+            current->censusSources[i].renewalRequest=0;current->censusSources[i].renewalBusy=false;
         }
     }
     if(current->mercuryFreeroamReady) {

@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <memory>
 #include <vector>
 
 namespace runtime=sunrise::server::runtime::activity;
@@ -331,12 +332,13 @@ void persistent_integration_cases() {
     CHECK(activity.ambient().state(0)==ambient::InitialState::published);
     const auto revision=activity.population().revision();
     const coo::PopulationOwner source{owner.sessionId,18,owner.incarnation.value,{0xEB1E8934,0x80F5B77F,1,0},request.source.generation};
-    const events::Lease lease{owner,source,15};events::Mailbox mailbox;coo::NativePopulationLedger<16> ledger;
-    CHECK(mailbox.bind(lease) && ledger.begin(source));
+    const events::Lease lease{owner,source,15};
+    auto mailbox=std::make_unique<events::Mailbox>();coo::NativePopulationLedger<16> ledger;
+    CHECK(mailbox->bind(lease) && ledger.begin(source));
     const coo::PopulationActor actor{source,0x123456,0x234567};
-    CHECK(mailbox.submit({lease,actor,0x345678,events::Kind::admitted},mailbox.epoch()));
-    CHECK(mailbox.submit({lease,actor,0x345678,events::Kind::died},mailbox.epoch()));
-    std::array<events::Event,4> received{};CHECK(mailbox.drain(owner,received)==2);
+    CHECK(mailbox->submit({lease,actor,0x345678,events::Kind::admitted},mailbox->epoch()));
+    CHECK(mailbox->submit({lease,actor,0x345678,events::Kind::died},mailbox->epoch()));
+    std::array<events::Event,4> received{};CHECK(mailbox->drain(owner,received)==2);
     CHECK(ledger.admitted(received[0].actor)==coo::PopulationIntake::accepted);
     CHECK(ledger.died(received[1].actor)==coo::PopulationIntake::accepted);
     CHECK(ledger.counts().dead==1 && ledger.counts().alive==0 && ledger.counts().resident==1);
@@ -346,12 +348,12 @@ void persistent_integration_cases() {
     CHECK(activity.update(15,true).populations.count==3);
     CHECK(activity.ambient().observe(owner,18,15,report(0xEB1E8934,3,4,1))==1);
     CHECK(activity.update(15,true).populations.count==3 && activity.population().revision()==revision);
-    CHECK(mailbox.submit({lease,actor,0x345678,events::Kind::retired},mailbox.epoch()));
-    CHECK(mailbox.drain(owner,received)==1);
+    CHECK(mailbox->submit({lease,actor,0x345678,events::Kind::retired},mailbox->epoch()));
+    CHECK(mailbox->drain(owner,received)==1);
     CHECK(ledger.actor_retired(received[0].actor)==coo::PopulationIntake::accepted);
     CHECK(ledger.counts().resident==0 && !ledger.counts().sourceRetired);
     CHECK(activity.update(15,true).populations.count==3 && activity.population().revision()==revision);
-    mailbox.release(owner);CHECK(!mailbox.submit({lease,actor,0x345678,events::Kind::died},mailbox.epoch()));
+    mailbox->release(owner);CHECK(!mailbox->submit({lease,actor,0x345678,events::Kind::died},mailbox->epoch()));
     runtime::PersistentActivity reentry;const population::Owner newOwner{82,{3}};
     CHECK(reentry.begin(newOwner,runtime::mercury::kActivity,enabled,18));
     CHECK(reentry.ambient().state(0)==ambient::InitialState::awaitingMonitor);
@@ -375,14 +377,27 @@ void cabal_persistent_cases() {
     CHECK(ambient::optional_registries(runtime::mercury::kActivity,*disabled,registries));CHECK(registries.count==0);
     runtime::PersistentActivity normal;const population::Owner disabledOwner{300,{1}};
     CHECK(normal.begin(disabledOwner,runtime::mercury::kActivity,std::move(disabled),100));
-    CHECK(normal.request_population({disabledOwner,1,1,0x2571C34D,0,1,100},15)==population::Result::unsupported);
+    // The shipped profile now owns source0 as an ordinary fallback escort.
+    // It does not need the diagnostic primary-rule named-point owner.
+    CHECK(normal.request_population({disabledOwner,1,1,0x2571C34D,0,1,100},15)==population::Result::accepted);
+    const auto ordinary=normal.population().project_retained();CHECK(ordinary.count==1);
+    CHECK(ordinary.entries[0].source.ruleSlot==9 && ordinary.entries[0].source.tactical.row==1);
     CHECK(!points::lookup(probe::kNamedDependency.list).binding.epoch);
+    // Keep the primary-rule probe as an isolated fixture, never as a second
+    // activation path for the production fallback source.
+    auto probePopulations=runtime::mercury::kPopulations;
+    probePopulations[22]=probe::kPopulation;
+    probePopulations[22].registry=runtime::mercury::kPopulations[22].registry;
+    const std::array<ambient::InitialBinding,2> probeBindings{{
+        runtime::mercury::ambient::probe::binding(7),probe::binding(22)}};
+    auto probeDefinition=runtime::mercury::kActivity;
+    probeDefinition.populations=probePopulations;probeDefinition.ambientInitial=probeBindings;
     CHECK(mission_parameter_fixture::numeric(text,"ambient_cabal_primary_probe_count",1));
     auto enabled=coo::script::MissionDocument::parse(text,runtime::mercury::kProfile,error);
-    CHECK(enabled && runtime::PersistentActivity::valid(runtime::mercury::kActivity,*enabled));
-    CHECK(ambient::optional_registries(runtime::mercury::kActivity,*enabled,registries));CHECK(registries.count==1);
+    CHECK(enabled && runtime::PersistentActivity::valid(probeDefinition,*enabled));
+    CHECK(ambient::optional_registries(probeDefinition,*enabled,registries));CHECK(registries.count==1);
     runtime::PersistentActivity activity;const population::Owner owner{301,{2}};
-    CHECK(activity.begin(owner,runtime::mercury::kActivity,std::move(enabled),101));
+    CHECK(activity.begin(owner,probeDefinition,std::move(enabled),101));
     CHECK(activity.ambient().size()==1 && activity.ambient().policy(0)->source->registry->key==0x2571C34D);
     runtime::NativeActivityFrame frame{};
     for(int i=0;i<4;++i)frame=activity.update(15,true);
@@ -417,8 +432,8 @@ void freeroam_profile_cases() {
     const auto document=coo::script::MissionDocument::parse(text,runtime::mercury::kProfile,error);
     CHECK(document && runtime::PersistentActivity::valid(runtime::mercury::kActivity,*document));
     CHECK(runtime::mercury::kActivity.registries.size()==20);
-    CHECK(runtime::mercury::kActivity.populations.size()==23);
-    CHECK(runtime::mercury::kActivity.ambientInitial.size()==2);
+    CHECK(runtime::mercury::kActivity.populations.size()==32);
+    CHECK(runtime::mercury::kActivity.ambientInitial.size()==1);
     for(const auto& capability:runtime::mercury::kActivity.populations) {
         CHECK(population::valid(capability));bool registered{};
         for(const auto& registry:runtime::mercury::kActivity.registries)

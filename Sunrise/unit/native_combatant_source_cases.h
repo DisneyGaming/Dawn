@@ -25,7 +25,17 @@ void native_combatant_source_cases() {
     CHECK(assigned.read(16,value) && value==32768+9);
     squad.hasSecondCategory=true;squad.secondRequested=1;
     bits::Writer two(body);CHECK(source::write_source(two,squad));CHECK(two.bit_count()==673);
-    squad.looseRequested=63;bits::Writer over(body);CHECK(!source::write_source(over,squad));CHECK(over.bit_count()==0);
+    // Lifetime quota is a biased signed32 counter, not the simultaneous roster.
+    for(const std::uint32_t count:{64U,256U,65536U,std::uint32_t(INT32_MAX)}) {
+        squad.looseRequested=count;squad.secondRequested=count;
+        bits::Writer cumulative(body);CHECK(source::write_source(cumulative,squad));
+        CHECK(cumulative.bit_count()==673);
+        bits::Reader values(body);CHECK(values.skip(121));
+        CHECK(values.read(32,value) && value==0x80000000ULL+count);
+        CHECK(values.read(32,value) && value==0x80000000ULL+count);
+    }
+    squad.looseRequested=std::uint32_t(INT32_MAX)+1;
+    bits::Writer over(body);CHECK(!source::write_source(over,squad));CHECK(over.bit_count()==0);
     std::array<std::byte,8> small{};bits::Writer shortBuffer(small);
     CHECK(!source::write_source(shortBuffer,vendor));
 }

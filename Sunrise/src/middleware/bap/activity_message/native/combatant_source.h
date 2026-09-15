@@ -21,10 +21,10 @@ struct Source final {
     std::uint32_t registry{};
     std::uint32_t generation{};
     std::uint16_t ruleSlot{};
-    std::uint8_t looseRequested{};
+    std::uint32_t looseRequested{};
     TacticalGroup tactical{};
     // Only sources with two authored native category groups set this extension.
-    std::uint8_t secondRequested{};
+    std::uint32_t secondRequested{};
     bool hasSecondCategory{};
     /** False only for an authored source without a spawn-rule reference (for example a vendor). */
     bool hasSpawnRule{true};
@@ -35,10 +35,9 @@ inline constexpr std::size_t kTwoCategorySourceBits = 673;
 [[nodiscard]] constexpr bool valid(const Source& source) noexcept {
     if(source.registry==0 || source.registry==0x811C9DC5U
         || source.generation==0 || source.generation>0x7FFFFFFFU
-        || source.ruleSlot>0x7FFFU || (!source.hasSpawnRule && source.ruleSlot!=0) || source.looseRequested>63
-        || source.secondRequested>63
-        || (!source.hasSecondCategory && source.secondRequested!=0)
-        || static_cast<unsigned>(source.looseRequested)+source.secondRequested>63) { return false; }
+        || source.ruleSlot>0x7FFFU || (!source.hasSpawnRule && source.ruleSlot!=0) || source.looseRequested>INT32_MAX
+        || source.secondRequested>INT32_MAX
+        || (!source.hasSecondCategory && source.secondRequested!=0)) { return false; }
     const auto& tactical=source.tactical;
     const bool assigned=tactical.row>=0;
     if(assigned ? (tactical.registry==0 || tactical.registry==0x811C9DC5U

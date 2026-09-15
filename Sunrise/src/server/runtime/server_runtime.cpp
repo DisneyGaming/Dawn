@@ -7,6 +7,7 @@
 #include "../http/server_http.h"
 #include "../transport/bap_listener.h"
 #include "../ui/runtime/server_ui_module_runtime.h"
+#include "activity/open_world_census.h"
 
 namespace sunrise::server {
 
@@ -29,6 +30,10 @@ bool initialize() noexcept {
                              "ev=gameplay stage=init result=fail");
         }
         if (ui::runtime::initialize()) {
+            if (!runtime::activity::open_world_census::initialize()) {
+                core::log::write(core::log::Channel::server, core::log::Level::warn,
+                                 "ev=open_world_census stage=init result=disabled");
+            }
             return true;
         }
         gameplay::shutdown();
@@ -54,6 +59,7 @@ void shutdown() noexcept {
     client::network::unregister_bap_consumer(&bap::consume);
     client::network::unregister_http_consumer(&http::consume);
     bap::shutdown();
+    runtime::activity::open_world_census::shutdown();
 }
 
 } // namespace sunrise::server

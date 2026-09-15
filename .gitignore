@@ -24,6 +24,8 @@
 *.pch
 *.tlog
 *.lastbuildstate
+*.exe.recipe
+*.vcxproj.FileListAbsolute.txt
 *.nativecodeanalysis.xml
 
 # Runtime caches, logs, local tools, and editor state

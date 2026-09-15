@@ -8,6 +8,10 @@
 #include <span>
 
 namespace sunrise::state::activity::native_population {
+inline constexpr std::size_t kBindingCapacity=320;
+inline constexpr std::size_t kCreationCapacity=1152;
+inline constexpr std::size_t kProvisionalCapacity=1152;
+inline constexpr std::size_t kEventCapacity=3456;
 struct Lease final {
     ActivityInstanceKey activity{};
     coo::PopulationOwner source{};
@@ -20,6 +24,9 @@ enum class Kind : std::uint8_t { admitted, died, retired, sourceRecreated };
 struct Event final {
     Lease lease{};coo::PopulationActor actor{};std::uint32_t sourceHandle{UINT32_MAX};Kind kind{};
     std::uint32_t previousSourceHandle{UINT32_MAX};
+    // Admission-only metadata from an exact native member/source catalog join.
+    // Unknown does not affect death/retirement identity or authorize lane refill.
+    std::uint8_t memberCategory{UINT8_MAX};
 };
 
 // A receipt identifies one specific binding lifetime. The lease value alone is
@@ -147,7 +154,8 @@ public:
         for(std::size_t i=0;i<inflight_;++i) if(creations_[i].nonce==creation.nonce) {ticket=i;break;}
         if(ticket==creations_.size()) return StageResult::rejected;
         const auto floor=creations_[ticket].floor;erase_creation(ticket);
-        if(!valid_provisional(event)) return StageResult::rejected;
+        if(!valid_provisional(event) || !event.actor.birthNonce || event.actor.birthNonce!=creation.nonce)
+            return StageResult::rejected;
         const auto receipt=capture(event.lease);
         // Reject a binding created after begin_creation(); this closes release /
         // identical-rebind ABA while the native original was running.
@@ -155,7 +163,8 @@ public:
         for(std::size_t i=0;i<provisional_;++i) {
             const auto& previous=provisionals_[i];
             if(previous.nonce==receipt.nonce && previous.event.actor.actor==event.actor.actor) {
-                if(previous.event.sourceHandle!=event.sourceHandle)return StageResult::rejected;
+                if(previous.event.sourceHandle!=event.sourceHandle
+                    || previous.event.actor.birthNonce!=event.actor.birthNonce)return StageResult::rejected;
                 output=receipt;return StageResult::staged;
             }
         }
@@ -175,6 +184,7 @@ public:
             const auto& candidate=provisionals_[i];
             if(candidate.nonce==receipt.nonce && candidate.event.lease==event.lease
                 && candidate.event.actor.actor==event.actor.actor
+                && candidate.event.actor.birthNonce==event.actor.birthNonce
                 && candidate.event.sourceHandle==event.sourceHandle) return true;
         }
         return false;
@@ -187,6 +197,7 @@ public:
         for(std::size_t i=0;i<provisional_;++i) {
             const auto& candidate=provisionals_[i];
             if(candidate.nonce==receipt.nonce && candidate.event.actor.actor==event.actor.actor
+                && candidate.event.actor.birthNonce==event.actor.birthNonce
                 && candidate.event.sourceHandle==event.sourceHandle) {staged=i;break;}
         }
         if(staged==provisionals_.size()) return AdmitResult::rejected;
@@ -294,12 +305,13 @@ private:
     }
     void erase_creation(std::size_t index) noexcept {creations_[index]=creations_[--inflight_];}
 
-    std::array<Binding,128> bindings_{};std::size_t used_{};
-    // One frame drains 64 entries. Keep several full frames of burst room and
-    // enough pre-attachment slots for every retained actor source.
-    std::array<Queued,1024> events_{};std::size_t queued_{};
-    std::array<Provisional,256> provisionals_{};std::size_t provisional_{};
-    std::array<Inflight,128> creations_{};std::size_t inflight_{};
+    std::array<Binding,kBindingCapacity> bindings_{};std::size_t used_{};
+    // One frame drains 64 entries. The open-world request budget admits at most
+    // 384 retained requests; conservative native fanout bounds three births and
+    // nine lifecycle events per request.
+    std::array<Queued,kEventCapacity> events_{};std::size_t queued_{};
+    std::array<Provisional,kProvisionalCapacity> provisionals_{};std::size_t provisional_{};
+    std::array<Inflight,kCreationCapacity> creations_{};std::size_t inflight_{};
     std::uint64_t nextNonce_{};bool overflow_{};
 };
 

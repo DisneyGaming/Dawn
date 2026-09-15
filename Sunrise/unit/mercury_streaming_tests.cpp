@@ -46,7 +46,7 @@ struct Fixture {
     std::uintptr_t pool{},entityPool{},netPool{};
     unsigned binds{},deletes{},dispatches{},destroys{},consumes{};
     bool deferred{};
-    LONG dispatchedConsumed{-1};
+    LONG dispatchedConsumed{-1},dispatchedSecondConsumed{-1};
     static Fixture* active;
     template<class T>void put(std::uintptr_t address,T value) {std::memcpy(reinterpret_cast<void*>(address),&value,sizeof value);}
     template<class T>T get(std::uintptr_t address) {T value;std::memcpy(&value,reinterpret_cast<void*>(address),sizeof value);return value;}
@@ -66,13 +66,15 @@ struct Fixture {
     static void __fastcall dispatch_original(std::uint32_t* source,std::uint32_t mode,const std::byte* authority) noexcept {
         unlocked();CHECK(mode==17);CHECK(authority!=nullptr);++active->dispatches;
         active->dispatchedConsumed=active->get<LONG>(reinterpret_cast<std::uintptr_t>(source)+0x268);
+        active->dispatchedSecondConsumed=active->get<LONG>(reinterpret_cast<std::uintptr_t>(source)+0x26C);
     }
     static void __fastcall destroy_original(void*) noexcept {unlocked();++active->destroys;}
     static void __fastcall consume_original(void* instance,std::uint32_t) noexcept {
         unlocked();++active->consumes;const auto source=reinterpret_cast<std::uintptr_t>(instance);
         active->put(source+0x268,active->get<LONG>(source+0x650));
+        active->put(source+0x26C,active->get<LONG>(source+0x654));
     }
-    Fixture() {
+    explicit Fixture(std::int32_t categories=1) {
         active=this;nativeEvents::release(fixtureLease.activity);CHECK(nativeEvents::bind(fixtureLease));
         g_image=reinterpret_cast<std::uintptr_t>(VirtualAlloc(nullptr,0x3200000,MEM_RESERVE|MEM_COMMIT,PAGE_READWRITE));
         CHECK(g_image!=0);pool=g_image+0x3100000;entityPool=pool+0x20000;netPool=pool+0x21000;
@@ -85,8 +87,9 @@ struct Fixture {
         for(unsigned i:{1U,3U}) {
             put(source(i),Ref{2,0x8080948F,16});put(source(i)+0x48,i);
             put(source(i)+0x650,LONG{4});put(source(i)+0x268,LONG{0});
+            put(source(i)+0x654,LONG{categories==2?3:0});put(source(i)+0x26C,LONG{0});
         }
-        put(ref(2)+16+0xA8,LONG{1});
+        put(ref(2)+16+0xA8,categories);
         put(g_image+0x1F93428,entityPool);put(g_image+0x1F93430,std::uint32_t{0x80});
         put(entityPool+4*0x80+0x4C,std::uint32_t{5});put(ref(5)+0x10,std::uint32_t{4});
         put(ref(6)+0xC0,std::uint32_t{6});put(ref(6)+0xC8,std::uint32_t{5});
@@ -133,6 +136,15 @@ void cases() {
         CHECK(f.drain(events)==1);CHECK(events[0].kind==nativeEvents::Kind::sourceRecreated);
         CHECK(events[0].previousSourceHandle==1 && events[0].sourceHandle==3);
         f.dispatch(3);CHECK(f.drain(events)==0 && f.dispatchedConsumed==1);
+    }
+    {
+        Fixture f{2};f.put(f.source(1)+0x268,LONG{1});f.put(f.source(1)+0x26C,LONG{2});
+        f.dispatch(1);CHECK(f.dispatchedConsumed==1 && f.dispatchedSecondConsumed==2);
+        streaming::consume_hook(reinterpret_cast<void*>(f.source(1)),0);
+        CHECK(f.get<LONG>(f.source(1)+0x268)==4 && f.get<LONG>(f.source(1)+0x26C)==3);
+        f.destroy();f.dispatch(3);
+        CHECK(f.dispatchedConsumed==1 && f.dispatchedSecondConsumed==2);
+        CHECK(f.drain(events)==1 && events[0].kind==nativeEvents::Kind::sourceRecreated);
     }
     {
         Fixture f;f.remember();f.deferred=true;streaming::bind_hook(7,UINT32_MAX);

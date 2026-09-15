@@ -9,6 +9,7 @@
 namespace sunrise::server::runtime::activity::population {
 namespace wire=middleware::bap::activity_message::native::population;
 namespace codec=middleware::bap::activity_message::native::combatant_source;
+inline constexpr std::size_t kSourceCapacity=wire::kSourceCapacity;
 using Owner=state::activity::ActivityInstanceKey;
 struct Capability final {
     const registry::Definition* registry{};
@@ -18,6 +19,9 @@ struct Capability final {
     // Explicit opt-in: only these package-authored rows of this objective may
     // replace the initial row using the native squad's reachable-cost reports.
     std::uint32_t taskMask{};
+    // Authored native source category-array width. Category one stays dormant
+    // until an explicit request supplies a nonzero second target.
+    std::uint8_t categories{1};
 };
 [[nodiscard]] inline bool valid(const Capability& capability) noexcept {
     if(!capability.registry || !registry::valid(*capability.registry)) return false;
@@ -28,10 +32,12 @@ struct Capability final {
         if(slot.index==capability.tactical.slot && slot.type==3 && slot.authSchema==0x80807F0C) ++tactical;
     }
     codec::Source request{capability.registry->key,1,capability.rule,1,capability.tactical};
+    request.hasSecondCategory=capability.categories==2;
     request.hasSpawnRule=capability.hasRule;
     if(capability.taskMask && (capability.tactical.row<0 || capability.tactical.row>=24 || (capability.taskMask&0xFF000000U)
         || !(capability.taskMask&(1U<<capability.tactical.row))))return false;
-    return source==1 && (!capability.hasRule || rule==1)
+    return (capability.categories==1 || capability.categories==2)
+        && source==1 && (!capability.hasRule || rule==1)
         && (capability.tactical.row<0 || (capability.tactical.registry==capability.registry->key && tactical==1))
         && codec::valid(request);
 }
@@ -42,6 +48,7 @@ struct Command final {
     std::uint16_t slot{};
     std::uint8_t requested{};
     std::uint64_t boot{};
+    std::uint8_t secondRequested{};
 };
 enum class Result : std::uint8_t { accepted, invalid, stale, duplicate, unsupported, decrease, unchanged, exhausted };
 // Explicit local development format. Absolute cumulative targets are idempotent;
@@ -76,6 +83,11 @@ enum class Result : std::uint8_t { accepted, invalid, stale, duplicate, unsuppor
     return true;
 }
 class Service final {
+    struct Targets final {
+        std::uint32_t first{},second{};
+        [[nodiscard]] constexpr std::uint64_t total() const noexcept {return std::uint64_t(first)+second;}
+        friend constexpr bool operator==(const Targets&,const Targets&)=default;
+    };
 public:
     struct Observation {
         std::array<std::uint32_t,6> scalar{};
@@ -106,14 +118,16 @@ public:
     [[nodiscard]] Result renew(const Command& command,std::uint32_t bubble) noexcept {
         if(!owner_ || command.boot!=boot_ || command.owner!=owner_ || command.expectedRevision!=revision_)return Result::stale;
         if(!command.request || command.request<=lastRequest_)return Result::duplicate;
-        if(!command.requested || command.requested>63)return Result::invalid;
+        if(!command.requested || unsigned(command.requested)+command.secondRequested>63)return Result::invalid;
         for(std::size_t i=0;i<capabilities_.size();++i) {
             const auto& capability=capabilities_[i];
             if(command.registry!=capability.registry->key || command.slot!=capability.slot)continue;
+            if(command.secondRequested && capability.categories!=2)return Result::invalid;
             if(bubble!=capability.registry->bubble)return Result::stale;
-            if(!targets_[i] || !consumed(i) || renewals_[i].pending
+            if(!targets_[i].first || !consumed(i) || renewals_[i].pending
                 || generations_[i]>=0x7FFFFFFFU || revision_==UINT64_MAX)return Result::exhausted;
-            renewals_[i]={command.request,generations_[i],targets_[i],command.requested,true};lastRequest_=command.request;
+            renewals_[i]={command.request,generations_[i],targets_[i].first,command.requested,true,
+                targets_[i].second,command.secondRequested,capability.categories==2};lastRequest_=command.request;
             return Result::accepted;
         }
         return Result::unsupported;
@@ -121,16 +135,39 @@ public:
     [[nodiscard]] Result request(const Command& command,std::uint32_t bubble) noexcept {
         if(!owner_ || command.boot!=boot_ || command.owner!=owner_ || command.expectedRevision!=revision_) return Result::stale;
         if(!command.request || command.request<=lastRequest_) return Result::duplicate;
-        if(!command.requested || command.requested>63) return Result::invalid;
+        if(!command.requested || unsigned(command.requested)+command.secondRequested>63) return Result::invalid;
         for(std::size_t i=0;i<capabilities_.size();++i) {
             const auto& capability=capabilities_[i];
             if(command.registry!=capability.registry->key || command.slot!=capability.slot) continue;
+            if(command.secondRequested && capability.categories!=2)return Result::invalid;
             if(bubble!=capability.registry->bubble) return Result::stale;
             if(renewals_[i].pending) return Result::exhausted;
-            if(command.requested<targets_[i]) return Result::decrease;
-            if(command.requested==targets_[i]) return Result::unchanged;
+            const Targets requested{command.requested,command.secondRequested};
+            if(requested.first<targets_[i].first || requested.second<targets_[i].second) return Result::decrease;
+            if(requested==targets_[i]) return Result::unchanged;
             if(revision_==UINT64_MAX) return Result::exhausted;
-            targets_[i]=command.requested;lastRequest_=command.request;++revision_;return Result::accepted;
+            targets_[i]=requested;requests_[i]=command.request;lastRequest_=command.request;++revision_;return Result::accepted;
+        }
+        return Result::unsupported;
+    }
+    // Internal casualty replacement only. Command counts here are bounded
+    // increments; ordinary request()/the developer text format remain absolute
+    // and capped at63. This extends lifetime quota, never the intended live cap.
+    [[nodiscard]] Result replenish(const Command& command,std::uint32_t bubble) noexcept {
+        if(!owner_ || command.boot!=boot_ || command.owner!=owner_ || command.expectedRevision!=revision_)return Result::stale;
+        if(!command.request || command.request<=lastRequest_)return Result::duplicate;
+        if(!command.requested && !command.secondRequested)return Result::invalid;
+        if(unsigned(command.requested)+command.secondRequested>63)return Result::invalid;
+        for(std::size_t i=0;i<capabilities_.size();++i) {
+            const auto& capability=capabilities_[i];
+            if(command.registry!=capability.registry->key || command.slot!=capability.slot)continue;
+            if(bubble!=capability.registry->bubble || !targets_[i].first)return Result::stale;
+            if(command.secondRequested && (capability.categories!=2 || !targets_[i].second))return Result::invalid;
+            if(renewals_[i].pending || revision_==UINT64_MAX
+                || targets_[i].first>std::uint32_t(INT32_MAX)-command.requested
+                || targets_[i].second>std::uint32_t(INT32_MAX)-command.secondRequested)return Result::exhausted;
+            targets_[i].first+=command.requested;targets_[i].second+=command.secondRequested;
+            requests_[i]=command.request;lastRequest_=command.request;++revision_;return Result::accepted;
         }
         return Result::unsupported;
     }
@@ -148,11 +185,13 @@ private:
         wire::Batch batch{};
         for(std::size_t i=0;i<capabilities_.size();++i) {
             const auto& capability=capabilities_[i];
-            if(!targets_[i] || (!retained && capability.registry->bubble!=bubble)) continue;
+            if(!targets_[i].first || (!retained && capability.registry->bubble!=bubble)) continue;
             auto& row=batch.entries[batch.count++];
             row.bubble=capability.registry->bubble;row.slot=capability.slot;
             row.source={capability.registry->key,generations_[i],
-                capability.rule,targets_[i],tasks_[i]};
+                capability.rule,targets_[i].first,tasks_[i]};
+            row.source.secondRequested=targets_[i].second;
+            row.source.hasSecondCategory=capability.categories==2;
             row.source.hasSpawnRule=capability.hasRule;
         }
         return batch;
@@ -164,11 +203,24 @@ public:
     // generation-qualified native source delta can establish this mirror.
     [[nodiscard]] const Observation* observe(std::uint32_t bubble,
         const middleware::bap::activity_message::sense_update::SenseObject& object) noexcept {
+        return observe_impl(bubble,false,object);
+    }
+    // Open-world sources remain authored and owned while the player crosses a
+    // bubble boundary. The caller must restrict this path to retained
+    // open-world population lifecycles; exact source identity and generation
+    // remain mandatory below.
+    [[nodiscard]] const Observation* observe_retained(
+        const middleware::bap::activity_message::sense_update::SenseObject& object) noexcept {
+        return observe_impl(0,true,object);
+    }
+private:
+    [[nodiscard]] const Observation* observe_impl(std::uint32_t bubble,bool retained,
+        const middleware::bap::activity_message::sense_update::SenseObject& object) noexcept {
         if(!owner_ || !object.hasNativeSchema || object.nativeSchema!=0x80807ECC
             || object.slotType!=1) return nullptr;
         for(std::size_t i=0;i<capabilities_.size();++i) {
             const auto& capability=capabilities_[i];
-            if(!targets_[i] || capability.registry->bubble!=bubble
+            if(!targets_[i].first || (!retained && capability.registry->bubble!=bubble)
                 || capability.registry->key!=object.registryKey || capability.slot!=object.slotIndex) continue;
             auto& mirror=observations_[i];
             if(mirror.seen && (object.nativeRevision==mirror.revision
@@ -208,23 +260,40 @@ public:
         }
         return nullptr;
     }
+public:
     [[nodiscard]] std::uint64_t revision() const noexcept { return revision_; }
     [[nodiscard]] std::uint64_t last_request() const noexcept { return lastRequest_; }
-    [[nodiscard]] std::uint8_t target(std::size_t index) const noexcept {
-        return index<capabilities_.size()?targets_[index]:0;
+    [[nodiscard]] std::uint64_t source_request(std::size_t index) const noexcept {
+        return index<capabilities_.size()?requests_[index]:0;
+    }
+    [[nodiscard]] std::uint32_t generation(std::size_t index) const noexcept {
+        return index<capabilities_.size()?generations_[index]:0;
+    }
+    [[nodiscard]] const Observation* observation(std::size_t index) const noexcept {
+        return index<capabilities_.size() && observations_[index].seen?&observations_[index]:nullptr;
+    }
+    [[nodiscard]] std::uint32_t target(std::size_t index) const noexcept {
+        return index<capabilities_.size()?targets_[index].first:0;
+    }
+    [[nodiscard]] std::uint32_t second_target(std::size_t index) const noexcept {
+        return index<capabilities_.size()?targets_[index].second:0;
     }
     [[nodiscard]] codec::TacticalGroup tactical(std::size_t index) const noexcept {
         return index<capabilities_.size()?tasks_[index]:codec::TacticalGroup{};
     }
     [[nodiscard]] bool consumed(std::size_t index) const noexcept {
-        if(index>=capabilities_.size() || !targets_[index])return false;
+        if(index>=capabilities_.size() || !targets_[index].first)return false;
         const auto& mirror=observations_[index];
-        return mirror.seen && mirror.consumedKnown && mirror.consumedCount==1
-            && mirror.consumed[0]>=static_cast<std::int32_t>(targets_[index]);
+        if(!mirror.seen || !mirror.consumedKnown
+            || mirror.consumedCount!=capabilities_[index].categories)return false;
+        for(std::size_t category=0;category<capabilities_[index].categories;++category)
+            if(mirror.consumed[category]<static_cast<std::int32_t>(category?targets_[index].second:targets_[index].first))return false;
+        return true;
     }
     struct Renewal final {
         std::uint64_t request{};std::uint32_t generation{};
-        std::uint8_t target{},nextTarget{};bool pending{};
+        std::uint32_t target{};std::uint8_t nextTarget{};bool pending{};
+        std::uint32_t secondTarget{};std::uint8_t nextSecondTarget{};bool hasSecondCategory{};
     };
     [[nodiscard]] Renewal renewal(std::size_t index) const noexcept {
         return index<capabilities_.size()?renewals_[index]:Renewal{};
@@ -235,9 +304,10 @@ public:
     [[nodiscard]] bool commit_renewal(std::size_t index) noexcept {
         if(index>=capabilities_.size())return false;const auto ticket=renewals_[index];
         if(!ticket.pending || !ticket.request || ticket.generation!=generations_[index]
-            || ticket.target!=targets_[index] || !ticket.nextTarget
+            || ticket.target!=targets_[index].first || ticket.secondTarget!=targets_[index].second || !ticket.nextTarget
+            || ticket.hasSecondCategory!=(capabilities_[index].categories==2)
             || generations_[index]>=0x7FFFFFFFU || revision_==UINT64_MAX)return false;
-        ++generations_[index];targets_[index]=ticket.nextTarget;observations_[index]={};
+        ++generations_[index];targets_[index]={ticket.nextTarget,ticket.nextSecondTarget};requests_[index]=ticket.request;observations_[index]={};
         costs_[index]={};tasks_[index]=capabilities_[index].tactical;
         if(capabilities_[index].taskMask)tasks_[index].revision=generations_[index];
         ++revision_;renewals_[index]={};return true;
@@ -248,12 +318,13 @@ private:
     // Registered capabilities have static lifetime. Dynamic definitions must
     // retain their owning revision lease before using this service.
     std::span<const Capability> capabilities_{};
-    std::array<std::uint8_t,32> targets_{};
-    std::array<std::uint32_t,32> generations_{};
-    std::array<Renewal,32> renewals_{};
-    std::array<Observation,32> observations_{};
-    std::array<codec::TacticalGroup,32> tasks_{};
-    std::array<state::activity::coo::TaskCosts,32> costs_{};
+    std::array<Targets,kSourceCapacity> targets_{};
+    std::array<std::uint64_t,kSourceCapacity> requests_{};
+    std::array<std::uint32_t,kSourceCapacity> generations_{};
+    std::array<Renewal,kSourceCapacity> renewals_{};
+    std::array<Observation,kSourceCapacity> observations_{};
+    std::array<codec::TacticalGroup,kSourceCapacity> tasks_{};
+    std::array<state::activity::coo::TaskCosts,kSourceCapacity> costs_{};
     std::uint64_t revision_{},lastRequest_{},boot_{};
 };
 } // namespace sunrise::server::runtime::activity::population

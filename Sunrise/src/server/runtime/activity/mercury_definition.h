@@ -74,8 +74,10 @@ inline constexpr coo::script::ParameterCapability kParameters[]{
     // observed missing in Mercury. This does not claim retail cadence recovery.
     {"host.tick_hz",1,120,30,false},
 };
-inline constexpr std::array<ambient_population::InitialBinding,2> kAmbientInitial{{
-    ambient::probe::binding(7),ambient::cabal_probe::binding(22),
+// The Cabal source0 primary probe is a standalone diagnostic now; this profile
+// owns that source as an ordinary fallback-rule escort, not an occupancy probe.
+inline constexpr std::array<ambient_population::InitialBinding,1> kAmbientInitial{{
+    ambient::probe::binding(7),
 }};
 // Authored native bubble scope15; not an endpoint or event revision.
 inline constexpr std::array<public_event::RallyBinding,1> kPublicEventRallies{{
