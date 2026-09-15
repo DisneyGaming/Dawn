@@ -110,12 +110,109 @@ The four-wave timing and counts are therefore labeled as reconstructed host
 policy while every native population identity remains package-derived.
 
 An actor-retirement receipt without a death represents streaming or despawn and
-does not clear a patrol. The native hook has an observed source-less restoration
-path, but that path cannot yet rebind the restored actor to an exact population
-lease. The retained roster wire lifecycle is covered by tests; leaving and
-re-entering Mercury while a selected patrol actor is alive still requires a live
-traversal playtest. If those selected groups retire and restore actors through
-the source-less path, renewal will remain blocked rather than inventing a kill.
+does not clear a patrol. Source-less network restoration does not restore native
+AI. The cleanup below removes the saved replica and rebinds the lease to a fresh
+native source, while preserving real death records and consumed quotas.
+
+### Withdrawn re-entry quota guard (2026-09-14)
+
+The first re-entry mitigation set source quotas to zero after living actors
+streamed out. User testing showed that this left source-less network replicas
+without working AI. It has been removed. A zero-dispatch test only demonstrated
+spawn suppression, not functional combatants, and is not an acceptance test.
+
+The AI regression rollback passed the Release build, 1,703 faction-battle checks
+and 2,995 ambient-population checks. Live traversal still needs a separate fix
+for the stale replicas; this rollback does not claim to resolve duplication.
+Patrol density remains 16 groups with one authored squad request per group.
+
+### Source-owned replica cleanup (2026-09-14)
+
+The rollback traversal showed 21 source-backed admissions, 21 living actor
+retirements, then source-less network restoration followed by 21 replacement
+admissions rejected against the old source handles. Actor-pool retirement alone
+did not release the saved network facets.
+
+Mercury leases now explicitly opt into streaming cleanup. The adapter retains
+the authenticated entity root from a source-backed admission, then captures its
+local network allocation and full facet handle while the actor is intact. At
+native object detachment (`1704870`), it uses the engine's full-delete path
+(`16EE070`) only after the detach write completes and the retained network
+allocation, facet handle, row and lease still match. The object must be the
+captured object or already detached. Native unload changes local owner -1 to
+unowned -2; both qualify only for a previously captured local registration.
+That path releases descendant facets, saved buffers and allocation maps.
+Deferred writes, remote peers, unwitnessed replicas, recycled network/facet
+allocations and released leases do not qualify. No archetype match grants
+deletion ownership.
+
+The native source destructor is witnessed separately. A replacement must have
+the same lease and source generation, a different authenticated allocation, and
+a released predecessor with no pending births. Before native dispatch, the
+adapter restores the single-category consumed counter captured before
+deactivation fills the remaining budget. Requested quotas and AI modes remain
+native. A `sourceRecreated` receipt then replaces the host's source handle and
+removes only retired living ledger entries; real death records remain.
+
+Validation includes the compiled hook fixture (`mercury_streaming_tests`),
+mailbox/ledger cases in `native_activity_policy_tests`, the synchronized bridge,
+and the faction/ambient suites. `tools/testing/mercury_streaming_native.py`
+executes the pinned native deletion and spawn routines in Unicorn, including
+child cleanup, both allocation maps, deferred detach, partial consumption and
+deactivation. These checks do not replace a live leave-and-return combat test.
+
+### Startup hook collision corrected (2026-09-15)
+
+The first replica-cleanup DLL (`BA9AC5C0861A93B5...`) never activated its
+population observer. The earlier Omega origin probe already owned `4E4580`;
+the population install compared that patched entry against the original bytes
+and rejected the entire batch. The September 15 log had no enemy-observer
+install or admission records, and a live read confirmed all six population
+entries were still unpatched while `4E4580` belonged to the origin probe.
+
+Source dispatch now passes through that existing probe's original trampoline
+and the population observer's call gate. There is one native detour owner.
+The population installer logs the exact target or Detours failure instead of
+silently returning false. A successful offline fixture is insufficient release
+evidence: verify the enemy-observer install line and patched native entries in
+the launched process before requesting another gameplay test.
+
+The corrected DLL `FD5A8CF654BBE464...` was installed and launched. Its startup
+log reports `result=ok` with `source_dispatch=shared_4E4580`; a read-only process
+check followed all 12 observer/cleanup detours into that exact DLL and verified
+that the full-delete helper itself remained unmodified. The compiled hook
+fixture passed 146 checks and the activity-policy suite passed 11,384 checks.
+
+### Live teardown identity corrected (2026-09-15)
+
+The `FD5A8CF654BBE464...` traversal still duplicated enemies: all 17 old actors
+retired and all 17 replacement sources were accepted, but no saved facet was
+deleted. Retained root records showed that native actor allocations had already
+been freed. Build `33384886EA8FBB2F...` captured each network registration while
+its source-backed actor was alive. The next live unload then identified the
+remaining rejection precisely: all 14 surviving enemies reached the detach
+hook with the same captured facet, but owner had changed from -1 to -2. Three
+other actors had real death receipts. A local-only cleanup check was invalid at
+this point in native teardown.
+
+Cleanup now accepts this ownership transition for the captured registration.
+The compiled hook fixture passes 185 checks, including released actor memory,
+owner transition, unrelated unowned replicas, remote ownership, recycled
+allocations, changed object binding, held peers and deferred writes. The
+activity-policy suite passes 11,391 checks. The native execution fixture now
+also executes the actual unowned-facet teardown serializer and event receiver:
+after detachment, both root and child saved state are released and the queued
+events free their network allocations without calling object teardown again.
+
+Installed DLL `A1CDB72DAEE76F7F...` (receipt `20260915-014812`) passed the live
+leave-and-return test. All 12 hooks were verified in the launched process.
+At t=226343, all 14 surviving actors' retained facets closed successfully.
+At t=235547, all 17 source replacements restored their consumed counters; the
+host accepted every replacement and admitted 14 fresh source-backed actors.
+The three previously killed populations retained consumed=1 and their death
+records. There were no source-less restoration events, and a read-only network
+snapshot found no unowned facets attached to enemies. The user confirmed that
+the returning enemies move and fight normally and that no duplicates remain.
 
 ## Roster capacity
 

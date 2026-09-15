@@ -11,6 +11,7 @@
 #include "../../../state/activity/coo/mercury_registries.h"
 #include "../../../state/activity/coo/mercury_ambient_primary_owner.h"
 #include "../../../state/activity/coo/mercury_public_event_registries.h"
+#include "../../../state/activity/coo/open_world_catalog.h"
 #include "internal.h"
 #include "campaign_shared_groups.h"
 
@@ -367,6 +368,8 @@ bool resolve_object(const reader::Source& source,
         // when this encounter is discovered outside a selected local registry.
         // Server admission still owns whether that catalog enters the wire roster.
         || state::activity::coo::mercury::public_events::required(
+            context.scenarioTag,objectTag,memo.registryKey,memo.explicitSliceMask)
+        || state::activity::coo::open_world::required(
             context.scenarioTag,objectTag,memo.registryKey,memo.explicitSliceMask);
     if (memo.group != kNotARosterGroup) {
         output.group = memo.group;

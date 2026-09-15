@@ -1,6 +1,7 @@
 #pragma once
 #include "registry_admission.h"
 #include "../../../state/activity/lifecycle_generation.h"
+#include "../../../state/activity/coo/task_costs.h"
 #include <charconv>
 #include <string_view>
 #include "../../../middleware/bap/activity_message/sense_update.h"
@@ -14,6 +15,9 @@ struct Capability final {
     std::uint16_t slot{},rule{};
     codec::TacticalGroup tactical{};
     bool hasRule{true};
+    // Explicit opt-in: only these package-authored rows of this objective may
+    // replace the initial row using the native squad's reachable-cost reports.
+    std::uint32_t taskMask{};
 };
 [[nodiscard]] inline bool valid(const Capability& capability) noexcept {
     if(!capability.registry || !registry::valid(*capability.registry)) return false;
@@ -25,6 +29,8 @@ struct Capability final {
     }
     codec::Source request{capability.registry->key,1,capability.rule,1,capability.tactical};
     request.hasSpawnRule=capability.hasRule;
+    if(capability.taskMask && (capability.tactical.row<0 || capability.tactical.row>=24 || (capability.taskMask&0xFF000000U)
+        || !(capability.taskMask&(1U<<capability.tactical.row))))return false;
     return source==1 && (!capability.hasRule || rule==1)
         && (capability.tactical.row<0 || (capability.tactical.registry==capability.registry->key && tactical==1))
         && codec::valid(request);
@@ -87,7 +93,11 @@ public:
                 if(definitions[i].registry->key==definitions[j].registry->key && definitions[i].slot==definitions[j].slot) return false;
         }
         owner_=owner;capabilities_=definitions;revision_=1;boot_=boot;
-        for(std::size_t i=0;i<definitions.size();++i)generations_[i]=static_cast<std::uint32_t>(owner.incarnation.value);
+        for(std::size_t i=0;i<definitions.size();++i) {
+            generations_[i]=static_cast<std::uint32_t>(owner.incarnation.value);
+            tasks_[i]=definitions[i].tactical;
+            if(definitions[i].taskMask)tasks_[i].revision=generations_[i];
+        }
         return true;
     }
     // Internal recurring-source renewal. The native consumed mirror proves the
@@ -125,18 +135,29 @@ public:
         return Result::unsupported;
     }
     [[nodiscard]] wire::Batch project(std::uint32_t bubble) const noexcept {
+        return project_selected(bubble,false);
+    }
+    // A retained roster continues to own started sources outside the currently
+    // selected region. Omitting their bodies resets native tactical authority.
+    // This republishes existing targets only; it never starts an unvisited zone.
+    [[nodiscard]] wire::Batch project_retained() const noexcept {
+        return project_selected(0,true);
+    }
+private:
+    [[nodiscard]] wire::Batch project_selected(std::uint32_t bubble,bool retained) const noexcept {
         wire::Batch batch{};
         for(std::size_t i=0;i<capabilities_.size();++i) {
             const auto& capability=capabilities_[i];
-            if(!targets_[i] || capability.registry->bubble!=bubble) continue;
+            if(!targets_[i] || (!retained && capability.registry->bubble!=bubble)) continue;
             auto& row=batch.entries[batch.count++];
             row.bubble=capability.registry->bubble;row.slot=capability.slot;
             row.source={capability.registry->key,generations_[i],
-                capability.rule,targets_[i],capability.tactical};
+                capability.rule,targets_[i],tasks_[i]};
             row.source.hasSpawnRule=capability.hasRule;
         }
         return batch;
     }
+public:
     [[nodiscard]] Owner owner() const noexcept { return owner_; }
     [[nodiscard]] std::uint64_t boot() const noexcept { return boot_; }
     // Transport/session/epoch qualification belongs to the caller. Only a
@@ -166,6 +187,23 @@ public:
                     mirror.consumed=delta.consumed;mirror.consumedCount=delta.consumedCount;mirror.consumedKnown=true;
                 }
             }
+            if(capability.taskMask && object.hasSquadOutput && !renewals_[i].pending) {
+                const auto& squad=object.squadOutput;
+                // A mismatched evaluator revision invalidates the sparse-cost
+                // lease: later omitted revisions cannot be assumed current until
+                // the client explicitly confirms this assignment again.
+                if(squad.hasRevision && squad.revision!=tasks_[i].revision)costs_[i]={};
+                else {
+                    const state::activity::coo::TaskCosts report{squad.cost,squad.costMask,
+                        squad.revision,squad.hasRevision,squad.initialized};
+                    costs_[i].merge(report);
+                    const auto selected=costs_[i].select(tasks_[i].row,tasks_[i].revision,
+                        [&capability](std::uint8_t row){return (capability.taskMask&(1U<<row))!=0;});
+                    if(selected>=0 && selected!=tasks_[i].row && revision_!=UINT64_MAX) {
+                        tasks_[i].row=selected;++revision_;
+                    }
+                }
+            }
             return &mirror;
         }
         return nullptr;
@@ -174,6 +212,9 @@ public:
     [[nodiscard]] std::uint64_t last_request() const noexcept { return lastRequest_; }
     [[nodiscard]] std::uint8_t target(std::size_t index) const noexcept {
         return index<capabilities_.size()?targets_[index]:0;
+    }
+    [[nodiscard]] codec::TacticalGroup tactical(std::size_t index) const noexcept {
+        return index<capabilities_.size()?tasks_[index]:codec::TacticalGroup{};
     }
     [[nodiscard]] bool consumed(std::size_t index) const noexcept {
         if(index>=capabilities_.size() || !targets_[index])return false;
@@ -197,6 +238,8 @@ public:
             || ticket.target!=targets_[index] || !ticket.nextTarget
             || generations_[index]>=0x7FFFFFFFU || revision_==UINT64_MAX)return false;
         ++generations_[index];targets_[index]=ticket.nextTarget;observations_[index]={};
+        costs_[index]={};tasks_[index]=capabilities_[index].tactical;
+        if(capabilities_[index].taskMask)tasks_[index].revision=generations_[index];
         ++revision_;renewals_[index]={};return true;
     }
     void cancel_renewal(std::size_t index) noexcept {if(index<capabilities_.size())renewals_[index]={};}
@@ -209,6 +252,8 @@ private:
     std::array<std::uint32_t,32> generations_{};
     std::array<Renewal,32> renewals_{};
     std::array<Observation,32> observations_{};
+    std::array<codec::TacticalGroup,32> tasks_{};
+    std::array<state::activity::coo::TaskCosts,32> costs_{};
     std::uint64_t revision_{},lastRequest_{},boot_{};
 };
 } // namespace sunrise::server::runtime::activity::population

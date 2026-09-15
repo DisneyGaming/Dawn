@@ -16,6 +16,7 @@
 
 namespace sunrise::server::runtime::activity {
 namespace coo=state::activity::coo;
+namespace open_world { struct Definition; }
 // Trusted package/profile data. Files select registered operations; they do
 // not define wire layouts, native pointers or destinations for teleports.
 struct NativeAction final {
@@ -62,5 +63,7 @@ struct NativeActivityDefinition final {
     std::span<const world_device::Capability> devices{};
     std::span<const public_event::InitialDefinition> publicEventInitials{};
     bool retainRosterOrdinals{false};
+    /** Shared package-derived free-roam behavior. Empty preserves specialized profiles. */
+    const open_world::Definition* openWorld{};
 };
 }

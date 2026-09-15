@@ -10,6 +10,8 @@ struct TacticalGroup final {
     std::uint32_t registry{};
     std::uint16_t slot{};
     std::int8_t row{-1};
+    // Nonzero asks the native evaluator to return revision-qualified task costs.
+    std::uint32_t revision{};
 };
 
 /** Reflected 80807EC9 source authority. The native spawner still owns template
@@ -40,8 +42,8 @@ inline constexpr std::size_t kTwoCategorySourceBits = 673;
     const auto& tactical=source.tactical;
     const bool assigned=tactical.row>=0;
     if(assigned ? (tactical.registry==0 || tactical.registry==0x811C9DC5U
-                   || tactical.slot>0x7FFFU || tactical.row>=24)
-                : (tactical.row!=-1 || tactical.registry!=0 || tactical.slot!=0)) { return false; }
+                   || tactical.slot>0x7FFFU || tactical.row>=24 || tactical.revision>0x7FFFFFFFU)
+                : (tactical.row!=-1 || tactical.registry!=0 || tactical.slot!=0 || tactical.revision!=0)) { return false; }
     return true;
 }
 
@@ -77,7 +79,7 @@ template<class Writer>
                 && writer.write(67,7) && writer.write(32768U+source.ruleSlot,16))
             : absent())
         && absent()
-        && writer.write(1,1) && writer.write(0,31)
+        && writer.write(1,1) && writer.write(tactical.revision,31)
         && writer.write(1,1) && writer.write(0,31)
         && writer.write(1,1) && writer.write(0,6)
         && writer.write(1,1) && writer.write(assigned?static_cast<std::uint32_t>(tactical.row)+1U:0U,5)

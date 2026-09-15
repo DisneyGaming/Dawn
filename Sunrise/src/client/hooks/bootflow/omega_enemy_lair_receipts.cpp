@@ -21,6 +21,7 @@
 #include "../../../state/activity/hijacked/runtime.h"
 #include "native_population_pending.h"
 #include "native_population_retirement.h"
+#include "native_population_streaming.h"
 #include "vance_contact_observer.h"
 #include "../../../state/activity/strike_bond/runtime.h"
 #include "../../../state/activity/eater_of_worlds/runtime.h"
@@ -75,7 +76,7 @@ using Admission=std::uint64_t(__fastcall*)(void*,const void*) noexcept;
 using CandidateEvent=std::uint64_t(__fastcall*)(void*,std::uint32_t) noexcept;
 using Retirement=void(__fastcall*)(std::uint32_t,std::uint8_t) noexcept;
 hooking::CallGate g_gate;
-std::array<hooking::detour::Handle,9> g_handles{};
+std::array<hooking::detour::Handle,12> g_handles{};
 std::atomic<Admission> g_admission{};
 std::atomic<CandidateEvent> g_candidate{};
 std::atomic<Retirement> g_retirement{};
@@ -665,6 +666,10 @@ bool registered_source(Read& read,const Actor& actorState,nativeEvents::Receipt&
     receipt=nativeEvents::capture(definition.handle,at<std::uint32_t>(identity.data()),static_cast<std::uint16_t>(slot),generation);
     return receipt && receipt.lease.activity && receipt.lease.source.valid();
 }
+namespace streaming {
+void remember(const pending::Birth&) noexcept;
+void retired(const nativeEvents::Event&) noexcept;
+}
 void observe_native_admission(std::uint32_t parent,nativeEvents::Creation creation) noexcept {
     if(!creation || parent==UINT32_MAX) {nativeEvents::cancel(creation);return;}
     Read read;std::uintptr_t address{},again{};std::array<std::byte,0x28> header{};
@@ -761,6 +766,7 @@ void finish_native_admissions(std::uint32_t onlyActor=UINT32_MAX) noexcept {
             const auto retained=g_admittedActors.add({complete,birth.parent,birth.receipt});
             if(retained!=pending::Intake::accepted && retained!=pending::Intake::duplicate) nativeEvents::observation_lost();
             observe_vance_contact_admission(complete,birth.parent);
+            streaming::remember({complete,birth.parent,birth.receipt});
         }
         native_report("ev=native_population_capture stage=attachment actor=%08X entity=%08X accepted=%u",
             current.handle,current.entity,accepted?1U:0U);
@@ -882,7 +888,7 @@ __declspec(noinline) void __fastcall retirement_hook(std::uint32_t handle,std::u
         std::lock_guard lock(g_pendingMutex);
         const bool accepted=released && nativeEvents::submit(event,captured.receipt);
         if(!accepted && nativeEvents::capture(event.lease)==captured.receipt) nativeEvents::observation_lost();
-        if(released) observe_vance_contact_retirement(event);
+        if(released) {observe_vance_contact_retirement(event);streaming::retired(event);}
         for(std::size_t i=0;i<g_admittedActors.size();++i) {
             if(g_admittedActors[i].event.actor==event.actor) {g_admittedActors.erase(i);break;}
         }
@@ -890,6 +896,7 @@ __declspec(noinline) void __fastcall retirement_hook(std::uint32_t handle,std::u
             handle,captured.event.actor.entity,before.generation,after.generation,released?1U:0U,accepted?1U:0U);
     },handle,mode);
 }
+#include "native_population_streaming.inl"
 #include "strike_bond_intro_release.inl"
 #include "strike_bond_target_binding.inl"
 #include "strike_bond_carriage.inl"
@@ -900,10 +907,22 @@ __declspec(noinline) void __fastcall retirement_hook(std::uint32_t handle,std::u
 
 void* target(std::uintptr_t rva,const std::array<std::uint8_t,16>& expected) noexcept {
     Read read;std::array<std::byte,16> actual{};
-    if(!read.copy(g_image+rva,actual) || std::memcmp(actual.data(),expected.data(),expected.size())!=0) {return nullptr;}
+    if(!read.copy(g_image+rva,actual) || std::memcmp(actual.data(),expected.data(),expected.size())!=0) {
+        std::array<char,160> line{};
+        const auto size=std::snprintf(line.data(),line.size(),
+            "ev=omega_enemy_lair stage=install result=prefix_mismatch rva=%llX",static_cast<unsigned long long>(rva));
+        if(size>0 && static_cast<std::size_t>(size)<line.size())
+            core::log::write(core::log::Channel::client,core::log::Level::error,{line.data(),static_cast<std::size_t>(size)});
+        return nullptr;
+    }
     return reinterpret_cast<void*>(g_image+rva);
 }
 } // namespace
+
+__declspec(noinline) void dispatch_native_population_source(std::uint32_t* instance,std::uint32_t reason,
+    const std::byte* authority,NativePopulationDispatch original) noexcept {
+    streaming::dispatch_source(instance,reason,authority,original);
+}
 
 __declspec(noinline) void retire_strike_bond_boss(std::uintptr_t source,bool allocatorReady) noexcept {
     const hooking::CallGate::Scope scope{g_gate};
@@ -921,19 +940,21 @@ __declspec(noinline) void poll_native_population_admissions() noexcept {
     }
     std::lock_guard lock(g_pendingMutex);
     finish_native_admissions();
+    streaming::prune();
     for(std::size_t i=0;i<g_admittedActors.size();) {
         const auto& birth=g_admittedActors[i];const auto& source=birth.event.lease.source;
         if(nativeEvents::capture(source.source.definition,source.source.registry,source.source.slot,source.generation)!=birth.receipt)
             g_admittedActors.erase(i);
-        else ++i;
+        else {streaming::remember(birth);++i;}
     }
+    streaming::capture_network_roots();
 }
 
 bool install_omega_enemy_lair_receipts() noexcept {
     if(g_handles[0].attached) {return g_gate.accepting();}
     g_image=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
     if(g_image==0) {return false;}
-    const std::array<hooking::detour::Spec,9> specs{{
+    const std::array<hooking::detour::Spec,12> specs{{
         {target(0xA0D510,{0x48,0x89,0x5C,0x24,0x20,0x56,0x48,0x83,0xEC,0x30,0x48,0x8B,0xD9,0x48,0x8B,0xF2}),reinterpret_cast<void*>(&admission_hook)},
         {target(0xC72390,{0x48,0x89,0x5C,0x24,0x10,0x55,0x56,0x57,0x48,0x83,0xEC,0x20,0x48,0x8B,0xE9,0x8B}),reinterpret_cast<void*>(&candidate_hook)},
         {target(0xA85540,{0x48,0x89,0x5C,0x24,0x08,0x48,0x89,0x74,0x24,0x10,0x57,0x48,0x83,0xEC,0x70,0x8B}),reinterpret_cast<void*>(&retirement_hook)},
@@ -942,10 +963,25 @@ bool install_omega_enemy_lair_receipts() noexcept {
         {target(0xBCD330,{0x40,0x56,0x57,0x48,0x83,0xEC,0x48,0x48,0x89,0x5C,0x24,0x68,0x32,0xC0,0x8B,0x59}),reinterpret_cast<void*>(&garden_fire::update_hook)},
         {target(0xC31200,{0x48,0x89,0x4C,0x24,0x08,0x53,0x55,0x56,0x57,0x41,0x54,0x41,0x55,0x41,0x56,0x41}),reinterpret_cast<void*>(&garden_fire::eligibility_hook)},
         {target(0xC613E0,{0x48,0x89,0x5C,0x24,0x18,0x48,0x89,0x74,0x24,0x20,0x57,0x48,0x83,0xEC,0x20,0x44}),reinterpret_cast<void*>(&garden_target::dispatch_hook)},
-        {target(0xC5FEF0,{0x40,0x57,0x48,0x83,0xEC,0x20,0x44,0x0F,0xBE,0x49,0x7A,0x49,0x8B,0xF8,0x41,0x83}),reinterpret_cast<void*>(&garden_target::decode_hook)}
+        {target(0xC5FEF0,{0x40,0x57,0x48,0x83,0xEC,0x20,0x44,0x0F,0xBE,0x49,0x7A,0x49,0x8B,0xF8,0x41,0x83}),reinterpret_cast<void*>(&garden_target::decode_hook)},
+        {target(0x1704870,{0x48,0x89,0x5C,0x24,0x08,0x57,0x48,0x83,0xEC,0x30,0x8B,0xFA,0x8B,0xD9,0xE8,0x3D}),reinterpret_cast<void*>(&streaming::bind_hook)},
+        {target(0x4E3C50,{0x40,0x56,0x48,0x83,0xEC,0x40,0x83,0xB9,0xFC,0x05,0x00,0x00,0xFF,0x48,0x8B,0xF1}),reinterpret_cast<void*>(&streaming::destroy_hook)},
+        {target(0x4E8270,{0x40,0x53,0x48,0x83,0xEC,0x50,0x48,0x8B,0x05,0x0B,0x18,0xBC,0x01,0x48,0x33,0xC4}),reinterpret_cast<void*>(&streaming::consume_hook)}
     }};
     for(const auto& spec:specs) if(!spec.target) return false;
-    if(!hooking::detour::install(specs,g_handles)) return false;
+    streaming::deleteFacet=reinterpret_cast<streaming::Delete>(target(0x16EE070,
+        {0x48,0x89,0x5C,0x24,0x08,0x48,0x89,0x6C,0x24,0x10,0x48,0x89,0x74,0x24,0x18,0x57}));
+    if(!streaming::deleteFacet)return false;
+    hooking::detour::InstallFailure failure{};
+    if(!hooking::detour::install(specs,g_handles,failure)) {
+        std::array<char,192> line{};
+        const auto size=std::snprintf(line.data(),line.size(),
+            "ev=omega_enemy_lair stage=install result=failed stage_id=%u index=%zu native_error=%ld",
+            static_cast<unsigned>(failure.stage),failure.index,failure.nativeError);
+        if(size>0 && static_cast<std::size_t>(size)<line.size())
+            core::log::write(core::log::Channel::client,core::log::Level::error,{line.data(),static_cast<std::size_t>(size)});
+        return false;
+    }
     hooking::publish_original(g_admission,reinterpret_cast<Admission>(g_handles[0].original));
     hooking::publish_original(g_candidate,reinterpret_cast<CandidateEvent>(g_handles[1].original));
     hooking::publish_original(g_retirement,reinterpret_cast<Retirement>(g_handles[2].original));
@@ -955,15 +991,18 @@ bool install_omega_enemy_lair_receipts() noexcept {
     hooking::publish_original(garden_fire::eligibility,reinterpret_cast<garden_fire::Eligibility>(g_handles[6].original));
     hooking::publish_original(garden_target::dispatch,reinterpret_cast<garden_target::Dispatch>(g_handles[7].original));
     hooking::publish_original(garden_target::decode,reinterpret_cast<garden_target::Decode>(g_handles[8].original));
+    hooking::publish_original(streaming::bind,reinterpret_cast<streaming::Bind>(g_handles[9].original));
+    hooking::publish_original(streaming::destroy,reinterpret_cast<streaming::Destroy>(g_handles[10].original));
+    hooking::publish_original(streaming::consume,reinterpret_cast<streaming::Consume>(g_handles[11].original));
     g_gate.accept();
     core::log::write(core::log::Channel::client,core::log::Level::info,
-        "ev=omega_enemy_lair stage=install result=ok admission=A0D510 health_death=C72390 event=80804C54 retirement=A85540 garden_fire_trace=BC8F20,BC8F80,BCD330,C31200 garden_intro_release=AFB11A12:31A03F93 garden_target_binding=C613E0,C5FEF0");
+        "ev=omega_enemy_lair stage=install result=ok admission=A0D510 health_death=C72390 event=80804C54 retirement=A85540 garden_fire_trace=BC8F20,BC8F80,BCD330,C31200 garden_intro_release=AFB11A12:31A03F93 garden_target_binding=C613E0,C5FEF0 mercury_streaming=1704870,16EE070,4E3C50,4E8270 source_dispatch=shared_4E4580");
     return true;
 }
 void quiesce_omega_enemy_lair_receipts() noexcept {g_gate.quiesce();}
 bool uninstall_omega_enemy_lair_receipts() noexcept {
     quiesce_omega_enemy_lair_receipts();if(!g_handles[0].attached) {return true;}
-    const std::array<hooking::detour::ProtectedCodeEntry,17> protectedCode{{
+    const std::array<hooking::detour::ProtectedCodeEntry,22> protectedCode{{
         {reinterpret_cast<void*>(&admission_hook)},{reinterpret_cast<void*>(&candidate_hook)},
         {reinterpret_cast<void*>(&observe_admission)},{reinterpret_cast<void*>(&observe_candidate)},
         {reinterpret_cast<void*>(&omega_boss_health::observe_native_death)},
@@ -977,12 +1016,20 @@ bool uninstall_omega_enemy_lair_receipts() noexcept {
         {reinterpret_cast<void*>(&garden_fire::eligibility_hook)},
         {reinterpret_cast<void*>(&garden_target::dispatch_hook)},
         {reinterpret_cast<void*>(&garden_target::decode_hook)},
+        {reinterpret_cast<void*>(&streaming::bind_hook)},
+        {reinterpret_cast<void*>(&streaming::dispatch_source)},
+        {reinterpret_cast<void*>(&dispatch_native_population_source)},
+        {reinterpret_cast<void*>(&streaming::destroy_hook)},
+        {reinterpret_cast<void*>(&streaming::consume_hook)},
         {reinterpret_cast<void*>(&hooking::call_gate_detail::enter)},
         {reinterpret_cast<void*>(&hooking::call_gate_detail::leave)}
     }};
     if(hooking::detour::uninstall(g_handles,protectedCode,idle)!=hooking::detour::UninstallResult::removed) {return false;}
     g_admission.store(nullptr,std::memory_order_release);g_candidate.store(nullptr,std::memory_order_release);
     g_retirement.store(nullptr,std::memory_order_release);
+    streaming::bind.store(nullptr,std::memory_order_release);
+    streaming::destroy.store(nullptr,std::memory_order_release);streaming::consume.store(nullptr,std::memory_order_release);
+    streaming::reset();
     garden_fire::oneTick.store(nullptr,std::memory_order_release);garden_fire::duration.store(nullptr,std::memory_order_release);
     garden_fire::update.store(nullptr,std::memory_order_release);garden_fire::eligibility.store(nullptr,std::memory_order_release);
     garden_target::dispatch.store(nullptr,std::memory_order_release);garden_target::decode.store(nullptr,std::memory_order_release);

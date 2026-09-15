@@ -69,9 +69,11 @@ inline constexpr ScanBinding kScans[]{
     {%s,%s,0x8156EFA4U,0xCDFC784B0C4A9CF5ULL,kGhostScans[0].defaultDuration,kGhostScans[0].sourceDuration},
     {%s,%s,0x8157E6B1U,0x844920F35A95B55BULL,kGhostScans[1].defaultDuration,kGhostScans[1].sourceDuration},
 };
-// The native directive owns authored objective text. Active object markers use
-// its scoped native source, never a fabricated position or a trigger centroid.
+// The opening uses the package-local ap_pyramidion_altar ActivityPoint.
+// Its locator resolves the entrance plate across native destination contexts.
+// Interaction markers use their scoped native sources.
 inline constexpr coo::MarkerTarget marker(std::uint32_t event) noexcept {
+    if(event==kObjectives[0].event) {return {{0x4324A238U,0x80B5616BU,47,4},{0x2D7B770FU,0x22723FADU,0x4324A238U,0x22BCA6B6U}};}
     if(event==kObjectives[1].event || event==kObjectives[2].event) {return {kScans[0].source,{}};}
     if(event==kObjectives[8].event) {return {kScans[1].source,{}};}
     return {};

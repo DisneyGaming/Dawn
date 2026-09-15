@@ -2,10 +2,48 @@
 #include "state/activity/native_population_events.h"
 #include "client/hooks/bootflow/native_population_pending.h"
 #include "client/hooks/bootflow/native_population_retirement.h"
+#include "client/hooks/bootflow/native_population_streaming.h"
 void native_population_event_cases() {
     namespace events=sunrise::state::activity::native_population;
     events::Mailbox mailbox;
     const events::Lease lease{{42,{1}},{42,123,1,{0x74337EDD,0x80F5B68E,1,1},1},15};
+    {
+        namespace stream=sunrise::client::hooks::bootflow::native_population_streaming;
+        const stream::Counters saved{1,4,1,0},fresh{1,4,0,0};
+        CHECK(stream::restore(saved,fresh,true,true));
+        CHECK(stream::restore(saved,saved,true,true));
+        CHECK(!stream::restore(saved,fresh,false,true));CHECK(!stream::restore(saved,fresh,true,false));
+        CHECK(!stream::restore(saved,{1,4,2,0},true,true));
+        CHECK(!stream::restore(saved,{1,4,0,1},true,true));
+        CHECK(!stream::restore(saved,{1,5,0,0},true,true));
+        CHECK(!stream::restore({1,4,5,0},fresh,true,true));
+        CHECK(!stream::restore({2,4,1,0},fresh,true,true));
+        CHECK(!stream::restore({1,4,-1,0},fresh,true,true));
+        CHECK(stream::local_facet(0,-1,0,0));CHECK(!stream::local_facet(0,-2,0,0));
+        CHECK(!stream::local_facet(1,-1,0,0));CHECK(!stream::local_facet(0,-1,4,0));
+        CHECK(!stream::local_facet(0,-1,0,1));
+        CHECK(stream::retained_facet(0,-1,0,0));CHECK(stream::retained_facet(0,-2,0,0));
+        CHECK(!stream::retained_facet(0,0,0,0));CHECK(!stream::retained_facet(0,-3,0,0));
+        CHECK(!stream::retained_facet(1,-2,0,0));CHECK(!stream::retained_facet(0,-2,4,0));
+        CHECK(!stream::retained_facet(0,-2,0,1));
+        events::Mailbox streaming;auto opted=lease;opted.discardStreamedReplicas=true;
+        CHECK(streaming.bind(opted));const auto receipt=streaming.capture(opted);
+        const events::Event recreated{opted,{opted.source},0x4567,events::Kind::sourceRecreated,0x3456};
+        CHECK(streaming.submit(recreated,receipt));
+        auto bad=recreated;bad.previousSourceHandle=bad.sourceHandle;CHECK(!streaming.submit(bad,receipt));
+        bad=recreated;bad.previousSourceHandle=UINT32_MAX;CHECK(!streaming.submit(bad,receipt));
+        bad=recreated;bad.actor.actor=0x1234;CHECK(!streaming.submit(bad,receipt));
+        bad=recreated;bad.lease.discardStreamedReplicas=false;CHECK(!streaming.submit(bad,receipt));
+        auto next=opted;++next.source.generation;
+        CHECK(streaming.renew(opted,next)==events::RenewResult::busy);
+        std::array<events::Event,2> output{};CHECK(streaming.drain(opted.activity,output)==1);
+        CHECK(output[0].kind==events::Kind::sourceRecreated && output[0].previousSourceHandle==0x3456);
+        auto noPolicy=next;noPolicy.discardStreamedReplicas=false;CHECK(!streaming.renew(opted,noPolicy));
+        CHECK(streaming.renew(opted,next));CHECK(!streaming.submit(recreated,receipt));
+        streaming.release(opted.activity);CHECK(streaming.bind(opted));CHECK(!streaming.submit(recreated,receipt));
+        events::Mailbox ordinary;CHECK(ordinary.bind(lease));bad=recreated;bad.lease=lease;
+        CHECK(!ordinary.submit(bad,ordinary.capture(lease)));
+    }
     CHECK(!mailbox.pending(lease.activity));CHECK(!mailbox.pending({}));
     CHECK(mailbox.epoch()==0);CHECK(mailbox.bind(lease));
     const auto epoch=mailbox.epoch();CHECK(mailbox.bind(lease));CHECK(mailbox.epoch()==epoch);

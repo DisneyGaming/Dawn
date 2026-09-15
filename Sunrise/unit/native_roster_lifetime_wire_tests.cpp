@@ -39,6 +39,60 @@ void top_values(const Encoded& value,std::span<const std::uint32_t> keys,
     CHECK(take(reader,1)==1); CHECK(take(reader,9)==keys.size());
     for(auto state:states) CHECK(take(reader,8)==state);
 }
+
+void mars_shared_registry() {
+    // Mars's installed ordinary roster has two globals and the same local
+    // registry in bubbles 1 and 5. Keep one group body and two lifetime entries.
+    constexpr life::Identity mars{identity.owner,1,UINT64_MAX,UINT64_MAX,0x80F6AB20};
+    constexpr std::array<std::uint32_t,1> shared{0xEAAF16E2};
+    std::array<wire::BubbleSubBlock,64> storage{};
+    storage[0]={1,shared,{},{}};storage[1]={5,shared,{},{}};
+    wire::Roster roster{};
+    roster.groups[0].key=0x4786C0E0;roster.groups[1].key=0x9FFBBD32;
+    roster.groups[2].key=shared[0];roster.groupCount=3;roster.topLevelGroupCount=2;
+    roster.bubbleSubBlocks=std::span(storage).first(2);
+    const auto original=encode(roster,true);
+    auto retained=std::make_unique<life::State>();
+    CHECK(life::prepare({},mars,1,0x83,true,roster,*retained)==life::Result::ready);
+    CHECK(life::project(*retained,roster,storage));
+    for(bool legacy:{false,true}) {
+        const auto actual=encode(roster,legacy);
+        CHECK(actual.bits==original.bits && actual.bytes==original.bytes);
+    }
+
+    // Omission during travel retains both copies. Returning with an explicit
+    // tombstone removes only the current bubble's copy, even through encoding.
+    wire::Roster travel{};travel.groups[0].key=0x4786C0E0;travel.groups[1].key=0x9FFBBD32;
+    travel.groupCount=travel.topLevelGroupCount=2;
+    CHECK(life::prepare(*retained,mars,5,0xfe,false,travel,*retained)==life::Result::ready);
+    CHECK(retained->blockCount==2 && retained->blocks[0].entries.states[0]==0x83
+        && retained->blocks[1].entries.states[0]==0x83);
+    constexpr std::array<std::uint8_t,1> absent{0};
+    const std::array removal{wire::BubbleSubBlock{1,shared,absent,{}}};
+    travel.bubbleSubBlocks=removal;
+    CHECK(life::prepare(*retained,mars,1,0xfe,false,travel,*retained)==life::Result::ready);
+    CHECK(life::project(*retained,travel,storage));
+    CHECK(retained->blocks[0].entries.presence[0]==0 && retained->blocks[1].entries.presence[0]==1);
+    for(bool legacy:{false,true}) {
+        const auto actual=encode(travel,legacy);
+        bits::Reader reader(actual.bytes);
+        CHECK(take(reader,3)==7);CHECK(take(reader,9)==2);
+        CHECK(take(reader,32)==0x4786C0E0);CHECK(take(reader,32)==0x9FFBBD32);
+        CHECK(take(reader,1)==1);
+        for(std::size_t word=0;word<8;++word)CHECK(take(reader,32)==(word==0?3U:0U));
+        CHECK(take(reader,1)==1);CHECK(take(reader,9)==2);
+        CHECK(take(reader,8)==0x83);CHECK(take(reader,8)==0x83);
+        CHECK(take(reader,1)==1);CHECK(take(reader,7)==2);
+        for(std::size_t b=0;b<2;++b) {
+            CHECK(take(reader,1)==1);CHECK(take(reader,32)==(b==0?0x80000001U:0x80000005U));
+            CHECK(take(reader,1)==1);CHECK(take(reader,1)==1);CHECK(take(reader,7)==1);
+            CHECK(take(reader,32)==shared[0]);CHECK(take(reader,1)==1);
+            CHECK(take(reader,32)==b);CHECK(take(reader,32)==0);CHECK(take(reader,32)==0);
+            CHECK(take(reader,1)==1);CHECK(take(reader,7)==1);CHECK(take(reader,8)==0x83);
+        }
+        CHECK(actual.bytes.size()*8-reader.remaining_bits()==actual.bits);
+    }
+}
 }
 
 // This target exercises only phase-1 roster encoding. Any accidental authority
@@ -51,6 +105,7 @@ bool legacy_write_auth_body(encoding::bits::Writer&,const Snapshot&,std::uint32_
 }
 
 int main() {
+    mars_shared_registry();
     constexpr std::array<std::uint32_t,8> mercury{0x74337EDD,0x564C6ECE,0xF25B938B,0x2749BAAE,
         0xEB1E8934,0x85C38F77,0x4A3E4900,0x2571C34D};
     std::array<wire::BubbleSubBlock,64> storage{};

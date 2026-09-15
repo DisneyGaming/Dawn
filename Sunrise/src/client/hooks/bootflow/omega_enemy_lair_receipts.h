@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <cstdint>
 
 namespace sunrise::client::hooks::bootflow {
@@ -10,6 +11,11 @@ namespace sunrise::client::hooks::bootflow {
 [[nodiscard]] bool install_omega_enemy_lair_receipts() noexcept;
 void quiesce_omega_enemy_lair_receipts() noexcept;
 void poll_native_population_admissions() noexcept;
+// The existing Omega source probe owns 4E4580. Share that boundary instead of
+// attempting a second detour against bytes that the first owner has patched.
+using NativePopulationDispatch=void(__fastcall*)(std::uint32_t*,std::uint32_t,const std::byte*) noexcept;
+void dispatch_native_population_source(std::uint32_t* instance,std::uint32_t reason,
+    const std::byte* authority,NativePopulationDispatch original) noexcept;
 // Called only by the existing native source-retirement boundary, after its
 // allocator TLS validation. Retains the population observer's unload gate.
 void retire_strike_bond_boss(std::uintptr_t source,bool allocatorReady) noexcept;

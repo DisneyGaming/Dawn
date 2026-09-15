@@ -2,6 +2,7 @@
 #include "../src/state/activity/deep_storage/hologram_owner.h"
 #include "../src/state/activity/deep_storage/mechanism_catalog.h"
 #include "../src/middleware/encoding/bit_writer.h"
+#include "../src/client/hooks/bootflow/deep_storage_navigation_rules.h"
 #include <cmath>
 #include <cstdio>
 
@@ -335,7 +336,111 @@ static bool retained_hologram() {
     return true;
 }
 
+static bool objective_markers() {
+    // The opening must use the authored Pyramidion entrance point, not the
+    // destination fallback observed at (405.063,233.173,43.279) in bubble 0.
+    const coo::Asset entrance{0x4324A238U,0x80B5616BU,47,4};
+    // ActivityPoints live in the local package table, outside the sync catalog.
+    CHECK(native::find(entrance.registry,entrance.type,entrance.slot)==nullptr);
+    const std::array<std::uint32_t,4> locator{0x2D7B770FU,0x22723FADU,0x4324A238U,0x22BCA6B6U};
+    CHECK(native::marker(0xB035525AU).locator==locator);
+    CHECK(native::marker(0xB035525AU).asset==entrance);
+    CHECK(native::marker(0xF8F223A7U).asset==native::kScans[0].source);
+    CHECK(native::marker(0xCB573BE1U).asset==native::kScans[1].source);
+    CHECK(!native::marker(0).valid() && !native::marker(UINT32_MAX).valid());
+
+    native::Frame f{};f.enabled=true;f.spawnGeneration=1;
+    coo::ObjectiveService service;
+    const auto inspect=[&]() {
+        f.presentation=service.state();
+        std::array<std::byte,601> bytes{};Writer w(bytes);
+        CHECK(native::write_body(w,f,native::kRoot,68,0) && w.bit_count()==4802);
+        const auto bits=[&](std::size_t at,unsigned count) {
+            std::uint32_t value{};
+            for(unsigned i=0;i<count;++i) {
+                value=(value<<1)|((std::to_integer<unsigned>(bytes[(at+i)/8])>>(7-(at+i)%8))&1U);
+            }
+            return value;
+        };
+        // Offsets are from the native 80804F67/68/6B reflected wire schema.
+        const auto selected=(f.presentation.revision-1U)%3U;
+        CHECK(bits(4799,3)==selected+1U);
+        for(unsigned i=0;i<3;++i) {
+            const std::size_t row=110+i*1563;
+            const bool active=f.presentation.active && i==selected;
+            const bool marked=active && f.presentation.marker.valid();
+            CHECK(bits(row,32)==(active?f.presentation.event:0x811C9DC5U));
+            CHECK(bits(row+32,32)==0x80000000U); // Authored variant remains zero.
+            CHECK(bits(row+64,2)==(active?1U:0U));
+            CHECK(bits(row+604,3)==(marked?3U:1U)); // Native target display mode.
+            CHECK(bits(row+607,32)==(marked?f.presentation.marker.asset.registry:0x811C9DC5U));
+            CHECK(bits(row+639,7)==(marked?f.presentation.marker.asset.type+1U:0U));
+            CHECK(bits(row+646,16)==(marked?f.presentation.marker.asset.slot+32768U:32767U));
+            for(unsigned j=0;j<4;++j) {CHECK(bits(row+717+j*32,32)==(marked?f.presentation.marker.locator[j]:0U));}
+        }
+        return true;
+    };
+    for(const auto event:{0xB035525AU,0xF8F223A7U,0x149B4756U,0x772F4471U,0xCB573BE1U}) {
+        service.set(event,native::marker(event));CHECK(inspect());
+        const auto revision=service.state().revision;
+        service.set(event,native::marker(event));
+        CHECK(service.state().revision==revision && inspect());
+    }
+    service.clear();CHECK(inspect());
+    return true;
+}
+
+static bool steady_opening_marker() {
+    namespace nav=sunrise::client::hooks::bootflow::deep_storage_navigation;
+    coo::ObjectiveState objective{0xB035525AU,0,1,native::marker(0xB035525AU),true,true};
+    std::array<std::byte,0xB10> initial{};
+    // Layout captured from native 80804F53; remaining bytes stay untouched.
+    nav::put<std::uint32_t>(initial,0,0x80B565DFU);nav::put<std::uint32_t>(initial,4,0x80804F54U);
+    nav::put<std::int64_t>(initial,8,0xB88);nav::put<std::uint32_t>(initial,0x48,0x5BF90016U);
+    nav::put<std::uint32_t>(initial,0x4C,0x80804F53U);
+    for(unsigned i=0;i<3;++i) {nav::put<std::int8_t>(initial,0x198+i*0xF8,-1);}
+    for(unsigned ring=0;ring<3;++ring) {
+        auto bytes=initial;nav::put(bytes,0x478,ring);const auto row=0x190+ring*0xF8;
+        nav::put(bytes,row,objective.event);nav::put<std::int8_t>(bytes,row+8,0);
+        nav::put<std::uint32_t>(bytes,row+0x68,0x4324A238U);nav::put<std::uint32_t>(bytes,row+0x6C,0x0004002FU);
+        nav::put(bytes,row+0x78,objective.marker.locator);
+        nav::put<std::uint8_t>(bytes,0xA84,3); // Retire the wrong destination fallback.
+        const auto nativeRecord=bytes;
+        auto result=nav::build(bytes,4,objective);CHECK(result.handled && result.publish==((1U<<(ring*4))|(1U<<12)));
+        const auto point=0x480+ring*0x200;
+        CHECK(nav::read<std::uint8_t>(bytes,point+4)==3 && nav::read<std::uint8_t>(bytes,point+12)==2);
+        CHECK(nav::read<std::uint32_t>(bytes,point+24)==4 && nav::read<std::uint8_t>(bytes,0xA84)==0);
+        CHECK(nav::read<float>(bytes,point+32)==1284.5F && nav::read<float>(bytes,point+36)==527.F);
+        CHECK(nav::read<float>(bytes,point+40)==-28.733692169189453F);
+        CHECK(nav::read<std::uint32_t>(bytes,point+48)==0x4324A238U && nav::read<std::uint32_t>(bytes,point+52)==0x0004002FU);
+        // Text, progress, targets and the selected ring are not rewritten.
+        CHECK(std::memcmp(bytes.data(),nativeRecord.data(),0x480)==0);
+        const auto stable=bytes;
+        for(unsigned tick=0;tick<100;++tick) {result=nav::build(bytes,4,objective);CHECK(result.handled && result.publish==0 && bytes==stable);}
+        for(unsigned fault=0;fault<12;++fault) {
+            auto invalid=nativeRecord;auto state=objective;std::uint32_t context=4;
+            switch(fault) {
+            case 0:context=0;break;
+            case 1:state.event=0xF8F223A7U;state.marker=native::marker(state.event);break;
+            case 2:state.active=false;break;
+            case 3:state.published=false;break;
+            case 4:++state.marker.asset.definition;break;
+            case 5:nav::put<std::uint32_t>(invalid,0,0x80B2E706U);break;
+            case 6:nav::put<std::uint32_t>(invalid,0x48,UINT32_MAX);break;
+            case 7:nav::put<std::uint32_t>(invalid,0x478,3);break;
+            case 8:nav::put<std::uint32_t>(invalid,row+0x6C,0x0001001FU);break;
+            case 9:nav::put<std::uint32_t>(invalid,row+0x84,0);break;
+            case 10:nav::put<std::int8_t>(invalid,row+8,1);break;
+            default:nav::put<std::int8_t>(invalid,0x198+((ring+1)%3)*0xF8,0);break;
+            }
+            const auto before=invalid;CHECK(!nav::build(invalid,context,state).handled && invalid==before);
+        }
+        CHECK(!nav::build(std::span(bytes).first(0xB00),4,objective).handled);
+    }
+    return true;
+}
+
 int main() {
-    if(!catalog() || !authority() || !retained_hologram()) {return 1;}
+    if(!catalog() || !authority() || !retained_hologram() || !objective_markers() || !steady_opening_marker()) {return 1;}
     std::puts("PASS: Deep Storage package catalog and native wire encoding; no live gameplay acceptance");
 }

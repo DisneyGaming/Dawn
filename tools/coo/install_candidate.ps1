@@ -16,7 +16,8 @@ $receiptPath = Join-Path $validation 'installation.json'
 if (Test-Path -LiteralPath $receiptPath) { throw 'This candidate has an installation receipt; preserve that evidence.' }
 $manifest = Get-Content -Raw -LiteralPath (Join-Path $validation 'package.json') | ConvertFrom-Json
 $names = @('steam_api64.dll', 'steam_api64.pdb', 'Lua_LICENSE.txt',
-    'Sunrise/scripts/omega.lua', 'Sunrise/scripts/deadly_trial.lua', 'Sunrise/scripts/gateway.lua', 'Sunrise/scripts/beyond_infinity.lua', 'Sunrise/scripts/deep_storage.lua', 'Sunrise/scripts/hijacked.lua', 'Sunrise/scripts/strike_pact.lua', 'Sunrise/scripts/strike_bond.lua', 'Sunrise/scripts/mission_pact.lua', 'Sunrise/scripts/mission_bond.lua', 'Sunrise/scripts/eater_of_worlds.lua', 'Sunrise/scripts/mercury_freeroam.json', 'Sunrise/scripts/infinite_abyss.json')
+    'Sunrise/scripts/omega.lua', 'Sunrise/scripts/deadly_trial.lua', 'Sunrise/scripts/gateway.lua', 'Sunrise/scripts/beyond_infinity.lua', 'Sunrise/scripts/deep_storage.lua', 'Sunrise/scripts/hijacked.lua', 'Sunrise/scripts/strike_pact.lua', 'Sunrise/scripts/strike_bond.lua', 'Sunrise/scripts/mission_pact.lua', 'Sunrise/scripts/mission_bond.lua', 'Sunrise/scripts/eater_of_worlds.lua', 'Sunrise/scripts/mercury_freeroam.json',
+    'Sunrise/scripts/eden_freeroam.json', 'Sunrise/scripts/fleet_freeroam.json', 'Sunrise/scripts/polaris_freeroam.json', 'Sunrise/scripts/planet_x_freeroam.json', 'Sunrise/scripts/tangled_shore_freeroam.json', 'Sunrise/scripts/dreaming_city_freeroam.json', 'Sunrise/scripts/infinite_abyss.json')
 $scopeProperty = $manifest.PSObject.Properties['validationScope']
 $validationScope = if ($scopeProperty) { [string]$scopeProperty.Value } else { 'full-lua' }
 $expectedCount = switch ($validationScope) {

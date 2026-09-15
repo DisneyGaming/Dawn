@@ -13,7 +13,8 @@ namespace sunrise::server::runtime::activity::mercury {
 // fallback (9). The primary consumed a request without an actor in r1. This
 // explicit A/B test is not an automatic fallback or a retail scheduling claim.
 // The persistent Mercury director requests the selected patrol and war sources.
-inline constexpr std::array<population::Capability,23> kPopulations{{
+inline constexpr auto kPopulations=[] {
+    std::array<population::Capability,23> result{{
     {&kRegistries[0],0,8,{0x74337EDD,2,0},true},
     {&kRegistries[0],1,9,{0x74337EDD,2,1},true},
     {&kRegistries[1],0,0,{},false},
@@ -42,5 +43,14 @@ inline constexpr std::array<population::Capability,23> kPopulations{{
     // The Vex diagnostic shares capability7 exactly. The distinct Cabal
     // primary-rule probe remains available at count zero.
     {&kRegistries[7],0,8,{0x2571C34D,2,0},true},
-}};
+    }};
+    // Patrols may reselect the owning encounter's authored task rows using
+    // native costs. Vendors, public-event cohorts and diagnostics stay fixed.
+    result[1].taskMask=(1U<<4)-1U;
+    for(std::size_t i=7;i<=21;++i) {
+        const auto* group=state::activity::coo::mercury::ambient::find(result[i].registry->key);
+        result[i].taskMask=(1U<<group->tacticalRows)-1U;
+    }
+    return result;
+}();
 } // namespace sunrise::server::runtime::activity::mercury

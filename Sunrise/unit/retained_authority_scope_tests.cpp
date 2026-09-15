@@ -337,13 +337,15 @@ void rejected_lineages_and_aliases() {
 void run(){round_trip();rejected_lineages_and_aliases();}
 }
 
-void mercury_held_region_route() {
+void open_world_held_region_route() {
     namespace route=sunrise::server::bap::encrypted::activity_message::membership;
     namespace state=sunrise::state::activity::membership;
     namespace client=sunrise::middleware::bap::activity_message::client_authoritative_data;
     // Exact two-leg travel semantics seen in the Mercury reentry log: after a
     // swap, the first leg names the loaded bubble and the second names outgoing.
-    for(const std::string_view destination:{"mercury_freeroam","strike_pact"}) {
+    for(const std::string_view destination:{"mercury_freeroam","eden_freeroam","fleet_freeroam",
+            "polaris_freeroam","planet_x_freeroam","tangled_shore_freeroam",
+            "dreaming_city_freeroam","strike_pact"}) {
         state::MembershipState current{};
         const auto apply=[&](int held,int outgoing,std::uint8_t token,bool hasToken,int expected) {
             client::ClientAuthoritativeData parsed{};
@@ -382,7 +384,7 @@ void mercury_held_region_route() {
 }
 
 int main() {
-    mercury_held_region_route();
+    open_world_held_region_route();
     scope_transition();invalid_metadata();descriptor_contracts();publisher_cases::run();
     std::printf("PASS %u retained authority scope/actual encoder checks\n",checks);
 }

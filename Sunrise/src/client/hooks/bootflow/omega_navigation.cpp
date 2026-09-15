@@ -7,9 +7,13 @@
 #include <cstdio>
 #include <cstring>
 #include <span>
+#include <utility>
 
 #include "omega_forest_recipe.h"
 #include "deadly_trial_presentation.h"
+#include "deep_storage_navigation_rules.h"
+#include "gateway_native_read.h"
+#include "../../../state/activity/deep_storage/runtime.h"
 #include "hijacked_presentation.h"
 #include "omega_navigation_rules.h"
 #include "internal.h"
@@ -32,6 +36,8 @@ std::atomic<HudPoints> g_hudOriginal{};
 std::atomic<DirectiveTick> g_directiveTickOriginal{};
 std::atomic<DirectiveBuild> g_directiveBuildOriginal{};
 std::atomic<RegisterPoint> g_registerPoint{};
+using ContextRevision=std::uint32_t(__fastcall*)() noexcept;
+std::atomic<ContextRevision> g_contextRevision{};
 std::atomic_bool g_enabled{};
 std::atomic_uint32_t g_calls{};
 std::atomic_uint64_t g_retiredRun{UINT64_MAX};
@@ -182,9 +188,42 @@ __declspec(noinline) void __fastcall directive_tick_hook(void* component) noexce
     update_directive_navigation(component);
 }
 
+// Preserve a complete opening waypoint across repeated native build calls.
+// Other objectives retain their original native navigation lifecycle.
+bool build_deep_storage_navigation(void* instance,std::uint32_t context) noexcept {
+    namespace deep=state::activity::deep_storage;
+    namespace rules=deep_storage_navigation;
+    if(!g_enabled.load(std::memory_order_acquire) || context!=4) {return false;}
+    const auto publish=g_registerPoint.load(std::memory_order_acquire);
+    const auto revision=g_contextRevision.load(std::memory_order_acquire);
+    std::array<std::byte,0xB10> bytes{};
+    if(!publish || !revision || !copy(instance,bytes) || !rules::source(bytes)) {return false;}
+    const auto state=deep::request();
+    if(!state.owner.valid() || !state.frame.enabled || state.frame.finished || state.frame.section!=0) {return false;}
+    gateway_native::Read memory{reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr))};
+    std::uintptr_t resolved{};const auto self=rules::read<std::uint32_t>(bytes,0x48);
+    if(!memory.resolve(self,resolved) || resolved!=reinterpret_cast<std::uintptr_t>(instance)) {return false;}
+    const auto result=rules::build(bytes,context,state.frame.presentation);if(!result.handled) {return false;}
+    const auto latest=deep::request();
+    if(latest.owner!=state.owner || !latest.frame.enabled || latest.frame.finished
+        || latest.frame.presentation.revision!=state.frame.presentation.revision) {return false;}
+    auto* component=static_cast<std::byte*>(instance);
+    for(unsigned i=0;i<13;++i) {
+        if((result.publish&(1U<<i))==0) {continue;}const auto point=0x480+i*0x80;
+        for(const auto [offset,size]:std::array<std::pair<std::size_t,std::size_t>,5>{{{4,1},{12,1},{24,4},{32,16},{48,8}}}) {
+            std::memcpy(component+point+offset,bytes.data()+point+offset,size);
+        }
+        const omega_navigation::Reference reference{self,0x80804F55U,static_cast<std::int64_t>(point)};
+        publish(&reference);
+    }
+    const auto currentRevision=revision();std::memcpy(component+0xB00,&currentRevision,sizeof currentRevision);
+    component[0xB04]=std::byte{1};return true;
+}
+
 __declspec(noinline) void __fastcall directive_build_hook(void* component,
                                                         std::uint32_t context) noexcept {
     const Call call;
+    if(build_deep_storage_navigation(component,context)) {return;}
     const auto original=g_directiveBuildOriginal.load(std::memory_order_acquire);
     if (original != nullptr) { original(component,context); }
     update_directive_navigation(component);
@@ -298,6 +337,10 @@ bool install_omega_navigation() noexcept {
     g_directiveTickOriginal.store(reinterpret_cast<DirectiveTick>(g_handles[2].original),std::memory_order_release);
     g_directiveBuildOriginal.store(reinterpret_cast<DirectiveBuild>(g_handles[3].original),std::memory_order_release);
     g_registerPoint.store(publish,std::memory_order_release);
+    constexpr std::array revisionPrefix{std::byte{0x48},std::byte{0x83},std::byte{0xEC},std::byte{0x28},
+        std::byte{0xE8},std::byte{0x87},std::byte{0xFE},std::byte{0xFF},std::byte{0xFF},
+        std::byte{0x48},std::byte{0x85},std::byte{0xC0},std::byte{0x74},std::byte{0x08}};
+    g_contextRevision.store(reinterpret_cast<ContextRevision>(target(0x4FFB60,revisionPrefix)),std::memory_order_release);
     g_enabled.store(true,std::memory_order_release);
     core::log::write(core::log::Channel::client,core::log::Level::info,
                     "ev=omega_navigation stage=install result=ok targets=+FFB850,+C73820,+100A3A0,+100A6E0");
@@ -321,6 +364,7 @@ bool uninstall_omega_navigation() noexcept {
     g_directiveTickOriginal.store(nullptr,std::memory_order_release);
     g_directiveBuildOriginal.store(nullptr,std::memory_order_release);
     g_registerPoint.store(nullptr,std::memory_order_release);
+    g_contextRevision.store(nullptr,std::memory_order_release);
     g_retiredRun.store(UINT64_MAX,std::memory_order_release);
     g_terminalGateRun.store(UINT64_MAX,std::memory_order_release);
     return true;

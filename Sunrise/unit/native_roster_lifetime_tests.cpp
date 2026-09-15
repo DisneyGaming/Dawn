@@ -162,6 +162,78 @@ void dormant_registration() {
     staged.blocks[1].entries.presence[0]=0;request.blocks=forest;
     unchanged_on_failure(staged,request,life::Result::dormantChange);
 }
+
+void shared_bubble_keys() {
+    // Installed free-roam cache: this ordinary group is shared by Mars (1,5),
+    // Titan (2,7), Tangled Shore (5,7,9,14,18), and Dreaming City (0,1,18,20).
+    constexpr std::array<std::uint32_t,1> shared{0xEAAF16E2};
+    struct Destination {std::uint32_t scenario;std::size_t count;std::array<std::uint32_t,5> bubbles;};
+    constexpr std::array destinations{
+        Destination{0x80F6AB20,2,{1,5}},Destination{0x80B3E142,2,{2,7}},
+        Destination{0x80FC9645,5,{5,7,9,14,18}},Destination{0x80F1404D,4,{0,1,18,20}}};
+    for(const auto& destination:destinations) {
+        auto owner=id;owner.scenario=destination.scenario;
+        std::array<life::WireBlock,5> blocks{};
+        for(std::size_t b=0;b<destination.count;++b)
+            blocks[b]={destination.bubbles[b],{shared,one,state}};
+        life::State committed{};
+        CHECK(life::seed(owner,{topKeys,present,states},
+            std::span(blocks).first(destination.count),committed)==life::Result::ready);
+        CHECK(life::validate(committed)==life::Result::ready);
+
+        // Reordered requests and region changes preserve each bubble's own
+        // ordinal/state. A removal in one bubble must leave every other copy live.
+        std::array<life::DesiredBlock,5> reverse{};
+        for(std::size_t b=0;b<destination.count;++b)
+            reverse[b]={destination.bubbles[destination.count-1-b],{shared,{}}};
+        life::Request request{owner,destination.bubbles[0],0xfe,{},
+            std::span(reverse).first(destination.count)};
+        CHECK(life::plan(committed,request,committed)==life::Result::ready);
+        const std::array remove{life::DesiredBlock{destination.bubbles[0],{shared,zero}}};
+        request.blocks=remove;
+        CHECK(life::plan(committed,request,committed)==life::Result::ready);
+        for(std::size_t b=0;b<destination.count;++b) {
+            CHECK(committed.blocks[b].bubble==destination.bubbles[b]);
+            CHECK(committed.blocks[b].entries.count==1 && committed.blocks[b].entries.keys[0]==shared[0]);
+            CHECK(committed.blocks[b].entries.states[0]==state[0]);
+            CHECK(committed.blocks[b].entries.presence[0]==(b==0?0:1));
+        }
+        const std::array restore{life::DesiredBlock{destination.bubbles[0],{shared,one}}};
+        request.currentBubble=destination.bubbles[1];request.blocks=restore;
+        unchanged_on_failure(committed,request,life::Result::dormantChange);
+        request.blocks={};
+        CHECK(life::plan(committed,request,committed)==life::Result::ready);
+        CHECK(committed.blocks[0].entries.presence[0]==0 && committed.blocks[1].entries.presence[0]==1);
+        request.currentBubble=destination.bubbles[0];request.blocks=restore;
+        CHECK(life::plan(committed,request,committed)==life::Result::ready);
+        CHECK(committed.blocks[0].entries.presence[0]==1 && committed.blocks[0].entries.states[0]==state[0]);
+
+        // Registering another bubble is an addition, even when its key already
+        // exists elsewhere. Do not confuse it with moving a global into a bubble.
+        const std::array appended{life::DesiredBlock{63,{shared,{}}}};
+        request.blocks=appended;
+        CHECK(life::plan(committed,request,committed)==life::Result::ready);
+        CHECK(committed.blockCount==destination.count+1);
+        CHECK(committed.blocks[destination.count].bubble==63);
+        CHECK(committed.blocks[destination.count].entries.states[0]==0xfe);
+        CHECK(committed.blocks[0].entries.states[0]==state[0]);
+
+        const std::array duplicate{shared[0],shared[0]};
+        const std::array invalid{life::DesiredBlock{destination.bubbles[0],{duplicate,{}}}};
+        request.blocks=invalid;unchanged_on_failure(committed,request,life::Result::duplicateKey);
+        const std::array duplicateWire{life::WireBlock{destination.bubbles[0],{duplicate,present,states}}};
+        auto rejected=committed;
+        CHECK(life::seed(owner,{},duplicateWire,rejected)==life::Result::duplicateKey);
+        CHECK(rejected.blockCount==committed.blockCount && rejected.identity==committed.identity);
+        CHECK(life::seed(owner,{shared,one,state},std::span(blocks).first(destination.count),rejected)
+            ==life::Result::duplicateKey);
+        request.top={shared,{}};request.blocks={};
+        unchanged_on_failure(committed,request,life::Result::keyScopeChanged);
+        const std::array topAsLocal{life::DesiredBlock{destination.bubbles[0],{topKeys,{}}}};
+        request.top={};request.blocks=topAsLocal;
+        unchanged_on_failure(committed,request,life::Result::keyScopeChanged);
+    }
+}
 } // namespace
 
-int main(){normal();rejected();limits();mercury_acknowledgement();dormant_registration();std::printf("PASS %u checks\n",checks);}
+int main(){normal();rejected();limits();mercury_acknowledgement();dormant_registration();shared_bubble_keys();std::printf("PASS %u checks\n",checks);}

@@ -11,7 +11,7 @@ namespace c=sunrise::state::activity::coo;
 namespace s=c::script;
 unsigned checks{};
 #define CHECK(x) do { ++checks;if(!(x)) { std::fprintf(stderr,"FAIL line %d: %s\n",__LINE__,#x);std::exit(1); } } while(false)
-constexpr c::Asset pump{91,101,0,0},display{92,102,0,0},camera{256,512,6,2},actors{257,513,2,3};
+constexpr c::Asset pump{91,101,0,0},display{92,102,0,0},camera{256,512,6,2},actorSource{257,513,2,3};
 constexpr s::Capability fixtureCapabilities[]{
     {"pump","composition",{c::Operation::mechanic,pump,17,c::Wait::requested}},
     {"display","composition",{c::Operation::mechanic,display,44,c::Wait::requested}},
@@ -19,7 +19,7 @@ constexpr s::Capability fixtureCapabilities[]{
     {"display_ready","composition",{c::Operation::observation,{},12,c::Wait::observed}},
     {"confirmed","composition",{c::Operation::observation,{},9,c::Wait::observed}},
     {"scene","room",{c::Operation::scene,camera,7,c::Wait::nativeReady}},
-    {"population","room",{c::Operation::population,actors,2,c::Wait::completed}}
+    {"population","room",{c::Operation::population,actorSource,2,c::Wait::completed}}
 };
 constexpr s::ModuleCapability modules[]{{"pump",{pump,17}},{"display",{display,44}}};
 constexpr s::FactCapability facts[]{{"pump_running",6},{"display_running",12},{"operator_confirmed",9}};
@@ -60,7 +60,9 @@ struct Ports final:c::MissionPorts<unsigned> {
 #include "persistent_activity_cases.h"
 #include "native_population_event_cases.h"
 #include "native_replication_role_cases.h"
+#include "open_world_cases.h"
 int main() {
+    open_world_cases();
     persistent_activity_cases();
     native_population_event_cases();
     native_replication_role_cases();
@@ -146,5 +148,5 @@ int main() {
     CHECK(!s::MissionDocument::parse(text+"{}",profile,error));
     // Simultaneously retained documents do not share mutable global selections.
     CHECK(doc->views().graph("room")->definition.steps.size()==2);CHECK(added->views().graph("room")->definition.steps.size()==3);
-    std::printf("PASS: %u checks; generic profiles, live revisions, native population retirement, source codecs, and existing graph contracts\n",checks);
+    std::printf("PASS: %u checks; destination free-roam profiles, live revisions, native population retirement, source codecs, and graph contracts\n",checks);
 }

@@ -12,10 +12,15 @@ struct Lease final {
     ActivityInstanceKey activity{};
     coo::PopulationOwner source{};
     std::uint8_t bubble{};
+    // Explicit policy from the owning activity, never inferred from an actor tag.
+    bool discardStreamedReplicas{};
     friend bool operator==(const Lease&,const Lease&)=default;
 };
-enum class Kind : std::uint8_t { admitted, died, retired };
-struct Event final {Lease lease{};coo::PopulationActor actor{};std::uint32_t sourceHandle{UINT32_MAX};Kind kind{};};
+enum class Kind : std::uint8_t { admitted, died, retired, sourceRecreated };
+struct Event final {
+    Lease lease{};coo::PopulationActor actor{};std::uint32_t sourceHandle{UINT32_MAX};Kind kind{};
+    std::uint32_t previousSourceHandle{UINT32_MAX};
+};
 
 // A receipt identifies one specific binding lifetime. The lease value alone is
 // insufficient because release followed by an identical bind is a valid ABA.
@@ -67,7 +72,8 @@ public:
 
     [[nodiscard]] RenewResult renew(const Lease& prior,const Lease& next) noexcept {
         if(!valid(prior) || !valid(next) || next.activity!=prior.activity
-            || next.bubble!=prior.bubble || next.source.activity!=prior.source.activity
+            || next.bubble!=prior.bubble || next.discardStreamedReplicas!=prior.discardStreamedReplicas
+            || next.source.activity!=prior.source.activity
             || next.source.run!=prior.source.run || next.source.incarnation!=prior.source.incarnation
             || next.source.source!=prior.source.source || prior.source.generation==0x7FFFFFFFU
             || next.source.generation!=prior.source.generation+1) return RenewResult::rejected;
@@ -256,6 +262,11 @@ private:
             && lease.source.source.type==1;
     }
     [[nodiscard]] static bool valid_event(const Event& event) noexcept {
+        if(event.kind==Kind::sourceRecreated)
+            return event.lease.discardStreamedReplicas && event.sourceHandle!=UINT32_MAX
+                && event.previousSourceHandle!=UINT32_MAX && event.previousSourceHandle!=event.sourceHandle
+                && event.actor.owner==event.lease.source
+                && event.actor.actor==UINT32_MAX && event.actor.entity==UINT32_MAX;
         return (event.kind==Kind::admitted || event.kind==Kind::died || event.kind==Kind::retired)
             && event.actor.valid() && event.sourceHandle!=UINT32_MAX
             && event.actor.owner==event.lease.source;

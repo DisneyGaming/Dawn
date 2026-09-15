@@ -428,8 +428,8 @@ void freeroam_profile_cases() {
         CHECK(registered);
     }
     CHECK(text.find("\"freeroam_respawn_ms\": 30000")!=std::string::npos);
-    CHECK(text.find("\"freeroam_normal_patrol_count\": 3")!=std::string::npos);
-    CHECK(text.find("\"freeroam_large_patrol_count\": 4")!=std::string::npos);
+    CHECK(text.find("\"freeroam_normal_patrol_count\": 1")!=std::string::npos);
+    CHECK(text.find("\"freeroam_large_patrol_count\": 1")!=std::string::npos);
     CHECK(text.find("\"faction_war_wave_4_count\": 5")!=std::string::npos);
 }
 

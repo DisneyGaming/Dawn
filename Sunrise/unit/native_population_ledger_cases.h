@@ -62,4 +62,29 @@ void native_population_cases() {
     c::NativePopulationLedger<3> late;
     CHECK(late.begin(owner));CHECK(late.retiring(owner));CHECK(late.source_retired(owner)==Intake::accepted);
     CHECK(late.admitted(first)==Intake::closed);CHECK(late.counts().failed);CHECK(!late.begin(next));
+    // Stream out after one kill: only the surviving actor is replaced. Returning
+    // repeatedly must neither fill the ledger nor turn streaming into kills.
+    c::NativePopulationLedger<3> streamed;
+    CHECK(streamed.begin(owner));CHECK(streamed.admitted(first)==Intake::accepted);
+    CHECK(streamed.admitted(second)==Intake::accepted);
+    CHECK(!streamed.source_recreated(owner));
+    CHECK(streamed.died(first)==Intake::accepted);CHECK(streamed.actor_retired(first)==Intake::accepted);
+    CHECK(!streamed.source_recreated(owner));CHECK(streamed.actor_retired(second)==Intake::accepted);
+    CHECK(!streamed.source_recreated(next));CHECK(streamed.source_recreated(owner));
+    CHECK(streamed.counts().admitted==1 && streamed.counts().dead==1 && streamed.counts().resident==0);
+    CHECK(streamed.died(second)==Intake::unknown);CHECK(streamed.died(first)==Intake::duplicate);
+    for(unsigned i=0;i<500;++i) {
+        const c::PopulationActor replacement{owner,0x80000+i,0x90000+i};
+        CHECK(streamed.admitted(replacement)==Intake::accepted);
+        CHECK(streamed.counts().alive==1 && streamed.counts().dead==1);
+        CHECK(streamed.actor_retired(replacement)==Intake::accepted);
+        CHECK(streamed.source_recreated(owner));
+        CHECK(streamed.counts().admitted==1 && !streamed.counts().failed);
+    }
+    const c::PopulationActor replacement{owner,0xA0000,0xB0000};
+    CHECK(streamed.admitted(replacement)==Intake::accepted);CHECK(streamed.died(replacement)==Intake::accepted);
+    CHECK(streamed.actor_retired(replacement)==Intake::accepted);CHECK(streamed.source_recreated(owner));
+    CHECK(streamed.counts().dead==2 && streamed.counts().admitted==2);
+    CHECK(streamed.renew(owner,sameRun));CHECK(streamed.counts().admitted==0);
+    CHECK(!late.source_recreated(owner));CHECK(!conflict.source_recreated(owner));
 }

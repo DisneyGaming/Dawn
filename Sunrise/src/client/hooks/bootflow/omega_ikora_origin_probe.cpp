@@ -20,6 +20,7 @@
 #include "../../hooking/call_gate.h"
 #include "../../hooking/detour.h"
 #include "internal.h"
+#include "omega_enemy_lair_receipts.h"
 #include "../../../state/activity/omega_presentation.h"
 #include "../../../state/activity/omega_first_lair_runtime.h"
 
@@ -112,9 +113,7 @@ constexpr std::array<std::byte, 24> kSelectorObjectResolvePrefix{
     std::byte{0x48}, std::byte{0x8B}, std::byte{0xF2}, std::byte{0x48},
     std::byte{0x8B}, std::byte{0xF9}, std::byte{0x48}, std::byte{0x85}};
 
-using SpawnerDeficit = void(__fastcall*)(std::uint32_t* instance,
-                                          std::uint32_t reason,
-                                          const std::byte* payload) noexcept;
+using SpawnerDeficit = NativePopulationDispatch;
 using SceneActorScheduler = void(__fastcall*)(std::uint32_t* scene) noexcept;
 using EntityFactory = std::int32_t*(__fastcall*)(std::int32_t* result,
                                                   const std::byte* descriptor,
@@ -508,7 +507,7 @@ void spawner_deficit_body(std::uint32_t* instance,
                 static_cast<int>(safe_read<std::int8_t>(payload+0x74)),GetCurrentThreadId());
         }
     }
-    original(instance, reason, payload);
+    dispatch_native_population_source(instance, reason, payload, original);
     if (reportBossReturn) {
         report("ev=omega_boss stage=deficit_return instance=%p thread=%lu",
                instance,GetCurrentThreadId());

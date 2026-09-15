@@ -72,6 +72,36 @@ void population_service_cases() {
     CHECK(!invalid.begin({43,{1}},malformed));
     malformed=m::kPopulations;malformed[1]=malformed[0];
     CHECK(!invalid.begin({43,{1}},malformed));
+    malformed=m::kPopulations;malformed[1].taskMask=1; // Initial row one must be allowed.
+    CHECK(!invalid.begin({43,{1}},malformed));
+    malformed=m::kPopulations;malformed[1].taskMask|=1U<<24;
+    CHECK(!invalid.begin({43,{1}},malformed));
+    malformed=m::kPopulations;malformed[1].tactical.revision=0x80000000U;
+    CHECK(!invalid.begin({43,{1}},malformed));
+    malformed=m::kPopulations;malformed[2].tactical.revision=1; // No objective on a vendor.
+    CHECK(!invalid.begin({43,{1}},malformed));
+
+    // Only patrol sources opt in. A native cost report must not move a fixed
+    // diagnostic, NPC, or public-event source, or select a row outside the mask.
+    for(std::size_t i=0;i<m::kPopulations.size();++i)
+        CHECK((m::kPopulations[i].taskMask!=0)==(i==1 || (i>=7 && i<=21)));
+    for(bool adaptive:{false,true}) {
+        std::array<p::Capability,1> capabilities{{m::kPopulations[1]}};
+        capabilities[0].taskMask=adaptive?3U:0U;
+        p::Service patrol;CHECK(patrol.begin({54,{1}},capabilities,10));
+        CHECK(patrol.request({{54,{1}},1,1,capabilities[0].registry->key,capabilities[0].slot,1,10},15)==p::Result::accepted);
+        CHECK(patrol.tactical(0).row==1 && patrol.tactical(0).revision==(adaptive?1U:0U));
+        sense={};sense.registryKey=capabilities[0].registry->key;sense.slotType=1;sense.slotIndex=capabilities[0].slot;
+        sense.hasNativeSchema=true;sense.nativeSchema=0x80807ECC;sense.hasRootDelta=true;
+        sense.nativeRevision=1;sense.sourceDelta.present=1;sense.sourceDelta.scalar[0]=1;
+        sense.hasSquadOutput=true;sense.squadOutput.initialized=true;
+        sense.squadOutput.hasRevision=true;sense.squadOutput.revision=1;
+        sense.squadOutput.costMask=7;sense.squadOutput.cost[0]=10;
+        sense.squadOutput.cost[1]=20;sense.squadOutput.cost[2]=0; // Cheapest but not permitted.
+        CHECK(patrol.observe(15,sense));CHECK(patrol.tactical(0).row==(adaptive?0:1));
+        CHECK(patrol.target(0)==1 && patrol.last_request()==1);
+        CHECK(patrol.revision()==(adaptive?3U:2U));
+    }
 
     // A recurring Mercury source changes generation only after its exact
     // consumed mirror. The next generation rejects the old mirror identity.

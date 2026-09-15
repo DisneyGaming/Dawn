@@ -75,6 +75,17 @@ public:
         if(item->retired) { return PopulationIntake::duplicate; }
         item->retired=true;settle_retirement();return PopulationIntake::accepted;
     }
+    // The adapter witnessed destruction of the former source and authenticated
+    // a replacement in the same generation. All old actors must have retired.
+    // Keep real deaths; forget only survivors removed by streaming, not kills.
+    [[nodiscard]] bool source_recreated(PopulationOwner owner) noexcept {
+        if(owner!=owner_ || phase_!=PopulationPhase::active || sourceRetired_ || failed_)return false;
+        for(std::size_t i=0;i<used_;++i)if(!actors_[i].retired)return false;
+        std::size_t kept{};
+        for(std::size_t i=0;i<used_;++i)if(actors_[i].dead)actors_[kept++]=actors_[i];
+        for(std::size_t i=kept;i<used_;++i)actors_[i]={};
+        used_=kept;return true;
+    }
     // Recurring sources keep the same native object and advance only their
     // generation. The bridge calls this after it has atomically excluded old
     // queued and provisional births. This is a lease rollover, not a native

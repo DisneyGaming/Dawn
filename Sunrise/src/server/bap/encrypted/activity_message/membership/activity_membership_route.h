@@ -9,7 +9,11 @@
 namespace sunrise::server::bap::encrypted::activity_message::membership {
 
 [[nodiscard]] constexpr bool retains_held_region(std::string_view destination) noexcept {
-    return destination == "mission_bond" || destination == "mission_pact" || destination == "strike_bond" || destination == "strike_pact" || destination == "mercury_freeroam"
+    return destination == "mission_bond" || destination == "mission_pact" || destination == "strike_bond" || destination == "strike_pact"
+        || destination == "mercury_freeroam" || destination == "eden_freeroam"
+        || destination == "fleet_freeroam" || destination == "polaris_freeroam"
+        || destination == "planet_x_freeroam" || destination == "tangled_shore_freeroam"
+        || destination == "dreaming_city_freeroam"
         || destination == "adventure_rumba" || destination == "raid_envy_v310";
 }
 
