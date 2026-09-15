@@ -41,13 +41,13 @@ void observe_native_object(void* raw) noexcept {
     if(!desired.prepared) {
         std::array<std::byte,0x44> bytes{};
         if(read.copy(source+0x180,bytes) && at<std::uint32_t>(bytes.data())==desired.generation && coo::native_device::inactive_state(bytes)
-            && request().owner==req.owner) {observe_prepared(req.owner,binding->asset);}return;
+            && native_owner()==req.owner) {observe_prepared(req.owner,binding->asset);}return;
     }
     std::uint32_t generation{},committed{};std::uint8_t active{};gn::Weak entity{},again{};
     if(!desired.active || !read.value(source+0x180,generation) || generation!=desired.generation
         || !read.value(source+0x2F0,committed) || committed!=generation || !read.value(source+0x188,active) || active!=1
         || !read.value(source+0x440,entity) || !read.weak(entity)
-        || !read.value(source+0x440,again) || again!=entity || !read.weak(again) || request().owner!=req.owner) {return;}
+        || !read.value(source+0x440,again) || again!=entity || !read.weak(again) || native_owner()!=req.owner) {return;}
     observe_object({{req.owner.run,generation},binding->asset,entity.handle,entity.serial});
 }
 void poll_native_objects() noexcept {
@@ -55,8 +55,7 @@ void poll_native_objects() noexcept {
     // Only the loose first Vandal needs a direct native start. Named members
     // already own their entry programs; observe those rather than queuing twice.
     static coo::Generation entranceOwner{};static EnemyReceipt queuedEntrance{};
-    static std::uint32_t entranceEntity{UINT32_MAX};static std::uint64_t entranceStart{},entranceNext{};
-    if(entranceOwner!=req.owner) {entranceOwner=req.owner;queuedEntrance={};entranceEntity=UINT32_MAX;}
+    if(entranceOwner!=req.owner) {entranceOwner=req.owner;queuedEntrance={};}
     for(std::size_t index=0;index<=std::size(kAmbushCues);++index) {
         if(!entrance::wanted(req,index)) {continue;}
         entrance::Binding before{},checked{},after{};gn::Read first{image()};
@@ -70,27 +69,13 @@ void poll_native_objects() noexcept {
                 using Start=bool(__fastcall*)(void*,const void*,std::uint8_t) noexcept;
                 if(!index && !before.started && queuedEntrance!=actor) {
                     if(reinterpret_cast<Start>(image()+0xC66590)(reinterpret_cast<void*>(before.channel),reinterpret_cast<void*>(before.entry),1)) {
-                        queuedEntrance=actor;entranceEntity=before.entity;entranceStart=GetTickCount64();entranceNext=entranceStart;
+                        queuedEntrance=actor;
                     }
                 }
                 gn::Read final{image()};
-                if(request().owner==req.owner && entrance::sample(final,image(),current,after,index) && after.playing
+                if(native_owner()==req.owner && entrance::sample(final,image(),current,after,index) && after.playing
                     && after.character==before.character && after.channel==before.channel && after.entity==before.entity) {observe_entrance(req.owner,actor);}
             }
-        }
-    }
-    // One bounded trace of the first reveal distinguishes a misplaced spawn
-    // from an entrance played off-screen. Never change its transform to log it.
-    const auto entranceNow=GetTickCount64();
-    if(entranceEntity!=UINT32_MAX && entranceNow>=entranceNext && entranceNow-entranceStart<=4000
-        && req.frame.firstVandal==queuedEntrance && req.frame.section==2) {
-        entranceNext=entranceNow+500;gn::Read read{image()};cn::NativeMount native{image()};std::array<float,4> position{};
-        if(native.valid(read) && cn::enemy(read,image(),queuedEntrance).created
-            && entrance::position(read,native,queuedEntrance.actor,entranceEntity,position) && request().owner==req.owner) {
-            std::array<char,192> line{};std::snprintf(line.data(),line.size(),
-                "ev=launchpad stage=ambush_position actor=%08X elapsed=%llu xyz=%.3f,%.3f,%.3f",
-                queuedEntrance.actor,static_cast<unsigned long long>(entranceNow-entranceStart),position[0],position[1],position[2]);
-            core::log::write(core::log::Channel::client,core::log::Level::info,line.data());
         }
     }
     if(req.frame.ghost.phase!=ghost::Phase::dormant && req.frame.ghost.phase!=ghost::Phase::retired) {
@@ -99,7 +84,7 @@ void poll_native_objects() noexcept {
         if(owner!=req.owner || now>=next) {
             owner=req.owner;next=now+100;unsigned reason{};gn::Read read{image()};
             const auto sample=ghost::sample(read,image(),req.frame.ghostActor,reason);
-            if(request().owner==req.owner) {observe_ghost(req.owner,req.frame.ghostActor,sample);}
+            if(native_owner()==req.owner) {observe_ghost(req.owner,req.frame.ghostActor,sample);}
             if(reason!=previous) {
                 previous=reason;std::array<char,128> line{};
                 std::snprintf(line.data(),line.size(),"ev=launchpad stage=ghost_reader result=%u actor=%08X",reason,req.frame.ghostActor.actor);
@@ -110,7 +95,7 @@ void poll_native_objects() noexcept {
     if(!req.frame.finished && req.frame.cinematic.phase==cinematics::Phase::gameplay) {
         gn::Read read{image()};cn::NativeMount native{image()};cn::MountedPlayer sample{};
         const auto state=!native.valid(read)?1:!cn::controlled_player(read,native,sample)?2:3;
-        if(state==3 && request().owner==req.owner) {
+        if(state==3 && native_owner()==req.owner) {
             observe_position(sample.position[0],sample.position[1],sample.position[2]);
         }
         static coo::Generation owner{};static int previous{};static std::uint64_t next{};

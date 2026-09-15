@@ -30,7 +30,7 @@ inline void depart_divide(const mission::Request& request) noexcept {
     const auto session=target(2);
     if(session!=manager+0x722A8+static_cast<std::uintptr_t>(current^1)*0x1C8A0
         || !native::read(session+0x1AEF8,state)) {return;}
-    if(transit::departure()!=wanted || mission::request().owner!=request.owner || target(2)!=session) {return;}
+    if(transit::departure()!=wanted || mission::native_owner()!=request.owner || target(2)!=session) {return;}
     if(wanted==sent) {
         if(session==leaving && state==0 && transit::departure_complete(wanted)) {
             complete=true;

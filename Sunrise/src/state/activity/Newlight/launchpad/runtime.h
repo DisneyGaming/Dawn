@@ -4,6 +4,7 @@ namespace sunrise::state::activity::newlight::launchpad {
 bool prepare(std::uint64_t,bool) noexcept;
 Frame snapshot(std::uint64_t,std::uint64_t,bool) noexcept;
 Request request() noexcept;
+coo::Generation native_owner() noexcept;
 bool opening_mask(std::uint64_t) noexcept;
 void observe_fly_in_complete() noexcept;
 std::uint64_t native_run() noexcept;

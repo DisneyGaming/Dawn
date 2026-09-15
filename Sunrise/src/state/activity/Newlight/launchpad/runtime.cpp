@@ -7,7 +7,6 @@
 #include "../../../../client/hooks/bootflow/gateway_native_read.h"
 #include "../../../../client/hooks/bootflow/coo_enemy_readiness.h"
 #include <cstdio>
-#include <cmath>
 #include <mutex>
 
 namespace sunrise::state::activity::newlight::launchpad {
@@ -97,6 +96,7 @@ Frame snapshot(std::uint64_t run,std::uint64_t now,bool ready) noexcept {
     }return f;
 }
 Request request() noexcept {const std::lock_guard lock(mutex);return selected()?Request{controller.owner(),controller.frame()}:Request{};}
+coo::Generation native_owner() noexcept {const std::lock_guard lock(mutex);return selected()?controller.owner():coo::Generation{};}
 std::uint64_t native_run() noexcept {const std::lock_guard lock(mutex);return current()?selectedRun:0;}
 bool publication_due(std::uint64_t now) noexcept {const std::lock_guard lock(mutex);return selected() && controller.frame().enabled && now>=nextPublication;}
 bool opening_mask(std::uint64_t now) noexcept {const std::lock_guard lock(mutex);return selected() && controller.frame().cinematic.masking_opening(now);}
@@ -132,13 +132,6 @@ void finish_handoff(coo::Generation owner) noexcept {
 void observe_position(float x,float y,float z) noexcept {
     const std::lock_guard lock(mutex);if(!current()) {return;}
     controller.position(selectedRun,{x,y,z});
-    static std::uint64_t run{},next{};static Point prior{};
-    const auto now=GetTickCount64();
-    if(controller.frame().cinematic.phase!=cinematics::Phase::gameplay || !std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z)) {return;}
-    const float distance=(x-prior.x)*(x-prior.x)+(y-prior.y)*(y-prior.y)+(z-prior.z)*(z-prior.z);
-    if(run==selectedRun && (now<next || distance<100.F)) {return;}
-    run=selectedRun;next=now+2000;prior={x,y,z};std::array<char,192> line{};
-    std::snprintf(line.data(),line.size(),"ev=launchpad stage=position section=%u xyz=%.3f,%.3f,%.3f",controller.frame().section,x,y,z);log(line.data());
 }
 void observe_submission(std::uint64_t run,std::uint32_t definition,std::int64_t offset,std::uint32_t bank,std::uint8_t row,std::uint32_t generation) noexcept {
     const auto* b=find(kRoot,53,2);if(!b || definition!=b->asset.definition || offset!=b->offset || bank!=kBank || row>=std::size(kDialogue)) {return;}

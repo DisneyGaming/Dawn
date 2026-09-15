@@ -23,6 +23,32 @@ namespace inv=account::inventory;
 namespace buckets=bd::inventory::buckets;
 namespace f4=middleware::datagen::family4::loadout;
 struct ItemInfo {bd::items::Definition item;bd::items::details::Definition detail;buckets::Descriptor bucket;};
+// Every service stages the same optimistic account snapshot and selected character.
+std::shared_ptr<TransactionData> begin_transaction() noexcept {
+    auto p=std::make_shared<TransactionData>();
+    p->before=account_snapshot();p->after=p->before;
+    if(!account::valid(p->before) || !detail::valid_profile_inventory(p->before)) return {};
+    for(p->character=0;p->character<p->before.characterCount;++p->character)
+        if(p->before.characters[p->character].selected) return p;
+    return {};
+}
+bool valid_transaction(const TransactionData& p) noexcept {
+    f4::ResolvedLoadout loadout{};
+    return account::valid(p.after) && detail::valid_profile_inventory(p.after)
+        && f4::resolve(p.after,p.character,loadout);
+}
+void apply_transaction(AccountState& current,const TransactionData& p) noexcept {
+    // Other characters may have changed since preparation. Only copy owned rows.
+    current.characters[p.character]=p.after.characters[p.character];
+    current.profileItems=p.after.profileItems;current.profileItemCount=p.after.profileItemCount;
+    current.vendorProgress=p.after.vendorProgress;current.vendorUnlocks=p.after.vendorUnlocks;
+}
+bool insert(TransactionData& p,inv::Item item) noexcept {
+    std::uint64_t removed{};
+    if(!inv::insert(p.after.characters[p.character],item,removed)) return false;
+    if(removed) p.removed.push_back(removed);
+    p.changed.push_back(item.instanceSoid);return true;
+}
 bool info(std::uint16_t index,ItemInfo& out) noexcept {
     return bd::find_item_definition_index(index,out.item)
         && bd::find_configured_item_detail(index,out.detail)
@@ -77,8 +103,7 @@ bool profile(TransactionData& p,const ItemInfo& item,std::int32_t amount) noexce
             if(!fresh_identity(p,false,mail.instanceSoid)) {return false;}
             mail.definitionHash=item.item.definitionHash;mail.quantity=static_cast<std::int32_t>((std::min)(excess,static_cast<std::int64_t>(item.detail.maxStackSize)));
             mail.mutationSerial=static_cast<std::int32_t>(c.nextInventorySerial++);mail.postmaster=true;
-            std::uint64_t removed{};if(!inv::insert(c,mail,removed)) {return false;}
-            if(removed) {p.removed.push_back(removed);}p.changed.push_back(mail.instanceSoid);excess-=mail.quantity;
+            if(!insert(p,mail)) {return false;}excess-=mail.quantity;
         }
         if(retained==old) {return true;}
     }
@@ -113,9 +138,7 @@ bool grant(TransactionData& p,std::uint16_t index,std::int32_t amount,std::int32
         row.level=item.bucket.equipmentSlot>=0 || item.bucket.bucketId==31?(power>0?power:detail::acquisition_level(c)):0;
         row.mutationSerial=static_cast<std::int32_t>(c.nextInventorySerial++);
         row.sockets.policy=inv::SocketPolicy::nativeDefaults;
-        std::uint64_t removed{};
-        if(!inv::insert(c,row,removed)) {return false;}
-        if(removed) {p.removed.push_back(removed);}p.changed.push_back(row.instanceSoid);
+        if(!insert(p,row)) {return false;}
     }
     return true;
 }
@@ -152,8 +175,7 @@ bool debit(TransactionData& p,const catalog::Cost& cost) noexcept {
             row.mutationSerial=static_cast<std::int32_t>(c.nextInventorySerial++);p.changed.push_back(row.instanceSoid);++i;
         } else {
             p.removed.push_back(row.instanceSoid);
-            for(auto n=i+1;n<c.inventory.count;++n) {c.inventory.values[n-1]=c.inventory.values[n];}
-            c.inventory.values[--c.inventory.count]={};
+            inv::erase(c,i);
         }
     }
     return !left;
@@ -292,8 +314,7 @@ bool advance(TransactionData& p,std::uint64_t soid,const catalog::QuestStep& ste
     } else {
         if(!write_value(p.after,p.character,true,step.slot,-1,step.slot)) {return false;}
         p.removed.push_back(soid);
-        for(auto i=at+1;i<c.inventory.count;++i) {c.inventory.values[i-1]=c.inventory.values[i];}
-        c.inventory.values[--c.inventory.count]={};
+        inv::erase(c,at);
     }
     for(const auto index:pursuit.objectives) {
         catalog::Objective o{};if(!catalog::objective(index,o)) {return false;}
@@ -374,12 +395,9 @@ bool interaction_available(const catalog::Interaction& interaction,const catalog
 }
 }
 bool prepare(const Request& request,Pending& pending) noexcept {
-    pending={};auto p=std::make_shared<TransactionData>();p->before=account_snapshot();p->after=p->before;
-    if(!catalog::ready() || request.vendor>=512 || request.reply<0 || !account::valid(p->before)
-        || !detail::valid_profile_inventory(p->before)) {return false;}
-    p->character=p->before.characterCount;
-    for(std::size_t i=0;i<p->before.characterCount;++i) if(p->before.characters[i].selected) {p->character=i;break;}
-    if(p->character==p->before.characterCount) {return false;}
+    pending={};
+    if(!catalog::ready() || request.vendor>=512 || request.reply<0) {return false;}
+    auto p=begin_transaction();if(!p) {return false;}
     const auto investment=investment_snapshot();catalog::Offer offer{};
     if(request.sale>=0) {
         if(request.sale>65535 || !catalog::offer(request.vendor,static_cast<std::uint16_t>(request.sale),offer)) {return false;}
@@ -454,9 +472,7 @@ bool prepare(const Request& request,Pending& pending) noexcept {
             if(!reward(*p,197,investment.family5)) {return false;}
         } else if(!grant(*p,offer.item,offer.quantity,power)) {return false;}
     }
-    f4::ResolvedLoadout loadout{};
-    if(p->changed.size()>16 || p->removed.size()>16 || !account::valid(p->after)
-        || !detail::valid_profile_inventory(p->after) || !f4::resolve(p->after,p->character,loadout)) {return false;}
+    if(p->changed.size()>16 || p->removed.size()>16 || !valid_transaction(*p)) {return false;}
     std::sort(p->changed.begin(),p->changed.end());p->changed.erase(std::unique(p->changed.begin(),p->changed.end()),p->changed.end());
     char line[180]{};std::snprintf(line,sizeof line,"ev=vendor stage=prepare result=ready vendor=%u sale=%d interaction=%d costs=%zu instances=%zu",
         request.vendor,request.sale,request.interaction,offer.costs.size(),p->changed.size());
@@ -465,11 +481,7 @@ bool prepare(const Request& request,Pending& pending) noexcept {
 }
 bool prepare_progress(Pending& pending) noexcept {
     pending={};if(!catalog::ready()) {return false;}
-    auto p=std::make_shared<TransactionData>();p->before=account_snapshot();p->after=p->before;
-    if(!account::valid(p->before) || !detail::valid_profile_inventory(p->before)) {return false;}
-    p->character=p->before.characterCount;
-    for(std::size_t i=0;i<p->before.characterCount;++i) if(p->before.characters[i].selected) {p->character=i;break;}
-    if(p->character==p->before.characterCount) {return false;}
+    auto p=begin_transaction();if(!p) {return false;}
     const auto investment=investment_snapshot();const auto& c=p->before.characters[p->character];
     for(std::size_t i=0;i<c.inventory.count;++i) {
         bd::items::Definition item{};catalog::QuestStep step{};catalog::Pursuit progress{};
@@ -478,8 +490,7 @@ bool prepare_progress(Pending& pending) noexcept {
             || !catalog::quest_step(item.definitionIndex,step) || !catalog::pursuit(step.item,progress)
             || !progress.globalQuest || catalog::manual(progress) || !complete(progress,*p,investment.family5)) {continue;}
         if(!advance(*p,c.inventory.values[i].instanceSoid,step,progress)) {return false;}
-        f4::ResolvedLoadout loadout{};
-        if(!account::valid(p->after) || !detail::valid_profile_inventory(p->after) || !f4::resolve(p->after,p->character,loadout)) {return false;}
+        if(!valid_transaction(*p)) {return false;}
         pending.data=std::move(p);return true;
     }
     return false;
@@ -488,19 +499,14 @@ bool prepare_decryption(std::uint64_t soid,std::uint16_t index,Pending& pending,
     pending={};if(!soid) {return false;}
     std::uint16_t pool{};
     if(!catalog::ready() || !catalog::loot_vendor(index,pool)) {return false;}
-    auto p=std::make_shared<TransactionData>();p->before=account_snapshot();p->after=p->before;
-    if(!account::valid(p->before) || !detail::valid_profile_inventory(p->before)) {return false;}
-    p->character=p->before.characterCount;
-    for(std::size_t i=0;i<p->before.characterCount;++i) if(p->before.characters[i].selected) {p->character=i;break;}
-    if(p->character==p->before.characterCount) {return false;}
+    auto p=begin_transaction();if(!p) {return false;}
     auto& c=p->after.characters[p->character];auto at=c.inventory.count;
     bd::items::Definition item{};if(!bd::find_item_definition_index(index,item)) {return false;}
     for(std::size_t i=0;i<c.inventory.count;++i) if(c.inventory.values[i].instanceSoid==soid
         && c.inventory.values[i].definitionHash==item.definitionHash) {at=i;break;}
     if(at==c.inventory.count || c.inventory.values[at].postmaster!=postmaster || c.inventory.values[at].quantity!=1 || (c.inventory.values[at].flags&inv::kLockedItemFlag)) {return false;}
     const auto power=c.inventory.values[at].level;
-    for(auto i=at+1;i<c.inventory.count;++i) {c.inventory.values[i-1]=c.inventory.values[i];}
-    c.inventory.values[--c.inventory.count]={};p->removed.push_back(soid);
+    inv::erase(c,at);p->removed.push_back(soid);
     if(!reward(*p,pool,investment_snapshot().family5,false)) {return false;}
     // Gear Up counts successful Prime decryptions, in the same transaction as
     // consuming the engram. Its native objective is character-local value 13081.
@@ -520,18 +526,13 @@ bool prepare_decryption(std::uint64_t soid,std::uint16_t index,Pending& pending,
             && bd::find_item_definition_hash(awarded.definitionHash,definition) && info(definition.definitionIndex,awardedInfo)
             && awardedInfo.bucket.equipmentSlot>=0) {awarded.level=power;}
     }
-    f4::ResolvedLoadout loadout{};
-    if(!account::valid(p->after) || !detail::valid_profile_inventory(p->after) || !f4::resolve(p->after,p->character,loadout)) {return false;}
+    if(!valid_transaction(*p)) {return false;}
     pending.data=std::move(p);return true;
 }
 bool prepare_recovery(std::uint64_t soid,std::uint16_t index,std::int32_t quantity,Pending& pending) noexcept {
     pending={};ItemInfo item{};
     if(!soid || !info(index,item)) {return false;}
-    auto p=std::make_shared<TransactionData>();p->before=account_snapshot();p->after=p->before;
-    if(!account::valid(p->before) || !detail::valid_profile_inventory(p->before)) {return false;}
-    p->character=p->before.characterCount;
-    for(std::size_t i=0;i<p->before.characterCount;++i) if(p->before.characters[i].selected) {p->character=i;break;}
-    if(p->character==p->before.characterCount) {return false;}
+    auto p=begin_transaction();if(!p) {return false;}
     auto& c=p->after.characters[p->character];auto at=c.inventory.count;
     for(std::size_t i=0;i<c.inventory.count;++i) if(c.inventory.values[i].instanceSoid==soid) {at=i;break;}
     if(at==c.inventory.count || !c.inventory.values[at].postmaster
@@ -556,8 +557,7 @@ bool prepare_recovery(std::uint64_t soid,std::uint16_t index,std::int32_t quanti
             || !inv::has_room(c,item.item.bucketId)) {return false;}
         stored.postmaster=false;stored.mutationSerial=static_cast<std::int32_t>(c.nextInventorySerial++);p->changed.push_back(soid);
     }
-    f4::ResolvedLoadout loadout{};
-    if(!account::valid(p->after) || !detail::valid_profile_inventory(p->after) || !f4::resolve(p->after,p->character,loadout)) {return false;}
+    if(!valid_transaction(*p)) {return false;}
     pending.data=std::move(p);return true;
 }
 // Opcode 402 requests one unit. A mailed material stack keeps its resident
@@ -566,11 +566,7 @@ bool prepare_postmaster_discard(std::uint64_t soid,std::uint16_t index,Pending& 
     pending={};ItemInfo item{};
     if(!soid || !info(index,item) || item.detail.instancedDefinitionState!=bd::items::details::InstancedDefinitionState::stackable
         || item.item.bucketId<8) return false;
-    auto p=std::make_shared<TransactionData>();p->before=account_snapshot();p->after=p->before;
-    if(!account::valid(p->before) || !detail::valid_profile_inventory(p->before)) return false;
-    for(p->character=0;p->character<p->before.characterCount;++p->character)
-        if(p->before.characters[p->character].selected) break;
-    if(p->character==p->before.characterCount) return false;
+    auto p=begin_transaction();if(!p) return false;
     auto& c=p->after.characters[p->character];
     for(std::size_t i=0;i<c.inventory.count;++i) {
         auto& stored=c.inventory.values[i];if(stored.instanceSoid!=soid) continue;
@@ -586,8 +582,7 @@ bool prepare_postmaster_discard(std::uint64_t soid,std::uint16_t index,Pending& 
 bool preview(const Pending& pending,AccountState& after) noexcept {
     if(!pending.data) {return false;}const auto current=account_snapshot();const auto& p=*pending.data;
     if(!matches(current,p)) {return false;}
-    after=current;after.characters[p.character]=p.after.characters[p.character];after.profileItems=p.after.profileItems;
-    after.profileItemCount=p.after.profileItemCount;after.vendorProgress=p.after.vendorProgress;after.vendorUnlocks=p.after.vendorUnlocks;return true;
+    after=current;apply_transaction(after,p);return true;
 }
 bool commit(Pending& pending) noexcept {
     if(!pending.data) {return false;}const auto p=std::move(pending.data);
@@ -595,9 +590,7 @@ bool commit(Pending& pending) noexcept {
     auto& current=runtime::storage::g_state.account;bool ok=matches(current,*p);
     if(ok) {
         auto candidate=std::make_unique<AccountState>(current);
-        candidate->characters[p->character]=p->after.characters[p->character];candidate->profileItems=p->after.profileItems;
-        candidate->profileItemCount=p->after.profileItemCount;candidate->vendorProgress=p->after.vendorProgress;
-        candidate->vendorUnlocks=p->after.vendorUnlocks;
+        apply_transaction(*candidate,*p);
         ok=persistence::save(*candidate,true);if(ok) {current=*candidate;}
     }
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);return ok;

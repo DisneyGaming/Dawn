@@ -1,37 +1,38 @@
 #pragma once
-#include "../Newlight/launchpad/native_catalog.h"
+#include "../coo/native_asset_catalog.h"
 namespace sunrise::state::activity::vendors {
-using newlight::launchpad::AssetBinding;
-using newlight::launchpad::Group;
+using coo::native_catalog::AssetBinding;
+using coo::native_catalog::Group;
+using coo::native_catalog::bind;
 // Installed destination NPCs, native named performances and placement-rule joins.
 inline constexpr AssetBinding kAssets[]{
-    {{0xC984DDDEU,0x80BE9309U,1,0},0x728U,0x80809A3BU,0x80807ECCU,0x80807EC9U,"sq_vendor_fallen_conflict"},
-    {{0xC984DDDEU,0x80BE6461U,42,2},0x228U,0x80809583U,0xFFFFFFFFU,0x80809586U,"sq_vendor_fallen_conflict_idle"},
-    {{0x05324D75U,0x80B9997AU,1,0},0x728U,0x80809A3BU,0x80807ECCU,0x80807EC9U,"sq_sloan_vendor"},
-    {{0x05324D75U,0x80BF16E2U,42,2},0x228U,0x80809583U,0xFFFFFFFFU,0x80809586U,"sq_sloan_vendor_idle"},
-    {{0x36E4495DU,0x80BD6EDCU,1,0},0x728U,0x80809A3BU,0x80807ECCU,0x80807EC9U,"ashir_squad"},
-    {{0x36E4495DU,0x80BD7599U,2,1},0xB58U,0x8080834EU,0x80807DA2U,0x80807DA1U,"ashir_squad__vendor_ashir"},
-    {{0x36E4495DU,0x80BD33C9U,42,3},0x228U,0x80809583U,0xFFFFFFFFU,0x80809586U,"pf_civilian_vendor_talus"},
-    {{0x7B3D65F8U,0x80C030D0U,1,0},0x878U,0x80809A3BU,0x80807ECCU,0x80807EC9U,"sq_vendor"},
-    {{0x7B3D65F8U,0x80C030D6U,42,2},0x228U,0x80809583U,0xFFFFFFFFU,0x80809586U,"sq_vendor_idle"},
-    {{0x54BD10BDU,0x80C03B26U,4,1},0x4C8U,0x80809927U,0x8080992EU,0x8080992FU,"o_penumbra_vendor"},
-    {{0x0D1B60CFU,0x80F6B14FU,1,0},0x728U,0x80809A3BU,0x80807ECCU,0x80807EC9U,"sq_vendor_ana_bray"},
-    {{0x0D1B60CFU,0x80F6B158U,42,3},0x228U,0x80809583U,0xFFFFFFFFU,0x80809586U,"perf_state_machine"},
-    {{0x564C6ECEU,0x80F5B9CCU,1,0},0x878U,0x80809A3BU,0x80807ECCU,0x80807EC9U,"sq_vance"},
-    {{0x564C6ECEU,0x80F5BA28U,42,2},0x228U,0x80809583U,0xFFFFFFFFU,0x80809586U,"sq_vance_idle"},
-    {{0x6D47E9B3U,0x80FDC330U,1,1},0x728U,0x80809A3BU,0x80807ECCU,0x80807EC9U,"sq_vendor_spider"},
-    {{0x6D47E9B3U,0x80FDC7ACU,42,8},0x228U,0x80809583U,0xFFFFFFFFU,0x80809586U,"sq_vendor_spider_idle"},
-    {{0x4ECC8169U,0x80F28552U,1,1},0x728U,0x80809A3BU,0x80807ECCU,0x80807EC9U,"sq_dreaming_city_vendor"},
-    {{0x4ECC8169U,0x80F28757U,42,4},0x228U,0x80809583U,0xFFFFFFFFU,0x80809586U,"sq_dreaming_city_vendor_idle"},
-    {{0x882CA5C9U,0x81572D11U,4,0},0x4C8U,0x80809927U,0x8080992EU,0x8080992FU,"o_eris_1"},
-    {{0x882CA5C9U,0x81572D29U,4,8},0x4C8U,0x80809927U,0x8080992EU,0x8080992FU,"o_nightmare_forge_vendor"},
-    {{0x23AB4F6AU,0x80B84546U,1,2},0x728U,0x80809A3BU,0x80807ECCU,0x80807EC9U,"sq_postmaster"},
-    {{0x23AB4F6AU,0x80B84549U,1,3},0x728U,0x80809A3BU,0x80807ECCU,0x80807EC9U,"sq_hawthorne"},
-    {{0x23AB4F6AU,0x80B84555U,1,14},0x728U,0x80809A3BU,0x80807ECCU,0x80807EC9U,"sq_cryptarch"},
-    {{0x23AB4F6AU,0x80B848D1U,42,22},0x228U,0x80809583U,0xFFFFFFFFU,0x80809586U,"sq_cryptarch_idle"},
-    {{0x23AB4F6AU,0x80B848D4U,42,23},0x228U,0x80809583U,0xFFFFFFFFU,0x80809586U,"sq_hawthorne_idle"},
-    {{0x23AB4F6AU,0x80B848D7U,42,24},0x228U,0x80809583U,0xFFFFFFFFU,0x80809586U,"sq_postmaster_idle"},
-    {{0xF18B720FU,0x815BA3D9U,4,0},0x4C8U,0x80809927U,0x8080992EU,0x8080992FU,"o_vendor"},
+    bind({0xC984DDDEU,0x80BE9309U,1,0},0x728U,"sq_vendor_fallen_conflict"),
+    bind({0xC984DDDEU,0x80BE6461U,42,2},0x228U,"sq_vendor_fallen_conflict_idle"),
+    bind({0x05324D75U,0x80B9997AU,1,0},0x728U,"sq_sloan_vendor"),
+    bind({0x05324D75U,0x80BF16E2U,42,2},0x228U,"sq_sloan_vendor_idle"),
+    bind({0x36E4495DU,0x80BD6EDCU,1,0},0x728U,"ashir_squad"),
+    bind({0x36E4495DU,0x80BD7599U,2,1},0xB58U,"ashir_squad__vendor_ashir"),
+    bind({0x36E4495DU,0x80BD33C9U,42,3},0x228U,"pf_civilian_vendor_talus"),
+    bind({0x7B3D65F8U,0x80C030D0U,1,0},0x878U,"sq_vendor"),
+    bind({0x7B3D65F8U,0x80C030D6U,42,2},0x228U,"sq_vendor_idle"),
+    bind({0x54BD10BDU,0x80C03B26U,4,1},0x4C8U,"o_penumbra_vendor"),
+    bind({0x0D1B60CFU,0x80F6B14FU,1,0},0x728U,"sq_vendor_ana_bray"),
+    bind({0x0D1B60CFU,0x80F6B158U,42,3},0x228U,"perf_state_machine"),
+    bind({0x564C6ECEU,0x80F5B9CCU,1,0},0x878U,"sq_vance"),
+    bind({0x564C6ECEU,0x80F5BA28U,42,2},0x228U,"sq_vance_idle"),
+    bind({0x6D47E9B3U,0x80FDC330U,1,1},0x728U,"sq_vendor_spider"),
+    bind({0x6D47E9B3U,0x80FDC7ACU,42,8},0x228U,"sq_vendor_spider_idle"),
+    bind({0x4ECC8169U,0x80F28552U,1,1},0x728U,"sq_dreaming_city_vendor"),
+    bind({0x4ECC8169U,0x80F28757U,42,4},0x228U,"sq_dreaming_city_vendor_idle"),
+    bind({0x882CA5C9U,0x81572D11U,4,0},0x4C8U,"o_eris_1"),
+    bind({0x882CA5C9U,0x81572D29U,4,8},0x4C8U,"o_nightmare_forge_vendor"),
+    bind({0x23AB4F6AU,0x80B84546U,1,2},0x728U,"sq_postmaster"),
+    bind({0x23AB4F6AU,0x80B84549U,1,3},0x728U,"sq_hawthorne"),
+    bind({0x23AB4F6AU,0x80B84555U,1,14},0x728U,"sq_cryptarch"),
+    bind({0x23AB4F6AU,0x80B848D1U,42,22},0x228U,"sq_cryptarch_idle"),
+    bind({0x23AB4F6AU,0x80B848D4U,42,23},0x228U,"sq_hawthorne_idle"),
+    bind({0x23AB4F6AU,0x80B848D7U,42,24},0x228U,"sq_postmaster_idle"),
+    bind({0xF18B720FU,0x815BA3D9U,4,0},0x4C8U,"o_vendor"),
 };
 inline constexpr Group kGroups[]{
     {0xC984DDDEU,0x80BE950DU,UINT32_MAX,51,false,std::span(kAssets).subspan(0,2)},

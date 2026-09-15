@@ -673,26 +673,6 @@ void observe_native_admission(std::uint32_t parent,std::uint64_t epochValue) noe
     if(!registered_source(read,actorState,lease)) {
         native_report("ev=native_population_capture stage=created result=source_rejected parent=%08X actor=%08X source=%08X entity=%08X",
             parent,handle,actorState.source.handle,actorState.entity);
-        // A streamed copy can finish construction without any source link. Keep
-        // a bounded native call path so restoration is distinguishable from a
-        // new population request; observation never changes construction.
-        static std::atomic_uint sourceLessTraces{};
-        if(actorState.source.handle==UINT32_MAX
-            && sourceLessTraces.fetch_add(1,std::memory_order_relaxed)<12) {
-            std::array<void*,24> frames{};
-            const auto depth=RtlCaptureStackBackTrace(0,static_cast<ULONG>(frames.size()),frames.data(),nullptr);
-            std::array<char,256> path{};std::size_t used{};
-            for(USHORT i=0;i<depth;++i) {
-                const auto frame=reinterpret_cast<std::uintptr_t>(frames[i]);
-                if(frame<g_image || frame-g_image>=0x1C00000U)continue;
-                const auto written=std::snprintf(path.data()+used,path.size()-used,"%s%llX",
-                    used?",":"",static_cast<unsigned long long>(frame-g_image));
-                if(written<=0 || static_cast<std::size_t>(written)>=path.size()-used)break;
-                used+=static_cast<std::size_t>(written);
-            }
-            native_report("ev=native_population_capture stage=source_less_path parent=%08X definition=%08X actor=%08X flags=%04X native_rvas=%s",
-                parent,at<std::uint32_t>(header.data()),handle,actorState.flags,path.data());
-        }
         return;
     }
     std::lock_guard lock(g_pendingMutex);

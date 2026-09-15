@@ -12,30 +12,6 @@ struct Binding {
     std::uint32_t characterSelf{},animation{},entity{},runtime{UINT32_MAX};bool started{},playing{};
     friend bool operator==(const Binding&,const Binding&)=default;
 };
-// Read the admitted entity's native world position, including animation motion.
-// A package placement or player trigger is not evidence of its rendered origin.
-template<class Read,class Native> bool position(Read& read,Native& native,std::uint32_t actor,std::uint32_t entity,
-                                                std::array<float,4>& out) noexcept {
-    std::uintptr_t table{},actors{};std::uint32_t stride{},actorStride{},self{},flags{},bound{};
-    if(actor==UINT32_MAX || entity==UINT32_MAX
-        || !read.value(read.image+0x1F9D7F8,actors) || actors<0x10000
-        || !read.value(read.image+0x1F9D800,actorStride) || actorStride<0x70 || actorStride>0x100000
-        || actors>UINTPTR_MAX-8192ULL*actorStride
-        || !read.value(read.image+0x1F93428,table) || table<0x10000
-        || !read.value(read.image+0x1F93430,stride) || stride<0xE0 || stride>0x1000
-        || table>UINTPTR_MAX-8192ULL*stride) {return false;}
-    const auto row=table+static_cast<std::uintptr_t>(entity&0x1FFFU)*stride;
-    const auto actorRow=actors+static_cast<std::uintptr_t>(actor&0x1FFFU)*actorStride;
-    const auto owned=[&] {
-        return read.value(actorRow+0x48,self) && self==actor && read.value(actorRow+0x4C,bound) && bound==entity
-            && read.value(row+0xC,self) && self==entity && read.value(row+4,flags) && !(flags&5U);
-    };
-    if(!owned()) {return false;}
-    std::array<float,4> value{};native.position(row+0x60,value);
-    for(float v:value) {if(!coo::native_atom::finite(v) || v<-100000.F || v>100000.F) {return false;}}
-    if(!owned()) {return false;}
-    out=value;return true;
-}
 inline const EnemyReceipt& actor(const Request& r,std::size_t index) noexcept {
     return index?r.frame.ambushActors[index-1]:r.frame.firstVandal;
 }
