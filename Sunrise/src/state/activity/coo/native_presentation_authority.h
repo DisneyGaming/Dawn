@@ -22,12 +22,17 @@ template<class Writer> bool dialogue(Writer& w,std::span<const std::uint32_t> ge
     }
     return w.bit_count()-start==kDialogueBits+(active==0xFF?0U:64U);
 }
-template<class Writer> bool directive_record(Writer& w,bool active,std::uint32_t event,MarkerTarget marker={},bool authored=false) noexcept {
+template<class Writer> bool directive_record(Writer& w,bool active,std::uint32_t event,MarkerTarget marker={},bool authored=false,std::int32_t current=-1,std::int32_t target=-1) noexcept {
     if(!w.write(active?event:0x811C9DC5U,32) || !w.write(0x80000000ULL,32)
         || !w.write(active?1U:0U,2) || !w.write(0,1)) { return false; }
     for(unsigned i=0;i<5;++i) { if(!w.write(authored && i<4?0U:UINT64_MAX,64)) { return false; } }
     if(!w.write(0,32)) { return false; }
-    for(unsigned i=0;i<4;++i) { if(!w.write(authored?0x80000000ULL:0x7FFFFFFFULL,32)) { return false; } }
+    for(unsigned i=0;i<4;++i) {
+        const auto value=active && current>=0 && target>0 && current<=target && i<2
+            ? 0x80000000U+static_cast<std::uint32_t>(i?target:current)
+            : authored?0x80000000U:0x7FFFFFFFU;
+        if(!w.write(value,32)) { return false; }
+    }
     if(!w.write(1,2) || !absent(w) || !w.write(1,3)) { return false; }
     for(unsigned i=0;i<4;++i) {
         const bool selected=active && i==0 && marker.valid();
@@ -49,13 +54,13 @@ template<class Writer> bool directive(Writer& w,std::uint32_t event) noexcept {
 }
 
 namespace sunrise::state::activity::coo::native_presentation {
-template<class Writer> bool objective(Writer& w,const ObjectiveState& state,Asset audience={},bool authored=false) noexcept {
+template<class Writer> bool objective(Writer& w,const ObjectiveState& state,Asset audience={},bool authored=false,std::int32_t current=-1,std::int32_t target=-1) noexcept {
     if(!state.published) { return false; }
     const auto begin=w.bit_count();
     const bool addressed=audience.registry!=0
         ? w.write(audience.registry,32) && w.write(audience.type+1U,7) && w.write(audience.slot+32768U,16)
         : absent(w);
-    return addressed && absent(w) && directive_record(w,state.active,state.event,state.marker,authored)
+    return addressed && absent(w) && directive_record(w,state.active,state.event,state.marker,authored,current,target)
         && directive_record(w,false,state.retiredEvent,{},authored) && directive_record(w,false,0,{},authored) && w.write(1,3)
         && w.bit_count()-begin==kDirectiveBits;
 }

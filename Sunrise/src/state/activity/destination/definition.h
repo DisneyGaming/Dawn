@@ -84,6 +84,7 @@ struct DestinationSelection final {
     std::uint16_t descriptorNameBit{};
     /** True only when the captured descriptor carried the fixed package-name field. */
     bool hasDescriptorName{};
+    friend constexpr bool operator==(const DestinationSelection&,const DestinationSelection&) noexcept = default;
 };
 
 /**

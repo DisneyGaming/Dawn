@@ -51,7 +51,8 @@ template<class Writer> bool linked_effect(Writer& w,std::uint32_t registry,std::
     for(unsigned i=0;i<4;++i) { if(!w.write(0x80000000U,32)) { return false; } }
     return w.write(registry,32) && w.write(35,7) && w.write(32768U+collection,16) && w.write(0,1);
 }
-template<class Writer> bool object(Writer& writer,std::uint32_t generation,bool active) noexcept {
+template<class Writer> bool object(Writer& writer,std::uint32_t generation,bool active,std::uint8_t states=0) noexcept {
+    if(states>3) { return false; }
     return writer.write(generation ^ 0x80000000U, 32) // decoded generation
         && writer.write(0x80000000U, 32)              // decoded candidate index 0
         && writer.write(active ? 1U : 0U, 1)
@@ -62,7 +63,7 @@ template<class Writer> bool object(Writer& writer,std::uint32_t generation,bool 
         && writer.write(0x7FFFU, 16)                 // decoded index -1
         && writer.write(0U, 32) && writer.write(0U, 32) && writer.write(0U, 32)
         && writer.write(0U, 1)                       // auxiliary object flag off
-        && writer.write(0U, 2);                      // zero dynamic component states
+        && writer.write(states, 2);                  // dynamic component states follow
 }
 
 // Change only the position channel. Absent revisions (-1) preserve native power

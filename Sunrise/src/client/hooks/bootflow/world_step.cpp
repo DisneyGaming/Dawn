@@ -1,3 +1,4 @@
+#include "../../../state/activity/Newlight/launchpad/runtime.h"
 #include <Windows.h>
 
 #include <atomic>
@@ -15,6 +16,7 @@
 #include "omega_enemy_lair_receipts.h"
 #include "../../activity/mission_launch.h"
 #include "omega_activity_handoff.inl"
+#include "launchpad_handoff.inl"
 
 namespace sunrise::client::hooks::bootflow {
 namespace {
@@ -120,6 +122,8 @@ void poll_world_step() noexcept {
     const graphics::hijacked_frame_timing::PostSpan timing(graphics::hijacked_frame_timing::Kind::world_step);
     // Spawning can finish before step 38, after which Destiny no longer calls the spawn gate.
     // Keep arrival observation and its pending fade completion alive on the camera frame.
+    state::activity::newlight::launchpad::poll_native_objects();
+    poll_opening_fade();
     poll_spawn_arrival();
     g_publishedStep.store(read_step(), std::memory_order_relaxed);
     g_publishedTick.store(GetTickCount64(), std::memory_order_release);
@@ -133,6 +137,7 @@ void poll_world_step() noexcept {
     // the embedded server's worker (the vex_wall device push froze from that context).
     sample_omega_portal_transport();
     omega_activity_handoff::poll();
+    launchpad_handoff::poll();
     hijacked_placements::poll();
     poll_native_population_admissions();
     client::activity::mission_launch::poll();

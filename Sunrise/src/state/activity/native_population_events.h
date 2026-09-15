@@ -36,6 +36,14 @@ public:
         }
         if(changed && epoch_!=UINT64_MAX) ++epoch_;
     }
+    void unbind(const Lease& lease) noexcept {
+        bool changed{};
+        for(std::size_t i=0;i<used_;)
+            if(leases_[i]==lease) {leases_[i]=leases_[--used_];changed=true;} else ++i;
+        for(std::size_t i=0;i<queued_;)
+            if(events_[i].lease==lease) erase(i);else ++i;
+        if(changed && epoch_!=UINT64_MAX) ++epoch_;
+    }
     [[nodiscard]] Lease lookup(std::uint32_t definition,std::uint32_t registry,
         std::uint16_t slot,std::uint32_t generation) const noexcept {
         const Lease* found{};
@@ -81,6 +89,7 @@ private:
 // Synchronized bridge. Native hooks copy and qualify records before calling it;
 // the authoritative activity update drains them without invoking native code.
 [[nodiscard]] bool bind(const Lease&) noexcept;
+void unbind(const Lease&) noexcept;
 void release(ActivityInstanceKey) noexcept;
 [[nodiscard]] std::uint64_t epoch() noexcept;
 // Scheduling hint only. The authoritative owner still drains and validates each

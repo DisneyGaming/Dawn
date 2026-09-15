@@ -207,22 +207,25 @@ void snapshot(ForcedDestination& value) noexcept {
     ReleaseSRWLockShared(&runtime::storage::g_stateLock);
 }
 
-bool suspend_omega_for_completed_run(std::uint64_t run) noexcept {
+static bool suspend_completed_run(std::uint64_t run,std::string_view package) noexcept {
     if (run == 0 || run != mission_run_generation()) { return false; }
     AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
     const auto& value = runtime::storage::g_state.activity.forced;
-    const bool omega = value.packageNameLength <= value.packageName.size()
-        && std::string_view(value.packageName.data(), value.packageNameLength) == "mission_scot";
-    const bool accepted = run == mission_run_generation() && (!active(value) || omega);
+    const bool matches = value.packageNameLength <= value.packageName.size()
+        && std::string_view(value.packageName.data(), value.packageNameLength) == package;
+    const bool accepted = run == mission_run_generation() && (!active(value) || matches);
     if (accepted && active(value)) { g_omegaCompletionSuspended = true; }
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
     if (accepted) {
         g_openingHostReady.store(false, std::memory_order_release);
         core::log::write(core::log::Channel::server, core::log::Level::info,
-            "ev=activity_override stage=omega_complete result=paused_until_configuration_changes");
+            "ev=activity_override stage=native_complete result=paused_until_configuration_changes");
     }
     return accepted;
 }
+
+bool suspend_omega_for_completed_run(std::uint64_t run) noexcept {return suspend_completed_run(run,"mission_scot");}
+bool suspend_launchpad_for_completed_run(std::uint64_t run) noexcept {return suspend_completed_run(run,"mission_launchpad");}
 
 bool omega_completion_suspended() noexcept {
     AcquireSRWLockShared(&runtime::storage::g_stateLock);

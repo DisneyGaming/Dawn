@@ -58,8 +58,21 @@ inline bool equal(const MembershipState& first, const MembershipState& second) n
            && first.hasIdentity == second.hasIdentity
            && first.synchronizationToken == second.synchronizationToken
            && first.hasSynchronizationToken == second.hasSynchronizationToken
+           && first.currentLeg == second.currentLeg && first.pendingLeg == second.pendingLeg
            && first.hasTeleportReceipt == second.hasTeleportReceipt
            && equal(first.currentRegion, second.currentRegion);
+}
+
+/** Compare meaningful fields: native transaction structs contain compiler padding. */
+inline bool equal(const PreparedRegionTransition& first, const PreparedRegionTransition& second) noexcept {
+    return first.activity == second.activity && first.expectedHostRegion == second.expectedHostRegion
+           && first.nextHostRegion == second.nextHostRegion && equal(first.before, second.before)
+           && equal(first.after, second.after) && first.destination == second.destination
+           && first.grantBefore.grantTokens == second.grantBefore.grantTokens
+           && first.expectedStateRevision == second.expectedStateRevision
+           && first.expectedRecordRevision == second.expectedRecordRevision
+           && first.effectiveRegion == second.effectiveRegion && first.movesRegion == second.movesRegion
+           && first.publishesMembership == second.publishesMembership;
 }
 
 /** @return True when both sparse authoritative updates match field by field. */
@@ -71,6 +84,7 @@ inline bool equal(const AuthoritativeUpdate& first, const AuthoritativeUpdate& s
            && first.hasSpawn == second.hasSpawn && first.hasTeleport == second.hasTeleport
            && first.synchronizationToken == second.synchronizationToken
            && first.hasSynchronizationToken == second.hasSynchronizationToken
+           && first.currentLeg == second.currentLeg && first.pendingLeg == second.pendingLeg
            && first.hasRegion == second.hasRegion
            && first.hasCurrentRegion == second.hasCurrentRegion
            && equal(first.currentRegion, second.currentRegion);
@@ -83,6 +97,7 @@ inline bool equal(const Snapshot& first, const Snapshot& second) noexcept {
            && first.epoch == second.epoch && first.transitionToken == second.transitionToken
            && first.synchronizationToken == second.synchronizationToken
            && first.hasSynchronizationToken == second.hasSynchronizationToken
+           && first.currentLeg == second.currentLeg && first.pendingLeg == second.pendingLeg
            && first.hasTeleportReceipt == second.hasTeleportReceipt;
 }
 
@@ -95,6 +110,8 @@ inline bool equal(const Snapshot& first, const Snapshot& second) noexcept {
 inline MembershipState merge(const MembershipState& state,
                              const AuthoritativeUpdate& update) noexcept {
     MembershipState merged = state;
+    if(update.currentLeg.present) {merged.currentLeg=update.currentLeg;}
+    if(update.pendingLeg.present) {merged.pendingLeg=update.pendingLeg;}
     if (update.hasTransitionToken) {
         merged.transitionToken = update.transitionToken;
         merged.hasTransitionToken = true;
@@ -162,6 +179,7 @@ inline bool equal_authoritative(const MembershipState& first,
            && first.hasTransitionToken == second.hasTransitionToken
            && first.synchronizationToken == second.synchronizationToken
            && first.hasSynchronizationToken == second.hasSynchronizationToken
+           && first.currentLeg == second.currentLeg && first.pendingLeg == second.pendingLeg
            && first.hasTeleportReceipt == second.hasTeleportReceipt
            && equal(first.spawn, second.spawn) && equal(first.teleport, second.teleport)
            && equal(first.currentRegion, second.currentRegion);
@@ -197,6 +215,7 @@ inline Snapshot make_snapshot(const MembershipState& state,
     snapshot.epoch = kStableEpoch;
     snapshot.transitionToken =
         state.hasTransitionToken ? state.transitionToken : kInitialTransitionToken;
+    snapshot.currentLeg=state.currentLeg;snapshot.pendingLeg=state.pendingLeg;
     snapshot.hasTeleportReceipt = state.hasTeleportReceipt;
     snapshot.synchronizationToken = state.synchronizationToken;
     snapshot.hasSynchronizationToken = state.hasSynchronizationToken;

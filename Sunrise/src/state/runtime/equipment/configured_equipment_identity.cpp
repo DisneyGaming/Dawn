@@ -108,9 +108,9 @@ std::uint64_t configured_hash(const AccountState& accountState) noexcept {
             mix_byte(hash, kPresentItemMarker);
             mix_item(hash, *item);
         }
-        static_assert(account::inventory::kCharacterItemCapacity
-                      <= (std::numeric_limits<std::uint8_t>::max)());
-        mix_byte(hash, static_cast<std::uint8_t>(character.inventory.count));
+        // Preserve existing cache identities for inventories below 256 rows.
+        mix_byte(hash,static_cast<std::uint8_t>(character.inventory.count));
+        if(character.inventory.count>255) {mix_value(hash,static_cast<std::uint16_t>(character.inventory.count));}
         for (std::size_t itemIndex = 0; itemIndex < character.inventory.count; ++itemIndex) {
             mix_item(hash, character.inventory.values[itemIndex]);
         }

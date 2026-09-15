@@ -2,6 +2,7 @@
 #include "../../../state/activity/beyond_infinity/runtime.h"
 #include "../../../state/activity/deep_storage/runtime.h"
 #include "../../../state/activity/hijacked/runtime.h"
+#include "../../../state/activity/Newlight/launchpad/runtime.h"
 #include "../../../state/activity/deadly_trial/runtime.h"
 #include "../../../state/activity/strike_pact/runtime.h"
 #include "../../../state/activity/strike_bond/runtime.h"
@@ -33,6 +34,8 @@
 #include "adventure_cue_observer.h"
 #include "adventure_dialogue_observer.h"
 #include "omega_teardown_native.h"
+#include "launchpad_retirement_native.h"
+#include "../../../state/activity/Newlight/launchpad/runtime.h"
 #include "../../../middleware/crypto/random_bytes.h"
 #include "../../../state/activity/destination/activity_destination_snapshot.h"
 #include "../../../state/activity/forced/activity_forced_destination.h"
@@ -1246,6 +1249,11 @@ __declspec(noinline) void __fastcall dialogue_dispatch(std::byte* component,
                 const auto generation=read_value<std::uint32_t>(component+kRecordGenerationOffset+static_cast<std::size_t>(index)*0x20U);
                 state::activity::hijacked::observe_submission(gatewayDispatchRun,self,offset,bank,static_cast<std::uint8_t>(index),generation);
             }
+            if(bank==state::activity::newlight::launchpad::kBank) {
+                beyondDispatch=true;
+                const auto generation=read_value<std::uint32_t>(component+kRecordGenerationOffset+static_cast<std::size_t>(index)*0x20U);
+                state::activity::newlight::launchpad::observe_submission(gatewayDispatchRun,self,offset,bank,static_cast<std::uint8_t>(index),generation);
+            }
         }
         if (component != nullptr && index >= 0 && index < 34) {
             std::uint32_t self{};
@@ -2219,8 +2227,31 @@ __declspec(noinline) void __fastcall roster_apply_hook(void* context,const void*
     const auto original=hooking::await_original(g_rosterOriginal);
     namespace ending=state::activity::omega_ending;
     ending::Token token{};
-    omega_teardown_native::Retirement lease{};
+    omega_teardown_native::Retirement lease{},launchpadLease{};
+    namespace launchpad=state::activity::newlight::launchpad;
+    state::activity::coo::Generation launchpadOwner{};
+    std::uint8_t launchpadMovie{};
     if(scope.accepts_side_effects()) {
+        const auto request=launchpad::request();
+        if(request.frame.enabled && request.owner.valid()
+            && request.frame.cinematic.retiring() && !request.frame.cinematic.gameplayRetired
+            && (request.frame.cinematic.movie==1
+                || (request.frame.cinematic.movie==2 && request.frame.cinematic.endingStarted))) {
+            launchpadOwner=request.owner;
+            launchpadMovie=request.frame.cinematic.movie;
+            unsigned reason{};
+            launchpadLease=launchpad_retirement_native::begin(teardown_source(),
+                reinterpret_cast<std::uintptr_t>(context),reinterpret_cast<std::uintptr_t>(delta),launchpadMovie,&reason);
+            // Ignore foreign owners. Record the first relevant native callback
+            // so a rejected mirror can be distinguished from cleanup stalling.
+            static std::atomic<unsigned> reports{};
+            if(reason!=1 && reports.fetch_add(1,std::memory_order_relaxed)<8) {
+                std::array<char,160> line{};std::snprintf(line.data(),line.size(),
+                    "ev=launchpad stage=ending_retirement result=native_apply run=%llu owner=%u movie=%u guard=%u",
+                    static_cast<unsigned long long>(launchpadOwner.run),launchpadOwner.value,launchpadMovie,reason);
+                core::log::write(core::log::Channel::client,core::log::Level::info,line.data());
+            }
+        }
         token=ending::retirement_request(state::activity::mission_run_generation());
         if(token.valid()) {
             lease=omega_teardown_native::begin_retirement(teardown_source(),
@@ -2231,6 +2262,31 @@ __declspec(noinline) void __fastcall roster_apply_hook(void* context,const void*
     {
         const graphics::hijacked_frame_timing::PostSpan timing(graphics::hijacked_frame_timing::Kind::roster_apply);
         original(context,delta);
+    }
+    if(scope.accepts_side_effects() && launchpadLease.valid()
+        && state::activity::mission_run_generation()==launchpadOwner.run) {
+        const auto current=launchpad::request();
+        const auto remove=g_indexFreeOriginal.load(std::memory_order_acquire);
+        const auto source=teardown_source();
+        if(current.owner==launchpadOwner && current.frame.cinematic.retiring()
+            && current.frame.cinematic.movie==launchpadMovie
+            && !current.frame.cinematic.gameplayRetired) {
+            const bool done=launchpad_retirement_native::finish(source,launchpadLease)
+                || (remove && launchpad_retirement_native::retire_globals(source,launchpadLease,
+                    [remove](std::uintptr_t list,std::uint32_t node) noexcept {
+                        remove(reinterpret_cast<int*>(list),node);
+                    }));
+            if(done) {static_cast<void>(launchpad::observe_retirement(launchpadOwner));}
+            else {
+                std::int32_t count{-1};
+                static_cast<void>(launchpad_retirement_native::read(source,launchpadLease.owner+0x28,count));
+                std::array<char,160> line{};std::snprintf(line.data(),line.size(),
+                    "ev=launchpad stage=ending_retirement result=cleanup_guard groups=%d owner=%u mirror=%u",
+                    count,launchpad_retirement_native::same_owner(source,launchpadLease)?1U:0U,
+                    launchpad_retirement_native::roster(source,launchpadLease.context+8,true)?1U:0U);
+                core::log::write(core::log::Channel::client,core::log::Level::info,line.data());
+            }
+        }
     }
     if(!scope.accepts_side_effects() || !lease.valid()) { return; }
     if(state::activity::mission_run_generation()!=token.run

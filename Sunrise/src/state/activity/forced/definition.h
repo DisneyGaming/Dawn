@@ -57,6 +57,16 @@ struct ForcedDestination {
 
 namespace profiles {
 
+// Launchpad begins outside the Wall. Its default spawn is inside the Breach.
+constexpr ForcedDestination launchpad_opening() noexcept {
+    ForcedDestination v{};constexpr char name[]="mission_launchpad";
+    for(std::size_t i=0;i<sizeof(name)-1;++i) {v.packageName[i]=name[i];}
+    v.packageNameLength=sizeof(name)-1;v.bubble=3;v.sliceSet=24;v.spawnSetHash=0xEAEC2335U;
+    v.hasBubble=v.hasSliceSet=v.hasSpawnSetHash=v.enabled=true;return v;
+}
+inline constexpr ForcedDestination kLaunchpadOpening=launchpad_opening();
+static_assert(active(kLaunchpadOpening));
+
 /** Measured Homecoming opening from mission_towerfall's installed scenario definition. */
 inline constexpr char kTowerfallPackageName[] = "mission_towerfall";
 /** Measured Underwatch opening used by the archived activity: bubble ordinal 9, region 72. */

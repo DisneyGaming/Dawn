@@ -53,6 +53,13 @@ public:
         if(s.revision==INT16_MAX) { return false; }s.position=position;++s.revision;
         if(s.phase==ObjectPhase::ready) { s.phase=ObjectPhase::apply; }return true;
     }
+    // Recreate one lost object after the caller has confirmed native retirement.
+    // Keep the mission owner, but require a fresh source generation and discard
+    // every entity/component receipt from the old incarnation.
+    bool rearm(Generation owner,std::size_t i,std::uint32_t generation) noexcept {
+        if(owner!=owner_ || !owner.valid() || i>=Objects || generation<=states_[i].generation || generation>=32766) {return false;}
+        states_[i]={ObjectPhase::prepare,generation,bindings_[i].initialPosition,1,false,false};owners_[i]={};return true;
+    }
     void retire(std::size_t i) noexcept { if(i<Objects) { states_[i].phase=ObjectPhase::retired;states_[i].create=false; } }
     ObjectState state(std::size_t i) const noexcept { return i<Objects?states_[i]:ObjectState{}; }
     ObjectReceipt owner(std::size_t i) const noexcept { return i<Objects?owners_[i]:ObjectReceipt{}; }

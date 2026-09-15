@@ -27,6 +27,8 @@ template<std::size_t Capacity> struct List final {
 struct Block final { std::uint32_t bubble{};List<kBlockKeyCapacity> entries{}; };
 
 /** Dedicated phase-1 mirror. Group bodies and their ordering are not stored here.
+ * Local identity is (bubble, key): a shared registry has an independent ordinal,
+ * presence and state in each bubble. Global keys remain separate from locals.
  * States are complete wire bytes, including the encoder's 0x80 bias. */
 struct State final {
     Identity identity{};
@@ -92,13 +94,15 @@ namespace detail {
     for(const auto state:value.states)if(!valid_state(state))return Result::invalidState;
     return Result::ready;
 }
-/** -2 means absent, -1 means top, otherwise the stable bubble number. */
-[[nodiscard]] constexpr int scope(const State& state,std::uint32_t key) noexcept {
-    for(std::size_t i=0;i<state.top.count;++i)if(state.top.keys[i]==key)return -1;
+template<std::size_t N> [[nodiscard]] constexpr bool contains(const List<N>& list,
+    std::uint32_t key) noexcept {
+    for(std::size_t i=0;i<list.count;++i)if(list.keys[i]==key)return true;
+    return false;
+}
+[[nodiscard]] constexpr bool in_bubbles(const State& state,std::uint32_t key) noexcept {
     for(std::size_t b=0;b<state.blockCount;++b)
-        for(std::size_t i=0;i<state.blocks[b].entries.count;++i)
-            if(state.blocks[b].entries.keys[i]==key)return static_cast<int>(state.blocks[b].bubble);
-    return -2;
+        if(contains(state.blocks[b].entries,key))return true;
+    return false;
 }
 template<std::size_t N> constexpr void copy(List<N>& to,const WireList& from) noexcept {
     to.count=from.keys.size();
@@ -151,10 +155,7 @@ template<std::size_t N> [[nodiscard]] constexpr Result apply(List<N>& target,
         if(retained>kRetainedKeyCapacity)return Result::capacity;
         for(std::size_t i=0;i<block.entries.count;++i) {
             const auto key=block.entries.keys[i];
-            for(std::size_t t=0;t<state.top.count;++t)if(state.top.keys[t]==key)return Result::duplicateKey;
-            for(std::size_t prior=0;prior<b;++prior)
-                for(std::size_t p=0;p<state.blocks[prior].entries.count;++p)
-                    if(state.blocks[prior].entries.keys[p]==key)return Result::duplicateKey;
+            if(detail::contains(state.top,key))return Result::duplicateKey;
         }
     }
     return Result::ready;
@@ -197,8 +198,7 @@ template<std::size_t N> [[nodiscard]] constexpr Result apply(List<N>& target,
     if(result!=Result::ready)return result;
     State candidate=prior;
     for(const auto key:request.top.keys) {
-        const auto existing=detail::scope(prior,key);
-        if(existing>=0)return Result::keyScopeChanged;
+        if(detail::in_bubbles(prior,key))return Result::keyScopeChanged;
     }
     result=detail::apply(candidate.top,request.top,request.initialStateByte,true);
     if(result!=Result::ready)return result;
@@ -210,8 +210,7 @@ template<std::size_t N> [[nodiscard]] constexpr Result apply(List<N>& target,
         result=detail::desired(block.entries,kBlockKeyCapacity);
         if(result!=Result::ready)return result;
         for(const auto key:block.entries.keys) {
-            const auto existing=detail::scope(candidate,key);
-            if(existing!=-2 && existing!=static_cast<int>(block.bubble))return Result::keyScopeChanged;
+            if(detail::contains(candidate.top,key))return Result::keyScopeChanged;
         }
         std::size_t slot{};
         while(slot<candidate.blockCount && candidate.blocks[slot].bubble!=block.bubble)++slot;

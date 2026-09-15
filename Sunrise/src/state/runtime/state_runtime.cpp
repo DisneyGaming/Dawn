@@ -18,6 +18,7 @@
 #include "equipment/configured_equipment_identity.h"
 #include "runtime.h"
 #include "state.h"
+#include "../vendors/persistence.h"
 #include "storage/internal.h"
 
 namespace sunrise::state {
@@ -33,6 +34,8 @@ namespace {
 // Guarded by the root State lock. This is the global investment/Director clock,
 // separate from an activity's scenario clock and retired only with root State.
 investment_clock::Clock investmentClock;
+void* newlightModule{};
+bool newlightPending{};
 
 /** Network-order IPv4 loopback returned by the in-process SignOn route. */
 constexpr std::uint32_t kLoopbackAddress = 0x7F000001;
@@ -238,7 +241,6 @@ bool initialize(void* module,
     // The published relay port is the one the listener binds, so both move with one setting.
     initialized.signOn.relayPort = core::settings::get().server.bapPort;
     initialized.signOn.tokenLifetimeSeconds = kDefaultTokenLifetimeSeconds;
-    initialized.account = runtimeAccount;
     initialized.activity.defaults = activityDefaults;
     initialized.investment.family5.objectSoid = kGlobalFamily5Soid;
     // Only the override lists come from settings. Identity and gate stay owned by State.
@@ -247,15 +249,9 @@ bool initialize(void* module,
     initialized.investment.family5.flagCount = authored.flagCount;
     initialized.investment.family5.values = authored.values;
     initialized.investment.family5.valueCount = authored.valueCount;
-    // The arm is account-wide and rides the first ws-503, which goes out before any pick. Nothing
-    // is selected at boot, so it is armed when any authored character carries the bypass. The
-    // per-character objB byte is the other half, and it still decides which character it opens.
-    for (std::size_t index = 0; index < runtimeAccount.characterCount; ++index) {
-        if (runtimeAccount.characters[index].contentBypass) {
-            initialized.investment.family5.contentGateArm = true;
-            break;
-        }
-    }
+    // Native character override arrays carry quest gates and live vendor prices.
+    // The separate character contentBypass byte still controls bypass policy.
+    initialized.investment.family5.contentGateArm=true;
 
     investment_clock::Clock clock;
     const auto utcSeconds = std::chrono::duration_cast<std::chrono::seconds>(
@@ -265,9 +261,16 @@ bool initialize(void* module,
         build_data::shutdown();
         return false;
     }
+    const bool newlightReady=build_data::item_definitions_ready() && build_data::configured_item_details_ready()
+        && build_data::inventory_bucket_descriptors_ready() && build_data::socket_entry_lists_ready();
+    if(newlightReady && (!prepare_newlight_start(runtimeAccount) || !restore_newlight_quests(module,runtimeAccount) || !vendors::persistence::restore(module,runtimeAccount))) {
+        SecureZeroMemory(&initialized,sizeof initialized);build_data::shutdown();return false;
+    }
+    initialized.account=runtimeAccount;
     // Publish one complete State and its clock only after every generated secret is valid.
     AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
     runtime::storage::g_state = initialized;
+    newlightModule=module;newlightPending=!newlightReady;
     investmentClock = clock;
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
     SecureZeroMemory(&initialized, sizeof initialized);
@@ -279,6 +282,7 @@ void shutdown() noexcept {
     AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
     SecureZeroMemory(&runtime::storage::g_state, sizeof runtime::storage::g_state);
     investmentClock = {};
+    newlightModule=nullptr;newlightPending=false;
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
     build_data::shutdown();
 }
@@ -292,9 +296,13 @@ const SignOnState& sign_on() noexcept {
 bool ensure_profile_item_identities() noexcept {
     AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
     AccountState candidate = runtime::storage::g_state.account;
-    const bool ready = canonicalize_profile_item_identities(candidate);
+    // A missing cache finishes extraction before its first inventory snapshot.
+    // Restore New Light here once, before any client can receive that account.
+    const bool ready=canonicalize_profile_item_identities(candidate)
+        && (!newlightPending || (prepare_newlight_start(candidate) && restore_newlight_quests(newlightModule,candidate) && vendors::persistence::restore(newlightModule,candidate)));
     if (ready) {
         runtime::storage::g_state.account = candidate;
+        newlightPending=false;
     }
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
     return ready;

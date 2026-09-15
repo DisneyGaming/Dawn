@@ -7,6 +7,8 @@
 #include "squad_sense.h"
 #include "monitor_sense.h"
 #include "combatant_sense.h"
+#include "object_sense.h"
+#include "device_sense.h"
 #include "native/forest_generator_sense.h"
 #include "native/public_event_engagement_sense.h"
 
@@ -18,6 +20,7 @@ struct SourceDelta {
     std::uint8_t present{},consumedCount{};
     bool consumedPresent{};
 };
+struct Passenger {std::uint32_t revision{},registry{};std::int8_t type{-1};std::int16_t slot{-1};};
 /** Pinned executable reflection; values are raw codes, never inferred actor deaths. */
 struct Output {
     std::uint32_t schema{};
@@ -27,6 +30,9 @@ struct Output {
     squad_sense::Output squad{};
     monitor_sense::Output monitor{};
     combatant_sense::Output combatant{};
+    object_sense::Output object{};
+    device_sense::Output device{};
+    Passenger passenger{};
     std::uint32_t generatorSeed{},generatorRegions{};
     std::uint64_t generatorGroups{};
     SourceDelta source{};
@@ -37,9 +43,11 @@ struct Output {
     switch (type) {
     case 1: return 0x80807ECC;
     case 2: return 0x80807DA2;
+    case 4: return 0x8080992E;
     case 23: return 0x80804F47;
     case 30: return 0x80809531;
     case 37: return native::forest_generator_sense::kSchema;
+    case 39: return 0x80804EE4;
     case 43: return 0x8080626A;
     case 70: return 0x808094F0;
     default: return 0;
@@ -134,8 +142,15 @@ template<class Reader>
                 || squadReader.remaining_bits()!=reader.remaining_bits()) return false;
         }
         if (type==2 && !combatant_sense::read_delta(reader,result.combatant)) return false;
-        if (type==23) for (unsigned i=0;i<6;++i) if (!optional(reader,32)) return false;
+        if (type==4 && !object_sense::read(reader,result.object)) return false;
+        if (type==23 && !device_sense::read(reader,result.device)) return false;
         if (type==30 && !monitor_sense::read(reader,result.monitor)) return false;
+        if(type==39) {
+            if(!reader.read(31,value)) return false;result.passenger.revision=static_cast<std::uint32_t>(value);
+            if(!reader.read(32,value)) return false;result.passenger.registry=static_cast<std::uint32_t>(value);
+            if(!reader.read(7,value)) return false;result.passenger.type=static_cast<std::int8_t>(static_cast<int>(value)-1);
+            if(!reader.read(16,value)) return false;result.passenger.slot=static_cast<std::int16_t>(static_cast<int>(value)-32768);
+        }
     }
     if (!reader.read(32,value)) return false;
     result.revision=static_cast<std::uint32_t>(value);

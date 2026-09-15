@@ -10,6 +10,10 @@ namespace sunrise::client::hooks::bootflow {
 [[nodiscard]] bool install_omega_enemy_lair_receipts() noexcept;
 void quiesce_omega_enemy_lair_receipts() noexcept;
 void poll_native_population_admissions() noexcept;
+// Paired by the existing native area-unload integration; outermost completion
+// retires only authenticated local vendor network copies whose entities expired.
+void begin_vendor_area_unload() noexcept;
+void finish_vendor_area_unload(bool allocatorReady) noexcept;
 // Called only by the existing native source-retirement boundary, after its
 // allocator TLS validation. Retains the population observer's unload gate.
 void retire_strike_bond_boss(std::uintptr_t source,bool allocatorReady) noexcept;

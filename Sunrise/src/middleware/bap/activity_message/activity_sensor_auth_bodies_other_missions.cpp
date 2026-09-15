@@ -4,6 +4,7 @@
 #include "../../../state/activity/beyond_infinity/authority.h"
 #include "../../../state/activity/deep_storage/authority.h"
 #include "../../../state/activity/hijacked/authority.h"
+#include "../../../state/activity/Newlight/launchpad/authority.h"
 #include "../../../state/activity/beyond_infinity/forest_selection.h"
 #include "../../../state/activity/deadly_trial/authority.h"
 #include "../../../state/activity/strike_pact/authority.h"
@@ -764,6 +765,9 @@ legacy_auth_body_bits(const Snapshot& snapshot,
     if(const auto count=state::activity::strike_bond::body_bits(snapshot.strike_bond,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::strike_pact::body_bits(snapshot.strike_pact,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::hijacked::body_bits(snapshot.hijacked,key,slotType,slotIndex)) { return count; }
+    if(const auto count=state::activity::newlight::launchpad::welcome::body_bits(snapshot.newlightWelcome,key,slotType,slotIndex)) {return count;}
+    if(state::activity::newlight::launchpad::tower::matches(snapshot.launchpadTower,key,slotType,slotIndex)) {return 263;}
+    if(const auto count=state::activity::newlight::launchpad::body_bits(snapshot.launchpad,key,slotType,slotIndex)) {return count;}
     if(const auto* request=native::engagement::find(snapshot.engagements,key,slotType,slotIndex)) return native::engagement::body_bits(*request);
     if(const auto* request=native::world_device::find(snapshot.devices,key,slotType,slotIndex)) return native::world_device::valid(request->state)?native::world_device::kPayloadBits:0;
     if(const auto* request=native::forest_generator::find(snapshot.generators,key,slotType,slotIndex)) return native::forest_generator::body_bits(request->state);
@@ -858,7 +862,7 @@ legacy_auth_body_bits(const Snapshot& snapshot,
     }
     if (slotType == kSlotTypeMissionDirector && kInitializeMissionDirector
         && (snapshot.initializeMissionAuthorityRuntime
-            || ((snapshot.omegaMission.generation || snapshot.deep_storage.enabled || snapshot.hijacked.enabled || snapshot.strike_bond.enabled) && key==0x4786C0E0U && slotIndex==1)
+            || ((snapshot.omegaMission.generation || snapshot.deep_storage.enabled || snapshot.hijacked.enabled || snapshot.strike_bond.enabled || snapshot.launchpad.enabled || snapshot.launchpadTower.enabled) && key==0x4786C0E0U && slotIndex==1)
             || snapshot.publishOmegaOpeningTransition
             || snapshot.publishAuthoredCueTransition)) {
         return kMissionDirectorBits;
@@ -899,6 +903,15 @@ bool legacy_write_auth_body(bits::Writer& writer,
     }
     if(state::activity::deep_storage::body_bits(snapshot.deep_storage,key,slotType,slotIndex)) {
         return state::activity::deep_storage::write_body(writer,snapshot.deep_storage,key,slotType,slotIndex);
+    }
+    if(state::activity::newlight::launchpad::welcome::body_bits(snapshot.newlightWelcome,key,slotType,slotIndex)) {
+        return state::activity::newlight::launchpad::welcome::write(writer,snapshot.newlightWelcome,key,slotType,slotIndex);
+    }
+    if(state::activity::newlight::launchpad::tower::matches(snapshot.launchpadTower,key,slotType,slotIndex)) {
+        return state::activity::newlight::launchpad::tower::write(writer,snapshot.launchpadTower);
+    }
+    if(state::activity::newlight::launchpad::body_bits(snapshot.launchpad,key,slotType,slotIndex)) {
+        return state::activity::newlight::launchpad::write_body(writer,snapshot.launchpad,key,slotType,slotIndex);
     }
     if(state::activity::hijacked::body_bits(snapshot.hijacked,key,slotType,slotIndex)) {
         return state::activity::hijacked::write_body(writer,snapshot.hijacked,key,slotType,slotIndex);
@@ -999,10 +1012,10 @@ bool legacy_write_auth_body(bits::Writer& writer,
         encoded = write_activity_script(writer, snapshot);
     } else if (slotType == kSlotTypeMissionDirector && kInitializeMissionDirector
                && (snapshot.initializeMissionAuthorityRuntime
-                   || ((snapshot.omegaMission.generation || snapshot.deep_storage.enabled || snapshot.hijacked.enabled || snapshot.strike_bond.enabled) && key==0x4786C0E0U && slotIndex==1)
+                   || ((snapshot.omegaMission.generation || snapshot.deep_storage.enabled || snapshot.hijacked.enabled || snapshot.strike_bond.enabled || snapshot.launchpad.enabled || snapshot.launchpadTower.enabled) && key==0x4786C0E0U && slotIndex==1)
                    || snapshot.publishOmegaOpeningTransition
                    || snapshot.publishAuthoredCueTransition)) {
-        encoded = write_mission_director(writer, snapshot,(snapshot.omegaMission.generation || snapshot.deep_storage.enabled || snapshot.hijacked.enabled || snapshot.strike_bond.enabled)
+        encoded = write_mission_director(writer, snapshot,(snapshot.omegaMission.generation || snapshot.deep_storage.enabled || snapshot.hijacked.enabled || snapshot.strike_bond.enabled || snapshot.launchpad.enabled || snapshot.launchpadTower.enabled)
             && key==0x4786C0E0U && slotIndex==1);
     } else if (slotType == kSlotTypeConfiguration) {
         // Both optional arrays absent and the terminal tag clear is the constructed state.

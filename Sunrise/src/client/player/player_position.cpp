@@ -3,6 +3,7 @@
 #include "../../state/activity/beyond_infinity/runtime.h"
 #include "../../state/activity/deep_storage/runtime.h"
 #include "../../state/activity/hijacked/runtime.h"
+#include "../../state/activity/Newlight/launchpad/runtime.h"
 #include "../../state/activity/strike_bond/runtime.h"
 /**
  * The local player's published world position.
@@ -150,6 +151,7 @@ void observe_crown_route(void* component,const teleport::Vector& position) noexc
     state::activity::beyond_infinity::observe_position(position[0],position[1],position[2]);
     state::activity::deep_storage::observe_position(position[0],position[1],position[2]);
     state::activity::hijacked::observe_position(position[0],position[1],position[2]);
+    state::activity::newlight::launchpad::observe_position(position[0],position[1],position[2]);
     state::activity::strike_bond::observe_position(position[0],position[1],position[2]);
     observe_crown_route(component,position);
     return true;

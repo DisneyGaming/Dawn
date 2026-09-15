@@ -3,6 +3,7 @@
 namespace sunrise::state::activity::native_population {
 namespace {std::mutex mutex;Mailbox mailbox;}
 bool bind(const Lease& lease) noexcept {std::lock_guard lock(mutex);return mailbox.bind(lease);}
+void unbind(const Lease& lease) noexcept {std::lock_guard lock(mutex);mailbox.unbind(lease);}
 void release(ActivityInstanceKey owner) noexcept {std::lock_guard lock(mutex);mailbox.release(owner);}
 std::uint64_t epoch() noexcept {std::lock_guard lock(mutex);return mailbox.epoch();}
 bool pending(ActivityInstanceKey owner) noexcept {std::lock_guard lock(mutex);return mailbox.pending(owner);}

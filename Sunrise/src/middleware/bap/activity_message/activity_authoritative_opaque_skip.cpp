@@ -1,3 +1,4 @@
+#include <bit>
 #include "client_authoritative_data.h"
 
 namespace sunrise::middleware::bap::activity_message::client_authoritative_data {
@@ -45,29 +46,18 @@ constexpr std::uint8_t kRegionHashWidth = 32;
 /** Logical signed fields subtract 1 from their unsigned wire value. */
 constexpr std::int32_t kSignedFieldBias = 1;
 
-/**
- * Reads one complete D6 leg, keeping its region scalars only when asked. Both legs have the same
- * shape; the first is held and the second is pending (then outgoing during the swap).
- * @param reader Reader sitting at the first required D6 scalar.
- * @param region Receives the region when keepRegion is set.
- * @param keepRegion True for the leg that carries the player's region.
- * @return True when every required scalar and optional child fits.
- */
-[[nodiscard]] bool
-read_d6(encoding::bits::Reader& reader, RegionState& region, bool keepRegion) noexcept {
-    std::uint64_t indexWire = 0;
-    std::uint64_t hash = 0;
-    if (!reader.read(kRegionIndexWidth, indexWire) || !reader.read(kRegionHashWidth, hash)
-        || !reader.skip(32) || !reader.skip(2) || !reader.skip(2) || !skip_optional(reader, 8)) {
-        return false;
-    }
-    if (keepRegion) {
-        region.index = static_cast<std::int32_t>(indexWire) - kSignedFieldBias;
-        region.hash = static_cast<std::uint32_t>(hash);
-        region.hasHash = true;
-    }
-    bool d9Present = false;
-    return read_presence(reader, d9Present) && (!d9Present || skip_d9(reader));
+/** Decode both native area legs, preserving every scalar needed by the transition echo. */
+[[nodiscard]] bool read_d6(encoding::bits::Reader& reader,RegionLeg& leg) noexcept {
+    std::uint64_t index{},hash{},region{},publicState{},auxState{};
+    if(!reader.read(kRegionIndexWidth,index) || !reader.read(kRegionHashWidth,hash)
+        || !reader.read(32,region) || !reader.read(2,publicState) || !reader.read(2,auxState)
+        || !skip_optional(reader,8)) {return false;}
+    bool session{};
+    if(!read_presence(reader,session) || (session && !skip_d9(reader))) {return false;}
+    leg={static_cast<std::int32_t>(index)-kSignedFieldBias,static_cast<std::uint32_t>(hash),
+        std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(region)-0x80000000U),
+        static_cast<std::int8_t>(publicState-1),static_cast<std::int8_t>(auxState-1),true};
+    return true;
 }
 
 /**
@@ -125,16 +115,16 @@ bool read_transition_branch(encoding::bits::Reader& reader,
         if (!present) {
             continue;
         }
-        RegionState region{};
+        auto& region=leg==0?update.currentLeg:update.pendingLeg;
         const bool keepRegion = leg == kRegionLegIndex;
-        if (!read_d6(reader, region, true)) {
+        if (!read_d6(reader, region)) {
             return false;
         }
         if (keepRegion) {
-            update.region = region;
+            update.region = {region.sliceSetIndex,region.sliceSetHash,true};
             update.hasRegion = true;
         } else {
-            update.currentRegion = region;
+            update.currentRegion = {region.sliceSetIndex,region.sliceSetHash,true};
             update.hasCurrentRegion = true;
         }
     }

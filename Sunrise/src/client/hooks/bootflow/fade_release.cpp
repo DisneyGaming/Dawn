@@ -1,3 +1,4 @@
+#include <Windows.h>
 #include <array>
 #include <atomic>
 #include <cstddef>
@@ -7,6 +8,8 @@
 
 #include "../../../core/logging/log.h"
 #include "../../../core/settings/settings.h"
+#include "../../../state/activity/Newlight/launchpad/runtime.h"
+#include "../../../state/activity/runtime.h"
 #include "internal.h"
 
 namespace sunrise::client::hooks::bootflow {
@@ -51,10 +54,19 @@ constexpr std::array<float, 4> kOpaqueBlack{0.0F, 0.0F, 0.0F, 1.0F};
 /** Blend seconds, so the world fades in rather than popping. */
 constexpr float kFadeInSeconds = 0.5F;
 
+// Native E4FAB0 acquires the same fade channel that E4FA70 releases. Both call
+// E4F630: acquire uses mode 1 (fade to opaque), release mode 0 (fade to clear).
+// This is a native call from the existing camera-frame integration, not a detour.
+constexpr std::string_view kAcquireSignatureText =
+    "48 83 EC 48 8B 02 0F 57 C0 F3 0F 11 44 24 30 48 8D 54 24 58 4D 8B C8 F3 0F 11 5C 24 28 41 B8 01 00 00 00";
+constexpr auto kAcquireSignature = signature<signature_length(kAcquireSignatureText)>(kAcquireSignatureText);
 using ReleaseChannel = std::int64_t(__fastcall*)(void*, std::uint32_t*, float*, float) noexcept;
+using AcquireChannel = void(__fastcall*)(void*, std::uint32_t*, float*, float) noexcept;
 
 void* g_manager{nullptr};
 std::atomic<ReleaseChannel> g_release{nullptr};
+std::atomic<AcquireChannel> g_acquire{nullptr};
+std::atomic_bool g_openingHeld{false};
 std::atomic_bool g_logged{false};
 
 } // namespace
@@ -65,7 +77,13 @@ void rearm_fade_release() noexcept {
 }
 
 /** Releases the world-transition fade channel. The spawn gate decides when. */
-void release_world_fade() noexcept {
+void release_world_fade(bool flyInComplete) noexcept {
+    // Only the admitted native arrival boundary can arm Launchpad's opening mask.
+    if (flyInComplete) { state::activity::newlight::launchpad::observe_fly_in_complete(); }
+    // The loading mask is visual only; the native spawn gate may finish while
+    // the movie prepares. Its usual fade release must not expose that camera.
+    if (g_acquire.load(std::memory_order_acquire)
+        && state::activity::newlight::launchpad::opening_mask(GetTickCount64())) { poll_opening_fade(); return; }
     const ReleaseChannel release = g_release.load(std::memory_order_acquire);
     if (release == nullptr || g_manager == nullptr || !core::settings::get().client.fadeRelease) {
         return;
@@ -88,6 +106,34 @@ void release_world_fade() noexcept {
     }
 }
 
+/** Runs on the existing camera frame, independently of the native spawn gate. */
+void poll_opening_fade() noexcept {
+    const auto acquire=g_acquire.load(std::memory_order_acquire);
+    const auto release=g_release.load(std::memory_order_acquire);
+    if (!acquire || !release || !g_manager) { return; }
+    const bool wanted=core::settings::get().client.fadeRelease
+        && state::activity::newlight::launchpad::opening_mask(GetTickCount64());
+    std::uint32_t channel=kWorldTransitionChannel;
+    auto colour=kOpaqueBlack;
+    if (wanted) {
+        if (state::activity::world_phase()==state::activity::WorldPhase::idle) { return; }
+        // Reassert across the native C9 fade: it shares this transition channel.
+        // Zero blend becomes the native minimum duration, so the mask is opaque
+        // for the initial arrival and while the opening's camera is installed.
+        acquire(g_manager,&channel,colour.data(),0.F);
+        if (!g_openingHeld.exchange(true,std::memory_order_relaxed)) {
+            core::log::write(core::log::Channel::client,core::log::Level::info,
+                "ev=launchpad stage=opening_mask active=1 source=fly_in_complete");
+        }
+    } else if (g_openingHeld.exchange(false,std::memory_order_relaxed)) {
+        // Release on genuine playback, timeout, reset, or mission change. This
+        // cleanup also runs after spawning has stopped calling its native gate.
+        (void)release(g_manager,&channel,colour.data(),kFadeInSeconds);
+        core::log::write(core::log::Channel::client,core::log::Level::info,
+            "ev=launchpad stage=opening_mask active=0");
+    }
+}
+
 /** Finds the fade release and its manager object. */
 bool install_fade_release() noexcept {
     std::byte* const release = scan_main_image_unique(kReleaseSignature, "fade_release_channel");
@@ -103,6 +149,12 @@ bool install_fade_release() noexcept {
     g_manager = resolve_relative(accessor + AccessorLayout::displacement,
                                  accessor + AccessorLayout::nextInstruction);
     g_release.store(reinterpret_cast<ReleaseChannel>(release), std::memory_order_release);
+    const auto acquire=scan_main_image_unique(kAcquireSignature,"fade_acquire_channel");
+    g_acquire.store(reinterpret_cast<AcquireChannel>(acquire),std::memory_order_release);
+    if (!acquire) {
+        core::log::write(core::log::Channel::client,core::log::Level::warn,
+            "ev=launchpad stage=opening_mask result=unavailable reason=native_acquire");
+    }
     core::log::write(core::log::Channel::client,
                      core::log::Level::info,
                      "ev=bootflow stage=fade_release result=ok");
@@ -112,6 +164,8 @@ bool install_fade_release() noexcept {
 /** Clears the fade release it found. */
 void uninstall_fade_release() noexcept {
     g_release.store(nullptr, std::memory_order_release);
+    g_acquire.store(nullptr,std::memory_order_release);
+    g_openingHeld.store(false,std::memory_order_release);
     g_manager = nullptr;
     g_logged.store(false, std::memory_order_release);
 }

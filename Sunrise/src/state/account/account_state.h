@@ -5,6 +5,8 @@
 #include <cstdint>
 
 #include "inventory/inventory_state.h"
+#include "../vendors/progress.h"
+#include "../vendors/unlocks.h"
 #include "settings/settings_state.h"
 
 namespace sunrise::state {
@@ -68,6 +70,9 @@ inline constexpr std::uint8_t kDefaultClassAbilityEntry = 2;
 
 /** Authored state for one playable character slot. */
 struct CharacterState {
+    vendors::Unlocks vendorUnlocks;
+    vendors::ProgressBank vendorProgress{};
+    std::uint8_t vendorCampaigns{};
     std::uint64_t soid{};
     /** Runtime selection, moved only by the character pick. No character is selected at boot. */
     bool selected{};
@@ -107,6 +112,8 @@ struct CharacterState {
 
 /** Account identity shared by backend object families. */
 struct AccountState {
+    vendors::Unlocks vendorUnlocks;
+    vendors::ProgressBank vendorProgress{};
     std::uint64_t primarySoid{};
     /** Economy policy comes from configuration, never from item-specific runtime constants. */
     std::array<DismantleRewardPolicy, kDismantleRewardPolicyCapacity> dismantleRewards{};

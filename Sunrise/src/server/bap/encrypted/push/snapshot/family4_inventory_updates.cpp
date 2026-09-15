@@ -251,7 +251,7 @@ bool prepare_item_acquisition(Scratch& scratch,
     if (!family4_datagen::character::encode(account.characters[mutation.characterIndex],
                                             selected.loadout,
                                             selected.lightEvaluation,
-                                            characterBytes)) {
+                                            characterBytes,&account)) {
         return report_failure("acquire_character_object");
     }
 
@@ -379,6 +379,11 @@ bool prepare_item_acquisition(Scratch& scratch,
     // descriptors: new item first, then the character after-image. Dismantle deliberately uses the
     // inverse dependency order (drop the character reference, then release the item).
     std::swap(staged.objects[0], staged.objects[1]);
+    if(acquisition.removedInstanceSoid!=mutation.removedInstanceSoid) {return report_failure("acquire_removed");}
+    if(mutation.removedInstanceSoid) {
+        staged.objects[objectCount++]={acquisition.itemInstanceDefinitionId,mutation.removedInstanceSoid,middleware::queuez::Encoding::oodle,{}};
+    }
+
 
     staged.compressedClearSize = (std::max)(reservation.compressedClearSize, compressedExtent);
     staged.family = middleware::queuez::Family{
@@ -486,7 +491,7 @@ bool prepare_item_dismantle(Scratch& scratch,
     if (!family4_datagen::character::encode(account.characters[mutation.characterIndex],
                                             selected.loadout,
                                             selected.lightEvaluation,
-                                            characterBytes)) {
+                                            characterBytes,&account)) {
         return report_failure("dismantle_character_object");
     }
 

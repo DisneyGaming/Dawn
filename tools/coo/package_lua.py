@@ -11,7 +11,7 @@ import verify_lua
 import native_test_inputs
 
 ROOT = verify.ROOT
-SCRIPTS = ('omega.lua', 'deadly_trial.lua', 'gateway.lua', 'beyond_infinity.lua', 'deep_storage.lua', 'hijacked.lua', 'strike_pact.lua', 'strike_bond.lua', 'mercury_freeroam.json', 'infinite_abyss.json')
+SCRIPTS = ('launchpad.lua', 'omega.lua', 'deadly_trial.lua', 'gateway.lua', 'beyond_infinity.lua', 'deep_storage.lua', 'hijacked.lua', 'strike_pact.lua', 'strike_bond.lua', 'mercury_freeroam.json', 'infinite_abyss.json')
 
 
 def require(condition, message):

@@ -35,7 +35,7 @@ namespace family4_loadout = middleware::datagen::family4::loadout;
                                          std::uint8_t& slot) noexcept {
     build_data::items::Definition definition{};
     item_details::Definition detail{};
-    if (!build_data::find_item_definition_hash(item.definitionHash, definition)
+    if (item.postmaster || !build_data::find_item_definition_hash(item.definitionHash, definition)
         || definition.definitionHash != item.definitionHash
         || !build_data::find_configured_item_detail(definition.definitionIndex, detail)
         || detail.definitionIndex != definition.definitionIndex
@@ -62,7 +62,7 @@ namespace family4_loadout = middleware::datagen::family4::loadout;
         || detail.bucketId != definition.bucketId) {
         return false;
     }
-    bucketId = detail.bucketId;
+    bucketId = item.postmaster ? authored_inventory::kPostmasterBucket : detail.bucketId;
     return true;
 }
 
@@ -290,7 +290,7 @@ finalize_equipment_transition(const AccountState& account,
                              const authored_inventory::Item& right) noexcept {
     return left.instanceSoid == right.instanceSoid && left.definitionHash == right.definitionHash
            && left.level == right.level && left.quantity == right.quantity
-           && left.flags == right.flags && left.sockets.policy == right.sockets.policy
+           && left.flags == right.flags && left.postmaster == right.postmaster && left.sockets.policy == right.sockets.policy
            && left.sockets.plugCount == right.sockets.plugCount
            && left.sockets.plugs == right.sockets.plugs;
 }
@@ -375,7 +375,8 @@ void report_item_state(std::string_view stage,
 /** Exact character comparison, including the canonical unused inventory tail. */
 [[nodiscard]] bool same_character(const CharacterState& left,
                                   const CharacterState& right) noexcept {
-    if (!same_loadout(left, right)) {
+    if (!same_loadout(left, right) || left.vendorProgress != right.vendorProgress || left.vendorCampaigns != right.vendorCampaigns
+        || left.vendorUnlocks != right.vendorUnlocks) {
         return false;
     }
     for (std::size_t index = left.inventory.count; index < left.inventory.values.size(); ++index) {

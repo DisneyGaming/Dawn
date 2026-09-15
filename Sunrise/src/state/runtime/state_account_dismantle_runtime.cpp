@@ -5,6 +5,7 @@
 #include <cstdint>
 
 #include "runtime.h"
+#include "../vendors/persistence.h"
 #include "state_account_transaction_helpers.h"
 #include "storage/internal.h"
 
@@ -101,7 +102,7 @@ bool commit_item_dismantle(PendingItemDismantle& mutation) noexcept {
     AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
     AccountState candidate{};
     const bool ready =
-        materialize_item_dismantle(runtime::storage::g_state.account, prepared, candidate);
+        materialize_item_dismantle(runtime::storage::g_state.account, prepared, candidate) && vendors::persistence::save(candidate);
     if (ready) {
         runtime::storage::g_state.account = candidate;
     }

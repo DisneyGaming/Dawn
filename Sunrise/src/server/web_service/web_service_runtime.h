@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <span>
 #include <variant>
+#include "../../state/vendors/transaction.h"
 
 #include "../../middleware/web_service/messages/opcode206.h"
 #include "../../state/runtime/runtime.h"
@@ -20,6 +21,8 @@ struct Outcome {
     /** A request prepares at most one State mutation; the alternative owns only that payload. */
     using Mutation = std::variant<std::monostate,
                                   state::PendingEquipmentSwap,
+                                  state::PendingNewlightQuest,
+                                  state::vendors::Pending,
                                   state::PendingItemAcquisition,
                                   state::PendingProfileItemAcquisition,
                                   state::PendingItemDismantle,

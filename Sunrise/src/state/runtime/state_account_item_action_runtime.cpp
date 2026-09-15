@@ -9,6 +9,7 @@
 #include "../../middleware/web_service/messages/opcode1901.h"
 #include "../build_data/runtime.h"
 #include "runtime.h"
+#include "../vendors/persistence.h"
 #include "state_account_transaction_helpers.h"
 #include "storage/internal.h"
 
@@ -367,6 +368,7 @@ bool commit_socket_plug(PendingSocketPlug& mutation) noexcept {
         ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
         return fail("account_or_resolve");
     }
+    if(!vendors::persistence::save(candidate)) {ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);return false;}
     runtime::storage::g_state.account = candidate;
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
 
@@ -495,6 +497,7 @@ bool commit_item_state(PendingItemState& mutation) noexcept {
         ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
         return fail("account_or_resolve");
     }
+    if(!vendors::persistence::save(candidate)) {ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);return false;}
     runtime::storage::g_state.account = candidate;
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
 

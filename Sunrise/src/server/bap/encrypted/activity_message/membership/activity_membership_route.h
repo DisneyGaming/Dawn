@@ -10,7 +10,7 @@ namespace sunrise::server::bap::encrypted::activity_message::membership {
 
 [[nodiscard]] constexpr bool retains_held_region(std::string_view destination) noexcept {
     return destination == "strike_bond" || destination == "strike_pact" || destination == "mercury_freeroam"
-        || destination == "adventure_rumba";
+        || destination == "adventure_rumba" || destination == "mission_launchpad";
 }
 
 /** Maps parsed membership fields without changing legacy destination routing. */
@@ -39,6 +39,12 @@ namespace sunrise::server::bap::encrypted::activity_message::membership {
     if(retains_held_region(destination)) {
         update.currentRegion={parsed.currentRegion.index,parsed.currentRegion.hash};
         update.hasCurrentRegion=parsed.hasCurrentRegion;
+    }
+    if(destination=="mission_launchpad") {
+        const auto leg=[](const auto& v) -> state::activity::membership::RegionLeg {
+            return {v.sliceSetIndex,v.sliceSetHash,v.regionIndex,v.publicState,v.auxState,v.present};
+        };
+        update.currentLeg=leg(parsed.currentLeg);update.pendingLeg=leg(parsed.pendingLeg);
     }
     return update;
 }

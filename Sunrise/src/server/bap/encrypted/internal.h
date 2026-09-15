@@ -6,6 +6,7 @@
 #include <span>
 #include <string_view>
 #include <variant>
+#include "../../../state/vendors/transaction.h"
 
 #include "../../../middleware/bap/family_unsubscription.h"
 #include "../../../middleware/bap/frame.h"
@@ -53,6 +54,13 @@ struct ItemStateTransaction {
 };
 
 /** Character acquisition and its exact QueueZ after-image. */
+struct VendorServiceTransaction {state::vendors::Pending pending{};queuez::VendorTransaction update{};};
+
+struct NewlightQuestTransaction {
+    state::PendingNewlightQuest pending{};
+    queuez::NewlightQuest update{};
+};
+
 struct ItemAcquisitionTransaction {
     state::PendingItemAcquisition pending{};
     queuez::ItemAcquisition update{};
@@ -89,10 +97,24 @@ struct ServiceOutcome {
                                      SocketPlugTransaction,
                                      ItemStateTransaction,
                                      ItemAcquisitionTransaction,
+                                     NewlightQuestTransaction,
+                                     VendorServiceTransaction,
                                      ProfileItemAcquisitionTransaction,
                                      ItemDismantleTransaction>;
     Transaction transaction{};
 };
+
+namespace push {
+bool append_vendor_transaction_notification(Scratch&,const queuez::VendorTransaction&,const state::vendors::Pending&,
+    std::span<const std::byte,state::kAesKeySize>,std::span<const std::byte,state::kBapNonceSize>,
+    std::span<std::byte>,std::size_t&) noexcept;
+bool append_newlight_appearance(Scratch&,queuez::SessionState&,const state::PendingNewlightQuest&,
+    std::span<const std::byte,state::kAesKeySize>,std::array<std::byte,state::kBapNonceSize>&,
+    std::span<std::byte>,std::size_t&) noexcept;
+bool append_newlight_quest_notification(Scratch&,const queuez::NewlightQuest&,const state::PendingNewlightQuest&,
+    std::span<const std::byte,state::kAesKeySize>,std::span<const std::byte,state::kBapNonceSize>,
+    std::span<std::byte>,std::size_t&) noexcept;
+}
 
 /** @return The service transaction of the requested type, or null for another route. */
 template <typename Transaction>

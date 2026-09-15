@@ -34,6 +34,10 @@ inline constexpr Profile kDeepStorage{"adventure_whisk",295,0x550500EEU,
 inline constexpr Profile kHijacked{"adventure_rumba",297,0x83211FEDU,
     0x77852DB9U,0x80B4200FU,0x80FB5018U,"hijacked_direct"};
 
+// Activity8153C013 joins scenario8153C01B and launch descriptor80FDB97F.
+inline constexpr Profile kLaunchpad{"mission_launchpad",1,0xED5A458AU,
+    0x71EA80ACU,0x8153C013U,0x80FDB97FU,"launchpad_direct"};
+
 [[nodiscard]] constexpr const Profile* find(std::string_view package) noexcept {
     if (package == kTowerfall.package) { return &kTowerfall; }
     if (package == kGateway.package) { return &kGateway; }
@@ -41,6 +45,7 @@ inline constexpr Profile kHijacked{"adventure_rumba",297,0x83211FEDU,
     if (package == kBeyondInfinity.package) { return &kBeyondInfinity; }
     if(package==kDeepStorage.package) {return &kDeepStorage;}
     if(package==kHijacked.package) {return &kHijacked;}
+    if(package==kLaunchpad.package) {return &kLaunchpad;}
     return nullptr;
 }
 [[nodiscard]] constexpr const Profile* configured(const ForcedDestination& value) noexcept {

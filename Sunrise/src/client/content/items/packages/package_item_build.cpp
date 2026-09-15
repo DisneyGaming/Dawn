@@ -18,6 +18,8 @@
 #include "../../../../state/runtime/runtime.h"
 #include "../../../memory/current_process_memory.h"
 #include "../../../targets/game.h"
+#include "../../vendors/vendor_services.h"
+#include "../../../../state/build_data/vendors/service_catalog.h"
 #include "../../activity/source.h"
 #include "../../activity/activity_catalog_build.h"
 #include "../../../../state/build_data/activities/activity_catalog.h"
@@ -68,7 +70,7 @@ bool build() noexcept {
     static bool omegaPropertyScanAttempted = false;
     const bool domainsReady = package_domains_ready();
     if (domainsReady && homecomingDumped && omegaPropertyScanAttempted
-        && state::build_data::activities::ready()) {
+        && state::build_data::activities::ready() && state::build_data::vendors::services::ready()) {
         return true;
     }
     static Storage storage{};
@@ -90,6 +92,7 @@ bool build() noexcept {
     {
         const reader::Source packageSource{directory.chars.data(), &keys};
         (void)content::activity::build_catalog(packageSource, storage.scratch);
+        (void)content::vendors::build_services(packageSource, storage.scratch);
         if (!homecomingDumped) {
             homecomingDumped = content::activity::dump_homecoming(packageSource, storage.scratch);
         }

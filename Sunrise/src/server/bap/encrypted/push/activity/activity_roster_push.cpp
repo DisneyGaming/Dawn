@@ -1,3 +1,4 @@
+#include "../../../../../state/activity/Newlight/launchpad/runtime.h"
 #include "activity_roster_push.h"
 
 #include <Windows.h>
@@ -67,25 +68,30 @@ std::atomic_uint32_t g_towerfallDeliveryReports{};
     std::span<const std::byte,state::kAesKeySize> key,
     std::array<std::byte,state::kBapNonceSize>& nonce,
     std::span<std::byte> response,std::size_t& written) noexcept {
+    const bool vendors=snapshot.newlightWelcome.enabled;
+    const bool launchpad=name=="mission_launchpad" && snapshot.launchpad.enabled;
     const bool hijacked=name=="adventure_rumba" && snapshot.hijacked.enabled;
     const bool deep=name=="adventure_whisk" && snapshot.deep_storage.enabled;
     const bool strike=name=="strike_pact" && snapshot.strike_pact.enabled;
     const bool garden=name=="strike_bond" && snapshot.strike_bond.enabled;
-    if(!garden && !hijacked && !deep && !strike && (name!="adventure_vod" || !snapshot.beyond_infinity.enabled)) { return true; }
+    if(!vendors && !launchpad && !garden && !hijacked && !deep && !strike && (name!="adventure_vod" || !snapshot.beyond_infinity.enabled)) { return true; }
     namespace beyond=state::activity::beyond_infinity;
     namespace clock=middleware::bap::activity_message::clock_state;
+    const auto launchpadCurrent=state::activity::newlight::launchpad::request();
     const auto current=beyond::request();
     const auto deepCurrent=state::activity::deep_storage::request();
     const auto hijackedCurrent=state::activity::hijacked::request();
-    const auto owner=garden?snapshot.strike_bond.completion.owner:hijacked?hijackedCurrent.owner:strike?snapshot.strike_pact.completion.owner:deep?deepCurrent.owner:current.owner;
-    const bool enabled=garden?snapshot.strike_bond.enabled:hijacked?hijackedCurrent.frame.enabled:strike?snapshot.strike_pact.enabled:deep?deepCurrent.frame.enabled:current.frame.enabled;
-    const auto generation=garden?snapshot.strike_bond.spawnGeneration:hijacked?hijackedCurrent.frame.spawnGeneration:strike?owner.value:deep?deepCurrent.frame.spawnGeneration:current.frame.spawnGeneration;
-    const auto expected=garden?snapshot.strike_bond.spawnGeneration:hijacked?snapshot.hijacked.spawnGeneration:strike?snapshot.strike_pact.spawnGeneration:deep?snapshot.deep_storage.spawnGeneration:snapshot.beyond_infinity.spawnGeneration;
+    const auto owner=launchpad?launchpadCurrent.owner:garden?snapshot.strike_bond.completion.owner:hijacked?hijackedCurrent.owner:strike?snapshot.strike_pact.completion.owner:deep?deepCurrent.owner:current.owner;
+    const bool enabled=launchpad?launchpadCurrent.frame.enabled:garden?snapshot.strike_bond.enabled:hijacked?hijackedCurrent.frame.enabled:strike?snapshot.strike_pact.enabled:deep?deepCurrent.frame.enabled:current.frame.enabled;
+    const auto generation=launchpad?launchpadCurrent.frame.spawnGeneration:garden?snapshot.strike_bond.spawnGeneration:hijacked?hijackedCurrent.frame.spawnGeneration:strike?owner.value:deep?deepCurrent.frame.spawnGeneration:current.frame.spawnGeneration;
+    const auto expected=launchpad?snapshot.launchpad.spawnGeneration:garden?snapshot.strike_bond.spawnGeneration:hijacked?snapshot.hijacked.spawnGeneration:strike?snapshot.strike_pact.spawnGeneration:deep?snapshot.deep_storage.spawnGeneration:snapshot.beyond_infinity.spawnGeneration;
     if(session.activity.joinedForeignSession || !lifecycle::activity_binding_is_current(session)
         || !session.activity.lineage.owns(session.activity.instance)
-        || state::activity::world_phase()!=state::activity::WorldPhase::arrived
-        || !owner.valid() || owner.run!=state::activity::mission_run_generation()
-        || !enabled || generation!=expected) { return false; }
+        || (!vendors && (!owner.valid() || owner.run!=state::activity::mission_run_generation()
+            || !enabled || generation!=expected))) { return false; }
+    // Launchpad owns its opening before arrival. Its initial roster must load
+    // the world before a running gameplay clock is required or published.
+    if(state::activity::world_phase()!=state::activity::WorldPhase::arrived) { return launchpad || vendors; }
     std::array<std::byte,clock::kEncodedSize> body{};std::size_t size{};
     if(!clock::encode(clock::kRunning,body,size)
         || !append_notification_frame(scratch,session.activity.instance.sessionId,
@@ -112,6 +118,8 @@ bool append_roster_notification(Session& session,
     if (!lifecycle::stage_roster_publication_generation(session.activity, publication)) {
         return false;
     }
+    const auto initialVendorPresence=session.activity.towerVendorPresence;
+    const auto initialVendorClockOrigin=session.activity.vendorClockOrigin;
     const std::uint32_t initialRosterGroups = session.activity.rosterGroups;
     const std::uint8_t initialRosterSends = session.activity.rosterSends;
     const std::uint8_t initialRosterState = session.activity.rosterState;
@@ -129,6 +137,8 @@ bool append_roster_notification(Session& session,
     }
     const std::string_view name(destination.data(), destinationLength);
     if (outcome != RosterOutcome::published) {
+        session.activity.towerVendorPresence=initialVendorPresence;
+        session.activity.vendorClockOrigin=initialVendorClockOrigin;
         session.activity.rosterGroups = initialRosterGroups;
         session.activity.rosterSends = initialRosterSends;
         session.activity.rosterState = initialRosterState;
@@ -178,6 +188,8 @@ bool append_roster_notification(Session& session,
         session.activity.rosterStaged.activity = session.activity.instance;
         session.activity.rosterStaged.publication = publication;
         session.activity.rosterStaged.grant = grant;
+        session.activity.rosterStaged.priorVendorPresence=initialVendorPresence;
+        session.activity.rosterStaged.priorVendorClockOrigin=initialVendorClockOrigin;
         session.activity.rosterStaged.priorGroups = initialRosterGroups;
         session.activity.rosterStaged.priorSends = initialRosterSends;
         session.activity.rosterStaged.priorState = initialRosterState;
@@ -235,6 +247,8 @@ bool append_roster_notification(Session& session,
         }
         written = initialWritten;
         nonce = initialNonce;
+        session.activity.towerVendorPresence=initialVendorPresence;
+        session.activity.vendorClockOrigin=initialVendorClockOrigin;
         session.activity.rosterGroups = initialRosterGroups;
         session.activity.rosterSends = initialRosterSends;
         session.activity.rosterState = initialRosterState;
@@ -315,6 +329,10 @@ bool append_roster_notification(
         staged.regionIndex = transition.regionIndex;
         staged.publication = transition.rosterPublication;
         staged.grant = transition.grantCandidate;
+        staged.priorVendorPresence=transition.before.vendorPresence;
+        staged.priorVendorClockOrigin=transition.before.vendorClockOrigin;
+        staged.afterVendorPresence=transition.after.vendorPresence;
+        staged.afterVendorClockOrigin=transition.after.vendorClockOrigin;
         staged.priorGroups = transition.before.groups;
         staged.priorSends = transition.before.sends;
         staged.priorState = transition.before.state;
@@ -347,18 +365,19 @@ bool append_roster_notification(
         written = initialWritten;
         nonce = initialNonce;
     }
-    if (destination == "adventure_rumba" && transition.rosterWire.hijacked.enabled) {
+    const bool launchpad = destination == "mission_launchpad" && transition.rosterWire.launchpad.enabled;
+    if (launchpad || (destination == "adventure_rumba" && transition.rosterWire.hijacked.enabled)) {
         static std::atomic_uint64_t lastReport{};
+        const auto generation = launchpad ? transition.rosterWire.launchpad.spawnGeneration : transition.rosterWire.hijacked.spawnGeneration;
         const auto status = encoded ? 1U : !clockEncoded ? 2U : !sensorEncoded ? 3U : 4U;
-        const auto signature = (static_cast<std::uint64_t>(transition.rosterWire.hijacked.spawnGeneration) << 8U) | status;
+        const auto signature = (static_cast<std::uint64_t>(generation) << 8U) | status | (launchpad ? 0x80U : 0U);
         if (lastReport.exchange(signature) != signature) {
             std::array<char, 320> line{};
             std::snprintf(line.data(),line.size(),
-                "ev=hijacked stage=publication result=%s clock=%u sensor=%u groups=%zu bytes=%zu activity=%016llX generation=%u",
-                encoded ? "staged" : "blocked",clockEncoded?1U:0U,sensorEncoded?1U:0U,
+                "ev=%s stage=publication result=%s clock=%u sensor=%u groups=%zu bytes=%zu activity=%016llX generation=%u",
+                launchpad ? "launchpad" : "hijacked",encoded ? "staged" : "blocked",clockEncoded?1U:0U,sensorEncoded?1U:0U,
                 transition.rosterWire.roster.groupCount,messageSize,
-                static_cast<unsigned long long>(session.activity.instance.sessionId),
-                transition.rosterWire.hijacked.spawnGeneration);
+                static_cast<unsigned long long>(session.activity.instance.sessionId),generation);
             core::log::write(core::log::Channel::server,encoded?core::log::Level::info:core::log::Level::warn,line.data());
         }
     }
@@ -497,6 +516,8 @@ void commit_staged_roster(Session& session) noexcept {
         }
     }
     if (session.activity.rosterStaged.hasAfter) {
+        session.activity.towerVendorPresence=session.activity.rosterStaged.afterVendorPresence;
+        session.activity.vendorClockOrigin=session.activity.rosterStaged.afterVendorClockOrigin;
         session.activity.rosterGroups = session.activity.rosterStaged.afterGroups;
         session.activity.rosterSends = session.activity.rosterStaged.afterSends;
         session.activity.rosterState = session.activity.rosterStaged.afterState;
@@ -542,6 +563,8 @@ void discard_staged_roster(Session& session) noexcept {
     }
     // The client never saw this body, so its state byte must not be spent. The next push has to
     // move the byte again or the client does not rebuild its roster objects.
+    session.activity.towerVendorPresence=session.activity.rosterStaged.priorVendorPresence;
+    session.activity.vendorClockOrigin=session.activity.rosterStaged.priorVendorClockOrigin;
     session.activity.rosterGroups = session.activity.rosterStaged.priorGroups;
     session.activity.rosterSends = session.activity.rosterStaged.priorSends;
     session.activity.rosterState = session.activity.rosterStaged.priorState;

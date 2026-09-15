@@ -13,6 +13,7 @@
 #include "../../middleware/datagen/family4/loadout/loadout_resolver.h"
 #include "../build_data/runtime.h"
 #include "runtime.h"
+#include "../vendors/persistence.h"
 #include "state.h"
 #include "state_account_transaction_helpers.h"
 #include "storage/internal.h"
@@ -456,6 +457,7 @@ bool commit_equipment_swap(PendingEquipmentSwap& mutation) noexcept {
         ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
         return false;
     }
+    if(!vendors::persistence::save(candidate)) {ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);return false;}
     runtime::storage::g_state.account = candidate;
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
 

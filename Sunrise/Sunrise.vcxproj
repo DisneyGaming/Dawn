@@ -1472,6 +1472,7 @@
     <ClInclude Include="src\server\runtime\activity\native_activity_runtime.h" />
     <ClInclude Include="src\server\runtime\activity\mercury_populations.h" />
     <ClCompile Include="src\state\activity\native_population_events.cpp" />
+    <ClCompile Include="src\state\activity\vendors\lifetime.cpp" />
     <ClCompile Include="src\server\runtime\activity\native_activity_runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\server\runtime\activity\public_event_native_bridge.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\server\runtime\activity\ambient_population_named_points.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
@@ -1572,5 +1573,80 @@
     <ClInclude Include="src\state\activity\coo\scan_playback.h" />
     <ClInclude Include="src\state\activity\coo\plate_presentation.h" />
     <ClInclude Include="src\state\activity\hijacked\plate_presentation.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="scripts\launchpad.lua" />
+    <ClInclude Include="src\middleware\bap\activity_message\device_sense.h" />
+    <ClInclude Include="src\middleware\bap\activity_message\object_sense.h" />
+    <ClInclude Include="src\server\bap\encrypted\push\activity\launchpad_roster.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\authority.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\cinematics.h" />
+    <ClCompile Include="src\state\activity\Newlight\launchpad\controller.cpp" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\controller.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\ghost.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\ghost_native.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\lighting_native.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\entrance_native.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\performances.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\entry.h" />
+    <ClCompile Include="src\state\activity\Newlight\launchpad\geometry.cpp" />
+    <ClCompile Include="src\state\activity\Newlight\launchpad\mission.cpp" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\mission.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\rewards.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\native_catalog.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\quest.h" />
+    <ClCompile Include="src\state\activity\Newlight\launchpad\native_observer.cpp" />
+    <ClCompile Include="src\state\activity\Newlight\launchpad\runtime.cpp" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\runtime.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\transit.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\transit_rules.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\state\activity\Newlight\launchpad\tower.h" />
+    <ClInclude Include="src\server\bap\encrypted\push\activity\launchpad_inventory.h" />
+    <ClInclude Include="src\client\hooks\bootflow\launchpad_handoff.inl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\state\activity\Newlight\launchpad\transport.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\server\bap\encrypted\push\snapshot\family4_newlight_quest.cpp" />
+    <ClInclude Include="src\server\bap\encrypted\push\activity\newlight_quest.h" />
+    <ClInclude Include="src\middleware\web_service\messages\opcode904.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\state\activity\Newlight\launchpad\cache_native.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\lighting.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\quest_runtime.h" />
+    <ClCompile Include="src\state\activity\Newlight\launchpad\quest_runtime.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\state\activity\Newlight\launchpad\welcome.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\server\bap\encrypted\push\activity\newlight_tower_roster.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\state\vendors\progress.h" />
+    <ClCompile Include="src\state\vendors\conditions.cpp" />
+    <ClInclude Include="src\state\vendors\conditions.h" />
+    <ClCompile Include="src\state\vendors\transaction.cpp" />
+    <ClInclude Include="src\state\vendors\transaction.h" />
+    <ClCompile Include="src\state\build_data\vendors\service_catalog.cpp" />
+    <ClInclude Include="src\state\build_data\vendors\service_catalog.h" />
+    <ClInclude Include="src\client\content\vendors\vendor_services.h" />
+    <ClCompile Include="src\client\content\vendors\vendor_services.cpp" />
+    <ClCompile Include="src\server\bap\encrypted\push\snapshot\family4_vendor_transaction.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\state\vendors\bounties.h" />
+    <ClInclude Include="src\state\vendors\persistence.h" />
+    <ClInclude Include="src\state\vendors\projection.h" />
+    <ClInclude Include="src\state\vendors\quest_state.h" />
+    <ClInclude Include="src\state\vendors\unlocks.h" />
+    <ClInclude Include="src\client\hooks\bootflow\vendor_lifetime_native.h" />
+    <ClInclude Include="src\server\bap\encrypted\push\activity\quest_progress.h" />
+    <ClCompile Include="src\state\vendors\persistence.cpp" />
+    <ClInclude Include="src\middleware\web_service\messages\opcode905.h" />
   </ItemGroup>
 </Project>

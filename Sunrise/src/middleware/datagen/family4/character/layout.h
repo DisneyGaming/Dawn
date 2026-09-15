@@ -133,6 +133,9 @@ struct InventoryChangeList {
     std::array<InventoryChangeRecord, kInventoryChangeRecordCapacity> records{};
 };
 
+struct UnlockFlagOverride {std::int16_t slot{};std::uint8_t value{},reserved{};};
+struct UnlockValueOverride {std::int16_t slot{};std::uint16_t reserved{};std::int32_t value{};};
+
 /** Byte-exact selected-character Family-4 object generated from resolved loadout rows. */
 struct Object {
     std::uint64_t characterSoid{};
@@ -170,7 +173,12 @@ struct Object {
     std::array<std::byte, kResetFlagsPaddingSize> resetFlagsPadding{};
     std::array<std::byte, kFlagCapacity> acquiredFlags{};
     std::array<std::int32_t, kObjectiveValueCapacity> objectiveValues{};
-    std::array<std::byte, kValuesContentPaddingSize> valuesContentPadding{};
+    std::array<std::byte,1196> valuesOverridePadding{};
+    std::uint32_t unlockFlagCount{};
+    std::array<UnlockFlagOverride,20> unlockFlags{};
+    std::uint32_t unlockValueCount{};
+    std::array<UnlockValueOverride,20> unlockValues{};
+    std::array<std::byte,20> overridesContentPadding{};
     /** This policy byte is effective only with the matching family-five gate arm. */
     std::uint8_t contentBypass{};
     std::array<std::byte, kContentTailPaddingSize> contentTailPadding{};
@@ -197,6 +205,10 @@ static_assert(sizeof(InventoryChangeList)
                      + kInventoryChangeRecordCapacity * sizeof(InventoryChangeRecord));
 static_assert(offsetof(InventoryChangeList, records) == 2 * sizeof(std::uint16_t));
 static_assert(sizeof(Object) == kObjectSize);
+static_assert(offsetof(Object,unlockFlagCount)==46068);
+static_assert(offsetof(Object,unlockFlags)==46072);
+static_assert(offsetof(Object,unlockValueCount)==46152);
+static_assert(offsetof(Object,unlockValues)==46156);
 static_assert(std::is_trivially_copyable_v<Object>);
 
 } // namespace sunrise::middleware::datagen::family4::character::layout

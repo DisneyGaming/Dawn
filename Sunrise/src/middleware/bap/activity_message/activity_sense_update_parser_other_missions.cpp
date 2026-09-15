@@ -332,6 +332,9 @@ constexpr std::uint64_t kProjectFnvPrime = 1099511628211ULL;
             object.monitorOutput=output.monitor;
             object.hasMonitorOutput=true;
         }
+        if(object.slotType==39 && output.root) {object.passengerOutput=output.passenger;object.hasPassengerOutput=true;}
+        if(object.slotType==4 && output.root) {object.objectOutput=output.object;object.hasObjectOutput=true;}
+        if(object.slotType==23 && output.root) {object.deviceOutput=output.device;object.hasDeviceOutput=true;}
         object.sourceDelta=output.source;
         object.engagement=output.engagement;
         object.revision=output.revision;

@@ -305,7 +305,7 @@ bool stage_item_acquisition(const SessionState& before,
                             std::uint64_t characterSoid,
                             std::uint64_t acquiredInstanceSoid,
                             bool updatesAccount,
-                            ItemAcquisition& acquisition) noexcept {
+                            ItemAcquisition& acquisition,std::uint64_t removedInstanceSoid) noexcept {
     acquisition = {};
     std::uint32_t accountDefinitionId = 0;
     std::uint32_t characterDefinitionId = 0;
@@ -313,7 +313,7 @@ bool stage_item_acquisition(const SessionState& before,
     if (!valid(before) || !before.family4Active || before.family4RootSoid == 0 || accountSoid == 0
         || accountSoid != before.family4RootSoid || characterSoid == 0 || acquiredInstanceSoid == 0
         || before.family4ResidentCount == 0
-        || before.family4ResidentCount >= before.family4Residents.size()
+        || (!removedInstanceSoid && before.family4ResidentCount >= before.family4Residents.size())
         || before.family4Version == (std::numeric_limits<std::int32_t>::max)()
         || !middleware::datagen::object_id(
             kAccountFamilyType, middleware::datagen::kAccountSlot, accountDefinitionId)
@@ -324,12 +324,16 @@ bool stage_item_acquisition(const SessionState& before,
         return false;
     }
 
+    bool removedResident = !removedInstanceSoid;
     bool accountResident = false;
     bool characterResident = false;
     for (std::size_t index = 0; index < before.family4ResidentCount; ++index) {
         const ResidentObject& object = before.family4Residents[index];
         if (object.objectSoid == acquiredInstanceSoid) {
             return false;
+        }
+        if(object.objectSoid==removedInstanceSoid) {
+            if(object.definitionId!=itemInstanceDefinitionId) {return false;}removedResident=true;
         }
         accountResident =
             accountResident
@@ -338,15 +342,18 @@ bool stage_item_acquisition(const SessionState& before,
             characterResident
             || (object.definitionId == characterDefinitionId && object.objectSoid == characterSoid);
     }
-    if (!accountResident || !characterResident) {
+    if (!accountResident || !characterResident || !removedResident) {
         return false;
     }
 
     acquisition.after = before;
     ++acquisition.after.family4Version;
-    acquisition.after.family4Residents[before.family4ResidentCount] =
-        ResidentObject{acquiredInstanceSoid, itemInstanceDefinitionId};
-    ++acquisition.after.family4ResidentCount;
+    acquisition.after.family4ResidentCount=0;
+    for(std::size_t i=0;i<before.family4ResidentCount;++i) if(before.family4Residents[i].objectSoid!=removedInstanceSoid) {
+        acquisition.after.family4Residents[acquisition.after.family4ResidentCount++]=before.family4Residents[i];
+    }
+    acquisition.after.family4Residents[acquisition.after.family4ResidentCount++]={acquiredInstanceSoid,itemInstanceDefinitionId};
+    acquisition.removedInstanceSoid=removedInstanceSoid;
     acquisition.accountDefinitionId = accountDefinitionId;
     acquisition.characterDefinitionId = characterDefinitionId;
     acquisition.itemInstanceDefinitionId = itemInstanceDefinitionId;

@@ -41,26 +41,25 @@ enum class Role : std::uint8_t { invalid, creator, derived };
 // generic auth bodies into a second native source with the same registry/slot.
 // Preserve unrelated child/player groups and their order. Existing policy
 // ordinals cannot be compacted safely; upgrading such a binding needs restart.
-template<class Storage>
-[[nodiscard]] Role prepare(const Definition& definition,
-    state::activity::ActivityInstanceKey instance, const RegionLineage& lineage,
-    const roster_lifetime::State& prior, Storage& storage, wire::Roster& roster) noexcept {
+template<class Storage,class OwnsKey>
+[[nodiscard]] Role prepare(state::activity::ActivityInstanceKey instance, const RegionLineage& lineage,
+    const roster_lifetime::State& prior, Storage& storage, wire::Roster& roster, OwnsKey owns) noexcept {
     const auto selected = role(instance, lineage);
     if (selected != Role::derived) return selected;
     if (roster.groupCount > roster.groups.size() || roster.topLevelGroupCount > roster.groupCount
         || roster.bubbleSubBlocks.size() > storage.rosterSubBlocks.size()
         || roster.bubbleSubBlocks.size() > storage.rosterSubBlockKeys.size()
         || !roster.topLevelKeys.empty() || !roster.topLevelPresence.empty()
-        || !roster.topLevelStates.empty() || owns_key(definition, roster.playerKeyGroup)) return Role::invalid;
+        || !roster.topLevelStates.empty() || owns(roster.playerKeyGroup)) return Role::invalid;
     if (prior.identity.owner) {
         if (roster_lifetime::validate(prior) != roster_lifetime::Result::ready
             || prior.identity.owner != instance.sessionId
             || prior.identity.incarnation != instance.incarnation.value) return Role::invalid;
         for (const auto key : roster_lifetime::view(prior.top).keys)
-            if (owns_key(definition, key)) return Role::invalid;
+            if (owns(key)) return Role::invalid;
         for (std::size_t b = 0; b < prior.blockCount; ++b)
             for (const auto key : roster_lifetime::view(prior.blocks[b].entries).keys)
-                if (owns_key(definition, key)) return Role::invalid;
+                if (owns(key)) return Role::invalid;
     }
     // All validation precedes mutation of the caller's scratch storage.
     for (const auto& block : roster.bubbleSubBlocks) {
@@ -72,7 +71,7 @@ template<class Storage>
     wire::Roster candidate = roster;
     candidate.groupCount = candidate.topLevelGroupCount = 0;
     for (std::size_t g = 0; g < roster.groupCount; ++g) {
-        if (owns_key(definition, roster.groups[g].key)) continue;
+        if (owns(roster.groups[g].key)) continue;
         candidate.groups[candidate.groupCount++] = roster.groups[g];
         if (g < roster.topLevelGroupCount) ++candidate.topLevelGroupCount;
     }
@@ -80,11 +79,18 @@ template<class Storage>
     for (const auto& block : roster.bubbleSubBlocks) {
         auto& keys = storage.rosterSubBlockKeys[count];
         std::size_t kept{};
-        for (const auto key : block.keys) if (!owns_key(definition, key)) keys[kept++] = key;
+        for (const auto key : block.keys) if (!owns(key)) keys[kept++] = key;
         if (kept) storage.rosterSubBlocks[count++] = {block.bubble, std::span(keys).first(kept)};
     }
     candidate.bubbleSubBlocks = std::span(storage.rosterSubBlocks).first(count);
     roster = candidate;
     return selected;
+}
+template<class Storage>
+[[nodiscard]] Role prepare(const Definition& definition,
+    state::activity::ActivityInstanceKey instance, const RegionLineage& lineage,
+    const roster_lifetime::State& prior, Storage& storage, wire::Roster& roster) noexcept {
+    return prepare(instance,lineage,prior,storage,roster,
+        [&definition](std::uint32_t key) noexcept {return owns_key(definition,key);});
 }
 }

@@ -6,6 +6,7 @@
 #include <span>
 
 #include "state.h"
+#include "../activity/Newlight/launchpad/quest_runtime.h"
 
 namespace sunrise::state {
 
@@ -40,6 +41,8 @@ struct PendingEquipmentSwap {
     bool prepared{};
 };
 
+enum class AcquisitionSource : std::uint8_t { collections, missionReward };
+
 /** Prepared selected-character inventory insertion kept private until its reply and push fit. */
 struct PendingItemAcquisition {
     CharacterState beforeCharacter{};
@@ -53,6 +56,7 @@ struct PendingItemAcquisition {
     std::uint64_t accountSoid{};
     std::uint64_t characterSoid{};
     std::uint64_t acquiredInstanceSoid{};
+    std::uint64_t removedInstanceSoid{};
     std::uint32_t acquiredDefinitionHash{};
     std::uint32_t materialRequirementSetHash{};
     std::uint32_t expectedNextInventorySerial{};
@@ -67,6 +71,8 @@ struct PendingItemAcquisition {
     std::uint8_t materialRequirementCount{};
     bool profileChanged{};
     bool prepared{};
+    AcquisitionSource source{AcquisitionSource::collections};
+    std::uint16_t rewardGlimmer{};
 };
 
 /** Prepared account-profile stack insertion kept private until its reply and account upsert fit. */
@@ -279,14 +285,17 @@ void shutdown() noexcept;
  * Native-default sockets, a unique runtime SOID, and the selected character's current item level
  * are used. Full loadout resolution is the authoritative bucket-capacity check.
  *
- * @param collectibleIndex Collections row the Client pulled from.
- * @param definitionHash Installed item definition requested by the Client.
+ * @param collectibleIndex Installed collectible linked to this item.
+ * @param definitionHash Installed item definition to acquire.
  * @param mutation Gets a checked after-image without changing account State.
+ * @param source Collections charges its native costs; an accepted mission reward is free.
  * @return True when the item and every existing loadout row resolve with one free native row.
  */
 [[nodiscard]] bool prepare_item_acquisition(std::uint16_t collectibleIndex,
                                             std::uint32_t definitionHash,
-                                            PendingItemAcquisition& mutation) noexcept;
+                                            PendingItemAcquisition& mutation,
+                                            AcquisitionSource source=AcquisitionSource::collections,
+                                            std::uint16_t rewardGlimmer=0) noexcept;
 
 /** Builds the exact full-account after-image while a prepared item pull remains current. */
 [[nodiscard]] bool preview_item_acquisition(const PendingItemAcquisition& mutation,

@@ -112,7 +112,7 @@ bool prepare(Scratch& scratch,
         const state::CharacterState& selectedCharacter =
             account.characters[selected.characterIndex];
         if (!family4_datagen::character::encode(
-                selectedCharacter, selected.loadout, selected.lightEvaluation, characterBytes)) {
+                selectedCharacter, selected.loadout, selected.lightEvaluation, characterBytes,&account)) {
             return report_failure("character_encode");
         }
         if (!append_object(scratch,

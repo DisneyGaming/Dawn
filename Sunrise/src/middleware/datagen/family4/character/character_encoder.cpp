@@ -1,4 +1,6 @@
 #include "character_encoder.h"
+#include "../../../../state/vendors/projection.h"
+#include "../../../../state/vendors/quest_state.h"
 
 #include <algorithm>
 #include <array>
@@ -8,6 +10,7 @@
 #include <optional>
 
 #include "../../../../state/unlocks/unlocks_runtime.h"
+#include "../../../../state/activity/Newlight/launchpad/quest.h"
 #include "../instance/layout.h"
 #include "../progression/progression_bank_keys.h"
 #include "abi.h"
@@ -68,7 +71,9 @@ constexpr std::int32_t kOccupiedRowWatermark = 1;
         const instance::ResolvedInstance& itemInstance = item.instance;
         const auto priorSoidsEnd = instanceSoids.cbegin() + static_cast<std::ptrdiff_t>(index);
         if (item.inventoryRow >= occupiedRows.size()
-            || item.equipmentSlot >= occupiedEquipmentSlots.size() || item.quantity <= 0
+            || (item.equipmentSlot >= occupiedEquipmentSlots.size()
+                && (item.equipped || item.equipmentSlot != loadout::kNoEquipmentSlot))
+            || item.quantity <= 0
             || itemInstance.instanceSoid == 0 || itemInstance.bounds.itemDefinitionCount == 0
             || itemInstance.bounds.itemDefinitionCount > instance::layout::kDefinitionIndexCapacity
             || itemInstance.baseDefinitionIndex == kEmptyDefinitionIndex
@@ -131,7 +136,7 @@ summary_matches_loadout(const loadout::ResolvedLoadout& resolvedLoadout,
 bool encode(const state::CharacterState& state,
             const loadout::ResolvedLoadout& resolvedLoadout,
             const state::equipment::light::Evaluation& lightEvaluation,
-            std::span<std::byte> output) noexcept {
+            std::span<std::byte> output,const state::AccountState* account) noexcept {
     if (!valid(state) || !valid(resolvedLoadout)
         || !summary_matches_loadout(resolvedLoadout, lightEvaluation)
         || output.size() < layout::kObjectSize) {
@@ -161,6 +166,12 @@ bool encode(const state::CharacterState& state,
         object.objectiveValues[index] =
             index < unlocks.characterObjectValues.size() ? unlocks.characterObjectValues[index] : 0;
     }
+    state::vendors::project_quests(state,1,object);
+    state::activity::newlight::launchpad::quest::project(state,object);
+    if(account) {
+        state::vendors::project_inventory(*account,state,object);
+        if(!state::vendors::project_active_progress(*account,state,object)) {return false;}
+    }
     if (!build_equipment_summary(lightEvaluation, object.equipmentSummary)) {
         return false;
     }
@@ -168,6 +179,7 @@ bool encode(const state::CharacterState& state,
                                object.progressions)) {
         return false;
     }
+    state::vendors::project(state.vendorProgress,object);
     object.nextInventorySerial = resolvedLoadout.nextInventorySerial;
     for (std::size_t index = 0; index < resolvedLoadout.itemCount; ++index) {
         const loadout::ResolvedItem& item = resolvedLoadout.items[index];

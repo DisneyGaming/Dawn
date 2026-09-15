@@ -94,6 +94,10 @@ struct SenseObject final {
     bool hasMonitorOutput{};
     combatant_sense::Output combatantOutput{};
     bool hasCombatantOutput{};
+    object_sense::Output objectOutput{};
+    device_sense::Output deviceOutput{};
+    native_sense::Passenger passengerOutput{};
+    bool hasObjectOutput{},hasDeviceOutput{},hasPassengerOutput{};
     /** True when the group envelope, rather than a recovered schema constant, set bodyBits. */
     bool inferredBodyWidth{};
     bool hasDelta{};

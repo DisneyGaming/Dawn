@@ -1,3 +1,4 @@
+#include "../../../state/activity/Newlight/launchpad/runtime.h"
 #include <Windows.h>
 #include <intrin.h>
 #include <bit>
@@ -45,6 +46,10 @@
 #include "../../../state/activity/omega_first_lair_runtime.h"
 #include "../../../state/activity/omega_presentation.h"
 #include "../../../state/activity/native_population_events.h"
+#include "../../../state/activity/vendors/lifetime.h"
+#include "vendor_network_presence.h"
+#include "vendor_lifetime_native.h"
+#include "../../../state/activity/Newlight/launchpad/welcome.h"
 
 namespace sunrise::client::hooks::bootflow {
 namespace {
@@ -56,8 +61,10 @@ namespace hijacked=state::activity::hijacked;
 namespace deep=state::activity::deep_storage;
 namespace strike=state::activity::strike_pact;
 namespace garden=state::activity::strike_bond;
-struct Context final { bool enabled;std::uint64_t run;bool gateway;bool trial{};bool deep{};bool strike{};bool hijacked{};bool garden{}; };
+namespace launchpad=state::activity::newlight::launchpad;
+struct Context final { bool enabled;std::uint64_t run;bool gateway;bool trial{};bool deep{};bool strike{};bool hijacked{};bool garden{};bool launchpad{}; };
 Context selected_context() noexcept {
+    const auto launchpadRun=launchpad::native_run();if(launchpadRun) {return {true,launchpadRun,false,false,false,false,false,false,true};}
     const auto gardenRun=garden::native_run();if(gardenRun) return {true,gardenRun,false,false,false,false,false,true};
     const auto hijackedRun=hijacked::native_run();if(hijackedRun) {return {true,hijackedRun,false,false,false,false,true};}
     const auto deepRun=deep::native_run();if(deepRun) {return {true,deepRun,false,false,true};}
@@ -208,11 +215,11 @@ enum : std::uint8_t {
     kSourceDefinitionRef=1,kSourceUnknownResource,kSourceResolve,kSourceRegistry,
     kSourceType,kSourceSlot,kSourceGenerationRead
 };
-bool source(Read& read,std::uintptr_t instance,Source& source,bool gatewayContext,bool trialContext,bool deepContext,bool strikeContext,bool hijackedContext,bool gardenContext) noexcept {
+bool source(Read& read,std::uintptr_t instance,Source& source,bool gatewayContext,bool trialContext,bool deepContext,bool strikeContext,bool hijackedContext,bool gardenContext,bool launchpadContext) noexcept {
     source.reason=0;source.nativeRegistry=0;source.nativeType=0;source.nativeSlot=-1;
     source.expectedRegistry=0;source.expectedSlot=0;
     Ref definition{};
-    if(!read.value(instance,definition) || definition.kind!=0x8080948FU || (!gatewayContext && !trialContext && !deepContext && !strikeContext && !hijackedContext && !gardenContext && definition.offset!=0x728)) {
+    if(!read.value(instance,definition) || definition.kind!=0x8080948FU || (!gatewayContext && !trialContext && !deepContext && !strikeContext && !hijackedContext && !gardenContext && !launchpadContext && definition.offset!=0x728)) {
         source.resource=definition.handle;source.kind=definition.kind;source.reason=kSourceDefinitionRef;return false;
     }
     source.resource=definition.handle;source.kind=definition.kind;
@@ -244,6 +251,12 @@ bool source(Read& read,std::uintptr_t instance,Source& source,bool gatewayContex
         if(!row) {source.nativeRegistry=registry;source.nativeType=type;source.nativeSlot=slot;source.reason=kSourceUnknownResource;return false;}
         expectedRegistry=row->registry;expectedSlot=row->source;
     }
+    if(launchpadContext) {
+        for(const auto& row:launchpad::kSpawns) {
+            if(row.definition==definition.handle && row.offset==definition.offset) {expectedRegistry=row.registry;expectedSlot=row.source;break;}
+        }
+        if(!expectedRegistry) {source.reason=kSourceUnknownResource;return false;}
+    }
     if(hijackedContext) {
         for(const auto& row:hijacked::kSpawns) {
             if(row.definition==definition.handle && row.offset==definition.offset) {expectedRegistry=row.registry;expectedSlot=row.source;break;}
@@ -263,7 +276,7 @@ bool source(Read& read,std::uintptr_t instance,Source& source,bool gatewayContex
         if(expectedRegistry==0) { source.reason=kSourceUnknownResource;return false; }
     }
     for(const auto& row:catalog::kSpawners) {
-        if(!gatewayContext && !trialContext && !deepContext && !strikeContext && !hijackedContext && !gardenContext && catalog::supported_by_encounter(row) && row.resource==definition.handle) {
+        if(!gatewayContext && !trialContext && !deepContext && !strikeContext && !hijackedContext && !gardenContext && !launchpadContext && catalog::supported_by_encounter(row) && row.resource==definition.handle) {
             expectedRegistry=catalog::kRegistry;expectedSlot=row.slot;break;
         }
     }
@@ -353,7 +366,7 @@ __declspec(noinline) void observe_admission(std::uint32_t parent,std::uint64_t c
         handle,actorState.handle,actorState.parent)
         || !read.resolve({actorState.parent,0,0},parentAgain) || parentAgain!=currentParent) {rejection=5;}
     else if(!read.resolve(actorState.source,linked)) {rejection=6;}
-    else if(!read.value(linked,definition) || !source(read,linked,sourceState,nav.gateway,nav.trial,nav.deep,nav.strike,nav.hijacked,nav.garden)) {rejection=7;}
+    else if(!read.value(linked,definition) || !source(read,linked,sourceState,nav.gateway,nav.trial,nav.deep,nav.strike,nav.hijacked,nav.garden,nav.launchpad)) {rejection=7;}
     else if(sourceState.generation==0 || sourceState.generation!=sourceState.senseGeneration) {rejection=8;}
 
     // Retain the authentic actor/AI-parent origin before progression can detach
@@ -367,7 +380,9 @@ __declspec(noinline) void observe_admission(std::uint32_t parent,std::uint64_t c
     // deduplicates full actor IDs, and fails closed on unexpected population.
     bool accepted=false;
     if(rejection==0) {
-        accepted=nav.garden?garden::observe_admission(
+        accepted=nav.launchpad?launchpad::observe_admission(
+            {nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
+            :nav.garden?garden::observe_admission(
             {nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
             :nav.hijacked?hijacked::observe_admission(
             {nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
@@ -391,6 +406,11 @@ __declspec(noinline) void observe_admission(std::uint32_t parent,std::uint64_t c
         gateway_native::Read probe{g_image};
         const hijacked::EnemyReceipt receipt{nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry};
         hijacked::observe_readiness(receipt,coo_native::enemy(probe,g_image,receipt));
+    }
+    if(nav.launchpad && rejection==0) {
+        gateway_native::Read probe{g_image};
+        const launchpad::EnemyReceipt receipt{nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry};
+        launchpad::observe_readiness(receipt,coo_native::enemy(probe,g_image,receipt));
     }
     if(nav.trial && rejection==0) {
         gateway_native::Read probe{g_image};
@@ -489,7 +509,7 @@ __declspec(noinline) void observe_candidate(void* instance,std::uint32_t event,
     else if(!read.resolve({at<std::uint32_t>(character.data()+0x24),0,0},characterAddress)) {rejection=4;}
     else if(characterAddress!=address) {rejection=5;}
     else if(!read.resolve(actorState.source,linked)) {rejection=6;}
-    else if(!source(read,linked,sourceState,nav.gateway,nav.trial,nav.deep,nav.strike,nav.hijacked,nav.garden)) {rejection=7;}
+    else if(!source(read,linked,sourceState,nav.gateway,nav.trial,nav.deep,nav.strike,nav.hijacked,nav.garden,nav.launchpad)) {rejection=7;}
     std::array<std::byte,0x3C> eventHeader{};std::array<std::byte,0x38> payload{};
     std::uint32_t eventDefinition{};bool eventValid=false,healthValid=false,deathAccepted=false;
     Ref healthRef{};std::uintptr_t healthAddress{},memberAddress{};
@@ -515,7 +535,9 @@ __declspec(noinline) void observe_candidate(void* instance,std::uint32_t event,
         const bool qualified=omega_enemy_native_health::death(eventValid,eventDefinition,healthValid,
             healthFlags,sourceState.generation,sourceState.senseGeneration);
         if(qualified && call.accepts_side_effects()) {
-            deathAccepted=nav.garden?garden::observe_death(
+            deathAccepted=nav.launchpad?launchpad::observe_death(
+                {nav.run,actorState.handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
+            :nav.garden?garden::observe_death(
                 {nav.run,actorState.handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
             :nav.hijacked?hijacked::observe_death(
                 {nav.run,actorState.handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
@@ -616,6 +638,7 @@ template<class... Args> void native_report(const char* format,Args... args) noex
     if(count>0 && static_cast<std::size_t>(count)<line.size())
         core::log::write(core::log::Channel::client,core::log::Level::info,{line.data(),static_cast<std::size_t>(count)});
 }
+#include "vendor_population.inl"
 // Shared observer for explicitly registered activity sources. Package definitions,
 // salted actor backlinks, typed health interfaces and source generations are
 // qualified before copying an event into the state mailbox. No spawn or AI call.
@@ -712,12 +735,14 @@ void finish_native_admissions(std::uint32_t onlyActor=UINT32_MAX) noexcept {
         }
         const nativeEvents::Event complete{lease,{lease.source,current.handle,current.entity},
             current.source.handle,nativeEvents::Kind::admitted};
-        const bool accepted=nativeEvents::submit(complete,epochValue);
+        const bool vendor=vendorPopulation::lifetime::owns(lease);
+        const bool accepted=vendor?vendorPopulation::lifetime::admit(complete):nativeEvents::submit(complete,epochValue);
         if(!accepted) nativeEvents::observation_lost();
         else {
             const auto retained=g_admittedActors.add({complete,birth.parent});
             if(retained!=pending::Intake::accepted && retained!=pending::Intake::duplicate) nativeEvents::observation_lost();
             observe_vance_contact_admission(complete,birth.parent);
+            if(vendor) vendorPopulation::remember(complete);
         }
         native_report("ev=native_population_capture stage=attachment actor=%08X entity=%08X accepted=%u",
             current.handle,current.entity,accepted?1U:0U);
@@ -745,6 +770,7 @@ void observe_native_candidate(void* instance,std::uint32_t event,std::uint64_t e
             actorState.entity,at<std::uint32_t>(health.data()+0x2C))
         || !omega_enemy_native_health::death(true,eventDefinition,true,at<std::uint8_t>(health.data()+0x338),
             lease.source.generation,lease.source.generation)) return;
+    if(vendorPopulation::lifetime::owns(lease)) return;
     // A death can beat the next frame poll. Deliver that actor's captured birth
     // first under the same lock, then its independently qualified native death.
     std::lock_guard lock(g_pendingMutex);
@@ -806,6 +832,7 @@ __declspec(noinline) void __fastcall retirement_hook(std::uint32_t handle,std::u
     if(epochValue) {
         std::lock_guard lock(g_pendingMutex);
         finish_native_admissions(handle);
+        vendorPopulation::poll();
         for(std::size_t i=0;i<g_admittedActors.size();++i) {
             const auto& birth=g_admittedActors[i];if(birth.event.actor.actor!=handle) continue;
             const auto& source=birth.event.lease.source;Read read;Actor current;
@@ -831,7 +858,7 @@ __declspec(noinline) void __fastcall retirement_hook(std::uint32_t handle,std::u
         const bool released=retirement_slot(read,handle,after) && native_population_retirement::released(before,after);
         auto event=captured.event;event.kind=nativeEvents::Kind::retired;
         std::lock_guard lock(g_pendingMutex);
-        const bool accepted=released && nativeEvents::submit(event,epochValue);
+        const bool accepted=released && (vendorPopulation::lifetime::owns(event.lease) || nativeEvents::submit(event,epochValue));
         if(!accepted) nativeEvents::observation_lost();
         if(released) observe_vance_contact_retirement(event);
         for(std::size_t i=0;i<g_admittedActors.size();++i) {
@@ -861,22 +888,37 @@ __declspec(noinline) void retire_strike_bond_boss(std::uintptr_t source,bool all
     if(scope.accepts_side_effects()) garden_retirement::dispatch(source,allocatorReady);
 }
 
+void begin_vendor_area_unload() noexcept {
+    vendorPopulation::unloading.fetch_add(1,std::memory_order_acq_rel);
+}
+void finish_vendor_area_unload(bool allocatorReady) noexcept {
+    const hooking::CallGate::Scope scope{g_gate};
+    if(vendorPopulation::unloading.load(std::memory_order_acquire)==1 && scope.accepts_side_effects())
+        vendorPopulation::finish_unload(allocatorReady);
+    vendorPopulation::unloading.fetch_sub(1,std::memory_order_release);
+}
+
 __declspec(noinline) void poll_native_population_admissions() noexcept {
     const hooking::CallGate::Scope scope{g_gate};
     if(!scope.accepts_side_effects()) return;
+    vendorPopulation::lifetime::prune();
     const auto hijackedRun=hijacked::native_run();
     if(hijackedRun && TryAcquireSRWLockExclusive(&g_lock)) {
         trace_hijacked_attachments(hijackedRun);
         ReleaseSRWLockExclusive(&g_lock);
     }
-    std::lock_guard lock(g_pendingMutex);
-    finish_native_admissions();
-    for(std::size_t i=0;i<g_admittedActors.size();) {
-        const auto& birth=g_admittedActors[i];const auto& source=birth.event.lease.source;
-        if(nativeEvents::lookup(source.source.definition,source.source.registry,source.source.slot,source.generation)!=birth.event.lease)
-            g_admittedActors.erase(i);
-        else ++i;
+    {
+        std::lock_guard lock(g_pendingMutex);
+        finish_native_admissions();
+        vendorPopulation::poll();
+        for(std::size_t i=0;i<g_admittedActors.size();) {
+            const auto& birth=g_admittedActors[i];const auto& source=birth.event.lease.source;
+            if(nativeEvents::lookup(source.source.definition,source.source.registry,source.source.slot,source.generation)!=birth.event.lease)
+                g_admittedActors.erase(i);
+            else ++i;
+        }
     }
+    vendorPopulation::resume();
 }
 
 bool install_omega_enemy_lair_receipts() noexcept {
@@ -939,7 +981,7 @@ bool uninstall_omega_enemy_lair_receipts() noexcept {
     garden_fire::reset();garden_intro::reset();garden_target::reset();garden_target::reset_replay();garden_carriage::reset();garden_cycle::reset();garden_shield::reset();garden_retirement::reset();
     g_image=0;g_run=UINT64_MAX;g_lines=0;g_seenCount=0;g_seen={};
     hijacked_trace_run(0);
-    g_pendingBirths={};g_admittedActors={};g_nativeLines.store(0,std::memory_order_relaxed);
+    g_pendingBirths={};g_admittedActors={};vendorPopulation::roots={};vendorPopulation::lines.store(0,std::memory_order_relaxed);g_nativeLines.store(0,std::memory_order_relaxed);
     g_candidateRejected=0;g_parentRejected=0;g_rejects={};g_rejectCount=0;g_rejectOverflow=false;return true;
 }
 } // namespace sunrise::client::hooks::bootflow

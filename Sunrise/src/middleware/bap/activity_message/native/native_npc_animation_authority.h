@@ -3,6 +3,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <span>
 
 namespace sunrise::middleware::bap::activity_message::native::npc_animation {
 inline constexpr std::uint32_t kSchema=0x80809586U;
@@ -21,16 +22,25 @@ struct Control final {
     return value.counter<=0x7FFFFFFFU
         && (value.sequence!=kEmptyHash ? value.counter!=0 : value.completion==kEmptyHash);
 }
-// Reflection: root optional tuple, two u32s, signed32 with INT_MIN bias;
-// then present 80809588 event list with count zero. No 5E events are supported
-// by this first adapter. Count zero serializes no elements of the bounded list.
-template<class Writer> [[nodiscard]] bool write(Writer& writer,Control value) noexcept {
-    if(!valid(value)) return false;
+// 80809588 has a three-bit count, capacity four (80809587). Each 8080958A
+// element is two unconditional u32s: sequence and event. A0F4A1 publishes
+// these as native 5E requests in group AFB11A12; they are retained state.
+struct Event final {std::uint32_t sequence{},event{};};
+[[nodiscard]] constexpr std::size_t body_bits(std::size_t events=0) noexcept {return kBodyBits+64U*events;}
+template<class Writer> [[nodiscard]] bool write(Writer& writer,Control value,std::span<const Event> events={}) noexcept {
+    if(!valid(value) || events.size()>4) return false;
+    for(std::size_t i=0;i<events.size();++i) {
+        if(events[i].sequence==kEmptyHash || events[i].event==kEmptyHash) return false;
+        for(std::size_t j=0;j<i;++j)
+            if(events[i].sequence==events[j].sequence && events[i].event==events[j].event) return false;
+    }
     const auto start=writer.bit_count();
-    return writer.write(1,1) && writer.write(value.sequence,32)
-        && writer.write(value.completion,32) && writer.write(value.counter+0x80000000U,32)
-        && writer.write(1,1) && writer.write(0,3)
-        && writer.bit_count()-start==kBodyBits;
+    if(!writer.write(1,1) || !writer.write(value.sequence,32)
+        || !writer.write(value.completion,32) || !writer.write(value.counter+0x80000000U,32)
+        || !writer.write(1,1) || !writer.write(events.size(),3)) return false;
+    for(const auto& event:events)
+        if(!writer.write(event.sequence,32) || !writer.write(event.event,32)) return false;
+    return writer.bit_count()-start==body_bits(events.size());
 }
 struct Request final {
     std::uint32_t registry{};

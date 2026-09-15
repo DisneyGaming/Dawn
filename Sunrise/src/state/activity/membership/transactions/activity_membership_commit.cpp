@@ -85,10 +85,7 @@ namespace {
                                     SessionRecord& record,
                                     const PendingMutation& prepared) noexcept {
     const PreparedRegionTransition& transition = prepared.regionTransition;
-    if (std::memcmp(&transition,
-                    &prepared.regionTransitionGuard,
-                    sizeof transition)
-            != 0
+    if (!transactions::equal(transition, prepared.regionTransitionGuard)
         || transition.activity != activity::transactions::instance_key(record)
         || transition.expectedHostRegion != activity::transactions::host_region_key(record)
         || transition.nextHostRegion != transition.expectedHostRegion

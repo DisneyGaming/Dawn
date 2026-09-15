@@ -145,6 +145,7 @@ find_resolved_position(const middleware::datagen::family4::loadout::ResolvedLoad
                                     std::uint16_t targetDefinitionIndex,
                                     std::uint32_t flags,
                                     PendingItemState& mutation) noexcept;
+[[nodiscard]] bool account_owns_soid(const AccountState& account,std::uint64_t soid) noexcept;
 [[nodiscard]] bool next_item_instance_soid(const AccountState& account,
                                            std::uint64_t& output) noexcept;
 [[nodiscard]] bool next_profile_item_instance_soid(const AccountState& account,

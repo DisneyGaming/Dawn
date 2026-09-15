@@ -147,7 +147,7 @@ bool prepare_selection_move(Scratch& scratch,
         if (!family4_datagen::character::encode(account.characters[selected.characterIndex],
                                                 selected.loadout,
                                                 selected.lightEvaluation,
-                                                characterBytes)) {
+                                                characterBytes,&account)) {
             return report_failure("move_character_object");
         }
         if (!append_object(scratch,
@@ -249,7 +249,7 @@ bool prepare_equipment_swap(Scratch& scratch,
     if (!family4_datagen::character::encode(account.characters[mutation.characterIndex],
                                             selected.loadout,
                                             selected.lightEvaluation,
-                                            characterBytes)) {
+                                            characterBytes,&account)) {
         return report_failure("equip_character_object");
     }
     report_equipment_object(swap,
@@ -321,7 +321,7 @@ bool prepare_item_state(Scratch& scratch,
     if (!family4_datagen::character::encode(account.characters[mutation.characterIndex],
                                             selected.loadout,
                                             selected.lightEvaluation,
-                                            characterBytes)) {
+                                            characterBytes,&account)) {
         return report_failure("item_state_character_object");
     }
     const auto& encoded =

@@ -77,6 +77,12 @@ public:
         }return {};
     }
     void enable(std::size_t index) noexcept { if (index < Groups) { enabled_[index] = true; } }
+    // Explicit source recreation, not a death or an area-wide reset. The caller
+    // must retire the old command generation before accepting new admissions.
+    bool restart(std::size_t index) noexcept {
+        if(index>=Groups || !enabled_[index]) {return false;}
+        actors_[index]={};counts_[index]=0;return true;
+    }
     [[nodiscard]] bool enabled(std::size_t index) const noexcept { return index < Groups && enabled_[index]; }
     template<class Catalog>
     [[nodiscard]] bool source_enabled(const Catalog& catalog, std::uint16_t source, std::uint32_t registry) const noexcept {

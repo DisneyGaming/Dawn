@@ -130,6 +130,10 @@ bool commit(ServiceOutcome& outcome, Publication& publication) noexcept {
                                    : "ev=equip stage=transaction_commit result=fail");
         return committed;
     }
+    if (auto* transaction = transaction_if<VendorServiceTransaction>(outcome)) {return state::vendors::commit(transaction->pending);}
+    if (auto* transaction = transaction_if<NewlightQuestTransaction>(outcome)) {
+        return state::commit_newlight_quest(transaction->pending);
+    }
     if (auto* transaction = transaction_if<ItemAcquisitionTransaction>(outcome)) {
         const bool committed = state::commit_item_acquisition(transaction->pending);
         core::log::write(core::log::Channel::server,

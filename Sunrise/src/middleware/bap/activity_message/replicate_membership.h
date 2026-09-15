@@ -39,7 +39,7 @@ inline constexpr std::size_t kCitizenEncodedSize =
 inline constexpr std::size_t kSynchronizationBitCount = 13;
 inline constexpr std::size_t kMaximumEncodedSize =
     (kMeaningfulBitCount + kRemoteMemberBitCount + kDescriptorBitCount
-     + 2U * kSynchronizationBitCount + 7U) / 8U;
+     + 2U * kSynchronizationBitCount + 160U + 7U) / 8U;
 
 /**
  * One remote-citizen advertisement placed in a single region record.
@@ -64,6 +64,16 @@ struct CitizenAdvertisement final {
     bool present{};
 };
 
+/** Native D4 area leg: current first, pending second. Absence preserves the prior leg. */
+struct RegionLeg final {
+    std::int32_t sliceSetIndex{-1};
+    std::uint32_t sliceSetHash{};
+    std::int32_t regionIndex{-1};
+    std::int8_t publicState{-1},auxState{-1};
+    bool present{};
+    friend constexpr bool operator==(const RegionLeg&,const RegionLeg&) noexcept = default;
+};
+
 /** Inputs for one local-player membership snapshot. */
 struct MembershipSnapshot final {
     client_identity::ClientIdentity identity{};
@@ -84,6 +94,7 @@ struct MembershipSnapshot final {
     /** Host acknowledgement, supplied only after the caller's native readiness checks. */
     std::uint8_t hostSynchronizationToken{};
     bool hasHostSynchronizationToken{};
+    RegionLeg currentLeg{},pendingLeg{};
 };
 
 /** Selects a packed active state without changing any echoed transition token. */
@@ -103,9 +114,10 @@ struct MembershipSnapshot final {
 }
 
 [[nodiscard]] constexpr std::size_t synchronization_bits(const MembershipSnapshot& snapshot) noexcept {
-    return (static_cast<std::size_t>(snapshot.hasSynchronizationToken)
-            + static_cast<std::size_t>(snapshot.citizen.present && snapshot.hasHostSynchronizationToken))
-           * kSynchronizationBitCount;
+    const bool local=snapshot.hasSynchronizationToken || snapshot.currentLeg.present || snapshot.pendingLeg.present;
+    return (local?5U:0U)+(snapshot.hasSynchronizationToken?8U:0U)
+        +(snapshot.currentLeg.present?80U:0U)+(snapshot.pendingLeg.present?80U:0U)
+        +(snapshot.citizen.present && snapshot.hasHostSynchronizationToken?kSynchronizationBitCount:0U);
 }
 
 [[nodiscard]] constexpr std::size_t meaningful_bits(const MembershipSnapshot& snapshot) noexcept {

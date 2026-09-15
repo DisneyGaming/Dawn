@@ -105,6 +105,7 @@ namespace build_buckets = state::build_data::inventory::buckets;
         if (itemCount >= resolved.size()
             || !resolve_item(
                 *authored, character, itemDefinitionCount, socketEntryListCount, candidate)
+            || candidate.item.equipmentSlot == kNoEquipmentSlot
             || !place_item(candidate, occupied, resolved[itemCount])) {
             return false;
         }

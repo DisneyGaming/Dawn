@@ -1,15 +1,20 @@
+#include "../../../../../state/activity/Newlight/launchpad/transit.h"
 #include "activity_keepalive_push.h"
 #include "../../../../../state/activity/gateway/runtime.h"
 #include "../../../../../state/activity/deadly_trial/runtime.h"
 #include "../../../../../state/activity/beyond_infinity/runtime.h"
 #include "../../../../../state/activity/deep_storage/runtime.h"
 #include "../../../../../state/activity/hijacked/runtime.h"
+#include "../../../../../state/activity/Newlight/launchpad/runtime.h"
 #include "../../../../../state/activity/beyond_infinity/transit.h"
 #include "../../../../../state/activity/strike_pact/runtime.h"
 #include "../../../../../state/activity/strike_bond/runtime.h"
 #include "../../../../../state/activity/coo/omega_opening_projection.h"
 #include "../../../../../state/activity/runtime.h"
 #include "../../../../../state/activity/native_population_events.h"
+#include "../../../../../state/activity/Newlight/launchpad/welcome.h"
+#include "../../../../../state/activity/vendors/lifetime.h"
+#include "../../../../../client/player/player_position.h"
 #include "../../../../runtime/activity/adventure_native_bridge.h"
 
 #include <Windows.h>
@@ -224,8 +229,7 @@ bool consume_activity_keepalive(Session& session,
         return service_region_debt(session, scratch, response, written);
     }
     const std::uint64_t now = GetTickCount64();
-    // A join or transition-token change opens the burst window. Outside it the roster goes out on
-    // the keepalive alone.
+    // Loading and native observations open the scheduled burst window.
     const bool omegaOpeningDue = ((session.activity.omegaOpeningStage >= message::kOmegaOpeningStageBaseline
          && session.activity.omegaOpeningStage < message::kOmegaOpeningStageReady)
         || (session.activity.omegaOpeningStage == message::kOmegaOpeningStageReady
@@ -247,11 +251,27 @@ bool consume_activity_keepalive(Session& session,
         && state::activity::native_population::pending(session.activity.instance);
     const bool nativeCueDue = !session.activity.joinedForeignSession
         && runtime::activity::adventure::native_bridge::pending(session.activity.instance);
+    namespace welcome=state::activity::newlight::launchpad::welcome;
+    const auto& vendorOwner=session.activity.rosterLifetimes.identity;
+    const auto player=client::player::position::snapshot();
+    // Greeting/departure inputs follow proximity edges, including after loading
+    // settles. They must not wait for the five-second idle keepalive.
+    const bool vendorPresenceDue=vendorOwner.owner==session.activity.instance.sessionId
+        && vendorOwner.incarnation==session.activity.instance.incarnation.value
+        && !welcome::groups(vendorOwner.scenario).empty()
+        && welcome::presence(session.activity.towerVendorPresence,0,player.position,player.present,vendorOwner.scenario)
+            !=session.activity.towerVendorPresence;
+    const auto vendorRevision=state::activity::vendors::lifetime::revision(session.activity.instance);
+    const bool vendorPopulationDue=vendorRevision!=session.activity.vendorPopulationRevision;
+    const bool scheduledBurst = now >= session.activity.rosterDueTick
+        && (now < session.activity.transitionUntilTick || omegaOpeningDue || towerWatchDue
+            || nativePopulationDue || nativeCueDue);
     const bool burstDue = !session.activity.joinedForeignSession
-                          && (now < session.activity.transitionUntilTick || omegaOpeningDue || towerWatchDue || nativePopulationDue || nativeCueDue)
-                          && now >= session.activity.rosterDueTick;
+        && (vendorPresenceDue || vendorPopulationDue || scheduledBurst);
     const bool endingMembershipDue=!session.activity.joinedForeignSession
-        && (state::activity::omega_ending::membership_due(session.activity.instance,
+        && (state::activity::newlight::launchpad::transit::membership_due(session.activity.instance,
+                state::activity::mission_run_generation(),now)
+            || state::activity::omega_ending::membership_due(session.activity.instance,
             state::activity::mission_run_generation(),now)
             || state::activity::beyond_infinity::transit::membership_due(session.activity.instance,
                 state::activity::mission_run_generation(),now));
@@ -266,7 +286,8 @@ bool consume_activity_keepalive(Session& session,
                 || state::activity::deep_storage::publication_due(now)
                 || state::activity::strike_bond::publication_due(now)
                 || state::activity::strike_pact::publication_due(now)
-                || state::activity::hijacked::publication_due(now)));
+                || state::activity::hijacked::publication_due(now)
+                || (state::activity::newlight::launchpad::publication_due(now) || state::activity::newlight::launchpad::tower::active())));
     if (session.activity.joinedForeignSession) {
         // This link exists only so the client's second activity instance sees traffic. A roster or
         // membership push on it leaves the transition running with no world entered.
@@ -356,6 +377,7 @@ bool consume_activity_keepalive(Session& session,
     written = framedSize;
     session.sendNonce = nextSendNonce;
     commit_staged_roster(session);
+    session.activity.vendorPopulationRevision=vendorRevision;
     if(refresh.publishesMembership) {
         state::activity::omega_ending::note_membership_published(session.activity.instance,
             state::activity::mission_run_generation(),now);
