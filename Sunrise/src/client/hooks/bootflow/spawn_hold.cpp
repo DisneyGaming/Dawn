@@ -11,6 +11,7 @@
 #include "../../../core/logging/log.h"
 #include "../../../core/settings/settings.h"
 #include "../../../state/activity/runtime.h"
+#include "../../../state/activity/destination/activity_destination_snapshot.h"
 #include "../../../state/activity/forced/activity_forced_destination.h"
 #include "../../hooking/call_gate.h"
 #include "../../hooking/detour.h"
@@ -79,11 +80,32 @@ std::atomic<std::byte*> g_image{nullptr};
 std::atomic_bool g_arrivalReported{};
 std::atomic_bool g_loaderHoldReported{};
 std::atomic_uint64_t g_holdStartedTick{};
+/** Frame-owned observation; full handles distinguish reused player pool slots. */
+std::atomic_uint32_t g_observedControlledEntity{spawn_hold_policy::kNoControlledEntity};
+/** Blocks the spawn hook's early fade release during an in-world player replacement. */
+std::atomic_bool g_playerReplacementPending{};
 hooking::CallGate g_callGate{};
 
 /** @return True when no spawn replacement call owns this owner's retained state. */
 [[nodiscard]] bool calls_idle() noexcept {
     return g_callGate.idle();
+}
+
+/** Prefer the joined destination, not a panel selection which may name the next launch. */
+[[nodiscard]] bool current_patrol_destination() noexcept {
+    state::activity::destination::DestinationSelection committed{};
+    const auto activity = state::activity::newest_joined_activity();
+    if (state::activity::destination::snapshot(activity, committed)) {
+        return spawn_hold_policy::patrol_destination(
+            {reinterpret_cast<const char*>(committed.packageName.data()), committed.packageNameLength});
+    }
+    // During public-region teardown the joined record can temporarily be absent. Only an
+    // enabled, validated override may provide the route in that interval.
+    state::activity::forced::ForcedDestination forced{};
+    state::activity::forced::snapshot(forced);
+    return state::activity::forced::active(forced)
+        && spawn_hold_policy::patrol_destination(
+            {forced.packageName.data(), forced.packageNameLength});
 }
 
 /** Roster slots that distinguish a registered authority object from a constructed runtime. */
@@ -491,7 +513,8 @@ __declspec(noinline) bool __fastcall spawn_gate(std::int32_t datum) noexcept {
     }
     const spawn_hold_policy::Decision decision = spawn_hold_policy::decide(
         spawn_hold_policy::Input{
-            allowed, policyPhase, client.holdSpawn, gaveUp, released, loader.busy});
+            allowed, policyPhase, client.holdSpawn, gaveUp, released, loader.busy,
+            g_playerReplacementPending.load(std::memory_order_acquire)});
 
     if (call.accepts_side_effects() && decision.loaderLoading
         && !g_loaderHoldReported.exchange(true, std::memory_order_relaxed)) {
@@ -535,6 +558,9 @@ __declspec(noinline) void poll_spawn_arrival() noexcept {
     }
     const auto phase = state::activity::world_phase();
     if (phase != state::activity::WorldPhase::arrived) {
+        g_observedControlledEntity.store(spawn_hold_policy::kNoControlledEntity,
+            std::memory_order_relaxed);
+        g_playerReplacementPending.store(false, std::memory_order_release);
         g_arrivalReported.store(false, std::memory_order_relaxed);
         g_loaderHoldReported.store(false, std::memory_order_relaxed);
         if (phase == state::activity::WorldPhase::idle) {
@@ -542,11 +568,35 @@ __declspec(noinline) void poll_spawn_arrival() noexcept {
         }
         return;
     }
-    if (g_arrivalReported.load(std::memory_order_relaxed)) {
-        return;
-    }
     std::uint32_t controlledEntity = UINT32_MAX;
-    if (!teleport::read_controlled_entity(controlledEntity)) {
+    const bool hasPlayer = teleport::read_controlled_entity(controlledEntity);
+    if (!hasPlayer) {
+        controlledEntity = spawn_hold_policy::kNoControlledEntity;
+    }
+    const bool patrol = current_patrol_destination();
+    const auto previous = g_observedControlledEntity.exchange(
+        patrol ? controlledEntity : spawn_hold_policy::kNoControlledEntity,
+        std::memory_order_relaxed);
+    if (!patrol) {
+        g_playerReplacementPending.store(false, std::memory_order_release);
+    }
+    if (spawn_hold_policy::player_replaced(spawn_hold_policy::Phase::arrived,
+            patrol, previous, controlledEntity)) {
+        g_playerReplacementPending.store(true, std::memory_order_release);
+        g_arrivalReported.store(false, std::memory_order_relaxed);
+        g_loaderHoldReported.store(false, std::memory_order_relaxed);
+        g_holdStartedTick.store(GetTickCount64(), std::memory_order_relaxed);
+        rearm_fade_release();
+        std::array<char, 192> line{};
+        const int written = std::snprintf(line.data(), line.size(),
+            "ev=bootflow stage=spawn_arrival result=rearmed reason=patrol_player_replaced previous=%08X current=%08X",
+            previous, controlledEntity);
+        if (written > 0 && static_cast<std::size_t>(written) < line.size()) {
+            core::log::write(core::log::Channel::client, core::log::Level::info,
+                {line.data(), static_cast<std::size_t>(written)});
+        }
+    }
+    if (g_arrivalReported.load(std::memory_order_relaxed) || !hasPlayer) {
         return;
     }
     const auto readWorld = g_worldState.load(std::memory_order_acquire);
@@ -559,11 +609,15 @@ __declspec(noinline) void poll_spawn_arrival() noexcept {
         spawn_hold_policy::Phase::arrived,
         g_arrivalReported.load(std::memory_order_relaxed), true,
         worldReadable, worldState, localReady, loader.readable, loader.busy};
-    if (!spawn_hold_policy::frame_arrival_ready(evidence) || !call.accepts_side_effects()
+    std::uint32_t confirmedEntity = UINT32_MAX;
+    if (!spawn_hold_policy::frame_arrival_ready(evidence)
+        || !teleport::read_controlled_entity(confirmedEntity) || confirmedEntity != controlledEntity
+        || !call.accepts_side_effects()
         || g_arrivalReported.exchange(true, std::memory_order_relaxed)) {
         return;
     }
     release_world_fade();
+    g_playerReplacementPending.store(false, std::memory_order_release);
     g_holdStartedTick.store(0U, std::memory_order_relaxed);
     g_loaderHoldReported.store(false, std::memory_order_relaxed);
     std::array<char, 240> line{};
@@ -681,6 +735,9 @@ bool uninstall_spawn_hold() noexcept {
     g_arrivalReported.store(false, std::memory_order_release);
     g_loaderHoldReported.store(false, std::memory_order_release);
     g_holdStartedTick.store(0U, std::memory_order_release);
+    g_observedControlledEntity.store(spawn_hold_policy::kNoControlledEntity,
+        std::memory_order_release);
+    g_playerReplacementPending.store(false, std::memory_order_release);
     core::log::write(core::log::Channel::client,
                      core::log::Level::info,
                      "ev=bootflow stage=spawn_hold_uninstall result=ok retained=0");

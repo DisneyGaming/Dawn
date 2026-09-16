@@ -21,6 +21,12 @@ import spawn_count_policy as counts
 import squad_cohort_policy as cohorts
 
 
+QUOTAS_PATH = ROOT / "tools/coo/lost_sector_encounter_quotas.json"
+FOOTAGE_REVIEW_PATH = ROOT / "tools/coo/lost_sector_footage_review.json"
+QUOTA_TARGET_MINIMUM = 0
+QUOTA_TARGET_MAXIMUM = 63
+
+
 # Reviewed package point-list/container dependencies. The generator replays the
 # complete selected source-rule GUID closure and rejects any byte/owner drift.
 POINT_DEPENDENCIES = {
@@ -191,7 +197,7 @@ SECTORS = (
     },
     {
         "namespace": "nessus", "activity": "planet_x_freeroam", "scenario": 0x80B43A1C,
-        "name": "The Orrery", "bubble": 12,
+        "name": "The Conflux", "bubble": 12,
         "groups": ((0xBB69D2E9, 0x80C08B57),),
         "stages": (
             ((0xBB69D2E9, tuple(range(5, 12))),), ((0xBB69D2E9, tuple(range(12, 16))),),
@@ -200,7 +206,7 @@ SECTORS = (
     },
     {
         "namespace": "nessus", "activity": "planet_x_freeroam", "scenario": 0x80B43A1C,
-        "name": "The Conflux", "bubble": 14,
+        "name": "The Orrery", "bubble": 14,
         "groups": ((0x3F8AF55C, 0x80C08ECC),),
         "stages": (
             ((0x3F8AF55C, (6, 7, 8, 9, 10, 11, 12, 13, 14, 15)),),
@@ -348,41 +354,141 @@ def source_rule(group: dict, source: int) -> tuple[int, str]:
     raise ValueError(f"Lost Sector source has no reviewed rule {group['key']:08X}:{source}")
 
 
-def request_targets(key: int, source: int, categories: int, choices: list[list[dict]], boss: bool) -> list[int]:
-    if boss:
-        return [1] + [0] * (categories - 1)
-    explicit: dict[tuple[int, int], tuple[int, int]] = {}
-    for slot in range(1, 12):
-        explicit[(0x3A80D8D4, slot)] = (3, 3 if slot in (2, 3, 4, 7, 8, 10, 11) else 0)
-    explicit.update({(0xD893B268, slot): (2, 0) for slot in (4, 5)})
-    explicit.update({(0xD893B268, slot): (3, 2 if slot in (10, 11, 13) else 0)
-                     for slot in (6, 7, 8, 9, 10, 11, 12, 13)})
-    explicit.update({(0x8DA9816E, slot): (3, 0) for slot in (0, 1, 2, 3, 4, 9)})
-    explicit.update({(0x8DA9816E, slot): (1, 0) for slot in (5, 6, 7, 8)})
-    explicit.update({(0x8DA9816E, slot): (6, 0) for slot in (10, 11, 12)})
-    explicit[(0x7BFEF9E6, 2)] = (6, 0)
-    explicit.update({(0x7BFEF9E6, slot): (3, 0) for slot in (3, 4, 17, 18)})
-    explicit.update({(0x7BFEF9E6, slot): (6, 0) for slot in (5, 6, 7, 8, 9, 10, 13, 14)})
-    explicit.update({(0x7BFEF9E6, slot): (2, 0) for slot in (11, 12, 15, 16)})
-    explicit.update({
-        (0x16833C32, 1): (2, 0), (0x16833C32, 2): (1, 0),
-        (0x16833C32, 3): (2, 0), (0x16833C32, 4): (2, 0),
-        (0x4F05045F, 1): (4, 2), (0x4F05045F, 2): (2, 4),
-        (0x4F05045F, 3): (2, 0), (0x4F05045F, 4): (2, 0),
-        (0x4F05045F, 5): (4, 0), (0x4F05045F, 6): (2, 0), (0x4F05045F, 8): (2, 0),
-        (0x7E21B2C3, 2): (4, 0), (0x7E21B2C3, 5): (4, 0),
-        (0x7E21B2C3, 6): (2, 0), (0x7E21B2C3, 7): (2, 0),
-        (0x7E21B2C3, 8): (1, 0), (0x7E21B2C3, 9): (1, 0),
-        (0x7E21B2C3, 10): (4, 0), (0x7E21B2C3, 11): (2, 0),
-        (0x7E21B2C3, 12): (2, 2),
-    })
-    if (key, source) in explicit:
-        first, second = explicit[(key, source)]
-        if categories == 1 and second:
-            raise ValueError("explicit Lost Sector second target on one-category source")
-        return [first] + ([second] if categories == 2 else [])
-    return [counts.category_target(f"lost-sector:{key:08X}:{source}:{i}", choices[i])[0]
-            for i in range(categories)]
+def quota_content_sha256(document: dict) -> str:
+    canonical = json.dumps(document, ensure_ascii=False, sort_keys=True,
+                           separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def load_encounter_quotas(path: Path = QUOTAS_PATH) -> tuple[dict, str]:
+    raw = path.read_bytes()
+    return json.loads(raw), hashlib.sha256(raw).hexdigest()
+
+
+def load_footage_review(path: Path = FOOTAGE_REVIEW_PATH) -> tuple[dict, str]:
+    raw = path.read_bytes()
+    document = json.loads(raw)
+    reviewed_names = [sector.get("name") for sector in document.get("sectors", [])]
+    expected_names = [sector["name"] for sector in SECTORS]
+    if document.get("schema") != 1 or len(reviewed_names) != len(set(reviewed_names)) \
+            or set(reviewed_names) != set(expected_names):
+        raise ValueError("Lost Sector footage-review coverage is incomplete or stale")
+    return document, hashlib.sha256(raw).hexdigest()
+
+
+def _validate_review(review: object, required: tuple[str, ...], context: str) -> None:
+    if not isinstance(review, dict) or any(key not in review for key in required):
+        raise ValueError(f"Lost Sector quota review fields missing for {context}")
+    if not isinstance(review["status"], str) or not review["status"].strip():
+        raise ValueError(f"Lost Sector quota review status invalid for {context}")
+    if not isinstance(review["note"], str) or not review["note"].strip():
+        raise ValueError(f"Lost Sector quota review note invalid for {context}")
+    for key in ("reference", "video_or_guide_reference"):
+        if key in required and review[key] != "tools/coo/lost_sector_footage_review.json":
+            raise ValueError(f"Lost Sector quota review reference invalid for {context}")
+    minimum = review.get("observed_minimum")
+    if minimum is not None and (type(minimum) is not int or minimum < 0):
+        raise ValueError(f"Lost Sector quota observed minimum invalid for {context}")
+    timestamp = review.get("timestamp")
+    if timestamp is not None and (not isinstance(timestamp, str) or not timestamp.strip()):
+        raise ValueError(f"Lost Sector quota review timestamp invalid for {context}")
+
+
+def validate_encounter_quotas(document: dict, groups: dict[tuple[int, int], dict]) \
+        -> dict[tuple[str, int, int], dict]:
+    """Validate the data-only quota layer against package-resolved source topology."""
+    if not isinstance(document, dict) or document.get("schema") != 1:
+        raise ValueError("Lost Sector quota schema changed")
+    disclaimer = document.get("estimate_disclaimer")
+    if not isinstance(disclaimer, str) or "estimate" not in disclaimer.lower() \
+            or "retail" not in disclaimer.lower():
+        raise ValueError("Lost Sector quota estimate disclaimer missing")
+    if document.get("target_bounds") != {
+        "minimum": QUOTA_TARGET_MINIMUM,
+        "maximum": QUOTA_TARGET_MAXIMUM,
+        "primary_must_be_positive": True,
+        "boss_total_must_equal": 1,
+    }:
+        raise ValueError("Lost Sector quota target bounds changed")
+
+    quota_sectors = document.get("sectors")
+    if not isinstance(quota_sectors, dict):
+        raise ValueError("Lost Sector quota sectors missing")
+    expected_names = [sector["name"] for sector in SECTORS]
+    if len(expected_names) != len(set(expected_names)) or set(quota_sectors) != set(expected_names):
+        raise ValueError("Lost Sector quota sector coverage is incomplete or stale")
+
+    rows: dict[tuple[str, int, int], dict] = {}
+    for sector in SECTORS:
+        name = sector["name"]
+        quota_sector = quota_sectors[name]
+        if not isinstance(quota_sector, dict) or (
+            quota_sector.get("namespace") != sector["namespace"]
+            or quota_sector.get("scenario") != f"{sector['scenario']:08X}"
+            or quota_sector.get("bubble") != sector["bubble"]
+        ):
+            raise ValueError(f"Lost Sector quota identity changed for {name}")
+        _validate_review(quota_sector.get("review"),
+                         ("status", "video_or_guide_reference", "note"), name)
+        quota_stages = quota_sector.get("stages")
+        if not isinstance(quota_stages, list) or len(quota_stages) != len(sector["stages"]):
+            raise ValueError(f"Lost Sector quota stage coverage changed for {name}")
+
+        boss_hits = 0
+        for stage_index, stage_spec in enumerate(sector["stages"]):
+            quota_stage = quota_stages[stage_index]
+            if not isinstance(quota_stage, dict) or quota_stage.get("stage") != stage_index:
+                raise ValueError(f"Lost Sector quota stage identity changed for {name}:{stage_index}")
+            quota_sources = quota_stage.get("sources")
+            expected_sources = [(key, source) for key, sources in stage_spec for source in sources]
+            if not isinstance(quota_sources, list) or [
+                (row.get("registry"), row.get("source")) if isinstance(row, dict) else (None, None)
+                for row in quota_sources
+            ] != [(f"{key:08X}", source) for key, source in expected_sources]:
+                raise ValueError(f"Lost Sector quota source coverage changed for {name}:{stage_index}")
+
+            for quota_row, (key, source) in zip(quota_sources, expected_sources):
+                row_key = (name, key, source)
+                if row_key in rows:
+                    raise ValueError(f"Lost Sector quota source repeated for {name}:{key:08X}:{source}")
+                _validate_review(quota_row.get("review"),
+                                 ("status", "reference", "observed_minimum", "timestamp", "note"),
+                                 f"{name}:{key:08X}:{source}")
+                group = groups[(sector["scenario"], key)]
+                categories = gen.source_category_count(group, source)
+                if categories not in (1, 2):
+                    raise ValueError(f"Lost Sector quota category unsupported for {name}:{key:08X}:{source}")
+                targets = quota_row.get("targets")
+                if not isinstance(targets, list) or len(targets) != categories:
+                    raise ValueError(f"Lost Sector quota category arity changed for {name}:{key:08X}:{source}")
+                if any(type(target) is not int or target < QUOTA_TARGET_MINIMUM
+                       or target > QUOTA_TARGET_MAXIMUM for target in targets):
+                    raise ValueError(f"Lost Sector quota target invalid for {name}:{key:08X}:{source}")
+                if not targets or targets[0] <= 0:
+                    raise ValueError(f"Lost Sector quota primary target invalid for {name}:{key:08X}:{source}")
+                if sum(targets) > QUOTA_TARGET_MAXIMUM:
+                    raise ValueError(f"Lost Sector quota exceeds runtime source limit for {name}:{key:08X}:{source}")
+                if (key, source) != sector["boss"] and any(target == 0 for target in targets):
+                    raise ValueError(f"Lost Sector quota disabled native category for {name}:{key:08X}:{source}")
+                choices = gen.source_count_choices(group, source)
+                for category_index, (target, category) in enumerate(zip(targets, choices)):
+                    if target > 1 and any(
+                        choice.get("rank") in counts.SINGLETON_RANKS
+                        or choice.get("species") in counts.FIXED_SPECIES
+                        for choice in category
+                    ):
+                        raise ValueError(
+                            f"Lost Sector singleton quota multiplied for "
+                            f"{name}:{key:08X}:{source}:{category_index}"
+                        )
+                if (key, source) == sector["boss"]:
+                    boss_hits += 1
+                    if targets != [1] + [0] * (categories - 1) or sum(targets) != 1:
+                        raise ValueError(f"Lost Sector boss quota changed for {name}:{key:08X}:{source}")
+                rows[row_key] = quota_row
+        if boss_hits != 1:
+            raise ValueError(f"Lost Sector quota boss coverage changed for {name}")
+    return rows
 
 
 def resolve() -> tuple[dict[tuple[int, int], dict], dict[int, list[int]]]:
@@ -405,8 +511,14 @@ def resolve() -> tuple[dict[tuple[int, int], dict], dict[int, list[int]]]:
     return groups, hashes
 
 
-def emit() -> tuple[str, dict]:
+def emit(quota_document: dict | None = None, quota_file_sha256: str | None = None) -> tuple[str, dict]:
     groups, hashes = resolve()
+    if quota_document is None:
+        quota_document, quota_file_sha256 = load_encounter_quotas()
+    elif quota_file_sha256 is None:
+        quota_file_sha256 = quota_content_sha256(quota_document)
+    quota_rows = validate_encounter_quotas(quota_document, groups)
+    footage_review, footage_review_sha256 = load_footage_review()
     by_namespace: dict[str, list[dict]] = {}
     for sector in SECTORS:
         by_namespace.setdefault(sector["namespace"], []).append(sector)
@@ -424,7 +536,19 @@ def emit() -> tuple[str, dict]:
         "// stage order and initial tactical row zero are a reviewed host reconstruction.",
     ]
     evidence = {
-        "schema": 2, "package_build": 86657, "sectors": [], "registry_proofs": [],
+        "schema": 3, "package_build": 86657, "sectors": [], "registry_proofs": [],
+        "quota_manifest": {
+            "path": "tools/coo/lost_sector_encounter_quotas.json",
+            "schema": quota_document["schema"],
+            "file_sha256": quota_file_sha256,
+            "content_sha256": quota_content_sha256(quota_document),
+            "estimate_disclaimer": quota_document["estimate_disclaimer"],
+        },
+        "footage_review": {
+            "path": "tools/coo/lost_sector_footage_review.json",
+            "file_sha256": footage_review_sha256,
+            "method": footage_review["method"],
+        },
         "omitted_sources": [
             {"registry": f"{key:08X}", "source": source, "reason": reason}
             for (key, source), reason in sorted(OMITTED_SOURCES.items())
@@ -462,8 +586,10 @@ def emit() -> tuple[str, dict]:
         sector_rows = []
         for sector in sectors:
             first_stage = len(stages)
+            quota_sector = quota_document["sectors"][sector["name"]]
             sector_evidence = {"name": sector["name"], "scenario": f"{sector['scenario']:08X}",
-                               "bubble": sector["bubble"], "stages": []}
+                               "bubble": sector["bubble"], "quota_review": quota_sector["review"],
+                               "stages": []}
             for stage_spec in sector["stages"]:
                 first = len(capabilities)
                 stage_evidence = []
@@ -482,7 +608,8 @@ def emit() -> tuple[str, dict]:
                         categories = gen.source_category_count(group, source)
                         choices = gen.source_count_choices(group, source)
                         boss = (key, source) == sector["boss"]
-                        targets = request_targets(key, source, categories, choices, boss)
+                        quota_row = quota_rows[(sector["name"], key, source)]
+                        targets = quota_row["targets"]
                         row_count = gen.tactical_row_count(group, objective) if objective_slot else 0
                         mask = (1 << row_count) - 1 if row_count else 0
                         capabilities.append((registry_index[key], source, rule, objective, mask, categories))
@@ -497,6 +624,7 @@ def emit() -> tuple[str, dict]:
                             "tactical_descriptor": f'{objective_slot["descriptor"]:08X}' if objective_slot else None,
                             "tactical_sha256": digest(objective_slot["descriptor"]) if objective_slot else None,
                             "categories": categories, "targets": targets,
+                            "quota_review": quota_row["review"],
                             "count_choices_sha256": gen.count_choices_digest(choices), "boss": boss,
                         })
                 stages.append((first, len(capabilities) - first))

@@ -20,8 +20,10 @@ using NativeCall = bool (*)(std::int32_t) noexcept;
                                             bool holdEnabled,
                                             bool timedOut,
                                             bool alreadyReleased,
-                                            bool loaderBusy) noexcept {
-    return policy::Input{nativeAllowed, phase, holdEnabled, timedOut, alreadyReleased, loaderBusy};
+                                            bool loaderBusy,
+                                            bool playerReplacement = false) noexcept {
+    return policy::Input{
+        nativeAllowed, phase, holdEnabled, timedOut, alreadyReleased, loaderBusy, playerReplacement};
 }
 
 constexpr policy::Decision kTransitioningHold =
@@ -104,25 +106,29 @@ static_assert(!policy::towerfall_ready([] {
                 for (const bool timedOut : values) {
                     for (const bool alreadyReleased : values) {
                         for (const bool loaderBusy : values) {
+                          for (const bool playerReplacement : values) {
                             const policy::Decision decision = policy::decide(input(nativeAllowed,
                                                                                    phase,
                                                                                    holdEnabled,
                                                                                    timedOut,
                                                                                    alreadyReleased,
-                                                                                   loaderBusy));
+                                                                                   loaderBusy,
+                                                                                   playerReplacement));
                             const bool expectedLoaderLoading =
                                 phase == policy::Phase::arrived && !alreadyReleased && loaderBusy;
                             const bool expectedLoading =
                                 holdEnabled && !timedOut && !alreadyReleased
                                 && (phase == policy::Phase::transitioning || expectedLoaderLoading);
                             const bool expectedRelease = phase == policy::Phase::arrived
-                                                         && !expectedLoading && !alreadyReleased;
+                                                         && !expectedLoading && !alreadyReleased
+                                                         && !playerReplacement;
                             if (decision.loaderLoading != expectedLoaderLoading
                                 || decision.loading != expectedLoading
                                 || decision.releaseFade != expectedRelease
                                 || decision.result != (nativeAllowed && !expectedLoading)) {
                                 return false;
                             }
+                          }
                         }
                     }
                 }
@@ -290,6 +296,93 @@ void generic_publication_window_waits_then_forwards_exactly_once() {
     CHECK(forwarder.idle());
 }
 
+void patrol_fast_travel_rearms_without_a_boot_transition() {
+    constexpr auto oldPlayer = 0x3DFAA417U;
+    constexpr auto newPlayerSameSlot = 0x3EFAA417U;
+    constexpr auto absent = policy::kNoControlledEntity;
+    CHECK(policy::patrol_destination("tangled_shore_freeroam"));
+    CHECK(policy::patrol_destination("planet_x_freeroam"));
+    CHECK(!policy::patrol_destination("mission_scot"));
+    CHECK(!policy::patrol_destination(""));
+    CHECK(!policy::player_replaced(policy::Phase::arrived, true, absent, oldPlayer));
+    CHECK(!policy::player_replaced(policy::Phase::arrived, true, oldPlayer, oldPlayer));
+    CHECK(policy::player_replaced(policy::Phase::arrived, true, oldPlayer, absent));
+    CHECK(!policy::player_replaced(policy::Phase::arrived, true, absent, absent));
+    CHECK(policy::player_replaced(policy::Phase::arrived, true, oldPlayer, newPlayerSameSlot));
+    CHECK(!policy::player_replaced(policy::Phase::transitioning, true, oldPlayer, absent));
+    CHECK(!policy::player_replaced(policy::Phase::arrived, false, oldPlayer, absent));
+    // The old launch latch blocks completion even after the new player appears.
+    policy::FrameArrival frame{policy::Phase::arrived, true, true, true, 3, true, true, false};
+    CHECK(!policy::frame_arrival_ready(frame));
+    frame.alreadyReleased = !policy::player_replaced(frame.phase, true, oldPlayer, newPlayerSameSlot);
+    CHECK(policy::frame_arrival_ready(frame));
+    frame.controlledEntity = false;
+    CHECK(!policy::frame_arrival_ready(frame));
+    frame.controlledEntity = true;
+    frame.loaderBusy = true;
+    CHECK(!policy::frame_arrival_ready(frame));
+    frame.loaderBusy = false;
+    frame.alreadyReleased = true;
+    CHECK(!policy::frame_arrival_ready(frame));
+    // A timeout or native spawn permission cannot bypass the frame witnesses.
+    for (bool allowed : {false, true}) {
+        for (bool busy : {false, true}) {
+            auto pending = input(allowed, policy::Phase::arrived, true, true, false, busy);
+            pending.playerReplacement = true;
+            const auto decision = policy::decide(pending);
+            CHECK(!decision.releaseFade);
+            CHECK(decision.result == allowed);
+        }
+    }
+}
+
+/** Policy sequence model: repeated travel, death/respawn, and leaving the patrol lifetime. */
+void patrol_arrival_sequences() {
+    constexpr auto absent = policy::kNoControlledEntity;
+    std::uint32_t previous = absent;
+    bool released = false;
+    unsigned releases = 0;
+    const auto tick = [&](policy::Phase phase, bool patrol, std::uint32_t player, bool busy) {
+        if (phase != policy::Phase::arrived) {
+            previous = absent;
+            released = false;
+            return;
+        }
+        if (policy::player_replaced(phase, patrol, previous, player)) {
+            released = false;
+        }
+        previous = patrol ? player : absent;
+        if (policy::frame_arrival_ready(
+                {phase, released, player != absent, true, 3, true, true, busy})) {
+            released = true;
+            ++releases;
+        }
+    };
+    tick(policy::Phase::arrived, true, 0x01000417U, false);
+    CHECK(releases == 1);
+    for (unsigned travel = 2; travel <= 4; ++travel) {
+        tick(policy::Phase::arrived, true, absent, true);
+        tick(policy::Phase::arrived, true, absent, false);
+        CHECK(releases == travel - 1);
+        const auto player = (travel << 24U) | 0x417U;
+        tick(policy::Phase::arrived, true, player, true);
+        CHECK(releases == travel - 1);
+        tick(policy::Phase::arrived, true, player, false);
+        tick(policy::Phase::arrived, true, player, false);
+        CHECK(releases == travel);
+    }
+    // Death/respawn and a replacement between camera polls share this same safe boundary.
+    tick(policy::Phase::arrived, true, 0x05000417U, false);
+    CHECK(releases == 5);
+    tick(policy::Phase::idle, false, absent, false);
+    tick(policy::Phase::transitioning, false, 0x06000417U, false);
+    CHECK(releases == 5);
+    tick(policy::Phase::arrived, false, 0x06000417U, false);
+    CHECK(releases == 6);
+    tick(policy::Phase::arrived, false, 0x07000417U, false);
+    CHECK(releases == 6); // Mission player replacements do not gain this patrol-only behavior.
+}
+
 void generic_quiesced_call_forwards_without_side_effects() {
     reset_native_barrier();
     GenericCallGateForwarder forwarder{};
@@ -332,6 +425,8 @@ void generic_active_call_stays_owned_through_native_interval() {
 int main() {
     frame_completion_after_last_spawn_call();
     frame_completion_requires_current_native_evidence();
+    patrol_fast_travel_rearms_without_a_boot_transition();
+    patrol_arrival_sequences();
     generic_publication_window_waits_then_forwards_exactly_once();
     generic_quiesced_call_forwards_without_side_effects();
     generic_active_call_stays_owned_through_native_interval();

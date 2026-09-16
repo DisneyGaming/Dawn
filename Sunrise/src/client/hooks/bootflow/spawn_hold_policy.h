@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
 
 namespace sunrise::client::hooks::bootflow::spawn_hold_policy {
 
@@ -19,7 +20,30 @@ struct Input final {
     bool timedOut{};
     bool alreadyReleased{};
     bool loaderBusy{};
+    /** A patrol player replacement must finish on the frame's readiness witnesses. */
+    bool playerReplacement{};
 };
+
+inline constexpr std::uint32_t kNoControlledEntity = UINT32_MAX;
+
+/** Only implemented patrols use player replacement as an in-world arrival boundary. */
+[[nodiscard]] constexpr bool patrol_destination(std::string_view name) noexcept {
+    return name == "mercury_freeroam" || name == "polaris_freeroam"
+        || name == "fleet_freeroam" || name == "planet_x_freeroam"
+        || name == "eden_freeroam" || name == "tangled_shore_freeroam"
+        || name == "dreaming_city_freeroam";
+}
+
+/**
+ * Fast travel can replace the player without leaving boot step 38. Compare the
+ * complete salted handle, not its reusable pool index. An initial observation
+ * is not a replacement; a disappearance or a direct replacement is one.
+ */
+[[nodiscard]] constexpr bool player_replaced(Phase phase, bool patrol,
+    std::uint32_t previous, std::uint32_t current) noexcept {
+    return patrol && phase == Phase::arrived && previous != kNoControlledEntity
+        && current != previous;
+}
 
 /** Pure spawn suppression and fade-release decision for one admitted native answer. */
 struct Decision final {
@@ -83,7 +107,8 @@ struct FrameArrival final {
     return Decision{
         loaderLoading,
         loading,
-        input.phase == Phase::arrived && !loading && !input.alreadyReleased,
+        input.phase == Phase::arrived && !loading && !input.alreadyReleased
+            && !input.playerReplacement,
         input.nativeAllowed && !loading,
     };
 }
