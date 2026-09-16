@@ -82,6 +82,14 @@ public:
     [[nodiscard]] bool graph_complete() const noexcept {
         return executor_.diagnostics().phase == coo::Phase::complete;
     }
+    [[nodiscard]] bool update_pending() const noexcept {
+        const auto phase = round_.snapshot().phase;
+        if (!started() || failed_ || phase == timed_round::Phase::complete) return false;
+        // Phase commits happen after graph execution. Keep the owner scheduled
+        // to start the new graph (and publish its objective) on the next update.
+        return defeatPending_ || executor_.update_pending()
+            || (graphPhase_ != phase && executor_.diagnostics().phase != coo::Phase::running);
+    }
     [[nodiscard]] bool failed() const noexcept { return failed_; }
     [[nodiscard]] timed_round::Snapshot round_snapshot() const noexcept { return round_.snapshot(); }
     [[nodiscard]] coo::Diagnostics diagnostics() const noexcept { return executor_.diagnostics(); }

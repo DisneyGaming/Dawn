@@ -469,9 +469,10 @@ public:
     }
     [[nodiscard]] bool publication_pending() const noexcept {
         return definition_ && definition_->rounds && rounds_.started()
-            && transitEffects_.native_targets()
-            && (rounds_.travel_pending()
-                || (rounds_.travel_arrival_pending() && !transitEffects_.arrival_qualified()));
+            && (rounds_.update_pending()
+                || (transitEffects_.native_targets()
+                    && (rounds_.travel_pending()
+                        || (rounds_.travel_arrival_pending() && !transitEffects_.arrival_qualified()))));
     }
 private:
     [[nodiscard]] bool append_triggered_poses(placement::wire::Batch& output) const noexcept {

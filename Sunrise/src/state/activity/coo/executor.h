@@ -191,15 +191,7 @@ public:
         for (std::size_t i = 0; i < definition_->steps.size(); ++i) {
             auto& state = states_[i];
             if (state.phase != StepPhase::active) { continue; }
-            bool joined = true;
-            const auto& step = definition_->steps[i];
-            for (std::size_t j = 0; j < step.commands.size(); ++j) {
-                const auto& command = state.commands[j];
-                const auto wait = step.commands[j].wait;
-                joined &= wait == Wait::requested ? command.requested
-                    : wait == Wait::nativeReady ? command.ready : command.completed;
-            }
-            if (joined) { state.phase = StepPhase::complete; complete_ |= std::uint32_t{1} << i; }
+            if (joined(i)) { state.phase = StepPhase::complete; complete_ |= std::uint32_t{1} << i; }
         }
         const auto all = definition_->steps.size() == 32 ? UINT32_MAX
             : (std::uint32_t{1} << definition_->steps.size()) - 1U;
@@ -223,7 +215,32 @@ public:
     }
     [[nodiscard]] const StepState& step_state(std::size_t step) const noexcept { return states_[step]; }
 
+    // Request another owner update only when it can advance without a new native
+    // receipt. In particular, activate() can leave requested-only steps ready
+    // to join after the final pass of update(). External waits remain dormant.
+    [[nodiscard]] bool update_pending() const noexcept {
+        if (phase_ != Phase::running || !definition_) { return false; }
+        if (count_ || overflow_) { return true; }
+        for (std::size_t i = 0; i < definition_->steps.size(); ++i) {
+            const auto& step = definition_->steps[i];
+            if (states_[i].phase == StepPhase::pending
+                && (step.dependencies & complete_) == step.dependencies) { return true; }
+            if (states_[i].phase == StepPhase::active && joined(i)) { return true; }
+        }
+        return false;
+    }
+
 private:
+    [[nodiscard]] bool joined(std::size_t index) const noexcept {
+        const auto& step = definition_->steps[index];
+        for (std::size_t j = 0; j < step.commands.size(); ++j) {
+            const auto& command = states_[index].commands[j];
+            const auto wait = step.commands[j].wait;
+            if (!(wait == Wait::requested ? command.requested
+                : wait == Wait::nativeReady ? command.ready : command.completed)) { return false; }
+        }
+        return true;
+    }
     [[nodiscard]] bool current(Token value) const noexcept {
         return definition_ && value.run == run_ && value.incarnation == incarnation_
             && value.step < definition_->steps.size()

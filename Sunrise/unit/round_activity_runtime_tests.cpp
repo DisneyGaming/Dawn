@@ -285,7 +285,9 @@ void runtime_drives_first_branch_and_arena_wait() {
     expect(runtime.begin(owner,19,synthetic::definition,*document,100));
     FakeRoundPorts ports{&runtime};
 
+    expect(runtime.update_pending());
     expect(runtime.update(ports,0));
+    expect(!runtime.update_pending()); // An untouched plate does not demand a burst.
     expect(runtime.snapshot().selectedPlatform==0);
     const auto* plate=ports.latest(ra::Operation::plateOccupied);
     expect(plate!=nullptr);
@@ -368,30 +370,40 @@ void runtime_drives_first_branch_and_arena_wait() {
     expect(runtime.population_event(0,bossSource,boss,native_population::Kind::admitted,36));
     expect(runtime.update(ports,37));
     expect(runtime.update(ports,38));
+    expect(!runtime.update_pending()); // A living boss is an external wait.
     expect(runtime.population_event(0,bossSource,boss,native_population::Kind::died,40));
+    expect(runtime.update_pending());
     expect(runtime.population_event(0,bossSource,boss,native_population::Kind::died,40));
     expect(runtime.boss_dead(boss,bossSource,40)==timed::Result::duplicate);
     const coo::PopulationActor wrongBoss{bossSource,102,202};
     expect(!runtime.population_event(0,bossSource,wrongBoss,native_population::Kind::died,40));
     expect(runtime.update(ports,40));
     expect(runtime.round_snapshot().phase==timed::Phase::returning);
+    expect(runtime.update_pending()); // Start the return graph without a keepalive delay.
 
     // A qualified retirement observation is required before return travel can
     // start; no actor death is used as a retirement acknowledgement.
     expect(runtime.update(ports,41));
+    expect(!runtime.update_pending()); // Retirement must still be acknowledged.
     expect(runtime.retirement_acknowledged(true,true));
+    expect(runtime.update_pending());
     expect(runtime.update(ports,42));
+    expect(runtime.update_pending()); // Join the just-published travel request.
     expect(runtime.update(ports,43));
+    expect(!runtime.update_pending()); // Wait for arrival; never manufacture it.
     expect(runtime.observe_travel(true,false)==false);
     expect(runtime.update(ports,44));
     expect(runtime.observe_travel(false,true));
+    expect(runtime.update_pending()); // Arrival has queued a receipt after the owner update.
     expect(runtime.update(ports,45));
     expect(runtime.round_snapshot().phase==timed::Phase::entry);
     expect(runtime.round_snapshot().token.round==2);
+    expect(runtime.update_pending()); // Publish round two's entry objective promptly.
 
     // Round two repeats entry and traversal, then deliberately expires while
     // in Terror before the real boss path enters rewards.
     expect(runtime.update(ports,45));
+    expect(!runtime.update_pending()); // Back to waiting for the next plate activation.
     const auto* plateTwo=ports.latest(ra::Operation::plateOccupied);
     expect(plateTwo!=nullptr && runtime.enqueue({plateTwo->token,coo::Milestone::observed}));
     expect(runtime.update(ports,46));
