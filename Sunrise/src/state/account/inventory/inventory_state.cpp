@@ -80,7 +80,7 @@ bool valid(const Item& item) noexcept {
 /** Checks every item present in the fixed semantic equipment array. */
 bool valid(const Equipment& equipment) noexcept {
     for (const std::optional<Item>& item : equipment.slots) {
-        if (item.has_value() && !valid(*item)) {
+        if (item.has_value() && (!valid(*item) || item->postmaster)) {
             return false;
         }
     }

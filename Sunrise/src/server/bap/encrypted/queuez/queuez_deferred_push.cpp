@@ -13,6 +13,7 @@
 #include "../../../../state/runtime/runtime.h"
 #include "../internal.h"
 #include "../push/activity/activity_keepalive_push.h"
+#include "../push/activity/quest_progress.h"
 #include "queuez_state_validation.h"
 
 namespace sunrise::server::bap::encrypted {
@@ -335,6 +336,7 @@ bool consume_deferred(Session& session,
     if (!session.family4RepushArmed || session.family4RepushRoot == 0
         || GetTickCount64() < session.family4RepushDueTick) {
         return consume_banner_repush(session, scratch, response, written, touchesScratch)
+               || push::activity::quest_progress::consume(session, scratch, response, written, touchesScratch)
                || push::activity::consume_activity_keepalive(
                    session, scratch, response, written, touchesScratch);
     }

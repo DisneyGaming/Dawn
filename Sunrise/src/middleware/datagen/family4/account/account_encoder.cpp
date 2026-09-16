@@ -1,4 +1,5 @@
 #include "account_encoder.h"
+#include "../../../../state/vendors/quest_state.h"
 
 #include <algorithm>
 #include <cstring>
@@ -102,6 +103,7 @@ bool encode(const state::AccountState& state, std::span<std::byte> output) noexc
             object.characterUnlocks[index].flags = characterUnlocks.flags;
         }
     }
+    state::vendors::project_account_quests(state,object);
     object.publicityExpiries.fill(kSuppressedPublicityDeadline);
     object.seenMessages.fill(kSeenMessageByte);
     for (inventory::layout::Entry& item : object.profileItems) {
@@ -116,6 +118,7 @@ bool encode(const state::AccountState& state, std::span<std::byte> output) noexc
                                object.progressions)) {
         return false;
     }
+    state::vendors::project(state.vendorProgress,object);
     // Profile rows are sentinelled above, so placement only has to claim its own slots.
     std::array<std::uint16_t, kBucketIdentityCapacity> takenSlots{};
     for (std::size_t index = 0; index < state.profileItemCount; ++index) {

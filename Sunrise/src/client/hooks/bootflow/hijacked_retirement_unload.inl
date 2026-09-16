@@ -27,6 +27,13 @@ void unload_report(const char* stage,const RetirementUnload& frame) noexcept {
 __declspec(noinline) void __fastcall unload_region(std::uintptr_t manager,std::uint32_t destination,std::uintptr_t argument) noexcept {
     const hooking::CallGate::Scope scope(gate);
     const auto fn=hooking::await_original(unloadRegion);
+    // Vendors use the same native unload scope even outside Hijacked. Pair all
+    // returns and nested unloads; no new physical hook or component predicate.
+    struct VendorUnload {
+        const hooking::CallGate::Scope& scope;
+        VendorUnload(const hooking::CallGate::Scope& s) noexcept : scope(s) {begin_vendor_area_unload();}
+        ~VendorUnload() {finish_vendor_area_unload(scope.accepts_side_effects() && retirement_allocator_ready());}
+    } vendorUnload{scope};
     // Mask a parent selection during any nested unload, including another region.
     struct Restore {RetirementUnload* previous;~Restore() {retirementUnload=previous;}} restore{retirementUnload};
     retirementUnload=nullptr;

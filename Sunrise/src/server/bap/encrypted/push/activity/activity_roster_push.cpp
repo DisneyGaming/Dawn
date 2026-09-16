@@ -67,11 +67,12 @@ std::atomic_uint32_t g_towerfallDeliveryReports{};
     std::span<const std::byte,state::kAesKeySize> key,
     std::array<std::byte,state::kBapNonceSize>& nonce,
     std::span<std::byte> response,std::size_t& written) noexcept {
+    const bool vendors=snapshot.vendorPresentation.enabled;
     const bool hijacked=name=="adventure_rumba" && snapshot.hijacked.enabled;
     const bool deep=name=="adventure_whisk" && snapshot.deep_storage.enabled;
     const bool strike=(name=="strike_pact" || name=="mission_pact") && snapshot.strike_pact.enabled;
     const bool garden=(name=="strike_bond" || name=="mission_bond") && snapshot.strike_bond.enabled;
-    if(!garden && !hijacked && !deep && !strike && (name!="adventure_vod" || !snapshot.beyond_infinity.enabled)) { return true; }
+    if(!vendors && !garden && !hijacked && !deep && !strike && (name!="adventure_vod" || !snapshot.beyond_infinity.enabled)) { return true; }
     namespace beyond=state::activity::beyond_infinity;
     namespace clock=middleware::bap::activity_message::clock_state;
     const auto current=beyond::request();
@@ -83,9 +84,10 @@ std::atomic_uint32_t g_towerfallDeliveryReports{};
     const auto expected=garden?snapshot.strike_bond.spawnGeneration:hijacked?snapshot.hijacked.spawnGeneration:strike?snapshot.strike_pact.spawnGeneration:deep?snapshot.deep_storage.spawnGeneration:snapshot.beyond_infinity.spawnGeneration;
     if(session.activity.joinedForeignSession || !lifecycle::activity_binding_is_current(session)
         || !session.activity.lineage.owns(session.activity.instance)
-        || state::activity::world_phase()!=state::activity::WorldPhase::arrived
-        || !owner.valid() || owner.run!=state::activity::mission_run_generation()
-        || !enabled || generation!=expected) { return false; }
+        || (!vendors && (!owner.valid() || owner.run!=state::activity::mission_run_generation()
+            || !enabled || generation!=expected))) { return false; }
+    // Vendor initialization can precede arrival; its running clock follows arrival.
+    if(state::activity::world_phase()!=state::activity::WorldPhase::arrived) { return vendors; }
     std::array<std::byte,clock::kEncodedSize> body{};std::size_t size{};
     if(!clock::encode(clock::kRunning,body,size)
         || !append_notification_frame(scratch,session.activity.instance.sessionId,
@@ -112,6 +114,8 @@ bool append_roster_notification(Session& session,
     if (!lifecycle::stage_roster_publication_generation(session.activity, publication)) {
         return false;
     }
+    const auto initialVendorPresence=session.activity.towerVendorPresence;
+    const auto initialVendorClockOrigin=session.activity.vendorClockOrigin;
     const std::uint32_t initialRosterGroups = session.activity.rosterGroups;
     const std::uint8_t initialRosterSends = session.activity.rosterSends;
     const std::uint8_t initialRosterState = session.activity.rosterState;
@@ -129,6 +133,8 @@ bool append_roster_notification(Session& session,
     }
     const std::string_view name(destination.data(), destinationLength);
     if (outcome != RosterOutcome::published) {
+        session.activity.towerVendorPresence=initialVendorPresence;
+        session.activity.vendorClockOrigin=initialVendorClockOrigin;
         session.activity.rosterGroups = initialRosterGroups;
         session.activity.rosterSends = initialRosterSends;
         session.activity.rosterState = initialRosterState;
@@ -178,6 +184,8 @@ bool append_roster_notification(Session& session,
         session.activity.rosterStaged.activity = session.activity.instance;
         session.activity.rosterStaged.publication = publication;
         session.activity.rosterStaged.grant = grant;
+        session.activity.rosterStaged.priorVendorPresence=initialVendorPresence;
+        session.activity.rosterStaged.priorVendorClockOrigin=initialVendorClockOrigin;
         session.activity.rosterStaged.priorGroups = initialRosterGroups;
         session.activity.rosterStaged.priorSends = initialRosterSends;
         session.activity.rosterStaged.priorState = initialRosterState;
@@ -235,6 +243,8 @@ bool append_roster_notification(Session& session,
         }
         written = initialWritten;
         nonce = initialNonce;
+        session.activity.towerVendorPresence=initialVendorPresence;
+        session.activity.vendorClockOrigin=initialVendorClockOrigin;
         session.activity.rosterGroups = initialRosterGroups;
         session.activity.rosterSends = initialRosterSends;
         session.activity.rosterState = initialRosterState;
@@ -315,6 +325,10 @@ bool append_roster_notification(
         staged.regionIndex = transition.regionIndex;
         staged.publication = transition.rosterPublication;
         staged.grant = transition.grantCandidate;
+        staged.priorVendorPresence=transition.before.vendorPresence;
+        staged.priorVendorClockOrigin=transition.before.vendorClockOrigin;
+        staged.afterVendorPresence=transition.after.vendorPresence;
+        staged.afterVendorClockOrigin=transition.after.vendorClockOrigin;
         staged.priorGroups = transition.before.groups;
         staged.priorSends = transition.before.sends;
         staged.priorState = transition.before.state;
@@ -497,6 +511,8 @@ void commit_staged_roster(Session& session) noexcept {
         }
     }
     if (session.activity.rosterStaged.hasAfter) {
+        session.activity.towerVendorPresence=session.activity.rosterStaged.afterVendorPresence;
+        session.activity.vendorClockOrigin=session.activity.rosterStaged.afterVendorClockOrigin;
         session.activity.rosterGroups = session.activity.rosterStaged.afterGroups;
         session.activity.rosterSends = session.activity.rosterStaged.afterSends;
         session.activity.rosterState = session.activity.rosterStaged.afterState;
@@ -542,6 +558,8 @@ void discard_staged_roster(Session& session) noexcept {
     }
     // The client never saw this body, so its state byte must not be spent. The next push has to
     // move the byte again or the client does not rebuild its roster objects.
+    session.activity.towerVendorPresence=session.activity.rosterStaged.priorVendorPresence;
+    session.activity.vendorClockOrigin=session.activity.rosterStaged.priorVendorClockOrigin;
     session.activity.rosterGroups = session.activity.rosterStaged.priorGroups;
     session.activity.rosterSends = session.activity.rosterStaged.priorSends;
     session.activity.rosterState = session.activity.rosterStaged.priorState;

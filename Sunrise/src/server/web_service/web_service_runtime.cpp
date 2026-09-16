@@ -26,6 +26,10 @@
 #include "../../state/runtime/runtime.h"
 #include "opcode_routes.h"
 #include "web_service_actions.h"
+#include "../../middleware/web_service/messages/opcode904.h"
+#include "../../middleware/web_service/messages/opcode905.h"
+#include "../../middleware/web_service/messages/opcode405.h"
+#include "../../state/activity/runtime.h"
 
 namespace sunrise::server::web_service {
 
@@ -85,14 +89,6 @@ void report_request(const middleware::web_service::Message& message) noexcept {
     }
 }
 
-/** One refusal line carries both request indices, the clock presence, and the clock verdict. */
-constexpr std::size_t kPurchaseLineCapacity = 128;
-/**
- * Status code answered to a purchase request.
- * Any non-zero value refuses. Zero is the success code, so it must not be used here.
- */
-constexpr std::int32_t kPurchaseRefusedCode = 1;
-
 /**
  * Reads the server's own clock for the purchase clock rule.
  * The system clock counts from the Unix epoch, which is the same base the request field uses.
@@ -101,53 +97,6 @@ constexpr std::int32_t kPurchaseRefusedCode = 1;
 [[nodiscard]] std::int64_t server_clock_seconds() noexcept {
     const auto sinceEpoch = std::chrono::system_clock::now().time_since_epoch();
     return std::chrono::duration_cast<std::chrono::seconds>(sinceEpoch).count();
-}
-
-/**
- * Refuses one vendor purchase and answers it.
- * No award, cost or stock rule exists yet, so no purchase can succeed. The refusal must still be
- * answered, because no answer holds the head of the client's pending queue.
- * @param message Parsed purchase request.
- * @param response Response-body storage owned by the caller.
- * @param written Receives the encoded response size.
- * @return True when the refusal was encoded.
- */
-[[nodiscard]] bool refuse_purchase(const middleware::web_service::Message& message,
-                                   std::span<std::byte> response,
-                                   std::size_t& written) noexcept {
-    namespace purchase_codec = middleware::web_service::messages::opcode901;
-    purchase_codec::Request purchase;
-    const bool parsed = purchase_codec::parse_request(message, purchase);
-    // The clock verdict is logged, never acted on. Nothing can pass while the route refuses.
-    const auto policy = purchase_codec::check_clock(purchase, server_clock_seconds());
-    std::array<char, kPurchaseLineCapacity> line{};
-    const int length =
-        parsed ? std::snprintf(
-                     line.data(),
-                     line.size(),
-                     "ev=ws901 stage=purchase result=refuse vendor=%d sale=%d present=%u policy=%s",
-                     static_cast<int>(purchase.vendorIndex),
-                     static_cast<int>(purchase.saleIndex),
-                     purchase.hasClock ? 1U : 0U,
-                     purchase_codec::clock_policy_name(policy))
-               : std::snprintf(line.data(),
-                               line.size(),
-                               "ev=ws901 stage=purchase result=refuse reason=parse");
-    if (length > 0) {
-        core::log::write(core::log::Channel::server,
-                         core::log::Level::error,
-                         {line.data(), static_cast<std::size_t>(length)});
-    }
-    middleware::web_service::StatusResponse status{};
-    status.code = kPurchaseRefusedCode;
-    // The trailing bool drives a local action effect on the client, so it stays clear.
-    status.trailingBool = false;
-    return middleware::web_service::encode_response(
-        message,
-        middleware::web_service::ResponseShape::statusPairWithBool,
-        status,
-        response,
-        written);
 }
 
 /**
@@ -212,6 +161,45 @@ bool consume(std::span<const std::byte> request,
     }
     report_request(message);
 
+    if(message.opcode==405) {
+        middleware::web_service::messages::opcode405::Request request{};state::vendors::Pending recovery;
+        if(middleware::web_service::messages::opcode405::parse(message,request) && request.item>=0
+            && state::vendors::prepare_recovery(request.instance,static_cast<std::uint16_t>(request.item),request.quantity,recovery)) {
+            outcome.mutation=std::move(recovery);
+        }
+        middleware::web_service::StatusResponse status{};status.code=1;
+        return middleware::web_service::encode_response(message,middleware::web_service::ResponseShape::statusPair,status,response,written);
+    }
+
+    if(message.opcode==905) {
+        middleware::web_service::messages::opcode905::Request request{};state::vendors::Pending vendor;
+        if(middleware::web_service::messages::opcode905::parse(message,request) && (request.location==1 || request.location==2) && request.item>=0
+            && (!request.hasClock || middleware::web_service::messages::opcode901::check_clock(
+                {0,0,request.clock,true},server_clock_seconds())==middleware::web_service::messages::opcode901::ClockPolicy::accepted)
+            && state::vendors::prepare_decryption(request.instance,static_cast<std::uint16_t>(request.item),vendor,request.location==2)) {
+            outcome.mutation=std::move(vendor);
+        }
+        middleware::web_service::StatusResponse status{};status.code=1;
+        return middleware::web_service::encode_response(message,middleware::web_service::ResponseShape::statusPair,status,response,written);
+    }
+
+    if(message.opcode==904) {
+        middleware::web_service::messages::opcode904::Request reply{};
+        middleware::web_service::StatusResponse status{};status.code=1;
+        if(middleware::web_service::messages::opcode904::parse(message,reply)
+            && reply.vendor>=0 && reply.interaction>=0 && reply.reply>=0) {
+            state::vendors::Pending vendor;
+            if(state::vendors::prepare({static_cast<std::uint16_t>(reply.vendor),reply.selection,
+                reply.interaction,reply.reply},vendor)) {
+                outcome.mutation=std::move(vendor);
+            }
+        }
+        // Success is encoded by the BAP publisher only after the matching Family-4
+        // revision has been staged. Unsupported or duplicate replies remain refused.
+        return middleware::web_service::encode_response(message,
+            middleware::web_service::ResponseShape::statusPair,status,response,written);
+    }
+
     if (message.opcode == middleware::web_service::messages::opcode205::kOpcode) {
         const auto investment = state::investment_snapshot();
         return middleware::web_service::messages::opcode205::encode_response(
@@ -253,8 +241,16 @@ bool consume(std::span<const std::byte> request,
 
     // Runs before the shared response-shape path, which would answer the success status.
     if (message.opcode == middleware::web_service::messages::opcode901::kOpcode) {
-        return refuse_purchase(message, response, written)
-               || encode_echo(message, response, written);
+        namespace codec=middleware::web_service::messages::opcode901;
+        codec::Request purchase{};state::vendors::Pending vendor;
+        if(codec::parse_request(message,purchase) && purchase.vendorIndex>=0 && purchase.saleIndex>=0
+            && (!purchase.hasClock || codec::check_clock(purchase,server_clock_seconds())==codec::ClockPolicy::accepted)
+            && state::vendors::prepare({static_cast<std::uint16_t>(purchase.vendorIndex),purchase.saleIndex,-1,0},vendor)) {
+            outcome.mutation=std::move(vendor);
+        }
+        middleware::web_service::StatusResponse status{};status.code=1;
+        return middleware::web_service::encode_response(message,
+            middleware::web_service::ResponseShape::statusPairWithBool,status,response,written);
     }
 
     if (message.opcode == middleware::web_service::messages::opcode601::kOpcode) {

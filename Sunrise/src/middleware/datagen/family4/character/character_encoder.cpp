@@ -1,4 +1,6 @@
 #include "character_encoder.h"
+#include "../../../../state/vendors/projection.h"
+#include "../../../../state/vendors/quest_state.h"
 
 #include <algorithm>
 #include <array>
@@ -69,7 +71,9 @@ constexpr std::int32_t kOccupiedRowWatermark = 1;
         const instance::ResolvedInstance& itemInstance = item.instance;
         const auto priorSoidsEnd = instanceSoids.cbegin() + static_cast<std::ptrdiff_t>(index);
         if (item.inventoryRow >= occupiedRows.size()
-            || item.equipmentSlot >= occupiedEquipmentSlots.size() || item.quantity <= 0
+            || (item.equipmentSlot >= occupiedEquipmentSlots.size()
+                && (item.equipped || item.equipmentSlot != loadout::kNoEquipmentSlot))
+            || item.quantity <= 0
             || itemInstance.instanceSoid == 0 || itemInstance.bounds.itemDefinitionCount == 0
             || itemInstance.bounds.itemDefinitionCount > instance::layout::kDefinitionIndexCapacity
             || itemInstance.baseDefinitionIndex == kEmptyDefinitionIndex
@@ -132,15 +136,15 @@ summary_matches_loadout(const loadout::ResolvedLoadout& resolvedLoadout,
 bool encode(const state::CharacterState& state,
             const loadout::ResolvedLoadout& resolvedLoadout,
             const state::equipment::light::Evaluation& lightEvaluation,
-            std::span<std::byte> output) noexcept {
+            std::span<std::byte> output,const state::AccountState* account) noexcept {
     return encode(state, resolvedLoadout, lightEvaluation, output,
-                  state::activity::nightfall::current_native_power_projection());
+                  state::activity::nightfall::current_native_power_projection(),account);
 }
 bool encode(const state::CharacterState& state,
             const loadout::ResolvedLoadout& resolvedLoadout,
             const state::equipment::light::Evaluation& lightEvaluation,
             std::span<std::byte> output,
-            const state::activity::nightfall::NativePowerProjection& power) noexcept {
+            const state::activity::nightfall::NativePowerProjection& power,const state::AccountState* account) noexcept {
     state::equipment::light::Evaluation effectiveLight = lightEvaluation;
     const auto powerResult = state::activity::nightfall::cap_equipment_summary(
         effectiveLight, power);
@@ -175,6 +179,11 @@ bool encode(const state::CharacterState& state,
         object.objectiveValues[index] =
             index < unlocks.objectValues.size() ? unlocks.objectValues[index] : 0;
     }
+    state::vendors::project_quests(state,1,object);
+    if(account) {
+        state::vendors::project_inventory(*account,state,object);
+        if(!state::vendors::project_active_progress(*account,state,object)) {return false;}
+    }
     if (!build_equipment_summary(effectiveLight, object.equipmentSummary)) {
         return false;
     }
@@ -184,6 +193,7 @@ bool encode(const state::CharacterState& state,
                                object.progressions)) {
         return false;
     }
+    state::vendors::project(state.vendorProgress,object);
     object.nextInventorySerial = resolvedLoadout.nextInventorySerial;
     for (std::size_t index = 0; index < resolvedLoadout.itemCount; ++index) {
         const loadout::ResolvedItem& item = resolvedLoadout.items[index];

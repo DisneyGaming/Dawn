@@ -20,7 +20,7 @@
 namespace sunrise::state::persistence {
 namespace {
 
-constexpr int kSchemaVersion = 1;
+constexpr int kSchemaVersion = 2;
 constexpr std::wstring_view kDatabaseName = L"\\player-state.db";
 constexpr std::uint64_t kFirstGeneratedItemSoid = 0x4000000000000001ULL;
 constexpr std::uint64_t kFirstProfileItemSoid = 0x5000000000000001ULL;
@@ -130,6 +130,20 @@ void rollback() noexcept { (void)execute("ROLLBACK"); }
 
 [[nodiscard]] int scope_value(Scope scope) noexcept { return static_cast<int>(scope); }
 
+// Called inside the same transaction as the load/import. A failed read rolls back
+// the schema upgrade too, leaving an older save usable by the previous build.
+[[nodiscard]] bool migrate_schema(int version) noexcept {
+    if (version == kSchemaVersion) return true;
+    if (version != 1) return false;
+    return execute(R"sql(
+ALTER TABLE characters ADD COLUMN vendor_campaigns INTEGER NOT NULL DEFAULT 0 CHECK(vendor_campaigns BETWEEN 0 AND 7);
+ALTER TABLE character_items ADD COLUMN postmaster INTEGER NOT NULL DEFAULT 0 CHECK(postmaster IN(0,1));
+CREATE TABLE vendor_progress(owner_soid TEXT NOT NULL, position INTEGER NOT NULL CHECK(position BETWEEN 0 AND 15), vendor INTEGER NOT NULL CHECK(vendor BETWEEN 0 AND 65534), points INTEGER NOT NULL CHECK(points>=0), rewards INTEGER NOT NULL CHECK(rewards>=0), PRIMARY KEY(owner_soid,position), UNIQUE(owner_soid,vendor));
+CREATE TABLE vendor_unlocks(owner_soid TEXT NOT NULL, kind INTEGER NOT NULL CHECK(kind IN(0,1)), position INTEGER NOT NULL CHECK(position BETWEEN 0 AND 2047), slot INTEGER NOT NULL CHECK(slot BETWEEN 0 AND 65535), value INTEGER NOT NULL, PRIMARY KEY(owner_soid,kind,position), UNIQUE(owner_soid,kind,slot));
+PRAGMA user_version=2;
+)sql");
+}
+
 [[nodiscard]] bool create_schema() noexcept {
     static constexpr const char* sql = R"sql(
 CREATE TABLE metadata(key TEXT PRIMARY KEY, value INTEGER NOT NULL);
@@ -152,7 +166,7 @@ CREATE TABLE missions(character_soid TEXT NOT NULL, mission_hash INTEGER NOT NUL
 CREATE TABLE reward_debts(debt_id INTEGER PRIMARY KEY AUTOINCREMENT, account_soid TEXT NOT NULL, character_soid TEXT NOT NULL, mission_hash INTEGER NOT NULL, runtime_epoch TEXT NOT NULL, session_id TEXT NOT NULL, run_id TEXT NOT NULL, definition_hash INTEGER NOT NULL, quantity INTEGER NOT NULL CHECK(quantity>0), credited INTEGER NOT NULL DEFAULT 0 CHECK(credited>=0 AND credited<=quantity), delivered INTEGER NOT NULL DEFAULT 0 CHECK(delivered IN(0,1)), UNIQUE(account_soid,runtime_epoch,session_id,run_id,definition_hash));
 PRAGMA user_version=1;
 )sql";
-    return execute(sql);
+    return execute(sql) && migrate_schema(1);
 }
 
 [[nodiscard]] bool write_setting_integer(const char* key, std::int64_t value) noexcept {
@@ -175,6 +189,8 @@ template <typename T>
               ||source>static_cast<std::int64_t>((std::numeric_limits<T>::max)()))return false;
     target=static_cast<T>(source);return true;
 }
+
+#include "vendor_state.inl"
 
 #define WRITE_I(group, field) if (!write_setting_integer(#group "." #field, settings.group.field)) return false
 #define WRITE_R(group, field) if (!write_setting_real(#group "." #field, settings.group.field)) return false
@@ -236,6 +252,7 @@ template <typename T>
         || bind_i64(itemStatement,5,item.definitionHash)==false || sqlite3_bind_int(itemStatement,6,item.level)!=SQLITE_OK
         || sqlite3_bind_int(itemStatement,7,item.quantity)!=SQLITE_OK || sqlite3_bind_int(itemStatement,8,item.mutationSerial)!=SQLITE_OK
         || bind_i64(itemStatement,9,item.flags)==false || sqlite3_bind_int(itemStatement,10,static_cast<int>(item.sockets.policy))!=SQLITE_OK
+        || sqlite3_bind_int(itemStatement,11,item.postmaster)!=SQLITE_OK
         || !step_done(itemStatement)) return false;
     for (std::size_t lane=0;lane<item.sockets.plugCount;++lane) {
         sqlite3_reset(socketStatement); sqlite3_clear_bindings(socketStatement);
@@ -275,7 +292,7 @@ void observe_allocators(const AccountState& account) noexcept {
 
 [[nodiscard]] bool write_account(const AccountState& accountState) noexcept {
     if (!account::valid(accountState)
-        || !execute("DELETE FROM item_sockets;DELETE FROM character_items;DELETE FROM characters;DELETE FROM profile_items;DELETE FROM dismantle_rewards;DELETE FROM account")) return false;
+        || !execute("DELETE FROM vendor_unlocks;DELETE FROM vendor_progress;DELETE FROM item_sockets;DELETE FROM character_items;DELETE FROM characters;DELETE FROM profile_items;DELETE FROM dismantle_rewards;DELETE FROM account")) return false;
     Statement accountInsert{"INSERT INTO account(id,primary_soid) VALUES(1,?1)"};
     if(!accountInsert.ready() || !bind_u64(accountInsert.value,1,accountState.primarySoid) || !step_done(accountInsert.value)) return false;
     Statement reward{"INSERT INTO dismantle_rewards(position,definition_hash,quantity) VALUES(?1,?2,?3)"};
@@ -291,8 +308,8 @@ void observe_allocators(const AccountState& account) noexcept {
             || !bind_i64(profile.value,3,p.definitionHash) || sqlite3_bind_int(profile.value,4,p.quantity)!=SQLITE_OK
             || sqlite3_bind_int(profile.value,5,p.mutationSerial)!=SQLITE_OK || !step_done(profile.value)) return false;
     }
-    Statement character{"INSERT INTO characters VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18)"};
-    Statement item{"INSERT INTO character_items VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)"};
+    Statement character{"INSERT INTO characters VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19)"};
+    Statement item{"INSERT INTO character_items VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)"};
     Statement socket{"INSERT INTO item_sockets VALUES(?1,?2,?3)"};
     if(!character.ready()||!item.ready()||!socket.ready()) return false;
     for(std::size_t i=0;i<accountState.characterCount;++i) {
@@ -306,13 +323,14 @@ void observe_allocators(const AccountState& account) noexcept {
             ||sqlite3_bind_int(character.value,13,c.movementAbilityEntry)!=SQLITE_OK||sqlite3_bind_int(character.value,14,c.grenadeAbilityEntry)!=SQLITE_OK
             ||sqlite3_bind_int(character.value,15,c.superAbilityEntry)!=SQLITE_OK||sqlite3_bind_int(character.value,16,c.meleeAbilityEntry)!=SQLITE_OK
             ||sqlite3_bind_int(character.value,17,c.classAbilityEntry)!=SQLITE_OK||!bind_i64(character.value,18,c.nextInventorySerial)
+            ||sqlite3_bind_int(character.value,19,c.vendorCampaigns)!=SQLITE_OK
             ||!step_done(character.value)) return false;
         for(std::size_t slot=0;slot<c.equipment.slots.size();++slot) if(c.equipment.slots[slot]
             && !write_item(item.value,socket.value,c.soid,0,slot,*c.equipment.slots[slot])) return false;
         for(std::size_t row=0;row<c.inventory.count;++row)
             if(!write_item(item.value,socket.value,c.soid,1,row,c.inventory.values[row])) return false;
     }
-    if(!write_settings(accountState.settings)) return false;
+    if(!write_vendor_state(accountState) || !write_settings(accountState.settings)) return false;
     observe_allocators(accountState);
     return write_allocator("item_instance",nextItemSoid)
            && write_allocator("profile_item_instance",nextProfileItemSoid);
@@ -501,10 +519,13 @@ void observe_allocators(const AccountState& account) noexcept {
         c.classAbilityEntry=static_cast<std::uint8_t>(abilities[4]);
         const auto serial=sqlite3_column_int64(characters.value,17);
         if(serial<0 || serial>(std::numeric_limits<std::uint32_t>::max)()) return false;
-        c.nextInventorySerial=static_cast<std::uint32_t>(serial);++accountState.characterCount;
+        c.nextInventorySerial=static_cast<std::uint32_t>(serial);
+        std::int32_t campaigns{};
+        if(!column_i32(characters.value,18,campaigns) || campaigns<0 || campaigns>7) return false;
+        c.vendorCampaigns=static_cast<std::uint8_t>(campaigns);++accountState.characterCount;
     }
     if(result!=SQLITE_DONE)return false;
-    Statement items{"SELECT character_soid,location,position,instance_soid,definition_hash,level,quantity,mutation_serial,flags,socket_policy FROM character_items ORDER BY character_soid,location,position"};
+    Statement items{"SELECT character_soid,location,position,instance_soid,definition_hash,level,quantity,mutation_serial,flags,socket_policy,postmaster FROM character_items ORDER BY character_soid,location,position"};
     if(!items.ready()) return false;
     while((result=sqlite3_step(items.value))==SQLITE_ROW) {
         std::uint64_t characterSoid{},instanceSoid{};
@@ -522,6 +543,9 @@ void observe_allocators(const AccountState& account) noexcept {
         if(hash<0||hash>(std::numeric_limits<std::uint32_t>::max)()||flags<0||flags>(std::numeric_limits<std::uint32_t>::max)()) return false;
         std::int32_t itemLevel{},quantity{},serial{};const int policy=sqlite3_column_int(items.value,9);
         if(!column_i32(items.value,5,itemLevel)||!column_i32(items.value,6,quantity)||!column_i32(items.value,7,serial)||policy<0||policy>1)return false;
+        std::int32_t postmaster{};
+        if(!column_i32(items.value,10,postmaster) || (postmaster!=0 && postmaster!=1)) return false;
+        item->postmaster=postmaster!=0;
         item->instanceSoid=instanceSoid;item->definitionHash=static_cast<std::uint32_t>(hash);
         item->level=itemLevel;item->quantity=quantity;item->mutationSerial=serial;
         item->flags=static_cast<std::uint32_t>(flags);item->sockets.policy=static_cast<account::inventory::SocketPolicy>(policy);
@@ -539,7 +563,7 @@ void observe_allocators(const AccountState& account) noexcept {
         }
         ++item->sockets.plugCount;
     }
-    return result==SQLITE_DONE&&read_settings(accountState.settings) && account::valid(accountState);
+    return result==SQLITE_DONE&&read_vendor_state(accountState)&&read_settings(accountState.settings) && account::valid(accountState);
 }
 
 [[nodiscard]] bool load_metadata() noexcept {
@@ -785,7 +809,7 @@ bool initialize(void* module,const AccountState& legacyAccount,const unlocks::Ta
         }
         loadedAccount=legacyAccount;
     } else {
-        if(schema!=kSchemaVersion||!begin()||!load_metadata()||!read_account(loadedAccount)
+        if(!begin()||!migrate_schema(schema)||!load_metadata()||!read_account(loadedAccount)
            ||!read_unlocks(loadedAccount,loadedUnlocks)||!read_family5(loadedFamily5)
            ||!advance_reward_epoch()||!commit()) {
             rollback();log_failure("load");sqlite3_close_v2(database);database=nullptr;return false;

@@ -286,6 +286,7 @@ void report_matchmaking_retirement_failure(const Session& session,
                                        deferred,
                                        touchesScratch)) {
         response.size += deferred;
+        if (session->accountMutationPublished) { publish_account_mutation(*session); }
     }
     if (session->accountMutationPublished) {
         publish_account_mutation(*session);

@@ -6,6 +6,7 @@
 #include "lost_sector_runtime.h"
 #include "open_world_census.h"
 #include "../../../state/activity/native_population_events.h"
+#include "../../../state/activity/vendors/catalog.h"
 #include "../../../state/activity/open_world_member_observations.h"
 #include "../../../state/activity/coo/open_world_member_catalog.h"
 #include "../../../core/filesystem/path.h"
@@ -763,6 +764,28 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
         frame.populations=current->activity.population().project(definition.bubble);
         frame.animations=current->activity.animation().project(definition.bubble);
     }
+    // Mercury's authored script keeps stable capability indices, including
+    // Vance. Remove vendor-owned output before either observation binding or
+    // publication; the vendor lifetime alone admits and retires those actors.
+    const auto vendorOwned=[&](std::uint32_t key,std::uint8_t type,std::uint16_t slot) noexcept {
+        for(const auto& registry:definition.registries)
+            if(registry.key==key && state::activity::vendors::owns(registry.scenario,key,type,slot))
+                return true;
+        return false;
+    };
+    std::size_t kept{};
+    for(std::size_t index=0;index<frame.populations.count;++index) {
+        const auto& request=frame.populations.entries[index];
+        if(!vendorOwned(request.source.registry,1,request.slot))
+            frame.populations.entries[kept++]=request;
+    }
+    frame.populations.count=kept;kept=0;
+    for(std::size_t index=0;index<frame.animations.count;++index) {
+        const auto& request=frame.animations.entries[index];
+        if(!vendorOwned(request.registry,42,request.slot))
+            frame.animations.entries[kept++]=request;
+    }
+    frame.animations.count=kept;
     // Publish the observation capability before the authority frame can create
     // actors. Native callbacks enqueue values; this owner drains them in order.
     for(std::size_t r=0;r<frame.populations.count;++r) {

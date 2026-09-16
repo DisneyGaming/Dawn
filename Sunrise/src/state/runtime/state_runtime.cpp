@@ -264,7 +264,9 @@ bool initialize(void* module,
         || !randomize(initialized.signOn.authenticationKey)
         || !randomize(initialized.signOn.sessionToken) || !randomize(initialized.bap.nonce)
         || !randomize(initialized.bap.sessionKey) || !randomize(initialized.bap.envelopeIv)) {
-        SecureZeroMemory(&initialized, sizeof initialized);
+        SecureZeroMemory(&initialized.signOn, sizeof initialized.signOn);
+        SecureZeroMemory(&initialized.bap, sizeof initialized.bap);
+        initialized = {};
         persistence::shutdown();
         build_data::shutdown();
         return false;
@@ -281,21 +283,18 @@ bool initialize(void* module,
     initialized.investment.family5.flagCount = persistedFamily5.flagCount;
     initialized.investment.family5.values = persistedFamily5.values;
     initialized.investment.family5.valueCount = persistedFamily5.valueCount;
-    // The arm is account-wide and rides the first ws-503, which goes out before any pick. Nothing
-    // is selected at boot, so it is armed when any authored character carries the bypass. The
-    // per-character objB byte is the other half, and it still decides which character it opens.
-    for (std::size_t index = 0; index < runtimeAccount.characterCount; ++index) {
-        if (runtimeAccount.characters[index].contentBypass) {
-            initialized.investment.family5.contentGateArm = true;
-            break;
-        }
-    }
+    // This account arm also enables native character override consumption
+    // (540642). Keep class/quest/vendor state enabled even when the separate
+    // per-character QA bypass is off. Only that character byte skips checks.
+    initialized.investment.family5.contentGateArm = true;
 
     investment_clock::Clock clock;
     const auto utcSeconds = std::chrono::duration_cast<std::chrono::seconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
     if (!clock.begin(utcSeconds, GetTickCount64())) {
-        SecureZeroMemory(&initialized, sizeof initialized);
+        SecureZeroMemory(&initialized.signOn, sizeof initialized.signOn);
+        SecureZeroMemory(&initialized.bap, sizeof initialized.bap);
+        initialized = {};
         persistence::shutdown();
         build_data::shutdown();
         return false;
@@ -308,7 +307,9 @@ bool initialize(void* module,
     runtime::storage::g_state = initialized;
     investmentClock = clock;
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
-    SecureZeroMemory(&initialized, sizeof initialized);
+    SecureZeroMemory(&initialized.signOn, sizeof initialized.signOn);
+    SecureZeroMemory(&initialized.bap, sizeof initialized.bap);
+    initialized = {};
     return true;
 }
 
@@ -318,7 +319,9 @@ void shutdown() noexcept {
     activity::progress::reset();
     persistence::shutdown();
     AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
-    SecureZeroMemory(&runtime::storage::g_state, sizeof runtime::storage::g_state);
+    SecureZeroMemory(&runtime::storage::g_state.signOn, sizeof runtime::storage::g_state.signOn);
+    SecureZeroMemory(&runtime::storage::g_state.bap, sizeof runtime::storage::g_state.bap);
+    runtime::storage::g_state = {};
     investmentClock = {};
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
     build_data::shutdown();

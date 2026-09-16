@@ -102,7 +102,7 @@ template<class Writer>
 }
 
 template<class Writer>
-[[nodiscard]] bool write_source(Writer& writer,const Source& source) noexcept {
+[[nodiscard]] bool write_source(Writer& writer,const Source& source,bool retainPrevious=true) noexcept {
     if(source.registry==0 || source.registry==0x811C9DC5U
         || source.generation==0 || source.generation>0x7FFFFFFFU
         || source.variant>5
@@ -151,7 +151,7 @@ template<class Writer>
         && writer.write(1,1) && writer.write(source.memberOwned?1U
             :static_cast<std::uint32_t>(static_cast<std::int32_t>(tactical.row)+1),5)
         && writer.write(1,1) && writer.write(source.generation,31)
-        && writer.write(source.memberOwned || source.retireOwned?1U:2U,2) && writer.write(source.sceneRequested?2U:1U,3)
+        && writer.write(source.memberOwned || source.retireOwned || !retainPrevious?1U:2U,2) && writer.write(source.sceneRequested?2U:1U,3)
         && writer.write(1,1) && writer.write(0x811C9DC5U,32);
     return ok && writer.bit_count()-begin==(source.hasSecondCategory?kTwoCategorySourceBits:kSourceBits);
 }

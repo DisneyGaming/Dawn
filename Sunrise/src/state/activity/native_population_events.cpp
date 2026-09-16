@@ -28,9 +28,10 @@ void cancel(Creation creation) noexcept {std::lock_guard lock(mutex);mailbox.can
 bool provisional(Receipt receipt,const Event& event) noexcept {
     std::lock_guard lock(mutex);return mailbox.provisional(receipt,event);
 }
-AdmitResult admit(Receipt receipt,const Event& event) noexcept {
-    std::lock_guard lock(mutex);return mailbox.admit(receipt,event);
+AdmitResult admit(Receipt receipt,const Event& event,bool publish) noexcept {
+    std::lock_guard lock(mutex);return mailbox.admit(receipt,event,publish);
 }
+void unbind(const Lease& lease) noexcept {std::lock_guard lock(mutex);mailbox.unbind(lease);}
 bool submit(const Event& event,Receipt receipt) noexcept {std::lock_guard lock(mutex);return mailbox.submit(event,receipt);}
 bool submit(const Event& event,std::uint64_t epochValue) noexcept {std::lock_guard lock(mutex);return mailbox.submit(event,epochValue);}
 void observation_lost() noexcept {std::lock_guard lock(mutex);mailbox.observation_lost();}

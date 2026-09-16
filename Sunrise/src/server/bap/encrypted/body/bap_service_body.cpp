@@ -211,6 +211,20 @@ bool process(const ServiceRoute& route,
             web_service::mutation_if<state::PendingProfileItemAcquisition>(webOutcome);
         const auto* itemDismantle =
             web_service::mutation_if<state::PendingItemDismantle>(webOutcome);
+        if (const auto* vendor=web_service::mutation_if<state::vendors::Pending>(webOutcome)) {
+            auto& tx=outcome.transaction.emplace<VendorServiceTransaction>();
+            middleware::web_service::StatusResponse status{};status.code=1;
+            if(queuez::stage_vendor_transaction(queuezState,*vendor,tx.update)) {
+                tx.pending=*vendor;status.code=0;status.value=tx.update.after.family4Version;
+                // Native 169C00A uses this optional acknowledgement popup to show
+                // the catalog tile. Family-4 already reports the actual grants;
+                // repeating the tile duplicates bounties and displays service dummies.
+                status.trailingBool=false;
+            } else {outcome.transaction=std::monostate{};}
+            return middleware::web_service::encode_response(message,
+                message.opcode==901?middleware::web_service::ResponseShape::statusPairWithBool:middleware::web_service::ResponseShape::statusPair,
+                status,output,written);
+        }
         if (equipmentSwap != nullptr) {
             // Equip is an optimistic Character-screen action. Its status-pair value is the exact
             // Family-4 revision whose following Queuez frame makes the action authoritative. Stage
@@ -317,7 +331,7 @@ bool process(const ServiceRoute& route,
                                                 itemAcquisition->characterSoid,
                                                 itemAcquisition->acquiredInstanceSoid,
                                                 itemAcquisition->profileChanged,
-                                                transaction.update)) {
+                                                transaction.update,itemAcquisition->removedInstanceSoid)) {
                 core::log::write(core::log::Channel::server,
                                  core::log::Level::warn,
                                  "ev=acquire stage=queuez_preflight result=fail");

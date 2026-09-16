@@ -192,6 +192,7 @@ bool consume(Session& session,
         || transaction_if<EquipmentSwapTransaction>(outcome) != nullptr
         || transaction_if<SocketPlugTransaction>(outcome) != nullptr
         || transaction_if<ItemStateTransaction>(outcome) != nullptr
+        || transaction_if<VendorServiceTransaction>(outcome) != nullptr
         || transaction_if<ItemAcquisitionTransaction>(outcome) != nullptr
         || transaction_if<ProfileItemAcquisitionTransaction>(outcome) != nullptr
         || transaction_if<ItemDismantleTransaction>(outcome) != nullptr;

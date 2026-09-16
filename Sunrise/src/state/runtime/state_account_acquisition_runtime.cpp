@@ -9,6 +9,7 @@
 #include "../../middleware/datagen/family4/loadout/loadout_resolver.h"
 #include "../build_data/runtime.h"
 #include "runtime.h"
+#include "../account/inventory/placement.h"
 #include "state_account_transaction_helpers.h"
 #include "storage/internal.h"
 #include "../persistence/persistence.h"
@@ -41,12 +42,17 @@ bool prepare_item_acquisition(std::uint16_t collectibleIndex,
         return false;
     }
 
-    AccountState chargedAccount{};
+    AccountState chargedAccount = account;
     bool profileChanged = false;
     if (!apply_collection_materials(account, collectible, chargedAccount, profileChanged)) {
         report_acquisition("prepare", "fail", "materials", definitionHash, 0, 0, 0, 0, 0, 0);
         return false;
     }
+
+    inventory_buckets::Descriptor destination{};
+    if(!build_data::find_inventory_bucket_descriptor(grantedDefinition.bucketId,destination)
+        || (destination.arraySelector==inventory_buckets::ArraySelector::profile
+            && authored_inventory::profile_room(chargedAccount,definitionHash)!=0)) {return false;}
 
     std::size_t characterIndex = account.characterCount;
     for (std::size_t index = 0; index < account.characterCount; ++index) {
@@ -61,8 +67,7 @@ bool prepare_item_acquisition(std::uint16_t collectibleIndex,
     }
 
     const CharacterState& before = account.characters[characterIndex];
-    if (before.inventory.count >= before.inventory.values.size()
-        || before.nextInventorySerial
+    if (before.nextInventorySerial
                >= static_cast<std::uint32_t>((std::numeric_limits<std::int32_t>::max)())) {
         report_acquisition("prepare",
                            "fail",
@@ -93,7 +98,7 @@ bool prepare_item_acquisition(std::uint16_t collectibleIndex,
     }
 
     CharacterState after = before;
-    const std::size_t inventoryIndex = after.inventory.count;
+    std::uint64_t removed{};
     authored_inventory::Item acquired{};
     acquired.instanceSoid = instanceSoid;
     acquired.definitionHash = definitionHash;
@@ -101,8 +106,8 @@ bool prepare_item_acquisition(std::uint16_t collectibleIndex,
     acquired.quantity = 1;
     acquired.mutationSerial = static_cast<std::int32_t>(after.nextInventorySerial++);
     acquired.sockets.policy = authored_inventory::SocketPolicy::nativeDefaults;
-    after.inventory.values[inventoryIndex] = acquired;
-    ++after.inventory.count;
+    if(!authored_inventory::insert(after,acquired,removed)) {return false;}
+    const std::size_t inventoryIndex=after.inventory.count-1;
 
     AccountState candidate = chargedAccount;
     candidate.characters[characterIndex] = after;
@@ -132,6 +137,7 @@ bool prepare_item_acquisition(std::uint16_t collectibleIndex,
     mutation.accountSoid = account.primarySoid;
     mutation.characterSoid = before.soid;
     mutation.acquiredInstanceSoid = instanceSoid;
+    mutation.removedInstanceSoid = removed;
     mutation.acquiredDefinitionHash = definitionHash;
     mutation.materialRequirementSetHash = collectible.materialRequirementSetHash;
     mutation.expectedNextInventorySerial = before.nextInventorySerial;
@@ -211,9 +217,9 @@ bool commit_item_acquisition(PendingItemAcquisition& mutation) noexcept {
         || prepared.accountSoid == 0
         || prepared.acquiredDefinitionHash == authored_inventory::kNoDefinitionHash
         || prepared.characterIndex >= kCharacterCapacity
-        || prepared.expectedInventoryCount >= authored_inventory::kCharacterItemCapacity
-        || prepared.inventoryIndex != prepared.expectedInventoryCount
-        || prepared.afterCharacter.inventory.count != prepared.expectedInventoryCount + 1U
+        || prepared.expectedInventoryCount > authored_inventory::kCharacterItemCapacity
+        || prepared.inventoryIndex != prepared.expectedInventoryCount - (prepared.removedInstanceSoid?1U:0U)
+        || prepared.afterCharacter.inventory.count != prepared.inventoryIndex + 1U
         || prepared.inventoryIndex >= prepared.afterCharacter.inventory.count
         || prepared.afterCharacter.inventory.values[prepared.inventoryIndex].instanceSoid
                != prepared.acquiredInstanceSoid
@@ -225,7 +231,10 @@ bool commit_item_acquisition(PendingItemAcquisition& mutation) noexcept {
     }
 
     build_data::collectibles::Definition collectible{};
+    build_data::items::Definition grantedDefinition{};
     if (!build_data::find_collectible_definition(prepared.collectibleIndex, collectible)
+        || !build_data::find_item_definition_index(collectible.itemDefinitionIndex, grantedDefinition)
+        || grantedDefinition.definitionHash != prepared.acquiredDefinitionHash
         || collectible.itemDefinitionIndex
                == build_data::collectibles::kUnavailableItemDefinitionIndex
         || collectible.materialRequirementSetHash != prepared.materialRequirementSetHash
@@ -260,6 +269,15 @@ bool commit_item_acquisition(PendingItemAcquisition& mutation) noexcept {
         return fail("stale");
     }
 
+    auto expectedCharacter=prepared.beforeCharacter;
+    const auto granted=prepared.afterCharacter.inventory.values[prepared.inventoryIndex];
+    std::uint64_t expectedRemoved{};
+    expectedCharacter.nextInventorySerial++;
+    if(granted.mutationSerial!=static_cast<std::int32_t>(prepared.beforeCharacter.nextInventorySerial)
+        || !authored_inventory::insert(expectedCharacter,granted,expectedRemoved)
+        || expectedRemoved!=prepared.removedInstanceSoid || !same_character(expectedCharacter,prepared.afterCharacter)) {
+        ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);return fail("placement");
+    }
     candidate.profileItems = prepared.afterProfileItems;
     candidate.profileItemCount = prepared.afterProfileItemCount;
     character = prepared.afterCharacter;

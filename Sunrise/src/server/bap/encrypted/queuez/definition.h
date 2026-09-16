@@ -121,7 +121,10 @@ struct RosterAppearanceRefresh {
     bool includeRoster{};
 };
 
-/** Validated item-acquisition after-image for one character upsert and one new instance object. */
+/** Pursuit advancement and up to two new item residents at one Family-4 revision. */
+struct VendorTransaction : EquipmentSwap {};
+
+
 struct ItemAcquisition {
     SessionState after{};
     std::uint32_t accountDefinitionId{};
@@ -131,6 +134,7 @@ struct ItemAcquisition {
     std::uint64_t characterSoid{};
     std::uint64_t acquiredInstanceSoid{};
     /** True when the same revision also publishes the charged profile-material balances. */
+    std::uint64_t removedInstanceSoid{};
     bool updatesAccount{};
 };
 

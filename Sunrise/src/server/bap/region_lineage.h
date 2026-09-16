@@ -66,6 +66,8 @@ struct RosterDeliveryBefore final {
     std::uint16_t directorSends{};
     bool missionDirectorActive{};
     encrypted::push::activity::roster_lifetime::State lifetimes{};
+    std::uint64_t vendorPresence{};
+    std::uint64_t vendorClockOrigin{};
 };
 
 /** Roster/Omega delivery values published once after caller copy. */

@@ -541,6 +541,13 @@ void dismantle_item(const middleware::web_service::Message& message, Outcome& ou
             message, "fail", "definition", instanceSoid, definitionIndex, 0, kSingleQuantity);
         return;
     }
+    state::vendors::Pending discard;
+    if (state::vendors::prepare_postmaster_discard(instanceSoid, definitionIndex, discard)) {
+        outcome.mutation = std::move(discard);
+        report_item_dismantle(message, "ok", "stack_unit", instanceSoid,
+                              definitionIndex, definition.definitionHash, kSingleQuantity);
+        return;
+    }
     state::PendingItemDismantle mutation{};
     if (!state::prepare_item_dismantle(instanceSoid, mutation)) {
         report_item_dismantle(message,
@@ -671,6 +678,13 @@ void acquire_item(const middleware::web_service::Message& message, Outcome& outc
         state::PendingProfileItemAcquisition mutation{};
         if (!state::prepare_profile_item_acquisition(
                 collectibleIndex, definition.definitionHash, mutation)) {
+            state::PendingItemAcquisition overflow{};
+            if(state::prepare_item_acquisition(collectibleIndex,definition.definitionHash,overflow)) {
+                outcome.mutation=overflow;
+                report_item_acquisition(message,"ok","postmaster_ready",collectibleIndex,
+                    itemDefinitionIndex,definition.definitionHash,overflow.acquiredInstanceSoid);
+                return;
+            }
             report_item_acquisition(message,
                                     "fail",
                                     "profile_state",

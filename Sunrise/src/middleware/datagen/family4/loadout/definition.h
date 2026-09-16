@@ -13,6 +13,9 @@ namespace sunrise::middleware::datagen::family4::loadout {
 inline constexpr std::size_t kItemCapacity = state::account::inventory::kEquipmentSlotCount
                                              + state::account::inventory::kCharacterItemCapacity;
 
+/** Character-owned pursuits have a native inventory bucket but no equipment slot. */
+inline constexpr std::uint8_t kNoEquipmentSlot = 0xFF;
+
 /** One installed-build-resolved item ready for character and instance encoding. */
 struct ResolvedItem {
     std::uint16_t inventoryRow{};

@@ -361,7 +361,7 @@
         "preview_available": true,
         "appearance_value": 1.0,
         "last_orbited_destination": "0x125CF0E7",
-        "content_bypass": true,
+        "content_bypass": false,
         "equipment": {
           "kinetic": {
             "instance_soid": "0x4000000000000001",
@@ -880,7 +880,7 @@
         "preview_available": true,
         "appearance_value": 1.0,
         "last_orbited_destination": "0x125CF0E7",
-        "content_bypass": true,
+        "content_bypass": false,
         "equipment": {
           "kinetic": {
             "instance_soid": "0x4000000000000065",
@@ -1399,7 +1399,7 @@
         "preview_available": true,
         "appearance_value": 1.0,
         "last_orbited_destination": "0x125CF0E7",
-        "content_bypass": true,
+        "content_bypass": false,
         "equipment": {
           "kinetic": {
             "instance_soid": "0x40000000000000C9",

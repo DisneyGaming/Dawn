@@ -61,12 +61,9 @@ inline constexpr std::uint64_t kFirstProfileItemInstanceSoid = 0x500000000000000
  * Confirmed against the installed build by three observed lock and unlock transitions.
  */
 inline constexpr std::uint32_t kLockedItemFlag = 0x1;
-/**
- * The 16 supported character equipment buckets reserve 151 native rows in this build. One row
-
- * * per semantic slot can be equipped, leaving at most 135 simultaneously unequipped instances.
- */
-inline constexpr std::size_t kCharacterItemCapacity = 135;
+/** Native character rows include equipment, Pursuits, engrams and recovery. */
+inline constexpr std::size_t kCharacterItemCapacity = 334;
+inline constexpr std::uint8_t kPostmasterBucket = 34;
 
 /** One authored account-wide item, placed by the inventory bucket its definition names. */
 struct ProfileItem {
@@ -90,6 +87,8 @@ struct Item {
     /** Native accumulated item-state bits such as the finisher favorite marker. */
     std::uint32_t flags{};
     Sockets sockets;
+    /** Recovery location; vector order preserves arrival age independently of mutations. */
+    bool postmaster{};
     friend bool operator==(const Item&, const Item&) = default;
 };
 

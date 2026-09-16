@@ -3,6 +3,7 @@
 #include "native_activity_definition.h"
 #include "open_world_definition.h"
 #include "lost_sector_catalog.h"
+#include "../../../state/activity/vendors/catalog.h"
 #include <array>
 
 namespace sunrise::server::runtime::activity::open_world::profiles {
@@ -56,11 +57,31 @@ template<std::size_t R,std::size_t P>
 template<const auto& Destination,const auto& Registries,const auto& PopulationBindings,
     const auto& PlacementBindings,const auto& AdventureBindings>
 struct Data final {
-    inline static constexpr auto populations=make_populations(Registries,PopulationBindings);
+    inline static constexpr auto populationBindings=[] {
+        constexpr std::size_t count=[] {
+            std::size_t value{};
+            for(const auto& binding:PopulationBindings)
+                if(!state::activity::vendors::owns(Destination.scenario,
+                    Registries[binding.registry].key,1,binding.source)) ++value;
+            return value;
+        }();
+        std::array<catalog::PopulationBinding,count> result{};
+        std::size_t index{};
+        for(const auto& binding:PopulationBindings)
+            if(!state::activity::vendors::owns(Destination.scenario,
+                Registries[binding.registry].key,1,binding.source)) result[index++]=binding;
+        return result;
+    }();
+    inline static constexpr auto populations=make_populations(Registries,populationBindings);
+    // The Director indexes authored policy and capability arrays together. Keep
+    // both filtered views aligned; Lost Sector offsets follow the filtered size.
+    inline static constexpr auto destination=[] {
+        auto result=Destination;result.populations=populationBindings;return result;
+    }();
     inline static constexpr auto placements=make_placements(Registries,PlacementBindings);
     inline static constexpr auto routes=make_routes(Destination,Registries,AdventureBindings);
     inline static constexpr auto bootstrap=source_asset(populations.front());
-    inline static constexpr Definition runtime{&Destination};
+    inline static constexpr Definition runtime{&destination};
 };
 
 #define SUNRISE_OPEN_WORLD_PROFILE(NAME,AUTHORED_NS,LOST_NS,SCRIPT_FILE,PROFILE_ID) \

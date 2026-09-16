@@ -128,7 +128,7 @@ bool prepare(Scratch& scratch,
         if (!family4_datagen::character::encode(selectedCharacter,
                                                 selected.loadout,
                                                 selected.lightEvaluation,
-                                                characterBytes, nativePower)) {
+                                                characterBytes, nativePower,&account)) {
             return report_failure("character_encode");
         }
         if (!append_object(scratch,

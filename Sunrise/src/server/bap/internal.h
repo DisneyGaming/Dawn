@@ -62,6 +62,8 @@ struct RosterPublication {
     state::activity::bubble_authority::Grant grant{};
     /** Correlates the staged JSONL auth record with its delivered or discarded outcome. */
     std::uint64_t omegaTracePublicationId{};
+    std::uint64_t priorVendorPresence{},priorVendorClockOrigin{};
+    std::uint64_t afterVendorPresence{},afterVendorClockOrigin{};
     std::uint32_t priorGroups{};
     std::uint8_t priorSends{};
     std::uint8_t priorState{};
@@ -179,6 +181,8 @@ struct ActivityBindingState {
     std::uint32_t rosterGroups{};
     std::uint8_t rosterSends{};
     std::uint8_t rosterState{};
+    std::uint64_t towerVendorPresence{},vendorClockOrigin{};
+    std::uint64_t vendorPopulationRevision{};
     encrypted::push::activity::roster_lifetime::State rosterLifetimes{};
     /** Temporary delivery-local home; the host-durable Omega move remains a later slice. */
     std::uint8_t omegaOpeningStage{};
@@ -226,6 +230,7 @@ struct Session {
     encrypted::queuez::SessionState queuez{};
     /** Tick count after which the owed Family-4 re-push may go out. */
     std::uint64_t family4RepushDueTick{};
+    std::uint64_t questProgressDueTick{};
     /** Root the owed re-push must use. */
     std::uint64_t family4RepushRoot{};
     /** True while one Family-4 re-push is still owed to this peer. */

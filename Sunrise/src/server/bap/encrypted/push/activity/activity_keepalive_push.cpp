@@ -11,6 +11,9 @@
 #include "../../../../../state/activity/coo/omega_opening_projection.h"
 #include "../../../../../state/activity/runtime.h"
 #include "../../../../../state/activity/native_population_events.h"
+#include "../../../../../state/activity/vendors/presentation.h"
+#include "../../../../../state/activity/vendors/lifetime.h"
+#include "../../../../../client/player/player_position.h"
 #include "../../../../runtime/activity/adventure_native_bridge.h"
 
 #include <Windows.h>
@@ -225,8 +228,7 @@ bool consume_activity_keepalive(Session& session,
         return service_region_debt(session, scratch, response, written);
     }
     const std::uint64_t now = GetTickCount64();
-    // A join or transition-token change opens the burst window. Outside it the roster goes out on
-    // the keepalive alone.
+    // Loading and native observations open the scheduled burst window.
     const bool omegaOpeningDue = ((session.activity.omegaOpeningStage >= message::kOmegaOpeningStageBaseline
          && session.activity.omegaOpeningStage < message::kOmegaOpeningStageReady)
         || (session.activity.omegaOpeningStage == message::kOmegaOpeningStageReady
@@ -248,9 +250,23 @@ bool consume_activity_keepalive(Session& session,
         && state::activity::native_population::pending(session.activity.instance);
     const bool nativeCueDue = !session.activity.joinedForeignSession
         && runtime::activity::adventure::native_bridge::pending(session.activity.instance);
+    namespace welcome=state::activity::vendors::presentation;
+    const auto& vendorOwner=session.activity.rosterLifetimes.identity;
+    const auto player=client::player::position::snapshot();
+    // Greeting/departure inputs follow proximity edges, including after loading
+    // settles. They must not wait for the five-second idle keepalive.
+    const bool vendorPresenceDue=vendorOwner.owner==session.activity.instance.sessionId
+        && vendorOwner.incarnation==session.activity.instance.incarnation.value
+        && !welcome::groups(vendorOwner.scenario).empty()
+        && welcome::presence(session.activity.towerVendorPresence,0,player.position,player.present,vendorOwner.scenario)
+            !=session.activity.towerVendorPresence;
+    const auto vendorRevision=state::activity::vendors::lifetime::revision(session.activity.instance);
+    const bool vendorPopulationDue=vendorRevision!=session.activity.vendorPopulationRevision;
+    const bool scheduledBurst = now >= session.activity.rosterDueTick
+        && (now < session.activity.transitionUntilTick || omegaOpeningDue || towerWatchDue
+            || nativePopulationDue || nativeCueDue);
     const bool burstDue = !session.activity.joinedForeignSession
-                          && (now < session.activity.transitionUntilTick || omegaOpeningDue || towerWatchDue || nativePopulationDue || nativeCueDue)
-                          && now >= session.activity.rosterDueTick;
+        && (vendorPresenceDue || vendorPopulationDue || scheduledBurst);
     const bool endingMembershipDue=!session.activity.joinedForeignSession
         && (state::activity::strike_bond::ending_membership_due(now)
             || state::activity::omega_ending::membership_due(session.activity.instance,
@@ -359,6 +375,7 @@ bool consume_activity_keepalive(Session& session,
     written = framedSize;
     session.sendNonce = nextSendNonce;
     commit_staged_roster(session);
+    session.activity.vendorPopulationRevision=vendorRevision;
     if(refresh.publishesMembership) {
         state::activity::omega_ending::note_membership_published(session.activity.instance,
             state::activity::mission_run_generation(),now);

@@ -11,6 +11,8 @@ namespace sunrise::client::hooks::bootflow {
 [[nodiscard]] bool install_omega_enemy_lair_receipts() noexcept;
 void quiesce_omega_enemy_lair_receipts() noexcept;
 void poll_native_population_admissions() noexcept;
+void begin_vendor_area_unload() noexcept;
+void finish_vendor_area_unload(bool allocatorReady) noexcept;
 // The existing Omega source probe owns 4E4580. Share that boundary instead of
 // attempting a second detour against bytes that the first owner has patched.
 using NativePopulationDispatch=void(__fastcall*)(std::uint32_t*,std::uint32_t,const std::byte*) noexcept;

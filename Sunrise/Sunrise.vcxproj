@@ -1636,4 +1636,35 @@
     <MASM Include="src\client\hooks\bootflow\native_cleanup_owner_guard.asm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
+  <ItemGroup>
+    <ClCompile Include="src\client\content\vendors\vendor_services.cpp" />
+    <ClInclude Include="src\client\content\vendors\vendor_services.h" />
+    <ClInclude Include="src\client\hooks\bootflow\vendor_lifetime_native.h" />
+    <ClInclude Include="src\client\hooks\bootflow\vendor_network_presence.h" />
+    <ClInclude Include="src\client\hooks\bootflow\vendor_population.inl" />
+    <ClInclude Include="src\middleware\web_service\messages\opcode405.h" />
+    <ClInclude Include="src\middleware\web_service\messages\opcode904.h" />
+    <ClInclude Include="src\middleware\web_service\messages\opcode905.h" />
+    <ClInclude Include="src\server\bap\encrypted\push\activity\quest_progress.h" />
+    <ClInclude Include="src\server\bap\encrypted\push\activity\vendor_roster.h" />
+    <ClCompile Include="src\server\bap\encrypted\push\snapshot\family4_vendor_transaction.cpp" />
+    <ClInclude Include="src\state\account\inventory\placement.h" />
+    <ClInclude Include="src\state\activity\coo\native_asset_catalog.h" />
+    <ClInclude Include="src\state\activity\vendors\catalog.h" />
+    <ClCompile Include="src\state\activity\vendors\lifetime.cpp" />
+    <ClInclude Include="src\state\activity\vendors\lifetime.h" />
+    <ClInclude Include="src\state\activity\vendors\presentation.h" />
+    <ClCompile Include="src\state\build_data\vendors\service_catalog.cpp" />
+    <ClInclude Include="src\state\build_data\vendors\service_catalog.h" />
+    <ClInclude Include="src\state\vendors\bounties.h" />
+    <ClCompile Include="src\state\vendors\conditions.cpp" />
+    <ClInclude Include="src\state\vendors\conditions.h" />
+    <ClInclude Include="src\state\vendors\progress.h" />
+    <ClInclude Include="src\state\persistence\vendor_state.inl" />
+    <ClInclude Include="src\state\vendors\projection.h" />
+    <ClInclude Include="src\state\vendors\quest_state.h" />
+    <ClCompile Include="src\state\vendors\transaction.cpp" />
+    <ClInclude Include="src\state\vendors\transaction.h" />
+    <ClInclude Include="src\state\vendors\unlocks.h" />
+  </ItemGroup>
 </Project>

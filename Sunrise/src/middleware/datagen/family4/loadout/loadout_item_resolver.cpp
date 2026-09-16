@@ -139,10 +139,15 @@ bool resolve_item(const authored_inventory::Item& authored,
     if (!state::build_data::find_item_definition_hash(authored.definitionHash, itemDefinition)
         || !state::build_data::find_configured_item_detail(itemDefinition.definitionIndex,
                                                            itemDetail)
-        || itemDefinition.bucketId != itemDetail.bucketId || !itemDetail.equipmentSlot.has_value()
-        || *itemDetail.equipmentSlot < 0
+        || itemDefinition.bucketId != itemDetail.bucketId
         || !state::build_data::find_inventory_bucket_descriptor(itemDetail.bucketId, bucket)
-        || bucket.arraySelector != build_buckets::ArraySelector::character
+        || (!authored.postmaster && bucket.arraySelector != build_buckets::ArraySelector::character)
+        || itemDetail.equipmentSlot.value_or(build_buckets::kUnavailableEquipmentSlot)
+               != bucket.equipmentSlot
+        || (itemDetail.equipmentSlot.has_value()
+            && (*itemDetail.equipmentSlot < 0
+                || static_cast<std::size_t>(*itemDetail.equipmentSlot)
+                       >= build_details::kEquipmentSlotCount))
         || !state::build_data::find_socket_entry_list(itemDetail.socketEntryListIndex, socketList)
         || static_cast<std::size_t>(itemDefinition.definitionIndex) >= itemDefinitionCount
         || static_cast<std::size_t>(socketList.definitionIndex) >= socketEntryListCount
@@ -151,8 +156,11 @@ bool resolve_item(const authored_inventory::Item& authored,
     }
 
     Candidate candidate{};
+    if(authored.postmaster && (!state::build_data::find_inventory_bucket_descriptor(
+        authored_inventory::kPostmasterBucket,bucket) || bucket.arraySelector!=build_buckets::ArraySelector::character)) {return false;}
     candidate.bucket = bucket;
-    candidate.item.equipmentSlot = static_cast<std::uint8_t>(*itemDetail.equipmentSlot);
+    candidate.item.equipmentSlot = !authored.postmaster && itemDetail.equipmentSlot.has_value()
+        ? static_cast<std::uint8_t>(*itemDetail.equipmentSlot) : kNoEquipmentSlot;
     candidate.item.mutationSerial = authored.mutationSerial;
     candidate.item.flags = authored.flags;
     if (!resolve_quantity(authored, itemDetail, candidate.item.quantity)

@@ -1,4 +1,5 @@
 #pragma once
+#include "../../../../state/vendors/transaction.h"
 
 #include <cstdint>
 
@@ -7,6 +8,7 @@
 #include "definition.h"
 
 namespace sunrise::server::bap::encrypted::queuez {
+[[nodiscard]] bool stage_vendor_transaction(const SessionState&,const state::vendors::Pending&,VendorTransaction&) noexcept;
 
 /** @return True when one peer queuez state is canonical for the implemented versions. */
 [[nodiscard]] bool valid(const SessionState& state) noexcept;
@@ -148,7 +150,7 @@ namespace sunrise::server::bap::encrypted::queuez {
                                           std::uint64_t characterSoid,
                                           std::uint64_t acquiredInstanceSoid,
                                           bool updatesAccount,
-                                          ItemAcquisition& acquisition) noexcept;
+                                          ItemAcquisition& acquisition,std::uint64_t removedInstanceSoid=0) noexcept;
 
 /**
  * Stages one Family-4 version increment for a full resident account-object upsert.

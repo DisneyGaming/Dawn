@@ -1,5 +1,7 @@
 #include "../../../../../state/activity/coo/native_mission_forest_authority.h"
+#include "../../../../../state/activity/vendors/lifetime.h"
 #include <Windows.h>
+#include "../../../../../client/player/player_position.h"
 
 #include <algorithm>
 #include <array>
@@ -44,6 +46,7 @@
 #include "beyond_infinity_roster.h"
 #include "deep_storage_roster.h"
 #include "hijacked_roster.h"
+#include "vendor_roster.h"
 #include "../../../../../state/activity/beyond_infinity/runtime.h"
 #include "../../../../../state/activity/deep_storage/runtime.h"
 #include "../../../../../state/activity/hijacked/runtime.h"
@@ -733,6 +736,40 @@ RosterOutcome build_roster_snapshot(Session& session,
             }
             snapshot.missionCompletion=snapshot.eater_of_worlds.completion;
             snapshot.gameplayClockTicks=snapshot.eater_of_worlds.gameplayClockTicks;
+        }
+    }
+    namespace vendorWorld=state::activity::vendors::presentation;
+    const bool towerVendors=!vendorWorld::groups(layout.tag).empty();
+    const auto ownsVendor=[scenario=layout.tag](std::uint32_t key) noexcept {return vendorWorld::owns(key,scenario);};
+    if(towerVendors) {
+        const auto role=native_publisher::prepare(session.activity.instance,session.activity.lineage,
+            session.activity.rosterLifetimes,scratch,snapshot.roster,
+            ownsVendor);
+        if(role==native_publisher::Role::invalid) {return RosterOutcome::noGroups;}
+        if(role==native_publisher::Role::creator) {
+            if(!vendor_roster::admit(scratch,snapshot.roster,layout.tag,
+                [](std::uint32_t key,layouts::RosterGroup& group) noexcept {
+                    std::uint16_t index{};
+                    return layouts::find_group_index(key,index) && state::build_data::find_roster_group(index,group);
+                })) {return RosterOutcome::noGroups;}
+            namespace welcome=state::activity::vendors::presentation;
+            const auto player=client::player::position::snapshot();
+            const auto bubble=static_cast<std::uint8_t>(inputs.regionIndex/8);
+            session.activity.towerVendorPresence=welcome::presence(session.activity.towerVendorPresence,bubble,
+                player.position,player.present,layout.tag);
+            snapshot.vendorPresentation={true,bubble,session.activity.towerVendorPresence,layout.tag};
+            for(const auto& group:welcome::groups(layout.tag)) for(const auto& binding:group.slots) {
+                const auto& source=binding.asset;
+                const auto index=welcome::source_index(layout.tag,source.registry,source.type,source.slot);
+                if(source.type!=1 || index>=snapshot.vendorPresentation.population.size()) continue;
+                state::activity::vendors::lifetime::Authority authority;
+                if(!state::activity::vendors::lifetime::prepare(session.activity.instance,source,group.bubble,authority))
+                    return RosterOutcome::noGroups;
+                snapshot.vendorPresentation.population[index]={authority.generation,authority.occupied,authority.suspended};
+            }
+            const auto now=GetTickCount64();
+            if(!session.activity.vendorClockOrigin) {session.activity.vendorClockOrigin=now;}
+            snapshot.gameplayClockTicks=state::activity::coo::native_activity_ticks(now-session.activity.vendorClockOrigin);
         }
     }
     if (name == "mission_scot") {
@@ -1544,8 +1581,10 @@ RosterOutcome build_roster_snapshot(Session& session,
     // objects. Only preserve generation when that exact base set is unchanged;
     // unrelated roster changes still use the normal state transition below.
     if(adventureAdditive)session.activity.rosterGroups=fold_groups(snapshot.roster);
+    // The phase-one removal must be the whole preparation packet. Even an
+    // empty reset block in phase two can seed a new sync record after cleanup.
     const auto folded = fold_groups(snapshot.roster);
-    const bool retainOrdinals = nativeProfile && nativeProfile->retainRosterOrdinals;
+    const bool retainOrdinals = towerVendors || (nativeProfile && nativeProfile->retainRosterOrdinals);
     const bool warmup = session.activity.rosterSends < kWarmupSends;
     if (retainOrdinals && !warmup) session.activity.rosterGroups = folded;
     snapshot.stateSequence = next_state_sequence(session, folded, burst);
@@ -1557,6 +1596,9 @@ RosterOutcome build_roster_snapshot(Session& session,
             static_cast<std::uint32_t>(inputs.regionIndex / 8),
             static_cast<std::uint8_t>(message::kStateByteBias + snapshot.stateSequence), warmup,
             snapshot.roster, session.activity.rosterLifetimes);
+        if(towerVendors && result==roster_lifetime::Result::ready) {
+            vendor_roster::retain(session.activity.rosterLifetimes,layout.tag);
+        }
         const bool projected = result == roster_lifetime::Result::ready
             && roster_lifetime::project(session.activity.rosterLifetimes, snapshot.roster,
                 scratch.rosterSubBlocks);
@@ -1594,6 +1636,7 @@ namespace {
         binding.directorSends,
         binding.missionDirectorActive,
         binding.rosterLifetimes,
+        binding.towerVendorPresence,binding.vendorClockOrigin,
     };
 }
 

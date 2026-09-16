@@ -54,6 +54,7 @@ struct PendingItemAcquisition {
     std::uint64_t accountSoid{};
     std::uint64_t characterSoid{};
     std::uint64_t acquiredInstanceSoid{};
+    std::uint64_t removedInstanceSoid{};
     std::uint32_t acquiredDefinitionHash{};
     std::uint32_t materialRequirementSetHash{};
     std::uint32_t expectedNextInventorySerial{};
@@ -322,9 +323,10 @@ void shutdown() noexcept;
  * Native-default sockets, a unique runtime SOID, and the selected character's current item level
  * are used. Full loadout resolution is the authoritative bucket-capacity check.
  *
- * @param collectibleIndex Collections row the Client pulled from.
- * @param definitionHash Installed item definition requested by the Client.
+ * @param collectibleIndex Installed collectible linked to this item.
+ * @param definitionHash Installed item definition to acquire.
  * @param mutation Gets a checked after-image without changing account State.
+ * @param source Collections charges its native costs; an accepted mission reward is free.
  * @return True when the item and every existing loadout row resolve with one free native row.
  */
 [[nodiscard]] bool prepare_item_acquisition(std::uint16_t collectibleIndex,

@@ -63,6 +63,37 @@ inline constexpr std::size_t kIdentityCapacity =
     return true;
 }
 
+[[nodiscard]] bool valid_vendor_unlocks(const vendors::Unlocks& unlocks) noexcept {
+    for (const auto* rows : {&unlocks.flags, &unlocks.values}) {
+        if (rows->size() > vendors::kUnlockLimit) return false;
+        for (std::size_t index = 0; index < rows->size(); ++index) {
+            const auto& row = (*rows)[index];
+            if (rows == &unlocks.flags && (row.value < 0 || row.value > 2)) return false;
+            for (std::size_t prior = 0; prior < index; ++prior)
+                if ((*rows)[prior].slot == row.slot) return false;
+        }
+    }
+    return true;
+}
+
+[[nodiscard]] bool valid_vendor_progress(const vendors::ProgressBank& bank,
+                                         std::uint8_t scope) noexcept {
+    for (std::size_t index = 0; index < bank.size(); ++index) {
+        const auto& row = bank[index];
+        if (row.vendor == 0xffff) {
+            if (row.points != 0 || row.rewards != 0) return false;
+            continue;
+        }
+        const auto* faction = vendors::faction(row.vendor);
+        if (!faction || faction->vendor != row.vendor || faction->scope != scope
+            || row.points < 0 || row.rewards < 0 || vendors::available(row, *faction) < 0)
+            return false;
+        for (std::size_t prior = 0; prior < index; ++prior)
+            if (bank[prior].vendor == row.vendor) return false;
+    }
+    return true;
+}
+
 /** Checks the complete authored/runtime structure without consulting installed build data. */
 [[nodiscard]] bool valid_impl(const AccountState& state) noexcept {
     if (state.profileItemCount > state.profileItems.size()
@@ -72,7 +103,8 @@ inline constexpr std::size_t kIdentityCapacity =
     if (state.primarySoid == 0) {
         if (state.profileItemCount != 0 || state.characterCount != 0
             || state.dismantleRewardCount != 0 || state.settings.configured
-            || state.settings.keyBindings.configured) {
+            || state.settings.keyBindings.configured || !state.vendorUnlocks.flags.empty()
+            || !state.vendorUnlocks.values.empty() || state.vendorProgress != vendors::ProgressBank{}) {
             return false;
         }
         return std::all_of(
@@ -81,7 +113,8 @@ inline constexpr std::size_t kIdentityCapacity =
                               state.dismantleRewards.cend(),
                               empty_dismantle_reward);
     }
-    if (!settings::valid(state.settings) || !valid_dismantle_rewards(state)) {
+    if (!settings::valid(state.settings) || !valid_dismantle_rewards(state)
+        || !valid_vendor_unlocks(state.vendorUnlocks) || !valid_vendor_progress(state.vendorProgress, 0)) {
         return false;
     }
 
@@ -114,7 +147,9 @@ inline constexpr std::size_t kIdentityCapacity =
             || character.gender > CharacterGender::female
             || character.characterClass > CharacterClass::warlock
             || !std::isfinite(character.appearanceValue) || !inventory::valid(character.equipment)
-            || !inventory::valid(character.inventory)) {
+            || !inventory::valid(character.inventory) || character.vendorCampaigns > 7
+            || !valid_vendor_unlocks(character.vendorUnlocks)
+            || !valid_vendor_progress(character.vendorProgress, 1)) {
             return false;
         }
         selected = selected || character.selected;

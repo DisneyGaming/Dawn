@@ -54,6 +54,12 @@ bool stage_service_outcome(Scratch& scratch,
         }
         middleware::secure_channel::advance_nonce(nonce);
         after = outcome.changeCharacter.after;
+    } else if (const auto* vendor=transaction_if<VendorServiceTransaction>(outcome)) {
+        const auto& update=vendor->update;
+        if(!valid(update.after) || update.after.family4RootSoid!=before.family4RootSoid
+            || before.family4Version==INT32_MAX || update.after.family4Version!=before.family4Version+1
+            || !push::append_vendor_transaction_notification(scratch,update,vendor->pending,key,nonce,response,written)) {return false;}
+        middleware::secure_channel::advance_nonce(nonce);after=update.after;
     } else if (equipment != nullptr) {
         // Body processing already staged this exact after-image so the correlated opcode-403
         // response could promise its version. Reuse it here; staging a second revision would make
@@ -205,14 +211,18 @@ bool stage_service_outcome(Scratch& scratch,
         // Body processing staged this exact manifest append before encoding the response version.
         // The character and new item objects must both fit or the State insertion is not committed.
         const ItemAcquisition& acquisition = itemAcquisition->update;
-        const std::size_t appendedIndex = before.family4ResidentCount;
-        bool preservedManifest = acquisition.after.family4ResidentCount == appendedIndex + 1U;
-        for (std::size_t index = 0; preservedManifest && index < appendedIndex; ++index) {
-            preservedManifest = acquisition.after.family4Residents[index].objectSoid
-                                    == before.family4Residents[index].objectSoid
-                                && acquisition.after.family4Residents[index].definitionId
-                                       == before.family4Residents[index].definitionId;
+        const auto removed=acquisition.removedInstanceSoid;
+        const std::size_t appendedIndex=before.family4ResidentCount-(removed?1U:0U);
+        bool preservedManifest=before.family4ResidentCount && acquisition.after.family4ResidentCount==appendedIndex+1U
+            && removed==itemAcquisition->pending.removedInstanceSoid;
+        std::size_t kept{},removedCount{};
+        for(std::size_t i=0;preservedManifest && i<before.family4ResidentCount;++i) {
+            const auto& old=before.family4Residents[i];
+            if(old.objectSoid==removed) {++removedCount;continue;}
+            const auto& next=acquisition.after.family4Residents[kept++];
+            preservedManifest=old.objectSoid==next.objectSoid && old.definitionId==next.definitionId;
         }
+        preservedManifest&=kept==appendedIndex && removedCount==(removed?1U:0U);
         if (!valid(acquisition.after) || !preservedManifest
             || acquisition.accountSoid != itemAcquisition->pending.accountSoid
             || acquisition.characterSoid != itemAcquisition->pending.characterSoid
@@ -220,7 +230,7 @@ bool stage_service_outcome(Scratch& scratch,
             || acquisition.updatesAccount != itemAcquisition->pending.profileChanged
             || acquisition.accountSoid != before.family4RootSoid
             || acquisition.after.family4RootSoid != before.family4RootSoid
-            || before.family4ResidentCount >= before.family4Residents.size()
+            || (!removed && before.family4ResidentCount >= before.family4Residents.size())
             || before.family4Version == (std::numeric_limits<std::int32_t>::max)()
             || acquisition.after.family4Version != before.family4Version + 1
             || acquisition.after.family4Residents[appendedIndex].objectSoid

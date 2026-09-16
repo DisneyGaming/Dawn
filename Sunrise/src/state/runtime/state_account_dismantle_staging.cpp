@@ -27,8 +27,8 @@ namespace item_details = build_data::items::details;
 namespace inventory_buckets = build_data::inventory::buckets;
 namespace family4_loadout = middleware::datagen::family4::loadout;
 
-/** Equipment slots 0-2 are weapons and 3-7 are class-specific armor. */
-constexpr std::uint8_t kGearEquipmentSlotCount = 8;
+/** Installed buckets 0-2 are weapons and 3-7 are armor, unlike equipment-slot ids. */
+constexpr std::uint8_t kGearBucketCount = 8;
 
 /** Writes one exhaustive item-dismantle transaction checkpoint. */
 void report_dismantle(std::string_view stage,
@@ -80,7 +80,7 @@ void report_dismantle(std::string_view stage,
  */
 [[nodiscard]] bool
 apply_dismantle_rewards(const AccountState& before,
-                        std::uint8_t equipmentSlot,
+                        std::uint8_t bucketId,
                         AccountState& after,
                         std::array<DismantleReward, kDismantleRewardCapacity>& rewards,
                         std::size_t& rewardCount) noexcept {
@@ -90,7 +90,7 @@ apply_dismantle_rewards(const AccountState& before,
     if (!valid_profile_inventory(before)) {
         return false;
     }
-    if (equipmentSlot >= kGearEquipmentSlotCount) {
+    if (bucketId >= kGearBucketCount) {
         return true;
     }
 
@@ -303,17 +303,23 @@ apply_dismantle_rewards(const AccountState& before,
         || dismantledDetail.definitionIndex != dismantledDefinition.definitionIndex
         || dismantledDetail.definitionHash != dismantledDefinition.definitionHash
         || dismantledDetail.bucketId != dismantledDefinition.bucketId
-        || dismantledDetail.instancedDefinitionState
-               != item_details::InstancedDefinitionState::instanced
-        || !dismantledDetail.equipmentSlot.has_value()
-        || static_cast<std::uint8_t>(*dismantledDetail.equipmentSlot) != dismantledSlot) {
+        || dismantledItem.quantity != 1
+        || (!dismantledItem.postmaster
+            && (dismantledDetail.instancedDefinitionState != item_details::InstancedDefinitionState::instanced
+                || !dismantledDetail.equipmentSlot.has_value()
+                || static_cast<std::uint8_t>(*dismantledDetail.equipmentSlot) != dismantledSlot))
+        || (dismantledItem.postmaster && dismantledSlot != family4_loadout::kNoEquipmentSlot)) {
         return false;
     }
 
     AccountState rewarded{};
     std::array<DismantleReward, kDismantleRewardCapacity> rewards{};
     std::size_t rewardCount = 0;
-    if (!apply_dismantle_rewards(candidate, dismantledSlot, rewarded, rewards, rewardCount)) {
+    // Mail placement has no equipment slot. Payout follows the item's native
+    // definition, while the deletion keeps the resolved Postmaster row/slot.
+    if (!apply_dismantle_rewards(candidate,
+            dismantledDetail.bucketId,
+            rewarded, rewards, rewardCount)) {
         return false;
     }
     candidate = rewarded;

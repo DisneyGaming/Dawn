@@ -18,6 +18,7 @@
 #include "../../../state/activity/beyond_infinity/frame.h"
 #include "../../../state/activity/deep_storage/frame.h"
 #include "../../../state/activity/hijacked/frame.h"
+#include "../../../state/activity/vendors/presentation.h"
 #include "../../../state/activity/deadly_trial/frame.h"
 #include "../../../state/activity/strike_pact/frame.h"
 #include "native/population_authority.h"
@@ -172,6 +173,7 @@ struct Snapshot final {
     state::activity::beyond_infinity::Frame beyond_infinity{};
     state::activity::deep_storage::Frame deep_storage{};
     state::activity::hijacked::Frame hijacked{};
+    state::activity::vendors::presentation::Frame vendorPresentation{};
     state::activity::deadly_trial::Frame deadly_trial{};
     state::activity::strike_pact::Frame strike_pact{};
     state::activity::strike_bond::Frame strike_bond{};

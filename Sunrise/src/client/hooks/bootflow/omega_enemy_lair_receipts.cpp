@@ -1,3 +1,7 @@
+#include "../../../state/activity/vendors/lifetime.h"
+#include "../../../state/activity/vendors/presentation.h"
+#include "vendor_network_presence.h"
+#include "vendor_lifetime_native.h"
 #include <Windows.h>
 #include <intrin.h>
 #include <bit>
@@ -649,6 +653,7 @@ template<class... Args> void native_report(const char* format,Args... args) noex
     if(count>0 && static_cast<std::size_t>(count)<line.size())
         core::log::write(core::log::Channel::client,core::log::Level::info,{line.data(),static_cast<std::size_t>(count)});
 }
+#include "vendor_population.inl"
 // Shared observer for explicitly registered activity sources. Package definitions,
 // salted actor backlinks, typed health interfaces and source generations are
 // qualified before copying an event into the state mailbox. No spawn or AI call.
@@ -768,10 +773,12 @@ void finish_native_admissions(std::uint32_t onlyActor=UINT32_MAX) noexcept {
         // Best-effort sidecar, captured before the authoritative event can be
         // drained. A busy retry deduplicates the same exact receipt and actor.
         // Failure here never changes native admission, renewal, or AI behavior.
-        state::activity::open_world_members::capture(birth.receipt,complete,
+        const bool vendor=vendorPopulation::lifetime::owns(lease);
+        if(!vendor) state::activity::open_world_members::capture(birth.receipt,complete,
             {current.member.handle,current.member.kind,current.member.offset});
-        const auto admission=nativeEvents::admit(birth.receipt,complete);
-        const bool accepted=admission==nativeEvents::AdmitResult::admitted;
+        const auto admission=nativeEvents::admit(birth.receipt,complete,!vendor);
+        const bool accepted=admission==nativeEvents::AdmitResult::admitted
+            && (!vendor || vendorPopulation::lifetime::admit(complete));
         if(admission==nativeEvents::AdmitResult::busy) {++i;continue;}
         if(!accepted) {
             state::activity::open_world_members::discard(birth.receipt,complete);
@@ -780,8 +787,11 @@ void finish_native_admissions(std::uint32_t onlyActor=UINT32_MAX) noexcept {
         else {
             const auto retained=g_admittedActors.add({complete,birth.parent,birth.receipt});
             if(retained!=pending::Intake::accepted && retained!=pending::Intake::duplicate) nativeEvents::observation_lost();
-            observe_vance_contact_admission(complete,birth.parent);
-            streaming::remember({complete,birth.parent,birth.receipt});
+            if(vendor) vendorPopulation::remember(complete);
+            else {
+                observe_vance_contact_admission(complete,birth.parent);
+                streaming::remember({complete,birth.parent,birth.receipt});
+            }
         }
         native_report("ev=native_population_capture stage=attachment actor=%08X entity=%08X accepted=%u",
             current.handle,current.entity,accepted?1U:0U);
@@ -809,6 +819,7 @@ void observe_native_candidate(void* instance,std::uint32_t event) noexcept {
             actorState.entity,at<std::uint32_t>(health.data()+0x2C))
         || !omega_enemy_native_health::death(true,eventDefinition,true,at<std::uint8_t>(health.data()+0x338),
             lease.source.generation,lease.source.generation)) return;
+    if(vendorPopulation::lifetime::owns(lease)) return;
     // A death can beat the next frame poll. Deliver that actor's captured birth
     // first under the same lock, then its independently qualified native death.
     std::lock_guard lock(g_pendingMutex);
@@ -904,9 +915,11 @@ __declspec(noinline) void __fastcall retirement_hook(std::uint32_t handle,std::u
         const bool released=retirement_slot(read,handle,after) && native_population_retirement::released(before,after);
         auto event=captured.event;event.kind=nativeEvents::Kind::retired;
         std::lock_guard lock(g_pendingMutex);
-        const bool accepted=released && nativeEvents::submit(event,captured.receipt);
+        const bool vendor=vendorPopulation::lifetime::owns(event.lease);
+        const bool accepted=released && (vendor || nativeEvents::submit(event,captured.receipt));
         if(!accepted && nativeEvents::capture(event.lease)==captured.receipt) nativeEvents::observation_lost();
-        if(released) {observe_vance_contact_retirement(event);streaming::retired(event);}
+        if(released && !vendor) {observe_vance_contact_retirement(event);streaming::retired(event);}
+        vendorPopulation::poll();
         for(std::size_t i=0;i<g_admittedActors.size();++i) {
             if(g_admittedActors[i].event.actor==event.actor) {g_admittedActors.erase(i);break;}
         }
@@ -947,25 +960,40 @@ __declspec(noinline) void retire_strike_bond_boss(std::uintptr_t source,bool all
     if(scope.accepts_side_effects()) garden_retirement::dispatch(source,allocatorReady);
 }
 
+void begin_vendor_area_unload() noexcept {
+    vendorPopulation::unloading.fetch_add(1,std::memory_order_acq_rel);
+}
+void finish_vendor_area_unload(bool allocatorReady) noexcept {
+    const hooking::CallGate::Scope scope{g_gate};
+    if(vendorPopulation::unloading.load(std::memory_order_acquire)==1 && scope.accepts_side_effects())
+        vendorPopulation::finish_unload(allocatorReady);
+    vendorPopulation::unloading.fetch_sub(1,std::memory_order_release);
+}
+
 __declspec(noinline) void poll_native_population_admissions() noexcept {
     const hooking::CallGate::Scope scope{g_gate};
     if(!scope.accepts_side_effects()) return;
     poll_mission_population_readiness(g_image,GetTickCount64());
+    vendorPopulation::lifetime::prune();
     const auto hijackedRun=hijacked::native_run();
     if(hijackedRun && TryAcquireSRWLockExclusive(&g_lock)) {
         trace_hijacked_attachments(hijackedRun);
         ReleaseSRWLockExclusive(&g_lock);
     }
+    {
     std::lock_guard lock(g_pendingMutex);
     finish_native_admissions();
+    vendorPopulation::poll();
     streaming::prune();
     for(std::size_t i=0;i<g_admittedActors.size();) {
         const auto& birth=g_admittedActors[i];const auto& source=birth.event.lease.source;
         if(nativeEvents::capture(source.source.definition,source.source.registry,source.source.slot,source.generation)!=birth.receipt)
             g_admittedActors.erase(i);
-        else {streaming::remember(birth);++i;}
+        else {if(!vendorPopulation::lifetime::owns(birth.event.lease)) streaming::remember(birth);++i;}
     }
     streaming::capture_network_roots();
+    }
+    vendorPopulation::resume();
 }
 
 bool install_omega_enemy_lair_receipts() noexcept {
@@ -1020,11 +1048,13 @@ bool install_omega_enemy_lair_receipts() noexcept {
 void quiesce_omega_enemy_lair_receipts() noexcept {g_gate.quiesce();}
 bool uninstall_omega_enemy_lair_receipts() noexcept {
     quiesce_omega_enemy_lair_receipts();if(!g_handles[0].attached) {return true;}
-    const std::array<hooking::detour::ProtectedCodeEntry,22> protectedCode{{
+    const std::array<hooking::detour::ProtectedCodeEntry,24> protectedCode{{
         {reinterpret_cast<void*>(&admission_hook)},{reinterpret_cast<void*>(&candidate_hook)},
         {reinterpret_cast<void*>(&observe_admission)},{reinterpret_cast<void*>(&observe_candidate)},
         {reinterpret_cast<void*>(&omega_boss_health::observe_native_death)},
         {reinterpret_cast<void*>(&poll_native_population_admissions)},
+        {reinterpret_cast<void*>(&begin_vendor_area_unload)},
+        {reinterpret_cast<void*>(&finish_vendor_area_unload)},
         {reinterpret_cast<void*>(&retirement_hook)},
         {reinterpret_cast<void*>(&retire_strike_bond_boss)},
         {reinterpret_cast<void*>(&garden_retirement::dispatch)},
@@ -1054,7 +1084,7 @@ bool uninstall_omega_enemy_lair_receipts() noexcept {
     garden_fire::reset();garden_intro::reset();garden_target::reset();garden_target::reset_replay();garden_carriage::reset();garden_cycle::reset();garden_shield::reset();garden_retirement::reset();
     g_image=0;g_run=UINT64_MAX;g_lines=0;g_seenCount=0;g_seen={};
     hijacked_trace_run(0);
-    g_pendingBirths={};g_admittedActors={};g_nativeLines.store(0,std::memory_order_relaxed);
+    g_pendingBirths={};g_admittedActors={};vendorPopulation::roots={};vendorPopulation::lines.store(0,std::memory_order_relaxed);g_nativeLines.store(0,std::memory_order_relaxed);
     g_candidateRejected=0;g_parentRejected=0;g_rejects={};g_rejectCount=0;g_rejectOverflow=false;return true;
 }
 } // namespace sunrise::client::hooks::bootflow

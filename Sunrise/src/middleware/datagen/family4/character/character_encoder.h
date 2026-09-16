@@ -21,12 +21,13 @@ namespace sunrise::middleware::datagen::family4::character {
 [[nodiscard]] bool encode(const state::CharacterState& state,
                           const loadout::ResolvedLoadout& resolvedLoadout,
                           const state::equipment::light::Evaluation& lightEvaluation,
-                          std::span<std::byte> output) noexcept;
+                          std::span<std::byte> output,const state::AccountState* account=nullptr) noexcept;
 /** Full snapshots share one captured power projection with all equipped item instances. */
 [[nodiscard]] bool encode(const state::CharacterState& state,
                           const loadout::ResolvedLoadout& resolvedLoadout,
                           const state::equipment::light::Evaluation& lightEvaluation,
                           std::span<std::byte> output,
-                          const state::activity::nightfall::NativePowerProjection& power) noexcept;
+                          const state::activity::nightfall::NativePowerProjection& power,
+                          const state::AccountState* account=nullptr) noexcept;
 
 } // namespace sunrise::middleware::datagen::family4::character

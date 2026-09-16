@@ -100,6 +100,16 @@ public:
         bindings_[binding]={next,nextNonce};return RenewResult::renewed;
     }
 
+    void unbind(const Lease& lease) noexcept {
+        for(std::size_t i=0;i<used_;) {
+            if(bindings_[i].lease==lease) bindings_[i]=bindings_[--used_];else ++i;
+        }
+        for(std::size_t i=0;i<queued_;)
+            if(events_[i].event.lease==lease) erase_event(i);else ++i;
+        for(std::size_t i=0;i<provisional_;)
+            if(provisionals_[i].event.lease==lease) erase_provisional(i);else ++i;
+    }
+
     void release(ActivityInstanceKey owner) noexcept {
         for(std::size_t i=0;i<used_;) {
             if(bindings_[i].lease.activity==owner) bindings_[i]=bindings_[--used_];
@@ -190,7 +200,7 @@ public:
         return false;
     }
 
-    [[nodiscard]] AdmitResult admit(Receipt receipt,const Event& event) noexcept {
+    [[nodiscard]] AdmitResult admit(Receipt receipt,const Event& event,bool publish=true) noexcept {
         if(!valid_event(event) || event.kind!=Kind::admitted || !current(receipt)
             || receipt.lease!=event.lease) return AdmitResult::rejected;
         std::size_t staged=provisionals_.size();
@@ -201,8 +211,11 @@ public:
                 && candidate.event.sourceHandle==event.sourceHandle) {staged=i;break;}
         }
         if(staged==provisionals_.size()) return AdmitResult::rejected;
-        if(queued_==events_.size()) return AdmitResult::busy;
-        events_[queued_++]={event,receipt.nonce};erase_provisional(staged);return AdmitResult::admitted;
+        if(publish) {
+            if(queued_==events_.size()) return AdmitResult::busy;
+            events_[queued_++]={event,receipt.nonce};
+        }
+        erase_provisional(staged);return AdmitResult::admitted;
     }
 
     [[nodiscard]] bool submit(const Event& event,Receipt receipt) noexcept {
@@ -332,7 +345,9 @@ void release(ActivityInstanceKey) noexcept;
 [[nodiscard]] StageResult stage(Creation,const Event&,Receipt&) noexcept;
 void cancel(Creation) noexcept;
 [[nodiscard]] bool provisional(Receipt,const Event&) noexcept;
-[[nodiscard]] AdmitResult admit(Receipt,const Event&) noexcept;
+/** Validates and consumes the exact provisional; external owners can suppress mailbox publication. */
+[[nodiscard]] AdmitResult admit(Receipt,const Event&,bool publish=true) noexcept;
+void unbind(const Lease&) noexcept;
 [[nodiscard]] bool submit(const Event&,Receipt) noexcept;
 [[nodiscard]] bool submit(const Event&,std::uint64_t epoch) noexcept;
 void observation_lost() noexcept;
