@@ -472,7 +472,9 @@ public:
             && (rounds_.update_pending()
                 || (transitEffects_.native_targets()
                     && (rounds_.travel_pending()
-                        || (rounds_.travel_arrival_pending() && !transitEffects_.arrival_qualified()))));
+                        || (rounds_.travel_arrival_pending()
+                            && !transitEffects_.arrival_qualified(rounds_.travel_cohort(),
+                                rounds_.travel_destination())))));
     }
 private:
     [[nodiscard]] bool append_triggered_poses(placement::wire::Batch& output) const noexcept {
@@ -996,10 +998,11 @@ private:
                 // Native-local routes already pulse the authored activity effect. Their
                 // arrival receipt is the travel boundary; membership travel would cause
                 // the roster wait and whole-region transition this profile is avoiding.
-                const auto requested=transitEffects_.native_targets() && !rounds_.defeat_reward_travel()
-                    ? true
-                    : native_activity_transit::request_all(population_.owner(),population_.boot(),
-                        rounds_.travel_cohort(),rounds_.travel_destination());
+                const auto requested=rounds_.defeat_reward_travel()
+                    ? native_activity_transit::request_respawn_all(population_.owner(),population_.boot(),
+                        rounds_.travel_cohort(),rounds_.travel_destination())
+                    : transitEffects_.native_targets() || native_activity_transit::request_all(
+                        population_.owner(),population_.boot(),rounds_.travel_cohort(),rounds_.travel_destination());
                 static_cast<void>(rounds_.mark_travel_request(requested));
             }
             if(!rounds_.update(ports,clock?clock.elapsedTicks:UINT64_MAX,
@@ -1008,7 +1011,11 @@ private:
                 && transitEffects_.native_targets() && !rounds_.defeat_reward_travel()) {
                 // Arrival, not the pulse, is the respawn boundary. Until the player is actually at
                 // the destination a death in the branch must not resolve there.
-                const bool qualified=transitEffects_.arrival_qualified();
+                // The graph can arm a new trip after this update's preparation pass.
+                // A completed previous trip must not qualify its arrival or respawn.
+                const bool qualified=rounds_.snapshot().travelRequested
+                    && transitEffects_.arrival_qualified(rounds_.travel_cohort(),
+                        rounds_.travel_destination());
                 if(qualified && !respawnLatched_)
                     respawnLatched_=native_activity_transit::set_respawn_destination(
                         population_.owner(),population_.boot(),rounds_.travel_destination());

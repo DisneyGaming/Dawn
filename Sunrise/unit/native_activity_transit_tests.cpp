@@ -237,6 +237,45 @@ void test_respawn_latch_lifetime() {
     transit::release(owner, boot);
 }
 
+void test_defeated_cohort_respawns() {
+    const std::array destinations{kFirst,kSecond};
+    check(transit::bind(kOwner,kBoot,destinations),"recovery owner binds");
+    check(!transit::request_respawn_all(kOwner,kBoot,1,kFirst.id),"no empty wipe cohort");
+    for(const auto member:{kMemberOne,kMemberTwo})
+        static_cast<void>(transit::project(kOwner,member,true,{},kFirst.region));
+    check(!transit::request_respawn_all(kOwner,kBoot+1,1,kFirst.id),"wrong recovery boot");
+    check(!transit::request_respawn_all(kOwner,kBoot,1,999),"unknown recovery destination");
+    check(transit::request_respawn_all(kOwner,kBoot,1,kFirst.id),"request native respawn");
+    check(transit::request_respawn_all(kOwner,kBoot,1,kFirst.id),"recovery retry is idempotent");
+    check(!transit::request_all(kOwner,kBoot,1,kFirst.id),"teleport cannot alias a respawn cohort");
+    service::Destination destination{};
+    check(transit::spawn_destination(kOwner,destination) && destination==kFirst,"reward spawn selected before recovery");
+    membership::SpawnState host{};
+    check(!transit::project_respawn(kOwner,kLateMember,{},kFirst.region,host),"late member cannot join recovery");
+    check(!transit::project_respawn(kOwner,kMemberOne,{},kSecond.region,host),"same-region recovery only");
+    for(const auto member:{kMemberOne,kMemberTwo}) {
+        check(transit::project_respawn(kOwner,member,{0,255,0},kFirst.region,host)
+            && host.state==1 && host.opaqueByte==0,"fresh native spawn token, including wrap");
+        check(!transit::snapshot(kOwner,kBoot,1).released,"request is not completion");
+        check(transit::project_respawn(kOwner,member,{4,255,0},kFirst.region,host)
+            && host.state==1,"old native token cannot confirm recovery");
+        check(transit::project_respawn(kOwner,member,{2,0,0},kFirst.region,host)
+            && host.state==1,"local loading state is not spawn completion");
+        check(transit::project_respawn(kOwner,member,{4,0,0},kFirst.region,host)
+            && host.state==4,"matching native ready releases host spawn");
+        check(!transit::snapshot(kOwner,kBoot,1).released,"wait for actual local release");
+        check(!transit::project_respawn(kOwner,member,{0,0,0},kFirst.region,host),"completed handshake returns native control");
+    }
+    const auto completed=transit::snapshot(kOwner,kBoot,1);
+    check(completed.arrived && completed.released && completed.members==2,"every frozen member recovered");
+    transit::note_membership_published(kOwner,100);
+    check(!transit::membership_due(kOwner,10000),"finished recovery stops polling");
+    check(transit::request_all(kOwner,kBoot,2,kSecond.id),"normal travel remains available after recovery");
+    check(transit::spawn_destination(kOwner,destination) && destination==kSecond,"new travel replaces recovery destination");
+    transit::release(kOwner,kBoot);
+    check(!transit::project_respawn(kOwner,kMemberOne,{},kFirst.region,host),"teardown clears recovery");
+}
+
 } // namespace
 
 int main() {
@@ -244,5 +283,6 @@ int main() {
     test_cohort_freeze_and_atomicity();
     test_initial_optional_tuple();
     test_respawn_latch_lifetime();
+    test_defeated_cohort_respawns();
     std::printf("native activity transit: %u checks, zero failures\n", checks);
 }

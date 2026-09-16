@@ -1893,6 +1893,10 @@ namespace {
     wire.spawn.state = membership.spawn.state;
     wire.spawn.opaqueByte = membership.spawn.opaqueByte;
     wire.spawn.opaqueValue = membership.spawn.opaqueValue;
+    state::activity::membership::SpawnState recovery{};
+    if(runtime::activity::native_activity_transit::project_respawn(activity,
+        membership.identity.memberKey,membership.spawn,membership.region.index,recovery))
+        wire.spawn={recovery.state,recovery.opaqueByte,recovery.opaqueValue};
     wire.teleport.state = membership.teleport.state;
     wire.teleport.token = membership.teleport.token;
     wire.teleport.sliceSetIndex = membership.teleport.sliceSetIndex;

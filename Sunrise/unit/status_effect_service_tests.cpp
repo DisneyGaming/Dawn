@@ -263,10 +263,15 @@ void arrival_revisions_belong_to_each_monitor() {
     monitor.hasMonitorOutput=true;monitor.monitorOutput={true,true,1,0};monitor.nativeRevision=99;
     expect(service.request(1,1));
     expect(service.observe(kOwner,kBoot,kBubble,monitor,10) && service.arrival_qualified());
+    expect(service.arrival_qualified(1,1));
+    expect(!service.arrival_qualified(2,2)); // Previous leg cannot qualify a newly armed trip.
+    expect(!service.arrival_qualified(1,2)); // Destination is part of the arrival identity.
     expect(service.request(2,2) && !service.arrival_qualified());
     expect(!service.observe(kOwner,kBoot,kBubble,monitor,11)); // Wrong monitor.
     monitor.slotIndex=27;monitor.nativeRevision=1;
     expect(service.observe(kOwner,kBoot,kBubble,monitor,12) && service.arrival_qualified());
+    expect(service.arrival_qualified(2,2) && !service.arrival_qualified(1,1));
+    expect(!service.arrival_qualified(3,1)); // This includes revisiting an earlier destination.
     expect(!service.observe(kOwner,kBoot,kBubble,monitor,13)); // Duplicate on this monitor.
     expect(service.request(3,1) && !service.arrival_qualified());
     monitor.slotIndex=25;monitor.nativeRevision=99;

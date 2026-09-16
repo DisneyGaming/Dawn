@@ -247,6 +247,7 @@ struct FakeRoundPorts final {
     std::array<coo::Command,32> commands{};
     std::array<ra::Operation,32> operations{};
     std::size_t count{};
+    bool acceptTravel{true};
     bool publish(ra::Operation operation,const coo::Command& command) noexcept {
         if(count==commands.size())return false;
         commands[count]=command;operations[count++]=operation;
@@ -254,7 +255,7 @@ struct FakeRoundPorts final {
         if(operation==ra::Operation::progressFull)return runtime->arm_progress(command.token);
         if(operation==ra::Operation::travelEncounter)
             return runtime->prepare_travel(command.token,0x42)
-                && runtime->mark_travel_request(true);
+                && (!acceptTravel || runtime->mark_travel_request(true));
         if(operation==ra::Operation::travelArrived)return runtime->arm_travel_arrival(command.token);
         if(operation==ra::Operation::spawnEncounter)
             return runtime->arm_spawn(command.token)
@@ -345,10 +346,15 @@ void runtime_drives_first_branch_and_arena_wait() {
     expect(runtime.round_snapshot().progress==100);
     expect(runtime.update(ports,31));
     expect(runtime.round_snapshot().phase==timed::Phase::toEncounter);
+    ports.acceptTravel=false;
     expect(runtime.update(ports,32));
     const auto* travel=ports.latest(ra::Operation::travelEncounter);
     const auto* arrival=ports.latest(ra::Operation::travelArrived);
     expect(travel!=nullptr && arrival!=nullptr);
+    expect(!runtime.observe_travel(true,true)); // No arrival before this trip was requested.
+    expect(!runtime.snapshot().travelArrivalQualified);
+    expect(runtime.mark_travel_request(true));
+    ports.acceptTravel=true;
     expect(runtime.snapshot().travelRequested && runtime.snapshot().travelCohort!=0);
     expect(runtime.update(ports,33));
     expect(runtime.round_snapshot().phase==timed::Phase::toEncounter);
@@ -505,6 +511,29 @@ void runtime_drives_first_branch_and_arena_wait() {
         synthetic::bossAsset,2};
     const coo::PopulationActor bossTwo{bossSourceTwo,111,211};
     expect(runtime.population_event(0,bossSourceTwo,bossTwo,native_population::Kind::admitted,156));
+    // An expired arena wipe ends the run without requiring or crediting this boss's death.
+    {
+        auto defeated=std::make_unique<ra::Runtime>(runtime);
+        FakeRoundPorts rewardPorts{defeated.get()};
+        expect(defeated->update(rewardPorts,157));
+        expect(defeated->round_snapshot().phase==timed::Phase::encounter);
+        expect(!defeated->observe_player_life(99,true,1000));
+        expect(!defeated->observe_player_life(99,false,1001));
+        expect(defeated->observe_player_life(99,false,4001));
+        expect(defeated->update(rewardPorts,158));
+        expect(defeated->round_snapshot().phase==timed::Phase::rewards);
+        expect(defeated->round_snapshot().completedRounds==1 && !defeated->boss_death_qualified());
+        expect(defeated->retirement_acknowledged(true,true));
+        for(unsigned clock=159;clock<163;++clock)expect(defeated->update(rewardPorts,clock));
+        expect(!defeated->observe_travel(true,false));
+        expect(!defeated->request_completion(1000,163));
+        expect(defeated->observe_travel(false,true));
+        expect(!defeated->restricted());
+        expect(defeated->request_completion(1000,163));
+        expect(defeated->update(rewardPorts,163));
+        expect(defeated->update(rewardPorts,164));
+        expect(defeated->completion().complete && defeated->round_snapshot().phase==timed::Phase::complete);
+    }
     // The boss can qualify before the encounter graph has consumed its wait.
     // The timed service must freeze at this proof clock until that wait commits.
     expect(runtime.population_event(0,bossSourceTwo,bossTwo,native_population::Kind::died,156));

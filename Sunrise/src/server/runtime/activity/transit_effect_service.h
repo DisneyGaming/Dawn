@@ -307,6 +307,10 @@ public:
         arrivalQualified_=true;return true;
     }
     [[nodiscard]] bool arrival_qualified() const noexcept {return arrivalQualified_;}
+    [[nodiscard]] bool arrival_qualified(std::uint64_t cohort,std::uint32_t destination) const noexcept {
+        return route_ && cohort==cohort_ && destination==route_->destination
+            && requested_ && arrivalQualified_;
+    }
     [[nodiscard]] bool ready(std::uint64_t cohort,std::uint64_t clock) const noexcept {
         return route_ && cohort==cohort_ && requested_ && appliedAt_!=UINT64_MAX && clock!=UINT64_MAX
             && clock>=appliedAt_ && clock-appliedAt_>=route_->handoffTicks;

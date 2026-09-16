@@ -66,6 +66,10 @@ make_wire_snapshot(state::activity::ActivityInstanceKey activity,
     const std::int32_t reported =
         transition.activity == activity ? transition.after.region.index
                                         : copied.sourceMembership.region.index;
+    state::activity::membership::SpawnState recovery{};
+    if(runtime::activity::native_activity_transit::project_respawn(activity,
+        snapshot.identity.memberKey,snapshot.spawn,reported,recovery))
+        wire.spawn={recovery.state,recovery.opaqueByte,recovery.opaqueValue};
     const std::string_view name(
         reinterpret_cast<const char*>(copied.destination.packageName.data()),
         copied.destination.packageNameLength);

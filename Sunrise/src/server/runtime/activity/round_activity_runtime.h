@@ -481,7 +481,7 @@ public:
     }
 
     [[nodiscard]] bool observe_travel(bool arrived, bool released) noexcept {
-        if (!travelArrivalArmed_) return false;
+        if (!travelArrivalArmed_ || !travelRequested_) return false;
         if (arrived) travelSawArrival_ = true;
         if (!released || !travelSawArrival_ || travelArrivalQualified_) return false;
         if (!enqueue({travelArrivalToken_, coo::Milestone::observed})) return false;

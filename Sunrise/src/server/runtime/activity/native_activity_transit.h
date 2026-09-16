@@ -33,6 +33,13 @@ void release(Owner owner, std::uint64_t boot) noexcept;
                                std::uint64_t cohortId,
                                std::uint32_t destinationId) noexcept;
 
+/** Recovers a defeated cohort at an authored spawn in its current region. */
+[[nodiscard]] bool request_respawn_all(Owner owner,std::uint64_t boot,
+    std::uint64_t cohortId,std::uint32_t destinationId) noexcept;
+/** Projects the native spawn handshake; a teleport cannot revive a dead member. */
+[[nodiscard]] bool project_respawn(Owner owner,std::uint64_t memberKey,
+    membership::SpawnState local,std::int32_t actualRegion,membership::SpawnState& output) noexcept;
+
 /** Reports the retained state of one frozen cohort. */
 [[nodiscard]] Status snapshot(Owner owner, std::uint64_t boot,
                               std::uint64_t cohortId) noexcept;

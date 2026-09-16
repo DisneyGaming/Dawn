@@ -9,6 +9,12 @@ namespace {
 constexpr std::size_t kOwnerCapacity = 16;
 constexpr std::uint64_t kMembershipIntervalMs = 250;
 
+enum class RespawnPhase : std::uint8_t { pending,requesting,arrived,released };
+struct Respawn final {
+    membership::SpawnState host{};
+    RespawnPhase phase{};
+};
+
 struct Slot final {
     membership_transit::Service service{};
     Owner owner{};
@@ -27,6 +33,8 @@ struct Slot final {
     bool hasCohort{};
     bool membershipPending{};
     bool hasRespawnDestination{};
+    bool respawning{};
+    std::array<Respawn,membership_transit::kMemberCapacity> respawns{};
 };
 
 std::mutex mutex;
@@ -118,6 +126,12 @@ void record_member(Slot& slot, std::uint64_t member) noexcept {
         && projection.requestId == slot.cohortRequests[index];
 }
 
+[[nodiscard]] bool respawns_released(const Slot& slot) noexcept {
+    for(std::size_t i=0;i<slot.cohortCount;++i)
+        if(slot.respawns[i].phase!=RespawnPhase::released)return false;
+    return slot.cohortCount!=0;
+}
+
 } // namespace
 
 bool bind(Owner owner, std::uint64_t boot,
@@ -158,7 +172,7 @@ bool request_all(Owner owner, std::uint64_t boot, std::uint64_t cohortId,
     }
     if (live->hasCohort) {
         if (cohortId == live->cohortId && destinationId == live->destinationId) {
-            return true;
+            return !live->respawning;
         }
         if (cohortId <= live->cohortId) {
             return false;
@@ -167,10 +181,13 @@ bool request_all(Owner owner, std::uint64_t boot, std::uint64_t cohortId,
     if (live->observedCount == 0) {
         return false;
     }
+    if(live->respawning && !respawns_released(*live))return false;
 
     // Admission happens entirely on a value copy. A failed member request therefore cannot leave
     // a partially requested live cohort or advance the wrapped service revision.
     Slot staged = *live;
+    if(staged.respawning) {staged.hasRespawnDestination=false;staged.respawnDestination={};}
+    staged.respawning=false;staged.respawns={};
     for (std::size_t index = 0; index < staged.observedCount; ++index) {
         const auto projection = staged.service.project(
             owner, boot, staged.observedMembers[index]);
@@ -200,6 +217,63 @@ bool request_all(Owner owner, std::uint64_t boot, std::uint64_t cohortId,
     return true;
 }
 
+bool request_respawn_all(Owner owner,std::uint64_t boot,std::uint64_t cohortId,
+    std::uint32_t destinationId) noexcept {
+    if(!cohortId)return false;
+    const std::lock_guard lock(mutex);
+    auto* slot=exact_slot(owner,boot);
+    if(!slot || !slot->observedCount)return false;
+    if(slot->hasCohort) {
+        if(cohortId==slot->cohortId)
+            return slot->respawning && destinationId==slot->destinationId;
+        if(cohortId<slot->cohortId || (slot->respawning && !respawns_released(*slot)))return false;
+    }
+    const Destination* destination{};
+    for(std::size_t i=0;i<slot->destinationCount;++i)
+        if(slot->destinations[i].id==destinationId)destination=&slot->destinations[i];
+    if(!destination)return false;
+    for(std::size_t i=0;i<slot->observedCount;++i) {
+        const auto phase=slot->service.project(owner,boot,slot->observedMembers[i]).phase;
+        if(phase!=membership_transit::Phase::idle && phase!=membership_transit::Phase::released)return false;
+    }
+    slot->cohortId=cohortId;slot->destinationId=destinationId;
+    slot->cohortCount=slot->observedCount;slot->cohortMembers=slot->observedMembers;
+    slot->respawns={};slot->respawning=true;slot->hasCohort=true;
+    slot->respawnDestination=*destination;slot->hasRespawnDestination=true;
+    slot->membershipPending=true;slot->nextMembershipDue=0;
+    return true;
+}
+
+bool project_respawn(Owner owner,std::uint64_t memberKey,membership::SpawnState local,
+    std::int32_t actualRegion,membership::SpawnState& output) noexcept {
+    output=local;
+    const std::lock_guard lock(mutex);
+    auto* slot=owner_slot(owner);
+    if(!slot || !slot->respawning || actualRegion!=slot->respawnDestination.region)return false;
+    for(std::size_t i=0;i<slot->cohortCount;++i) {
+        if(slot->cohortMembers[i]!=memberKey)continue;
+        auto& recovery=slot->respawns[i];
+        const auto before=recovery.phase;
+        // The same membership spawn exchange used by 1AU recovery:
+        // host 1 -> local 2/4 -> host 4 -> local 0. The reward environment and
+        // spawn override are already published; no mission checkpoint is reset.
+        if(recovery.phase==RespawnPhase::pending && local.state==0) {
+            recovery.host={1,static_cast<std::uint8_t>(local.opaqueByte+1U),0};
+            recovery.phase=RespawnPhase::requesting;
+        } else if(local.opaqueByte==recovery.host.opaqueByte) {
+            if(recovery.phase==RespawnPhase::requesting && local.state==4) {
+                recovery.host.state=4;recovery.phase=RespawnPhase::arrived;
+            } else if(recovery.phase==RespawnPhase::arrived && local.state==0) {
+                recovery.host.state=0;recovery.phase=RespawnPhase::released;
+            }
+        }
+        if(before!=recovery.phase) {slot->membershipPending=true;slot->nextMembershipDue=0;}
+        if(recovery.phase==RespawnPhase::pending || recovery.phase==RespawnPhase::released)return false;
+        output=recovery.host;return true;
+    }
+    return false;
+}
+
 Status snapshot(Owner owner, std::uint64_t boot, std::uint64_t cohortId) noexcept {
     const std::lock_guard lock(mutex);
     const auto* slot = exact_slot_const(owner, boot);
@@ -215,6 +289,14 @@ Status snapshot(Owner owner, std::uint64_t boot, std::uint64_t cohortId) noexcep
     result.members = slot->cohortCount;
     result.arrived = result.members != 0;
     result.released = result.members != 0;
+    if(slot->respawning) {
+        for(std::size_t i=0;i<slot->cohortCount;++i) {
+            const auto phase=slot->respawns[i].phase;
+            result.arrived &= phase==RespawnPhase::arrived || phase==RespawnPhase::released;
+            result.released &= phase==RespawnPhase::released;
+        }
+        return result;
+    }
     for (std::size_t index = 0; index < slot->cohortCount; ++index) {
         const auto projection = slot->service.project(
             owner, boot, slot->cohortMembers[index]);
@@ -288,7 +370,7 @@ membership_transit::Projection project(Owner owner, std::uint64_t memberKey,
                                         std::int32_t actualRegion) noexcept {
     const std::lock_guard lock(mutex);
     auto* slot = owner_slot(owner);
-    if (!slot || !memberKey || memberKey == membership::kInvalidOpaqueSoid) {
+    if (!slot || slot->respawning || !memberKey || memberKey == membership::kInvalidOpaqueSoid) {
         return {};
     }
     const auto prior = slot->service.project(owner, slot->boot, memberKey);
@@ -332,6 +414,7 @@ bool membership_due(Owner owner, std::uint64_t now) noexcept {
     if (slot->membershipPending) {
         return true;
     }
+    if(slot->respawning)return !respawns_released(*slot) && now>=slot->nextMembershipDue;
     bool active = false;
     for (std::size_t index = 0; index < slot->cohortCount; ++index) {
         const auto projection = slot->service.project(
