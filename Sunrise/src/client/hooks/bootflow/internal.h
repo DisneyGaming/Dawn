@@ -220,6 +220,17 @@ void arm_omega_forest_route_trace() noexcept;
 /** Detaches the scoped stale activity-provider mapping guard. */
 void uninstall_activity_provider_stale_mapping_guard() noexcept;
 
+/** Preserve native destruction when its optional sibling-owner lookup is empty. */
+[[nodiscard]] bool install_native_cleanup_owner_guard() noexcept;
+[[nodiscard]] bool install_native_property_list_guard() noexcept;
+[[nodiscard]] bool install_local_reconnect() noexcept;
+void quiesce_local_reconnect() noexcept;
+[[nodiscard]] bool uninstall_local_reconnect() noexcept;
+void quiesce_native_property_list_guard() noexcept;
+[[nodiscard]] bool uninstall_native_property_list_guard() noexcept;
+void quiesce_native_cleanup_owner_guard() noexcept;
+[[nodiscard]] bool uninstall_native_cleanup_owner_guard() noexcept;
+
 /**
  * Keeps a bounded native-owned entity-ID allowance through Eater's exact entrance startup burst.
  */

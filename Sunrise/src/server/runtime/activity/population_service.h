@@ -15,7 +15,8 @@ namespace codec=middleware::bap::activity_message::native::combatant_source;
 using Owner=state::activity::ActivityInstanceKey;
 
 inline constexpr std::uint32_t kMaximumGeneration=0x7FFFFFFFU;
-inline constexpr std::size_t kBindingCapacity=wire::kPopulationCapacity;
+inline constexpr std::size_t kSourceCapacity=wire::kSourceCapacity;
+inline constexpr std::size_t kBindingCapacity=kSourceCapacity;
 inline constexpr std::uint16_t kNoNamedMember=wire::kNoNamedMember;
 
 struct Capability final {
@@ -24,6 +25,7 @@ struct Capability final {
     codec::TacticalGroup tactical{};
     bool hasRule{true};
     std::uint32_t taskMask{};
+    std::uint8_t categories{1};
     bool allowCycles{};
     std::uint16_t namedMember{kNoNamedMember};
 };
@@ -41,10 +43,11 @@ struct Capability final {
     }
     codec::Source request{capability.registry->key,1,capability.rule,1,capability.tactical};
     request.hasSpawnRule=capability.hasRule;
+    request.hasSecondCategory=capability.categories==2;
     if(capability.taskMask && (capability.tactical.row<0 || capability.tactical.row>=24 || (capability.taskMask&0xFF000000U)
         || !(capability.taskMask&(1U<<capability.tactical.row))))return false;
     const bool named=capability.namedMember!=kNoNamedMember;
-    return source==1 && (!capability.hasRule || rule==1)
+    return (capability.categories==1 || capability.categories==2) && source==1 && (!capability.hasRule || rule==1)
         && (capability.tactical.row<0 || (capability.tactical.registry==capability.registry->key && tactical==1))
         && (!named || member==1) && codec::valid(request);
 }
@@ -56,6 +59,7 @@ struct Command final {
     std::uint16_t slot{};
     std::uint8_t requested{};
     std::uint64_t boot{};
+    std::uint8_t secondRequested{};
 };
 enum class Phase : std::uint8_t { inactive, active, retiring, retired };
 using PopulationPhase=Phase;
@@ -66,7 +70,7 @@ enum class Result : std::uint8_t {
 struct Status final {
     std::uint32_t generation{};
     std::uint32_t cycle{};
-    std::uint8_t requested{};
+    std::uint32_t requested{};
     Phase phase{Phase::inactive};
     bool published{};
     bool nativeAckNeeded{};
@@ -106,6 +110,11 @@ struct Status final {
 }
 
 class Service final {
+    struct Targets final {
+        std::uint32_t first{},second{};
+        [[nodiscard]] constexpr std::uint64_t total() const noexcept {return std::uint64_t(first)+second;}
+        friend constexpr bool operator==(const Targets&,const Targets&)=default;
+    };
 public:
     struct Observation {
         std::array<std::uint32_t,6> scalar{};
@@ -124,7 +133,7 @@ public:
                 if(definitions[i].registry->key==definitions[j].registry->key && definitions[i].slot==definitions[j].slot) return false;
         }
         owner_=owner;capabilities_=definitions;revision_=1;lastRequest_=0;boot_=boot;
-        targets_={};statuses_={};observations_={};observedGeneration_={};history_={};historyUsed_=0;
+        targets_={};requests_={};renewals_={};statuses_={};observations_={};observedGeneration_={};history_={};historyUsed_=0;
         for(std::size_t i=0;i<definitions.size();++i) {
             statuses_[i].generation=static_cast<std::uint32_t>(owner.incarnation.value);
             reset_task(i);
@@ -138,14 +147,15 @@ public:
     [[nodiscard]] Result renew(const Command& command,std::uint32_t bubble) noexcept {
         if(!owner_ || command.boot!=boot_ || command.owner!=owner_ || command.expectedRevision!=revision_)return Result::stale;
         if(!command.request || command.request<=lastRequest_)return Result::duplicate;
-        if(!command.requested || command.requested>63)return Result::invalid;
+        if(!command.requested || unsigned(command.requested)+command.secondRequested>63)return Result::invalid;
         for(std::size_t i=0;i<capabilities_.size();++i) {
             const auto& capability=capabilities_[i];
             if(command.registry!=capability.registry->key || command.slot!=capability.slot)continue;
+            if(command.secondRequested && capability.categories!=2)return Result::invalid;
             if(bubble!=capability.registry->bubble)return Result::stale;
-            if(capability.allowCycles || !targets_[i] || !consumed(i) || renewals_[i].pending
+            if(capability.allowCycles || !targets_[i].first || !consumed(i) || renewals_[i].pending
                 || statuses_[i].generation>=0x7FFFFFFFU || revision_==UINT64_MAX)return Result::exhausted;
-            renewals_[i]={command.request,statuses_[i].generation,targets_[i],command.requested,true};lastRequest_=command.request;
+            renewals_[i]={command.request,statuses_[i].generation,targets_[i].first,command.requested,true,targets_[i].second,command.secondRequested,capability.categories==2};lastRequest_=command.request;
             return Result::accepted;
         }
         return Result::unsupported;
@@ -156,22 +166,45 @@ public:
         if(!matches_session(command.owner,command.boot,command.expectedRevision)) return Result::stale;
         if(has_history(HistoryKind::normal,command,bubble,0)) return Result::duplicate;
         if(command.request==0 || command.request<=lastRequest_) return Result::stale;
-        if(command.requested==0 || command.requested>63) return Result::invalid;
+        if(command.requested==0 || unsigned(command.requested)+command.secondRequested>63
+            || (command.secondRequested && capabilities_[index].categories!=2)) return Result::invalid;
         if(bubble!=capabilities_[index].registry->bubble) return Result::stale;
         auto& state=statuses_[index];
         if(renewals_[index].pending) return Result::exhausted;
         if(state.phase==Phase::retiring || state.phase==Phase::retired) return Result::notAllowed;
-        if(command.requested<targets_[index]) return Result::decrease;
-        if(command.requested==targets_[index]) return Result::unchanged;
+        if(command.requested<targets_[index].first || command.secondRequested<targets_[index].second) return Result::decrease;
+        if(command.requested==targets_[index].first && command.secondRequested==targets_[index].second) return Result::unchanged;
         if(revision_==UINT64_MAX) return Result::exhausted;
         if(!state.published) {
             state.published=true;state.phase=Phase::active;reset_mirror(index);
         }
-        targets_[index]=command.requested;state.requested=command.requested;
+        targets_[index]={command.requested,command.secondRequested};requests_[index]=command.request;state.requested=command.requested;
         lastRequest_=command.request;++revision_;record(HistoryKind::normal,command,bubble,0);
         return Result::accepted;
     }
 
+    // Internal casualty replacement only. Command counts here are bounded
+    // increments; ordinary request()/the developer text format remain absolute
+    // and capped at63. This extends lifetime quota, never the intended live cap.
+    [[nodiscard]] Result replenish(const Command& command,std::uint32_t bubble) noexcept {
+        if(!owner_ || command.boot!=boot_ || command.owner!=owner_ || command.expectedRevision!=revision_)return Result::stale;
+        if(!command.request || command.request<=lastRequest_)return Result::duplicate;
+        if(!command.requested && !command.secondRequested)return Result::invalid;
+        if(unsigned(command.requested)+command.secondRequested>63)return Result::invalid;
+        for(std::size_t i=0;i<capabilities_.size();++i) {
+            const auto& capability=capabilities_[i];
+            if(command.registry!=capability.registry->key || command.slot!=capability.slot)continue;
+            if(bubble!=capability.registry->bubble || !targets_[i].first)return Result::stale;
+            if(command.secondRequested && (capability.categories!=2 || !targets_[i].second))return Result::invalid;
+            if(statuses_[i].phase!=Phase::active)return Result::notAllowed;
+            if(renewals_[i].pending || revision_==UINT64_MAX
+                || targets_[i].first>std::uint32_t(INT32_MAX)-command.requested
+                || targets_[i].second>std::uint32_t(INT32_MAX)-command.secondRequested)return Result::exhausted;
+            targets_[i].first+=command.requested;targets_[i].second+=command.secondRequested;
+            statuses_[i].requested=targets_[i].first;requests_[i]=command.request;lastRequest_=command.request;++revision_;return Result::accepted;
+        }
+        return Result::unsupported;
+    }
     [[nodiscard]] Result request_retirement(Owner owner,std::uint64_t boot,std::uint64_t expectedRevision,
         std::uint64_t request,std::uint32_t registry,std::uint16_t slot) noexcept {
         Command command{owner,expectedRevision,request,registry,slot,0,boot};
@@ -186,7 +219,7 @@ public:
         if(!capability.allowCycles || !state.published || state.phase!=Phase::active) return Result::notAllowed;
         if(state.generation==kMaximumGeneration) return Result::exhausted;
         ++state.generation;state.phase=Phase::retiring;state.nativeAckNeeded=true;
-        state.retirementAcknowledged=false;targets_[index]=0;state.requested=0;reset_mirror(index);
+        state.retirementAcknowledged=false;targets_[index]={};requests_[index]=request;state.requested=0;reset_mirror(index);
         lastRequest_=request;++revision_;record(HistoryKind::retirement,command,0,0);
         return Result::accepted;
     }
@@ -210,7 +243,7 @@ public:
         if(!initial && state.generation==kMaximumGeneration) return Result::exhausted;
         if(!initial) ++state.generation;
         state.cycle=newCycle;state.phase=Phase::active;state.published=true;
-        state.nativeAckNeeded=false;state.retirementAcknowledged=false;targets_[index]=requestedTarget;
+        state.nativeAckNeeded=false;state.retirementAcknowledged=false;targets_[index]={requestedTarget,0};requests_[index]=request;
         state.requested=requestedTarget;reset_mirror(index);
         lastRequest_=request;++revision_;record(HistoryKind::cycle,command,0,newCycle);
         return Result::accepted;
@@ -231,9 +264,22 @@ public:
 
     [[nodiscard]] const Observation* observe(std::uint32_t bubble,
         const middleware::bap::activity_message::sense_update::SenseObject& object) noexcept {
+        return observe_impl(bubble,false,object);
+    }
+    // Open-world sources remain authored and owned while the player crosses a
+    // bubble boundary. The caller must restrict this path to retained
+    // open-world population lifecycles; exact source identity and generation
+    // remain mandatory below.
+    [[nodiscard]] const Observation* observe_retained(
+        const middleware::bap::activity_message::sense_update::SenseObject& object) noexcept {
+        return observe_impl(0,true,object);
+    }
+private:
+    [[nodiscard]] const Observation* observe_impl(std::uint32_t bubble,bool retained,
+        const middleware::bap::activity_message::sense_update::SenseObject& object) noexcept {
         if(!owner_ || !object.hasNativeSchema || object.nativeSchema!=0x80807ECC || object.slotType!=1) return nullptr;
         const auto index=find(object.registryKey,object.slotIndex);
-        if(index==kMissing || !targetsPublished(index) || capabilities_[index].registry->bubble!=bubble) return nullptr;
+        if(index==kMissing || !targetsPublished(index) || (!retained && capabilities_[index].registry->bubble!=bubble)) return nullptr;
         auto& mirror=observations_[index];
         if(mirror.seen && (object.nativeRevision==mirror.revision
             || object.nativeRevision-mirror.revision>=0x80000000U)) return nullptr;
@@ -273,6 +319,7 @@ public:
         return &mirror;
     }
 
+public:
     [[nodiscard]] wire::Batch project(std::uint32_t bubble) const noexcept { return project_impl(bubble,false); }
     [[nodiscard]] wire::Batch project_retained() const noexcept { return project_impl(0,true); }
 private:
@@ -283,11 +330,10 @@ private:
             if(!targetsPublished(i) || (!retained && capability.registry->bubble!=bubble) || batch.count==batch.entries.size()) continue;
             auto& row=batch.entries[batch.count++];
             row.bubble=capability.registry->bubble;row.slot=capability.slot;row.namedMember=capability.namedMember;
-            row.source={capability.registry->key,state.generation,capability.rule,targets_[i],tasks_[i]};
-            if (capability.tactical.row >= 0) {
-                row.source.tactical.revision = state.generation;
-            }
+            row.source={capability.registry->key,state.generation,capability.rule,targets_[i].first,tasks_[i]};
             row.source.hasSpawnRule=capability.hasRule;
+            row.source.secondRequested=targets_[i].second;
+            row.source.hasSecondCategory=capability.categories==2;
             row.source.retireOwned=state.phase==Phase::retiring || state.phase==Phase::retired;
         }
         return batch;
@@ -317,21 +363,37 @@ public:
         const auto* value=status(registry,slot);return value && value->nativeAckNeeded;
     }
 
-    [[nodiscard]] std::uint8_t target(std::size_t index) const noexcept {
-        return index<capabilities_.size()?targets_[index]:0;
+    [[nodiscard]] std::uint64_t source_request(std::size_t index) const noexcept {
+        return index<capabilities_.size()?requests_[index]:0;
+    }
+    [[nodiscard]] std::uint32_t generation(std::size_t index) const noexcept {
+        return index<capabilities_.size()?statuses_[index].generation:0;
+    }
+    [[nodiscard]] const Observation* observation(std::size_t index) const noexcept {
+        return index<capabilities_.size() && observations_[index].seen?&observations_[index]:nullptr;
+    }
+    [[nodiscard]] std::uint32_t target(std::size_t index) const noexcept {
+        return index<capabilities_.size()?targets_[index].first:0;
+    }
+    [[nodiscard]] std::uint32_t second_target(std::size_t index) const noexcept {
+        return index<capabilities_.size()?targets_[index].second:0;
     }
     [[nodiscard]] codec::TacticalGroup tactical(std::size_t index) const noexcept {
         return index<capabilities_.size()?tasks_[index]:codec::TacticalGroup{};
     }
     [[nodiscard]] bool consumed(std::size_t index) const noexcept {
-        if(index>=capabilities_.size() || !targets_[index])return false;
+        if(index>=capabilities_.size() || !targets_[index].first)return false;
         const auto& mirror=observations_[index];
-        return mirror.seen && mirror.consumedKnown && mirror.consumedCount==1
-            && mirror.consumed[0]>=static_cast<std::int32_t>(targets_[index]);
+        if(!mirror.seen || !mirror.consumedKnown
+            || mirror.consumedCount!=capabilities_[index].categories)return false;
+        for(std::size_t category=0;category<capabilities_[index].categories;++category)
+            if(mirror.consumed[category]<static_cast<std::int32_t>(category?targets_[index].second:targets_[index].first))return false;
+        return true;
     }
     struct Renewal final {
         std::uint64_t request{};std::uint32_t generation{};
-        std::uint8_t target{},nextTarget{};bool pending{};
+        std::uint32_t target{};std::uint8_t nextTarget{};bool pending{};
+        std::uint32_t secondTarget{};std::uint8_t nextSecondTarget{};bool hasSecondCategory{};
     };
     [[nodiscard]] Renewal renewal(std::size_t index) const noexcept {
         return index<capabilities_.size()?renewals_[index]:Renewal{};
@@ -342,9 +404,10 @@ public:
     [[nodiscard]] bool commit_renewal(std::size_t index) noexcept {
         if(index>=capabilities_.size())return false;const auto ticket=renewals_[index];
         if(!ticket.pending || !ticket.request || ticket.generation!=statuses_[index].generation
-            || ticket.target!=targets_[index] || !ticket.nextTarget
+            || ticket.target!=targets_[index].first || ticket.secondTarget!=targets_[index].second || !ticket.nextTarget
+            || ticket.hasSecondCategory!=(capabilities_[index].categories==2)
             || statuses_[index].generation>=0x7FFFFFFFU || revision_==UINT64_MAX)return false;
-        ++statuses_[index].generation;targets_[index]=ticket.nextTarget;
+        ++statuses_[index].generation;targets_[index]={ticket.nextTarget,ticket.nextSecondTarget};requests_[index]=ticket.request;
         statuses_[index].requested=ticket.nextTarget;reset_mirror(index);
         costs_[index]={};tasks_[index]=capabilities_[index].tactical;
         if(capabilities_[index].taskMask)tasks_[index].revision=statuses_[index].generation;
@@ -376,7 +439,7 @@ private:
             if(prior.kind==kind && prior.command.owner==command.owner && prior.command.boot==command.boot
                 && prior.command.request==command.request
                 && prior.command.registry==command.registry && prior.command.slot==command.slot
-                && prior.command.requested==command.requested && prior.bubble==bubble && prior.cycle==cycleValue) return true;
+                && prior.command.requested==command.requested && prior.command.secondRequested==command.secondRequested && prior.bubble==bubble && prior.cycle==cycleValue) return true;
         }
         return false;
     }
@@ -396,7 +459,8 @@ private:
 
     Owner owner_{};
     std::span<const Capability> capabilities_{};
-    std::array<std::uint8_t,kBindingCapacity> targets_{};
+    std::array<Targets,kBindingCapacity> targets_{};
+    std::array<std::uint64_t,kBindingCapacity> requests_{};
     std::array<Status,kBindingCapacity> statuses_{};
     std::array<Renewal,kBindingCapacity> renewals_{};
     std::array<codec::TacticalGroup,kBindingCapacity> tasks_{};

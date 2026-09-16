@@ -708,7 +708,13 @@ private:
             case round_activity::Operation::travelEntry:
                 {
                 const auto round=owner.rounds_.round_snapshot().token.round;
-                const auto destination=rounds.platforms[static_cast<std::size_t>(round%rounds.platforms.size())].transitDestinationId;
+                const auto& landing=rounds.platforms[static_cast<std::size_t>(round%rounds.platforms.size())];
+                // Arrival cannot activate the floor: the player needs it before
+                // the native teleport fires. Transit separately qualifies its
+                // committed placement children before publishing the effect.
+                for(const auto index:landing.placementIndexes)
+                    if(index>=owner.placements_.size())return false;else owner.placements_[index]=true;
+                const auto destination=landing.transitDestinationId;
                 if(!owner.rounds_.prepare_return_travel(command.token,destination))return false;
                 return true; // Retried after the offscreen generator reset drains.
                 }

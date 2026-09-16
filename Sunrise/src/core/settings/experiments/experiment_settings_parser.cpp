@@ -49,6 +49,7 @@ bool Parser::omega_experiment_settings(experiments::Omega& output) noexcept {
     bool hasPortalMutation = false;
     bool hasSyntheticStageMachine = false;
     bool hasUnsafeDiagnostics = false;
+    bool hasOpenWorldCensus = false;
     bool hasCooExecutor = false;
     bool hasForestCandyDrops = false;
     bool hasForestRewardCoffers = false;
@@ -109,6 +110,11 @@ bool Parser::omega_experiment_settings(experiments::Omega& output) noexcept {
                 return false;
             }
             hasUnsafeDiagnostics = true;
+        } else if (key == "open_world_census") {
+            if (hasOpenWorldCensus || !boolean(candidate.openWorldCensus)) {
+                return false;
+            }
+            hasOpenWorldCensus = true;
         } else if (!skip_value(0)) {
             return false;
         }

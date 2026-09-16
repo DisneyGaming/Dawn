@@ -23,6 +23,8 @@ struct Omega final {
     bool syntheticStageMachine{};
     /** Enables invasive/high-volume RE hooks which are unsuitable for a trusted baseline run. */
     bool unsafeDiagnostics{};
+    /** Writes the privacy-allowlisted open-world population census JSONL artifact. */
+    bool openWorldCensus{};
     /** Select the CoO adapter at the next Omega run; retain legacy by default. */
     bool cooExecutor{};
     /**

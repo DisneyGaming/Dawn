@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <memory>
 
 namespace rt=sunrise::server::runtime::activity::population;
 namespace wire=sunrise::middleware::bap::activity_message::native::population;
@@ -35,10 +36,10 @@ const registry::Definition kAssignedDefinition{"assigned",1,kKey,2,3,7,
     std::span<const registry::Slot>(kAssignedSlots)};
 
 rt::Capability capability(bool cycles=true) {
-    return {&kDefinition,0,7,{},true,0,cycles,42};
+    return {&kDefinition,0,7,{},true,0,1,cycles,42};
 }
 rt::Capability assigned_capability() {
-    return {&kAssignedDefinition,0,7,{kKey,42,0},true,0,true};
+    return {&kAssignedDefinition,0,7,{kKey,42,0},true,0,1,true};
 }
 rt::Command command(rt::Owner owner,std::uint64_t revision,std::uint64_t request,
                     std::uint8_t target,std::uint64_t boot=11) {
@@ -55,7 +56,7 @@ int main() {
     CHECK(rt::valid(capability()));
     std::array<registry::Slot,3> malformed{kSlots[0],kSlots[1],kSlots[2]};malformed[2].authSchema=0x80807DA2U;
     const registry::Definition badDefinition{"cycle",1,kKey,2,3,7,std::span<const registry::Slot>(malformed)};
-    CHECK(!rt::valid({&badDefinition,0,7,{},true,0,true,42}));
+    CHECK(!rt::valid({&badDefinition,0,7,{},true,0,1,true,42}));
 
     // Normal and explicit retirement source bodies differ only at BC.
     wire::Batch normal{};normal.count=1;normal.entries[0].source={kKey,7,7,3,{}};
@@ -129,8 +130,9 @@ int main() {
     sunrise::middleware::bap::activity_message::sensor_auth_update::Roster roster{};roster.groupCount=1;roster.groups[0]=group;roster.bubbleSubBlocks=std::span(&block,1);
     CHECK(wire::valid(batch,roster,56));
 
-    // Exactly 128 authored bindings fit; the 129th cannot be represented.
-    std::array<registry::Definition,128> definitions{};std::array<rt::Capability,128> capabilities{};
+    // The shared source capacity includes retained patrol and Lost Sector sources.
+    std::array<registry::Definition,rt::kBindingCapacity> definitions{};
+    std::array<rt::Capability,rt::kBindingCapacity> capabilities{};
     for(std::size_t i=0;i<definitions.size();++i) {
         definitions[i]={"many",1,static_cast<std::uint32_t>(0x2000+i),2,3,1,std::span<const registry::Slot>(kSlots,2)};
         capabilities[i]={&definitions[i],0,7,{},true,false};
@@ -150,7 +152,9 @@ int main() {
     // Fixed type-1 mailbox rebind purges only the old queued lease.
     namespace events=sunrise::state::activity::native_population;
     const events::Lease oldLease{{99,{7}},{99,11,7,{kKey,2,1,0},7},7};
-    auto newLease=oldLease;newLease.source.generation=8;events::Mailbox mailbox;CHECK(mailbox.bind(oldLease));
+    auto newLease=oldLease;newLease.source.generation=8;
+    auto mailboxStorage=std::make_unique<events::Mailbox>();auto& mailbox=*mailboxStorage;
+    CHECK(mailbox.bind(oldLease));
     events::Event oldEvent{oldLease,{oldLease.source,100,101},9,events::Kind::admitted};CHECK(mailbox.submit(oldEvent,mailbox.epoch()));
     CHECK(mailbox.rebind(oldLease,newLease));CHECK(!mailbox.pending(oldLease.activity));
     CHECK(!mailbox.rebind(oldLease,newLease));

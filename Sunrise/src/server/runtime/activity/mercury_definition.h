@@ -6,7 +6,11 @@
 #include "adventure_mercury_start_routes.h"
 #include "adventure_mercury_openings.h"
 #include "mercury_public_event_definition.h"
+#include "lost_sector_catalog.h"
 namespace sunrise::server::runtime::activity::mercury {
+namespace lost=lost_sector::catalog::mercury;
+inline constexpr auto kActivityPopulations=lost_sector::catalog::concat(kPopulations,lost::kCapabilities);
+inline constexpr auto kLostSectorDefinition=lost::definition(static_cast<std::uint16_t>(kPopulations.size()));
 inline constexpr coo::ModuleBinding kPersistentModule{{0x80F4696A,0x80F4696A,0,0},1};
 inline constexpr coo::script::Capability kScriptCapabilities[]{
     {"persistent.start","composition",{coo::Operation::mechanic,kPersistentModule.asset,1,coo::Wait::requested}},
@@ -74,8 +78,10 @@ inline constexpr coo::script::ParameterCapability kParameters[]{
     // observed missing in Mercury. This does not claim retail cadence recovery.
     {"host.tick_hz",1,120,30,false},
 };
-inline constexpr std::array<ambient_population::InitialBinding,2> kAmbientInitial{{
-    ambient::probe::binding(7),ambient::cabal_probe::binding(22),
+// The Cabal source0 primary probe is a standalone diagnostic now; this profile
+// owns that source as an ordinary fallback-rule escort, not an occupancy probe.
+inline constexpr std::array<ambient_population::InitialBinding,1> kAmbientInitial{{
+    ambient::probe::binding(7),
 }};
 // Authored native bubble scope15; not an endpoint or event revision.
 inline constexpr std::array<public_event::RallyBinding,1> kPublicEventRallies{{
@@ -91,7 +97,8 @@ inline constexpr std::array<ambient_population::RegistryBinding,3> kOptionalRegi
     {&public_events::kRegistries[2],"public_event_opening_probe"}
 }};
 inline const NativeActivityDefinition kActivity{"mercury_freeroam",L"mercury_freeroam.json",15,
-    &kProfile,kRegistries,kPopulations,kPlacements,kActions,kPersistentModule,kVanceAnimationCapabilities,
+    &kProfile,kRegistries,kActivityPopulations,kPlacements,kActions,kPersistentModule,kVanceAnimationCapabilities,
     adventure::mercury::kStartRoutes,kAmbientInitial,kPublicEventRallies,adventure::mercury::kOpenings,
-    {},{},kOptionalRegistries,"host.tick_hz",{},{},{},{},{},public_events::kInitialDefinitions,true};
+    {},{},kOptionalRegistries,"host.tick_hz",{},{},{},{},{},public_events::kInitialDefinitions,true,
+    {}, {}, false, {}, nullptr,lost::kRegistries,&kLostSectorDefinition};
 }

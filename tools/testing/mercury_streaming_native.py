@@ -187,6 +187,33 @@ def source_cases(image):
         n.call(0x4E4580, source, 0, authority)
         assert sum(requests) == expected, (requested, consumed, living_count, pending, mode, requests)
         assert n.get(source + 0x650) == requested and n.get(authority + 0xBD, "B") == mode
+    # These cumulative totals exceed the former uint8 policy boundary. Keep
+    # only a small residual deficit so this proves the original routine reads
+    # the full signed 32-bit counters without authorizing a large spawn burst.
+    wide = [
+        (64, 61, 0, 0, 3),
+        (256, 252, 1, 0, 3),
+        (65536, 65530, 2, 1, 3),
+        (0x7FFFFFFF, 0x7FFFFFFC, 0, 0, 3),
+        (0x7FFFFFFF, 0x7FFFFFF9, 2, 1, 3),
+        # Pending births reduce, rather than inflate, the dispatched deficit.
+        (64, 60, 1, 2, 1),
+        (256, 250, 2, 3, 1),
+        (65536, 65531, 1, 3, 1),
+    ]
+    for requested, consumed, living_count, pending, expected in wide:
+        alive[0] = living_count
+        n.put(source + 0x650, requested)
+        n.put(source + 0x268, consumed)
+        n.put(source + 0x670, pending)
+        n.put(authority + 0xBD, 0, "B")
+        requests.clear()
+        n.call(0x4E4580, source, 0, authority)
+        assert sum(requests) == expected, (requested, consumed, living_count, pending, requests)
+        assert all(0 < request <= 3 for request in requests), requests
+        assert n.get(source + 0x650) == requested, "native target counter truncated"
+        assert n.get(source + 0x268) == consumed, "fixture dispatch unexpectedly consumed work"
+        assert n.get(source + 0x670) == pending, "fixture dispatch unexpectedly changed pending births"
     # Native deactivation consumes the remaining budget. A pre-deactivation
     # checkpoint is necessary: copying its final counter would suppress AI.
     alive[0] = 0
@@ -194,7 +221,7 @@ def source_cases(image):
     n.put(source + 0x268, 1)
     n.call(0x4E8270, source, 0)
     assert n.get(source + 0x268) == 4
-    print("PASS native source arithmetic: fresh AI, partial kills, residents, pending births, exhausted quota, all authority modes, deactivation")
+    print("PASS native source arithmetic: fresh AI, partial kills, residents, pending births, exhausted quota, all authority modes, 32-bit cumulative boundaries with bounded deficits, deactivation")
 
 
 if __name__ == "__main__":

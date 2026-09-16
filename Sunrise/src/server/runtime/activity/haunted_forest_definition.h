@@ -161,11 +161,22 @@ inline constexpr std::array<transit_effect::TargetPlacement,3> kTransitTarget5{{
     {&kOwnedRegistries[0],41,0x815500C4U,0x4C8},{&kOwnedRegistries[0],42,0x815500C7U,0x4C8},{&kOwnedRegistries[0],43,0x815500CAU,0x4C8}}};
 inline constexpr std::array<transit_effect::TargetPlacement,3> kTransitTarget6{{
     {&kOwnedRegistries[0],52,0x815500E5U,0x4C8},{&kOwnedRegistries[0],53,0x815500E8U,0x4C8},{&kOwnedRegistries[0],54,0x815500EBU,0x4C8}}};
+inline constexpr auto kTransitLanding=[] {
+    std::array<std::array<transit_effect::LandingPlacement,2>,kPlatforms.size()> output{};
+    for(std::size_t i=0;i<kPlatforms.size();++i) {
+        // The capture plate owns a separate, cycling generation. Only the
+        // stable terrain placements prove a safe landing; capture is armed on arrival.
+        const std::array assets{kPlatforms[i].main,kPlatforms[i].approach};
+        for(std::size_t j=0;j<assets.size();++j)
+            output[i][j]={{&kOwnedRegistries[0],assets[j].slot,assets[j].definition,0x4C8},1};
+    }
+    return output;
+}();
 inline constexpr std::array<transit_effect::Route,6> kTransitEffectRoutes{{
-    {1,0,504900,kTransitTarget1,{transit_effect::ArrivalKind::monitor,&kOwnedRegistries[0],110,0}},
-    {2,1,504900,kTransitTarget2,{transit_effect::ArrivalKind::monitor,&kOwnedRegistries[0],114,0}},
-    {3,2,504900,kTransitTarget3,{transit_effect::ArrivalKind::monitor,&kOwnedRegistries[0],118,0}},
-    {4,3,504900,kTransitTarget4,{transit_effect::ArrivalKind::monitor,&kOwnedRegistries[0],122,0}},
+    {1,0,504900,kTransitTarget1,{transit_effect::ArrivalKind::monitor,&kOwnedRegistries[0],110,0},kTransitLanding[0]},
+    {2,1,504900,kTransitTarget2,{transit_effect::ArrivalKind::monitor,&kOwnedRegistries[0],114,0},kTransitLanding[1]},
+    {3,2,504900,kTransitTarget3,{transit_effect::ArrivalKind::monitor,&kOwnedRegistries[0],118,0},kTransitLanding[2]},
+    {4,3,504900,kTransitTarget4,{transit_effect::ArrivalKind::monitor,&kOwnedRegistries[0],122,0},kTransitLanding[3]},
     {5,4,504900,kTransitTarget5,{transit_effect::ArrivalKind::monitor,&kOwnedRegistries[2],2,0}},
     {6,4,504900,kTransitTarget6,{transit_effect::ArrivalKind::playerTrigger,&kOwnedRegistries[0],102,142}},
 }};
@@ -211,7 +222,7 @@ inline constexpr auto kOwnedPopulationCapabilities=[] {
     }
     // sq_darkblade uses authored sr_darkblade and obj_darkblade row0/task162.
     // Keep its native prefab/selector attributes and AI; no synthetic health edits.
-    output.back()={&kOwnedRegistries[0],59,160,{kOwnedRegistries[0].key,61,0},true,0,false,60};
+    output.back()={&kOwnedRegistries[0],59,160,{kOwnedRegistries[0].key,61,0},true,0,1,false,60};
     return output;
 }();
 

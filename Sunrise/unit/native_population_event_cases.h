@@ -8,6 +8,32 @@ void native_population_event_cases() {
     events::Mailbox mailbox;
     const events::Lease lease{{42,{1}},{42,123,1,{0x74337EDD,0x80F5B68E,1,1},1},15};
     {
+        events::Mailbox births;CHECK(births.bind(lease));
+        auto ticket=births.begin_creation();events::Receipt receipt;
+        events::Event provisional{lease,{lease.source,100,UINT32_MAX,ticket.nonce+1},200,events::Kind::admitted};
+        CHECK(births.stage(ticket,provisional,receipt)==events::StageResult::rejected);
+        ticket=births.begin_creation();provisional.actor.birthNonce=0;
+        CHECK(births.stage(ticket,provisional,receipt)==events::StageResult::rejected);
+        ticket=births.begin_creation();provisional.actor.birthNonce=ticket.nonce;
+        CHECK(births.stage(ticket,provisional,receipt)==events::StageResult::staged);
+        const auto secondTicket=births.begin_creation();auto reused=provisional;reused.actor.birthNonce=secondTicket.nonce;
+        events::Receipt rejected;
+        CHECK(births.stage(secondTicket,reused,rejected)==events::StageResult::rejected);
+        CHECK(births.provisional(receipt,provisional));
+        auto forged=provisional;++forged.actor.birthNonce;forged.actor.entity=300;
+        CHECK(!births.provisional(receipt,forged));
+        CHECK(births.admit(receipt,forged)==events::AdmitResult::rejected);
+        forged.actor.birthNonce=0;CHECK(births.admit(receipt,forged)==events::AdmitResult::rejected);
+        auto complete=provisional;complete.actor.entity=300;complete.memberCategory=1;
+        CHECK(births.admit(receipt,complete)==events::AdmitResult::admitted);
+        auto death=complete;death.kind=events::Kind::died;
+        auto retired=complete;retired.kind=events::Kind::retired;
+        CHECK(births.submit(death,receipt));CHECK(births.submit(retired,receipt));
+        std::array<events::Event,3> output{};CHECK(births.drain(lease.activity,output)==3);
+        CHECK(output[0].actor==output[1].actor && output[1].actor==output[2].actor);
+        CHECK(output[0].actor.birthNonce==ticket.nonce && output[0].memberCategory==1);
+    }
+    {
         namespace stream=sunrise::client::hooks::bootflow::native_population_streaming;
         const stream::Counters saved{1,4,1,0},fresh{1,4,0,0};
         CHECK(stream::restore(saved,fresh,true,true));
@@ -19,6 +45,12 @@ void native_population_event_cases() {
         CHECK(!stream::restore({1,4,5,0},fresh,true,true));
         CHECK(!stream::restore({2,4,1,0},fresh,true,true));
         CHECK(!stream::restore({1,4,-1,0},fresh,true,true));
+        const stream::Counters savedTwo{2,4,1,0,3,2,0},freshTwo{2,4,0,0,3,0,0};
+        CHECK(stream::restore(savedTwo,freshTwo,true,true));
+        CHECK(stream::restore(savedTwo,savedTwo,true,true));
+        CHECK(!stream::restore(savedTwo,{2,4,0,0,4,0,0},true,true));
+        CHECK(!stream::restore(savedTwo,{2,4,0,0,3,1,0},true,true));
+        CHECK(!stream::restore(savedTwo,{2,4,0,0,3,0,1},true,true));
         CHECK(stream::local_facet(0,-1,0,0));CHECK(!stream::local_facet(0,-2,0,0));
         CHECK(!stream::local_facet(1,-1,0,0));CHECK(!stream::local_facet(0,-1,4,0));
         CHECK(!stream::local_facet(0,-1,0,1));

@@ -71,7 +71,7 @@ void persistent_population_reuse_seam() {
     constexpr registry::Slot slots[]{{0,1,1,0,0x80807EC9U,1},{7,66,1,0,0,2}};
     const registry::Definition definition{"persistent-reuse",1,key,2,3,1,
         std::span<const registry::Slot>(slots)};
-    const population::Capability capability{&definition,0,7,{},true,0,true};
+    const population::Capability capability{&definition,0,7,{},true,0,1,true};
     population::Service service;
     const population::Owner owner{77,{3}};
     expect(service.begin(owner,std::span(&capability,1),19));

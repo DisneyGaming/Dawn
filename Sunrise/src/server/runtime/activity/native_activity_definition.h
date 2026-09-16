@@ -19,6 +19,7 @@ namespace sunrise::server::runtime::activity {
 namespace coo=state::activity::coo;
 namespace round_activity { struct Definition; }
 namespace open_world { struct Definition; }
+namespace lost_sector { struct Definition; }
 // Trusted package/profile data. Files select registered operations; they do
 // not define wire layouts, native pointers or destinations for teleports.
 struct NativeAction final {
@@ -79,5 +80,9 @@ struct NativeActivityDefinition final {
     std::span<const TriggeredPlacementPose> triggeredPlacementPoses{};
     /** Shared package-derived free-roam behavior. Empty preserves specialized profiles. */
     const open_world::Definition* openWorld{};
+    /** Additional package registries used only by the staged Lost Sector suffix. */
+    std::span<const registry::Definition> lostSectorRegistries{};
+    /** Optional staged Lost Sector director. Empty preserves existing activities. */
+    const lost_sector::Definition* lostSectors{};
 };
 }

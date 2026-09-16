@@ -37,7 +37,8 @@ template<class Definition,class Document>
 [[nodiscard]] bool configure_initial(const Definition& definition,const Document& document,
     std::span<const InitialBinding> bindings,std::array<InitialPolicy,32>& output,std::size_t& count) noexcept {
     output={};count=0;
-    if(bindings.size()>output.size() || definition.populations.size()>32) return false;
+    if(bindings.size()>output.size()
+        || definition.populations.size()>population::kSourceCapacity) return false;
     if constexpr(requires {definition.optionalRegistries;}) {
         RegistryBatch selected{};
         if(!optional_registries(definition,document,selected))return false;

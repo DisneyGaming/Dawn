@@ -5,7 +5,11 @@
 #include <span>
 
 namespace sunrise::middleware::bap::activity_message::native::population {
-inline constexpr std::size_t kPopulationCapacity = 128;
+// The largest package-pinned open-world definition is Nessus: 234 ordinary
+// sources plus 131 Lost Sector sources. The 9-bit wire count permits up to 511;
+// 384 keeps bounded headroom while matching server, binding and client storage.
+inline constexpr std::size_t kSourceCapacity = 384;
+inline constexpr std::size_t kPopulationCapacity = kSourceCapacity;
 inline constexpr std::uint16_t kNoNamedMember = UINT16_MAX;
 // Server-owned values only. No destination names, file IO, actor pointers or
 // policy selection in this envelope. The descriptor admission layer verifies
@@ -19,7 +23,7 @@ struct Request final {
 };
 using BatchRequest = Request;
 struct Batch final {
-    std::array<Request,kPopulationCapacity> entries{};
+    std::array<Request,kSourceCapacity> entries{};
     std::size_t count{};
 };
 [[nodiscard]] inline const Request* find(const Batch& batch,std::uint32_t key,

@@ -76,6 +76,7 @@ enum class Leaf : std::size_t {
     portalMutation,
     syntheticStageMachine,
     unsafeDiagnostics,
+    openWorldCensus,
     count,
 };
 
@@ -89,6 +90,7 @@ constexpr std::array<std::string_view, kLeafCount> kLeafKeys{
     "portal_mutation",
     "synthetic_stage_machine",
     "unsafe_diagnostics",
+    "open_world_census",
 };
 
 using FlagSet = std::array<bool, kLeafCount>;
@@ -129,6 +131,7 @@ constexpr FlagSet requested_flags(const Omega& omega) noexcept {
         omega.portalMutation,
         omega.syntheticStageMachine,
         omega.unsafeDiagnostics,
+        omega.openWorldCensus,
     };
 }
 
@@ -141,6 +144,7 @@ void set_all(Omega& omega, bool value) noexcept {
     omega.portalMutation = value;
     omega.syntheticStageMachine = value;
     omega.unsafeDiagnostics = value;
+    omega.openWorldCensus = value;
 }
 
 // Consumers preserve every requested bit, but the bootflow manifest and activity publishers make
@@ -155,6 +159,7 @@ constexpr EffectivePolicy effective_policy(const Omega& requested) noexcept {
     effective.enabled[index(Leaf::syntheticStageMachine)] =
         flags[index(Leaf::syntheticStageMachine)];
     effective.enabled[index(Leaf::unsafeDiagnostics)] = flags[index(Leaf::unsafeDiagnostics)];
+    effective.enabled[index(Leaf::openWorldCensus)] = flags[index(Leaf::openWorldCensus)];
 
     const bool master = flags[index(Leaf::syntheticStageMachine)];
     effective.enabled[index(Leaf::sceneAuthority)] = master && flags[index(Leaf::sceneAuthority)];
@@ -202,7 +207,7 @@ void all_off_defaults_are_stable() {
 
     Settings explicitOff{};
     CHECK(parse_document(
-        R"({"version":6,"experiments":{"omega":{"directive_ui":false,"ikora_carrier_model_suppression":false,"ikora_vfx_rebind":false,"scene_authority":false,"gate_authority":false,"portal_mutation":false,"synthetic_stage_machine":false,"unsafe_diagnostics":false}}})",
+        R"({"version":6,"experiments":{"omega":{"directive_ui":false,"ikora_carrier_model_suppression":false,"ikora_vfx_rebind":false,"scene_authority":false,"gate_authority":false,"portal_mutation":false,"synthetic_stage_machine":false,"unsafe_diagnostics":false,"open_world_census":false}}})",
         explicitOff));
     CHECK(requested_flags(explicitOff.omegaExperiments) == FlagSet{});
 }
@@ -260,9 +265,9 @@ void stage_master_gates_only_its_three_dependants() {
             R"("scene_authority":true,"gate_authority":true,"portal_mutation":true,"synthetic_stage_machine":true)"),
         parsed));
     CHECK(requested_flags(parsed.omegaExperiments)
-          == (FlagSet{false, false, false, true, true, true, true, false}));
+          == (FlagSet{false, false, false, true, true, true, true, false, false}));
     CHECK(effective_policy(parsed.omegaExperiments).enabled
-          == (FlagSet{false, false, false, true, true, true, true, false}));
+          == (FlagSet{false, false, false, true, true, true, true, false, false}));
     CHECK(!effective_policy(parsed.omegaExperiments).dependencyMissing);
 }
 
@@ -302,14 +307,14 @@ void malformed_and_duplicate_values_fail_transactionally() {
         CHECK(!parse_document(document_with_omega_member(member), output));
         CHECK(output.version == 123U);
         CHECK(requested_flags(output.omegaExperiments)
-              == (FlagSet{true, true, true, true, true, true, true, true}));
+              == (FlagSet{true, true, true, true, true, true, true, true, true}));
 
         const std::string duplicate = std::string{"\""} + std::string{kLeafKeys[leaf]}
                                       + "\":true,\"" + std::string{kLeafKeys[leaf]} + "\":false";
         CHECK(!parse_document(document_with_omega_member(duplicate), output));
         CHECK(output.version == 123U);
         CHECK(requested_flags(output.omegaExperiments)
-              == (FlagSet{true, true, true, true, true, true, true, true}));
+              == (FlagSet{true, true, true, true, true, true, true, true, true}));
     }
 
     for (const std::string_view value : kMalformedKnownValues) {
@@ -338,7 +343,7 @@ void malformed_and_duplicate_values_fail_transactionally() {
         CHECK(!parse_document(malformed, output));
         CHECK(output.version == 123U);
         CHECK(requested_flags(output.omegaExperiments)
-              == (FlagSet{true, true, true, true, true, true, true, true}));
+              == (FlagSet{true, true, true, true, true, true, true, true, true}));
     }
 }
 

@@ -1,0 +1,240 @@
+{
+  "schema": 1,
+  "method": "Root visually inspected browser screenshots from selected timestamps, not every frame or a continuous full clear. Counts are estimates authorized by the user. No original retail quota script was recovered.",
+  "reviewed_on": "2026-09-15",
+  "native_provenance": "Native source/rule/point closure remains authoritative for geometry. Videos do not establish exact native source IDs or spawn-volume dimensions.",
+  "counter_crosscheck": {
+    "url": "https://www.reddit.com/r/DestinyTheGame/comments/ehipgw/",
+    "use": "Approximate whole-run calibration only. The author counted weapon kills; explosions may omit kills, Taken can duplicate, and later Nightmare overlays differ from the ordinary encounter. Comments dispute several totals, particularly Kingship Dock."
+  },
+  "sectors": [
+    {
+      "name": "Pariah's Refuge",
+      "video": "https://www.youtube.com/watch?v=xIbE4kya_KA",
+      "sample_times": [
+        "01:05",
+        "01:49",
+        "02:32",
+        "03:16"
+      ],
+      "observation": "Goblins in the first fight, a separated pair on a raised ledge, and later Goblin reinforcements. Early samples were sought during playback; timestamps are approximate.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": false
+    },
+    {
+      "name": "Core Terminus",
+      "video": "https://www.youtube.com/watch?v=gdXtbZnsYDU",
+      "sample_times": [
+        "01:01",
+        "01:17",
+        "01:43",
+        "02:09",
+        "02:34",
+        "03:00",
+        "03:26",
+        "03:52"
+      ],
+      "observation": "Hive laboratory and connector fights, including a close Thrall encounter. Effects and cleared rooms prevent an exact total; timestamps are approximate.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": false
+    },
+    {
+      "name": "Ma'adim Subterrane",
+      "video": "https://www.youtube.com/watch?v=4PnyAPf9rYs",
+      "sample_times": [
+        "01:43",
+        "02:08",
+        "03:00"
+      ],
+      "observation": "Cabal cave terraces: a distant Psion across the gap and a close Legionary encounter. This supports composition and placement context, not an exact room total.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": false
+    },
+    {
+      "name": "Methane Flush",
+      "video": "https://www.youtube.com/watch?v=Xgfy9O8WzK0",
+      "sample_times": [
+        "01:38",
+        "02:52"
+      ],
+      "observation": "Acolytes fight around the room's cover and stairs; two are visible together in the early sample. Playback continued after seeking, so timestamps are approximate.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": false
+    },
+    {
+      "name": "Cargo Bay 3",
+      "video": "https://www.youtube.com/watch?v=DI3KainXCC0",
+      "sample_times": [
+        "01:21",
+        "02:13",
+        "02:57"
+      ],
+      "observation": "Cargo-container lanes and a single named Ogre boss, followed by mostly cleared stairs. Sparse samples do not establish 36 actors; existing single placements are retained.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": false
+    },
+    {
+      "name": "DS Quarters-2",
+      "video": "https://www.youtube.com/watch?v=A7JZBmMZzsQ",
+      "sample_times": [
+        "01:01",
+        "01:47"
+      ],
+      "observation": "Hive interior and round-door corridors sampled. The camera/cleared rooms obscure group sizes; quota changes are package- and counter-calibrated estimates, not visual counts.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": false
+    },
+    {
+      "name": "Sanctum of Bones",
+      "video": "https://www.youtube.com/watch?v=KS8MMXJls1g",
+      "sample_times": [
+        "01:44",
+        "03:13"
+      ],
+      "observation": "Taken Vandal combat in the cave and a later cleared route. Early timestamp approximate; Taken duplication prevents treating a kill counter as a fixed quota.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": false
+    },
+    {
+      "name": "Aphix Conduit",
+      "video": "https://www.youtube.com/watch?v=LiUr1UnlBsg",
+      "sample_times": [
+        "01:08",
+        "02:00"
+      ],
+      "observation": "Vex circular machinery room and at least four Goblins visible together in the later post-boss sample. Timestamps approximate; no complete wave count.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": false
+    },
+    {
+      "name": "Grove of Ulan-Tan",
+      "video": "https://www.youtube.com/watch?v=5QqCAZbmcJU",
+      "sample_times": [
+        "01:20",
+        "02:20"
+      ],
+      "observation": "Cave approach, then Qeldron Hydra with nearby Goblins in the later sample. Timestamps approximate; no complete wave count.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": false
+    },
+    {
+      "name": "The Rift",
+      "video": "https://www.youtube.com/watch?v=0nxg7-9vGVM",
+      "sample_times": [
+        "01:15",
+        "01:34",
+        "02:11"
+      ],
+      "observation": "Fallen platforms, a Dreg close to the player and a single Tattered Dusk Captain. Cleared areas in other samples do not imply zero population.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": false
+    },
+    {
+      "name": "The Orrery",
+      "video": "https://www.youtube.com/watch?v=2p5DiPV7kl4",
+      "sample_times": [
+        "00:41",
+        "00:52",
+        "01:12"
+      ],
+      "observation": "The on-screen Orrery title accompanies Vex, not Cabal. At 00:52 several Vex occupy different ledges. This corroborates the catalog name correction.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": false
+    },
+    {
+      "name": "The Conflux",
+      "video": "https://www.youtube.com/watch?v=nvUUnFHopGo",
+      "sample_times": [
+        "00:56",
+        "01:10",
+        "01:39"
+      ],
+      "observation": "Two Psion nameplates in the first sample and an Incendior at 01:10. The Cabal encounter corroborates the catalog name correction.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": false
+    },
+    {
+      "name": "The Carrion Pit",
+      "video": "https://www.youtube.com/watch?v=4IqLRVeOBB8",
+      "sample_times": [
+        "00:57",
+        "01:11",
+        "01:40"
+      ],
+      "observation": "Fallen combat in the cargo cave, including one nearby charging melee unit. Other sampled views are already cleared; exact total remains estimated.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": false
+    },
+    {
+      "name": "Ancient's Haunt",
+      "video": "https://www.youtube.com/watch?v=DOJFoseN380",
+      "sample_times": [
+        "01:14",
+        "01:32",
+        "02:09"
+      ],
+      "observation": "Goblins on the cave path, with several together in the 01:32 combat sample; effects obscure an exact number.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": false
+    },
+    {
+      "name": "Trapper's Cave",
+      "video": "https://www.youtube.com/watch?v=WBGmwP_wpDk",
+      "sample_times": [
+        "01:17",
+        "02:16",
+        "02:35"
+      ],
+      "observation": "Cave entry, Cabal fighting during a super, then a surviving ranged enemy after cache-code acquisition. Exact wave totals are estimates.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": false
+    },
+    {
+      "name": "Wolfship Turbine",
+      "video": "https://www.youtube.com/watch?v=KNNVYbNBtEw",
+      "sample_times": [
+        "03:55",
+        "06:51"
+      ],
+      "observation": "Hive-infested lower passage and upper platform combat, including a small pair near the steps. The walkthrough includes exploration delays; duration is not a count proxy.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": false
+    },
+    {
+      "name": "Kingship Dock",
+      "video": "https://www.youtube.com/watch?v=R0oh0xmG-FQ",
+      "sample_times": [
+        "00:55",
+        "01:37",
+        "02:04"
+      ],
+      "observation": "Entrance and Scorn arena combat sampled; the last sample is the outro. No deduplicated whole-run count. Existing quota is retained, with conflicting larger counter reports documented.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": false
+    },
+    {
+      "name": "The Empty Tank",
+      "video": "https://www.youtube.com/watch?v=oJN25n4m-7g",
+      "sample_times": [
+        "02:11",
+        "02:44",
+        "03:49",
+        "04:22"
+      ],
+      "observation": "Combat in the bar and arena, including a Vandal at 03:49. Effects and already-cleared views preclude exact counting; arena/chest phases are not claimed reconstructed.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": false
+    },
+    {
+      "name": "Shipyard AWO-43",
+      "video": "https://www.youtube.com/watch?v=ncGFigO6P4o",
+      "sample_times": [
+        "02:35",
+        "03:27"
+      ],
+      "observation": "Forsaken-period footage: Exploder Shank at 02:35, then at least five Fallen visible in the 03:27 death-camera view. This is a simultaneous visible minimum, not a deduplicated whole-run or source count. Also sampled Rodwenn's later KDH-Tsqb_CA route at 01:24 and 02:27; that was not used as a numeric authority.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": false
+    }
+  ]
+}

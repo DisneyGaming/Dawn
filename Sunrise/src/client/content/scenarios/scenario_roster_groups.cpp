@@ -12,6 +12,7 @@
 #include "../../../state/activity/coo/mercury_ambient_primary_owner.h"
 #include "../../../state/activity/coo/mercury_public_event_registries.h"
 #include "../../../state/activity/coo/open_world_catalog.h"
+#include "../../../state/activity/coo/lost_sector_group_catalog.h"
 #include "internal.h"
 #include "campaign_shared_groups.h"
 
@@ -370,6 +371,8 @@ bool resolve_object(const reader::Source& source,
         || state::activity::coo::mercury::public_events::required(
             context.scenarioTag,objectTag,memo.registryKey,memo.explicitSliceMask)
         || state::activity::coo::open_world::required(
+            context.scenarioTag,objectTag,memo.registryKey,memo.explicitSliceMask)
+        || state::activity::coo::lost_sector::required(
             context.scenarioTag,objectTag,memo.registryKey,memo.explicitSliceMask);
     if (memo.group != kNotARosterGroup) {
         output.group = memo.group;
@@ -474,9 +477,19 @@ bool resolve_object(const reader::Source& source,
     const std::size_t authoredLimit = layouts::kRosterGroupCapacity - kOrdinaryGroupReserve;
     if (storage.groupCount == layouts::kRosterGroupCapacity
         || (!ordinaryLayout && storage.groupCount >= authoredLimit)) {
-        if (scenarioRoot || selectedLocal) {
+        if (scenarioRoot || selectedLocal || requiredCatalog) {
             output.authoredRejected = true;
             ++storage.catalogOverflows;
+        }
+        if(requiredCatalog) {
+            std::array<char,384> line{};
+            const auto written=std::snprintf(line.data(),line.size(),
+                "ev=required_registry_extract result=failed reason=catalog_capacity scenario=%08X object=%08X key=%08X groups=%zu authored_limit=%zu capacity=%zu",
+                context.scenarioTag,objectTag,memo.registryKey,storage.groupCount,authoredLimit,
+                layouts::kRosterGroupCapacity);
+            if(written>0 && static_cast<std::size_t>(written)<line.size())
+                core::log::write(core::log::Channel::state,core::log::Level::error,
+                    {line.data(),static_cast<std::size_t>(written)});
         }
         output.disposition = ResolveDisposition::catalogCapacity;
         trace_towerfall_resolution(context, output);

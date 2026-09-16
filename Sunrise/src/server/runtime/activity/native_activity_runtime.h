@@ -13,7 +13,7 @@ using Owner=population::Owner;
 // roster slot without the auth flag voids every placement in it.
 [[nodiscard]] NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
     const NativeActivityDefinition& definition,const adventure_start::wire::Request& selected={},
-    bool openingAdmissionReady=true,bool experimentalRewardPlacements=false) noexcept;
+    bool openingAdmissionReady=true,std::uint32_t populationPrefetchBubble=UINT32_MAX,bool experimentalRewardPlacements=false) noexcept;
 void observe(Owner owner,std::uint32_t bubble,
     const middleware::bap::activity_message::sense_update::SenseUpdate& update) noexcept;
 bool observe_player_trigger(Owner owner,

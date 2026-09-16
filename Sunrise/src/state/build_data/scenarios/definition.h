@@ -27,10 +27,12 @@ inline constexpr std::uint8_t kBubbleEnabledByte = 0x80;
 inline constexpr std::uint8_t kBubbleDisabledByte = 0x7F;
 /**
  * Descriptor layouts reachable through the ordinary roster plus content-derived scenario-root and
- * selected-slice authored paths. The installed census has 1,883 unique layouts. This bank is
+ * selected-slice authored paths. The former 2,304-entry bank exhausted its authored partition
+ * during the full patrol pass and omitted every required Tangled Shore group. Keep headroom
+ * for the complete installed traversal and explicit encounter profiles. This bank is
  * process-static (and cache scratch is heap-backed), so it never occupies a thread stack.
  */
-inline constexpr std::size_t kRosterGroupCapacity = 2'304;
+inline constexpr std::size_t kRosterGroupCapacity = 3'072;
 /** Slots on one roster group object. The widest installed group declares 1218. */
 inline constexpr std::size_t kRosterSlotCapacity = 1280;
 /** Roster groups one destination publishes. */
@@ -43,7 +45,7 @@ inline constexpr std::size_t kDestinationBubbleGroupCapacity = 4;
  */
 inline constexpr std::size_t kDestinationAuthoredGroupCapacity = 5;
 /** Top-level, ordinary bubble-local, and selected-slice authored groups one body can carry. */
-inline constexpr std::size_t kDestinationWireGroupCapacity = 32;
+inline constexpr std::size_t kDestinationWireGroupCapacity = 96;
 /** Bytes needed to persist one bit per supported bubble. */
 inline constexpr std::size_t kBubbleMaskBytes = kBubbleCapacity / 8;
 /** Slot flag bit for a slot whose type declares a sense schema. */

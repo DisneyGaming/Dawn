@@ -1269,6 +1269,9 @@ RosterOutcome build_roster_snapshot(Session& session,
         for(const auto& definition:nativeProfile->registries) {
             if(!admitProfileRegistry(definition))return RosterOutcome::noGroups;
         }
+        for(const auto& definition:nativeProfile->lostSectorRegistries) {
+            if(!admitProfileRegistry(definition))return RosterOutcome::noGroups;
+        }
         server::runtime::activity::ambient_population::RegistryBatch optional{};
         if(!server::runtime::activity::native_activity::optional_registries(*nativeProfile,optional))
             return RosterOutcome::noGroups;
@@ -1280,7 +1283,14 @@ RosterOutcome build_roster_snapshot(Session& session,
         }
     }
     bool adventureAdditive{};
-    if(nativePublisher==native_publisher::Role::creator && inputs.regionIndex>=0 && inputs.regionIndex%8==0) {
+    const auto nativeRuntimeRegion=native_publisher::runtime_region(
+        inputs.regionIndex,inputs.sourceMembership.currentRegion.index);
+    // The publication can announce a streamed-in neighbor before currentRegion
+    // changes. It can prewarm incoming sources, but it never replaces the held
+    // location or proves an exit, reset, or completed Lost Sector wave.
+    const auto populationPrefetchBubble=native_publisher::population_prefetch_bubble(inputs.regionIndex);
+    if(nativePublisher==native_publisher::Role::creator
+        && nativeRuntimeRegion>=0 && nativeRuntimeRegion%8==0) {
         namespace overlay=server::runtime::activity::authored_overlay;
         server::runtime::activity::adventure_start::wire::Request selected{};
         // Only the creator publishes its persistent policy. Derived activities
@@ -1292,9 +1302,9 @@ RosterOutcome build_roster_snapshot(Session& session,
                 || selected.selection.descriptorBitLength!=committed.descriptorBitLength)selected={};
         }
         const auto frame=server::runtime::activity::native_activity::update(
-            session.activity.lineage.source,static_cast<std::uint32_t>(inputs.regionIndex/8),
+            session.activity.lineage.source,static_cast<std::uint32_t>(nativeRuntimeRegion/8),
             state::activity::world_phase()==state::activity::WorldPhase::arrived,*nativeProfile,selected,
-            session.activity.rosterSends>=kWarmupSends,omegaExperiments.forestRewardCoffers);
+            session.activity.rosterSends>=kWarmupSends,populationPrefetchBubble,omegaExperiments.forestRewardCoffers);
         snapshot.populations=frame.populations;snapshot.placements=frame.placements;
         nativeTraversalRespawn=frame.nativeTraversalRespawn;
         snapshot.animations=frame.animations;

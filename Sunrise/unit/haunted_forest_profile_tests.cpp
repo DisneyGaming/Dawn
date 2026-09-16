@@ -164,7 +164,7 @@ int main(int argc, char** argv) {
     CHECK(hf::kRounds.experimentalRewardPlacementIndices.size() == 5);
     CHECK(hf::kCaptures.size() == 4);
     CHECK(hf::kOccupancy.size() == 5);
-    CHECK(hf::kDevices.size() == 4);
+    CHECK(hf::kDevices.size() == 5);
     CHECK(hf::kOwnedPopulationCapabilities.size() == 110);
     CHECK(hf::kGeneratedPalettes.size() == 19);
     CHECK(hf::kRankedPrefabs.size() == 163);
@@ -219,10 +219,10 @@ int main(int argc, char** argv) {
     CHECK(hf::kEnvironmentData.forestSwitches.size() == 6);
     CHECK(hf::kPlacements[12].interactionMode
         == activity::placement::interaction::Mode::enabled);
-    // The coffers carry no interaction controller; their mode must stay untouched.
+    // Coffers use their authored interaction controller for cipher redemption.
     for (std::size_t i = 14; i < hf::kPlacements.size(); ++i)
         CHECK(hf::kPlacements[i].interactionMode
-            == activity::placement::interaction::Mode::unchanged);
+            == activity::placement::interaction::Mode::enabled);
 
     CHECK(activity::native_capture::Runtime::valid(hf::kActivity, *document));
 

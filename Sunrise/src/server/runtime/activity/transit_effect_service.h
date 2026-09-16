@@ -22,6 +22,10 @@ struct TargetRequest final {
     std::uint32_t generation{};
     bool active{};
 };
+struct LandingPlacement final {
+    TargetPlacement placement{};
+    std::uint32_t generation{1};
+};
 enum class ArrivalKind : std::uint8_t { none, monitor, playerTrigger };
 struct ArrivalBinding final {
     ArrivalKind kind{ArrivalKind::none};
@@ -52,6 +56,9 @@ struct Route final {
     std::uint64_t handoffTicks{};
     std::span<const TargetPlacement> targets{};
     ArrivalBinding arrival{};
+    // Owned by the activity placement service; transit only waits for their
+    // exact committed generation. Never retire a floor with teleport markers.
+    std::span<const LandingPlacement> landing{};
 };
 struct Definition final {
     std::span<const status_effect::Capability> effects{};
@@ -69,7 +76,7 @@ struct Definition final {
         const auto& route=definition.routes[i];
         if(!route.destination || route.effect>=definition.effects.size()
             || !route.handoffTicks || route.handoffTicks==UINT64_MAX)return false;
-        if(route.targets.size()>18)return false;
+        if(route.targets.size()>18 || route.landing.size()>3)return false;
         for(const auto& target:route.targets) {
             if(!target.registry || !registry::valid(*target.registry))return false;
             unsigned matches{};
@@ -78,6 +85,19 @@ struct Definition final {
                     && slot.senseSchema==0x8080992E && slot.authSchema==0x8080992F
                     && slot.descriptorTag==target.definitionTag)++matches;
             if(matches!=1 || target.definitionOffset<=0 || target.definitionOffset>0x1000000)return false;
+        }
+        for(const auto& support:route.landing) {
+            const auto& target=support.placement;
+            if(!support.generation || !target.registry || !registry::valid(*target.registry)
+                || target.definitionOffset<=0 || target.definitionOffset>0x1000000)return false;
+            unsigned matches{};
+            for(const auto& slot:target.registry->slots)
+                if(slot.index==target.slot && slot.type==4 && slot.componentClass==0x80809927
+                    && slot.senseSchema==0x8080992E && slot.authSchema==0x8080992F
+                    && slot.descriptorTag==target.definitionTag)++matches;
+            if(matches!=1)return false;
+            for(const auto& marker:route.targets)
+                if(marker.registry->key==target.registry->key && marker.slot==target.slot)return false;
         }
         if(route.arrival.kind!=ArrivalKind::none) {
             if(!route.arrival.registry || route.arrival.slot>32767)return false;
@@ -122,7 +142,8 @@ public:
             }
         }
         route_=selected;cohort_=cohort;appliedAt_=UINT64_MAX;requested_=false;
-        targetReady_=selected->targets.empty();arrivalCandidate_=false;arrivalQualified_=false;triggerArmed_=false;
+        landingReady_={};
+        targetReady_=selected->targets.empty() && selected->landing.empty();arrivalCandidate_=false;arrivalQualified_=false;triggerArmed_=false;
         for(const auto& authored:selected->targets) {
             TargetState* target{};
             for(std::size_t i=0;i<targetCount_;++i)
@@ -172,6 +193,7 @@ public:
         if(!route_)return 0;
         std::size_t pending{};
         for(std::size_t i=0;i<targetCount_;++i)pending+=targets_[i].ready?0U:1U;
+        for(std::size_t i=0;i<route_->landing.size();++i)pending+=landingReady_[i]?0U:1U;
         if(pending>output.size())return 0;
         std::size_t count{};
         for(std::size_t i=0;i<targetCount_;++i) {
@@ -181,6 +203,12 @@ public:
             output[count++]={target.placement.registry->key,target.placement.slot,
                 target.placement.definitionTag,target.placement.definitionOffset,
                 target.generation,target.active};
+        }
+        for(std::size_t i=0;i<route_->landing.size();++i) {
+            if(landingReady_[i])continue;
+            const auto& support=route_->landing[i];const auto& target=support.placement;
+            output[count++]={target.registry->key,target.slot,target.definitionTag,
+                target.definitionOffset,support.generation,true};
         }
         return count;
     }
@@ -200,11 +228,24 @@ public:
             targetReady_=true;
             for(std::size_t j=0;j<targetCount_;++j)
                 if(!targets_[j].ready)targetReady_=false;
+            for(std::size_t j=0;j<route_->landing.size();++j)
+                if(!landingReady_[j])targetReady_=false;
             return true;
         }
         return false;
     }
     [[nodiscard]] bool observe_target(const TargetRequest& request) noexcept {
+        if(!route_)return false;
+        for(std::size_t i=0;i<route_->landing.size();++i) {
+            const auto& support=route_->landing[i];const auto& target=support.placement;
+            if(target.registry->key!=request.registry || target.slot!=request.slot
+                || target.definitionTag!=request.definitionTag || target.definitionOffset!=request.definitionOffset
+                || support.generation!=request.generation || !request.active)continue;
+            landingReady_[i]=true;targetReady_=true;
+            for(std::size_t j=0;j<route_->landing.size();++j)if(!landingReady_[j])targetReady_=false;
+            for(std::size_t j=0;j<targetCount_;++j)if(!targets_[j].ready)targetReady_=false;
+            return true;
+        }
         for(std::size_t i=0;i<targetCount_;++i) {
             const auto& target=targets_[i];
             if(target.placement.registry->key!=request.registry || target.placement.slot!=request.slot
@@ -292,6 +333,7 @@ public:
         output.applied=appliedAt_!=UINT64_MAX;output.arrivalCandidate=arrivalCandidate_;
         output.arrivalQualified=arrivalQualified_;
         for(std::size_t i=0;i<targetCount_;++i)if(!targets_[i].ready && output.targetsPending<255)++output.targetsPending;
+        if(route_)for(std::size_t i=0;i<route_->landing.size();++i)if(!landingReady_[i])++output.targetsPending;
         return output;
     }
 private:
@@ -323,6 +365,7 @@ private:
     std::uint64_t cohort_{},appliedAt_{UINT64_MAX};
     std::int32_t expected_{};
     std::array<TargetState,18> targets_{};
+    std::array<bool,3> landingReady_{};
     std::size_t targetCount_{};
     mutable bool triggerArmed_{};
     bool targetReady_{},requested_{},arrivalCandidate_{},arrivalQualified_{};

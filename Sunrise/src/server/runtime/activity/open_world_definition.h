@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../../state/activity/coo/open_world_catalog.h"
+#include "../../../middleware/bap/activity_message/native/population_authority.h"
 
 namespace sunrise::server::runtime::activity::open_world {
 
@@ -15,7 +16,9 @@ struct Definition final {
     const auto* value=definition.authored;
     return value && !value->activity.empty() && value->scenario && value->primaryBubble<64
         && !value->registries.empty() && !value->populations.empty()
-        && value->populations.size()<=32 && value->placements.size()<=32;
+        && value->populations.size()
+            <=middleware::bap::activity_message::native::population::kSourceCapacity
+        && value->placements.size()<=32;
 }
 
 } // namespace sunrise::server::runtime::activity::open_world

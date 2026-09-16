@@ -244,6 +244,36 @@ void local_targets_require_fresh_preparation_and_arrival_receipts() {
     expect(!service.observe_player_trigger(kRegistry,25,1)); // mixed source/slot cannot qualify
 }
 
+void landing_floor_must_commit_before_teleport() {
+    namespace transit=sunrise::server::runtime::activity::transit_effect;
+    const std::array<registry::Slot,3> slots{{
+        {kSlot,26,0x8080953F,0x8080954A,0x8080954B,0x12340002},
+        {24,4,0x80809927,0x8080992E,0x8080992F,0x12340003},
+        {26,4,0x80809927,0x8080992E,0x8080992F,0x12340005}}};
+    const registry::Definition authored{"landing_test",1,kRegistry,0x12345679U,0x1234567AU,kBubble,slots};
+    const std::array<status::Capability,1> effects{{{&authored,kSlot}}};
+    const std::array<transit::TargetPlacement,1> markers{{{&authored,24,0x12340003U,0x4C8}}};
+    const std::array<transit::LandingPlacement,1> landing{{{{&authored,26,0x12340005U,0x4C8},1}}};
+    const std::array<transit::Route,2> routes{{{1,0,1,markers,{},landing},{2,0,1,markers,{}}}};
+    const transit::Definition definition{effects,routes};transit::Service service;
+    expect(service.begin(kOwner,kBoot,definition) && service.prepare(1,1));
+    expect(service.observe_target(kRegistry,24,1,true));
+    expect(!service.target_ready(1) && !service.pulse(1));
+    std::array<transit::TargetRequest,21> pending{};
+    expect(service.pending_targets(pending)==1 && pending[0].slot==26);
+    auto wrong=pending[0];wrong.generation=2;expect(!service.observe_target(wrong));
+    wrong=pending[0];wrong.active=false;expect(!service.observe_target(wrong));
+    wrong=pending[0];wrong.definitionTag++;expect(!service.observe_target(wrong));
+    expect(service.observe_target(pending[0]) && service.target_ready(1) && service.pulse(1));
+    expect(service.prepare(2,2));
+    auto projected=placement::Batch{};
+    expect(service.append_targets(projected,kBubble));
+    // The floor stays owned by the activity; target retirement must not delete it.
+    expect(!placement::find(projected,kRegistry,4,26));
+    expect(service.prepare(3,1) && !service.target_ready(3));
+    expect(service.pending_targets(pending)==2); // returning again requires fresh floor proof
+}
+
 int main() {
     codec_decodes_all_players_and_disabled_record_length();
     invalid_registry_and_type_proof_are_rejected();
@@ -251,5 +281,6 @@ int main() {
     requests_are_monotonic_and_disable_preserves_native_defaults();
     one_shot_playback_waits_for_matching_native_application();
     local_targets_require_fresh_preparation_and_arrival_receipts();
+    landing_floor_must_commit_before_teleport();
     std::printf("status effect service: %u checks, zero failures\n",checks);
 }

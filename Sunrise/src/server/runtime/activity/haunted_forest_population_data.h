@@ -90,12 +90,12 @@ inline constexpr std::array<population::Capability,kPopulationCount> kPopulation
     std::size_t cursor{};
     for(const auto& boss:kBosses) {
         output[cursor++]=population::Capability{kPopulationRegistry,boss.squad.slot,kBossRuleSlot,
-            kBossTactical,true,0,true,boss.combatant.slot};
+            kBossTactical,true,0,1,true,boss.combatant.slot};
     }
     const auto append=[&](const auto& sources) constexpr {
         for(const auto& source:sources) {
             output[cursor++]=population::Capability{kPopulationRegistry,source.source.slot,kAddRuleSlot,
-                kAddTactical,true,0,true,population::kNoNamedMember};
+                kAddTactical,true,0,1,true,population::kNoNamedMember};
         }
     };
     append(kCabalAddSources);
