@@ -213,6 +213,13 @@ int main(int argc, char** argv) {
     CHECK(hf::kRounds.encounterDestinationId == 5);
     CHECK(hf::kRounds.rewardDestinationId == 6);
     CHECK(hf::kRounds.transitDestinations.size() == 6);
+    CHECK(hf::kRounds.platforms.size() == 1);
+    CHECK(hf::kRounds.platforms[0].transitDestinationId == 1);
+    CHECK(hf::kTransitEffectRoutes[0].effect == 4);
+    for(std::size_t i=0;i<3;++i) CHECK(hf::kTransitTarget1[i].slot == 44+i);
+    CHECK(hf::kTransitEffectRoutes[0].arrival.slot == 110);
+    CHECK(hf::kTransitLanding[0][0].placement.slot == 30
+        && hf::kTransitLanding[0][1].placement.slot == 31);
     CHECK(hf::kRounds.completionTimerAsset == hud::kCompletionTimerAsset);
     CHECK(hf::kRounds.environment != nullptr);
     CHECK(hf::kEnvironmentData.effects.size() == 4);

@@ -244,6 +244,37 @@ void local_targets_require_fresh_preparation_and_arrival_receipts() {
     expect(!service.observe_player_trigger(kRegistry,25,1)); // mixed source/slot cannot qualify
 }
 
+void arrival_revisions_belong_to_each_monitor() {
+    namespace transit=sunrise::server::runtime::activity::transit_effect;
+    namespace sense=sunrise::middleware::bap::activity_message::sense_update;
+    const std::array<registry::Slot,3> slots{{
+        {kSlot,26,0x8080953F,0x8080954A,0x8080954B,0x12340002},
+        {25,30,0x8080952F,0x80809531,0x80809532,0x12340004},
+        {27,30,0x8080952F,0x80809531,0x80809532,0x12340006}}};
+    const registry::Definition authored{"monitor_revisions",1,kRegistry,0x12345679U,0x1234567AU,kBubble,slots};
+    const std::array<status::Capability,1> effects{{{&authored,kSlot}}};
+    const std::array<transit::Route,2> routes{{
+        {1,0,1,{},{transit::ArrivalKind::monitor,&authored,25,0}},
+        {2,0,1,{},{transit::ArrivalKind::monitor,&authored,27,0}}}};
+    const transit::Definition definition{effects,routes};transit::Service service;
+    expect(service.begin(kOwner,kBoot,definition));
+    sense::SenseObject monitor{};monitor.registryKey=kRegistry;monitor.slotIndex=25;monitor.slotType=30;
+    monitor.nativeSchema=0x80809531;monitor.hasNativeSchema=true;monitor.hasRootDelta=true;
+    monitor.hasMonitorOutput=true;monitor.monitorOutput={true,true,1,0};monitor.nativeRevision=99;
+    expect(service.request(1,1));
+    expect(service.observe(kOwner,kBoot,kBubble,monitor,10) && service.arrival_qualified());
+    expect(service.request(2,2) && !service.arrival_qualified());
+    expect(!service.observe(kOwner,kBoot,kBubble,monitor,11)); // Wrong monitor.
+    monitor.slotIndex=27;monitor.nativeRevision=1;
+    expect(service.observe(kOwner,kBoot,kBubble,monitor,12) && service.arrival_qualified());
+    expect(!service.observe(kOwner,kBoot,kBubble,monitor,13)); // Duplicate on this monitor.
+    expect(service.request(3,1) && !service.arrival_qualified());
+    monitor.slotIndex=25;monitor.nativeRevision=99;
+    expect(!service.observe(kOwner,kBoot,kBubble,monitor,14)); // Retain history on returning to it.
+    monitor.nativeRevision=100;
+    expect(service.observe(kOwner,kBoot,kBubble,monitor,15) && service.arrival_qualified());
+}
+
 void landing_floor_must_commit_before_teleport() {
     namespace transit=sunrise::server::runtime::activity::transit_effect;
     const std::array<registry::Slot,3> slots{{
@@ -281,6 +312,7 @@ int main() {
     requests_are_monotonic_and_disable_preserves_native_defaults();
     one_shot_playback_waits_for_matching_native_application();
     local_targets_require_fresh_preparation_and_arrival_receipts();
+    arrival_revisions_belong_to_each_monitor();
     landing_floor_must_commit_before_teleport();
     std::printf("status effect service: %u checks, zero failures\n",checks);
 }

@@ -135,9 +135,8 @@ inline constexpr std::array<std::uint16_t,2> kRewardPlacementIndices{{12,13}};
 inline constexpr std::array<std::uint16_t,5> kCofferPlacementIndices{{14,15,16,17,18}};
 
 inline constexpr std::array<native_activity_transit::Destination,6> kTransitDestinations{{
-    // Destination 1 intentionally uses the authored initial spawn. It differs
-    // by the recovered 51 m from the slot-36 return marker; keep the authored
-    // hash and document the limitation instead of inventing raw coordinates.
+    // Destination 1 is the original start. Its native teleport placements are
+    // slots 44-46, not the side platform's capture-pad destinations 36-38.
     {1,104,0x79E3AB1FU},{2,104,0x69310371U},{3,104,0x69310372U},
     {4,104,0x69310373U},{5,104,0x8BC697B5U},{6,104,0x29E00F76U},
 }};
@@ -150,7 +149,7 @@ inline constexpr std::array<status_effect::Capability,5> kTransitEffectSources{{
     {&kOwnedRegistries[0],29},{&kOwnedRegistries[0],80},
 }};
 inline constexpr std::array<transit_effect::TargetPlacement,3> kTransitTarget1{{
-    {&kOwnedRegistries[0],36,0x815500B5U,0x4C8},{&kOwnedRegistries[0],37,0x815500B8U,0x4C8},{&kOwnedRegistries[0],38,0x815500BBU,0x4C8}}};
+    {&kOwnedRegistries[0],44,0x815500CDU,0x4C8},{&kOwnedRegistries[0],45,0x815500D0U,0x4C8},{&kOwnedRegistries[0],46,0x815500D3U,0x4C8}}};
 inline constexpr std::array<transit_effect::TargetPlacement,3> kTransitTarget2{{
     {&kOwnedRegistries[0],16,0x8155007CU,0x4C8},{&kOwnedRegistries[0],17,0x8155007FU,0x4C8},{&kOwnedRegistries[0],18,0x81550082U,0x4C8}}};
 inline constexpr std::array<transit_effect::TargetPlacement,3> kTransitTarget3{{
@@ -173,7 +172,7 @@ inline constexpr auto kTransitLanding=[] {
     return output;
 }();
 inline constexpr std::array<transit_effect::Route,6> kTransitEffectRoutes{{
-    {1,0,504900,kTransitTarget1,{transit_effect::ArrivalKind::monitor,&kOwnedRegistries[0],110,0},kTransitLanding[0]},
+    {1,4,504900,kTransitTarget1,{transit_effect::ArrivalKind::monitor,&kOwnedRegistries[0],110,0},kTransitLanding[0]},
     {2,1,504900,kTransitTarget2,{transit_effect::ArrivalKind::monitor,&kOwnedRegistries[0],114,0},kTransitLanding[1]},
     {3,2,504900,kTransitTarget3,{transit_effect::ArrivalKind::monitor,&kOwnedRegistries[0],118,0},kTransitLanding[2]},
     {4,3,504900,kTransitTarget4,{transit_effect::ArrivalKind::monitor,&kOwnedRegistries[0],122,0},kTransitLanding[3]},
@@ -343,7 +342,10 @@ inline constexpr round::Hud kHud{
 inline constexpr round::Definition kRounds{
     kModule.asset,
     {"round.entry","round.traversal","round.toEncounter","round.encounter","round.returning","round.rewards"},
-    kRoundCommands,kRoundPlatforms,0,1,2,kGeneratorPalette,kEncounters,kHud,kScores,
+    // Each branch returns to the original start and re-arms its capture plate.
+    // The other authored side platforms remain available as bindings, but are
+    // not a host-invented round-robin itinerary for this activity.
+    kRoundCommands,std::span<const round::Platform>(kRoundPlatforms).first(1),0,1,2,kGeneratorPalette,kEncounters,kHud,kScores,
     5,6,kRewardPlacementIndices,kTransitDestinations,haunted_forest_hud::kCompletionTimerAsset,
     kNamedEliteCompletionGroup,900000,&kEnvironment,&kRoundMusic,kRoundSequences,
     kRewardPopulationIndices,4,&kTransitEffects,kCofferPlacementIndices,kRewardChestDeviceIndex,

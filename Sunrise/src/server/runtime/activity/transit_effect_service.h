@@ -66,7 +66,8 @@ struct Definition final {
 };
 [[nodiscard]] inline bool valid(const Definition& definition) noexcept {
     if(definition.effects.empty() || definition.routes.empty()
-        || definition.effects.size()>status_effect::kBindingCapacity)return false;
+        || definition.effects.size()>status_effect::kBindingCapacity
+        || definition.routes.size()>status_effect::kBindingCapacity)return false;
     for(const auto& effect:definition.effects) {
         if(!status_effect::valid(effect))return false;
         for(const auto& slot:effect.registry->slots)
@@ -354,8 +355,12 @@ private:
             || object.slotType!=30 || !object.hasNativeSchema || object.nativeSchema!=0x80809531
             || object.inferredBodyWidth || !object.hasRootDelta || !object.hasMonitorOutput
             || !object.monitorOutput.any || !object.monitorOutput.all || object.monitorOutput.count<=0
-            || !object.nativeRevision || object.nativeRevision<=lastArrivalRevision_)return false;
-        lastArrivalRevision_=object.nativeRevision;arrivalCandidate_=true;
+            || !object.nativeRevision)return false;
+        // Each authored monitor has an independent native revision stream.
+        // A boss-room revision must not suppress a lower return-platform revision.
+        auto& revision=arrivalRevisions_[static_cast<std::size_t>(route_-definition_->routes.data())];
+        if(object.nativeRevision<=revision)return false;
+        revision=object.nativeRevision;arrivalCandidate_=true;
         if(requested_)arrivalQualified_=true;
         return true;
     }
@@ -369,7 +374,7 @@ private:
     std::size_t targetCount_{};
     mutable bool triggerArmed_{};
     bool targetReady_{},requested_{},arrivalCandidate_{},arrivalQualified_{};
-    std::uint32_t lastArrivalRevision_{};
+    std::array<std::uint32_t,status_effect::kBindingCapacity> arrivalRevisions_{};
     std::uint8_t lastFailure_{};
 };
 }
