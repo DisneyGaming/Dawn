@@ -93,36 +93,9 @@ Builds are `/W4 /WX`. Warnings are errors.
 
 ---
 
-## Quick install
-
-For an existing build 86657 game installation, this — builds Dawn, backs up what it touches, deploys to every location that could win,
-ensures the mission arrival overrides exist, then launches and proves which DLL actually mapped:
-
-```powershell
-git clone --branch codex/production https://github.com/isinternets/Dawn.git dawn
-cd dawn
-.\tools\install\Install-Dawn.ps1
-```
-
-| flag | |
-|---|---|
-| `-GameRoot "D:\Dawn"` | skip auto-detection |
-| `-SkipBuild` | deploy the existing build output |
-| `-NoLaunch` | deploy without starting the game |
-| `-Restore` | roll back to the last backup it made |
-
-Backups land in `<GAME_ROOT>\.dawn\backup\<timestamp>\` and cover both DLL locations, local runtime
-settings, player databases, and every mission script. The pristine Steam DLL the Dawn installer
-saved at `.dawn\original\steam_api64.dll` is never touched.
-
-Read [Setup](#setup) anyway — the script automates those steps but the reasoning behind them is
-what you will need when something goes wrong.
-
----
-
 ## Setup
 
-Use the installer above, or follow these steps for a manual deployment.
+Follow these steps for a manual deployment.
 
 ### 1. Locate the installed game
 
