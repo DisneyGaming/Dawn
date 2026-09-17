@@ -15,6 +15,7 @@
 #include "../push/activity/activity_keepalive_push.h"
 #include "../push/activity/quest_progress.h"
 #include "queuez_state_validation.h"
+#include "../activity_message/lost_sector_rewards.h"
 
 namespace sunrise::server::bap::encrypted {
 namespace {
@@ -329,6 +330,9 @@ bool consume_deferred(Session& session,
         // A failed power refresh retries before lower-priority account images. Activity
         // keepalives are independent and must not be starved by a temporarily unavailable image.
         return push::activity::consume_activity_keepalive(session, scratch, response, written, touchesScratch);
+    }
+    if (lost_sector_rewards::consume(session, scratch, response, written, touchesScratch)) {
+        return true;
     }
     if (consume_completion_reward(session, scratch, response, written, touchesScratch)) {
         return true;

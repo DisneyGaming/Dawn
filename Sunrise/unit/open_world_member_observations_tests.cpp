@@ -131,10 +131,10 @@ void busy_retry_join() {
     CHECK(output.member == value.member && diagnostic.size() == 0);
 }
 void exact_catalog() {
-    CHECK(members::kSources.size() == 749);
+    CHECK(members::kSources.size() == 1692);
     std::size_t choices{};
     for (const auto& source : members::kSources) {
-        CHECK(source.first == choices && source.count > 0 && source.count <= 192);
+        CHECK(source.first == choices && source.count > 0 && source.count <= 1776);
         for (std::size_t i = 0; i < source.count; ++i) {
             const auto& choice = members::kChoices[source.first + i];
             CHECK(members::lookup(source.resource, source.registry, source.source, choice.memberOffset) == &choice);
@@ -142,11 +142,11 @@ void exact_catalog() {
             CHECK(!members::lookup(source.resource, 0, source.source, choice.memberOffset));
             CHECK(!members::lookup(source.resource, source.registry, UINT16_MAX, choice.memberOffset));
             CHECK(!members::lookup(source.resource, source.registry, source.source, INT64_MIN));
-            CHECK(choice.weight > 0 && choice.variant < 6 && choice.category < 2 && choice.choice < 16);
+            CHECK(choice.weight > 0 && choice.variant < 6 && choice.category < 8 && choice.choice < 128);
         }
         choices += source.count;
     }
-    CHECK(choices == members::kChoices.size() && choices == 6126);
+    CHECK(choices == members::kChoices.size() && choices == 16512);
 }
 void terminal_and_superseded() {
     auto authorityStorage = std::make_unique<events::Mailbox>();

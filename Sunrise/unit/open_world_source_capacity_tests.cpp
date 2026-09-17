@@ -17,9 +17,9 @@ unsigned checks{};
 #define CHECK(value) do { ++checks; if(!(value)) { std::fprintf(stderr,"FAIL line %d: %s\n",__LINE__,#value); return 1; } } while(false)
 
 struct Fixture final {
-    static constexpr std::size_t count=activity::population::kSourceCapacity;
+    static constexpr std::size_t count=activity::open_world::kRetainedRequestCapacity;
     static constexpr std::size_t groups=96;
-    std::array<std::array<sunrise::state::activity::coo::registry::Slot,4>,groups> slots{};
+    std::array<std::array<sunrise::state::activity::coo::registry::Slot,6>,groups> slots{};
     std::array<sunrise::state::activity::coo::registry::Definition,groups> registries{};
     std::array<activity::population::Capability,count> capabilities{};
     std::array<authored::PopulationBinding,count> bindings{};
@@ -37,7 +37,7 @@ struct Fixture final {
         }
         for(std::size_t i=0;i<count;++i) {
             const auto group=i%groups;const auto slot=i/groups;
-            capabilities[i]={&registries[group],static_cast<std::uint16_t>(slot),0,{},false,0,1};
+            capabilities[i]={&registries[group],static_cast<std::uint16_t>(slot),0,{},false};
             bindings[i]={static_cast<std::uint16_t>(group),static_cast<std::uint16_t>(slot),0,0,-1,
                 authored::PopulationKind::patrol,false,0,1,0,1};
         }
@@ -54,23 +54,23 @@ events::Lease lease(std::uint16_t slot=0) {
 }
 
 int main() {
-    static_assert(native::population::kSourceCapacity==384);
+    static_assert(native::population::kSourceCapacity==512);
     static_assert(sizeof(activity::open_world::Director)<4096,
         "Per-source transaction state must remain off the publication stack");
     static_assert(activity::open_world::kRetainedRequestCapacity==384);
     static_assert(events::kCreationCapacity==1152 && events::kProvisionalCapacity==1152);
     static_assert(events::kEventCapacity==3456);
-    static_assert(events::kBindingCapacity==384);
-    static_assert(sunrise::client::hooks::bootflow::native_population_streaming::kSourceCapacity==384);
-    static_assert(wire::kGroupCapacity==96);
-    static_assert(sunrise::state::build_data::scenarios::kDestinationWireGroupCapacity==96);
+    static_assert(events::kBindingCapacity==512);
+    static_assert(sunrise::client::hooks::bootflow::native_population_streaming::kSourceCapacity==512);
+    static_assert(wire::kGroupCapacity==256);
+    static_assert(sunrise::state::build_data::scenarios::kDestinationWireGroupCapacity==256);
 
     Fixture fixture;
     CHECK(activity::open_world::valid(fixture.definition));
     activity::population::Service service;
     const activity::population::Owner owner{0x5000U,{11}};
     CHECK(service.begin(owner,fixture.capabilities,99));
-    std::array<activity::population::Capability,Fixture::count+1> tooMany{};
+    std::array<activity::population::Capability,activity::population::kSourceCapacity+1> tooMany{};
     std::copy(fixture.capabilities.begin(),fixture.capabilities.end(),tooMany.begin());
     tooMany.back()=fixture.capabilities.front();
     activity::population::Service rejected;
@@ -88,7 +88,7 @@ int main() {
     CHECK(!overBudget.begin(owner,99,fixture.definition,fixture.capabilities));
 
     native::population::Batch batch{};
-    batch.count=batch.entries.size();
+    batch.count=Fixture::count;
     for(std::size_t i=0;i<batch.count;++i) {
         const auto& capability=fixture.capabilities[i];
         batch.entries[i].slot=capability.slot;
@@ -97,13 +97,13 @@ int main() {
         batch.entries[i].source.hasSpawnRule=false;
     }
     CHECK(native::population::find(batch,fixture.capabilities.back().registry->key,1,
-        fixture.capabilities.back().slot)==&batch.entries.back());
-    CHECK(native::population::bits(batch.entries.back())==native::combatant_source::kSourceBits);
+        fixture.capabilities.back().slot)==&batch.entries[Fixture::count-1]);
+    CHECK(native::population::bits(batch.entries[Fixture::count-1])==native::combatant_source::kSourceBits);
     auto invalidBatch=batch;invalidBatch.count=invalidBatch.entries.size()+1;
     CHECK(native::population::find(invalidBatch,fixture.registries.front().key,1,0)==nullptr);
 
-    std::array<std::array<std::uint8_t,4>,Fixture::groups> types{},flags{};
-    std::array<std::array<std::uint16_t,4>,Fixture::groups> indices{};
+    std::array<std::array<std::uint8_t,6>,Fixture::groups> types{},flags{};
+    std::array<std::array<std::uint16_t,6>,Fixture::groups> indices{};
     std::array<std::uint32_t,Fixture::groups> keys{};
     wire::Snapshot snapshot{};snapshot.lifetime=3;snapshot.region=0;snapshot.hasRegion=true;
     snapshot.populations=batch;snapshot.roster.groupCount=Fixture::groups;

@@ -10,6 +10,7 @@ std::atomic<ModuleDamage> g_moduleDamage{};
 std::atomic<ModuleDamageGate> g_moduleDamageGate{};
 std::atomic<ModuleDamageSummary> g_moduleDamageSummary{};
 __declspec(noinline) bool gateway_damage_blocked(const void* context) noexcept {
+    if(lost_sector_native_object::blocked(context)) return true;
     if(garden_lens_damage::blocked(context)) return true;
     gateway_native::Read read{g_image};native_box_identity::Sample sample{};
     if(!native_box_identity::sample(read,reinterpret_cast<std::uintptr_t>(context),sample)) { return false; }
@@ -24,6 +25,7 @@ __declspec(noinline) bool gateway_damage_blocked(const void* context) noexcept {
     return deep_storage_lens_damage::blocked(deep,deep_storage_lens_damage::current(deepRead,deep,deepCandidate,sample));
 }
 __declspec(noinline) void gateway_damage_receipt(const void* context) noexcept {
+    lost_sector_native_object::receipt(context);
     garden_lens_damage::receipt(context);
     gateway_native::Read read{g_image};native_box_identity::Sample sample{};
     if(!native_box_identity::sample(read,reinterpret_cast<std::uintptr_t>(context),sample) || !sample.dead) { return; }
@@ -44,7 +46,8 @@ __declspec(noinline) void gateway_damage_receipt(const void* context) noexcept {
 __declspec(noinline) bool __fastcall gateway_damage_gate_hook(const void* context) noexcept {
     const hooking::CallGate::Scope gate{g_gate};
     const bool nativeResult=hooking::await_original(g_moduleDamageGate)(context);
-    const bool result=gate.accepts_side_effects()?garden_damage::allowed(context,garden_lens_damage::allowed(context,nativeResult)):nativeResult;
+    const bool result=gate.accepts_side_effects()?lost_sector_native_object::allowed(context,
+        garden_damage::allowed(context,garden_lens_damage::allowed(context,nativeResult))):nativeResult;
     if(!gate.accepts_side_effects()) { return result; }
     if(strike_pact_damage::immune(context) || hijacked_damage::immune(context) || garden_damage::immune(context)) {return false;}
     gateway_native::Read read{g_image};native_box_identity::Sample sample{};

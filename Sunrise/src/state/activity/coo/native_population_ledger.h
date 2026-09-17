@@ -42,6 +42,7 @@ struct PopulationCounts final {
 template<std::size_t Capacity>
 class NativePopulationLedger final {
     static_assert(Capacity>0 && Capacity<=256);
+    static constexpr std::size_t kMaximumCategories=8;
 public:
     [[nodiscard]] bool begin(PopulationOwner owner) noexcept {
         if(!owner.valid() || failed_ || (phase_!=PopulationPhase::idle && phase_!=PopulationPhase::retired)) { return false; }
@@ -56,7 +57,7 @@ public:
         sourceRetired_=false;phase_=PopulationPhase::active;return true;
     }
     [[nodiscard]] PopulationIntake admitted(PopulationActor actor,std::uint8_t category=UINT8_MAX) noexcept {
-        if(category>1 && category!=UINT8_MAX)return PopulationIntake::conflict;
+        if(category>=kMaximumCategories && category!=UINT8_MAX)return PopulationIntake::conflict;
         if(!matches(actor)) { return PopulationIntake::unrelated; }
         for(std::size_t i=0;i<used_;++i) {
             if(actors_[i].identity==actor) {
@@ -102,7 +103,7 @@ public:
             failed_=true;return PopulationIntake::overflow;
         }
         actors_[used_].identity=actor;actors_[used_++].category=category;++admitted_;
-        if(category<2)++admittedByCategory_[category];return PopulationIntake::accepted;
+        if(category<kMaximumCategories)++admittedByCategory_[category];return PopulationIntake::accepted;
     }
     [[nodiscard]] PopulationIntake died(PopulationActor actor) noexcept {
         if(!matches(actor)) { return PopulationIntake::unrelated; }
@@ -114,7 +115,7 @@ public:
         if(item->dead) { return PopulationIntake::duplicate; }
         if(item->retired) { return PopulationIntake::closed; }
         if(dead_==(std::numeric_limits<std::size_t>::max)()) {failed_=true;return PopulationIntake::overflow;}
-        item->dead=true;++dead_;if(item->category<2)++deadByCategory_[item->category];return PopulationIntake::accepted;
+        item->dead=true;++dead_;if(item->category<kMaximumCategories)++deadByCategory_[item->category];return PopulationIntake::accepted;
     }
     [[nodiscard]] PopulationIntake actor_retired(PopulationActor actor) noexcept {
         if(!matches(actor)) { return PopulationIntake::unrelated; }
@@ -129,12 +130,32 @@ public:
     // The adapter witnessed destruction of the former source and authenticated
     // a replacement in the same generation. All old actors must have retired.
     // Keep real deaths; forget only survivors removed by streaming, not kills.
+    [[nodiscard]] bool source_recreated(PopulationOwner owner,
+        std::array<std::uint8_t,kMaximumCategories>& streamedSurvivors) noexcept {
+        if(owner!=owner_ || phase_!=PopulationPhase::active || sourceRetired_ || failed_)return false;
+        for(std::size_t i=0;i<used_;++i)if(!actors_[i].retired)return false;
+        streamedSurvivors={};
+        for(std::size_t i=0;i<used_;++i)if(!actors_[i].dead) {
+            if(actors_[i].category>=kMaximumCategories
+                || streamedSurvivors[actors_[i].category]==UINT8_MAX)return false;
+            ++streamedSurvivors[actors_[i].category];
+        }
+        std::size_t kept{};
+        for(std::size_t i=0;i<used_;++i)if(actors_[i].dead)actors_[kept++]=actors_[i];else {
+            --admitted_;if(actors_[i].category<kMaximumCategories)--admittedByCategory_[actors_[i].category];
+        }
+        for(std::size_t i=kept;i<used_;++i)actors_[i]={};
+        used_=kept;return true;
+    }
     [[nodiscard]] bool source_recreated(PopulationOwner owner) noexcept {
         if(owner!=owner_ || phase_!=PopulationPhase::active || sourceRetired_ || failed_)return false;
         for(std::size_t i=0;i<used_;++i)if(!actors_[i].retired)return false;
+        // Legacy/non-authorizing callers may not have exact member-category
+        // evidence. Forget streamed survivors while retaining real deaths, but
+        // never translate unknown categories into replacement quota.
         std::size_t kept{};
         for(std::size_t i=0;i<used_;++i)if(actors_[i].dead)actors_[kept++]=actors_[i];else {
-            --admitted_;if(actors_[i].category<2)--admittedByCategory_[actors_[i].category];
+            --admitted_;if(actors_[i].category<kMaximumCategories)--admittedByCategory_[actors_[i].category];
         }
         for(std::size_t i=kept;i<used_;++i)actors_[i]={};
         used_=kept;return true;
@@ -176,10 +197,10 @@ public:
         }
         return result;
     }
-    // Unknown categories are not redistributed between lanes. A two-category
+    // Unknown categories are not redistributed between lanes. A multi-category
     // refill must account for every actor with exact admitted-template evidence.
     [[nodiscard]] PopulationCounts counts(std::uint8_t category) const noexcept {
-        if(category>1)return PopulationCounts{0,0,0,0,sourceRetired_,true};
+        if(category>=kMaximumCategories)return PopulationCounts{0,0,0,0,sourceRetired_,true};
         PopulationCounts result{admittedByCategory_[category],0,deadByCategory_[category],0,
             sourceRetired_,failed_};
         for(std::size_t i=0;i<used_;++i)if(actors_[i].category==category) {
@@ -190,6 +211,30 @@ public:
     }
     [[nodiscard]] PopulationPhase phase() const noexcept { return phase_; }
     [[nodiscard]] PopulationOwner owner() const noexcept { return owner_; }
+    [[nodiscard]] bool sole_live(PopulationActor& output) const noexcept {
+        output={};bool found{};
+        for(std::size_t i=0;i<used_;++i)if(!actors_[i].dead && !actors_[i].retired) {
+            if(found)return false;output=actors_[i].identity;found=true;
+        }
+        return found;
+    }
+    [[nodiscard]] bool live_actor(std::uint32_t actor) const noexcept {
+        if(actor==UINT32_MAX)return false;
+        for(std::size_t i=0;i<used_;++i)if(actors_[i].identity.actor==actor
+            && !actors_[i].dead && !actors_[i].retired)return true;
+        return false;
+    }
+    [[nodiscard]] bool live_entity(std::uint32_t entity) const noexcept {
+        if(entity==UINT32_MAX)return false;
+        for(std::size_t i=0;i<used_;++i)if(actors_[i].identity.entity==entity
+            && !actors_[i].dead && !actors_[i].retired)return true;
+        return false;
+    }
+    [[nodiscard]] bool current_entity(std::uint32_t entity) const noexcept {
+        if(entity==UINT32_MAX)return false;
+        for(std::size_t i=0;i<used_;++i)if(actors_[i].identity.entity==entity && !actors_[i].retired)return true;
+        return false;
+    }
 private:
     struct Actor final { PopulationActor identity{}; bool dead{},retired{};std::uint8_t category{UINT8_MAX}; };
     [[nodiscard]] static bool reusable(const Actor& previous,const PopulationActor& next) noexcept {
@@ -247,7 +292,7 @@ private:
     std::array<Actor,Capacity> tombstones_{};
     std::size_t used_{};
     std::size_t tombstoneUsed_{},admitted_{},dead_{};
-    std::array<std::size_t,2> admittedByCategory_{},deadByCategory_{};
+    std::array<std::size_t,kMaximumCategories> admittedByCategory_{},deadByCategory_{};
     std::uint64_t retiredNonceFloor_{};
     PopulationPhase phase_{PopulationPhase::idle};
     bool sourceRetired_{},failed_{},legacyHistoryLost_{};

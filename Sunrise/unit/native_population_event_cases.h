@@ -51,6 +51,17 @@ void native_population_event_cases() {
         CHECK(!stream::restore(savedTwo,{2,4,0,0,4,0,0},true,true));
         CHECK(!stream::restore(savedTwo,{2,4,0,0,3,1,0},true,true));
         CHECK(!stream::restore(savedTwo,{2,4,0,0,3,0,1},true,true));
+        auto savedThree=savedTwo;auto freshThree=freshTwo;
+        savedThree.categories=freshThree.categories=3;
+        savedThree.additionalRequested[0]=freshThree.additionalRequested[0]=5;
+        savedThree.additionalConsumed[0]=4;
+        CHECK(stream::restore(savedThree,freshThree,true,true));
+        freshThree.additionalConsumed[0]=4;CHECK(stream::restore(savedThree,freshThree,true,true));
+        freshThree.additionalConsumed[0]=3;CHECK(!stream::restore(savedThree,freshThree,true,true));
+        freshThree.additionalConsumed[0]=0;freshThree.additionalPending[0]=1;
+        CHECK(!stream::restore(savedThree,freshThree,true,true));
+        freshThree.additionalPending[0]=0;++freshThree.additionalRequested[0];
+        CHECK(!stream::restore(savedThree,freshThree,true,true));
         CHECK(stream::local_facet(0,-1,0,0));CHECK(!stream::local_facet(0,-2,0,0));
         CHECK(!stream::local_facet(1,-1,0,0));CHECK(!stream::local_facet(0,-1,4,0));
         CHECK(!stream::local_facet(0,-1,0,1));
@@ -60,7 +71,8 @@ void native_population_event_cases() {
         CHECK(!stream::retained_facet(0,-2,0,1));
         events::Mailbox streaming;auto opted=lease;opted.discardStreamedReplicas=true;
         CHECK(streaming.bind(opted));const auto receipt=streaming.capture(opted);
-        const events::Event recreated{opted,{opted.source},0x4567,events::Kind::sourceRecreated,0x3456};
+        const events::Event recreated{.lease=opted,.actor={opted.source},.sourceHandle=0x4567,
+            .kind=events::Kind::sourceRecreated,.previousSourceHandle=0x3456};
         CHECK(streaming.submit(recreated,receipt));
         auto bad=recreated;bad.previousSourceHandle=bad.sourceHandle;CHECK(!streaming.submit(bad,receipt));
         bad=recreated;bad.previousSourceHandle=UINT32_MAX;CHECK(!streaming.submit(bad,receipt));

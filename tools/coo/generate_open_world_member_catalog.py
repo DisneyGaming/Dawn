@@ -1,8 +1,9 @@
 """Generate a digest-pinned lookup for native open-world source member offsets.
 
 The catalog contains only positive-weight native choices belonging to sources
-selected by the generic open-world profiles or Mercury's persistent patrol
-director. It does not infer species, rank, actor counts, or live member kind.
+selected by the open-world profiles (ordinary patrols and registered NPCs),
+Mercury's persistent patrol director, and Lost Sectors. It
+does not infer species, rank, actor counts, or live member kind.
 """
 from __future__ import annotations
 
@@ -26,8 +27,8 @@ SOURCE_DEFINITION_CLASS = 0x8080948F
 CATEGORY_CLASS = 0x80808356
 CHOICE_CLASS = 0x80808358
 MEMBER_RECORD_CLASS = 0x808099D8
-MAX_CATEGORIES = 2
-MAX_CHOICES_PER_VARIANT = 16
+MAX_CATEGORIES = 8
+MAX_CHOICES_PER_VARIANT = 128
 
 
 @dataclass(frozen=True)
@@ -91,6 +92,43 @@ def generic_sources() -> list[SelectedSource]:
     return result
 
 
+def npc_sources() -> list[SelectedSource]:
+    result = []
+    for target in profiles.TARGETS:
+        groups = _groups(target)
+        for bubble, key in target.npcs:
+            group = groups.get((bubble, key))
+            if group is None:
+                raise ValueError(f"selected NPC registry {_hex(key)} is not package-resolved")
+            slots = [slot for slot in group["slots"] if slot["type"] == 1]
+            if not slots or not any(slot["type"] == 42 for slot in group["slots"]):
+                raise ValueError(f"selected NPC registry {_hex(key)} lacks source/controller")
+            # Profile generation intentionally selects the first authored source.
+            slot = slots[0]
+            result.append(SelectedSource(target.activity, "npc", slot["descriptor"],
+                                         group["key"], slot["index"]))
+    return result
+
+
+def edz_moon_bootstrap_sources() -> list[SelectedSource]:
+    specs = (
+        ("edz_freeroam", 0x80B2F00A, 0, 0x52695108, 1, 0x80BE2F2E),
+        ("luna_freeroam", 0x81503E69, 0, 0x2F2CA9F5, 0, 0x81565CBB),
+    )
+    result = []
+    for activity, scenario, bubble, key, source, descriptor in specs:
+        target = profiles.Target(activity, activity, activity, scenario, bubble, (), (), ())
+        group = _groups(target).get((bubble, key))
+        if group is None:
+            raise ValueError(f"bootstrap registry {_hex(key)} is not package-resolved")
+        slots = [slot for slot in group["slots"]
+                 if slot["type"] == 1 and slot["index"] == source]
+        if len(slots) != 1 or slots[0]["descriptor"] != descriptor:
+            raise ValueError(f"bootstrap source {_hex(key)}/{source} changed")
+        result.append(SelectedSource(activity, "bootstrap", descriptor, key, source))
+    return result
+
+
 def _mercury_registry_keys() -> list[int | None]:
     text = (ROOT / "Sunrise/src/state/activity/coo/mercury_registries.h").read_text()
     body = _block(text, "inline constexpr std::array<registry::Definition,20> kRegistries{{", "}};")
@@ -150,15 +188,67 @@ def mercury_sources() -> list[SelectedSource]:
         if len(slots) != 1:
             raise ValueError(f"selected Mercury source {_hex(key)}/{source} is ambiguous")
         result.append(SelectedSource("mercury_freeroam", "mercury", slots[0]["descriptor"], key, source))
+    # The retained Mercury activity also publishes Vance and four Crossroads
+    # event sources outside kPatrols. They still receive native population
+    # leases and therefore need exact member-category attribution for streamed
+    # recreation, even though none authorizes ordinary patrol replenishment.
+    extras = (
+        (0x564C6ECE, 0, 0x80F5B9CC),
+        (0xC8229B2B, 44, 0x80F5E3A4),
+        (0xC8229B2B, 46, 0x80F5E3AA),
+        (0xC8229B2B, 48, 0x80F5E3B0),
+        (0xC8229B2B, 49, 0x80F5E3B3),
+    )
+    for key, source, descriptor in extras:
+        group = groups.get(key)
+        if group is None:
+            raise ValueError(f"retained Mercury registry {_hex(key)} is not package-resolved")
+        slots = [slot for slot in group["slots"]
+                 if slot["type"] == 1 and slot["index"] == source]
+        if len(slots) != 1 or slots[0]["descriptor"] != descriptor:
+            raise ValueError(f"retained Mercury source {_hex(key)}/{source} changed")
+        result.append(SelectedSource("mercury_freeroam", "retained", descriptor, key, source))
+    return result
+
+
+def lost_sector_sources() -> list[SelectedSource]:
+    import generate_lost_sector_catalog as lost
+    groups, _ = lost.resolve()
+    result = []
+    for sector in lost.SECTORS:
+        for stage in sector["stages"]:
+            for key, source_slots in stage:
+                group = groups[(sector["scenario"], key)]
+                for source in source_slots:
+                    slots = [slot for slot in group["slots"]
+                             if slot["type"] == 1 and slot["index"] == source]
+                    if len(slots) != 1:
+                        raise ValueError(f"Lost Sector source {_hex(key)}/{source} is ambiguous")
+                    result.append(SelectedSource(sector["activity"], "lost_sector",
+                                                 slots[0]["descriptor"], key, source))
+    research = json.loads((Path(__file__).with_name("lost_sector_edz_moon_native_research.json")).read_text())
+    if research.get("schema") != 1:
+        raise ValueError("EDZ/Moon Lost Sector research schema changed")
+    for sector in research["sectors"]:
+        activity = "edz_freeroam" if sector["namespace"] == "edz" else "moon_freeroam"
+        registry = int(sector["registry"], 16)
+        for source in sector["sources"]:
+            result.append(SelectedSource(activity, "lost_sector", int(source["descriptor"], 16),
+                                         registry, source["slot"]))
     return result
 
 
 def selected_sources() -> list[SelectedSource]:
-    result = generic_sources() + mercury_sources()
-    identities = [(row.resource, row.registry, row.source) for row in result]
-    if len(identities) != len(set(identities)):
-        raise ValueError("duplicate selected source identity")
-    return sorted(result, key=lambda row: (row.activity, row.registry, row.source, row.resource))
+    candidates = (generic_sources() + npc_sources() + edz_moon_bootstrap_sources() + mercury_sources()
+                  + lost_sector_sources())
+    result = {}
+    for row in candidates:
+        identity=(row.resource,row.registry,row.source)
+        previous=result.get(identity)
+        if previous and (previous.registry,previous.source)!=(row.registry,row.source):
+            raise ValueError("conflicting selected source identity")
+        result.setdefault(identity,row)
+    return sorted(result.values(), key=lambda row: (row.activity, row.registry, row.source, row.resource))
 
 
 def decode_source(selected: SelectedSource) -> dict:
@@ -231,7 +321,7 @@ def decode_source(selected: SelectedSource) -> dict:
 def current_document() -> dict:
     rows = [decode_source(source) for source in selected_sources()]
     return {"schemaVersion": 1, "packageBuild": 86657,
-            "scope": "selected generic patrol sources plus selected Mercury persistent patrol sources",
+            "scope": "registered generic, Mercury patrol, and Lost Sector population sources",
             "sources": rows}
 
 
@@ -289,6 +379,13 @@ def render_header(document: dict) -> str:
                      f"{begin}U,{count}U,{source['source']}}}, // {source['activity']} {source['resourceSha256'].upper()}")
     lines.extend([
         "}};",
+        "[[nodiscard]] constexpr bool registered(std::uint32_t resource,",
+        "    std::uint32_t registry,std::uint16_t source) noexcept {",
+        "    unsigned matches{};",
+        "    for(const auto& range:kSources)",
+        "        matches+=(range.resource==resource && range.registry==registry && range.source==source)?1U:0U;",
+        "    return matches==1;",
+        "}",
         "[[nodiscard]] constexpr const MemberChoice* lookup(std::uint32_t resource,",
         "    std::uint32_t registry,std::uint16_t source,std::int64_t memberOffset) noexcept {",
         "    const MemberChoice* result=nullptr;",

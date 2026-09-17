@@ -45,7 +45,7 @@ inline constexpr std::size_t kDestinationBubbleGroupCapacity = 4;
  */
 inline constexpr std::size_t kDestinationAuthoredGroupCapacity = 5;
 /** Top-level, ordinary bubble-local, and selected-slice authored groups one body can carry. */
-inline constexpr std::size_t kDestinationWireGroupCapacity = 96;
+inline constexpr std::size_t kDestinationWireGroupCapacity = 256;
 /** Bytes needed to persist one bit per supported bubble. */
 inline constexpr std::size_t kBubbleMaskBytes = kBubbleCapacity / 8;
 /** Slot flag bit for a slot whose type declares a sense schema. */

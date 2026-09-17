@@ -34,6 +34,9 @@ EXPECTED_QUOTA_TOTALS = {
     "Kingship Dock": 29,
     "The Empty Tank": 54,
     "Shipyard AWO-43": 43,
+    "Bay of Drowned Wishes": 28,
+    "Chamber of Starlight": 33,
+    "Aphelion's Rest": 30,
 }
 
 
@@ -67,7 +70,7 @@ def main() -> None:
         name: sum(sum(row["targets"]) for stage in sector["stages"] for row in stage["sources"])
         for name, sector in quota_document["sectors"].items()
     }
-    if len(quota_rows) != 455 or quota_totals != EXPECTED_QUOTA_TOTALS:
+    if len(quota_rows) != 505 or quota_totals != EXPECTED_QUOTA_TOTALS:
         raise SystemExit(f"Lost Sector quota coverage/baseline changed: rows={len(quota_rows)} totals={quota_totals}")
     sectors = evidence["sectors"]
     proofs = evidence["registry_proofs"]
@@ -80,10 +83,14 @@ def main() -> None:
         ("2F8DB58A", 2), ("100F6578", 2),
         ("9A24C39A", 52), ("9A24C39A", 60), ("9A24C39A", 64),
         ("9A24C39A", 70), ("9A24C39A", 76),
+        *(("B846777D", source) for source in (0, 1, 2, 3, 4, 5, 45, 48, 49)),
+        *(("74E16154", source) for source in (19, 23, 25, 26, 27, 28, 29, 30,
+            31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48)),
+        ("D7FF797A", 24), ("D7FF797A", 28),
     }
     # The entire 69A1B17C source8 group is extraction-only and therefore is
     # not one of the 38 runtime proofs.
-    if len(sectors) != 19 or len(proofs) != 38 or enabled != 455 \
+    if len(sectors) != 22 or len(proofs) != 41 or enabled != 505 \
             or omitted != expected_omitted:
         raise SystemExit("Lost Sector coverage/omission invariant changed")
 
@@ -155,7 +162,7 @@ def main() -> None:
     finally:
         catalog.POINT_DEPENDENCIES[key] = original
     print(f"PASS Lost Sector catalog: sectors={len(sectors)} proofs={len(proofs)} "
-          f"enabled={enabled} quota_rows={len(quota_rows)} omitted=16")
+          f"enabled={enabled} quota_rows={len(quota_rows)} omitted={len(omitted)}")
 
 
 if __name__ == "__main__":

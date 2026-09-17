@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <initializer_list>
 #include <limits>
 #include <string_view>
 #include <type_traits>
@@ -20,7 +21,7 @@
 namespace sunrise::state::persistence {
 namespace {
 
-constexpr int kSchemaVersion = 2;
+constexpr int kSchemaVersion = 3;
 constexpr std::wstring_view kDatabaseName = L"\\player-state.db";
 constexpr std::uint64_t kFirstGeneratedItemSoid = 0x4000000000000001ULL;
 constexpr std::uint64_t kFirstProfileItemSoid = 0x5000000000000001ULL;
@@ -132,15 +133,71 @@ void rollback() noexcept { (void)execute("ROLLBACK"); }
 
 // Called inside the same transaction as the load/import. A failed read rolls back
 // the schema upgrade too, leaving an older save usable by the previous build.
+[[nodiscard]] bool columns_match(const char* sql,
+                                std::initializer_list<std::string_view> expected) noexcept {
+    Statement columns{sql};
+    if (!columns.ready()) return false;
+    for (const auto name : expected) {
+        if (sqlite3_step(columns.value) != SQLITE_ROW) return false;
+        const auto* text = sqlite3_column_text(columns.value, 1);
+        if (!text || name != reinterpret_cast<const char*>(text)) return false;
+    }
+    return sqlite3_step(columns.value) == SQLITE_DONE;
+}
+
+[[nodiscard]] bool migrate_vendor_v2() noexcept {
+    // Two branches shipped user_version=2 with different vendor layouts. Inspect
+    // both tables before upgrading; version 3 unambiguously uses the vendor branch codec.
+    if (columns_match("PRAGMA table_info(vendor_progress)",
+                      {"owner_soid", "position", "vendor", "points", "rewards"})
+        && columns_match("PRAGMA table_info(vendor_unlocks)",
+                         {"owner_soid", "kind", "position", "slot", "value"})) return true;
+    if (!columns_match("PRAGMA table_info(vendor_progress)",
+                       {"scope", "owner_soid", "position", "vendor", "points", "rewards"})
+        || !columns_match("PRAGMA table_info(vendor_unlocks)",
+                          {"scope", "owner_soid", "numeric", "position", "slot", "value"})) return false;
+
+    // Scope becomes implicit in the unique owner SOID. Validate it before dropping
+    // the column, including the empty progress slots that the old writer emitted.
+    {
+        Statement invalid{R"sql(
+SELECT 1 FROM (
+ SELECT scope,owner_soid FROM vendor_progress
+ UNION ALL SELECT scope,owner_soid FROM vendor_unlocks
+) WHERE typeof(scope)!='integer' OR NOT (
+ (scope=0 AND owner_soid IN (SELECT primary_soid FROM account WHERE id=1)) OR
+ (scope=1 AND owner_soid IN (SELECT soid FROM characters)))
+UNION ALL
+SELECT 1 FROM vendor_progress
+ WHERE typeof(position)!='integer' OR position NOT BETWEEN 0 AND 15
+ OR (vendor=65535 AND (typeof(vendor)!='integer' OR typeof(points)!='integer'
+     OR typeof(rewards)!='integer' OR points!=0 OR rewards!=0))
+LIMIT 1
+)sql"};
+        if (!invalid.ready() || sqlite3_step(invalid.value) != SQLITE_DONE) return false;
+    }
+    return execute(R"sql(
+CREATE TABLE vendor_progress_v3(owner_soid TEXT NOT NULL, position INTEGER NOT NULL CHECK(position BETWEEN 0 AND 15), vendor INTEGER NOT NULL CHECK(vendor BETWEEN 0 AND 65534), points INTEGER NOT NULL CHECK(points>=0), rewards INTEGER NOT NULL CHECK(rewards>=0), PRIMARY KEY(owner_soid,position), UNIQUE(owner_soid,vendor));
+CREATE TABLE vendor_unlocks_v3(owner_soid TEXT NOT NULL, kind INTEGER NOT NULL CHECK(kind IN(0,1)), position INTEGER NOT NULL CHECK(position BETWEEN 0 AND 2047), slot INTEGER NOT NULL CHECK(slot BETWEEN 0 AND 65535), value INTEGER NOT NULL, PRIMARY KEY(owner_soid,kind,position), UNIQUE(owner_soid,kind,slot));
+INSERT INTO vendor_progress_v3 SELECT owner_soid,position,CASE vendor WHEN 324 THEN 11 ELSE vendor END,points,rewards FROM vendor_progress WHERE vendor!=65535;
+INSERT INTO vendor_unlocks_v3 SELECT owner_soid,numeric,position,slot,value FROM vendor_unlocks;
+DROP TABLE vendor_progress;
+DROP TABLE vendor_unlocks;
+ALTER TABLE vendor_progress_v3 RENAME TO vendor_progress;
+ALTER TABLE vendor_unlocks_v3 RENAME TO vendor_unlocks;
+)sql");
+}
+
 [[nodiscard]] bool migrate_schema(int version) noexcept {
     if (version == kSchemaVersion) return true;
+    if (version == 2) return migrate_vendor_v2() && execute("PRAGMA user_version=3");
     if (version != 1) return false;
     return execute(R"sql(
 ALTER TABLE characters ADD COLUMN vendor_campaigns INTEGER NOT NULL DEFAULT 0 CHECK(vendor_campaigns BETWEEN 0 AND 7);
 ALTER TABLE character_items ADD COLUMN postmaster INTEGER NOT NULL DEFAULT 0 CHECK(postmaster IN(0,1));
 CREATE TABLE vendor_progress(owner_soid TEXT NOT NULL, position INTEGER NOT NULL CHECK(position BETWEEN 0 AND 15), vendor INTEGER NOT NULL CHECK(vendor BETWEEN 0 AND 65534), points INTEGER NOT NULL CHECK(points>=0), rewards INTEGER NOT NULL CHECK(rewards>=0), PRIMARY KEY(owner_soid,position), UNIQUE(owner_soid,vendor));
 CREATE TABLE vendor_unlocks(owner_soid TEXT NOT NULL, kind INTEGER NOT NULL CHECK(kind IN(0,1)), position INTEGER NOT NULL CHECK(position BETWEEN 0 AND 2047), slot INTEGER NOT NULL CHECK(slot BETWEEN 0 AND 65535), value INTEGER NOT NULL, PRIMARY KEY(owner_soid,kind,position), UNIQUE(owner_soid,kind,slot));
-PRAGMA user_version=2;
+PRAGMA user_version=3;
 )sql");
 }
 

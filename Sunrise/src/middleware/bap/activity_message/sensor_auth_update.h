@@ -1,4 +1,5 @@
 #pragma once
+#include "native/lost_sector_shield_authority.h"
 #include "native/forest_generator_authority.h"
 #include "native/world_device_authority.h"
 #include "native/world_sequence_authority.h"
@@ -86,7 +87,7 @@ inline constexpr std::uint16_t kMinimumGrantToken = 1;
 /** Host storage for top-level and bubble-local groups together. Mercury needs
  * patrol groups alongside player roots, public events and adventure overlays.
  * Group bodies use presence-terminated records; this is not a wire count width. */
-inline constexpr std::size_t kGroupCapacity = 96;
+inline constexpr std::size_t kGroupCapacity = 256;
 /** The three lifetime states spawn gate G4's unbounded jump table accepts. */
 inline constexpr std::array<std::uint8_t, 3> kLifetimeStates = {3, 6, 10};
 /** Slot flag bit for a block that carries a sense reset bit. */
@@ -156,6 +157,7 @@ struct Snapshot final {
     /** Native source authority prepared by a server population service. */
     native::population::Batch populations{};
     native::placement::Batch placements{};
+    native::lost_sector_shield::Batch lostSectorShields{};
     native::forest_generator::Batch generators{};
     native::world_device::Batch devices{};
     native::engagement::Batch engagements{};

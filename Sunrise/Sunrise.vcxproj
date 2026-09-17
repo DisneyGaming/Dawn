@@ -1609,6 +1609,22 @@
     <ClInclude Include="src\server\runtime\activity\haunted_forest_hud.h" />
   </ItemGroup>
   <Import Project="lua-items.props" />
+  <ItemGroup>
+    <ClInclude Include="src\client\hooks\bootflow\lost_sector_object_receipts.inl" />
+    <ClInclude Include="src\middleware\bap\activity_message\device_sense.h" />
+    <ClInclude Include="src\middleware\bap\activity_message\native\lost_sector_shield_authority.h" />
+    <ClInclude Include="src\middleware\bap\activity_message\object_sense.h" />
+    <ClInclude Include="src\server\bap\encrypted\activity_message\lost_sector_reward_claim_slots.h" />
+    <ClCompile Include="src\server\bap\encrypted\activity_message\lost_sector_rewards.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClInclude Include="src\server\bap\encrypted\activity_message\lost_sector_rewards.h" />
+    <ClInclude Include="src\server\runtime\activity\edz_moon_lost_sector_catalog.h" />
+    <ClInclude Include="src\server\runtime\activity\lost_sector_destructible_definitions.h" />
+    <ClInclude Include="src\server\runtime\activity\lost_sector_reward_items.h" />
+    <ClInclude Include="src\server\runtime\activity\lost_sector_reward_policy.h" />
+    <ClInclude Include="src\server\runtime\activity\moon_lost_sector_runtime.h" />
+    <ClInclude Include="src\server\runtime\activity\moon_lost_sector_types.h" />
+    <ClInclude Include="src\state\activity\coo\edz_moon_lost_sector_group_catalog.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemGroup>
     <ClInclude Include="src\state\activity\deep_storage\scan_playback.h" />

@@ -15,7 +15,7 @@ bool stage_vendor_transaction(const SessionState& before,const state::vendors::P
         || !stage_equipment_swap(before,p.before.characters[p.character].soid,out)) {return false;}
     constexpr auto instance=middleware::datagen::kItemInstanceObjectId;
     for(const auto removed:p.removed) {
-        auto& state=out.after;auto index=state.family4ResidentCount;
+        auto& state=out.after;std::size_t index=state.family4ResidentCount;
         for(std::size_t i=0;i<state.family4ResidentCount;++i) if(state.family4Residents[i].objectSoid==removed
             && state.family4Residents[i].definitionId==instance) {index=i;break;}
         if(index==state.family4ResidentCount) {return false;}

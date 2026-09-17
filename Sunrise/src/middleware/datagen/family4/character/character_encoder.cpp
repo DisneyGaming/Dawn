@@ -194,6 +194,9 @@ bool encode(const state::CharacterState& state,
         return false;
     }
     state::vendors::project(state.vendorProgress,object);
+    // Requested native character flags, applied after saved quest/vendor state.
+    object.acquiredFlags[20] = std::byte{2}; // Flag 753 enabled.
+    object.acquiredFlags[59] = std::byte{0}; // Flag 1041 disabled.
     object.nextInventorySerial = resolvedLoadout.nextInventorySerial;
     for (std::size_t index = 0; index < resolvedLoadout.itemCount; ++index) {
         const loadout::ResolvedItem& item = resolvedLoadout.items[index];

@@ -8,7 +8,7 @@
 #include <span>
 
 namespace sunrise::state::activity::native_population {
-inline constexpr std::size_t kBindingCapacity=384;
+inline constexpr std::size_t kBindingCapacity=512;
 inline constexpr std::size_t kCreationCapacity=1152;
 inline constexpr std::size_t kProvisionalCapacity=1152;
 inline constexpr std::size_t kEventCapacity=3456;
@@ -20,9 +20,35 @@ struct Lease final {
     bool discardStreamedReplicas{};
     friend bool operator==(const Lease&,const Lease&)=default;
 };
+struct PaletteDefinition final {
+    std::uint32_t resourceTag{};
+    std::uint32_t definitionOffset{};
+    std::uint32_t actorRowsOffset{};
+    std::uint32_t actorRowCount{};
+    friend bool operator==(const PaletteDefinition&,const PaletteDefinition&)=default;
+};
+struct GeneratorBinding final {
+    Lease lease{};
+    std::uint32_t seed{};
+    std::uint32_t resourceTag{};
+    std::uint32_t workerDefinitionTag{};
+    std::uint32_t workerDefinitionOffset{};
+    std::span<const PaletteDefinition> palettes{};
+};
+// Post-tick native state, qualified by the registered worker tuple and epoch.
+// Disabled alone is not retirement: the worker's deferred reset must also
+// have reached idle with no entries, areas or gateway records remaining.
+struct GeneratorObservation final {
+    std::uint32_t resourceTag{},seed{},workerDefinitionTag{},workerDefinitionOffset{};
+    std::uint32_t workerOwner{UINT32_MAX};
+    std::int32_t entries{},areas{},gateways{};
+    std::uint8_t state{};
+    bool enabled{};
+};
 enum class Kind : std::uint8_t { admitted, died, retired, sourceRecreated };
 struct Event final {
     Lease lease{};coo::PopulationActor actor{};std::uint32_t sourceHandle{UINT32_MAX};Kind kind{};
+    std::uint32_t memberPrefabTag{};std::uint32_t completionGroup{UINT32_MAX};
     std::uint32_t previousSourceHandle{UINT32_MAX};
     // Admission-only metadata from an exact native member/source catalog join.
     // Unknown does not affect death/retirement identity or authorize lane refill.
@@ -100,17 +126,73 @@ public:
         bindings_[binding]={next,nextNonce};return RenewResult::renewed;
     }
 
-    void unbind(const Lease& lease) noexcept {
-        for(std::size_t i=0;i<used_;) {
-            if(bindings_[i].lease==lease) bindings_[i]=bindings_[--used_];else ++i;
+    // Rebinding is an explicit post-retirement-proof operation. It only
+    // replaces one fixed type-1 lease and discards queued observations for
+    // that old generation; it never creates a death or retired receipt.
+    [[nodiscard]] bool rebind(const Lease& oldLease,const Lease& newLease) noexcept {
+        if(!valid_lease(oldLease,1) || !valid_lease(newLease,1)
+            || oldLease==newLease || oldLease.activity!=newLease.activity
+            || oldLease.source.source!=newLease.source.source
+            || oldLease.source.run!=newLease.source.run
+            || newLease.source.generation<=oldLease.source.generation
+            || nextNonce_==UINT64_MAX) return false;
+        std::size_t index{};bool found{};
+        for(std::size_t i=0;i<used_;++i) if(bindings_[i].lease==oldLease) {index=i;found=true;break;}
+        if(!found) return false;
+        for(std::size_t i=0;i<used_;++i) {
+            if(i!=index && bindings_[i].lease.activity==newLease.activity
+                && bindings_[i].lease.source.source==newLease.source.source) return false;
         }
-        for(std::size_t i=0;i<queued_;)
-            if(events_[i].event.lease==lease) erase_event(i);else ++i;
-        for(std::size_t i=0;i<provisional_;)
-            if(provisionals_[i].event.lease==lease) erase_provisional(i);else ++i;
+        for(std::size_t i=0;i<queued_;) {
+            if(events_[i].event.lease==oldLease) erase_event(i);else ++i;
+        }
+        std::uint64_t nonce{};if(!allocate(nonce))return false;
+        for(std::size_t i=0;i<provisional_;) {
+            if(provisionals_[i].event.lease==oldLease)erase_provisional(i);else ++i;
+        }
+        bindings_[index]={newLease,nonce};return true;
     }
-
+    [[nodiscard]] bool bind_generator(const GeneratorBinding& binding) noexcept {
+        if(!valid_generator(binding)) return false;
+        for(std::size_t i=0;i<generatorUsed_;++i) {
+            if(same_generator(generators_[i],binding)) return true;
+            if(generators_[i].lease.activity==binding.lease.activity
+                && generators_[i].lease.source.source==binding.lease.source.source) return false;
+        }
+        if(generatorUsed_==generators_.size() || generatorEpoch_==UINT64_MAX) return false;
+        std::uint64_t nonce{};if(!allocate(nonce))return false;
+        auto& entry=generators_[generatorUsed_++];copy_generator(entry,binding);entry.nonce=nonce;
+        ++generatorEpoch_;return true;
+    }
+    [[nodiscard]] bool rebind_generator(const Lease& oldLease,const GeneratorBinding& binding) noexcept {
+        if(!valid_generator(binding)) return false;
+        std::size_t index{};bool found{};
+        for(std::size_t i=0;i<generatorUsed_;++i) if(generators_[i].lease==oldLease) {index=i;found=true;break;}
+        if(!found) return false;
+        const auto& old=generators_[index];
+        if(binding.lease.activity!=old.lease.activity || binding.lease.source.source!=old.lease.source.source
+            || binding.lease.source.run!=old.lease.source.run
+            || binding.lease.source.activity!=old.lease.source.activity
+            || binding.lease.source.incarnation!=old.lease.source.incarnation
+            || binding.lease.source.generation<=old.lease.source.generation || binding.seed==old.seed
+            || generatorEpoch_==UINT64_MAX) return false;
+        for(std::size_t i=0;i<generatorUsed_;++i) {
+            if(i!=index && generators_[i].lease.activity==binding.lease.activity
+                && generators_[i].lease.source.source==binding.lease.source.source) return false;
+        }
+        for(std::size_t i=0;i<queued_;) {
+            if(events_[i].event.lease==oldLease) erase_event(i);else ++i;
+        }
+        std::uint64_t nonce{};if(!allocate(nonce))return false;
+        copy_generator(generators_[index],binding);generators_[index].nonce=nonce;++generatorEpoch_;return true;
+    }
     void release(ActivityInstanceKey owner) noexcept {
+        bool generatedChanged{};
+        for(std::size_t i=0;i<generatorUsed_;) {
+            if(generators_[i].lease.activity==owner) {generators_[i]=generators_[--generatorUsed_];generatedChanged=true;}
+            else ++i;
+        }
+        if(generatedChanged && generatorEpoch_!=UINT64_MAX)++generatorEpoch_;
         for(std::size_t i=0;i<used_;) {
             if(bindings_[i].lease.activity==owner) bindings_[i]=bindings_[--used_];
             else ++i;
@@ -121,6 +203,20 @@ public:
         for(std::size_t i=0;i<provisional_;) {
             if(provisionals_[i].event.lease.activity==owner) erase_provisional(i);else ++i;
         }
+    }
+
+    void unbind(const Lease& lease) noexcept {
+        bool generatedChanged{};
+        for(std::size_t i=0;i<generatorUsed_;)
+            if(generators_[i].lease==lease) {generators_[i]=generators_[--generatorUsed_];generatedChanged=true;}
+            else ++i;
+        if(generatedChanged && generatorEpoch_!=UINT64_MAX) ++generatorEpoch_;
+        for(std::size_t i=0;i<used_;)
+            if(bindings_[i].lease==lease) bindings_[i]=bindings_[--used_]; else ++i;
+        for(std::size_t i=0;i<queued_;)
+            if(events_[i].event.lease==lease) erase_event(i); else ++i;
+        for(std::size_t i=0;i<provisional_;)
+            if(provisionals_[i].event.lease==lease) erase_provisional(i); else ++i;
     }
 
     [[nodiscard]] Lease lookup(std::uint32_t definition,std::uint32_t registry,
@@ -142,14 +238,82 @@ public:
         return found?Receipt{found->lease,found->nonce}:Receipt{};
     }
 
+    [[nodiscard]] Lease lookup_generated(std::uint32_t resourceTag,std::uint32_t seed,
+        std::uint32_t workerDefinitionTag,std::uint32_t workerDefinitionOffset,
+        std::uint32_t paletteTag,std::uint32_t paletteDefinitionOffset) const noexcept {
+        const Lease* found{};
+        for(std::size_t i=0;i<generatorUsed_;++i) {
+            const auto& generator=generators_[i];
+            if(generator.resourceTag!=resourceTag || generator.seed!=seed
+                || generator.workerDefinitionTag!=workerDefinitionTag
+                || generator.workerDefinitionOffset!=workerDefinitionOffset) continue;
+            bool palette{};
+            for(std::size_t j=0;j<generator.paletteCount;++j) {
+                if(generator.palettes[j].resourceTag==paletteTag
+                    && generator.palettes[j].definitionOffset==paletteDefinitionOffset) {palette=true;break;}
+            }
+            if(!palette) continue;
+            if(found) return {};
+            found=&generator.lease;
+        }
+        return found?*found:Lease{};
+    }
+    [[nodiscard]] bool has_generator(std::uint32_t resourceTag,std::uint32_t seed,
+        std::uint32_t workerDefinitionTag,std::uint32_t workerDefinitionOffset) const noexcept {
+        const GeneratorEntry* found{};
+        for(std::size_t i=0;i<generatorUsed_;++i) {
+            const auto& generator=generators_[i];
+            if(generator.resourceTag!=resourceTag || generator.seed!=seed
+                || generator.workerDefinitionTag!=workerDefinitionTag
+                || generator.workerDefinitionOffset!=workerDefinitionOffset) continue;
+            if(found) return false;
+            found=&generator;
+        }
+        return found!=nullptr;
+    }
+    [[nodiscard]] bool has_lease(const Lease& lease) const noexcept {
+        for(std::size_t i=0;i<used_;++i) if(bindings_[i].lease==lease) return true;
+        for(std::size_t i=0;i<generatorUsed_;++i) if(generators_[i].lease==lease) return true;
+        return false;
+    }
+    [[nodiscard]] bool observe_generator(const GeneratorObservation& observation,std::uint64_t epoch) noexcept {
+        if(epoch!=generatorEpoch_ || observation.workerOwner==UINT32_MAX
+            || observation.entries<0 || observation.areas<0 || observation.gateways<0
+            || observation.state>6) return false;
+        GeneratorEntry* found{};
+        for(std::size_t i=0;i<generatorUsed_;++i) {
+            auto& entry=generators_[i];
+            if(entry.resourceTag!=observation.resourceTag || entry.seed!=observation.seed
+                || entry.workerDefinitionTag!=observation.workerDefinitionTag
+                || entry.workerDefinitionOffset!=observation.workerDefinitionOffset)continue;
+            if(found)return false;
+            found=&entry;
+        }
+        if(!found)return false;
+        found->drained=!observation.enabled && observation.state==0
+            && observation.entries==0 && observation.areas==0 && observation.gateways==0;
+        return true;
+    }
+    [[nodiscard]] bool generator_drained(ActivityInstanceKey owner,std::uint64_t boot,
+        std::uint32_t registry,std::uint16_t slot,std::uint32_t seed) const noexcept {
+        for(std::size_t i=0;i<generatorUsed_;++i) {
+            const auto& entry=generators_[i];
+            if(entry.lease.activity==owner && entry.lease.source.run==boot
+                && entry.lease.source.source.registry==registry
+                && entry.lease.source.source.slot==slot && entry.seed==seed)return entry.drained;
+        }
+        return false;
+    }
     [[nodiscard]] Receipt capture(const Lease& lease) const noexcept {
         for(std::size_t i=0;i<used_;++i)
             if(bindings_[i].lease==lease) return {lease,bindings_[i].nonce};
+        for(std::size_t i=0;i<generatorUsed_;++i)
+            if(generators_[i].lease==lease)return {lease,generators_[i].nonce};
         return {};
     }
 
     [[nodiscard]] Creation begin_creation() noexcept {
-        if(used_==0)return {};
+        if(used_==0 && generatorUsed_==0)return {};
         if(inflight_==creations_.size()) {overflow_=true;return {};}
         std::uint64_t nonce{};if(!allocate(nonce)) {overflow_=true;return {};}
         // floor is the newest binding that existed before the native original.
@@ -218,6 +382,22 @@ public:
         erase_provisional(staged);return AdmitResult::admitted;
     }
 
+    // Completes a staged native birth for an external owner such as a persistent vendor. The
+    // external lifetime consumes the actor directly, so no mission event is queued.
+    [[nodiscard]] bool complete_external(Receipt receipt,const Event& event) noexcept {
+        if(!valid_event(event) || event.kind!=Kind::admitted || !current(receipt)
+            || receipt.lease!=event.lease) return false;
+        for(std::size_t i=0;i<provisional_;++i) {
+            const auto& candidate=provisionals_[i];
+            if(candidate.nonce==receipt.nonce && candidate.event.actor.actor==event.actor.actor
+                && candidate.event.actor.birthNonce==event.actor.birthNonce
+                && candidate.event.sourceHandle==event.sourceHandle) {
+                erase_provisional(i);return true;
+            }
+        }
+        return false;
+    }
+
     [[nodiscard]] bool submit(const Event& event,Receipt receipt) noexcept {
         if(!valid_event(event) || !current(receipt) || receipt.lease!=event.lease) return false;
         if(queued_==events_.size()) {overflow_=true;return false;}
@@ -228,7 +408,8 @@ public:
     // submit. Native hooks use binding receipts so unrelated renewal is isolated.
     [[nodiscard]] bool submit(const Event& event,std::uint64_t epochValue) noexcept {
         const auto receipt=capture(event.lease);
-        return receipt && receipt.nonce==epochValue && submit(event,receipt);
+        return receipt && (event.lease.source.source.type==37
+            ? epochValue==generatorEpoch_ : receipt.nonce==epochValue) && submit(event,receipt);
     }
 
     [[nodiscard]] std::size_t drain(ActivityInstanceKey owner,std::span<Event> output) noexcept {
@@ -239,7 +420,9 @@ public:
         return count;
     }
 
-    [[nodiscard]] std::uint64_t epoch() const noexcept {return used_?nextNonce_:0;}
+    [[nodiscard]] std::uint64_t epoch() const noexcept {return used_||generatorUsed_?nextNonce_:0;}
+
+    [[nodiscard]] std::uint64_t generator_epoch() const noexcept {return generatorUsed_?generatorEpoch_:0;}
 
     [[nodiscard]] bool pending(ActivityInstanceKey owner) const noexcept {
         if(!owner)return false;
@@ -274,6 +457,61 @@ public:
     void observation_lost() noexcept {overflow_=true;}
 
 private:
+    static constexpr std::size_t kGeneratorCapacity=4;
+    static constexpr std::size_t kPaletteCapacity=32;
+    static constexpr std::uint32_t kMaximumPaletteRows=512;
+    static constexpr std::uint32_t kActorRowStride=0xC0;
+    static constexpr std::uint32_t kMemberReferenceOffset=16;
+    static constexpr std::uint32_t kInvalidNativeTag=0x811C9DC5U;
+    struct GeneratorEntry final {
+        Lease lease{};std::uint32_t seed{},resourceTag{},workerDefinitionTag{},workerDefinitionOffset{};
+        std::array<PaletteDefinition,kPaletteCapacity> palettes{};std::size_t paletteCount{};
+        bool drained{};std::uint64_t nonce{};
+    };
+    static bool native_tag(std::uint32_t value) noexcept {
+        return value!=0 && value!=UINT32_MAX && value!=kInvalidNativeTag;
+    }
+    static bool native_offset(std::uint32_t value) noexcept { return value!=0 && value!=UINT32_MAX; }
+    static bool valid_palette(const PaletteDefinition& palette) noexcept {
+        if(!native_tag(palette.resourceTag) || !native_offset(palette.definitionOffset)
+            || !native_offset(palette.actorRowsOffset) || !palette.actorRowCount
+            || palette.actorRowCount>kMaximumPaletteRows) return false;
+        const auto end=static_cast<std::uint64_t>(palette.actorRowsOffset)
+            +static_cast<std::uint64_t>(palette.actorRowCount-1U)*kActorRowStride
+            +kMemberReferenceOffset+sizeof(std::uint32_t);
+        return end<=UINT32_MAX;
+    }
+    static bool valid_lease(const Lease& lease,std::uint16_t type) noexcept {
+        return lease.activity && lease.source.valid() && lease.bubble<=63
+            && lease.source.activity==lease.activity.sessionId
+            && lease.source.incarnation==lease.activity.incarnation.value && lease.source.source.type==type;
+    }
+    static bool valid_generator(const GeneratorBinding& binding) noexcept {
+        if(!valid_lease(binding.lease,37) || !binding.seed || !native_tag(binding.resourceTag)
+            || !native_tag(binding.workerDefinitionTag) || !native_offset(binding.workerDefinitionOffset)
+            || binding.lease.source.generation==binding.seed || binding.palettes.empty()
+            || binding.palettes.size()>kPaletteCapacity) return false;
+        for(std::size_t i=0;i<binding.palettes.size();++i) {
+            if(!valid_palette(binding.palettes[i])) return false;
+            for(std::size_t j=0;j<i;++j) if(binding.palettes[i]==binding.palettes[j]) return false;
+        }
+        return true;
+    }
+    static bool same_generator(const GeneratorEntry& entry,const GeneratorBinding& binding) noexcept {
+        if(entry.lease!=binding.lease || entry.seed!=binding.seed || entry.resourceTag!=binding.resourceTag
+            || entry.workerDefinitionTag!=binding.workerDefinitionTag
+            || entry.workerDefinitionOffset!=binding.workerDefinitionOffset
+            || entry.paletteCount!=binding.palettes.size()) return false;
+        for(std::size_t i=0;i<entry.paletteCount;++i) if(entry.palettes[i]!=binding.palettes[i]) return false;
+        return true;
+    }
+    static void copy_generator(GeneratorEntry& entry,const GeneratorBinding& binding) noexcept {
+        entry={};
+        entry.lease=binding.lease;entry.seed=binding.seed;entry.resourceTag=binding.resourceTag;
+        entry.workerDefinitionTag=binding.workerDefinitionTag;entry.workerDefinitionOffset=binding.workerDefinitionOffset;
+        entry.paletteCount=binding.palettes.size();
+        for(std::size_t i=0;i<entry.paletteCount;++i) entry.palettes[i]=binding.palettes[i];
+    }
     struct Binding final {Lease lease{};std::uint64_t nonce{};};
     struct Queued final {Event event{};std::uint64_t nonce{};};
     struct Provisional final {Event event{};std::uint64_t nonce{};};
@@ -296,7 +534,7 @@ private:
             && event.actor.owner==event.lease.source;
     }
     [[nodiscard]] static bool valid_provisional(const Event& event) noexcept {
-        return event.kind==Kind::admitted && valid(event.lease)
+        return event.kind==Kind::admitted && (valid(event.lease) || valid_lease(event.lease,37))
             && event.actor.owner==event.lease.source && event.actor.actor!=UINT32_MAX
             && event.sourceHandle!=UINT32_MAX;
     }
@@ -304,6 +542,8 @@ private:
         if(!receipt)return false;
         for(std::size_t i=0;i<used_;++i)
             if(bindings_[i].nonce==receipt.nonce && bindings_[i].lease==receipt.lease)return true;
+        for(std::size_t i=0;i<generatorUsed_;++i)
+            if(generators_[i].nonce==receipt.nonce && generators_[i].lease==receipt.lease)return true;
         return false;
     }
     [[nodiscard]] bool allocate(std::uint64_t& nonce) noexcept {
@@ -318,6 +558,8 @@ private:
     }
     void erase_creation(std::size_t index) noexcept {creations_[index]=creations_[--inflight_];}
 
+    std::array<GeneratorEntry,kGeneratorCapacity> generators_{};std::size_t generatorUsed_{};
+    std::uint64_t generatorEpoch_{1};
     std::array<Binding,kBindingCapacity> bindings_{};std::size_t used_{};
     // One frame drains 64 entries. The open-world request budget admits at most
     // 384 retained requests; conservative native fanout bounds three births and
@@ -331,6 +573,19 @@ private:
 // Synchronized bridge. Native hooks copy and qualify records before calling it;
 // the authoritative activity update drains them without invoking native code.
 [[nodiscard]] bool bind(const Lease&) noexcept;
+[[nodiscard]] bool rebind(const Lease&,const Lease&) noexcept;
+[[nodiscard]] bool bind_generator(const GeneratorBinding&) noexcept;
+[[nodiscard]] bool rebind_generator(const Lease&,const GeneratorBinding&) noexcept;
+[[nodiscard]] Lease lookup_generated(std::uint32_t resourceTag,std::uint32_t seed,
+    std::uint32_t workerDefinitionTag,std::uint32_t workerDefinitionOffset,
+    std::uint32_t paletteTag,std::uint32_t paletteDefinitionOffset) noexcept;
+[[nodiscard]] bool has_generator(std::uint32_t resourceTag,std::uint32_t seed,
+    std::uint32_t workerDefinitionTag,std::uint32_t workerDefinitionOffset) noexcept;
+[[nodiscard]] bool has_lease(const Lease&) noexcept;
+[[nodiscard]] bool observe_generator(const GeneratorObservation&,std::uint64_t epoch) noexcept;
+[[nodiscard]] bool generator_drained(ActivityInstanceKey owner,std::uint64_t boot,
+    std::uint32_t registry,std::uint16_t slot,std::uint32_t seed) noexcept;
+[[nodiscard]] std::uint64_t generator_epoch() noexcept;
 [[nodiscard]] RenewResult renew(const Lease&,const Lease&) noexcept;
 void release(ActivityInstanceKey) noexcept;
 [[nodiscard]] std::uint64_t epoch() noexcept;
@@ -348,6 +603,7 @@ void cancel(Creation) noexcept;
 /** Validates and consumes the exact provisional; external owners can suppress mailbox publication. */
 [[nodiscard]] AdmitResult admit(Receipt,const Event&,bool publish=true) noexcept;
 void unbind(const Lease&) noexcept;
+[[nodiscard]] bool complete_external(Receipt,const Event&) noexcept;
 [[nodiscard]] bool submit(const Event&,Receipt) noexcept;
 [[nodiscard]] bool submit(const Event&,std::uint64_t epoch) noexcept;
 void observation_lost() noexcept;

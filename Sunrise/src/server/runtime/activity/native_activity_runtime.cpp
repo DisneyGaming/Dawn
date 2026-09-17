@@ -4,6 +4,7 @@
 #include "mercury_freeroam_runtime.h"
 #include "open_world_runtime.h"
 #include "lost_sector_runtime.h"
+#include "moon_lost_sector_runtime.h"
 #include "open_world_census.h"
 #include "../../../state/activity/native_population_events.h"
 #include "../../../state/activity/vendors/catalog.h"
@@ -31,11 +32,13 @@ struct Entry {
     // A loose request can create an authored group. The largest Mercury wave
     // raises one source by five requests before renewal, so retain a bounded
     // cohort rather than assuming one request equals one actor.
-    std::array<coo::NativePopulationLedger<64>,population::kSourceCapacity> ledgers{};
+    std::array<coo::NativePopulationLedger<128>,population::kSourceCapacity> ledgers{};
     std::array<std::uint32_t,population::kSourceCapacity> sourceHandles{};
     mercury::freeroam::Director mercuryFreeroam{};
     open_world::Director openWorld{};
     lost_sector::Director lostSectors{};
+    moon_lost_sector::Director moonLostSectors{};
+    bool moonLostSectorsReady{};
     std::uint8_t lastBubble{};
     bool mercuryFreeroamReady{};
     bool openWorldReady{};
@@ -209,6 +212,7 @@ bool snapshot_placements(Owner owner,const NativeActivityDefinition*& definition
             || !open_world::append_placements(definition->placements,entry.lastBubble,output))) {
             definition=nullptr;output={};return false;
         }
+        if(definition)adventure_start::restrict_banners(definition->startRoutes,output);
         return definition!=nullptr;
     }
     return false;
@@ -298,6 +302,43 @@ void observe(Owner owner,std::uint32_t bubble,
         return;
     }
 }
+lost_sector::RewardTicket lost_sector_reward(Owner owner,std::uint32_t registryKey,
+    std::uint16_t slot,std::uint32_t generation) noexcept {
+    if(!owner || !registryKey || !generation || !state::activity::contains(owner))return {};
+    std::lock_guard lock(mutex);
+    const auto* entry=detail::find_owned_entry(entries,owner,
+        [](const Entry& candidate) noexcept {return candidate.activity.population().owner();});
+    if(!entry || !entry->lostSectorsReady || !entry->lastArrived)return {};
+    const auto ticket=entry->lostSectors.reward_ticket(registryKey,slot,generation);
+    if(ticket && ticket.bubble==entry->lastBubble)return ticket;
+    return {};
+}
+lost_sector::RewardTicket lost_sector_reward_current(Owner owner,std::uint32_t registryKey,
+    std::uint16_t slot,std::uint32_t generation) noexcept {
+    if(!owner || !registryKey || !generation || !state::activity::contains(owner))return {};
+    std::lock_guard lock(mutex);
+    const auto* entry=detail::find_owned_entry(entries,owner,
+        [](const Entry& candidate) noexcept {return candidate.activity.population().owner();});
+    if(!entry || !entry->lostSectorsReady)return {};
+    return entry->lostSectors.reward_ticket(registryKey,slot,generation);
+}
+moon_lost_sector::DestructibleRequest lost_sector_object_request(Owner owner,std::uint32_t definition) noexcept {
+ if(!owner || !state::activity::contains(owner))return {};
+ std::lock_guard lock(mutex);
+ auto* entry=detail::find_owned_entry(entries,owner,[](const Entry& value){return value.activity.population().owner();});
+ if(!entry || !entry->moonLostSectorsReady || !entry->lastArrived
+    || entry->lastBubble!=moon_lost_sector::moon::kRegistries[1].bubble)return {};
+ return entry->moonLostSectors.object_request(definition);
+}
+bool lost_sector_object_observed(const moon_lost_sector::ObjectReceipt& receipt,bool dead,bool replaced) noexcept {
+ if(!receipt.valid() || !state::activity::contains(receipt.activity))return false;
+ std::lock_guard lock(mutex);
+ auto* entry=detail::find_owned_entry(entries,receipt.activity,[](const Entry& value){return value.activity.population().owner();});
+ if(!entry || !entry->moonLostSectorsReady || !entry->lastArrived
+    || entry->lastBubble!=moon_lost_sector::moon::kRegistries[1].bubble)return false;
+ return entry->moonLostSectors.observe_object(receipt,dead,replaced);
+}
+
 NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
     const NativeActivityDefinition& definition,const adventure_start::wire::Request& selected,
     bool openingAdmissionReady,std::uint32_t populationPrefetchBubble) noexcept {
@@ -353,6 +394,10 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
                 reset_entry(*current);return {};
             }
             current->lostSectorsReady=true;
+            if(definition.activity=="luna_freeroam") {
+                if(!current->moonLostSectors.begin(owner,current->activity.population().boot(),definition.lostSectors->capabilityBase))return {};
+                current->moonLostSectorsReady=true;
+            }
         }
         report(current->activity.population(),"ready");
         open_world_census::emit(census_record(definition,current->activity.population(),definition.populations.size(),
@@ -376,7 +421,7 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
         || current->lostSectorsReady;
     // Apply native observations before building this authority frame. Otherwise
     // an accepted death waits for another periodic snapshot to reach the HUD.
-    std::array<nativeEvents::Event,64> native{};bool overflow{};
+    std::array<nativeEvents::Event,256> native{};bool overflow{};
     const auto received=nativeEvents::drain(owner,native,overflow);current->observationFailure|=overflow;
     if(overflow) {
         auto failed=census_record(definition,current->activity.population(),definition.populations.size(),bubble,arrived,
@@ -387,10 +432,36 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
         for(std::size_t i=0;i<definition.populations.size();++i) {
             auto& ledger=current->ledgers[i];if(ledger.owner()!=event.lease.source) continue;
             coo::PopulationIntake result=coo::PopulationIntake::conflict;
+            const auto& cap=definition.populations[i];
             if(event.kind==nativeEvents::Kind::sourceRecreated) {
+                auto stagedLedger=ledger;std::array<std::uint8_t,8> streamedSurvivors{};
                 if(populationLifecycleReady && event.lease.discardStreamedReplicas
                     && (current->sourceHandles[i]==event.previousSourceHandle || current->sourceHandles[i]==0)
-                    && ledger.source_recreated(event.lease.source)) {
+                    && stagedLedger.source_recreated(event.lease.source,streamedSurvivors)) {
+                    const auto replacements=detail::streamed_replacements(current->activity.population(),i,
+                        stagedLedger,streamedSurvivors,definition.populations[i].categories,
+                        definition.populations[i].recurringRehydration);
+                    bool any{};
+                    for(std::size_t category=0;category<streamedSurvivors.size();++category) {
+                        if(category>=definition.populations[i].categories && streamedSurvivors[category]) {
+                            current->observationFailure=true;return {};
+                        }
+                        any=any || replacements[category]!=0;
+                    }
+                    auto stagedPopulation=current->activity.population();
+                    if(any) {
+                        if(stagedPopulation.last_request()==UINT64_MAX) {current->observationFailure=true;return {};}
+                        population::Command command{owner,stagedPopulation.revision(),
+                            stagedPopulation.last_request()+1,cap.registry->key,cap.slot,
+                            replacements[0],stagedPopulation.boot(),replacements[1]};
+                        for(std::size_t category=2;category<streamedSurvivors.size();++category)
+                            command.additionalRequested[category-2]=replacements[category];
+                        command.categoryCount=cap.categories;
+                        if(stagedPopulation.rehydrate(command,cap.registry->bubble)!=population::Result::accepted) {
+                            current->observationFailure=true;return {};
+                        }
+                    }
+                    current->activity.population()=std::move(stagedPopulation);ledger=std::move(stagedLedger);
                     current->sourceHandles[i]=event.sourceHandle;result=coo::PopulationIntake::accepted;
                 }
             } else if(current->sourceHandles[i]==0 || current->sourceHandles[i]==event.sourceHandle) {
@@ -484,11 +555,11 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
     const auto freeroamNow=GetTickCount64();
     if(current->openWorldReady
         && !current->openWorld.update(freeroamNow,bubble,arrived,current->activity.population(),
-            std::span<const coo::NativePopulationLedger<64>>(current->ledgers),nativePending,
+            std::span<const coo::NativePopulationLedger<128>>(current->ledgers),nativePending,
             populationPrefetchBubble))return {};
     if(current->mercuryFreeroamReady) {
         if(!current->mercuryFreeroam.update(GetTickCount64(),bubble,arrived,current->activity.population(),
-            std::span<const coo::NativePopulationLedger<64>>(current->ledgers),nativePending,
+            std::span<const coo::NativePopulationLedger<128>>(current->ledgers),nativePending,
             populationPrefetchBubble))return {};
     }
     if(current->lostSectorsReady) {
@@ -502,8 +573,9 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
                     || !current->activity.population().consumed(capability))return false;
                 const auto source=current->ledgers[capability].owner();
                 const auto counts=current->ledgers[capability].counts();
-                if(!source.valid() || counts.failed || !counts.admitted || counts.dead!=counts.admitted
-                    || counts.alive || counts.resident)return false;
+                if(!lost_sector::source_defeated(nativePending[capability]!=0,
+                    current->activity.population().consumed(capability),source.valid(),counts.failed,
+                    counts.admitted,counts.dead,counts.alive))return false;
                 leases[local]={owner,source,
                     static_cast<std::uint8_t>(definition.populations[capability].registry->bubble),true};
             }
@@ -511,6 +583,33 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
         };
         if(!current->lostSectors.update(bubble,arrived,current->activity.population(),quiescent,
             populationPrefetchBubble))return {};
+        if(!current->lostSectors.append_rewards(bubble,arrived,frame.placements))return {};
+    }
+    if(current->moonLostSectorsReady) {
+        const auto defeated=[&](std::size_t index,std::uint32_t generation) noexcept {
+            if(index>=definition.populations.size() || nativePending[index]
+                || current->activity.population().generation(index)!=generation
+                || !current->activity.population().consumed(index))return false;
+            const auto source=current->ledgers[index].owner();const auto counts=current->ledgers[index].counts();
+            const nativeEvents::Lease lease{owner,source,
+                static_cast<std::uint8_t>(definition.populations[index].registry->bubble),true};
+            return source.valid() && source.generation==generation && !counts.failed && counts.admitted
+                && counts.dead==counts.admitted && !counts.alive
+                && nativeEvents::quiescent(std::span(&lease,1));
+        };
+        moon_lost_sector::ShieldBatch shields{};
+        middleware::bap::activity_message::native::world_device::Batch traversalDevices{};
+        if(!current->moonLostSectors.update(bubble,arrived,current->lostSectors,
+            current->activity.population(),frame.placements,shields,traversalDevices,defeated)
+            || frame.lostSectorShields.count+shields.count>frame.lostSectorShields.entries.size()
+            || frame.devices.count+traversalDevices.count>frame.devices.entries.size())return {};
+        for(std::size_t i=0;i<shields.count;++i) {
+            const auto& source=shields.entries[i];
+            frame.lostSectorShields.entries[frame.lostSectorShields.count++]={source.registry->key,
+                source.effectSlot,source.filterSlot,source.protectedSource,source.registry->bubble,source.enabled};
+        }
+        for(std::size_t i=0;i<traversalDevices.count;++i)
+            frame.devices.entries[frame.devices.count++]=traversalDevices.entries[i];
     }
     for(std::size_t i=0;i<definition.populations.size();++i) {
         const auto generation=current->activity.population().generation(i);
@@ -764,6 +863,7 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
         frame.populations=current->activity.population().project(definition.bubble);
         frame.animations=current->activity.animation().project(definition.bubble);
     }
+    adventure_start::restrict_banners(definition.startRoutes,frame.placements);
     // Mercury's authored script keeps stable capability indices, including
     // Vance. Remove vendor-owned output before either observation binding or
     // publication; the vendor lifetime alone admits and retires those actors.

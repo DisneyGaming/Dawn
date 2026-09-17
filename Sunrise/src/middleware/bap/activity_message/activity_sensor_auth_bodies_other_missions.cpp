@@ -765,6 +765,7 @@ legacy_auth_body_bits(const Snapshot& snapshot,
     if(const auto count=state::activity::strike_bond::body_bits(snapshot.strike_bond,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::eater_of_worlds::body_bits(snapshot.eater_of_worlds,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::strike_pact::body_bits(snapshot.strike_pact,key,slotType,slotIndex)) { return count; }
+    if(const auto count=native::lost_sector_shield::body_bits(snapshot.lostSectorShields,key,slotType,slotIndex))return count;
     if(const auto count=state::activity::vendors::presentation::body_bits(snapshot.vendorPresentation,key,slotType,slotIndex)) {return count;}
     if(const auto count=state::activity::hijacked::body_bits(snapshot.hijacked,key,slotType,slotIndex)) { return count; }
     if(const auto* request=native::engagement::find(snapshot.engagements,key,slotType,slotIndex)) return native::engagement::body_bits(*request);
@@ -904,6 +905,8 @@ bool legacy_write_auth_body(bits::Writer& writer,
     if(state::activity::deep_storage::body_bits(snapshot.deep_storage,key,slotType,slotIndex)) {
         return state::activity::deep_storage::write_body(writer,snapshot.deep_storage,key,slotType,slotIndex);
     }
+    if(native::lost_sector_shield::body_bits(snapshot.lostSectorShields,key,slotType,slotIndex))
+        return native::lost_sector_shield::write_body(writer,snapshot.lostSectorShields,key,slotType,slotIndex);
     if(state::activity::vendors::presentation::body_bits(snapshot.vendorPresentation,key,slotType,slotIndex)) {
         return state::activity::vendors::presentation::write(writer,snapshot.vendorPresentation,key,slotType,slotIndex);
     }

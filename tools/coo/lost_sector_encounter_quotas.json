@@ -1207,6 +1207,20 @@
           "sources": [
             {
               "registry": "A27443E8",
+              "source": 5,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "estimated_from_package_roles_and_native_layout",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+              }
+            },
+            {
+              "registry": "A27443E8",
               "source": 6,
               "targets": [
                 1
@@ -1861,6 +1875,20 @@
           "sources": [
             {
               "registry": "2E3D2EB4",
+              "source": 2,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "estimated_from_package_roles_and_native_layout",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+              }
+            },
+            {
+              "registry": "2E3D2EB4",
               "source": 3,
               "targets": [
                 3
@@ -2394,6 +2422,20 @@
             },
             {
               "registry": "5BA616DA",
+              "source": 20,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "estimated_from_package_roles_and_native_layout",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+              }
+            },
+            {
+              "registry": "5BA616DA",
               "source": 2,
               "targets": [
                 1
@@ -2541,6 +2583,20 @@
         {
           "stage": 1,
           "sources": [
+            {
+              "registry": "DB5D8740",
+              "source": 4,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "estimated_from_package_roles_and_native_layout",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+              }
+            },
             {
               "registry": "DB5D8740",
               "source": 5,
@@ -3353,6 +3409,20 @@
                 "timestamp": null,
                 "note": "Estimated quota; exact per-source count is not visually verified."
               }
+            },
+            {
+              "registry": "33C30847",
+              "source": 5,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "estimated_from_package_roles_and_native_layout",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+              }
             }
           ]
         },
@@ -3695,6 +3765,20 @@
           "sources": [
             {
               "registry": "6717656F",
+              "source": 2,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "estimated_from_package_roles_and_native_layout",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+              }
+            },
+            {
+              "registry": "6717656F",
               "source": 3,
               "targets": [
                 1
@@ -3965,6 +4049,20 @@
         {
           "stage": 0,
           "sources": [
+            {
+              "registry": "BB69D2E9",
+              "source": 4,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "estimated_from_package_roles_and_native_layout",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+              }
+            },
             {
               "registry": "BB69D2E9",
               "source": 5,
@@ -4255,6 +4353,20 @@
         {
           "stage": 0,
           "sources": [
+            {
+              "registry": "3F8AF55C",
+              "source": 5,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "estimated_from_package_roles_and_native_layout",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+              }
+            },
             {
               "registry": "3F8AF55C",
               "source": 6,
@@ -4843,6 +4955,20 @@
           "sources": [
             {
               "registry": "2F8DB58A",
+              "source": 2,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "estimated_from_package_roles_and_native_layout",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+              }
+            },
+            {
+              "registry": "2F8DB58A",
               "source": 3,
               "targets": [
                 1
@@ -5345,6 +5471,20 @@
         {
           "stage": 2,
           "sources": [
+            {
+              "registry": "100F6578",
+              "source": 2,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "estimated_from_package_roles_and_native_layout",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+              }
+            },
             {
               "registry": "100F6578",
               "source": 3,
@@ -6520,6 +6660,22 @@
           "sources": [
             {
               "registry": "9A24C39A",
+              "source": 52,
+              "targets": [
+                7,
+                7,
+                7
+              ],
+              "review": {
+                "status": "estimated_from_package_roles_and_native_layout",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+              }
+            },
+            {
+              "registry": "9A24C39A",
               "source": 56,
               "targets": [
                 3
@@ -6548,6 +6704,56 @@
             },
             {
               "registry": "9A24C39A",
+              "source": 60,
+              "targets": [
+                5,
+                7,
+                7
+              ],
+              "review": {
+                "status": "estimated_from_package_roles_and_native_layout",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+              }
+            },
+            {
+              "registry": "9A24C39A",
+              "source": 64,
+              "targets": [
+                1,
+                1,
+                1,
+                1,
+                1
+              ],
+              "review": {
+                "status": "estimated_from_package_roles_and_native_layout",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+              }
+            },
+            {
+              "registry": "9A24C39A",
+              "source": 70,
+              "targets": [
+                1,
+                1,
+                1
+              ],
+              "review": {
+                "status": "estimated_from_package_roles_and_native_layout",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+              }
+            },
+            {
+              "registry": "9A24C39A",
               "source": 74,
               "targets": [
                 1
@@ -6558,6 +6764,22 @@
                 "observed_minimum": null,
                 "timestamp": null,
                 "note": "Estimated quota; exact per-source count is not visually verified."
+              }
+            },
+            {
+              "registry": "9A24C39A",
+              "source": 76,
+              "targets": [
+                1,
+                1,
+                1
+              ],
+              "review": {
+                "status": "estimated_from_package_roles_and_native_layout",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
               }
             }
           ]
@@ -7097,6 +7319,763 @@
                 "observed_minimum": null,
                 "timestamp": null,
                 "note": "Estimated quota; exact per-source count is not visually verified."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "Bay of Drowned Wishes": {
+      "namespace": "dreaming_city",
+      "scenario": "80F1404D",
+      "bubble": 8,
+      "review": {
+        "status": "user_species_count_policy_from_package_templates",
+        "video_or_guide_reference": "tools/coo/lost_sector_footage_review.json",
+        "counter_crosscheck": null,
+        "note": "Package-authored source identities use the shared user-species-counts-v1 request policy; counts are host reconstruction values, not recovered retail quotas."
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "sources": [
+            {
+              "registry": "B846777D",
+              "source": 125,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 126,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 127,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 128,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 129,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 130,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 131,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 132,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 133,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 134,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 135,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 136,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 137,
+              "targets": [
+                3
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 138,
+              "targets": [
+                4,
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: user-species-varied, unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 139,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: fixed-species-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 140,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: fixed-species-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 141,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: fixed-species-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 144,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: boss-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 146,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 147,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "B846777D",
+              "source": 149,
+              "targets": [
+                2
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "Chamber of Starlight": {
+      "namespace": "dreaming_city",
+      "scenario": "80F1404D",
+      "bubble": 9,
+      "review": {
+        "status": "user_species_count_policy_from_package_templates",
+        "video_or_guide_reference": "tools/coo/lost_sector_footage_review.json",
+        "counter_crosscheck": null,
+        "note": "Package-authored source identities use the shared user-species-counts-v1 request policy; counts are host reconstruction values, not recovered retail quotas."
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "sources": [
+            {
+              "registry": "74E16154",
+              "source": 0,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: boss-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "74E16154",
+              "source": 2,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "74E16154",
+              "source": 3,
+              "targets": [
+                5
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "74E16154",
+              "source": 4,
+              "targets": [
+                6
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "74E16154",
+              "source": 5,
+              "targets": [
+                6
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "74E16154",
+              "source": 6,
+              "targets": [
+                1,
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton, unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "74E16154",
+              "source": 7,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "74E16154",
+              "source": 8,
+              "targets": [
+                3,
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: user-species-varied, segmented-rank-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "74E16154",
+              "source": 9,
+              "targets": [
+                3
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "74E16154",
+              "source": 10,
+              "targets": [
+                2
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "74E16154",
+              "source": 11,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "74E16154",
+              "source": 12,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "Aphelion's Rest": {
+      "namespace": "dreaming_city",
+      "scenario": "80F1404D",
+      "bubble": 10,
+      "review": {
+        "status": "user_species_count_policy_from_package_templates",
+        "video_or_guide_reference": "tools/coo/lost_sector_footage_review.json",
+        "counter_crosscheck": null,
+        "note": "Package-authored source identities use the shared user-species-counts-v1 request policy; counts are host reconstruction values, not recovered retail quotas."
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "sources": [
+            {
+              "registry": "D7FF797A",
+              "source": 1,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "D7FF797A",
+              "source": 2,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "D7FF797A",
+              "source": 3,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "D7FF797A",
+              "source": 4,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "D7FF797A",
+              "source": 5,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "D7FF797A",
+              "source": 6,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "D7FF797A",
+              "source": 7,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: fixed-species-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "D7FF797A",
+              "source": 8,
+              "targets": [
+                3
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "D7FF797A",
+              "source": 9,
+              "targets": [
+                3
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "D7FF797A",
+              "source": 10,
+              "targets": [
+                2
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "D7FF797A",
+              "source": 11,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: segmented-rank-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "D7FF797A",
+              "source": 12,
+              "targets": [
+                2
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "D7FF797A",
+              "source": 13,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: boss-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "D7FF797A",
+              "source": 15,
+              "targets": [
+                5
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "D7FF797A",
+              "source": 16,
+              "targets": [
+                1
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: fixed-species-singleton. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "D7FF797A",
+              "source": 17,
+              "targets": [
+                3
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+              }
+            },
+            {
+              "registry": "D7FF797A",
+              "source": 18,
+              "targets": [
+                2
+              ],
+              "review": {
+                "status": "user_species_count_policy_from_package_templates",
+                "reference": "tools/coo/lost_sector_footage_review.json",
+                "observed_minimum": null,
+                "timestamp": null,
+                "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
               }
             }
           ]

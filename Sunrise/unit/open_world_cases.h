@@ -6,22 +6,24 @@
 #include "middleware/encoding/bit_writer.h"
 #include <array>
 #include <fstream>
+#include "state/activity/coo/edz_moon_lost_sector_group_catalog.h"
 
 inline void open_world_cases() {
     namespace activity=sunrise::server::runtime::activity;
     namespace profiles=activity::open_world::profiles;
     namespace authored=sunrise::state::activity::coo::open_world;
-    constexpr std::array<const char*,6> scripts{{
+    constexpr std::array<const char*,8> scripts{{
         "Sunrise/scripts/eden_freeroam.json","Sunrise/scripts/fleet_freeroam.json",
         "Sunrise/scripts/polaris_freeroam.json","Sunrise/scripts/planet_x_freeroam.json",
         "Sunrise/scripts/tangled_shore_freeroam.json","Sunrise/scripts/dreaming_city_freeroam.json",
+        "Sunrise/scripts/edz_freeroam.json","Sunrise/scripts/luna_freeroam.json",
     }};
-    constexpr std::array<std::size_t,6> populations{{137,93,105,234,140,21}};
-    constexpr std::array<std::size_t,6> lostSectorPopulations{{68,81,52,126,106,0}};
-    constexpr std::array<std::size_t,6> npcs{{1,1,1,1,1,3}};
-    constexpr std::array<std::size_t,6> twoCategorySources{{16,17,6,30,4,0}};
-    constexpr std::array<std::size_t,6> placements{{3,3,2,2,1,3}};
-    constexpr std::array<std::size_t,6> adventures{{3,3,2,2,6,3}};
+    constexpr std::array<std::size_t,8> populations{{136,92,104,233,140,20,1,1}};
+    constexpr std::array<std::size_t,8> lostSectorPopulations{{70,84,52,131,111,50,205,203}};
+    constexpr std::array<std::size_t,8> npcs{{0,0,0,0,1,2,0,0}};
+    constexpr std::array<std::size_t,8> twoCategorySources{{16,17,6,30,4,0,0,0}};
+    constexpr std::array<std::size_t,8> placements{{3,3,2,2,1,3,0,0}};
+    constexpr std::array<std::size_t,8> adventures{{3,3,2,2,6,3,0,0}};
     CHECK(profiles::kActivities.size()==scripts.size());
     for(std::size_t world=0;world<profiles::kActivities.size();++world) {
         const auto& definition=*profiles::kActivities[world];
@@ -35,8 +37,8 @@ inline void open_world_cases() {
         CHECK(definition.populations.size()==populations[world]+lostSectorPopulations[world]);
         CHECK(destination.populations.size()==populations[world]);
         const auto ordinary=definition.populations.first(destination.populations.size());
-        CHECK(definition.lostSectorRegistries.empty()==(world==5));
-        CHECK((definition.lostSectors!=nullptr)==(world!=5));
+        CHECK(!definition.lostSectorRegistries.empty());
+        CHECK(definition.lostSectors!=nullptr);
         if(definition.lostSectors) {
             const auto base=definition.lostSectors->capabilityBase;
             CHECK(base==ordinary.size());
@@ -71,7 +73,7 @@ inline void open_world_cases() {
                 }
             }
             CHECK(binding.categories==2?binding.secondRequestOverride<=9:binding.secondRequestOverride==0);
-            CHECK(binding.categories==1 || binding.categories==2);
+            CHECK(binding.categories>=1 && binding.categories<=8);
             if(binding.categories==2)++twoCategoryCount;
             CHECK(ordinary[i].taskMask==(binding.tacticalRows?(1U<<binding.tacticalRows)-1U:0U));
             if(destination.populations[i].kind==authored::PopulationKind::npc)++npcCount;
@@ -81,7 +83,9 @@ inline void open_world_cases() {
         for(const auto& registry:definition.registries) {
             CHECK(activity::registry::valid(registry));
             CHECK(authored::required(registry.scenario,registry.objectTag,registry.key,
-                std::uint64_t{1}<<registry.bubble));
+                std::uint64_t{1}<<registry.bubble)
+                || sunrise::state::activity::coo::edz_moon_lost_sector_groups::required(
+                    registry.scenario,registry.objectTag,registry.key,std::uint64_t{1}<<registry.bubble));
             CHECK(!authored::required(registry.scenario,registry.objectTag,registry.key,0));
         }
         activity::placement::wire::Batch allFlags{};
@@ -235,7 +239,7 @@ inline void open_world_cases() {
             std::uint32_t total{};
             for(std::size_t i=0;i<destination.populations.size();++i)
                 total+=service.target(i)+service.second_target(i);
-            CHECK(total==160 && total*3<=activity::open_world::kAdmissionBurstCapacity
+            CHECK(total==159 && total*3<=activity::open_world::kAdmissionBurstCapacity
                 && total*9<=activity::open_world::kEventBurstCapacity);
             for(const auto& row:expected) {
                 std::size_t matches{};
@@ -263,7 +267,7 @@ inline void open_world_cases() {
             };
             constexpr std::array<std::uint32_t,6> marsBubbles{{0,1,5,7,9,10}};
             for(const auto bubble:marsBubbles)CHECK(tick(100+bubble,bubble));
-            const auto before=cohortService.project_retained();CHECK(before.count==105);
+            const auto before=cohortService.project_retained();CHECK(before.count==104);
             for(std::size_t i=0;i<ordinary.size();++i) {
                 if(destination.populations[i].kind==authored::PopulationKind::npc)continue;
                 const auto& cap=ordinary[i];
@@ -322,7 +326,7 @@ inline void open_world_cases() {
             }
         }
 
-        if(world==0) {
+        if(world==4) {
             // Exercise request policy independently of generated destination rows.
             // A request remains a native source request; this test does not infer
             // an actor count from it.
@@ -445,8 +449,13 @@ inline void open_world_cases() {
             for(std::size_t i=0;i<destination.populations.size();++i)
                 if(invalidBindings[i].categories==2)invalidBindings[i].secondRequestOverride=21;
             overriddenDestination.populations=std::span<const authored::PopulationBinding>(invalidBindings.data(),destination.populations.size());
-            activity::open_world::Director secondCategoryOverBudget;
-            CHECK(!secondCategoryOverBudget.begin(overriddenOwner,boot,overriddenDefinition,ordinary,overrideConfiguration));
+            std::size_t secondCategoryRequests{};
+            for(std::size_t i=0;i<destination.populations.size();++i)
+                secondCategoryRequests+=(invalidBindings[i].requestOverride?invalidBindings[i].requestOverride:1U)
+                    +invalidBindings[i].secondRequestOverride;
+            activity::open_world::Director secondCategoryBudget;
+            CHECK(secondCategoryBudget.begin(overriddenOwner,boot,overriddenDefinition,ordinary,overrideConfiguration)
+                ==(secondCategoryRequests<=activity::open_world::kRetainedRequestCapacity));
             invalidBindings=bindings;invalidBindings[npc].requestOverride=1;
             overriddenDestination.populations=std::span<const authored::PopulationBinding>(invalidBindings.data(),destination.populations.size());
             activity::open_world::Director unchangedNpc;
@@ -529,15 +538,22 @@ inline void open_world_cases() {
         std::array<std::byte,128> actual{},expected{};
         sunrise::middleware::encoding::bits::Writer actualWriter(actual),expectedWriter(expected);
         const auto source=adaptive.project_retained().entries[0].source;
-        const native::Source reference{source.registry,source.generation,source.ruleSlot,
+        native::Source reference{source.registry,source.generation,source.ruleSlot,
             static_cast<std::uint8_t>(source.looseRequested),{source.tactical.registry,source.tactical.slot,source.tactical.row,source.tactical.revision}};
+        std::array<std::uint8_t,8> categories{};
+        categories[0]=static_cast<std::uint8_t>(source.looseRequested);
+        categories[1]=static_cast<std::uint8_t>(source.secondRequested);
+        for(std::size_t i=2;i<first.categories;++i)
+            categories[i]=static_cast<std::uint8_t>(source.additionalRequested[i-2]);
+        reference.categories=std::span(categories).first(first.categories);reference.hasRule=source.hasSpawnRule;
+        reference.looseRequested=0;
         CHECK(activity::population::codec::write_source(actualWriter,source));
         CHECK(native::write_source(expectedWriter,reference));
-        CHECK(actualWriter.bit_count()==641 && actualWriter.bit_count()==expectedWriter.bit_count());
+        CHECK(actualWriter.bit_count()==641+32U*(first.categories-1U) && actualWriter.bit_count()==expectedWriter.bit_count());
         CHECK(actual==expected);
         // Renewal starts a new evaluator lease and drops all old sparse costs.
         sense.nativeRevision=7;sense.sourceDelta={};sense.sourceDelta.consumedPresent=true;
-        sense.sourceDelta.consumedCount=1;sense.sourceDelta.consumed[0]=1;sense.hasSquadOutput=false;
+        sense.sourceDelta.consumedCount=first.categories;sense.sourceDelta.consumed[0]=1;sense.hasSquadOutput=false;
         CHECK(adaptive.observe(bubble,sense));
         CHECK(adaptive.renew({owner,adaptive.revision(),2,first.registry->key,first.slot,1,boot},bubble)
             ==activity::population::Result::accepted);

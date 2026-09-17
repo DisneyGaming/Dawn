@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <memory>
 #include <span>
 #include <string_view>
 #include <vector>
@@ -126,7 +127,7 @@ constexpr std::string_view kInferredRootDeltaPacket =
 
 void parses_two_native_monitor_bodies() {
     const std::vector<std::byte> packet = bytes(kTwoGroupPacket);
-    sense::SenseUpdate update{};
+    auto updateStorage=std::make_unique<sense::SenseUpdate>(); auto& update=*updateStorage;
     std::size_t consumed = 0;
     CHECK(packet.size() == 64U);
     CHECK(sense::parse_sense_update(packet, update, consumed));
@@ -158,7 +159,7 @@ void parses_two_native_monitor_bodies() {
 void parses_complete_native_omega_corpus() {
     for (const auto& expected : fixtures::kOmegaSenseExpectedPackets) {
         const auto packet = bytes(fixtures::omega_native_sense_capture(static_cast<std::uint16_t>(expected.packet)));
-        sense::SenseUpdate update{};
+        auto updateStorage=std::make_unique<sense::SenseUpdate>(); auto& update=*updateStorage;
         std::size_t consumed{};
         const bool parsed = sense::parse_sense_update(packet, update, consumed);
         if (!parsed) std::cerr << "native capture packet " << expected.packet << " rejected\n";
@@ -183,7 +184,7 @@ void parses_complete_native_omega_corpus() {
             auto malformed = packet;
             const auto endBit = wanted.end - 1U;
             malformed[endBit / 8U] |= static_cast<std::byte>(1U << (7U-endBit%8U));
-            sense::SenseUpdate rejected{}; std::size_t rejectedBits{};
+            auto rejectedStorage=std::make_unique<sense::SenseUpdate>(); auto& rejected=*rejectedStorage; std::size_t rejectedBits{};
             CHECK(!sense::parse_sense_update(malformed, rejected, rejectedBits));
             CHECK(rejectedBits == 0U && rejected.objectCount == 0U);
         }
@@ -218,7 +219,7 @@ void parses_complete_native_omega_corpus() {
             CHECK(update.groups[1].registryKey == 0xF4D0E0B2U && update.groups[1].objectCount == 20U);
         }
         for (std::size_t size = 0; size < packet.size(); ++size) {
-            sense::SenseUpdate truncated{}; std::size_t truncatedBits{};
+            auto truncatedStorage=std::make_unique<sense::SenseUpdate>(); auto& truncated=*truncatedStorage; std::size_t truncatedBits{};
             CHECK(!sense::parse_sense_update(std::span(packet).first(size), truncated, truncatedBits));
             CHECK(truncatedBits == 0U && truncated.objectCount == 0U);
         }
@@ -228,7 +229,7 @@ void parses_complete_native_omega_corpus() {
 void parses_reflected_native_schema_boundaries() {
     for (const auto& fixture : fixtures::kOmegaNativeSenseBoundaries) {
         const auto packet = bytes(fixture.hex);
-        sense::SenseUpdate update{}; std::size_t consumed{};
+        auto updateStorage=std::make_unique<sense::SenseUpdate>(); auto& update=*updateStorage; std::size_t consumed{};
         const bool parsed = sense::parse_sense_update(packet, update, consumed);
         if (parsed != fixture.valid) std::cerr << "native boundary " << fixture.name << " result differs\n";
         CHECK(parsed == fixture.valid);
@@ -255,7 +256,7 @@ void parses_reflected_native_schema_boundaries() {
             CHECK(first.sceneOutput.events.back() == UINT32_MAX);
         }
         for (std::size_t size = 0; size < packet.size(); ++size) {
-            sense::SenseUpdate truncated{}; std::size_t truncatedBits{};
+            auto truncatedStorage=std::make_unique<sense::SenseUpdate>(); auto& truncated=*truncatedStorage; std::size_t truncatedBits{};
             CHECK(!sense::parse_sense_update(std::span(packet).first(size), truncated, truncatedBits));
             CHECK(truncatedBits == 0U && truncated.objectCount == 0U);
         }
@@ -264,7 +265,7 @@ void parses_reflected_native_schema_boundaries() {
 
 void parses_forest_generator_state() {
     const std::vector<std::byte> packet = bytes(kForestInitialPacket);
-    sense::SenseUpdate update{};
+    auto updateStorage=std::make_unique<sense::SenseUpdate>(); auto& update=*updateStorage;
     std::size_t consumed = 0;
     CHECK(packet.size() == 255U);
     CHECK(sense::parse_sense_update(packet, update, consumed));
@@ -286,7 +287,7 @@ void parses_forest_generator_state() {
 
 void parses_forest_progress_and_rejects_truncation() {
     std::vector<std::byte> packet = bytes(kForestProgressPacket);
-    sense::SenseUpdate update{};
+    auto updateStorage=std::make_unique<sense::SenseUpdate>(); auto& update=*updateStorage;
     std::size_t consumed = 0;
     CHECK(packet.size() == 255U);
     CHECK(sense::parse_sense_update(packet, update, consumed));
@@ -304,7 +305,7 @@ void parses_forest_progress_and_rejects_truncation() {
 
 void preserves_108_bit_opaque_activation_delta() {
     const std::vector<std::byte> packet = bytes(kActivationDeltaPacket);
-    sense::SenseUpdate update{};
+    auto updateStorage=std::make_unique<sense::SenseUpdate>(); auto& update=*updateStorage;
     std::size_t consumed = 0;
     CHECK(packet.size() == 46U);
     CHECK(sense::parse_sense_update(packet, update, consumed));
@@ -326,7 +327,7 @@ void preserves_108_bit_opaque_activation_delta() {
 
 void bounds_unknown_root_body_by_group_envelope() {
     const std::vector<std::byte> packet = bytes(kInferredRootDeltaPacket);
-    sense::SenseUpdate update{};
+    auto updateStorage=std::make_unique<sense::SenseUpdate>(); auto& update=*updateStorage;
     std::size_t consumed = 0;
     CHECK(sense::parse_sense_update(packet, update, consumed));
     CHECK(update.objectCount == 1U);
@@ -339,7 +340,7 @@ void bounds_unknown_root_body_by_group_envelope() {
 
 void parses_complete_towerfall_initial_snapshot() {
     const std::vector<std::byte> packet = bytes(fixtures::kTowerfallInitialSenseSnapshot);
-    sense::SenseUpdate update{};
+    auto updateStorage=std::make_unique<sense::SenseUpdate>(); auto& update=*updateStorage;
     std::size_t consumed = 0;
     CHECK(packet.size() == 1900U);
     CHECK(sense::parse_sense_update(packet, update, consumed));
@@ -409,7 +410,7 @@ void parses_complete_towerfall_initial_snapshot() {
 
 void maps_complete_towerfall_snapshot_by_stable_node_identity() {
     const std::vector<std::byte> packet = bytes(fixtures::kTowerfallInitialSenseSnapshot);
-    sense::SenseUpdate update{};
+    auto updateStorage=std::make_unique<sense::SenseUpdate>(); auto& update=*updateStorage;
     std::size_t consumed = 0;
     CHECK(sense::parse_sense_update(packet, update, consumed));
 

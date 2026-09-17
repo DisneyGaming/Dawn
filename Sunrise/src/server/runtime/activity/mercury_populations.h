@@ -46,7 +46,7 @@ inline constexpr auto kPopulations=[] {
     {&kRegistries[8],0,9,{0x9D083869,2,1},true},
     // Complete selected native families without enabling another registry.
     {&kRegistries[9],0,9,{0x9692BB5E,2,1},true},
-    {&kRegistries[10],0,9,{0x1ED6087A,2,1},true,0,2},
+    {&kRegistries[10],0,9,{0x1ED6087A,2,1},true,0,false,population::kNoNamedMember,2},
     {&kRegistries[11],0,7,{0xFB7F2889,2,1},true},
     {&kRegistries[12],0,8,{0x1780D86F,2,1},true},
     {&kRegistries[14],0,7,{0xCF2196EA,2,1},true},
@@ -68,6 +68,10 @@ inline constexpr auto kPopulations=[] {
         const auto* group=state::activity::coo::mercury::ambient::find(result[i].registry->key);
         result[i].taskMask=(1U<<group->tacticalRows)-1U;
     }
+    // Exactly the 27 sources selected by freeroam::kPatrols. Public-event
+    // sources 2..6 are staged encounters and never use patrol rehydration.
+    result[0].recurringRehydration=result[1].recurringRehydration=true;
+    for(std::size_t i=7;i<result.size();++i)result[i].recurringRehydration=true;
     return result;
 }();
 } // namespace sunrise::server::runtime::activity::mercury

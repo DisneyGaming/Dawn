@@ -10,7 +10,8 @@ struct Probe { std::uint32_t health{UINT32_MAX};std::uintptr_t component{};std::
 // Match the read-only resource iterator (591290/59A350) and component-self
 // lookup (557529..55754A). Runtime metadata, unlike serialized definitions,
 // describes the component offsets in each entity resource allocation.
-template<class Read> bool find(Read& read,std::uint32_t bundle,std::uint32_t entity,Probe& out) noexcept {
+template<class Read> bool find(Read& read,std::uint32_t bundle,std::uint32_t entity,Probe& out,
+    native_box_identity::Binding binding=native_box_identity::kGatewayBinding) noexcept {
     std::array<std::uint32_t,64> visited{};
     while(bundle!=UINT32_MAX && out.resources<visited.size()) {
         for(std::uint32_t i=0;i<out.resources;++i) { if(visited[i]==bundle) { return false; } }
@@ -35,13 +36,13 @@ template<class Read> bool find(Read& read,std::uint32_t bundle,std::uint32_t ent
                     if(!read.copy(component,header)) { return false; }
                     std::uint32_t tag{},kind{};std::uint64_t definitionOffset{};
                     std::memcpy(&tag,header.data(),4);std::memcpy(&kind,header.data()+4,4);std::memcpy(&definitionOffset,header.data()+8,8);
-                    if(tag!=0x80F48026U || kind!=0x80804B8AU || definitionOffset!=0xB08U) { continue; }
+                    if(tag!=binding.definition || kind!=binding.kind || definitionOffset!=binding.definitionOffset) { continue; }
                     std::array<std::byte,0x340> state{};std::uintptr_t resolved{};
                     if(!read.copy(component,state)) { return false; }
                     std::memcpy(&out.health,state.data()+0x24,4);
-                    if(!gateway_module_identity::health(state,out.health,entity)
+                    if(!native_box_identity::health(state,out.health,entity,binding)
                         || !read.resolve(out.health,resolved) || resolved!=component) { return false; }
-                    out.component=component;out.dead=gateway_module_identity::dead(state,out.health,entity);return true;
+                    out.component=component;out.dead=native_box_identity::dead(state,out.health,entity,binding);return true;
                 }
             }
         }

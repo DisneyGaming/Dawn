@@ -54,11 +54,25 @@ bool source_identity(void* instance,nativeEvents::Receipt& receipt,Weak& identit
 bool counters(void* instance,policy::Counters& result) noexcept {
     Read read;const auto address=reinterpret_cast<std::uintptr_t>(instance);
     Ref definition{};std::uintptr_t resolved{};
-    return read.value(address,definition) && read.resolve(definition,resolved)
-        && read.value(resolved+0xA8,result.categories) && read.value(address+0x650,result.requested)
-        && read.value(address+0x268,result.consumed) && read.value(address+0x670,result.pending)
-        && (result.categories!=2 || (read.value(address+0x654,result.secondRequested)
-            && read.value(address+0x26C,result.secondConsumed) && read.value(address+0x674,result.secondPending)));
+    if(!read.value(address,definition) || !read.resolve(definition,resolved)
+        || !read.value(resolved+0xA8,result.categories) || result.categories<1
+        || result.categories>static_cast<std::int32_t>(policy::kMaximumCategories))return false;
+    for(std::size_t category=0;category<static_cast<std::size_t>(result.categories);++category) {
+        std::int32_t requested{},consumed{},pending{};
+        if(!read.value(address+0x650+category*4,requested)
+            || !read.value(address+0x268+category*4,consumed)
+            || !read.value(address+0x670+category*4,pending))return false;
+        if(category==0) {
+            result.requested=requested;result.consumed=consumed;result.pending=pending;
+        } else if(category==1) {
+            result.secondRequested=requested;result.secondConsumed=consumed;result.secondPending=pending;
+        } else {
+            result.additionalRequested[category-2]=requested;
+            result.additionalConsumed[category-2]=consumed;
+            result.additionalPending[category-2]=pending;
+        }
+    }
+    return true;
 }
 // The actor's root may attach after A0D510. Retry this from the normal admission
 // poll as well as immediately before native detachment.
@@ -204,7 +218,7 @@ __declspec(noinline) void __fastcall consume_hook(void* instance,std::uint32_t m
 __declspec(noinline) void __fastcall destroy_hook(void* instance) noexcept {
     const hooking::CallGate::Scope scope{g_gate};nativeEvents::Receipt receipt;Weak identity;
     const bool qualified=scope.accepts_side_effects() && source_identity(instance,receipt,identity);
-    policy::Counters value{};const bool settled=qualified && counters(instance,value) && value.pending==0;
+    policy::Counters value{};const bool settled=qualified && counters(instance,value) && policy::checkpoint(value);
     if(qualified) {
         checkpoint_source(instance,true);
         std::lock_guard lock(g_pendingMutex);
@@ -252,31 +266,44 @@ void prepare_source(void* instance) noexcept {
     // Every earlier actor retirement must already be queued before rebinding.
     for(std::size_t i=0;i<g_admittedActors.size();++i)
         if(g_admittedActors[i].receipt==receipt && g_admittedActors[i].event.sourceHandle==previous->identity.handle)return;
-    const auto saved=previous->counters.consumed;const auto savedSecond=previous->counters.secondConsumed;
-    auto* consumed=reinterpret_cast<volatile LONG*>(reinterpret_cast<std::uintptr_t>(instance)+0x268);
-    if(InterlockedCompareExchange(consumed,saved,current.consumed)!=current.consumed)return;
-    auto* secondConsumed=consumed+1;
-    if(current.categories==2
-        && InterlockedCompareExchange(secondConsumed,savedSecond,current.secondConsumed)!=current.secondConsumed) {
-        InterlockedCompareExchange(consumed,current.consumed,saved);return;
+    auto* consumedBase=reinterpret_cast<volatile LONG*>(reinterpret_cast<std::uintptr_t>(instance)+0x268);
+    std::size_t restored{};
+    for(;restored<static_cast<std::size_t>(current.categories);++restored) {
+        const auto saved=policy::consumed(previous->counters,restored);
+        const auto replacement=policy::consumed(current,restored);
+        if(InterlockedCompareExchange(consumedBase+restored,saved,replacement)!=replacement)break;
     }
-    const nativeEvents::Event event{receipt.lease,{receipt.lease.source},identity.handle,
-        nativeEvents::Kind::sourceRecreated,previous->identity.handle};
+    if(restored!=static_cast<std::size_t>(current.categories)) {
+        while(restored) {
+            --restored;InterlockedCompareExchange(consumedBase+restored,policy::consumed(current,restored),
+                policy::consumed(previous->counters,restored));
+        }
+        return;
+    }
+    const nativeEvents::Event event{.lease=receipt.lease,.actor={receipt.lease.source},
+        .sourceHandle=identity.handle,.kind=nativeEvents::Kind::sourceRecreated,
+        .previousSourceHandle=previous->identity.handle};
     if(!nativeEvents::submit(event,receipt)) {
-        if(current.categories==2)InterlockedCompareExchange(secondConsumed,current.secondConsumed,savedSecond);
-        InterlockedCompareExchange(consumed,current.consumed,saved);return;
+        for(std::size_t category=0;category<static_cast<std::size_t>(current.categories);++category)
+            InterlockedCompareExchange(consumedBase+category,policy::consumed(current,category),
+                policy::consumed(previous->counters,category));
+        return;
     }
     report("ev=native_population_streaming stage=source_recreated registry=%08X slot=%u generation=%u previous=%08X source=%08X consumed=%d requested=%d",
         receipt.lease.source.source.registry,receipt.lease.source.source.slot,receipt.lease.source.generation,
-        previous->identity.handle,identity.handle,saved,current.requested);
-    current.consumed=saved;current.secondConsumed=savedSecond;*previous={receipt,identity,current};
+        previous->identity.handle,identity.handle,previous->counters.consumed,current.requested);
+    for(std::size_t category=0;category<static_cast<std::size_t>(current.categories);++category)
+        policy::set_consumed(current,category,policy::consumed(previous->counters,category));
+    *previous={receipt,identity,current};
 }
 __declspec(noinline) void dispatch_source(std::uint32_t* instance,std::uint32_t mode,
     const std::byte* authority,Dispatch original) noexcept {
     const hooking::CallGate::Scope scope{g_gate};Read read;std::uint8_t spawnMode{UINT8_MAX};
     const bool active=scope.accepts_side_effects()
         && read.value(reinterpret_cast<std::uintptr_t>(authority)+0xBD,spawnMode) && (spawnMode==0 || spawnMode==2);
-    if(active)prepare_source(instance);
+    if(active) {
+        prepare_source(instance);
+    }
     original(instance,mode,authority);
     if(active && scope.accepts_side_effects())checkpoint_source(instance,false);
 }

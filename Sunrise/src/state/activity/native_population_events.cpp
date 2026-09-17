@@ -33,7 +33,35 @@ AdmitResult admit(Receipt receipt,const Event& event,bool publish) noexcept {
 }
 void unbind(const Lease& lease) noexcept {std::lock_guard lock(mutex);mailbox.unbind(lease);}
 bool submit(const Event& event,Receipt receipt) noexcept {std::lock_guard lock(mutex);return mailbox.submit(event,receipt);}
+bool complete_external(Receipt receipt,const Event& event) noexcept {
+    std::lock_guard lock(mutex);return mailbox.complete_external(receipt,event);
+}
 bool submit(const Event& event,std::uint64_t epochValue) noexcept {std::lock_guard lock(mutex);return mailbox.submit(event,epochValue);}
+bool rebind(const Lease& oldLease,const Lease& newLease) noexcept {
+    std::lock_guard lock(mutex);return mailbox.rebind(oldLease,newLease);
+}
+bool bind_generator(const GeneratorBinding& binding) noexcept {std::lock_guard lock(mutex);return mailbox.bind_generator(binding);}
+bool rebind_generator(const Lease& oldLease,const GeneratorBinding& binding) noexcept {
+    std::lock_guard lock(mutex);return mailbox.rebind_generator(oldLease,binding);
+}
+Lease lookup_generated(std::uint32_t resourceTag,std::uint32_t seed,std::uint32_t workerDefinitionTag,
+    std::uint32_t workerDefinitionOffset,std::uint32_t paletteTag,std::uint32_t paletteDefinitionOffset) noexcept {
+    std::lock_guard lock(mutex);return mailbox.lookup_generated(resourceTag,seed,workerDefinitionTag,
+        workerDefinitionOffset,paletteTag,paletteDefinitionOffset);
+}
+bool has_generator(std::uint32_t resourceTag,std::uint32_t seed,std::uint32_t workerDefinitionTag,
+    std::uint32_t workerDefinitionOffset) noexcept {
+    std::lock_guard lock(mutex);return mailbox.has_generator(resourceTag,seed,workerDefinitionTag,workerDefinitionOffset);
+}
+bool has_lease(const Lease& lease) noexcept {std::lock_guard lock(mutex);return mailbox.has_lease(lease);}
+bool observe_generator(const GeneratorObservation& observation,std::uint64_t epochValue) noexcept {
+    std::lock_guard lock(mutex);return mailbox.observe_generator(observation,epochValue);
+}
+bool generator_drained(ActivityInstanceKey owner,std::uint64_t boot,
+    std::uint32_t registry,std::uint16_t slot,std::uint32_t seed) noexcept {
+    std::lock_guard lock(mutex);return mailbox.generator_drained(owner,boot,registry,slot,seed);
+}
+std::uint64_t generator_epoch() noexcept {std::lock_guard lock(mutex);return mailbox.generator_epoch();}
 void observation_lost() noexcept {std::lock_guard lock(mutex);mailbox.observation_lost();}
 std::size_t drain(ActivityInstanceKey owner,std::span<Event> output,bool& overflow) noexcept {
     std::lock_guard lock(mutex);overflow=mailbox.overflow();return mailbox.drain(owner,output);

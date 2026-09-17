@@ -6,7 +6,7 @@
 void native_combatant_source_cases() {
     namespace source=sunrise::middleware::bap::activity_message::native::combatant_source;
     namespace bits=sunrise::middleware::encoding::bits;
-    std::array<std::byte,96> body{};
+    std::array<std::byte,128> body{};
     source::Source vendor{0x564C6ECEU,1,0,1,{}};
     vendor.hasSpawnRule=false;
     bits::Writer writer(body);CHECK(source::write_source(writer,vendor));CHECK(writer.bit_count()==641);
@@ -34,6 +34,19 @@ void native_combatant_source_cases() {
         CHECK(values.read(32,value) && value==0x80000000ULL+count);
         CHECK(values.read(32,value) && value==0x80000000ULL+count);
     }
+    squad.looseRequested=7;squad.secondRequested=7;squad.categoryCount=3;
+    squad.additionalRequested[0]=7;
+    bits::Writer three(body);CHECK(source::write_source(three,squad));CHECK(three.bit_count()==705);
+    bits::Reader threeValues(body);CHECK(threeValues.skip(117));
+    CHECK(threeValues.read(4,value) && value==3);
+    for(unsigned i=0;i<3;++i)CHECK(threeValues.read(32,value) && value==0x80000007ULL);
+    squad.categoryCount=5;squad.looseRequested=1;squad.secondRequested=1;
+    squad.additionalRequested={1,1,1,0,0,0};
+    bits::Writer five(body);CHECK(source::write_source(five,squad));CHECK(five.bit_count()==769);
+    auto stray=squad;stray.additionalRequested[4]=1;
+    bits::Writer strayWriter(body);CHECK(!source::write_source(strayWriter,stray));
+    auto tooWide=squad;tooWide.categoryCount=9;
+    bits::Writer tooWideWriter(body);CHECK(!source::write_source(tooWideWriter,tooWide));
     squad.looseRequested=std::uint32_t(INT32_MAX)+1;
     bits::Writer over(body);CHECK(!source::write_source(over,squad));CHECK(over.bit_count()==0);
     std::array<std::byte,8> small{};bits::Writer shortBuffer(small);

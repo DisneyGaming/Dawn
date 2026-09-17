@@ -37,6 +37,7 @@ enum class Role : std::uint8_t { invalid, creator, derived };
 [[nodiscard]] inline bool owns_key(const Definition& definition, std::uint32_t key) noexcept {
     for (const auto& registry : definition.registries) if (registry.key == key) return true;
     for (const auto& registry : definition.lostSectorRegistries) if (registry.key == key) return true;
+    for (const auto& registry : definition.lostSectorRewardRegistries) if (registry.key == key) return true;
     // Disabled options must not leave a second descriptor behind for later activation.
     for (const auto& binding : definition.optionalRegistries)
         if (binding.registry && binding.registry->key == key) return true;

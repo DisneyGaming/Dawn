@@ -22,15 +22,60 @@ namespace item_details = build_data::items::details;
 namespace inventory_buckets = build_data::inventory::buckets;
 namespace family4_loadout = middleware::datagen::family4::loadout;
 
+namespace {
+[[nodiscard]] bool mission_glimmer(const AccountState& before,
+                                   std::uint16_t amount,
+                                   AccountState& after,
+                                   bool& changed) noexcept {
+    after=before;changed=false;
+    if(!amount)return true;
+    if(amount>500)return false;
+    constexpr std::uint32_t hash=3159615086U;
+    build_data::items::Definition definition{};item_details::Definition detail{};
+    inventory_buckets::Descriptor bucket{};
+    if(!build_data::find_item_definition_hash(hash,definition)
+        ||!build_data::find_configured_item_detail(definition.definitionIndex,detail)
+        ||detail.definitionHash!=hash||detail.bucketId!=definition.bucketId
+        ||detail.instancedDefinitionState!=item_details::InstancedDefinitionState::stackable
+        ||detail.maxStackSize<=0||!build_data::find_inventory_bucket_descriptor(detail.bucketId,bucket)
+        ||bucket.arraySelector!=inventory_buckets::ArraySelector::profile
+        ||build_data::is_profile_action_source(definition.definitionIndex,definition.bucketId))return false;
+    auto index=before.profileItemCount;std::int32_t serial{};
+    for(std::size_t i=0;i<before.profileItemCount;++i) {
+        const auto& item=before.profileItems[i];serial=(std::max)(serial,item.mutationSerial);
+        if(item.definitionHash!=hash)continue;
+        if(index!=before.profileItemCount||item.instanceSoid||item.quantity<=0
+            ||item.quantity>detail.maxStackSize)return false;
+        index=i;
+    }
+    const bool append=index==before.profileItemCount;
+    const auto quantity=append?0:before.profileItems[index].quantity;
+    const auto credit=(std::min)(static_cast<std::int32_t>(amount),detail.maxStackSize-quantity);
+    if(!credit)return true;
+    if((append&&index>=before.profileItems.size())
+        ||serial==(std::numeric_limits<std::int32_t>::max)())return false;
+    after.profileItems[index]={0,hash,quantity+credit,serial+1};
+    if(append)++after.profileItemCount;
+    changed=true;
+    return account::valid(after)&&valid_profile_inventory(after);
+}
+
+}
+
 /** Prepares one native-row-checked selected-character inventory insertion. */
 bool prepare_item_acquisition(std::uint16_t collectibleIndex,
                               std::uint32_t definitionHash,
-                              PendingItemAcquisition& mutation) noexcept {
+                              PendingItemAcquisition& mutation,
+                              AcquisitionSource source,
+                              std::uint16_t rewardGlimmer) noexcept {
     mutation = {};
     const AccountState account = account_snapshot();
     build_data::collectibles::Definition collectible{};
     build_data::items::Definition grantedDefinition{};
-    if (definitionHash == authored_inventory::kNoDefinitionHash || !account::valid(account)
+    if ((source != AcquisitionSource::collections && source != AcquisitionSource::missionReward)
+        || (source == AcquisitionSource::collections && rewardGlimmer != 0)
+        || rewardGlimmer > 500
+        || definitionHash == authored_inventory::kNoDefinitionHash || !account::valid(account)
         || !valid_profile_inventory(account)
         || !build_data::find_collectible_definition(collectibleIndex, collectible)
         || collectible.itemDefinitionIndex
@@ -44,7 +89,9 @@ bool prepare_item_acquisition(std::uint16_t collectibleIndex,
 
     AccountState chargedAccount = account;
     bool profileChanged = false;
-    if (!apply_collection_materials(account, collectible, chargedAccount, profileChanged)) {
+    if (!(source == AcquisitionSource::missionReward
+        ? mission_glimmer(account, rewardGlimmer, chargedAccount, profileChanged)
+        : apply_collection_materials(account, collectible, chargedAccount, profileChanged))) {
         report_acquisition("prepare", "fail", "materials", definitionHash, 0, 0, 0, 0, 0, 0);
         return false;
     }
@@ -130,6 +177,8 @@ bool prepare_item_acquisition(std::uint16_t collectibleIndex,
         return false;
     }
 
+    mutation.source = source;
+    mutation.rewardGlimmer = rewardGlimmer;
     mutation.beforeCharacter = before;
     mutation.afterCharacter = after;
     mutation.beforeProfileItems = account.profileItems;
@@ -169,7 +218,11 @@ bool prepare_item_acquisition(std::uint16_t collectibleIndex,
 bool preview_item_acquisition(const PendingItemAcquisition& mutation,
                               AccountState& after) noexcept {
     after = {};
-    if (!mutation.prepared || mutation.accountSoid == 0 || mutation.characterSoid == 0
+    if (!mutation.prepared
+        || (mutation.source != AcquisitionSource::collections && mutation.source != AcquisitionSource::missionReward)
+        || (mutation.source == AcquisitionSource::collections && mutation.rewardGlimmer != 0)
+        || mutation.rewardGlimmer > 500
+        || mutation.accountSoid == 0 || mutation.characterSoid == 0
         || mutation.acquiredInstanceSoid == 0 || mutation.characterIndex >= kCharacterCapacity
         || mutation.expectedProfileItemCount > authored_inventory::kProfileItemCapacity
         || mutation.afterProfileItemCount > authored_inventory::kProfileItemCapacity) {
@@ -213,7 +266,11 @@ bool commit_item_acquisition(PendingItemAcquisition& mutation) noexcept {
                            prepared.afterCharacter.nextInventorySerial);
         return false;
     };
-    if (!prepared.prepared || prepared.characterSoid == 0 || prepared.acquiredInstanceSoid == 0
+    if (!prepared.prepared
+        || (prepared.source != AcquisitionSource::collections && prepared.source != AcquisitionSource::missionReward)
+        || (prepared.source == AcquisitionSource::collections && prepared.rewardGlimmer != 0)
+        || prepared.rewardGlimmer > 500
+        || prepared.characterSoid == 0 || prepared.acquiredInstanceSoid == 0
         || prepared.accountSoid == 0
         || prepared.acquiredDefinitionHash == authored_inventory::kNoDefinitionHash
         || prepared.characterIndex >= kCharacterCapacity
@@ -277,6 +334,16 @@ bool commit_item_acquisition(PendingItemAcquisition& mutation) noexcept {
         || !authored_inventory::insert(expectedCharacter,granted,expectedRemoved)
         || expectedRemoved!=prepared.removedInstanceSoid || !same_character(expectedCharacter,prepared.afterCharacter)) {
         ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);return fail("placement");
+    }
+    AccountState expectedProfile{};
+    bool expectedProfileChanged{};
+    const bool profileValid = prepared.source == AcquisitionSource::missionReward
+        ? mission_glimmer(candidate, prepared.rewardGlimmer, expectedProfile, expectedProfileChanged)
+        : apply_collection_materials(candidate, collectible, expectedProfile, expectedProfileChanged);
+    if (!profileValid || expectedProfileChanged != prepared.profileChanged
+        || !same_profile_inventory(expectedProfile, prepared.afterProfileItems, prepared.afterProfileItemCount)) {
+        ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
+        return fail("profile_grant");
     }
     candidate.profileItems = prepared.afterProfileItems;
     candidate.profileItemCount = prepared.afterProfileItemCount;

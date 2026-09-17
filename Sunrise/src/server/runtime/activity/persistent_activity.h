@@ -1,4 +1,5 @@
 #pragma once
+#include "../../../middleware/bap/activity_message/native/lost_sector_shield_authority.h"
 #include "native_activity_definition.h"
 #include <memory>
 
@@ -6,6 +7,7 @@ namespace sunrise::server::runtime::activity {
 struct NativeActivityFrame final {
     population::wire::Batch populations{};
     placement::wire::Batch placements{};
+    middleware::bap::activity_message::native::lost_sector_shield::Batch lostSectorShields{};
     npc_animation::wire::Batch animations{};
     adventure::OpeningFrame opening{};
     activity_clock::Publication clock{};
@@ -319,6 +321,7 @@ public:
         static_cast<void>(placement::project(std::span(active).first(count),definition_->bubble,output));
         if(!rally_.append(definition_->bubble,output))return {};
         if(!capture_.append(output) || !publicInitial_.append(output))return {};
+        adventure_start::restrict_banners(definition_->startRoutes,output);
         return output;
     }
     [[nodiscard]] std::uint64_t fingerprint() const noexcept {return document_?document_->fingerprint():0;}

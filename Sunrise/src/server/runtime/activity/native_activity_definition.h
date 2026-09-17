@@ -70,5 +70,6 @@ struct NativeActivityDefinition final {
     std::span<const registry::Definition> lostSectorRegistries{};
     /** Optional staged Lost Sector director. Empty preserves existing activities. */
     const lost_sector::Definition* lostSectors{};
+    std::span<const registry::Definition> lostSectorRewardRegistries{};
 };
 }

@@ -655,7 +655,15 @@
             "boss": true
           }
         ]
-      ]
+      ],
+      "reward": {
+        "registry": "3F0E0EE6",
+        "object": "80F5E876",
+        "slot": 0,
+        "descriptor": "80F5E866",
+        "role": "dungeon_chest",
+        "descriptor_sha256": "36c7a3681b47be9c751a54c76baf4c5788d7be3967961e2fe9a601a6f2a7d314"
+      }
     },
     {
       "name": "Core Terminus",
@@ -1548,7 +1556,15 @@
             "boss": true
           }
         ]
-      ]
+      ],
+      "reward": {
+        "registry": "7CF44AF0",
+        "object": "80F73C83",
+        "slot": 1,
+        "descriptor": "80F73CA9",
+        "role": "region_chest_major1",
+        "descriptor_sha256": "5660098820687b5b815e0450c9ca7a362ad7e600610c05b1aa17ced363d24d2d"
+      }
     },
     {
       "name": "Ma'adim Subterrane",
@@ -2162,7 +2178,15 @@
             "boss": true
           }
         ]
-      ]
+      ],
+      "reward": {
+        "registry": "662D2585",
+        "object": "80F76089",
+        "slot": 0,
+        "descriptor": "80F76103",
+        "role": "region_chest_major1",
+        "descriptor_sha256": "898ba8f0da0c1b4111a18cec6971a595c9c43d2d3a96aeb37d57cb967a220c1a"
+      }
     },
     {
       "name": "Methane Flush",
@@ -2176,6 +2200,34 @@
       },
       "stages": [
         [
+          {
+            "registry": "A27443E8",
+            "source": 5,
+            "source_descriptor": "80BF0241",
+            "source_sha256": "4097dfda636d4c41ba6dd5e16ee394e0a165ca34dc8e51f3a4e9ba33bdc18354",
+            "rule_role": "primary",
+            "rule": 75,
+            "rule_descriptor": "80BF021D",
+            "rule_sha256": "1410b45f9983021f7dfdb243bb89bcbd20f1b717e06e0841a143471812720029",
+            "tactical": 1,
+            "tactical_row": 0,
+            "tactical_rows": 7,
+            "tactical_descriptor": "80BF0231",
+            "tactical_sha256": "32085b736acacfb60a8361fc182afc00afa0770750d713e686f1b745a7d6edf3",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "estimated_from_package_roles_and_native_layout",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+            },
+            "count_choices_sha256": "b469d9cf9219e3667d9a60cd365f433a21b4d1dd9954657c23a904cde10b1573",
+            "boss": false
+          },
           {
             "registry": "A27443E8",
             "source": 6,
@@ -3051,7 +3103,15 @@
             "boss": true
           }
         ]
-      ]
+      ],
+      "reward": {
+        "registry": "89BDCDA2",
+        "object": "80BF080B",
+        "slot": 0,
+        "descriptor": "80BF0489",
+        "role": "region_chest_major1",
+        "descriptor_sha256": "9151433c381a1c9360fe4ce4feccdab11f74344359f1c5b0477a33bf79d3d100"
+      }
     },
     {
       "name": "DS Quarters-2",
@@ -3431,6 +3491,34 @@
           }
         ],
         [
+          {
+            "registry": "2E3D2EB4",
+            "source": 2,
+            "source_descriptor": "80BF1347",
+            "source_sha256": "bb5c273507bbfcb5d038a9e378c842d3daca89e944b25f8df636bb06a7eb89f4",
+            "rule_role": "primary",
+            "rule": 55,
+            "rule_descriptor": "80BF1338",
+            "rule_sha256": "26eb1f318c149311acffa79b9b67606a66d117e0170cd855cdcbcc88111e6f86",
+            "tactical": 22,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80BF1383",
+            "tactical_sha256": "fa4a8784efc1c80c0ab206e9c56d5070456451f1f94854d4b264235b40439f0f",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "estimated_from_package_roles_and_native_layout",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+            },
+            "count_choices_sha256": "0f20c46337c52f7fdb78a5a992b1026a8eab8f43c98b22ab36dafa931e1d9578",
+            "boss": false
+          },
           {
             "registry": "2E3D2EB4",
             "source": 3,
@@ -3944,7 +4032,15 @@
             "boss": true
           }
         ]
-      ]
+      ],
+      "reward": {
+        "registry": "8A6203C8",
+        "object": "80BF65DF",
+        "slot": 0,
+        "descriptor": "80BF155A",
+        "role": "region_chest_major1",
+        "descriptor_sha256": "6fef856a5205a61a74d5a525d0b485c2077fff108347be94a3703716b08e2462"
+      }
     },
     {
       "name": "Cargo Bay 3",
@@ -4438,6 +4534,34 @@
           },
           {
             "registry": "5BA616DA",
+            "source": 20,
+            "source_descriptor": "80BF16DA",
+            "source_sha256": "6d55558c332451db1b60d97fbde94bdde7418c71da970c3b9b14796ac2c62838",
+            "rule_role": "primary",
+            "rule": 71,
+            "rule_descriptor": "80BF15CA",
+            "rule_sha256": "daf98f7eef679ab0f12d06a50f1d5533c4ec44b880267bb37a03d9d62a47e393",
+            "tactical": 1,
+            "tactical_row": 0,
+            "tactical_rows": 4,
+            "tactical_descriptor": "80BF15D3",
+            "tactical_sha256": "7e306d9c823b22168db9cfe7cbdf6d48dc71e63a52c6ce6e2c3b67b8b5415e29",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "estimated_from_package_roles_and_native_layout",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+            },
+            "count_choices_sha256": "0f20c46337c52f7fdb78a5a992b1026a8eab8f43c98b22ab36dafa931e1d9578",
+            "boss": false
+          },
+          {
+            "registry": "5BA616DA",
             "source": 2,
             "source_descriptor": "80BF15D6",
             "source_sha256": "8aba0ce33df2db6ff1ca1f5c78df2c3bc3530c560dc2ea164b05b5d417acb340",
@@ -4493,7 +4617,15 @@
             "boss": true
           }
         ]
-      ]
+      ],
+      "reward": {
+        "registry": "32C796F1",
+        "object": "80BF6B83",
+        "slot": 0,
+        "descriptor": "80BF1827",
+        "role": "region_chest_major2",
+        "descriptor_sha256": "08c5ebb8e9f5d2486f6516abcd037117dd234d85a49f4814bbccce221eaba06c"
+      }
     },
     {
       "name": "Sanctum of Bones",
@@ -4705,6 +4837,34 @@
           }
         ],
         [
+          {
+            "registry": "DB5D8740",
+            "source": 4,
+            "source_descriptor": "80BD7137",
+            "source_sha256": "7d6df83539eba02a5cb5f5ee788075aff98d9ce24d18b0a7464b43811c48d823",
+            "rule_role": "primary",
+            "rule": 36,
+            "rule_descriptor": "80BD712B",
+            "rule_sha256": "c1e60923e9e87ad5e52485aa1e9add3f9e02a8b4fbe315ea10e6924cff8920c8",
+            "tactical": 0,
+            "tactical_row": 0,
+            "tactical_rows": 3,
+            "tactical_descriptor": "80BD7131",
+            "tactical_sha256": "f8d481d7f459026d59312ca6ec4099a3444c4826d57a37f22a325de9e45d312f",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "estimated_from_package_roles_and_native_layout",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+            },
+            "count_choices_sha256": "587176e4f76650d0381689fc512b2469c1e0639970a17f40241b27e6445b729a",
+            "boss": false
+          },
           {
             "registry": "DB5D8740",
             "source": 5,
@@ -5187,7 +5347,15 @@
             "boss": true
           }
         ]
-      ]
+      ],
+      "reward": {
+        "registry": "4B422BBB",
+        "object": "80BD7F6D",
+        "slot": 0,
+        "descriptor": "80BD74EA",
+        "role": "region_chest_major1",
+        "descriptor_sha256": "f10ace7a5944fc38615f9ad77c20ef52fc3e3429ff95a9c112cdd4dd312efd01"
+      }
     },
     {
       "name": "Aphix Conduit",
@@ -5826,7 +5994,15 @@
             "boss": true
           }
         ]
-      ]
+      ],
+      "reward": {
+        "registry": "B81A4C9E",
+        "object": "80BD874D",
+        "slot": 0,
+        "descriptor": "80BD78BB",
+        "role": "region_chest_major2",
+        "descriptor_sha256": "c2ef769ff0bc4c85e837c2f19ed5d1fcba7857f44e098479963a07c4e104b40d"
+      }
     },
     {
       "name": "Grove of Ulan-Tan",
@@ -6212,6 +6388,34 @@
             },
             "count_choices_sha256": "5e0cf12b184e48a8073570287dc632846d6abd12f70fa17fa5f15bd1da9f0649",
             "boss": false
+          },
+          {
+            "registry": "33C30847",
+            "source": 5,
+            "source_descriptor": "80BD8A6A",
+            "source_sha256": "98038b1bbaf094c899e59d047bfa250b4e6c3d0609d72e021632e3ff85707b85",
+            "rule_role": "primary",
+            "rule": 39,
+            "rule_descriptor": "80BD8A46",
+            "rule_sha256": "ee7c59990784805d48ddd943f5c890482d480855049922d1bf80cf4c38d9211b",
+            "tactical": 0,
+            "tactical_row": 0,
+            "tactical_rows": 4,
+            "tactical_descriptor": "80BD8A50",
+            "tactical_sha256": "07c2c85da28102b616be51d194a3db90aa74e3e60b22c5b2abec1e90d64e97b7",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "estimated_from_package_roles_and_native_layout",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+            },
+            "count_choices_sha256": "e647c77e12d46e03672b08f97de25890fdab21991407e161b5a742788f9f8409",
+            "boss": false
           }
         ],
         [
@@ -6471,7 +6675,15 @@
             "boss": true
           }
         ]
-      ]
+      ],
+      "reward": {
+        "registry": "1FC9AD3A",
+        "object": "80C36427",
+        "slot": 0,
+        "descriptor": "80BD9089",
+        "role": "region_chest_major1",
+        "descriptor_sha256": "bd48b70888ae106b7845895c955bdd633ac6f41fcafcbbbb0e105f5a00c947aa"
+      }
     },
     {
       "name": "The Rift",
@@ -6828,6 +7040,34 @@
           }
         ],
         [
+          {
+            "registry": "6717656F",
+            "source": 2,
+            "source_descriptor": "80C07775",
+            "source_sha256": "0b340acfe157ad614f4831152eb3c6196a6b6efd9dc0ffceae3566a9c8e0101c",
+            "rule_role": "primary",
+            "rule": 46,
+            "rule_descriptor": "80C0775C",
+            "rule_sha256": "8068d0ce356fcf2f53c7b281113ac2846528ffa475c82dc1a10436682f89b88a",
+            "tactical": 20,
+            "tactical_row": 0,
+            "tactical_rows": 4,
+            "tactical_descriptor": "80C077D3",
+            "tactical_sha256": "a2ba5339aa2b96772ad16515e181ad347d15c3f5fc1f2f367a60830496320abc",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "estimated_from_package_roles_and_native_layout",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+            },
+            "count_choices_sha256": "68cd0d900db353958492ce23bf7f778eef35268ad39785b7b41ea16ffee890ca",
+            "boss": false
+          },
           {
             "registry": "6717656F",
             "source": 3,
@@ -7315,7 +7555,15 @@
             "boss": true
           }
         ]
-      ]
+      ],
+      "reward": {
+        "registry": "9F123D29",
+        "object": "80C06D92",
+        "slot": 0,
+        "descriptor": "80C07865",
+        "role": "region_chest_major1",
+        "descriptor_sha256": "579b48d19517a78223921252e9173b92ebbeb4de540c469d9b7dbd84b0f27685"
+      }
     },
     {
       "name": "The Conflux",
@@ -7329,6 +7577,34 @@
       },
       "stages": [
         [
+          {
+            "registry": "BB69D2E9",
+            "source": 4,
+            "source_descriptor": "80C08E0F",
+            "source_sha256": "cbb2e36bd2f8e47702a841adcab10cc4a3174c38c282cfa6d72f8c24a2f67835",
+            "rule_role": "primary",
+            "rule": 65,
+            "rule_descriptor": "80C08DF1",
+            "rule_sha256": "3f3064f8600b4d5e3f30f07a938d241d9d11367a7f41a5b10b7faae931d08c91",
+            "tactical": 1,
+            "tactical_row": 0,
+            "tactical_rows": 7,
+            "tactical_descriptor": "80C08E05",
+            "tactical_sha256": "b64d9efe69eb406d428b223e44714ed8c79a019ff12b7cc001b3b703c65f0928",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "estimated_from_package_roles_and_native_layout",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+            },
+            "count_choices_sha256": "e12c15f51745b756d3fd710c02687ed0a090a6a49a6291ab9a476564e2ed7709",
+            "boss": false
+          },
           {
             "registry": "BB69D2E9",
             "source": 5,
@@ -7845,7 +8121,15 @@
             "boss": true
           }
         ]
-      ]
+      ],
+      "reward": {
+        "registry": "8ACACC33",
+        "object": "80C08BFA",
+        "slot": 0,
+        "descriptor": "80C08E8C",
+        "role": "region_chest_major1",
+        "descriptor_sha256": "3ddc702b4f12dac66e187d69345d40d109a705ba709658c016a2bbfd4e2d61a0"
+      }
     },
     {
       "name": "The Orrery",
@@ -7859,6 +8143,34 @@
       },
       "stages": [
         [
+          {
+            "registry": "3F8AF55C",
+            "source": 5,
+            "source_descriptor": "80C0925F",
+            "source_sha256": "f6ae1c7d9efcf33d8a05a83f6e2693eaac64bac763cbdf2d69d9baccb4684355",
+            "rule_role": "primary",
+            "rule": 77,
+            "rule_descriptor": "80C09246",
+            "rule_sha256": "8f27b65e63d961c2fb0f0d200ed041b8ab731b9db3f59e504245707fb6bad7a6",
+            "tactical": 1,
+            "tactical_row": 0,
+            "tactical_rows": 8,
+            "tactical_descriptor": "80C0924C",
+            "tactical_sha256": "0fa10c8f457a7da489d6f78e3e17415d3b6e29b5687eca3a6a9f013b5f785015",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "estimated_from_package_roles_and_native_layout",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+            },
+            "count_choices_sha256": "e647c77e12d46e03672b08f97de25890fdab21991407e161b5a742788f9f8409",
+            "boss": false
+          },
           {
             "registry": "3F8AF55C",
             "source": 6,
@@ -8684,7 +8996,15 @@
             "boss": true
           }
         ]
-      ]
+      ],
+      "reward": {
+        "registry": "5D0FE7E1",
+        "object": "80C0902F",
+        "slot": 0,
+        "descriptor": "80C095E2",
+        "role": "region_chest_major1",
+        "descriptor_sha256": "4e88953492ea78c3196ec05fcc1827e2fc08c06f3cf321acde470d631b8611a0"
+      }
     },
     {
       "name": "The Carrion Pit",
@@ -8956,6 +9276,34 @@
           }
         ],
         [
+          {
+            "registry": "2F8DB58A",
+            "source": 2,
+            "source_descriptor": "80C0A522",
+            "source_sha256": "53e9de5869ea2c2118e945aaead1f59f8948b815ba07b25267452fc7138d16a7",
+            "rule_role": "primary",
+            "rule": 37,
+            "rule_descriptor": "80C0A500",
+            "rule_sha256": "7a8a181a9cce144a57de6c2769c49593f0f07cf671d1a94140e3cc00c4a41e2d",
+            "tactical": 20,
+            "tactical_row": 0,
+            "tactical_rows": 5,
+            "tactical_descriptor": "80C0A570",
+            "tactical_sha256": "dd30a1369889bacd1658ff88e038e5bfe3c58e9bb895ef592541062992ebd605",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "estimated_from_package_roles_and_native_layout",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+            },
+            "count_choices_sha256": "42a2c30627220a5f3a70fb4118ce898995bc7863ba52725564467884cd938a3f",
+            "boss": false
+          },
           {
             "registry": "2F8DB58A",
             "source": 3,
@@ -9469,7 +9817,15 @@
             "boss": true
           }
         ]
-      ]
+      ],
+      "reward": {
+        "registry": "8A55AD63",
+        "object": "80C09CC1",
+        "slot": 0,
+        "descriptor": "80C0A70B",
+        "role": "region_chest_major1",
+        "descriptor_sha256": "8605a7554fcc19da2d502f104ee3c4c7b56c76d89033cb476b13c29cc6de5914"
+      }
     },
     {
       "name": "Ancient's Haunt",
@@ -9909,6 +10265,34 @@
         [
           {
             "registry": "100F6578",
+            "source": 2,
+            "source_descriptor": "80C3195F",
+            "source_sha256": "426143f3662f9533e1969b032831f3e028de130060ad82214fb7dac1660461bd",
+            "rule_role": "primary",
+            "rule": 33,
+            "rule_descriptor": "80C31951",
+            "rule_sha256": "6d629dc678723f5d5a722a9b95a7753560067b94c24be5764eb80c1d5121d620",
+            "tactical": 11,
+            "tactical_row": 0,
+            "tactical_rows": 2,
+            "tactical_descriptor": "80C31980",
+            "tactical_sha256": "fceae2dde4e2370d60e512408f0ff8d0d39b7d54a32bd83da2b12737eb7f9f57",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "estimated_from_package_roles_and_native_layout",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+            },
+            "count_choices_sha256": "e647c77e12d46e03672b08f97de25890fdab21991407e161b5a742788f9f8409",
+            "boss": false
+          },
+          {
+            "registry": "100F6578",
             "source": 3,
             "source_descriptor": "80C31962",
             "source_sha256": "dd87f151d70e122e7fb9e5e8c6b86ec5591e1a9c21bf6fde659be11071dea347",
@@ -10138,7 +10522,15 @@
             "boss": true
           }
         ]
-      ]
+      ],
+      "reward": {
+        "registry": "26928E05",
+        "object": "80C31050",
+        "slot": 0,
+        "descriptor": "80C31BB3",
+        "role": "region_chest_major1",
+        "descriptor_sha256": "5c910213e0a04851f29a32d2db20624d58a5c15a997b9980d59f26477a3ab695"
+      }
     },
     {
       "name": "Trapper's Cave",
@@ -10754,7 +11146,15 @@
             "boss": true
           }
         ]
-      ]
+      ],
+      "reward": {
+        "registry": "16972B37",
+        "object": "80FD5D26",
+        "slot": 1,
+        "descriptor": "80FD595C",
+        "role": "region_chest_major1",
+        "descriptor_sha256": "6e1ffc05dc7e32e3accd4186e3439803942f631dc203c637fc1b17ad8d29e271"
+      }
     },
     {
       "name": "Wolfship Turbine",
@@ -11221,7 +11621,15 @@
             "boss": true
           }
         ]
-      ]
+      ],
+      "reward": {
+        "registry": "AA9A0D8D",
+        "object": "80FD85CC",
+        "slot": 1,
+        "descriptor": "80FD8021",
+        "role": "region_chest_major1",
+        "descriptor_sha256": "33ecb204387d55bb19eba80c3d704e74f2288d513106b87d21f3e12d0ba53d78"
+      }
     },
     {
       "name": "Kingship Dock",
@@ -11574,7 +11982,15 @@
             "boss": true
           }
         ]
-      ]
+      ],
+      "reward": {
+        "registry": "E0E3C57F",
+        "object": "80FD96A1",
+        "slot": 0,
+        "descriptor": "80FD9111",
+        "role": "region_chest_major1",
+        "descriptor_sha256": "c702d7cf883aac83ad0e4573f53c11a85fd17c90abfec5ed26bb3a754a4a9e5c"
+      }
     },
     {
       "name": "The Empty Tank",
@@ -12096,6 +12512,36 @@
         [
           {
             "registry": "9A24C39A",
+            "source": 52,
+            "source_descriptor": "80FD93D9",
+            "source_sha256": "9e51834ba8fcb076d3a713bb85841fb11ff010b4011ddec019e2004e7f4dba7d",
+            "rule_role": "fallback",
+            "rule": 243,
+            "rule_descriptor": "80FD926D",
+            "rule_sha256": "4fb39e58bc1c68533bb9b4c1b9d9e3a45db5d2d708fbb19c3a62701dbb0dac15",
+            "tactical": -1,
+            "tactical_row": 0,
+            "tactical_rows": 0,
+            "tactical_descriptor": null,
+            "tactical_sha256": null,
+            "categories": 3,
+            "targets": [
+              7,
+              7,
+              7
+            ],
+            "quota_review": {
+              "status": "estimated_from_package_roles_and_native_layout",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+            },
+            "count_choices_sha256": "30bbeddd33c50a86738c48a5242cc6af6c1eb9bdbe9d4d20316abe319a67d131",
+            "boss": false
+          },
+          {
+            "registry": "9A24C39A",
             "source": 56,
             "source_descriptor": "80FD93DC",
             "source_sha256": "398c8a3b7d83dde986aa90b0a5f6accf6b3a9349549157d4b2ae414af4f4f7a8",
@@ -12152,6 +12598,98 @@
           },
           {
             "registry": "9A24C39A",
+            "source": 60,
+            "source_descriptor": "80FD93EB",
+            "source_sha256": "32ca586ccaff25126acba57daded641dc631249277d7c1f790a1ae75e034d628",
+            "rule_role": "fallback",
+            "rule": 264,
+            "rule_descriptor": "80FD92C4",
+            "rule_sha256": "374c93d1f61564ecde7a00590a61725a47c9fb2bbd72fb06eff1728365529ece",
+            "tactical": -1,
+            "tactical_row": 0,
+            "tactical_rows": 0,
+            "tactical_descriptor": null,
+            "tactical_sha256": null,
+            "categories": 3,
+            "targets": [
+              5,
+              7,
+              7
+            ],
+            "quota_review": {
+              "status": "estimated_from_package_roles_and_native_layout",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+            },
+            "count_choices_sha256": "30bbeddd33c50a86738c48a5242cc6af6c1eb9bdbe9d4d20316abe319a67d131",
+            "boss": false
+          },
+          {
+            "registry": "9A24C39A",
+            "source": 64,
+            "source_descriptor": "80FD9403",
+            "source_sha256": "f6109a9cf37a50eaaf8fa521990e8ad00771e357c557d2a109a0c1a2eafd8d83",
+            "rule_role": "fallback",
+            "rule": 280,
+            "rule_descriptor": "80FD92CE",
+            "rule_sha256": "85dde86910b50a48d5f7016b677d3f9ca3cfe1191ad790e358fd23e7c6480a07",
+            "tactical": -1,
+            "tactical_row": 0,
+            "tactical_rows": 0,
+            "tactical_descriptor": null,
+            "tactical_sha256": null,
+            "categories": 5,
+            "targets": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "quota_review": {
+              "status": "estimated_from_package_roles_and_native_layout",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+            },
+            "count_choices_sha256": "bf41809e7a585be29d2b2cb55669caa6d4c3e293bf19d82765bc4acd9d25494a",
+            "boss": false
+          },
+          {
+            "registry": "9A24C39A",
+            "source": 70,
+            "source_descriptor": "80FD943D",
+            "source_sha256": "b19964504ab0c8fc7bd43642e2239041c348d9356ded7a8eb8e313e54af8ea36",
+            "rule_role": "fallback",
+            "rule": 285,
+            "rule_descriptor": "80FD92DD",
+            "rule_sha256": "d68c6aa52cccd55630edeef12f4924fe8516dcfd624c548152801fbb29de18b3",
+            "tactical": -1,
+            "tactical_row": 0,
+            "tactical_rows": 0,
+            "tactical_descriptor": null,
+            "tactical_sha256": null,
+            "categories": 3,
+            "targets": [
+              1,
+              1,
+              1
+            ],
+            "quota_review": {
+              "status": "estimated_from_package_roles_and_native_layout",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+            },
+            "count_choices_sha256": "a5151c2cfda03d440c37e3bbbe7357267c67f16c27ac9a127814304b9c635c3f",
+            "boss": false
+          },
+          {
+            "registry": "9A24C39A",
             "source": 74,
             "source_descriptor": "80FD944F",
             "source_sha256": "1c054cfd4053fe1c70510ce88816bf1c8b2daadffb05d0fb03fc3182d7a2709f",
@@ -12176,6 +12714,36 @@
               "note": "Estimated quota; exact per-source count is not visually verified."
             },
             "count_choices_sha256": "61773854033f7737fbb0d2ec028237ed121447a2f9060e92989eba94017bacca",
+            "boss": false
+          },
+          {
+            "registry": "9A24C39A",
+            "source": 76,
+            "source_descriptor": "80FD9470",
+            "source_sha256": "1ae6e4ce2e94fd0ee7b75a558804f7c6dfb2834ba413c5196bb92f8394d09c47",
+            "rule_role": "fallback",
+            "rule": 154,
+            "rule_descriptor": "80FD9190",
+            "rule_sha256": "e18742c9b85524674ec99bdb4abbe7bd18a2eaed1b334a1ee5a85cf1be2427cc",
+            "tactical": -1,
+            "tactical_row": 0,
+            "tactical_rows": 0,
+            "tactical_descriptor": null,
+            "tactical_sha256": null,
+            "categories": 3,
+            "targets": [
+              1,
+              1,
+              1
+            ],
+            "quota_review": {
+              "status": "estimated_from_package_roles_and_native_layout",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "Package-pinned authored source restored; target is a reconstruction estimate, not a retail quota claim."
+            },
+            "count_choices_sha256": "1c35aacc7be517679188aede41c5543c2408458863cd162f34fb316bf3d6e1e5",
             "boss": false
           }
         ],
@@ -12603,7 +13171,15 @@
             "boss": true
           }
         ]
-      ]
+      ],
+      "reward": {
+        "registry": "47A6AC0A",
+        "object": "80FD9948",
+        "slot": 1,
+        "descriptor": "80FD962A",
+        "role": "treasure_chest_dungeon",
+        "descriptor_sha256": "5e1d616eaea099da84de1d81a2689138106edf83a08ac4bd1549fa63bea7442c"
+      }
     },
     {
       "name": "Shipyard AWO-43",
@@ -13210,7 +13786,1487 @@
             "boss": true
           }
         ]
-      ]
+      ],
+      "reward": {
+        "registry": "CA95C18E",
+        "object": "80FDC3F1",
+        "slot": 0,
+        "descriptor": "80FDC072",
+        "role": "o_dungeon_chest",
+        "descriptor_sha256": "b2ea4f0769f3ed22182ddce290748ad2452c845e74dd8193473057b7ec61eb7f"
+      }
+    },
+    {
+      "name": "Bay of Drowned Wishes",
+      "scenario": "80F1404D",
+      "bubble": 8,
+      "quota_review": {
+        "status": "user_species_count_policy_from_package_templates",
+        "video_or_guide_reference": "tools/coo/lost_sector_footage_review.json",
+        "counter_crosscheck": null,
+        "note": "Package-authored source identities use the shared user-species-counts-v1 request policy; counts are host reconstruction values, not recovered retail quotas."
+      },
+      "stages": [
+        [
+          {
+            "registry": "B846777D",
+            "source": 125,
+            "source_descriptor": "80F24D01",
+            "source_sha256": "0ce7b98c121d751ebd904ad2e067d52e55db2d301ecdac5dc50418abb5d11a2f",
+            "rule_role": "primary",
+            "rule": 201,
+            "rule_descriptor": "80F24B8A",
+            "rule_sha256": "e5decc5fc5490e7bdbe3269063c846dd42f1147a33ae725b4b30b7b164fa76ba",
+            "tactical": 142,
+            "tactical_row": 0,
+            "tactical_rows": 12,
+            "tactical_descriptor": "80F24FE5",
+            "tactical_sha256": "bc666859e40dd1d13ba152806ea79635db8f5e389d254bfe9db97b5d311a72e8",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "1e1b2291f2387cf365b27d80e25ae1f7e978e45beecc369d5316c8b74bb21a1e",
+            "boss": false
+          },
+          {
+            "registry": "B846777D",
+            "source": 126,
+            "source_descriptor": "80F24D0B",
+            "source_sha256": "b782864a77b988cb974948cde9a4945d7f6530984275d16a9e3879652bc7fff6",
+            "rule_role": "primary",
+            "rule": 203,
+            "rule_descriptor": "80F24B8D",
+            "rule_sha256": "312c168db3c8af21f4e8b656c16834a5ab37055c291c11a7429faedad8c90b83",
+            "tactical": 142,
+            "tactical_row": 0,
+            "tactical_rows": 12,
+            "tactical_descriptor": "80F24FE5",
+            "tactical_sha256": "bc666859e40dd1d13ba152806ea79635db8f5e389d254bfe9db97b5d311a72e8",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "1e1b2291f2387cf365b27d80e25ae1f7e978e45beecc369d5316c8b74bb21a1e",
+            "boss": false
+          },
+          {
+            "registry": "B846777D",
+            "source": 127,
+            "source_descriptor": "80F24D18",
+            "source_sha256": "aa967f0c324fc487d90c414a2b2e86254c3cf793f2476510142b6e2aadccdadc",
+            "rule_role": "primary",
+            "rule": 205,
+            "rule_descriptor": "80F24B90",
+            "rule_sha256": "e5a22797c0e276a94caa40824f594d0810a83a53a751105e692c5a3113be36cf",
+            "tactical": 142,
+            "tactical_row": 0,
+            "tactical_rows": 12,
+            "tactical_descriptor": "80F24FE5",
+            "tactical_sha256": "bc666859e40dd1d13ba152806ea79635db8f5e389d254bfe9db97b5d311a72e8",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "1e1b2291f2387cf365b27d80e25ae1f7e978e45beecc369d5316c8b74bb21a1e",
+            "boss": false
+          },
+          {
+            "registry": "B846777D",
+            "source": 128,
+            "source_descriptor": "80F24D20",
+            "source_sha256": "02438e7e2a0b72185689184bcb4032906929387252aad2843679581beed2f26d",
+            "rule_role": "primary",
+            "rule": 207,
+            "rule_descriptor": "80F24B93",
+            "rule_sha256": "4cd62ee9aed0bf9cdcfd75920e54e3a53ef672ae2f01dce6f84c450875ed767a",
+            "tactical": 142,
+            "tactical_row": 0,
+            "tactical_rows": 12,
+            "tactical_descriptor": "80F24FE5",
+            "tactical_sha256": "bc666859e40dd1d13ba152806ea79635db8f5e389d254bfe9db97b5d311a72e8",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "1e1b2291f2387cf365b27d80e25ae1f7e978e45beecc369d5316c8b74bb21a1e",
+            "boss": false
+          },
+          {
+            "registry": "B846777D",
+            "source": 129,
+            "source_descriptor": "80F24D29",
+            "source_sha256": "f3d32ae646bcb4d8093ab890c8545a01091a1683471667b728466f751d5dba51",
+            "rule_role": "primary",
+            "rule": 210,
+            "rule_descriptor": "80F24B96",
+            "rule_sha256": "bb98d39235bb4949d928bcce2216e6b85a8d7303f04ee9b390cbb85fd96e4184",
+            "tactical": 142,
+            "tactical_row": 0,
+            "tactical_rows": 12,
+            "tactical_descriptor": "80F24FE5",
+            "tactical_sha256": "bc666859e40dd1d13ba152806ea79635db8f5e389d254bfe9db97b5d311a72e8",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "1e1b2291f2387cf365b27d80e25ae1f7e978e45beecc369d5316c8b74bb21a1e",
+            "boss": false
+          },
+          {
+            "registry": "B846777D",
+            "source": 130,
+            "source_descriptor": "80F24D2C",
+            "source_sha256": "8aa735b4b91bcd90748cf4a905460d1ffaabc2ab977a7cd31e26d2c508132d0c",
+            "rule_role": "primary",
+            "rule": 210,
+            "rule_descriptor": "80F24B96",
+            "rule_sha256": "bb98d39235bb4949d928bcce2216e6b85a8d7303f04ee9b390cbb85fd96e4184",
+            "tactical": 142,
+            "tactical_row": 0,
+            "tactical_rows": 12,
+            "tactical_descriptor": "80F24FE5",
+            "tactical_sha256": "bc666859e40dd1d13ba152806ea79635db8f5e389d254bfe9db97b5d311a72e8",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "1e1b2291f2387cf365b27d80e25ae1f7e978e45beecc369d5316c8b74bb21a1e",
+            "boss": false
+          },
+          {
+            "registry": "B846777D",
+            "source": 131,
+            "source_descriptor": "80F24D37",
+            "source_sha256": "32f955ff453817f2d82199a4e421755822367c0084e5decbfde4d6269e49cdb9",
+            "rule_role": "primary",
+            "rule": 213,
+            "rule_descriptor": "80F24B99",
+            "rule_sha256": "f5d36ff701cb78c60f9a96290868e6ec234f7838b59eac3e26bc49c50ceb312a",
+            "tactical": 142,
+            "tactical_row": 0,
+            "tactical_rows": 12,
+            "tactical_descriptor": "80F24FE5",
+            "tactical_sha256": "bc666859e40dd1d13ba152806ea79635db8f5e389d254bfe9db97b5d311a72e8",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "1e1b2291f2387cf365b27d80e25ae1f7e978e45beecc369d5316c8b74bb21a1e",
+            "boss": false
+          },
+          {
+            "registry": "B846777D",
+            "source": 132,
+            "source_descriptor": "80F24D40",
+            "source_sha256": "51871d3f90fcc715ec931384cab167dfe79220258174e98d6784e11340e2f86c",
+            "rule_role": "primary",
+            "rule": 213,
+            "rule_descriptor": "80F24B99",
+            "rule_sha256": "f5d36ff701cb78c60f9a96290868e6ec234f7838b59eac3e26bc49c50ceb312a",
+            "tactical": 142,
+            "tactical_row": 0,
+            "tactical_rows": 12,
+            "tactical_descriptor": "80F24FE5",
+            "tactical_sha256": "bc666859e40dd1d13ba152806ea79635db8f5e389d254bfe9db97b5d311a72e8",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "1e1b2291f2387cf365b27d80e25ae1f7e978e45beecc369d5316c8b74bb21a1e",
+            "boss": false
+          },
+          {
+            "registry": "B846777D",
+            "source": 133,
+            "source_descriptor": "80F24D43",
+            "source_sha256": "f37ed220dd69358acdc2b6db8ff70d43905b857d9a0983918bd9a026be39ea8d",
+            "rule_role": "primary",
+            "rule": 216,
+            "rule_descriptor": "80F24B9C",
+            "rule_sha256": "920829f51c90a8e33d989dbfef960cec109467fdb60bd943214265c01581d37d",
+            "tactical": 142,
+            "tactical_row": 0,
+            "tactical_rows": 12,
+            "tactical_descriptor": "80F24FE5",
+            "tactical_sha256": "bc666859e40dd1d13ba152806ea79635db8f5e389d254bfe9db97b5d311a72e8",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "1e1b2291f2387cf365b27d80e25ae1f7e978e45beecc369d5316c8b74bb21a1e",
+            "boss": false
+          },
+          {
+            "registry": "B846777D",
+            "source": 134,
+            "source_descriptor": "80F24D4E",
+            "source_sha256": "9aee8596fff49a01e1cb708abc03e5bc0fcb5a08426d0e1ca5035abb2b63606a",
+            "rule_role": "primary",
+            "rule": 216,
+            "rule_descriptor": "80F24B9C",
+            "rule_sha256": "920829f51c90a8e33d989dbfef960cec109467fdb60bd943214265c01581d37d",
+            "tactical": 142,
+            "tactical_row": 0,
+            "tactical_rows": 12,
+            "tactical_descriptor": "80F24FE5",
+            "tactical_sha256": "bc666859e40dd1d13ba152806ea79635db8f5e389d254bfe9db97b5d311a72e8",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "1e1b2291f2387cf365b27d80e25ae1f7e978e45beecc369d5316c8b74bb21a1e",
+            "boss": false
+          },
+          {
+            "registry": "B846777D",
+            "source": 135,
+            "source_descriptor": "80F24D57",
+            "source_sha256": "f6312714e353d4f3b021b1bfe0126780e5c2453a152ce32aa986be0066ed7804",
+            "rule_role": "fallback",
+            "rule": 218,
+            "rule_descriptor": "80F24BFF",
+            "rule_sha256": "76b96b741266d6099ba1402b6684c94638ba1e1c1a995f88d174329c81202817",
+            "tactical": 142,
+            "tactical_row": 0,
+            "tactical_rows": 12,
+            "tactical_descriptor": "80F24FE5",
+            "tactical_sha256": "bc666859e40dd1d13ba152806ea79635db8f5e389d254bfe9db97b5d311a72e8",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "1bed5ce132f8d863089e2c27da38437552e715d61fb006544ebe4a85d97b1a4a",
+            "boss": false
+          },
+          {
+            "registry": "B846777D",
+            "source": 136,
+            "source_descriptor": "80F24D5A",
+            "source_sha256": "9f129ffa170d4e61e871ae6217bb26e66b18ee6a8c3bf6940267f138c1d2d3d6",
+            "rule_role": "fallback",
+            "rule": 220,
+            "rule_descriptor": "80F24C02",
+            "rule_sha256": "935283fe4598988aa8d5b7e12fdd0f4eab433d2e7cdacf684dd34b91854dfd42",
+            "tactical": 142,
+            "tactical_row": 0,
+            "tactical_rows": 12,
+            "tactical_descriptor": "80F24FE5",
+            "tactical_sha256": "bc666859e40dd1d13ba152806ea79635db8f5e389d254bfe9db97b5d311a72e8",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "1bed5ce132f8d863089e2c27da38437552e715d61fb006544ebe4a85d97b1a4a",
+            "boss": false
+          },
+          {
+            "registry": "B846777D",
+            "source": 137,
+            "source_descriptor": "80F24D65",
+            "source_sha256": "4bffca5a52d74f2aa150261d56535b2f9644655447d96c2012ed4fb9ae03f74c",
+            "rule_role": "primary",
+            "rule": 222,
+            "rule_descriptor": "80F24C29",
+            "rule_sha256": "217a0e0b9956d76192e998b6b80ab22ee13f400aec91ee9e396ca88d4267f23f",
+            "tactical": 142,
+            "tactical_row": 0,
+            "tactical_rows": 12,
+            "tactical_descriptor": "80F24FE5",
+            "tactical_sha256": "bc666859e40dd1d13ba152806ea79635db8f5e389d254bfe9db97b5d311a72e8",
+            "categories": 1,
+            "targets": [
+              3
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "b5b8417d748da1aa1ac858f7f232fd3e868c3ac9f67fe491f1bb1d5be1d54b23",
+            "boss": false
+          },
+          {
+            "registry": "B846777D",
+            "source": 138,
+            "source_descriptor": "80F24D6E",
+            "source_sha256": "32651da740f2f32d9c2bed5dc06605780d47e9a82e50f842c8eb223816edb645",
+            "rule_role": "fallback",
+            "rule": 224,
+            "rule_descriptor": "80F24C2C",
+            "rule_sha256": "3be91c9b9c3a6db8f53a776881e51933dc7b90ca81de685cc835e95be95cff71",
+            "tactical": 142,
+            "tactical_row": 0,
+            "tactical_rows": 12,
+            "tactical_descriptor": "80F24FE5",
+            "tactical_sha256": "bc666859e40dd1d13ba152806ea79635db8f5e389d254bfe9db97b5d311a72e8",
+            "categories": 2,
+            "targets": [
+              4,
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: user-species-varied, unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "1b6a6b57e13554ac1ba4ac3557bd7dad100a61c9917c54b6fd0eaf7c2a5085f6",
+            "boss": false
+          },
+          {
+            "registry": "B846777D",
+            "source": 139,
+            "source_descriptor": "80F24D71",
+            "source_sha256": "b64dfffb68c946256a4e9b9a1d99e521c3f5841266ccb71a65335a047fafff4b",
+            "rule_role": "fallback",
+            "rule": 226,
+            "rule_descriptor": "80F24C32",
+            "rule_sha256": "e82098770b9489d347a08d0fb7c27536cdcbff454f0f6fba37cc9ad1f1fd1c91",
+            "tactical": 142,
+            "tactical_row": 0,
+            "tactical_rows": 12,
+            "tactical_descriptor": "80F24FE5",
+            "tactical_sha256": "bc666859e40dd1d13ba152806ea79635db8f5e389d254bfe9db97b5d311a72e8",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: fixed-species-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "8b45fe8c39bcc9efc1e85f68fcc7cf9cf61b505ff14007f4cbac3efee6a40a6b",
+            "boss": false
+          },
+          {
+            "registry": "B846777D",
+            "source": 140,
+            "source_descriptor": "80F24D7C",
+            "source_sha256": "c11958c50ac9ad99ee392a056f9989d8b836ac2e83e4ffde6f44175c46dea334",
+            "rule_role": "fallback",
+            "rule": 228,
+            "rule_descriptor": "80F24C5F",
+            "rule_sha256": "d678ee0ed99c157626bf46dba98b253ff6f5b9b201b7d363beef61c8b1c4edc4",
+            "tactical": 142,
+            "tactical_row": 0,
+            "tactical_rows": 12,
+            "tactical_descriptor": "80F24FE5",
+            "tactical_sha256": "bc666859e40dd1d13ba152806ea79635db8f5e389d254bfe9db97b5d311a72e8",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: fixed-species-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "8b45fe8c39bcc9efc1e85f68fcc7cf9cf61b505ff14007f4cbac3efee6a40a6b",
+            "boss": false
+          },
+          {
+            "registry": "B846777D",
+            "source": 141,
+            "source_descriptor": "80F24D85",
+            "source_sha256": "a1bf3d2fdda2f16a8d0db03fcd87fd67cdf44751845a55705f3798624ae1fb9d",
+            "rule_role": "fallback",
+            "rule": 230,
+            "rule_descriptor": "80F24C65",
+            "rule_sha256": "1e24fcf5c320798ef14e4d9237b33e17d447bebf3bf4c09511c29f0775ab8cfd",
+            "tactical": 142,
+            "tactical_row": 0,
+            "tactical_rows": 12,
+            "tactical_descriptor": "80F24FE5",
+            "tactical_sha256": "bc666859e40dd1d13ba152806ea79635db8f5e389d254bfe9db97b5d311a72e8",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: fixed-species-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "8b45fe8c39bcc9efc1e85f68fcc7cf9cf61b505ff14007f4cbac3efee6a40a6b",
+            "boss": false
+          },
+          {
+            "registry": "B846777D",
+            "source": 144,
+            "source_descriptor": "80F24D88",
+            "source_sha256": "a59c970c1f2ee4422ade0daa2ad97c758cbbe0272eb433fafe3425e8cb398065",
+            "rule_role": "fallback",
+            "rule": 292,
+            "rule_descriptor": "80F24C86",
+            "rule_sha256": "0f0333fbd13bc38498dcbb1c1d9f43442a1ad83f83d7f8f2eea95c26f4299121",
+            "tactical": 148,
+            "tactical_row": 0,
+            "tactical_rows": 3,
+            "tactical_descriptor": "80F24FF7",
+            "tactical_sha256": "0dcad06b8c211dcaedbe70e12e2ea605702c4dc64941de28ba1c100db3a0c250",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: boss-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "6ba4876d5a8d9cc8c388e80a810cd636cc50c355d53c63c1126226b6a15a30f1",
+            "boss": true
+          },
+          {
+            "registry": "B846777D",
+            "source": 146,
+            "source_descriptor": "80F24D8F",
+            "source_sha256": "4729ff40b9fb7f00d842fc97fbc1c64e3dfd7c79c75a1e9537737a9c37d1bf6d",
+            "rule_role": "fallback",
+            "rule": 289,
+            "rule_descriptor": "80F24C7F",
+            "rule_sha256": "f156c137f15be5e31719eb0a0978fd53018ec0adde01642d77096924969e7a5a",
+            "tactical": 148,
+            "tactical_row": 0,
+            "tactical_rows": 3,
+            "tactical_descriptor": "80F24FF7",
+            "tactical_sha256": "0dcad06b8c211dcaedbe70e12e2ea605702c4dc64941de28ba1c100db3a0c250",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "d7b2ddba17fb732f87cfb8f46b1702c6676de12d5fe53cb41fc7f39f3051e3be",
+            "boss": false
+          },
+          {
+            "registry": "B846777D",
+            "source": 147,
+            "source_descriptor": "80F24D99",
+            "source_sha256": "eae374d8cb88d82353570fc58d6618c36668fbec995cccde18e876e6f144c07c",
+            "rule_role": "primary",
+            "rule": 291,
+            "rule_descriptor": "80F24C83",
+            "rule_sha256": "0d9ed13d797cf15c35a068337aea7840af4305119a5a227aac315cac82ed673a",
+            "tactical": 148,
+            "tactical_row": 0,
+            "tactical_rows": 3,
+            "tactical_descriptor": "80F24FF7",
+            "tactical_sha256": "0dcad06b8c211dcaedbe70e12e2ea605702c4dc64941de28ba1c100db3a0c250",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "a29912d37f45071d4fba447ac85880a5adb268d236bd4bb0848ca7ef589f47be",
+            "boss": false
+          },
+          {
+            "registry": "B846777D",
+            "source": 149,
+            "source_descriptor": "80F24D9F",
+            "source_sha256": "977331728117e412aee7be21b3b6363bb652432ce872de1905910467aeb9072b",
+            "rule_role": "fallback",
+            "rule": 310,
+            "rule_descriptor": "80F24C8D",
+            "rule_sha256": "312e22a3f304fb22579680f420be2b2b2354de5ec4b644332de16d422d84c869",
+            "tactical": 148,
+            "tactical_row": 0,
+            "tactical_rows": 3,
+            "tactical_descriptor": "80F24FF7",
+            "tactical_sha256": "0dcad06b8c211dcaedbe70e12e2ea605702c4dc64941de28ba1c100db3a0c250",
+            "categories": 1,
+            "targets": [
+              2
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "2bc4a66acc4ba202b7bb093b2f267b1af2175e0622b0f4a82f27496451721083",
+            "boss": false
+          }
+        ]
+      ],
+      "reward": {
+        "registry": "BA29E558",
+        "object": "80F25086",
+        "slot": 1,
+        "descriptor": "80F24E41",
+        "role": "region_chest_major1",
+        "descriptor_sha256": "f574abd71296e59432e027fa8a88276760699add40b2f65d58dce074b0789df8"
+      }
+    },
+    {
+      "name": "Chamber of Starlight",
+      "scenario": "80F1404D",
+      "bubble": 9,
+      "quota_review": {
+        "status": "user_species_count_policy_from_package_templates",
+        "video_or_guide_reference": "tools/coo/lost_sector_footage_review.json",
+        "counter_crosscheck": null,
+        "note": "Package-authored source identities use the shared user-species-counts-v1 request policy; counts are host reconstruction values, not recovered retail quotas."
+      },
+      "stages": [
+        [
+          {
+            "registry": "74E16154",
+            "source": 0,
+            "source_descriptor": "80F25083",
+            "source_sha256": "8f172e18d237435578868eb8a39df33e5020be06b0e1f7bc86a2e66ba4f64d74",
+            "rule_role": "primary",
+            "rule": 100,
+            "rule_descriptor": "80F24FFD",
+            "rule_sha256": "783743f27f186a27877baf815e68586691a16be27099feb08ec70a230e921378",
+            "tactical": 52,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F252C7",
+            "tactical_sha256": "10da8505cf84d01530bd8bb2f795c6afa8aee78087b497546c1d4f50380bd152",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: boss-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "65cfde94340041bc15f15799cf6a3f72cb1a6dc9262647d718d851e0082c8a56",
+            "boss": true
+          },
+          {
+            "registry": "74E16154",
+            "source": 2,
+            "source_descriptor": "80F25087",
+            "source_sha256": "d3b068ffbd895ef45cb3856c1af9ae0dc68554baf1744b1d3847ff5ff6448750",
+            "rule_role": "primary",
+            "rule": 101,
+            "rule_descriptor": "80F25000",
+            "rule_sha256": "607dbadcaaf85d9e635b734d5c808756d57cd4a214935e152809da00a74e0f94",
+            "tactical": 52,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F252C7",
+            "tactical_sha256": "10da8505cf84d01530bd8bb2f795c6afa8aee78087b497546c1d4f50380bd152",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "c3d360e381ae367bfe52b1b6fe014b084b4d77e598eace5a5dd2a1010aa01b8c",
+            "boss": false
+          },
+          {
+            "registry": "74E16154",
+            "source": 3,
+            "source_descriptor": "80F2508A",
+            "source_sha256": "4484c6975ef7aa6425866bcb07199f8592c771eccf12a4edb8a63a7db547f7fe",
+            "rule_role": "primary",
+            "rule": 101,
+            "rule_descriptor": "80F25000",
+            "rule_sha256": "607dbadcaaf85d9e635b734d5c808756d57cd4a214935e152809da00a74e0f94",
+            "tactical": 52,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F252C7",
+            "tactical_sha256": "10da8505cf84d01530bd8bb2f795c6afa8aee78087b497546c1d4f50380bd152",
+            "categories": 1,
+            "targets": [
+              5
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "c8862b74eea2ddc5419569b8b82c498a90ba0c4c0318351ee708c6ace9c3d7fe",
+            "boss": false
+          },
+          {
+            "registry": "74E16154",
+            "source": 4,
+            "source_descriptor": "80F2508D",
+            "source_sha256": "8504bb6d557e782890afe7eef3b96f729922ed755c4df5b208e5595a9ef87f8f",
+            "rule_role": "primary",
+            "rule": 103,
+            "rule_descriptor": "80F25006",
+            "rule_sha256": "67ec31fe6a21c5939d70aec630c27d93fe41c4c883e2abb01a6f22d18e1e7759",
+            "tactical": 52,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F252C7",
+            "tactical_sha256": "10da8505cf84d01530bd8bb2f795c6afa8aee78087b497546c1d4f50380bd152",
+            "categories": 1,
+            "targets": [
+              6
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "c8862b74eea2ddc5419569b8b82c498a90ba0c4c0318351ee708c6ace9c3d7fe",
+            "boss": false
+          },
+          {
+            "registry": "74E16154",
+            "source": 5,
+            "source_descriptor": "80F25090",
+            "source_sha256": "68aefca3ec4304523b8e71a5dd0ad38cab20d96546b77e13ff0a072c47bab0d2",
+            "rule_role": "primary",
+            "rule": 105,
+            "rule_descriptor": "80F2500C",
+            "rule_sha256": "53d8bdf9ce5e2e1841cb735dfb46ac74bf3c3d0a725a238aaa5519b4ee98aff6",
+            "tactical": 52,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F252C7",
+            "tactical_sha256": "10da8505cf84d01530bd8bb2f795c6afa8aee78087b497546c1d4f50380bd152",
+            "categories": 1,
+            "targets": [
+              6
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "c8862b74eea2ddc5419569b8b82c498a90ba0c4c0318351ee708c6ace9c3d7fe",
+            "boss": false
+          },
+          {
+            "registry": "74E16154",
+            "source": 6,
+            "source_descriptor": "80F25093",
+            "source_sha256": "d0a7f664f82a946360cc07686369372c8f6fa45d19ebec47e9b470df43f51391",
+            "rule_role": "primary",
+            "rule": 110,
+            "rule_descriptor": "80F2501B",
+            "rule_sha256": "aad6106471c51cf235bd7e1d4f4b9f33b75029317108ca93186fd3b99b887f7e",
+            "tactical": 52,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F252C7",
+            "tactical_sha256": "10da8505cf84d01530bd8bb2f795c6afa8aee78087b497546c1d4f50380bd152",
+            "categories": 2,
+            "targets": [
+              1,
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton, unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "4f5ac7b8e3d3e9ef0b132a335bbc606892d53f48065606c1c9b82c5841044d8b",
+            "boss": false
+          },
+          {
+            "registry": "74E16154",
+            "source": 7,
+            "source_descriptor": "80F2509A",
+            "source_sha256": "4702614716e46e1869a3532525fe1f71321b43d60922d8f11c5e8b6fece88fd7",
+            "rule_role": "primary",
+            "rule": 111,
+            "rule_descriptor": "80F2501E",
+            "rule_sha256": "381aa545ef3636c07ad282f7710357018b8a41bb68a611b8ee4d118037aa76ff",
+            "tactical": 52,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F252C7",
+            "tactical_sha256": "10da8505cf84d01530bd8bb2f795c6afa8aee78087b497546c1d4f50380bd152",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "c3d360e381ae367bfe52b1b6fe014b084b4d77e598eace5a5dd2a1010aa01b8c",
+            "boss": false
+          },
+          {
+            "registry": "74E16154",
+            "source": 8,
+            "source_descriptor": "80F250D9",
+            "source_sha256": "c62ec1462ed26e1a1f67fdbe37750de68252a8ed47e3c4467d26ca418dc08eed",
+            "rule_role": "primary",
+            "rule": 112,
+            "rule_descriptor": "80F25021",
+            "rule_sha256": "ff795261f9444b89bb649cc7a5599ac86d14268804f11c4450e17f05ec328c0f",
+            "tactical": 52,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F252C7",
+            "tactical_sha256": "10da8505cf84d01530bd8bb2f795c6afa8aee78087b497546c1d4f50380bd152",
+            "categories": 2,
+            "targets": [
+              3,
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: user-species-varied, segmented-rank-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "b017e769e27c2b2ad9f57d92f39baf36c5fd18c8da3949bea1d0582f034f3cbb",
+            "boss": false
+          },
+          {
+            "registry": "74E16154",
+            "source": 9,
+            "source_descriptor": "80F250DC",
+            "source_sha256": "cba376a3f64e3ea2a3ae4b3ad670d4a9c017eb13adcb351845b67b3c087ec3fe",
+            "rule_role": "primary",
+            "rule": 116,
+            "rule_descriptor": "80F2502D",
+            "rule_sha256": "05eec835b2a3425b51ddc33f0436217ae57a6b9fe301faab049e8fc009a0f496",
+            "tactical": 52,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F252C7",
+            "tactical_sha256": "10da8505cf84d01530bd8bb2f795c6afa8aee78087b497546c1d4f50380bd152",
+            "categories": 1,
+            "targets": [
+              3
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "cb62de5af5705bde66f1344c2e9bbd2c1ca8f2cc08f3e62d678ca310a67f91a9",
+            "boss": false
+          },
+          {
+            "registry": "74E16154",
+            "source": 10,
+            "source_descriptor": "80F250DF",
+            "source_sha256": "4792ee58cf4f4662d0ff9566ed20b264e2aaff354b17ad2488810fb1443820d0",
+            "rule_role": "primary",
+            "rule": 117,
+            "rule_descriptor": "80F25030",
+            "rule_sha256": "9eb400f674796346df73e907152be79797ef3ddb06df2ab2d822a258e3de0684",
+            "tactical": 52,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F252C7",
+            "tactical_sha256": "10da8505cf84d01530bd8bb2f795c6afa8aee78087b497546c1d4f50380bd152",
+            "categories": 1,
+            "targets": [
+              2
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "cb62de5af5705bde66f1344c2e9bbd2c1ca8f2cc08f3e62d678ca310a67f91a9",
+            "boss": false
+          },
+          {
+            "registry": "74E16154",
+            "source": 11,
+            "source_descriptor": "80F250E4",
+            "source_sha256": "0659334a9227e65fbc456aadaab8e0f6b46c490b348feec095963cf2820eaf53",
+            "rule_role": "implicit_fixed_turret",
+            "rule": 0,
+            "rule_descriptor": null,
+            "rule_sha256": null,
+            "tactical": 52,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F252C7",
+            "tactical_sha256": "10da8505cf84d01530bd8bb2f795c6afa8aee78087b497546c1d4f50380bd152",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "4b6e31aab47acac39e9d5618bd3c0d68b8f0ce5a569de41de4e3eca6ef162aad",
+            "boss": false
+          },
+          {
+            "registry": "74E16154",
+            "source": 12,
+            "source_descriptor": "80F250EE",
+            "source_sha256": "574b7cb029587043b011e6a2738fe29db6136c0ebbd496128c9035f5914767f7",
+            "rule_role": "implicit_fixed_turret",
+            "rule": 0,
+            "rule_descriptor": null,
+            "rule_sha256": null,
+            "tactical": 52,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F252C7",
+            "tactical_sha256": "10da8505cf84d01530bd8bb2f795c6afa8aee78087b497546c1d4f50380bd152",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "4b6e31aab47acac39e9d5618bd3c0d68b8f0ce5a569de41de4e3eca6ef162aad",
+            "boss": false
+          }
+        ]
+      ],
+      "reward": {
+        "registry": "039307C3",
+        "object": "80F25376",
+        "slot": 1,
+        "descriptor": "80F2524C",
+        "role": "region_chest_major1",
+        "descriptor_sha256": "f6cdcc02ec7ccfb508aa653ef47cf8c5b0c9dc37c967745d1a7e87a9e46afcf8"
+      }
+    },
+    {
+      "name": "Aphelion's Rest",
+      "scenario": "80F1404D",
+      "bubble": 10,
+      "quota_review": {
+        "status": "user_species_count_policy_from_package_templates",
+        "video_or_guide_reference": "tools/coo/lost_sector_footage_review.json",
+        "counter_crosscheck": null,
+        "note": "Package-authored source identities use the shared user-species-counts-v1 request policy; counts are host reconstruction values, not recovered retail quotas."
+      },
+      "stages": [
+        [
+          {
+            "registry": "D7FF797A",
+            "source": 1,
+            "source_descriptor": "80F25318",
+            "source_sha256": "fb5ef4bd821fe30f98b89fd0eba86eb7939b8fc37ca62d97d07d83efdd318821",
+            "rule_role": "primary",
+            "rule": 105,
+            "rule_descriptor": "80F252F4",
+            "rule_sha256": "6443f7e4f6629d0abcf02e7e12d2bc75b1395551008419266d71f38d9a10ab41",
+            "tactical": 61,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F2558B",
+            "tactical_sha256": "3442651044204ce083d0ef5c8f99fc93d84208ee002f1f052123ddbf9e4a42bd",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "c3d360e381ae367bfe52b1b6fe014b084b4d77e598eace5a5dd2a1010aa01b8c",
+            "boss": false
+          },
+          {
+            "registry": "D7FF797A",
+            "source": 2,
+            "source_descriptor": "80F2531B",
+            "source_sha256": "ec35f7a45d2901e9782e500981f2f4b4ac30911e749a1988dd87073ef0d683e6",
+            "rule_role": "primary",
+            "rule": 105,
+            "rule_descriptor": "80F252F4",
+            "rule_sha256": "6443f7e4f6629d0abcf02e7e12d2bc75b1395551008419266d71f38d9a10ab41",
+            "tactical": 61,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F2558B",
+            "tactical_sha256": "3442651044204ce083d0ef5c8f99fc93d84208ee002f1f052123ddbf9e4a42bd",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "4b6e31aab47acac39e9d5618bd3c0d68b8f0ce5a569de41de4e3eca6ef162aad",
+            "boss": false
+          },
+          {
+            "registry": "D7FF797A",
+            "source": 3,
+            "source_descriptor": "80F2531E",
+            "source_sha256": "5bc4ad4a26d5ae4330c4618359d5b66f26015852370fed20faec477984b38b11",
+            "rule_role": "primary",
+            "rule": 105,
+            "rule_descriptor": "80F252F4",
+            "rule_sha256": "6443f7e4f6629d0abcf02e7e12d2bc75b1395551008419266d71f38d9a10ab41",
+            "tactical": 61,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F2558B",
+            "tactical_sha256": "3442651044204ce083d0ef5c8f99fc93d84208ee002f1f052123ddbf9e4a42bd",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "c3d360e381ae367bfe52b1b6fe014b084b4d77e598eace5a5dd2a1010aa01b8c",
+            "boss": false
+          },
+          {
+            "registry": "D7FF797A",
+            "source": 4,
+            "source_descriptor": "80F25321",
+            "source_sha256": "a0e2d487cd0b95dc72ff448f6b0eeed4ddc3af864ea8df0813aeea1d765230f2",
+            "rule_role": "primary",
+            "rule": 105,
+            "rule_descriptor": "80F252F4",
+            "rule_sha256": "6443f7e4f6629d0abcf02e7e12d2bc75b1395551008419266d71f38d9a10ab41",
+            "tactical": 61,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F2558B",
+            "tactical_sha256": "3442651044204ce083d0ef5c8f99fc93d84208ee002f1f052123ddbf9e4a42bd",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "4b6e31aab47acac39e9d5618bd3c0d68b8f0ce5a569de41de4e3eca6ef162aad",
+            "boss": false
+          },
+          {
+            "registry": "D7FF797A",
+            "source": 5,
+            "source_descriptor": "80F2532C",
+            "source_sha256": "88e05ae2f0158e968e7ece630334faa2be61fbe57c44fdc31c61a2bd66ecda70",
+            "rule_role": "primary",
+            "rule": 107,
+            "rule_descriptor": "80F252F7",
+            "rule_sha256": "f3edf7e50e6ab33ba112d2b8a1d3e4226d39593db8e2363d8fe839ace982e772",
+            "tactical": 61,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F2558B",
+            "tactical_sha256": "3442651044204ce083d0ef5c8f99fc93d84208ee002f1f052123ddbf9e4a42bd",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "c3d360e381ae367bfe52b1b6fe014b084b4d77e598eace5a5dd2a1010aa01b8c",
+            "boss": false
+          },
+          {
+            "registry": "D7FF797A",
+            "source": 6,
+            "source_descriptor": "80F2532F",
+            "source_sha256": "ce6108470d21e601e4acccd9e0ba2292861885a9fc215235f04cac22a52b171a",
+            "rule_role": "primary",
+            "rule": 107,
+            "rule_descriptor": "80F252F7",
+            "rule_sha256": "f3edf7e50e6ab33ba112d2b8a1d3e4226d39593db8e2363d8fe839ace982e772",
+            "tactical": 61,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F2558B",
+            "tactical_sha256": "3442651044204ce083d0ef5c8f99fc93d84208ee002f1f052123ddbf9e4a42bd",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: unresolved-choice-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "4b6e31aab47acac39e9d5618bd3c0d68b8f0ce5a569de41de4e3eca6ef162aad",
+            "boss": false
+          },
+          {
+            "registry": "D7FF797A",
+            "source": 7,
+            "source_descriptor": "80F25332",
+            "source_sha256": "3af667e0a71b94a46a870c0bb0c9177bf415423a76aff210f86cad43d5730ee2",
+            "rule_role": "primary",
+            "rule": 111,
+            "rule_descriptor": "80F25303",
+            "rule_sha256": "1fdf682c4d383a14ca1b230add25a1295b036478835712148fea0062d7e0cabc",
+            "tactical": 61,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F2558B",
+            "tactical_sha256": "3442651044204ce083d0ef5c8f99fc93d84208ee002f1f052123ddbf9e4a42bd",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: fixed-species-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "dc871ae69a945fbf207acb6d6c94fc6d357740e5b4e15a33c9ff37410bd51567",
+            "boss": false
+          },
+          {
+            "registry": "D7FF797A",
+            "source": 8,
+            "source_descriptor": "80F25335",
+            "source_sha256": "b76a86c67447aa0911bfe71f3b6bd1dcef9db2ac94ffe6c68c0adcd91383f15b",
+            "rule_role": "primary",
+            "rule": 108,
+            "rule_descriptor": "80F252FA",
+            "rule_sha256": "eb30a6b1a9f892c59ee12477912ae3c9074eb5857655b7c99371784fcb301906",
+            "tactical": 61,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F2558B",
+            "tactical_sha256": "3442651044204ce083d0ef5c8f99fc93d84208ee002f1f052123ddbf9e4a42bd",
+            "categories": 1,
+            "targets": [
+              3
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "de220965a0e9bb3fa21057141f0dc80ea4e07777789a93b9dc3813bfb5a4089e",
+            "boss": false
+          },
+          {
+            "registry": "D7FF797A",
+            "source": 9,
+            "source_descriptor": "80F25338",
+            "source_sha256": "5a1b2b7c8e570c4b2ee8e8e1992b37901121f56aa59f687f9ca7a48c333c7ce3",
+            "rule_role": "primary",
+            "rule": 109,
+            "rule_descriptor": "80F252FD",
+            "rule_sha256": "f4a3361ea618121c3c7a60a67e8cf76e2348f459342735b56b854d44f7e7a728",
+            "tactical": 61,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F2558B",
+            "tactical_sha256": "3442651044204ce083d0ef5c8f99fc93d84208ee002f1f052123ddbf9e4a42bd",
+            "categories": 1,
+            "targets": [
+              3
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "de220965a0e9bb3fa21057141f0dc80ea4e07777789a93b9dc3813bfb5a4089e",
+            "boss": false
+          },
+          {
+            "registry": "D7FF797A",
+            "source": 10,
+            "source_descriptor": "80F2533F",
+            "source_sha256": "41173ddbeb480c90bc24737a6bd3285abcbf57b9d9b917bbb2987da1ae277517",
+            "rule_role": "primary",
+            "rule": 110,
+            "rule_descriptor": "80F25300",
+            "rule_sha256": "fb2f44e8ca823b9ee737b50ba8002383404c535ed630d148ba38b7887a54baf2",
+            "tactical": 61,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F2558B",
+            "tactical_sha256": "3442651044204ce083d0ef5c8f99fc93d84208ee002f1f052123ddbf9e4a42bd",
+            "categories": 1,
+            "targets": [
+              2
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "de220965a0e9bb3fa21057141f0dc80ea4e07777789a93b9dc3813bfb5a4089e",
+            "boss": false
+          },
+          {
+            "registry": "D7FF797A",
+            "source": 11,
+            "source_descriptor": "80F25342",
+            "source_sha256": "5bf3e28e64470756932730c547214f74d6543d92c6e66efa6785e0d0a2e11d2d",
+            "rule_role": "primary",
+            "rule": 130,
+            "rule_descriptor": "80F2530C",
+            "rule_sha256": "a430fce3c431fcb813869e054eda1bcd06cb58760af30f2a8d44a1d6d5de81d6",
+            "tactical": 61,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F2558B",
+            "tactical_sha256": "3442651044204ce083d0ef5c8f99fc93d84208ee002f1f052123ddbf9e4a42bd",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: segmented-rank-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "c87619e5323f60a928373a41d9fdda369dc0c09dddb29deb1763c82a5ce6b85e",
+            "boss": false
+          },
+          {
+            "registry": "D7FF797A",
+            "source": 12,
+            "source_descriptor": "80F25345",
+            "source_sha256": "ea7c8606fa7cd9fd0e917952b6060656e603e2fcb3768590d4975bd2dd39a536",
+            "rule_role": "primary",
+            "rule": 112,
+            "rule_descriptor": "80F25306",
+            "rule_sha256": "ef6a4e3e64f47aa34bde92edba5f7b0905ce68640b6b4dd2a3498a718b2ff3d4",
+            "tactical": 61,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F2558B",
+            "tactical_sha256": "3442651044204ce083d0ef5c8f99fc93d84208ee002f1f052123ddbf9e4a42bd",
+            "categories": 1,
+            "targets": [
+              2
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "9ff972d5fb58089a225c6965f9211c2d02b4d430a60eac31608e7c4d79d16984",
+            "boss": false
+          },
+          {
+            "registry": "D7FF797A",
+            "source": 13,
+            "source_descriptor": "80F25348",
+            "source_sha256": "e19652e86efb165ac21105b9fdacc52e604346f4481e9c685921d8125f8f4425",
+            "rule_role": "primary",
+            "rule": 121,
+            "rule_descriptor": "80F25309",
+            "rule_sha256": "a66743749b46b6fe32d2d119241dc677251a49d55e6bb776df3d7beed23cdb3b",
+            "tactical": 61,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F2558B",
+            "tactical_sha256": "3442651044204ce083d0ef5c8f99fc93d84208ee002f1f052123ddbf9e4a42bd",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: boss-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "5b1f22d01e7f8256434fff66c559ce408b217b33c4f7c4dfbfae7cf8053683dd",
+            "boss": true
+          },
+          {
+            "registry": "D7FF797A",
+            "source": 15,
+            "source_descriptor": "80F2534B",
+            "source_sha256": "80585fa8d3d6452d0295822322586afccc6508f17bd10a7f0bd5c213662ceb42",
+            "rule_role": "primary",
+            "rule": 99,
+            "rule_descriptor": "80F252EB",
+            "rule_sha256": "0c423a9b36bb327579b446d8a61985d9a4f0ea640fd92ccd02154e8f5551e479",
+            "tactical": 61,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F2558B",
+            "tactical_sha256": "3442651044204ce083d0ef5c8f99fc93d84208ee002f1f052123ddbf9e4a42bd",
+            "categories": 1,
+            "targets": [
+              5
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "c8862b74eea2ddc5419569b8b82c498a90ba0c4c0318351ee708c6ace9c3d7fe",
+            "boss": false
+          },
+          {
+            "registry": "D7FF797A",
+            "source": 16,
+            "source_descriptor": "80F2534E",
+            "source_sha256": "a7f187e3159aa93adfb0ad352191910405c9a826561abcc19951220856c37565",
+            "rule_role": "fallback",
+            "rule": 102,
+            "rule_descriptor": "80F252EE",
+            "rule_sha256": "14c72b50ace731b922e3b8a9812a7ef688ede3a043dbf8c903591f1a09921425",
+            "tactical": 61,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F2558B",
+            "tactical_sha256": "3442651044204ce083d0ef5c8f99fc93d84208ee002f1f052123ddbf9e4a42bd",
+            "categories": 1,
+            "targets": [
+              1
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: fixed-species-singleton. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "dc871ae69a945fbf207acb6d6c94fc6d357740e5b4e15a33c9ff37410bd51567",
+            "boss": false
+          },
+          {
+            "registry": "D7FF797A",
+            "source": 17,
+            "source_descriptor": "80F25351",
+            "source_sha256": "fcd9ef6121d65c93f4f8d6f6154d9daad41670b7e83b902a2c02b40d69a24128",
+            "rule_role": "fallback",
+            "rule": 102,
+            "rule_descriptor": "80F252EE",
+            "rule_sha256": "14c72b50ace731b922e3b8a9812a7ef688ede3a043dbf8c903591f1a09921425",
+            "tactical": 61,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F2558B",
+            "tactical_sha256": "3442651044204ce083d0ef5c8f99fc93d84208ee002f1f052123ddbf9e4a42bd",
+            "categories": 1,
+            "targets": [
+              3
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "9ff972d5fb58089a225c6965f9211c2d02b4d430a60eac31608e7c4d79d16984",
+            "boss": false
+          },
+          {
+            "registry": "D7FF797A",
+            "source": 18,
+            "source_descriptor": "80F25354",
+            "source_sha256": "86673fc5610cb0b843e3e6e7f68150f2f66249750de383601b1e4032b7495ae0",
+            "rule_role": "primary",
+            "rule": 103,
+            "rule_descriptor": "80F252F1",
+            "rule_sha256": "f1c79ff02a32fa4182500ad4b3d8fe4c31de50e47dbdc27b909d5e4f63daacf9",
+            "tactical": 61,
+            "tactical_row": 0,
+            "tactical_rows": 1,
+            "tactical_descriptor": "80F2558B",
+            "tactical_sha256": "3442651044204ce083d0ef5c8f99fc93d84208ee002f1f052123ddbf9e4a42bd",
+            "categories": 1,
+            "targets": [
+              2
+            ],
+            "quota_review": {
+              "status": "user_species_count_policy_from_package_templates",
+              "reference": "tools/coo/lost_sector_footage_review.json",
+              "observed_minimum": null,
+              "timestamp": null,
+              "note": "user-species-counts-v1: user-species-varied. Exact retail per-source quota was not recovered."
+            },
+            "count_choices_sha256": "de220965a0e9bb3fa21057141f0dc80ea4e07777789a93b9dc3813bfb5a4089e",
+            "boss": false
+          }
+        ]
+      ],
+      "reward": {
+        "registry": "BA29E55E",
+        "object": "80F255FC",
+        "slot": 1,
+        "descriptor": "80F254A2",
+        "role": "region_chest_major1",
+        "descriptor_sha256": "f071cdb1299011547662ce62cebe4267639ff32eee9ea9db04c6cad01566de86"
+      }
     }
   ],
   "registry_proofs": [
@@ -13239,7 +15295,8 @@
       "point_containers": [
         "80F4FF2E"
       ],
-      "native_point_closure_sha256": "806872ba5dea9d38111a11b42638ba70081c0b224ceebbfcf7cec563ad2dc336"
+      "native_point_closure_sha256": "806872ba5dea9d38111a11b42638ba70081c0b224ceebbfcf7cec563ad2dc336",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80F4696A",
@@ -13268,7 +15325,8 @@
         "80F4FF2E",
         "80F5028C"
       ],
-      "native_point_closure_sha256": "196b03bb20e6c7474ff1d71b812cba904e0aabd70aaf49dee10680c52150d3f5"
+      "native_point_closure_sha256": "196b03bb20e6c7474ff1d71b812cba904e0aabd70aaf49dee10680c52150d3f5",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80F6AB20",
@@ -13297,7 +15355,8 @@
       "point_containers": [
         "80EA8D94"
       ],
-      "native_point_closure_sha256": "38bfe729c45726c4ff8fb77131c252e36a9fdbffc4d3d7873aa048ccbc9ff393"
+      "native_point_closure_sha256": "38bfe729c45726c4ff8fb77131c252e36a9fdbffc4d3d7873aa048ccbc9ff393",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80F6AB20",
@@ -13339,7 +15398,8 @@
         "80F6C458",
         "80F6C531"
       ],
-      "native_point_closure_sha256": "fd04ee52dbc5a0b7623c86fb27e0eb565c31c7c7c809ebf901b9fb9e60958818"
+      "native_point_closure_sha256": "fd04ee52dbc5a0b7623c86fb27e0eb565c31c7c7c809ebf901b9fb9e60958818",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80F6AB20",
@@ -13356,7 +15416,8 @@
         "80F73E4A"
       ],
       "point_containers": [],
-      "native_point_closure_sha256": "9dbb46da7096bd7472a70ae67c85e59303840d2b38ad82f9c5cb5f7b9df6bf30"
+      "native_point_closure_sha256": "9dbb46da7096bd7472a70ae67c85e59303840d2b38ad82f9c5cb5f7b9df6bf30",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80F6AB20",
@@ -13376,7 +15437,8 @@
         "80F73EAF"
       ],
       "point_containers": [],
-      "native_point_closure_sha256": "ca3d8b64fe0a47c0407da4427acfe8cfbacd35856d27bd0c606870654fdaad45"
+      "native_point_closure_sha256": "ca3d8b64fe0a47c0407da4427acfe8cfbacd35856d27bd0c606870654fdaad45",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80F6AB20",
@@ -13402,7 +15464,8 @@
       "point_containers": [
         "80F6CAFD"
       ],
-      "native_point_closure_sha256": "ce927b226b1e54bcb245b4babe9769904ea00299d0db8f2f9a40001eacf1650d"
+      "native_point_closure_sha256": "ce927b226b1e54bcb245b4babe9769904ea00299d0db8f2f9a40001eacf1650d",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B3E142",
@@ -13411,6 +15474,7 @@
       "enabled_sources": [
         2,
         3,
+        5,
         6,
         7,
         8,
@@ -13441,9 +15505,7 @@
         33,
         34
       ],
-      "omitted_sources": [
-        5
-      ],
+      "omitted_sources": [],
       "point_lists": [
         "80BF01E9",
         "80F32F95"
@@ -13451,7 +15513,8 @@
       "point_containers": [
         "80F32F96"
       ],
-      "native_point_closure_sha256": "01c51d8b02493284ecb5afdac125fd13d7149eaf5631149e7beb53dba63b3ee0"
+      "native_point_closure_sha256": "453dadcae66383bfcb863cc65aa209a9dde7a45d9c3828355e19a565d38006fb",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B3E142",
@@ -13480,7 +15543,8 @@
       "point_containers": [
         "80F33EF1"
       ],
-      "native_point_closure_sha256": "c22b1d44e7754b6d6db3bf7e74881ea1041f22bf6302169f0e90c74a27188ba0"
+      "native_point_closure_sha256": "c22b1d44e7754b6d6db3bf7e74881ea1041f22bf6302169f0e90c74a27188ba0",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B3E142",
@@ -13488,6 +15552,7 @@
       "object": "80BF60E6",
       "enabled_sources": [
         0,
+        2,
         3,
         4,
         5,
@@ -13506,9 +15571,7 @@
         18,
         19
       ],
-      "omitted_sources": [
-        2
-      ],
+      "omitted_sources": [],
       "point_lists": [
         "80BF1321",
         "80F33EF0"
@@ -13516,7 +15579,8 @@
       "point_containers": [
         "80F33EF1"
       ],
-      "native_point_closure_sha256": "22a24bbc2551ab59d34a5e82ac99d318b11fd7671493511fa23737432592d55a"
+      "native_point_closure_sha256": "863a286561f67f8e6ebad559b83cc560938640cac01ca4e4d4b10377c3233b03",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B3E142",
@@ -13541,11 +15605,10 @@
         17,
         18,
         19,
+        20,
         21
       ],
-      "omitted_sources": [
-        20
-      ],
+      "omitted_sources": [],
       "point_lists": [
         "80BF1563",
         "80F3400A"
@@ -13553,7 +15616,8 @@
       "point_containers": [
         "80F3400B"
       ],
-      "native_point_closure_sha256": "d07cd663bc34449887f9e1c08cb827414d262571215453da8d2d1001236493d1"
+      "native_point_closure_sha256": "72d87608400126780007915686c41d18e98fad2344aee00a4e7832403a0fc952",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B56B1B",
@@ -13573,7 +15637,8 @@
         "80BD352B"
       ],
       "point_containers": [],
-      "native_point_closure_sha256": "edb089d54105d1b56a0c6187ac67bc587090252a93cd11e3158eea9f5bcdc485"
+      "native_point_closure_sha256": "edb089d54105d1b56a0c6187ac67bc587090252a93cd11e3158eea9f5bcdc485",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B56B1B",
@@ -13581,6 +15646,7 @@
       "object": "80BD76CA",
       "enabled_sources": [
         2,
+        4,
         5,
         6,
         7,
@@ -13598,9 +15664,7 @@
         19,
         20
       ],
-      "omitted_sources": [
-        4
-      ],
+      "omitted_sources": [],
       "point_lists": [
         "80BD7117",
         "80ED5B87"
@@ -13608,7 +15672,8 @@
       "point_containers": [
         "81544CBD"
       ],
-      "native_point_closure_sha256": "f571330a4698d2720b95ca4e6b3977bfc98bf9dd7df0bbf60bcf3f82a4a8032c"
+      "native_point_closure_sha256": "3484d91a7b16bea6a48d78886fd8b8b048417f718f024f497c7b849d467d52f7",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B56B1B",
@@ -13627,7 +15692,8 @@
         "80BD3680"
       ],
       "point_containers": [],
-      "native_point_closure_sha256": "a3bf44a6058e41a973034f811e2ad8760d52d2cee0c402f86510756cf2b370aa"
+      "native_point_closure_sha256": "a3bf44a6058e41a973034f811e2ad8760d52d2cee0c402f86510756cf2b370aa",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B56B1B",
@@ -13648,7 +15714,8 @@
         "80BD36AD"
       ],
       "point_containers": [],
-      "native_point_closure_sha256": "f67de925022e66d03d82e779fbd3554a7bb7f06cfe1559378958a05b7221a09c"
+      "native_point_closure_sha256": "f67de925022e66d03d82e779fbd3554a7bb7f06cfe1559378958a05b7221a09c",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B56B1B",
@@ -13672,7 +15739,8 @@
       "point_containers": [
         "80ED5B5C"
       ],
-      "native_point_closure_sha256": "5b790047a9d58b5ca553f70986627bbd9d7f5f21c3b3e3f9fa566aefb7a0f419"
+      "native_point_closure_sha256": "5b790047a9d58b5ca553f70986627bbd9d7f5f21c3b3e3f9fa566aefb7a0f419",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B56B1B",
@@ -13687,7 +15755,8 @@
         "80BD6B22"
       ],
       "point_containers": [],
-      "native_point_closure_sha256": "20c93915068b2145880ed5bcf24648a35361407948a3351304691d73819a009b"
+      "native_point_closure_sha256": "20c93915068b2145880ed5bcf24648a35361407948a3351304691d73819a009b",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B56B1B",
@@ -13706,7 +15775,8 @@
         "80BD6B39"
       ],
       "point_containers": [],
-      "native_point_closure_sha256": "816671e3996622f6fda5223592a126d7a4473c5507857ece78eb9f415ee43dbc"
+      "native_point_closure_sha256": "816671e3996622f6fda5223592a126d7a4473c5507857ece78eb9f415ee43dbc",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B56B1B",
@@ -13715,6 +15785,7 @@
       "enabled_sources": [
         2,
         3,
+        5,
         6,
         7,
         8,
@@ -13724,9 +15795,7 @@
         12,
         13
       ],
-      "omitted_sources": [
-        5
-      ],
+      "omitted_sources": [],
       "point_lists": [
         "80BD8A35",
         "80C37000"
@@ -13734,7 +15803,8 @@
       "point_containers": [
         "80ED5519"
       ],
-      "native_point_closure_sha256": "67742ed74a32557921e08662a493bc516584d9b4d2025a73c8f5db810834a421"
+      "native_point_closure_sha256": "6bee2648cc5b99b432b7164fcf5356ca484cb5a456833df7ddf491dc91b205b1",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B56B1B",
@@ -13751,7 +15821,8 @@
         "80BD6B9F"
       ],
       "point_containers": [],
-      "native_point_closure_sha256": "04ee21b8a91ca886038d45d23b942a6f0d51381252c48dab1e955987fb655abd"
+      "native_point_closure_sha256": "04ee21b8a91ca886038d45d23b942a6f0d51381252c48dab1e955987fb655abd",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B43A1C",
@@ -13759,6 +15830,7 @@
       "object": "80C06CF8",
       "enabled_sources": [
         0,
+        2,
         3,
         4,
         5,
@@ -13776,9 +15848,7 @@
         17,
         18
       ],
-      "omitted_sources": [
-        2
-      ],
+      "omitted_sources": [],
       "point_lists": [
         "80B43307",
         "80C07736"
@@ -13786,7 +15856,8 @@
       "point_containers": [
         "80EE0662"
       ],
-      "native_point_closure_sha256": "672315c83c5631a632b9956bd38b977d88555c57871f9e1e9760a04510dffacd"
+      "native_point_closure_sha256": "026c212454ee2c5a014fcdbf6899973189764de1fa2a70cf6e51070e1fb84b05",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B43A1C",
@@ -13814,7 +15885,8 @@
       "point_containers": [
         "80EE0662"
       ],
-      "native_point_closure_sha256": "1f12f9b72e68767a26114d21ad5f7a7c3084c8a96d71556d12fd4a0744cd195a"
+      "native_point_closure_sha256": "1f12f9b72e68767a26114d21ad5f7a7c3084c8a96d71556d12fd4a0744cd195a",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B43A1C",
@@ -13822,6 +15894,7 @@
       "object": "80C08B57",
       "enabled_sources": [
         2,
+        4,
         5,
         6,
         7,
@@ -13840,9 +15913,7 @@
         20,
         21
       ],
-      "omitted_sources": [
-        4
-      ],
+      "omitted_sources": [],
       "point_lists": [
         "80C08DCC",
         "80C309ED"
@@ -13850,7 +15921,8 @@
       "point_containers": [
         "80EE10CD"
       ],
-      "native_point_closure_sha256": "f09728b9bf9652b9d0a8cf6e84ce841485c5bad22f9f3243c3543b21e85699ee"
+      "native_point_closure_sha256": "543062296479b0cc9b6ce040526d0f494a5459efcf0cad9601be113166a485f4",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B43A1C",
@@ -13859,6 +15931,7 @@
       "enabled_sources": [
         2,
         3,
+        5,
         6,
         7,
         8,
@@ -13887,9 +15960,7 @@
         31,
         32
       ],
-      "omitted_sources": [
-        5
-      ],
+      "omitted_sources": [],
       "point_lists": [
         "80C09223",
         "80C31198",
@@ -13899,7 +15970,8 @@
         "80EE133B",
         "80EE133D"
       ],
-      "native_point_closure_sha256": "2c2fca5e7bc37c0a4edbc8c3ff3facd5a48ecc85cc33d4d19f9f02b5340696c4"
+      "native_point_closure_sha256": "1785c2fc5ba5edd3a8286d5a639c737592db2c1052ecd60a6499d6606bc6b904",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B43A1C",
@@ -13924,7 +15996,8 @@
       "point_containers": [
         "80EE183D"
       ],
-      "native_point_closure_sha256": "906b14e20bef6b6ec93f8a6b2e73b78568f638d0de7033f79425b0a007a58c67"
+      "native_point_closure_sha256": "906b14e20bef6b6ec93f8a6b2e73b78568f638d0de7033f79425b0a007a58c67",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B43A1C",
@@ -13932,6 +16005,7 @@
       "object": "80C09958",
       "enabled_sources": [
         0,
+        2,
         3,
         4,
         5,
@@ -13950,9 +16024,7 @@
         18,
         19
       ],
-      "omitted_sources": [
-        2
-      ],
+      "omitted_sources": [],
       "point_lists": [
         "80C0A4EC",
         "80C4C979"
@@ -13960,7 +16032,8 @@
       "point_containers": [
         "80EE183D"
       ],
-      "native_point_closure_sha256": "a6ae16c7fdeca851cf7864139e7304cf8c8ee50db7c709b16d6513d46c954f53"
+      "native_point_closure_sha256": "f08a8e673a84dc5379ebe538402e172cea977e22b20ae7a8403671a8090a79ba",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B43A1C",
@@ -13991,7 +16064,8 @@
       "point_containers": [
         "80F684D9"
       ],
-      "native_point_closure_sha256": "a3a44b2fe024d6ad18e340c260b9a2065288491122ef1bd45e021cf379fc3d30"
+      "native_point_closure_sha256": "a3a44b2fe024d6ad18e340c260b9a2065288491122ef1bd45e021cf379fc3d30",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80B43A1C",
@@ -13999,6 +16073,7 @@
       "object": "80C30CCD",
       "enabled_sources": [
         0,
+        2,
         3,
         4,
         5,
@@ -14007,9 +16082,7 @@
         8,
         9
       ],
-      "omitted_sources": [
-        2
-      ],
+      "omitted_sources": [],
       "point_lists": [
         "80C31947",
         "80F6849F"
@@ -14017,7 +16090,8 @@
       "point_containers": [
         "80F684D9"
       ],
-      "native_point_closure_sha256": "10ceceeba9877775a4b3211f022aa66bf3232da4ce195b8e498cbc1b808f86e3"
+      "native_point_closure_sha256": "fd5501ef20038b5498ed9a13fe07f7f0ddbc77819fa00d680b525bdaf5683ebe",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80FC9645",
@@ -14034,7 +16108,8 @@
         "80FD5C5F"
       ],
       "point_containers": [],
-      "native_point_closure_sha256": "5ee17a3c0218ed13315b3ec7c758c5cb4c41363cf2cee59a196aee29e85ef899"
+      "native_point_closure_sha256": "5ee17a3c0218ed13315b3ec7c758c5cb4c41363cf2cee59a196aee29e85ef899",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80FC9645",
@@ -14053,7 +16128,8 @@
         "80FD5C96"
       ],
       "point_containers": [],
-      "native_point_closure_sha256": "8143f64b0d0bfc70ba960c272999d9cb64cbd86b17a34f69e250177d8fbd8bd4"
+      "native_point_closure_sha256": "8143f64b0d0bfc70ba960c272999d9cb64cbd86b17a34f69e250177d8fbd8bd4",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80FC9645",
@@ -14077,7 +16153,8 @@
         "80FD5CCE"
       ],
       "point_containers": [],
-      "native_point_closure_sha256": "b1e177e9062ec6ecd8f6d352faaf9b2ff7b5807724b91027cc4db9b2a7c07070"
+      "native_point_closure_sha256": "b1e177e9062ec6ecd8f6d352faaf9b2ff7b5807724b91027cc4db9b2a7c07070",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80FC9645",
@@ -14100,7 +16177,8 @@
       "point_containers": [
         "80FBED25"
       ],
-      "native_point_closure_sha256": "07c8d22ff1c90edf28abe1bcb8f7ed7d4806794cf211e45c2b555c9b66753b58"
+      "native_point_closure_sha256": "07c8d22ff1c90edf28abe1bcb8f7ed7d4806794cf211e45c2b555c9b66753b58",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80FC9645",
@@ -14125,7 +16203,8 @@
       "point_containers": [
         "80FBED25"
       ],
-      "native_point_closure_sha256": "3460e1cbbafba7eb0e3b2d2c378868f3323fa43fb37ff06e9342ce301b8e48a8"
+      "native_point_closure_sha256": "3460e1cbbafba7eb0e3b2d2c378868f3323fa43fb37ff06e9342ce301b8e48a8",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80FC9645",
@@ -14150,7 +16229,8 @@
         "80FD9604"
       ],
       "point_containers": [],
-      "native_point_closure_sha256": "32a330d787d2f28ec4f3c69e3ef13a5abb642942c9befe267add0c056d0728b2"
+      "native_point_closure_sha256": "32a330d787d2f28ec4f3c69e3ef13a5abb642942c9befe267add0c056d0728b2",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80FC9645",
@@ -14175,9 +16255,14 @@
         39,
         42,
         44,
+        52,
         56,
         58,
+        60,
+        64,
+        70,
         74,
+        76,
         82,
         84,
         85,
@@ -14194,18 +16279,13 @@
         101,
         103
       ],
-      "omitted_sources": [
-        52,
-        60,
-        64,
-        70,
-        76
-      ],
+      "omitted_sources": [],
       "point_lists": [
         "80FD9123"
       ],
       "point_containers": [],
-      "native_point_closure_sha256": "aaff66653ac49a5838766bc5bfb2b80afa5d8e79abb22613daaf60b13b7c3e0e"
+      "native_point_closure_sha256": "40c90c9f8415c068a6eeb820de468429e9da3660982d6a2e137727843e809d04",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80FC9645",
@@ -14224,7 +16304,8 @@
         "80FDC2F8"
       ],
       "point_containers": [],
-      "native_point_closure_sha256": "7673d97dbd8198e884c04f9bdc66387de479b0d374db136303cbd575001f58ac"
+      "native_point_closure_sha256": "7673d97dbd8198e884c04f9bdc66387de479b0d374db136303cbd575001f58ac",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80FC9645",
@@ -14245,7 +16326,8 @@
         "80FDC34A"
       ],
       "point_containers": [],
-      "native_point_closure_sha256": "d4f0c4e49e53d4ce3784e9e78d5add3fe7ee87f641f56e012c2af41b2d4be3b6"
+      "native_point_closure_sha256": "d4f0c4e49e53d4ce3784e9e78d5add3fe7ee87f641f56e012c2af41b2d4be3b6",
+      "implicit_ruleless_sources": []
     },
     {
       "scenario": "80FC9645",
@@ -14265,101 +16347,355 @@
         "80FDC3AB"
       ],
       "point_containers": [],
-      "native_point_closure_sha256": "ddf5b5f6af9eb81fc923a8cd04a816da84c786f546a1cca0c2acc348c2232a1a"
+      "native_point_closure_sha256": "ddf5b5f6af9eb81fc923a8cd04a816da84c786f546a1cca0c2acc348c2232a1a",
+      "implicit_ruleless_sources": []
+    },
+    {
+      "scenario": "80F1404D",
+      "registry": "B846777D",
+      "object": "80F25045",
+      "enabled_sources": [
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        144,
+        146,
+        147,
+        149
+      ],
+      "omitted_sources": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        45,
+        48,
+        49
+      ],
+      "point_lists": [
+        "80F24DDE"
+      ],
+      "point_containers": [],
+      "native_point_closure_sha256": "3c21cf975cedd904f3866a8e4edbfc006752444a3b6361169de6896e7867e935",
+      "implicit_ruleless_sources": []
+    },
+    {
+      "scenario": "80F1404D",
+      "registry": "74E16154",
+      "object": "80F25324",
+      "enabled_sources": [
+        0,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "omitted_sources": [
+        19,
+        23,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48
+      ],
+      "point_lists": [
+        "80F251B5"
+      ],
+      "point_containers": [],
+      "native_point_closure_sha256": "cf777aa3ac409a590c360ac63747a4ffe1bd2713580a732a3329d72a80773d90",
+      "implicit_ruleless_sources": [
+        {
+          "source": 11,
+          "descriptor": "80F250E4",
+          "descriptor_sha256": "0659334a9227e65fbc456aadaab8e0f6b46c490b348feec095963cf2820eaf53"
+        },
+        {
+          "source": 12,
+          "descriptor": "80F250EE",
+          "descriptor_sha256": "574b7cb029587043b011e6a2738fe29db6136c0ebbd496128c9035f5914767f7"
+        }
+      ]
+    },
+    {
+      "scenario": "80F1404D",
+      "registry": "D7FF797A",
+      "object": "80F255C4",
+      "enabled_sources": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        15,
+        16,
+        17,
+        18
+      ],
+      "omitted_sources": [
+        24,
+        28
+      ],
+      "point_lists": [
+        "80F2549D"
+      ],
+      "point_containers": [],
+      "native_point_closure_sha256": "44dd3ed2f340b5df041ddbd54b5366af461095b5af0094d6999eccc66b470091",
+      "implicit_ruleless_sources": []
     }
   ],
   "quota_manifest": {
     "path": "tools/coo/lost_sector_encounter_quotas.json",
     "schema": 1,
-    "file_sha256": "69ba4c80059d6ddac21c4fef096c5e4ba00cb9e44e71f44208583f28b60a100a",
-    "content_sha256": "e62392d85a0d430b551920729e66f80f46d842e9d059c89aeaebe832c0d9b64a",
+    "file_sha256": "af873167f78177904fbf97a4f23f6da63b133fd80836822293a3539920f8e4fa",
+    "content_sha256": "9ae764fca135443599645ee227ab5040b2c918027b88160fec0aa1e2fc0559b0",
     "estimate_disclaimer": "All targets are host estimates, not recovered retail script counts or verified whole-run totals. Sampled footage does not verify exact per-source counts. Weapon-counter crosschecks can be distorted by chain explosions, Taken splits, and seasonal Nightmare overlays. Native registry, source, rule, tactical, point, and stage mappings remain package-pinned and unchanged."
   },
   "footage_review": {
     "path": "tools/coo/lost_sector_footage_review.json",
-    "file_sha256": "a9ec9754ac53b167da78707b567d3013005fa3ea9656333284c18e83aef1b4a8",
+    "file_sha256": "f4b05eccfca5c1d280da3ce18f1dd31cc8d8a681aec7159a0cfeceb9dca9622f",
     "method": "Root visually inspected browser screenshots from selected timestamps, not every frame or a continuous full clear. Counts are estimates authorized by the user. No original retail quota script was recovered."
   },
   "omitted_sources": [
-    {
-      "registry": "100F6578",
-      "source": 2,
-      "reason": "seasonal_nightmare_overlay"
-    },
-    {
-      "registry": "2E3D2EB4",
-      "source": 2,
-      "reason": "seasonal_nightmare_overlay"
-    },
-    {
-      "registry": "2F8DB58A",
-      "source": 2,
-      "reason": "seasonal_nightmare_overlay"
-    },
-    {
-      "registry": "33C30847",
-      "source": 5,
-      "reason": "seasonal_nightmare_overlay"
-    },
-    {
-      "registry": "3F8AF55C",
-      "source": 5,
-      "reason": "seasonal_nightmare_overlay"
-    },
-    {
-      "registry": "5BA616DA",
-      "source": 20,
-      "reason": "seasonal_nightmare_overlay"
-    },
-    {
-      "registry": "6717656F",
-      "source": 2,
-      "reason": "seasonal_nightmare_overlay"
-    },
     {
       "registry": "69A1B17C",
       "source": 8,
       "reason": "unsupported_native_three_category_helper"
     },
     {
-      "registry": "9A24C39A",
-      "source": 52,
-      "reason": "unsupported_native_three_category_helper"
+      "registry": "74E16154",
+      "source": 19,
+      "reason": "ascendant_overlay"
     },
     {
-      "registry": "9A24C39A",
-      "source": 60,
-      "reason": "unsupported_native_three_category_helper"
+      "registry": "74E16154",
+      "source": 23,
+      "reason": "ascendant_overlay"
     },
     {
-      "registry": "9A24C39A",
-      "source": 64,
-      "reason": "unsupported_native_five_category_helper"
+      "registry": "74E16154",
+      "source": 25,
+      "reason": "ascendant_overlay"
     },
     {
-      "registry": "9A24C39A",
-      "source": 70,
-      "reason": "unsupported_native_three_category_helper"
+      "registry": "74E16154",
+      "source": 26,
+      "reason": "ascendant_overlay"
     },
     {
-      "registry": "9A24C39A",
-      "source": 76,
-      "reason": "unsupported_native_three_category_helper"
+      "registry": "74E16154",
+      "source": 27,
+      "reason": "ascendant_overlay"
     },
     {
-      "registry": "A27443E8",
+      "registry": "74E16154",
+      "source": 28,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 29,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 30,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 31,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 32,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 33,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 34,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 35,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 36,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 37,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 38,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 39,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 40,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 41,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 42,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 43,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 44,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 45,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 46,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 47,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "74E16154",
+      "source": 48,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "B846777D",
+      "source": 0,
+      "reason": "non_lost_sector_or_ascendant_overlay"
+    },
+    {
+      "registry": "B846777D",
+      "source": 1,
+      "reason": "non_lost_sector_or_ascendant_overlay"
+    },
+    {
+      "registry": "B846777D",
+      "source": 2,
+      "reason": "non_lost_sector_or_ascendant_overlay"
+    },
+    {
+      "registry": "B846777D",
+      "source": 3,
+      "reason": "non_lost_sector_or_ascendant_overlay"
+    },
+    {
+      "registry": "B846777D",
+      "source": 4,
+      "reason": "non_lost_sector_or_ascendant_overlay"
+    },
+    {
+      "registry": "B846777D",
       "source": 5,
-      "reason": "seasonal_nightmare_overlay"
+      "reason": "non_lost_sector_or_ascendant_overlay"
     },
     {
-      "registry": "BB69D2E9",
-      "source": 4,
-      "reason": "seasonal_nightmare_overlay"
+      "registry": "B846777D",
+      "source": 45,
+      "reason": "non_lost_sector_or_ascendant_overlay"
     },
     {
-      "registry": "DB5D8740",
-      "source": 4,
-      "reason": "seasonal_nightmare_overlay"
+      "registry": "B846777D",
+      "source": 48,
+      "reason": "non_lost_sector_or_ascendant_overlay"
+    },
+    {
+      "registry": "B846777D",
+      "source": 49,
+      "reason": "non_lost_sector_or_ascendant_overlay"
+    },
+    {
+      "registry": "D7FF797A",
+      "source": 24,
+      "reason": "ascendant_overlay"
+    },
+    {
+      "registry": "D7FF797A",
+      "source": 28,
+      "reason": "ascendant_overlay"
     }
   ],
   "limitations": [

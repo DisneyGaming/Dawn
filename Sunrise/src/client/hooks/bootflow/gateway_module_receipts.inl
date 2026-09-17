@@ -1,5 +1,6 @@
 // Generic object initialization receipts at the existing source create/sense boundary.
 void observe_gateway_object(void* raw) noexcept {
+    lost_sector_native_object::observe_source(raw);
     namespace gateway=state::activity::gateway;namespace coo=state::activity::coo;namespace gn=gateway_native;
     gn::Read read{g_image};const auto source=reinterpret_cast<std::uintptr_t>(raw);std::array<std::byte,16> header{};
     if(!read.copy(source,header)) { return; }

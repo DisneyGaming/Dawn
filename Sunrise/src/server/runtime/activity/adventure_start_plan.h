@@ -7,6 +7,7 @@
 #include "../../../middleware/bap/activity_message/native/placement_authority.h"
 
 namespace sunrise::server::runtime::activity::adventure_start {
+inline constexpr bool kLaunchesEnabled=false;
 namespace wire=middleware::bap::activity_message::adventure_start;
 namespace placements=middleware::bap::activity_message::native::placement;
 
@@ -32,6 +33,18 @@ struct Plan final {
     wire::Request request{};
     Route route{};
 };
+inline void restrict_banners(std::span<const Route> routes,placements::Batch& batch) noexcept {
+    if(kLaunchesEnabled)return;
+    for(std::size_t i=0;i<batch.count && i<batch.entries.size();++i) {
+        auto& request=batch.entries[i];
+        for(const auto& route:routes)if(route.registry==request.registry && route.slot==request.slot
+            && route.bubble==request.bubble) {
+            request.generation=1;request.active=false;
+            request.interactionMode=middleware::bap::activity_message::native::interaction::Mode::disabled;
+        }
+    }
+}
+
 enum class Result : std::uint8_t {
     accepted,invalidOwner,invalidSelection,identityMismatch,staleRevision,
     unsupportedRoute,placementUnavailable
@@ -63,6 +76,7 @@ enum class Result : std::uint8_t {
        || !context.current.hasNonce || request.account!=context.current.account
        || request.nonce!=context.current.nonce || package(request)!=package(context.current)) return Result::identityMismatch;
     if(request.revision!=next_revision(context.current.revision)) return Result::staleRevision;
+    if(!kLaunchesEnabled)return Result::unsupportedRoute;
     const Route* match=nullptr;
     for(const auto& route:routes) {
         if(route.scenario==context.scenario && route.rootPackage==package(request)

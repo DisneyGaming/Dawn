@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <array>
+#include <span>
 
 namespace sunrise::state::activity::coo::native_combatant {
 
@@ -46,9 +47,43 @@ struct Source final {
     bool sceneRequested{};
     /** Zero-based installed native source-template variant. Build 86657 exposes rows 0..5. */
     std::uint8_t variant{};
+    // Larger authored casts with eight member categories. Empty preserves the
+    // established one/two-category representation and wire bytes.
+    std::span<const std::uint8_t> categories{};
 };
 inline constexpr std::size_t kSourceBits = 641;
 inline constexpr std::size_t kTwoCategorySourceBits = 673;
+
+[[nodiscard]] constexpr std::size_t category_count(const Source& source) noexcept {
+    return source.categories.empty()?(source.hasSecondCategory?2U:1U):source.categories.size();
+}
+
+[[nodiscard]] constexpr bool valid_categories(const Source& source) noexcept {
+    if(source.categories.empty()) return true;
+    if(source.categories.size()>15 || source.looseRequested || source.secondRequested
+        || source.hasSecondCategory) return false;
+    unsigned requested{};
+    for(const auto count:source.categories) {
+        requested+=count;
+        if(count>63 || requested>63
+            || (count && (source.memberOwned || source.retireOwned))) return false;
+    }
+    return true;
+}
+
+template<class Writer>
+[[nodiscard]] bool write_categories(Writer& writer,const Source& source) noexcept {
+    if(!writer.write(category_count(source),4)) return false;
+    if(source.categories.empty()) {
+        return writer.write(0x80000000U+source.looseRequested,32)
+            && (!source.hasSecondCategory
+                || writer.write(0x80000000U+source.secondRequested,32));
+    }
+    for(const auto count:source.categories) {
+        if(!writer.write(0x80000000U+count,32)) return false;
+    }
+    return true;
+}
 
 /** Sparse replacement/reserved placement keeps authored spawn rules and unrelated actor state. */
 [[nodiscard]] constexpr std::size_t authored_source_bits(std::size_t categories,bool objective) noexcept {
@@ -60,7 +95,10 @@ template<class Writer>
                                          const std::array<std::int8_t,4>& profile) noexcept {
     const auto& task=source.tactical;
     const bool objective=task.registry!=0;
-    if(source.registry==0 || source.registry==0x811C9DC5U || source.hasRule || source.memberOwned
+    if(!valid_categories(source) || source.registry==0 || source.registry==0x811C9DC5U
+        || source.hasRule
+        || (source.memberOwned && (source.looseRequested || source.secondRequested
+            || source.sceneRequested || source.retireOwned))
         || source.generation==0 || source.generation>0x7FFFFFFFU
         || source.variant>5
         || (!source.hasSecondCategory && source.secondRequested!=0)
@@ -81,9 +119,7 @@ template<class Writer>
         || (objective && !(writer.write(task.registry,32) && writer.write(4,7)
                             && writer.write(32768U+task.slot,16)))
         || !writer.write(0,2) || !writer.write(1,1)
-        || !writer.write(source.hasSecondCategory?2U:1U,4)
-        || !writer.write(0x80000000U+source.looseRequested,32)
-        || (source.hasSecondCategory && !writer.write(0x80000000U+source.secondRequested,32))
+        || !write_categories(writer,source)
         || !writer.write(0,1) || !writer.write(1,1)
         || !writer.write(static_cast<std::uint32_t>(source.variant)+1U,3)) { return false; }
     for(std::size_t i=0;i<profile.size();++i) {
@@ -96,14 +132,16 @@ template<class Writer>
         && (!objective || writer.write(static_cast<unsigned>(static_cast<int>(task.row)+1),5))
         // Field 17 is the independent member-binding revision; placement does not own it.
         // Logical mode 2 replaces the requested population; mode 1 reserves a scene/delivery.
-        && writer.write(0,1) && writer.write(2,2) && writer.write(source.sceneRequested?2U:3U,3)
+        && writer.write(0,1) && writer.write(2,2)
+        && writer.write(source.memberOwned?1U:source.sceneRequested?2U:3U,3)
         && writer.write(1,1) && writer.write(0x811C9DC5U,32);
-    return ok && writer.bit_count()-begin==authored_source_bits(source.hasSecondCategory?2U:1U,objective);
+    return ok && writer.bit_count()-begin==authored_source_bits(category_count(source),objective);
 }
 
 template<class Writer>
-[[nodiscard]] bool write_source(Writer& writer,const Source& source,bool retainPrevious=true) noexcept {
-    if(source.registry==0 || source.registry==0x811C9DC5U
+[[nodiscard]] bool write_source(Writer& writer,const Source& source,
+                                bool retainPrevious=true) noexcept {
+    if(!valid_categories(source) || source.registry==0 || source.registry==0x811C9DC5U
         || source.generation==0 || source.generation>0x7FFFFFFFU
         || source.variant>5
         || (source.hasRule && source.ruleSlot>0x7FFFU) || source.looseRequested>63
@@ -127,9 +165,7 @@ template<class Writer>
             && writer.write(4,7) && writer.write(32768U+tactical.slot,16))
         : absent()) && absent()
         && writer.write(1,1) && writer.write(0,3)
-        && writer.write(1,1) && writer.write(source.hasSecondCategory?2U:1U,4)
-        && writer.write(0x80000000U+source.looseRequested,32)
-        && (!source.hasSecondCategory || writer.write(0x80000000U+source.secondRequested,32))
+        && writer.write(1,1) && write_categories(writer,source)
         && writer.write(1,1) && writer.write(0,4)
         // Bias one maps logical variants 0..5 to wire values 1..6. Wire zero is -1 and would
         // index before the installed six-template array. Name tier 0 remains authored.
@@ -151,9 +187,10 @@ template<class Writer>
         && writer.write(1,1) && writer.write(source.memberOwned?1U
             :static_cast<std::uint32_t>(static_cast<std::int32_t>(tactical.row)+1),5)
         && writer.write(1,1) && writer.write(source.generation,31)
-        && writer.write(source.memberOwned || source.retireOwned || !retainPrevious?1U:2U,2) && writer.write(source.sceneRequested?2U:1U,3)
+        && writer.write(source.memberOwned || source.retireOwned || !retainPrevious?1U:2U,2)
+        && writer.write(source.sceneRequested?2U:1U,3)
         && writer.write(1,1) && writer.write(0x811C9DC5U,32);
-    return ok && writer.bit_count()-begin==(source.hasSecondCategory?kTwoCategorySourceBits:kSourceBits);
+    return ok && writer.bit_count()-begin==kSourceBits+32U*(category_count(source)-1U);
 }
 
 /** Type-2 squad-member ownership root with no program and no manifest (schema 80807DA1).

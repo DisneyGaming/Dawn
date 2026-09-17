@@ -162,9 +162,9 @@ bool consume(std::span<const std::byte> request,
     report_request(message);
 
     if(message.opcode==405) {
-        middleware::web_service::messages::opcode405::Request request{};state::vendors::Pending recovery;
-        if(middleware::web_service::messages::opcode405::parse(message,request) && request.item>=0
-            && state::vendors::prepare_recovery(request.instance,static_cast<std::uint16_t>(request.item),request.quantity,recovery)) {
+        middleware::web_service::messages::opcode405::Request serviceRequest{};state::vendors::Pending recovery;
+        if(middleware::web_service::messages::opcode405::parse(message,serviceRequest) && serviceRequest.item>=0
+            && state::vendors::prepare_recovery(serviceRequest.instance,static_cast<std::uint16_t>(serviceRequest.item),serviceRequest.quantity,recovery)) {
             outcome.mutation=std::move(recovery);
         }
         middleware::web_service::StatusResponse status{};status.code=1;
@@ -172,11 +172,11 @@ bool consume(std::span<const std::byte> request,
     }
 
     if(message.opcode==905) {
-        middleware::web_service::messages::opcode905::Request request{};state::vendors::Pending vendor;
-        if(middleware::web_service::messages::opcode905::parse(message,request) && (request.location==1 || request.location==2) && request.item>=0
-            && (!request.hasClock || middleware::web_service::messages::opcode901::check_clock(
-                {0,0,request.clock,true},server_clock_seconds())==middleware::web_service::messages::opcode901::ClockPolicy::accepted)
-            && state::vendors::prepare_decryption(request.instance,static_cast<std::uint16_t>(request.item),vendor,request.location==2)) {
+        middleware::web_service::messages::opcode905::Request serviceRequest{};state::vendors::Pending vendor;
+        if(middleware::web_service::messages::opcode905::parse(message,serviceRequest) && (serviceRequest.location==1 || serviceRequest.location==2) && serviceRequest.item>=0
+            && (!serviceRequest.hasClock || middleware::web_service::messages::opcode901::check_clock(
+                {0,0,serviceRequest.clock,true},server_clock_seconds())==middleware::web_service::messages::opcode901::ClockPolicy::accepted)
+            && state::vendors::prepare_decryption(serviceRequest.instance,static_cast<std::uint16_t>(serviceRequest.item),vendor,serviceRequest.location==2)) {
             outcome.mutation=std::move(vendor);
         }
         middleware::web_service::StatusResponse status{};status.code=1;

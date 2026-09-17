@@ -3,12 +3,16 @@
 #include "native_activity_definition.h"
 #include "open_world_definition.h"
 #include "lost_sector_catalog.h"
+#include "edz_moon_lost_sector_catalog.h"
 #include "../../../state/activity/vendors/catalog.h"
 #include <array>
 
 namespace sunrise::server::runtime::activity::open_world::profiles {
 
 namespace catalog=state::activity::coo::open_world;
+inline constexpr std::array<std::int32_t,0> kAnyActivityOrdinals{};
+inline constexpr std::array<std::int32_t,1> kEdzActivityOrdinals{{8}};
+inline constexpr std::array<std::int32_t,1> kMoonActivityOrdinals{{169}};
 
 template<std::size_t R,std::size_t P>
 [[nodiscard]] consteval std::array<population::Capability,P> make_populations(
@@ -20,7 +24,9 @@ template<std::size_t R,std::size_t P>
         result[i]={&registry,binding.source,binding.rule,
             binding.tacticalRow<0?population::codec::TacticalGroup{}
                 :population::codec::TacticalGroup{registry.key,binding.tactical,binding.tacticalRow},
-            binding.hasRule,binding.tacticalRows?(1U<<binding.tacticalRows)-1U:0U,binding.categories};
+            binding.hasRule,binding.tacticalRows?(1U<<binding.tacticalRows)-1U:0U,
+            false,population::kNoNamedMember,binding.categories,
+            binding.kind==catalog::PopulationKind::patrol};
     }
     return result;
 }
@@ -84,7 +90,7 @@ struct Data final {
     inline static constexpr Definition runtime{&destination};
 };
 
-#define SUNRISE_OPEN_WORLD_PROFILE(NAME,AUTHORED_NS,LOST_NS,SCRIPT_FILE,PROFILE_ID) \
+#define SUNRISE_OPEN_WORLD_PROFILE(NAME,AUTHORED_NS,LOST_NS,SCRIPT_FILE,PROFILE_ID,ACTIVITY_ORDINALS) \
 namespace NAME { \
 namespace authored=catalog::AUTHORED_NS; \
 namespace lost=lost_sector::catalog::LOST_NS; \
@@ -113,23 +119,26 @@ inline const coo::script::Profile kProfile{PROFILE_ID,"nativeOtherActivities", \
     coo::Schema::otherMissions,kCapabilities,kModules,{}, {}, {}, {}, {},{},kParameters}; \
 inline const NativeActivityDefinition kActivity{authored::kDestination.activity,SCRIPT_FILE, \
     authored::kDestination.primaryBubble,&kProfile,authored::kRegistries,kPopulations, \
-    Storage::placements,kActions,kPersistentModule,{},Storage::routes,{},{},{},{},{},{}, \
+    Storage::placements,kActions,kPersistentModule,{},Storage::routes,{},{},{},{},ACTIVITY_ORDINALS,{}, \
     "host.tick_hz",{},{},{},{},{},{},true,&Storage::runtime,lost::kRegistries, \
-    lost::kSectors.empty()?nullptr:&kLostSectorDefinition}; \
+    lost::kSectors.empty()?nullptr:&kLostSectorDefinition,lost::kRewardRegistries}; \
 }
 
-SUNRISE_OPEN_WORLD_PROFILE(io,io,io,L"eden_freeroam.json","io.freeroam.native.v1")
-SUNRISE_OPEN_WORLD_PROFILE(titan,titan,titan,L"fleet_freeroam.json","titan.freeroam.native.v1")
-SUNRISE_OPEN_WORLD_PROFILE(mars,mars,mars,L"polaris_freeroam.json","mars.freeroam.native.v1")
-SUNRISE_OPEN_WORLD_PROFILE(nessus,nessus,nessus,L"planet_x_freeroam.json","nessus.freeroam.native.v1")
-SUNRISE_OPEN_WORLD_PROFILE(tangled_shore,tangled_shore,tangled_shore,L"tangled_shore_freeroam.json","tangled_shore.freeroam.native.v1")
-SUNRISE_OPEN_WORLD_PROFILE(dreaming_city,dreaming_city,none,L"dreaming_city_freeroam.json","dreaming_city.freeroam.native.v1")
+SUNRISE_OPEN_WORLD_PROFILE(io,io,io,L"eden_freeroam.json","io.freeroam.native.v1",kAnyActivityOrdinals)
+SUNRISE_OPEN_WORLD_PROFILE(titan,titan,titan,L"fleet_freeroam.json","titan.freeroam.native.v1",kAnyActivityOrdinals)
+SUNRISE_OPEN_WORLD_PROFILE(mars,mars,mars,L"polaris_freeroam.json","mars.freeroam.native.v1",kAnyActivityOrdinals)
+SUNRISE_OPEN_WORLD_PROFILE(nessus,nessus,nessus,L"planet_x_freeroam.json","nessus.freeroam.native.v1",kAnyActivityOrdinals)
+SUNRISE_OPEN_WORLD_PROFILE(tangled_shore,tangled_shore,tangled_shore,L"tangled_shore_freeroam.json","tangled_shore.freeroam.native.v1",kAnyActivityOrdinals)
+SUNRISE_OPEN_WORLD_PROFILE(dreaming_city,dreaming_city,dreaming_city,L"dreaming_city_freeroam.json","dreaming_city.freeroam.native.v1",kAnyActivityOrdinals)
+
+SUNRISE_OPEN_WORLD_PROFILE(edz,edz,edz,L"edz_freeroam.json","edz.freeroam.native.v1",kEdzActivityOrdinals)
+SUNRISE_OPEN_WORLD_PROFILE(moon,moon,moon,L"luna_freeroam.json","moon.freeroam.native.v1",kMoonActivityOrdinals)
 
 #undef SUNRISE_OPEN_WORLD_PROFILE
 
-inline constexpr std::array<const NativeActivityDefinition*,6> kActivities{{
+inline constexpr std::array<const NativeActivityDefinition*,8> kActivities{{
     &io::kActivity,&titan::kActivity,&mars::kActivity,&nessus::kActivity,
-    &tangled_shore::kActivity,&dreaming_city::kActivity,
+    &tangled_shore::kActivity,&dreaming_city::kActivity,&edz::kActivity,&moon::kActivity,
 }};
 
 } // namespace sunrise::server::runtime::activity::open_world::profiles

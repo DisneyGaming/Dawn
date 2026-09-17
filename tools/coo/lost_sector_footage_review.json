@@ -235,6 +235,30 @@
       "observation": "Forsaken-period footage: Exploder Shank at 02:35, then at least five Fallen visible in the 03:27 death-camera view. This is a simultaneous visible minimum, not a deduplicated whole-run or source count. Also sampled Rodwenn's later KDH-Tsqb_CA route at 01:24 and 02:27; that was not used as a numeric authority.",
       "whole_run_count_verified": false,
       "source_to_actor_matching_verified": false
+    },
+    {
+      "name": "Bay of Drowned Wishes",
+      "video": null,
+      "sample_times": [],
+      "observation": "Installed package roles identify the ordinary Lost Sector encounter, singleton boss source, authored rules, tactical objective, physical point list, and major chest. Quotas activate each authored squad source once; no retail whole-run count was inferred.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": true
+    },
+    {
+      "name": "Chamber of Starlight",
+      "video": null,
+      "sample_times": [],
+      "observation": "Installed package roles identify the ordinary Lost Sector encounter, singleton boss source, authored rules, tactical objective, physical point list, and major chest. Quotas activate each authored squad source once; no retail whole-run count was inferred.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": true
+    },
+    {
+      "name": "Aphelion's Rest",
+      "video": null,
+      "sample_times": [],
+      "observation": "Installed package roles identify the ordinary Lost Sector encounter, singleton boss source, authored rules, tactical objective, physical point list, and major chest. Quotas activate each authored squad source once; no retail whole-run count was inferred.",
+      "whole_run_count_verified": false,
+      "source_to_actor_matching_verified": true
     }
   ]
 }

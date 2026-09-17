@@ -14,6 +14,7 @@
 #include "../../../state/activity/vendors/catalog.h"
 #include "../../../state/activity/coo/open_world_catalog.h"
 #include "../../../state/activity/coo/lost_sector_group_catalog.h"
+#include "../../../state/activity/coo/edz_moon_lost_sector_group_catalog.h"
 #include "internal.h"
 #include "campaign_shared_groups.h"
 
@@ -376,6 +377,8 @@ bool resolve_object(const reader::Source& source,
         || state::activity::vendors::required(
             context.scenarioTag,objectTag,memo.registryKey,memo.explicitSliceMask)
         || state::activity::coo::lost_sector::required(
+            context.scenarioTag,objectTag,memo.registryKey,memo.explicitSliceMask)
+        || state::activity::coo::edz_moon_lost_sector_groups::required(
             context.scenarioTag,objectTag,memo.registryKey,memo.explicitSliceMask);
     if (memo.group != kNotARosterGroup) {
         output.group = memo.group;

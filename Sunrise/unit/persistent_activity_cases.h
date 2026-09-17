@@ -1,6 +1,7 @@
 #pragma once
 #include "server/runtime/activity/persistent_activity.h"
 #include "server/runtime/activity/mercury_definition.h"
+#include <cstring>
 void persistent_activity_cases() {
     namespace a=sunrise::server::runtime::activity;
     namespace mercury=a::mercury;
@@ -26,6 +27,20 @@ void persistent_activity_cases() {
     for(int i=0;i<100;++i) {frame=activity.update(15,true);CHECK(frame.placements.count==10);}
     CHECK(activity.population().revision()==revision);
     CHECK(activity.diagnostics().phase==c::Phase::complete);
+    // A saved selection must not bypass the global adventure pause.
+    for(const auto& route:mercury::kActivity.startRoutes) {
+        a::adventure_start::wire::Request saved{};
+        saved.hasAccount=saved.hasNonce=true;saved.account=11;saved.nonce=22;saved.revision=1;
+        saved.selection.reason=1;saved.selection.activityIndex=saved.selection.sourceActivityIndex=route.activity;
+        saved.selection.hasPackageName=true;
+        saved.selection.packageNameLength=static_cast<std::uint8_t>(route.rootPackage.size());
+        std::memcpy(saved.selection.packageName.data(),route.rootPackage.data(),route.rootPackage.size());
+        saved.selection.descriptorBitLength=1;
+        const auto paused=activity.update(route.bubble,true,saved);
+        CHECK(!paused.opening.requested && !paused.opening.binding && !paused.opening.gatewayRequested);
+        CHECK(!activity.opening().retains_region(route.bubble,saved));
+    }
+
     // Region departure must preserve the exact accepted source generations and
     // flags without advancing the script or issuing a second request.
     const auto beforeDeparture=frame;

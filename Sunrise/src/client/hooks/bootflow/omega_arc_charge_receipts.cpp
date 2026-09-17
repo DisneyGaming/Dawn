@@ -58,6 +58,9 @@
 #include "../../../state/activity/omega_presentation.h"
 #include "../../../server/runtime/activity/public_event_native_bridge.h"
 #include "../../../server/runtime/activity/public_event_key_bridge.h"
+#include "../../../server/runtime/activity/native_activity_runtime.h"
+#include "../../../state/activity/runtime.h"
+#include "../../../server/runtime/activity/lost_sector_destructible_definitions.h"
 
 namespace sunrise::client::hooks::bootflow {
 namespace {
@@ -722,6 +725,7 @@ void reset_eater_platform_contacts() noexcept;
 void reset_eater_door_receipts() noexcept;
 #include "eater_of_worlds_station_receipts.inl"
 #include "eater_of_worlds_object_receipts.inl"
+#include "lost_sector_object_receipts.inl"
 #include "gateway_module_receipts.inl"
 #include "gateway_module_damage_hooks.inl"
 

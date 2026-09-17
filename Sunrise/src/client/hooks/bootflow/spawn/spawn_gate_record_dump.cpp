@@ -44,8 +44,8 @@ std::atomic_bool g_dumped{false};
  * whether that body reached this object and which arm bound the record.
  * @return Record-relative offset of the key, or `kKeyAbsent` when it is not near it.
  */
-[[nodiscard]] std::int32_t find_player_key(const std::uint8_t* record) noexcept {
-    const state::AccountState account = state::account_snapshot();
+[[nodiscard]] std::int32_t scan_player_key(const std::uint8_t* record,
+                                          const state::AccountState& account) noexcept {
     // A backward sweep can leave the allocation on the proxy arm, so a fault ends the sweep, not
     // the process.
     __try {
@@ -67,6 +67,11 @@ std::atomic_bool g_dumped{false};
         return kKeyAbsent;
     }
     return kKeyAbsent;
+}
+
+[[nodiscard]] std::int32_t find_player_key(const std::uint8_t* record) noexcept {
+    const auto account = state::account_snapshot();
+    return scan_player_key(record, account);
 }
 
 } // namespace

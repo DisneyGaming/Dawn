@@ -1,4 +1,7 @@
 #include "activity_message_route.h"
+#include "lost_sector_rewards.h"
+#include "../push/activity/native_activity_publisher.h"
+#include "../../../../state/activity/membership/activity_membership_query.h"
 #include "adventure_start_route.h"
 #include "omega_roster_readiness.h"
 #include "omega_monitor_edges.h"
@@ -645,6 +648,22 @@ void report_sense_update(Session& session, const service::Request& request) noex
     const bool portalMutation = core::settings::get().omegaExperiments.portalMutation;
     const bool epochBound = parsed && session.activityPatchEpochSeen
                             && same_epoch(update.epoch, session.activityPatchEpoch);
+    if(handleBound && epochBound && !session.activity.joinedForeignSession && session.activity.lineage
+        && session.activity.lineage.bound==session.activity.instance) {
+        const auto owner=session.activity.lineage.source;
+        state::activity::membership::RegionSnapshotInputs useInputs{};
+        const bool useBound=state::activity::membership::snapshot_region_inputs(
+            session.activity.instance,owner,{},useInputs);
+        const auto useRegion=useBound?push::activity::native_publisher::runtime_region(
+            session.activity.advertisedRegion,useInputs.sourceMembership.currentRegion.index):-1;
+        const auto useBubble=push::activity::native_publisher::population_prefetch_bubble(useRegion);
+        for(std::size_t index=0;index<update.objectCount;++index) {
+            const auto& object=update.objects[index];
+            if(object.hasObjectOutput && object.slotType==4)
+                lost_sector_rewards::receive(session,owner,useBubble,
+                    object.registryKey,object.slotType,object.slotIndex,object.objectOutput);
+        }
+    }
     if(handleBound && epochBound) {
         const auto run=state::activity::strike_pact::native_run();
         if(run!=0) {

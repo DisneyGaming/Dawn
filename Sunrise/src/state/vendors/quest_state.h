@@ -135,7 +135,7 @@ template<class Object> bool project_active_progress(const AccountState& a,const 
                 std::int32_t value{};
                 if(!saved_value(a,c,true,static_cast<std::uint16_t>(op.operand),value)) {continue;}
                 std::size_t at{};
-                for(;at<object.unlockValueCount;++at) if(object.unlockValues[at].slot==op.operand) {break;}
+                for(;at<object.unlockValueCount;++at) if(object.unlockValues[at].slot==static_cast<std::int16_t>(op.operand)) {break;}
                 if(at>=object.unlockValues.size()) {ok=false;continue;}
                 if(at==object.unlockValueCount) {++object.unlockValueCount;}
                 object.unlockValues[at]={static_cast<std::int16_t>(op.operand),0,value};

@@ -60,25 +60,20 @@ POINT_DEPENDENCIES = {
     0xED59DF6F: (["80FD9604"], []), 0x9A24C39A: (["80FD9123"], []),
     0x5B603F1E: (["80FDC2F8"], []), 0x76A432A7: (["80FDC34A"], []),
     0xBD63AFEC: (["80FDC3AB"], []),
+    0xB846777D: (["80F24DDE"], []),
+    0x74E16154: (["80F251B5"], []),
+    0xD7FF797A: (["80F2549D"], []),
 }
 
 OMITTED_SOURCES = {
-    (0xA27443E8, 5): "seasonal_nightmare_overlay",
-    (0x2E3D2EB4, 2): "seasonal_nightmare_overlay",
-    (0x5BA616DA, 20): "seasonal_nightmare_overlay",
-    (0xDB5D8740, 4): "seasonal_nightmare_overlay",
-    (0x33C30847, 5): "seasonal_nightmare_overlay",
-    (0x6717656F, 2): "seasonal_nightmare_overlay",
-    (0xBB69D2E9, 4): "seasonal_nightmare_overlay",
-    (0x3F8AF55C, 5): "seasonal_nightmare_overlay",
-    (0x2F8DB58A, 2): "seasonal_nightmare_overlay",
-    (0x100F6578, 2): "seasonal_nightmare_overlay",
     (0x69A1B17C, 8): "unsupported_native_three_category_helper",
-    (0x9A24C39A, 52): "unsupported_native_three_category_helper",
-    (0x9A24C39A, 60): "unsupported_native_three_category_helper",
-    (0x9A24C39A, 64): "unsupported_native_five_category_helper",
-    (0x9A24C39A, 70): "unsupported_native_three_category_helper",
-    (0x9A24C39A, 76): "unsupported_native_three_category_helper",
+    **{(0xB846777D, source): "non_lost_sector_or_ascendant_overlay"
+       for source in (0, 1, 2, 3, 4, 5, 45, 48, 49)},
+    **{(0x74E16154, source): "ascendant_overlay"
+       for source in (19, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34,
+                      35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48)},
+    **{(0xD7FF797A, source): "ascendant_overlay"
+       for source in (24, 28)},
 }
 
 
@@ -131,7 +126,7 @@ SECTORS = (
         "name": "Methane Flush", "bubble": 3,
         "groups": ((0xA27443E8, 0x80BF014B),),
         "stages": (
-            ((0xA27443E8, tuple(range(6, 19))),), ((0xA27443E8, tuple(range(19, 27))),),
+            ((0xA27443E8, (5, *range(6, 19))),), ((0xA27443E8, tuple(range(19, 27))),),
             ((0xA27443E8, tuple(range(27, 32))),), ((0xA27443E8, (32, 33, 34, 2, 3)),),
         ), "boss": (0xA27443E8, 3),
     },
@@ -140,7 +135,7 @@ SECTORS = (
         "name": "DS Quarters-2", "bubble": 8,
         "groups": ((0x98B63236, 0x80BF6158), (0x2E3D2EB4, 0x80BF60E6)),
         "stages": (
-            ((0x98B63236, tuple(range(13))),), ((0x2E3D2EB4, (3,)),),
+            ((0x98B63236, tuple(range(13))),), ((0x2E3D2EB4, (2, 3)),),
             ((0x2E3D2EB4, (4, 5, 6, 7)),), ((0x2E3D2EB4, (8, 9)),),
             ((0x2E3D2EB4, (10, 11, 12, 13)),),
             ((0x2E3D2EB4, (14, 15, 16, 17, 18, 19, 0)),),
@@ -152,7 +147,7 @@ SECTORS = (
         "groups": ((0x5BA616DA, 0x80BF66AC),),
         "stages": (
             ((0x5BA616DA, (19, *range(3, 15))),),
-            ((0x5BA616DA, (*range(15, 19), 2, 21)),),
+            ((0x5BA616DA, (*range(15, 19), 20, 2, 21)),),
         ), "boss": (0x5BA616DA, 21),
     },
     {
@@ -160,7 +155,7 @@ SECTORS = (
         "name": "Sanctum of Bones", "bubble": 5,
         "groups": ((0x265E16C7, 0x80BD760C), (0xDB5D8740, 0x80BD76CA)),
         "stages": (
-            ((0x265E16C7, tuple(range(1, 8))),), ((0xDB5D8740, tuple(range(5, 15))),),
+            ((0x265E16C7, tuple(range(1, 8))),), ((0xDB5D8740, (4, *range(5, 15))),),
             ((0xDB5D8740, (15, 16, 17)),), ((0xDB5D8740, (18, 19, 20, 2)),),
         ), "boss": (0xDB5D8740, 2),
     },
@@ -181,7 +176,7 @@ SECTORS = (
                    (0x33C30847, 0x80BD9B3C), (0x87678E81, 0x80BD9B57)),
         "stages": (
             ((0xDF80EDAD, (1, 2)),), ((0xCEA81A19, tuple(range(1, 7))),),
-            ((0x87678E81, tuple(range(1, 5))),), ((0x33C30847, (2,)),),
+            ((0x87678E81, tuple(range(1, 5))),), ((0x33C30847, (2, 5)),),
             ((0x33C30847, tuple(range(6, 12))),), ((0x33C30847, (12, 13, 3)),),
         ), "boss": (0x33C30847, 3),
     },
@@ -191,7 +186,7 @@ SECTORS = (
         "groups": ((0x6717656F, 0x80C06CF8), (0xD7BD9746, 0x80C06D74)),
         "stages": (
             ((0xD7BD9746, tuple(range(1, 7))),), ((0xD7BD9746, tuple(range(7, 11))),),
-            ((0xD7BD9746, (11, 12)),), ((0x6717656F, tuple(range(3, 10))),),
+            ((0xD7BD9746, (11, 12)),), ((0x6717656F, (2, *range(3, 10))),),
             ((0x6717656F, tuple(range(10, 16))),), ((0x6717656F, (16, 17, 18, 0)),),
         ), "boss": (0x6717656F, 0),
     },
@@ -200,7 +195,7 @@ SECTORS = (
         "name": "The Conflux", "bubble": 12,
         "groups": ((0xBB69D2E9, 0x80C08B57),),
         "stages": (
-            ((0xBB69D2E9, tuple(range(5, 12))),), ((0xBB69D2E9, tuple(range(12, 16))),),
+            ((0xBB69D2E9, (4, *range(5, 12))),), ((0xBB69D2E9, tuple(range(12, 16))),),
             ((0xBB69D2E9, tuple(range(16, 20))),), ((0xBB69D2E9, (20, 21, 2)),),
         ), "boss": (0xBB69D2E9, 2),
     },
@@ -209,7 +204,7 @@ SECTORS = (
         "name": "The Orrery", "bubble": 14,
         "groups": ((0x3F8AF55C, 0x80C08ECC),),
         "stages": (
-            ((0x3F8AF55C, (6, 7, 8, 9, 10, 11, 12, 13, 14, 15)),),
+            ((0x3F8AF55C, (5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)),),
             ((0x3F8AF55C, (16, 17, 18)),), ((0x3F8AF55C, tuple(range(19, 25))),),
             ((0x3F8AF55C, tuple(range(25, 30))),), ((0x3F8AF55C, (30, 31, 32, 2, 3)),),
         ), "boss": (0x3F8AF55C, 3),
@@ -220,7 +215,7 @@ SECTORS = (
         "groups": ((0x719085A0, 0x80C09917), (0x2F8DB58A, 0x80C09958)),
         "stages": (
             ((0x719085A0, tuple(range(0, 6))),), ((0x719085A0, (6, 7, 8)),),
-            ((0x2F8DB58A, tuple(range(3, 12))),), ((0x2F8DB58A, (12, 13, 14)),),
+            ((0x2F8DB58A, (2, *range(3, 12))),), ((0x2F8DB58A, (12, 13, 14)),),
             ((0x2F8DB58A, (15, 16, 17, 18, 19, 0)),),
         ), "boss": (0x2F8DB58A, 0),
     },
@@ -230,7 +225,7 @@ SECTORS = (
         "groups": ((0xE8346A52, 0x80C30C3C), (0x100F6578, 0x80C30CCD)),
         "stages": (
             ((0xE8346A52, tuple(range(0, 9))),), ((0xE8346A52, tuple(range(9, 15))),),
-            ((0x100F6578, tuple(range(3, 8))),), ((0x100F6578, (8, 9, 0)),),
+            ((0x100F6578, (2, *range(3, 8))),), ((0x100F6578, (8, 9, 0)),),
         ), "boss": (0x100F6578, 0),
     },
     {
@@ -265,7 +260,7 @@ SECTORS = (
         "groups": ((0x9A24C39A, 0x80FD993B),),
         "stages": (
             ((0x9A24C39A, (2, 4, 6, 8, 10, 12, 14, 16, 17, 18, 19, 20, 21, 22, 37, 39, 42, 44)),),
-            ((0x9A24C39A, (56, 58, 74)),),
+            ((0x9A24C39A, (52, 56, 58, 60, 64, 70, 74, 76)),),
             ((0x9A24C39A, (84, 85, 86, 89, 92, 93, 94, 95, 96, 97, 98, 99, 101, 103, 82)),),
         ), "boss": (0x9A24C39A, 82),
     },
@@ -278,7 +273,57 @@ SECTORS = (
             ((0x76A432A7, tuple(range(1, 9))),),
         ), "boss": (0x76A432A7, 8),
     },
+    {
+        "namespace": "dreaming_city", "activity": "dreaming_city_freeroam", "scenario": 0x80F1404D,
+        "name": "Bay of Drowned Wishes", "bubble": 8,
+        "groups": ((0xB846777D, 0x80F25045),),
+        "stages": (((0xB846777D, (*range(125, 142), 144, 146, 147, 149)),),),
+        "boss": (0xB846777D, 144),
+    },
+    {
+        "namespace": "dreaming_city", "activity": "dreaming_city_freeroam", "scenario": 0x80F1404D,
+        "name": "Chamber of Starlight", "bubble": 9,
+        "groups": ((0x74E16154, 0x80F25324),),
+        "stages": (((0x74E16154, (0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)),),),
+        "boss": (0x74E16154, 0),
+    },
+    {
+        "namespace": "dreaming_city", "activity": "dreaming_city_freeroam", "scenario": 0x80F1404D,
+        "name": "Aphelion's Rest", "bubble": 10,
+        "groups": ((0xD7FF797A, 0x80F255C4),),
+        "stages": (((0xD7FF797A, (*range(1, 14), *range(15, 19))),),),
+        "boss": (0xD7FF797A, 13),
+    },
 )
+
+# Exact completion-placement groups in each Lost Sector bubble. These are
+# separate from the encounter groups above. Their type-4 descriptors retain a
+# package-authored chest role string and are admitted only for the boss-cleared
+# completion projection.
+REWARDS = {
+    "Pariah's Refuge": (0x3F0E0EE6, 0x80F5E876, 0, 0x80F5E866, "dungeon_chest"),
+    "Core Terminus": (0x7CF44AF0, 0x80F73C83, 1, 0x80F73CA9, "region_chest_major1"),
+    "Ma'adim Subterrane": (0x662D2585, 0x80F76089, 0, 0x80F76103, "region_chest_major1"),
+    "Methane Flush": (0x89BDCDA2, 0x80BF080B, 0, 0x80BF0489, "region_chest_major1"),
+    "DS Quarters-2": (0x8A6203C8, 0x80BF65DF, 0, 0x80BF155A, "region_chest_major1"),
+    "Cargo Bay 3": (0x32C796F1, 0x80BF6B83, 0, 0x80BF1827, "region_chest_major2"),
+    "Sanctum of Bones": (0x4B422BBB, 0x80BD7F6D, 0, 0x80BD74EA, "region_chest_major1"),
+    "Aphix Conduit": (0xB81A4C9E, 0x80BD874D, 0, 0x80BD78BB, "region_chest_major2"),
+    "Grove of Ulan-Tan": (0x1FC9AD3A, 0x80C36427, 0, 0x80BD9089, "region_chest_major1"),
+    "The Rift": (0x9F123D29, 0x80C06D92, 0, 0x80C07865, "region_chest_major1"),
+    "The Conflux": (0x8ACACC33, 0x80C08BFA, 0, 0x80C08E8C, "region_chest_major1"),
+    "The Orrery": (0x5D0FE7E1, 0x80C0902F, 0, 0x80C095E2, "region_chest_major1"),
+    "The Carrion Pit": (0x8A55AD63, 0x80C09CC1, 0, 0x80C0A70B, "region_chest_major1"),
+    "Ancient's Haunt": (0x26928E05, 0x80C31050, 0, 0x80C31BB3, "region_chest_major1"),
+    "Trapper's Cave": (0x16972B37, 0x80FD5D26, 1, 0x80FD595C, "region_chest_major1"),
+    "Wolfship Turbine": (0xAA9A0D8D, 0x80FD85CC, 1, 0x80FD8021, "region_chest_major1"),
+    "Kingship Dock": (0xE0E3C57F, 0x80FD96A1, 0, 0x80FD9111, "region_chest_major1"),
+    "The Empty Tank": (0x47A6AC0A, 0x80FD9948, 1, 0x80FD962A, "treasure_chest_dungeon"),
+    "Shipyard AWO-43": (0xCA95C18E, 0x80FDC3F1, 0, 0x80FDC072, "o_dungeon_chest"),
+    "Bay of Drowned Wishes": (0xBA29E558, 0x80F25086, 1, 0x80F24E41, "region_chest_major1"),
+    "Chamber of Starlight": (0x039307C3, 0x80F25376, 1, 0x80F2524C, "region_chest_major1"),
+    "Aphelion's Rest": (0xBA29E55E, 0x80F255FC, 1, 0x80F254A2, "region_chest_major1"),
+}
 
 
 def cpp(value: int) -> str:
@@ -341,10 +386,18 @@ def tactical(group: dict, source: int) -> int:
         return 0
     if key == 0x9A24C39A:
         return 1 if source <= 44 else (-1 if source < 80 else 80)
+    if key == 0xB846777D:
+        return 148 if source in (144, 146, 147, 149) else 142
+    if key == 0x74E16154:
+        return 52
+    if key == 0xD7FF797A:
+        return 61
     raise ValueError(f"Lost Sector tactical policy missing for {key:08X}:{source}")
 
 
 def source_rule(group: dict, source: int) -> tuple[int, str]:
+    if group["key"] == 0x74E16154 and source in (11, 12):
+        return 0, "implicit_fixed_turret"
     roles = ("fallback",) if group["key"] in (0x3A80D8D4, 0xD893B268) else ("primary", "fallback")
     for role in roles:
         try:
@@ -456,7 +509,7 @@ def validate_encounter_quotas(document: dict, groups: dict[tuple[int, int], dict
                                  f"{name}:{key:08X}:{source}")
                 group = groups[(sector["scenario"], key)]
                 categories = gen.source_category_count(group, source)
-                if categories not in (1, 2):
+                if categories < 1 or categories > 8:
                     raise ValueError(f"Lost Sector quota category unsupported for {name}:{key:08X}:{source}")
                 targets = quota_row.get("targets")
                 if not isinstance(targets, list) or len(targets) != categories:
@@ -498,7 +551,7 @@ def resolve() -> tuple[dict[tuple[int, int], dict], dict[int, list[int]]]:
         bubble_hashes, objects = gen.scenario_objects(scenario)
         hashes[scenario] = bubble_hashes
         wanted = {(sector["bubble"], key): obj for sector in SECTORS if sector["scenario"] == scenario
-                  for key, obj in sector["groups"]}
+                  for key, obj in (*sector["groups"], REWARDS[sector["name"]][:2])}
         for bubble, tags in objects.items():
             for tag in tags:
                 group = gen.resolve_group(tag)
@@ -565,9 +618,17 @@ def emit(quota_document: dict | None = None, quota_file_sha256: str | None = Non
                 group = groups[(sector["scenario"], key)]
                 if group not in unique:
                     unique.append(group)
+        rewards = []
+        for sector in sectors:
+            key = REWARDS[sector["name"]][0]
+            group = groups[(sector["scenario"], key)]
+            if group not in rewards:
+                rewards.append(group)
+        all_groups = unique + rewards
         registry_index = {group["key"]: index for index, group in enumerate(unique)}
+        reward_index = {group["key"]: index for index, group in enumerate(rewards)}
         lines.extend(["", f"namespace {namespace} {{"])
-        for index, group in enumerate(unique):
+        for index, group in enumerate(all_groups):
             lines.append(f"inline constexpr std::array<registry::Slot,{len(group['slots'])}> kSlots{index}{{{{")
             for slot in group["slots"]:
                 lines.append(f"    {{{slot['index']},{slot['type']},{cpp(slot['component'])},{cpp(slot['sense'])},"
@@ -575,10 +636,18 @@ def emit(quota_document: dict | None = None, quota_file_sha256: str | None = Non
             lines.append("}};")
         lines.append(f"inline constexpr std::array<registry::Definition,{len(unique)}> kRegistries{{{{")
         for index, group in enumerate(unique):
-            sector = next(s for s in sectors if any(key == group["key"] for key, _ in s["groups"]))
+            sector = next(s for s in sectors if any(key == group["key"]
+                for key, _ in s["groups"]))
             lines.append(f"    {{\"{sector['activity']}\",{cpp(sector['scenario'])},{cpp(group['key'])},"
                          f"{cpp(group['object'])},{cpp(hashes[sector['scenario']][sector['bubble']])},"
                          f"{sector['bubble']},kSlots{index}}},")
+        lines.append("}};")
+        lines.append(f"inline constexpr std::array<registry::Definition,{len(rewards)}> kRewardRegistries{{{{")
+        for index, group in enumerate(rewards):
+            sector = next(s for s in sectors if REWARDS[s["name"]][0] == group["key"])
+            lines.append(f"    {{\"{sector['activity']}\",{cpp(sector['scenario'])},{cpp(group['key'])},"
+                         f"{cpp(group['object'])},{cpp(hashes[sector['scenario']][sector['bubble']])},"
+                         f"{sector['bubble']},kSlots{len(unique)+index}}},")
         lines.append("}};")
         capabilities = []
         policies = []
@@ -598,11 +667,16 @@ def emit(quota_document: dict | None = None, quota_file_sha256: str | None = Non
                     for source in source_slots:
                         source_slot = next(x for x in group["slots"] if x["type"] == 1 and x["index"] == source)
                         rule, rule_role = source_rule(group, source)
-                        rule_slot = next(x for x in group["slots"] if x["type"] == 66 and x["index"] == rule)
+                        rule_slot = next((x for x in group["slots"]
+                                          if x["type"] == 66 and x["index"] == rule), None)
+                        if rule_role != "implicit_fixed_turret" and rule_slot is None:
+                            raise ValueError("Lost Sector selected rule slot missing")
                         objective = tactical(group, source)
                         objective_slot = next((x for x in group["slots"] if x["type"] == 3 and x["index"] == objective), None)
                         if objective_slot is None and (key, source) not in {
-                            (0x9A24C39A, 56), (0x9A24C39A, 58), (0x9A24C39A, 74)
+                            (0x9A24C39A, 52), (0x9A24C39A, 56), (0x9A24C39A, 58),
+                            (0x9A24C39A, 60), (0x9A24C39A, 64), (0x9A24C39A, 70),
+                            (0x9A24C39A, 74), (0x9A24C39A, 76)
                         }:
                             raise ValueError("Lost Sector tactical objective missing without reviewed no-tactical policy")
                         categories = gen.source_category_count(group, source)
@@ -612,14 +686,16 @@ def emit(quota_document: dict | None = None, quota_file_sha256: str | None = Non
                         targets = quota_row["targets"]
                         row_count = gen.tactical_row_count(group, objective) if objective_slot else 0
                         mask = (1 << row_count) - 1 if row_count else 0
-                        capabilities.append((registry_index[key], source, rule, objective, mask, categories))
-                        policies.append((targets[0], targets[1] if categories == 2 else 0, boss))
+                        capabilities.append((registry_index[key], source, rule, objective, mask, categories,
+                                             rule_role != "implicit_fixed_turret"))
+                        policies.append((targets, boss))
                         stage_evidence.append({
                             "registry": f"{key:08X}", "source": source,
                             "source_descriptor": f'{source_slot["descriptor"]:08X}',
                             "source_sha256": digest(source_slot["descriptor"]),
-                            "rule_role": rule_role, "rule": rule, "rule_descriptor": f'{rule_slot["descriptor"]:08X}',
-                            "rule_sha256": digest(rule_slot["descriptor"]),
+                            "rule_role": rule_role, "rule": rule,
+                            "rule_descriptor": f'{rule_slot["descriptor"]:08X}' if rule_slot else None,
+                            "rule_sha256": digest(rule_slot["descriptor"]) if rule_slot else None,
                             "tactical": objective, "tactical_row": 0, "tactical_rows": row_count,
                             "tactical_descriptor": f'{objective_slot["descriptor"]:08X}' if objective_slot else None,
                             "tactical_sha256": digest(objective_slot["descriptor"]) if objective_slot else None,
@@ -629,20 +705,41 @@ def emit(quota_document: dict | None = None, quota_file_sha256: str | None = Non
                         })
                 stages.append((first, len(capabilities) - first))
                 sector_evidence["stages"].append(stage_evidence)
-            sector_rows.append((sector["name"], sector["bubble"], first_stage, len(stages) - first_stage))
+            reward_key, _, reward_slot, reward_descriptor, reward_role = REWARDS[sector["name"]]
+            reward_group = groups[(sector["scenario"], reward_key)]
+            reward = next((slot for slot in reward_group["slots"]
+                if slot["index"] == reward_slot and slot["type"] == 4), None)
+            if reward is None or reward["descriptor"] != reward_descriptor:
+                raise ValueError(f"Lost Sector chest placement changed for {sector['name']}")
+            _, reward_raw = gen.package_read.read(reward_descriptor)
+            if reward_role.encode("ascii") not in reward_raw:
+                raise ValueError(f"Lost Sector chest role changed for {sector['name']}")
+            sector_evidence["reward"] = {
+                "registry": f"{reward_key:08X}", "object": f"{reward_group['object']:08X}",
+                "slot": reward_slot, "descriptor": f"{reward_descriptor:08X}",
+                "role": reward_role, "descriptor_sha256": digest(reward_descriptor),
+            }
+            sector_rows.append((sector["name"], sector["bubble"], first_stage,
+                                len(stages) - first_stage, reward_index[reward_key], reward_slot))
             evidence["sectors"].append(sector_evidence)
         for registry_id, group in enumerate(unique):
             enabled = {source for rid, source, *_ in capabilities if rid == registry_id}
             if not enabled:
-                raise ValueError("runtime Lost Sector registry has no enabled sources")
+                reward_sector = next((sector for sector in sectors
+                    if REWARDS[sector["name"]][0] == group["key"]), None)
+                if reward_sector is None:
+                    raise ValueError("runtime Lost Sector registry has no enabled source or chest")
+                continue
             raw_sources = {slot["index"] for slot in group["slots"] if slot["type"] == 1}
             expected_omitted = {source for key, source in OMITTED_SOURCES if key == group["key"]}
             if raw_sources - enabled != expected_omitted or raw_sources != enabled | expected_omitted:
                 raise ValueError("Lost Sector source omission policy is incomplete or stale")
             reviewed_group = dict(group)
             reviewed_group["slots"] = [slot for slot in group["slots"]
-                                         if slot["type"] != 1 or slot["index"] in enabled]
-            selected_rules = {source: rule for rid, source, rule, *_ in capabilities if rid == registry_id}
+                                         if slot["type"] != 1 or (slot["index"] in enabled
+                                            and not (group["key"] == 0x74E16154 and slot["index"] in (11, 12)))]
+            selected_rules = {source: rule for rid, source, rule, *_, has_rule in capabilities
+                              if rid == registry_id and has_rule}
             point_lists, point_containers = POINT_DEPENDENCIES[group["key"]]
             scenario = next(sector["scenario"] for sector in sectors
                             if any(key == group["key"] for key, _ in sector["groups"]))
@@ -656,29 +753,40 @@ def emit(quota_document: dict | None = None, quota_file_sha256: str | None = Non
                                           if slot["type"] == 1 and slot["index"] not in enabled),
                 "point_lists": point_lists, "point_containers": point_containers,
                 "native_point_closure_sha256": proof,
+                "implicit_ruleless_sources": [
+                    {"source": slot["index"], "descriptor": f'{slot["descriptor"]:08X}',
+                     "descriptor_sha256": digest(slot["descriptor"])}
+                    for slot in group["slots"] if slot["type"] == 1 and slot["index"] in enabled
+                    and slot["index"] not in selected_rules
+                ],
             })
         lines.append(f"inline constexpr std::array<population::Capability,{len(capabilities)}> kCapabilities{{{{")
-        for registry_id, source, rule, objective, mask, categories in capabilities:
+        for registry_id, source, rule, objective, mask, categories, has_rule in capabilities:
             key = unique[registry_id]["key"]
             tactical_cpp = f"{{{cpp(key)},{objective},0}}" if objective >= 0 else "{}"
             lines.append(f"    {{&kRegistries[{registry_id}],{source},{rule},{tactical_cpp},"
-                         f"true,{cpp(mask)},{categories}}},")
+                         f"{'true' if has_rule else 'false'},{cpp(mask)},false,population::kNoNamedMember,{categories}}},")
         lines.append("}};")
         lines.append(f"inline constexpr std::array<SourcePolicy,{len(policies)}> kPolicies{{{{")
-        for first, second, boss in policies:
-            lines.append(f"    {{{first},{second},{'true' if boss else 'false'}}},")
+        for targets, boss in policies:
+            first=targets[0]
+            second=targets[1] if len(targets)>1 else 0
+            additional=targets[2:]+[0]*(8-len(targets))
+            lines.append(f"    {{{first},{second},{'true' if boss else 'false'},"
+                         f"{{{','.join(str(value) for value in additional[:6])}}},{len(targets)}}},")
         lines.append("}};")
         lines.append(f"inline constexpr std::array<Stage,{len(stages)}> kStages{{{{")
         for first, count in stages:
             lines.append(f"    {{{first},{count}}},")
         lines.append("}};")
         lines.append(f"inline constexpr std::array<Sector,{len(sector_rows)}> kSectors{{{{")
-        for name, bubble, first, count in sector_rows:
-            lines.append(f"    {{\"{name}\",{bubble},{first},{count}}},")
+        for name, bubble, first, count, reward_registry, reward_slot in sector_rows:
+            lines.append(f"    {{\"{name}\",{bubble},{first},{count},&kRewardRegistries[{reward_registry}],{reward_slot}}},")
         lines.extend(["}};", "[[nodiscard]] constexpr Definition definition(std::uint16_t capabilityBase) noexcept {",
                       "    return {kSectors,kStages,kPolicies,capabilityBase};", "}", f"}} // namespace {namespace}"])
     lines.extend(["", "namespace none {",
                   "inline constexpr std::array<registry::Definition,0> kRegistries{};",
+                  "inline constexpr std::array<registry::Definition,0> kRewardRegistries{};",
                   "inline constexpr std::array<population::Capability,0> kCapabilities{};",
                   "inline constexpr std::array<SourcePolicy,0> kPolicies{};",
                   "inline constexpr std::array<Stage,0> kStages{};",

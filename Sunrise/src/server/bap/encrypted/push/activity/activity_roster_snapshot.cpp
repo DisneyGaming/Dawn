@@ -760,8 +760,9 @@ RosterOutcome build_roster_snapshot(Session& session,
             snapshot.vendorPresentation={true,bubble,session.activity.towerVendorPresence,layout.tag};
             for(const auto& group:welcome::groups(layout.tag)) for(const auto& binding:group.slots) {
                 const auto& source=binding.asset;
-                const auto index=welcome::source_index(layout.tag,source.registry,source.type,source.slot);
-                if(source.type!=1 || index>=snapshot.vendorPresentation.population.size()) continue;
+                if(source.type!=1) continue;
+                const auto index=welcome::source_index(layout.tag,source.registry,1,source.slot);
+                if(index>=snapshot.vendorPresentation.population.size()) continue;
                 state::activity::vendors::lifetime::Authority authority;
                 if(!state::activity::vendors::lifetime::prepare(session.activity.instance,source,group.bubble,authority))
                     return RosterOutcome::noGroups;
@@ -1127,6 +1128,17 @@ RosterOutcome build_roster_snapshot(Session& session,
         for(const auto& definition:nativeProfile->lostSectorRegistries) {
             if(!admitProfileRegistry(definition))return RosterOutcome::noGroups;
         }
+        // A completion chest has no population authority and is useful only in
+        // its authored region. Admit the exact current/prefetched bubble instead
+        // of retaining every sector chest in the destination roster.
+        const auto rewardRegion=native_publisher::runtime_region(
+            inputs.regionIndex,inputs.sourceMembership.currentRegion.index);
+        const auto rewardBubble=native_publisher::population_prefetch_bubble(
+            rewardRegion);
+        for(const auto& definition:nativeProfile->lostSectorRewardRegistries) {
+            if(definition.bubble==rewardBubble && !admitProfileRegistry(definition))
+                return RosterOutcome::noGroups;
+        }
         server::runtime::activity::ambient_population::RegistryBatch optional{};
         if(!server::runtime::activity::native_activity::optional_registries(*nativeProfile,optional))
             return RosterOutcome::noGroups;
@@ -1164,6 +1176,7 @@ RosterOutcome build_roster_snapshot(Session& session,
         snapshot.animations=frame.animations;
         snapshot.generators=frame.generators;
         snapshot.devices=frame.devices;
+        snapshot.lostSectorShields=frame.lostSectorShields;
         snapshot.engagements=frame.engagements;
         snapshot.cues=frame.cues;
         snapshot.dialogues=frame.dialogues;

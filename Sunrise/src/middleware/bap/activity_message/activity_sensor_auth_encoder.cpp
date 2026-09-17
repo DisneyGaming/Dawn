@@ -98,6 +98,7 @@ constexpr std::uint32_t kMaximumRegion = 0x7FFFFFFF;
     if(!native::player_predicates::compose(snapshot.playerPredicates,snapshot.omegaPortalPlayerHash,
         state::activity::omega_portal_entry::kRequiredPlayerHash))return false;
     if(!native::placement::valid(snapshot.placements,snapshot.roster,snapshot.region)) return false;
+    if(!native::lost_sector_shield::valid(snapshot.lostSectorShields,snapshot.roster,snapshot.region)) return false;
     if(!native::engagement::valid(snapshot.engagements,snapshot.roster,snapshot.region)) return false;
     if(!native::forest_generator::valid(snapshot.generators,snapshot.roster,snapshot.region)) return false;
     if(!native::world_device::valid(snapshot.devices,snapshot.roster,snapshot.region)) return false;

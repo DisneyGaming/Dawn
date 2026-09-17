@@ -41,8 +41,12 @@ struct PendingEquipmentSwap {
     bool prepared{};
 };
 
+enum class AcquisitionSource : std::uint8_t { collections, missionReward };
+
 /** Prepared selected-character inventory insertion kept private until its reply and push fit. */
 struct PendingItemAcquisition {
+    AcquisitionSource source{AcquisitionSource::collections};
+    std::uint16_t rewardGlimmer{};
     CharacterState beforeCharacter{};
     CharacterState afterCharacter{};
     /** Exact profile material view observed before and after charging the native requirement set.
@@ -331,7 +335,9 @@ void shutdown() noexcept;
  */
 [[nodiscard]] bool prepare_item_acquisition(std::uint16_t collectibleIndex,
                                             std::uint32_t definitionHash,
-                                            PendingItemAcquisition& mutation) noexcept;
+                                            PendingItemAcquisition& mutation,
+                                            AcquisitionSource source = AcquisitionSource::collections,
+                                            std::uint16_t rewardGlimmer = 0) noexcept;
 
 /** Builds the exact full-account after-image while a prepared item pull remains current. */
 [[nodiscard]] bool preview_item_acquisition(const PendingItemAcquisition& mutation,

@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cstdio>
-#include <cstdio>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -21,7 +20,9 @@
 #define CHECK(expression) do { if (!(expression)) { std::fprintf(stderr,"CHECK failed at line %d: %s\n",__LINE__,#expression); std::abort(); } } while (false)
 
 namespace sunrise::core::log {
-void write(Channel,Level,std::string_view) noexcept {}
+void write(Channel,Level,std::string_view message) noexcept {
+    std::fprintf(stderr,"%.*s\n",static_cast<int>(message.size()),message.data());
+}
 void early(std::string_view) noexcept {}
 Settings defaults() noexcept { return {}; }
 }
@@ -76,9 +77,90 @@ void run_fresh_process_verifier() {
     CHECK(GetExitCodeProcess(process.hProcess,&exitCode)!=FALSE);CloseHandle(process.hThread);CloseHandle(process.hProcess);
     CHECK(exitCode==0);
 }
+
+void edit_database(const char* sql) {
+    sqlite3* connection{};CHECK(sqlite3_open16(database_path().c_str(),&connection)==SQLITE_OK);
+    char* error{};
+    const int result=sqlite3_exec(connection,sql,nullptr,nullptr,&error);
+    if(error) std::fprintf(stderr,"%s\n",error);
+    sqlite3_free(error);sqlite3_close(connection);CHECK(result==SQLITE_OK);
 }
 
-int main(int argc,char**) {
+int database_integer(const char* sql) {
+    sqlite3* connection{};CHECK(sqlite3_open16(database_path().c_str(),&connection)==SQLITE_OK);
+    sqlite3_stmt* statement{};CHECK(sqlite3_prepare_v2(connection,sql,-1,&statement,nullptr)==SQLITE_OK);
+    CHECK(sqlite3_step(statement)==SQLITE_ROW);const int value=sqlite3_column_int(statement,0);
+    CHECK(sqlite3_step(statement)==SQLITE_DONE);sqlite3_finalize(statement);sqlite3_close(connection);return value;
+}
+
+void test_vendor_migrations(const AccountState& legacy,const unlocks::Table& initialUnlocks,
+                            const Family5State& family) {
+    namespace durable=sunrise::state::persistence;
+    AccountState loaded{};unlocks::ScopedTable unlocks{};Family5State loadedFamily{};
+    CHECK(durable::initialize(GetModuleHandleW(nullptr),legacy,initialUnlocks,family,loaded,unlocks,loadedFamily));
+    durable::shutdown();
+    // Original v1 saves still upgrade through the production import path.
+    edit_database("ALTER TABLE characters DROP COLUMN vendor_campaigns;"
+                  "ALTER TABLE character_items DROP COLUMN postmaster;"
+                  "DROP TABLE vendor_progress;DROP TABLE vendor_unlocks;PRAGMA user_version=1;");
+    CHECK(durable::initialize(GetModuleHandleW(nullptr),legacy,initialUnlocks,family,loaded,unlocks,loadedFamily));
+    CHECK(loaded==legacy);
+    AccountState expected=legacy;
+    expected.vendorProgress[3]={20,6000,1};
+    expected.characters[0].vendorProgress[7]={11,4000,1};
+    expected.vendorUnlocks.flags.push_back({91,2});expected.vendorUnlocks.values.push_back({92,1234});
+    expected.characters[0].vendorUnlocks.flags.push_back({91,1});
+    expected.characters[1].vendorUnlocks.values.push_back({92,5678});
+    expected.characters[0].vendorCampaigns=3;
+    expected.characters[0].inventory.values[0].postmaster=true;
+    CHECK(durable::commit_account(loaded,expected));durable::shutdown();
+    // Vendor-branch v2 uses the same codec as v3 and needs no data conversion.
+    edit_database("PRAGMA user_version=2");
+    CHECK(durable::initialize(GetModuleHandleW(nullptr),legacy,initialUnlocks,family,loaded,unlocks,loadedFamily));
+    CHECK(loaded==expected);durable::shutdown();
+    CHECK(database_integer("PRAGMA user_version")==3);
+    // Recreate the old local branch's exact scoped layout, including all unused slots.
+    edit_database(R"sql(
+ALTER TABLE vendor_progress RENAME TO current_progress;
+ALTER TABLE vendor_unlocks RENAME TO current_unlocks;
+CREATE TABLE vendor_progress(scope INTEGER NOT NULL,owner_soid TEXT NOT NULL,position INTEGER NOT NULL,vendor INTEGER NOT NULL,points INTEGER NOT NULL,rewards INTEGER NOT NULL,PRIMARY KEY(scope,owner_soid,position));
+CREATE TABLE vendor_unlocks(scope INTEGER NOT NULL,owner_soid TEXT NOT NULL,numeric INTEGER NOT NULL,position INTEGER NOT NULL,slot INTEGER NOT NULL,value INTEGER NOT NULL,PRIMARY KEY(scope,owner_soid,numeric,position));
+WITH RECURSIVE positions(position) AS (SELECT 0 UNION ALL SELECT position+1 FROM positions WHERE position<15),
+ owners(scope,soid) AS (SELECT 0,primary_soid FROM account UNION ALL SELECT 1,soid FROM characters)
+INSERT INTO vendor_progress SELECT scope,soid,positions.position,COALESCE(vendor,65535),COALESCE(points,0),COALESCE(rewards,0)
+ FROM owners CROSS JOIN positions LEFT JOIN current_progress p ON p.owner_soid=soid AND p.position=positions.position;
+INSERT INTO vendor_unlocks SELECT CASE WHEN owner_soid=(SELECT primary_soid FROM account) THEN 0 ELSE 1 END,owner_soid,kind,position,slot,value FROM current_unlocks;
+DROP TABLE current_progress;DROP TABLE current_unlocks;
+UPDATE vendor_progress SET vendor=324 WHERE vendor=11;
+PRAGMA user_version=2;
+)sql");
+    // Refuse to lose nonempty sentinel data or silently reassign an owner scope.
+    edit_database("UPDATE vendor_progress SET points=1 WHERE vendor=65535");
+    CHECK(!durable::initialize(GetModuleHandleW(nullptr),legacy,initialUnlocks,family,loaded,unlocks,loadedFamily));
+    CHECK(database_integer("PRAGMA user_version")==2);
+    CHECK(database_integer("SELECT COUNT(*) FROM vendor_progress WHERE vendor=65535 AND points=1")==46);
+    edit_database("UPDATE vendor_progress SET points=0 WHERE vendor=65535;UPDATE vendor_unlocks SET scope=1 WHERE scope=0");
+    CHECK(!durable::initialize(GetModuleHandleW(nullptr),legacy,initialUnlocks,family,loaded,unlocks,loadedFamily));
+    const int movement=database_integer("SELECT movement_ability FROM characters WHERE position=0");
+    edit_database("UPDATE vendor_unlocks SET scope=0 WHERE owner_soid=(SELECT primary_soid FROM account);"
+                  "UPDATE characters SET movement_ability=256 WHERE position=0");
+    // Even failure after the schema conversion must roll back the entire migration.
+    CHECK(!durable::initialize(GetModuleHandleW(nullptr),legacy,initialUnlocks,family,loaded,unlocks,loadedFamily));
+    CHECK(database_integer("PRAGMA user_version")==2);
+    CHECK(database_integer("SELECT COUNT(*) FROM vendor_progress WHERE vendor=65535")==46);
+    CHECK(database_integer("SELECT COUNT(*) FROM vendor_unlocks WHERE numeric=1")==2);
+    edit_database(("UPDATE characters SET movement_ability="+std::to_string(movement)+" WHERE position=0").c_str());
+    CHECK(durable::initialize(GetModuleHandleW(nullptr),legacy,initialUnlocks,family,loaded,unlocks,loadedFamily));
+    CHECK(loaded==expected);CHECK(unlocks==unlocks::expand(initialUnlocks,expected));CHECK(loadedFamily==family);
+    CHECK(durable::commit_account(loaded,loaded));durable::shutdown();
+    CHECK(database_integer("PRAGMA user_version")==3);
+    CHECK(database_integer("SELECT COUNT(*) FROM vendor_progress")==2);
+    CHECK(durable::initialize(GetModuleHandleW(nullptr),legacy,initialUnlocks,family,loaded,unlocks,loadedFamily));
+    CHECK(loaded==expected);durable::shutdown();remove_database();
+}
+}
+
+int main(int argc,char** argv) {
     using namespace sunrise::state;
     namespace durable=sunrise::state::persistence;
     std::printf("sizeof(AccountState)=%zu sizeof(State)=%zu sizeof(ScopedTable)=%zu "
@@ -107,7 +189,17 @@ int main(int argc,char**) {
     legacyUnlocks.characterObjectValues[33]=77;legacyUnlocks.characterProgressions[8][2]=19;
     Family5State family{};family.flagCount=1;family.flags[0]={91,2};family.valueCount=1;family.values[0]={17,900};
     AccountState loaded{};unlocks::ScopedTable unlocks{};Family5State loadedFamily{};
+    if(argc==2 && std::string_view(argv[1])=="--load-existing") {
+        CHECK(database_path().parent_path().parent_path().filename()==L"persistence");
+        CHECK(std::filesystem::exists(database_path()));
+        if(!durable::initialize(GetModuleHandleW(nullptr),legacy,legacyUnlocks,family,loaded,unlocks,loadedFamily)) return 1;
+        std::printf("Existing save loaded: %zu characters, %zu profile items; account valid=%d\n",
+                    static_cast<std::size_t>(loaded.characterCount),static_cast<std::size_t>(loaded.profileItemCount),
+                    account::valid(loaded));
+        durable::shutdown();return 0;
+    }
     if(argc>1) {
+        CHECK(argc==2 && std::string_view(argv[1])=="--verify");
         CHECK(durable::initialize(GetModuleHandleW(nullptr),legacy,legacyUnlocks,family,loaded,unlocks,loadedFamily));
         CHECK(loaded.profileItems[0].quantity==100&&loaded.characters[0].inventory.values[0].flags==0);
         bool found=false;durable::MissionRecord mission{};
@@ -124,6 +216,7 @@ int main(int argc,char**) {
     CHECK(loadedFamily==fixtureSettings.initialFamily5);
     durable::shutdown();
     remove_database();
+    test_vendor_migrations(legacy,legacyUnlocks,family);
     CHECK(durable::initialize(GetModuleHandleW(nullptr),legacy,legacyUnlocks,family,loaded,unlocks,loadedFamily));
     CHECK(loaded.primarySoid==legacy.primarySoid&&loaded.characters[0].inventory.values[0].flags==1);
     CHECK(unlocks.accountFlags[120]==2&&unlocks.characters[0].objectValues[33]==77);

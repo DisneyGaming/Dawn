@@ -286,7 +286,7 @@ def source_category_count(group: dict, source_index: int) -> int:
     if struct.unpack_from("<IHH", raw, definition + 48) != (group["key"], 1, source_index):
         raise ValueError("source native identity does not match its registry slot")
     categories = array_rows(raw, definition + 0xA8, 104, 0x80808356)
-    if not 1 <= len(categories) <= 2:
+    if not 1 <= len(categories) <= 8:
         raise ValueError(f"source has unsupported native category count {len(categories)}")
     return len(categories)
 
