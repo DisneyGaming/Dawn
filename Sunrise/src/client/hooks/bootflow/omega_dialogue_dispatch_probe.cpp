@@ -27,6 +27,7 @@
 #include "../../../core/filesystem/path.h"
 #include "forest_tuner_record.h"
 #include "forest_tuner_state.h"
+#include "native_authority_bitmap.h"
 #include "omega_forest_recipe.h"
 #include "beyond_infinity_forest_recipe.h"
 #include "../../../state/activity/beyond_infinity/forest_selection.h"
@@ -1845,9 +1846,11 @@ void prepare_registered_forest(void* instance) noexcept {
     const auto setter=g_forestOwnerAuthoritySetter.load(std::memory_order_acquire);
     const auto* image=reinterpret_cast<const std::byte*>(GetModuleHandleW(nullptr));
     if(owner==UINT32_MAX || !setter || !image)return;
+    const auto authority=native_authority_bitmap::View::acquire(
+        image+kObjectAuthorityTableRva,readable);
+    if(!authority)return;
     const auto retain=[&](std::uint32_t entity) noexcept {
-        const auto* word=image+kObjectAuthorityTableRva+((entity&0x1FFFU)>>5U)*4U;
-        if(!readable(word,4U) || (read_value<std::uint32_t>(word)&(1U<<(entity&31U))))return false;
+        if(!authority.missing(entity))return false;
         setter(entity,1U);return true;
     };
     const bool repaired=retain(owner);

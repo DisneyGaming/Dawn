@@ -7,6 +7,7 @@
 
 #include "client/hooks/bootflow/omega_forest_recipe.h"
 #include "client/hooks/bootflow/omega_forest_scope.h"
+#include "client/hooks/bootflow/native_authority_bitmap.h"
 
 namespace forest = sunrise::client::hooks::bootflow::omega_forest;
 namespace {
@@ -19,9 +20,39 @@ void check(bool passed, const char* description) {
         std::printf("FAIL: %s\n", description);
     }
 }
+#define CHECK_AUTHORITY(expression) check(static_cast<bool>(expression), #expression)
+void authority_bitmap_checks_are_batched() {
+    using View=sunrise::client::hooks::bootflow::native_authority_bitmap::View;
+    std::array<std::uint32_t,256> words{};
+    const auto* bytes=reinterpret_cast<const std::byte*>(words.data());
+    unsigned queries{};
+    const auto view=View::acquire(bytes,[&](const std::byte* at,std::size_t size) noexcept {
+        ++queries;return at==bytes && size==sizeof words;
+    });
+    CHECK_AUTHORITY(view);CHECK_AUTHORITY(queries==1);
+    for(std::uint32_t slot=0;slot<8192;++slot) {
+        const auto handle=0x12340000U|slot;
+        CHECK_AUTHORITY(view.missing(handle));
+        words[slot/32]|=1U<<(slot%32);
+        CHECK_AUTHORITY(!view.missing(handle));
+    }
+    CHECK_AUTHORITY(queries==1); // No per-owner memory-permission queries.
+    CHECK_AUTHORITY(!view.missing(UINT32_MAX));
+    words[255]&=~(1U<<31);
+    CHECK_AUTHORITY(view.missing(0x12341FFFU)); // A cleared live bit is not cached.
+    const auto denied=View::acquire(bytes,[](const std::byte*,std::size_t) noexcept {return false;});
+    CHECK_AUTHORITY(!denied);CHECK_AUTHORITY(!denied.missing(0));
+    const auto absent=View::acquire(nullptr,[&](const std::byte*,std::size_t) noexcept {
+        ++queries;return true;
+    });
+    CHECK_AUTHORITY(!absent);CHECK_AUTHORITY(queries==1);
+}
+#undef CHECK_AUTHORITY
+
 }
 
 int main() {
+    authority_bitmap_checks_are_batched();
     // Regression: Haunted #78 reached native slice 104, whose pending bubble bit is 13.
     // Its otherwise valid-looking forest mask must never authorize an Omega seed override.
     constexpr std::array<std::string_view, 7> otherPackages{
