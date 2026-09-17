@@ -17,12 +17,13 @@ struct Definition final {
     std::uint32_t scenario{}, key{}, objectTag{}, bubbleHash{};
     std::uint8_t bubble{};
     std::span<const Slot> slots;
+    bool topLevel{};
 };
 // This qualifies catalog extraction only. It never makes an object ordinary,
 // adds it to a wire roster, or enables a native source.
 [[nodiscard]] constexpr bool required(const Definition& definition,std::uint32_t scenario,
     std::uint32_t objectTag,std::uint32_t key,std::uint64_t explicitBubbleMask) noexcept {
-    return definition.bubble<64 && definition.scenario==scenario && definition.objectTag==objectTag
+    return !definition.topLevel && definition.bubble<64 && definition.scenario==scenario && definition.objectTag==objectTag
         && definition.key==key && explicitBubbleMask==(std::uint64_t{1}<<definition.bubble);
 }
 } // namespace sunrise::state::activity::coo::registry

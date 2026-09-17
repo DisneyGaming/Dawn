@@ -71,6 +71,8 @@ struct Header {
     std::uint32_t socketPlugRuleCount{};
     std::uint32_t socketPlugPoolCount{};
     std::uint32_t socketPlugMemberCount{};
+    std::uint32_t socketPlugRollPoolCount{};
+    std::uint32_t socketPlugRollMemberCount{};
     std::uint32_t inventoryBucketCount{};
     std::uint32_t socketEntryListCount{};
     std::uint32_t socketEntryTableCount{};
@@ -111,6 +113,12 @@ struct ItemRecord {
         items::kUnavailableMaterialRequirementSetIndex};
     std::uint16_t enabledMaterialRequirementSetIndex{
         items::kUnavailableMaterialRequirementSetIndex};
+    std::uint32_t plugCategoryHash{};
+    std::uint8_t tier{};
+    /** First investment-stat value (the tier of a masterwork stat plug), clamped into a byte. */
+    std::uint8_t actionStatValue{};
+    /** Stat table row of the first investment stat (the stat a masterwork plug boosts). */
+    std::uint8_t actionStatRow{};
 };
 
 /** Disk form of one material charged by a native Collections acquisition. */
@@ -184,6 +192,7 @@ struct SocketPlugRuleRecord {
     /** Must be zero so all unused bytes have one canonical value. */
     std::uint8_t reserved{};
     std::uint32_t poolIndex{};
+    std::uint32_t rollPoolIndex{};
 };
 
 /** Disk form of one contiguous range in the flat allowed-plug member bank. */
@@ -194,6 +203,17 @@ struct SocketPlugPoolRecord {
 
 /** Disk form of one native item-definition index allowed as a plug. */
 struct SocketPlugMemberRecord {
+    std::uint16_t itemDefinitionIndex{};
+};
+
+/** Disk form of one contiguous range in the flat native-order roll-member bank. */
+struct SocketPlugRollPoolRecord {
+    std::uint32_t memberOffset{};
+    std::uint32_t memberCount{};
+};
+
+/** Disk form of one native item-definition index in a native-order roll pool. */
+struct SocketPlugRollMemberRecord {
     std::uint16_t itemDefinitionIndex{};
 };
 
@@ -381,7 +401,7 @@ struct VendorSaleRowRecord {
     std::uint16_t rowIndex{};
     std::uint16_t itemIndex{};
     std::uint16_t secondaryItemIndex{};
-    std::int32_t installedIndex{};
+    std::int32_t categoryIndex{};
     std::uint32_t raw104{};
     std::uint32_t raw108{};
     std::int32_t raw172{};
@@ -423,7 +443,7 @@ static_assert(sizeof(Prefix) == kCacheMagic.size() + sizeof(std::uint32_t));
 static_assert(sizeof(InvestmentConstants)
               == constants::kCharacterStatRowCount + 3 * sizeof(std::uint8_t));
 static_assert(sizeof(Header)
-              == kCacheMagic.size() + 26 * sizeof(std::uint32_t) + 2 * sizeof(std::uint64_t)
+              == kCacheMagic.size() + 28 * sizeof(std::uint32_t) + 2 * sizeof(std::uint64_t)
                      + 2 * sizeof(core::provenance::Sha256Digest)
                      + sizeof(InvestmentConstants));
 static_assert(sizeof(SpawnPointRecord)
@@ -474,7 +494,7 @@ static_assert(sizeof(NamedRecord)
               == content::kDefinitionNameCapacity + 2 * sizeof(std::uint16_t)
                      + 2 * sizeof(std::uint32_t));
 static_assert(sizeof(ItemRecord)
-              == sizeof(std::uint32_t) + 3 * sizeof(std::uint16_t) + 2 * sizeof(std::uint8_t));
+              == 2 * sizeof(std::uint32_t) + 3 * sizeof(std::uint16_t) + 5 * sizeof(std::uint8_t));
 static_assert(sizeof(MaterialRequirementRecord)
               == sizeof(std::uint32_t) + 2 * sizeof(std::uint16_t) + 2 * sizeof(std::uint8_t));
 static_assert(sizeof(CollectibleRecord)
@@ -494,9 +514,11 @@ static_assert(sizeof(ItemDetailRecord)
                      + items::details::kRenderOverrideCapacity
                            * (2 * sizeof(std::uint8_t) + sizeof(std::uint16_t)));
 static_assert(sizeof(SocketPlugRuleRecord)
-              == sizeof(std::uint16_t) + 2 * sizeof(std::uint8_t) + sizeof(std::uint32_t));
+              == sizeof(std::uint16_t) + 2 * sizeof(std::uint8_t) + 2 * sizeof(std::uint32_t));
 static_assert(sizeof(SocketPlugPoolRecord) == 2 * sizeof(std::uint32_t));
 static_assert(sizeof(SocketPlugMemberRecord) == sizeof(std::uint16_t));
+static_assert(sizeof(SocketPlugRollPoolRecord) == 2 * sizeof(std::uint32_t));
+static_assert(sizeof(SocketPlugRollMemberRecord) == sizeof(std::uint16_t));
 static_assert(sizeof(InventoryBucketRecord)
               == 4 * sizeof(std::uint8_t) + 2 * sizeof(std::uint16_t));
 static_assert(sizeof(SocketEntryListRecord)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
 
 #include "../destination/definition.h"
 #include "definition.h"
@@ -41,6 +42,11 @@ void stored(ForcedDestination& value) noexcept;
 
 /** Drops the selection and the switch, the same as the interface's clear action. */
 void clear() noexcept;
+
+/** An explicit native Forest selection supersedes only a matching Forest debug
+ * override. Keep the panel's fields, but release its switch through return to orbit. */
+[[nodiscard]] bool release_haunted_forest_for_native_selection(
+    std::int16_t source,std::int16_t destination,std::string_view package) noexcept;
 
 /** Commits a supported hidden mission from the exact Chosen donor tuple.
  * Returns the same configuration committed under the state lock. */

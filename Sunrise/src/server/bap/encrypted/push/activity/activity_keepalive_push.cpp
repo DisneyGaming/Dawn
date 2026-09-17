@@ -46,6 +46,8 @@
 #include "activity_region_snapshot.h"
 #include "activity_roster_push.h"
 #include "internal.h"
+#include "../../../../runtime/activity/native_activity_transit.h"
+#include "../../../../runtime/activity/native_activity_runtime.h"
 
 namespace sunrise::server::bap::encrypted::push::activity {
 namespace {
@@ -61,7 +63,7 @@ constexpr std::uint64_t kKeepaliveIntervalMs = 5'000;
  * Roster burst cadence for loading and pending native observations. Idle
  * sessions keep the ordinary keepalive cadence.
  */
-constexpr std::uint64_t kRosterBurstIntervalMs = 1'000;
+constexpr std::uint64_t kRosterBurstIntervalMs = 100;
 /** @return True while this implemented authored-mission override owns a host-ready launch. */
 [[nodiscard]] bool opening_mission_host_ready() noexcept {
     return state::activity::forced::opening_host_ready();
@@ -175,6 +177,8 @@ constexpr std::uint32_t kOmegaForestRegionHash = 0x47EA4CEAU;
     if(requires_notification(snapshot.required,RegionNotification::membership)) {
         state::activity::omega_ending::note_membership_published(snapshot.activity,
             state::activity::mission_run_generation(),GetTickCount64());
+        runtime::activity::native_activity_transit::note_membership_published(
+            snapshot.activity, GetTickCount64());
     }
     if (snapshot.publishesHud) {
         publish_hud_region_locked(session, snapshot.sourceHostRegion);
@@ -252,6 +256,8 @@ bool consume_activity_keepalive(Session& session,
         && state::activity::native_population::pending(session.activity.instance);
     const bool nativeCueDue = !session.activity.joinedForeignSession
         && runtime::activity::adventure::native_bridge::pending(session.activity.instance);
+    const bool nativeActivityPublicationPending = !session.activity.joinedForeignSession
+        && runtime::activity::native_activity::publication_pending(session.activity.instance);
     namespace welcome=state::activity::vendors::presentation;
     const auto& vendorOwner=session.activity.rosterLifetimes.identity;
     const auto player=client::player::position::snapshot();
@@ -266,7 +272,7 @@ bool consume_activity_keepalive(Session& session,
     const bool vendorPopulationDue=vendorRevision!=session.activity.vendorPopulationRevision;
     const bool scheduledBurst = now >= session.activity.rosterDueTick
         && (now < session.activity.transitionUntilTick || omegaOpeningDue || towerWatchDue
-            || nativePopulationDue || nativeCueDue);
+            || nativePopulationDue || nativeCueDue || nativeActivityPublicationPending);
     const bool burstDue = !session.activity.joinedForeignSession
         && (vendorPresenceDue || vendorPopulationDue || scheduledBurst);
     const bool endingMembershipDue=!session.activity.joinedForeignSession
@@ -276,7 +282,9 @@ bool consume_activity_keepalive(Session& session,
             || state::activity::omega_ending::membership_due(session.activity.instance,
             state::activity::mission_run_generation(),now)
             || state::activity::beyond_infinity::transit::membership_due(session.activity.instance,
-                state::activity::mission_run_generation(),now));
+                state::activity::mission_run_generation(),now)
+            || runtime::activity::native_activity_transit::membership_due(
+                session.activity.instance, now));
     const bool keepaliveDue = now >= session.activity.keepaliveDueTick
         || endingMembershipDue
         || (!session.activity.joinedForeignSession
@@ -384,6 +392,8 @@ bool consume_activity_keepalive(Session& session,
     if(refresh.publishesMembership) {
         state::activity::omega_ending::note_membership_published(session.activity.instance,
             state::activity::mission_run_generation(),now);
+        runtime::activity::native_activity_transit::note_membership_published(
+            session.activity.instance, now);
     }
     if (refresh.publishesMembership && refresh.inputs.sourceMembership.region.index >= 0) {
         session.activity.advertisedRegion = refresh.inputs.sourceMembership.region.index;

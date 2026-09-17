@@ -360,13 +360,15 @@ constexpr std::size_t kSpawnKeyCount = 32;
     const auto names=native::player_predicates::compose(snapshot.playerPredicates,snapshot.omegaPortalPlayerHash,
         state::activity::omega_portal_entry::kRequiredPlayerHash);
     encoded=encoded && names && native::player_predicates::write(writer,*names);
-    return encoded && writer.write(0, 6)
-           // Byte 736 skips the respawn delay, whose countdown never expires when the content
-           // delay is negative. Byte 737 holds the spawn while the client loads.
+    encoded = encoded && writer.write(0, 6)
            && writer.write(1, kPresenceWidth)
            && writer.write(snapshot.awaitClientSync ? kAwaitingClientSync : 0U, 4)
-           && writer.write(0, 3) && writer.write(0, kPresenceWidth) && writer.write(128, 8)
-           && writer.write(kSignedZero, 32);
+           && writer.write(0, 1) && writer.write(snapshot.nativeRespawnRestricted ? 1U : 0U, 1);
+    // Same optional half-float revive delay used by 1AU-UnEx. The three-second wipe
+    // precedes this thirty-second delay; ordinary participation stays byte-identical.
+    if(snapshot.nativeRespawnRestricted) encoded=encoded && writer.write(0x4F80U,16);
+    return encoded && writer.write(0,1) && writer.write(0,kPresenceWidth) && writer.write(128,8)
+           && writer.write(kSignedZero,32);
 }
 
 /**
@@ -817,6 +819,8 @@ auth_body_bits(const Snapshot& snapshot,
     if(const auto* request=native::placement::find(snapshot.placements,key,slotType,slotIndex)) return native::placement::body_bits(*request);
     if(const auto* request=native::population::find(snapshot.populations,key,slotType,slotIndex))
         return native::population::bits(*request);
+    if(const auto* request=native::population::find_member(snapshot.populations,key,slotType,slotIndex))
+        return native::population::member_bits(request->source.retireOwned);
     if (!snapshot.archiveOmega) { return legacy_auth_body_bits(snapshot, key, slotType, slotIndex, carriesPlayerKey); }
 
     if(const auto* status=omega_eye_status_source(snapshot,key,slotType,slotIndex)) {
@@ -893,6 +897,7 @@ auth_body_bits(const Snapshot& snapshot,
     if (slotType == kSlotTypeParticipation) {
         return carriesPlayerKey
                    ? kParticipationBits + (snapshot.hasRegion ? kParticipationRegionBits : 0)
+                         + (snapshot.nativeRespawnRestricted ? 16U : 0U)
                          + 32U*native::player_predicates::compose(snapshot.playerPredicates,snapshot.omegaPortalPlayerHash,
                              state::activity::omega_portal_entry::kRequiredPlayerHash).value().count
                    : 0;
@@ -953,6 +958,9 @@ bool write_auth_body(bits::Writer& writer,
     if(const auto* request=native::placement::find(snapshot.placements,key,slotType,slotIndex)) return native::placement::write(writer,*request);
     if(const auto* request=native::population::find(snapshot.populations,key,slotType,slotIndex))
         return native::combatant_source::write_source(writer,request->source);
+    if(const auto* request=native::population::find_member(snapshot.populations,key,slotType,slotIndex))
+        return native::population::write_member(writer,request->source.generation,
+            request->source.retireOwned);
     if (!snapshot.archiveOmega) { return legacy_write_auth_body(writer, snapshot, key, slotType, slotIndex, carriesPlayerKey); }
 
     const std::size_t start = writer.bit_count();

@@ -21,7 +21,12 @@
 namespace sunrise::state::persistence {
 namespace {
 
-constexpr int kSchemaVersion = 3;
+constexpr int kSchemaVersion = 4;
+/** Additive roll storage; old instances remain curated and are never rerolled on load. */
+constexpr const char* kRollSchema = R"sql(
+CREATE TABLE IF NOT EXISTS item_rolls(instance_soid TEXT PRIMARY KEY, entropy BLOB NOT NULL CHECK(length(entropy)=8), lane_mask INTEGER NOT NULL CHECK(lane_mask>=0 AND lane_mask<4096), owned_rows BLOB NOT NULL CHECK(length(owned_rows)=96), FOREIGN KEY(instance_soid) REFERENCES character_items(instance_soid) ON DELETE CASCADE);
+)sql";
+
 constexpr std::wstring_view kDatabaseName = L"\\player-state.db";
 constexpr std::uint64_t kFirstGeneratedItemSoid = 0x4000000000000001ULL;
 constexpr std::uint64_t kFirstProfileItemSoid = 0x5000000000000001ULL;
@@ -190,7 +195,8 @@ ALTER TABLE vendor_unlocks_v3 RENAME TO vendor_unlocks;
 
 [[nodiscard]] bool migrate_schema(int version) noexcept {
     if (version == kSchemaVersion) return true;
-    if (version == 2) return migrate_vendor_v2() && execute("PRAGMA user_version=3");
+    if (version == 3) return execute(kRollSchema) && execute("PRAGMA user_version=4");
+    if (version == 2) return migrate_vendor_v2() && migrate_schema(3);
     if (version != 1) return false;
     return execute(R"sql(
 ALTER TABLE characters ADD COLUMN vendor_campaigns INTEGER NOT NULL DEFAULT 0 CHECK(vendor_campaigns BETWEEN 0 AND 7);
@@ -198,7 +204,7 @@ ALTER TABLE character_items ADD COLUMN postmaster INTEGER NOT NULL DEFAULT 0 CHE
 CREATE TABLE vendor_progress(owner_soid TEXT NOT NULL, position INTEGER NOT NULL CHECK(position BETWEEN 0 AND 15), vendor INTEGER NOT NULL CHECK(vendor BETWEEN 0 AND 65534), points INTEGER NOT NULL CHECK(points>=0), rewards INTEGER NOT NULL CHECK(rewards>=0), PRIMARY KEY(owner_soid,position), UNIQUE(owner_soid,vendor));
 CREATE TABLE vendor_unlocks(owner_soid TEXT NOT NULL, kind INTEGER NOT NULL CHECK(kind IN(0,1)), position INTEGER NOT NULL CHECK(position BETWEEN 0 AND 2047), slot INTEGER NOT NULL CHECK(slot BETWEEN 0 AND 65535), value INTEGER NOT NULL, PRIMARY KEY(owner_soid,kind,position), UNIQUE(owner_soid,kind,slot));
 PRAGMA user_version=3;
-)sql");
+)sql") && migrate_schema(3);
 }
 
 [[nodiscard]] bool create_schema() noexcept {
@@ -221,7 +227,7 @@ CREATE TABLE family5_flags(slot INTEGER PRIMARY KEY, value INTEGER NOT NULL);
 CREATE TABLE family5_values(slot INTEGER PRIMARY KEY, value INTEGER NOT NULL);
 CREATE TABLE missions(character_soid TEXT NOT NULL, mission_hash INTEGER NOT NULL, checkpoint_hash INTEGER NOT NULL, checkpoint_slice_set INTEGER NOT NULL, activity_index INTEGER NOT NULL, progress INTEGER NOT NULL, completed INTEGER NOT NULL, updated_utc INTEGER NOT NULL, PRIMARY KEY(character_soid,mission_hash), FOREIGN KEY(character_soid) REFERENCES characters(soid) DEFERRABLE INITIALLY DEFERRED);
 CREATE TABLE reward_debts(debt_id INTEGER PRIMARY KEY AUTOINCREMENT, account_soid TEXT NOT NULL, character_soid TEXT NOT NULL, mission_hash INTEGER NOT NULL, runtime_epoch TEXT NOT NULL, session_id TEXT NOT NULL, run_id TEXT NOT NULL, definition_hash INTEGER NOT NULL, quantity INTEGER NOT NULL CHECK(quantity>0), credited INTEGER NOT NULL DEFAULT 0 CHECK(credited>=0 AND credited<=quantity), delivered INTEGER NOT NULL DEFAULT 0 CHECK(delivered IN(0,1)), UNIQUE(account_soid,runtime_epoch,session_id,run_id,definition_hash));
-PRAGMA user_version=1;
+PRAGMA user_version=2;
 )sql";
     return execute(sql) && migrate_schema(1);
 }
@@ -311,6 +317,15 @@ template <typename T>
         || bind_i64(itemStatement,9,item.flags)==false || sqlite3_bind_int(itemStatement,10,static_cast<int>(item.sockets.policy))!=SQLITE_OK
         || sqlite3_bind_int(itemStatement,11,item.postmaster)!=SQLITE_OK
         || !step_done(itemStatement)) return false;
+    // The roll and its offered perk rows commit atomically with the item and selected sockets.
+    Statement roll{"INSERT INTO item_rolls VALUES(?1,?2,?3,?4)"};
+    if (!roll.ready() || !bind_u64(roll.value, 1, item.instanceSoid)
+        || sqlite3_bind_blob(roll.value, 2, item.randomRoll.data(),
+                             static_cast<int>(sizeof(item.randomRoll)), SQLITE_TRANSIENT) != SQLITE_OK
+        || !bind_i64(roll.value, 3, item.rolledLaneMask)
+        || sqlite3_bind_blob(roll.value, 4, item.availablePlugRows.data(),
+                             static_cast<int>(sizeof(item.availablePlugRows)), SQLITE_TRANSIENT) != SQLITE_OK
+        || !step_done(roll.value)) return false;
     for (std::size_t lane=0;lane<item.sockets.plugCount;++lane) {
         sqlite3_reset(socketStatement); sqlite3_clear_bindings(socketStatement);
         if (!bind_u64(socketStatement,1,item.instanceSoid) || sqlite3_bind_int(socketStatement,2,static_cast<int>(lane))!=SQLITE_OK
@@ -619,6 +634,24 @@ void observe_allocators(const AccountState& account) noexcept {
             item->sockets.plugs[lane]=static_cast<std::uint32_t>(hash);
         }
         ++item->sockets.plugCount;
+    }
+    if (result != SQLITE_DONE) return false;
+    Statement rolls{"SELECT instance_soid,entropy,lane_mask,owned_rows FROM item_rolls"};
+    if (!rolls.ready()) return false;
+    while ((result = sqlite3_step(rolls.value)) == SQLITE_ROW) {
+        std::uint64_t instanceSoid{};
+        if (!parse_u64(sqlite3_column_text(rolls.value, 0), instanceSoid)) return false;
+        auto* item = find_item(accountState, instanceSoid);
+        std::int32_t mask{};
+        if (item == nullptr || !column_i32(rolls.value, 2, mask) || mask < 0
+            || mask >= (1 << account::inventory::kPlugCapacity)
+            || sqlite3_column_type(rolls.value, 1) != SQLITE_BLOB
+            || sqlite3_column_bytes(rolls.value, 1) != sizeof(item->randomRoll)
+            || sqlite3_column_type(rolls.value, 3) != SQLITE_BLOB
+            || sqlite3_column_bytes(rolls.value, 3) != sizeof(item->availablePlugRows)) return false;
+        std::memcpy(item->randomRoll.data(), sqlite3_column_blob(rolls.value, 1), sizeof(item->randomRoll));
+        std::memcpy(item->availablePlugRows.data(), sqlite3_column_blob(rolls.value, 3), sizeof(item->availablePlugRows));
+        item->rolledLaneMask = static_cast<std::uint16_t>(mask);
     }
     return result==SQLITE_DONE&&read_vendor_state(accountState)&&read_settings(accountState.settings) && account::valid(accountState);
 }

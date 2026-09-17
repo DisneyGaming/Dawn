@@ -4,13 +4,17 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <chrono>
 #include <limits>
+#include <span>
 
 #include "../../middleware/datagen/family4/loadout/loadout_resolver.h"
 #include "../build_data/runtime.h"
 #include "runtime.h"
 #include "../account/inventory/placement.h"
 #include "state_account_transaction_helpers.h"
+#include "state_item_random_roll.h"
+#include "profile_reward_staging.h"
 #include "storage/internal.h"
 #include "../persistence/persistence.h"
 
@@ -60,40 +64,218 @@ namespace {
     return account::valid(after)&&valid_profile_inventory(after);
 }
 
+[[nodiscard]] bool has_item_replacement_metadata(const PendingItemAcquisition& mutation) noexcept {
+    return mutation.updatedInstanceSoid != 0;
 }
 
+[[nodiscard]] bool empty_item_replacement_metadata(
+    const PendingItemAcquisition& mutation) noexcept {
+    return mutation.updatedInstanceSoid == 0 && mutation.updatedInventoryIndex == 0
+           && mutation.updatedInventoryRow == 0 && mutation.updatedEquipmentSlot == 0
+           && mutation.updatedBeforeDefinitionIndex == 0
+           && mutation.updatedAfterDefinitionIndex == 0
+           && mutation.updatedBeforeDefinitionHash == 0
+           && mutation.updatedAfterDefinitionHash == 0
+           && mutation.updatedBeforeMutationSerial == 0
+           && mutation.updatedAfterMutationSerial == 0;
+}
+
+[[nodiscard]] bool definition_identity(std::uint32_t definitionHash,
+                                       std::uint16_t expectedDefinitionIndex,
+                                       build_data::items::Definition& definition) noexcept {
+    return definitionHash != authored_inventory::kNoDefinitionHash
+           && build_data::find_item_definition_hash(definitionHash, definition)
+           && definition.definitionHash == definitionHash
+           && definition.definitionIndex == expectedDefinitionIndex;
+}
+
+[[nodiscard]] bool no_existing_definition(const CharacterState& character,
+                                          std::uint32_t definitionHash) noexcept {
+    for (const auto& item : character.equipment.slots) {
+        if (item.has_value() && item->definitionHash == definitionHash) {
+            return false;
+        }
+    }
+    for (std::size_t index = 0; index < character.inventory.count; ++index) {
+        if (character.inventory.values[index].definitionHash == definitionHash) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/** Validates the only permitted extra change in a character acquisition after-image. */
+[[nodiscard]] bool valid_item_replacement_image(const PendingItemAcquisition& mutation) noexcept {
+    if (!has_item_replacement_metadata(mutation)) {
+        return empty_item_replacement_metadata(mutation);
+    }
+
+    constexpr std::int32_t kMaxMutationSerial = (std::numeric_limits<std::int32_t>::max)();
+    if (mutation.updatedInstanceSoid == mutation.acquiredInstanceSoid
+        || mutation.updatedInstanceSoid == 0
+        || mutation.updatedInventoryIndex >= mutation.expectedInventoryCount
+        || mutation.expectedInventoryCount >= authored_inventory::kCharacterItemCapacity
+        || mutation.beforeCharacter.inventory.count != mutation.expectedInventoryCount
+        || mutation.afterCharacter.inventory.count != mutation.expectedInventoryCount + 1U
+        || mutation.updatedBeforeDefinitionHash == authored_inventory::kNoDefinitionHash
+        || mutation.updatedAfterDefinitionHash == authored_inventory::kNoDefinitionHash
+        || mutation.updatedBeforeDefinitionHash == mutation.updatedAfterDefinitionHash
+        || mutation.updatedBeforeMutationSerial < 0
+        || mutation.updatedAfterMutationSerial <= mutation.updatedBeforeMutationSerial
+        || mutation.updatedAfterMutationSerial >= kMaxMutationSerial
+        || mutation.expectedNextInventorySerial >=
+               static_cast<std::uint32_t>(kMaxMutationSerial)
+        || mutation.afterCharacter.nextInventorySerial
+               != mutation.expectedNextInventorySerial + 2U) {
+        return false;
+    }
+
+    build_data::items::Definition beforeDefinition{};
+    build_data::items::Definition afterDefinition{};
+    if (!definition_identity(mutation.updatedBeforeDefinitionHash,
+                             mutation.updatedBeforeDefinitionIndex,
+                             beforeDefinition)
+        || !definition_identity(mutation.updatedAfterDefinitionHash,
+                                mutation.updatedAfterDefinitionIndex,
+                                afterDefinition)) {
+        return false;
+    }
+
+    const account::inventory::Item& beforeItem =
+        mutation.beforeCharacter.inventory.values[mutation.updatedInventoryIndex];
+    const account::inventory::Item& afterItem =
+        mutation.afterCharacter.inventory.values[mutation.updatedInventoryIndex];
+    if (beforeItem.instanceSoid != mutation.updatedInstanceSoid
+        || beforeItem.definitionHash != mutation.updatedBeforeDefinitionHash
+        || beforeItem.mutationSerial != mutation.updatedBeforeMutationSerial
+        || afterItem.instanceSoid != mutation.updatedInstanceSoid
+        || afterItem.definitionHash != mutation.updatedAfterDefinitionHash
+        || afterItem.level != beforeItem.level || afterItem.quantity != beforeItem.quantity
+        || afterItem.flags != beforeItem.flags
+        || afterItem.mutationSerial != mutation.updatedAfterMutationSerial
+        || !no_existing_definition(mutation.beforeCharacter,
+                                    mutation.updatedAfterDefinitionHash)) {
+        return false;
+    }
+
+    CharacterItemLocation location{};
+    if (!find_character_item_location(
+            mutation.beforeCharacter, mutation.updatedInstanceSoid, location)
+        || location.equipped || location.index != mutation.updatedInventoryIndex) {
+        return false;
+    }
+
+    // Everything durable on the row survives the definition change; only the definition, the
+    // serial and the socket lane (native defaults for the new definition) are allowed to differ.
+    account::inventory::Item expectedUpdated{};
+    expectedUpdated.instanceSoid = beforeItem.instanceSoid;
+    expectedUpdated.definitionHash = mutation.updatedAfterDefinitionHash;
+    expectedUpdated.level = beforeItem.level;
+    expectedUpdated.quantity = beforeItem.quantity;
+    expectedUpdated.mutationSerial = mutation.updatedAfterMutationSerial;
+    expectedUpdated.flags = beforeItem.flags;
+    if (!same_stationary_item(afterItem, expectedUpdated)) {
+        return false;
+    }
+
+    account::inventory::Item expectedAcquired{};
+    expectedAcquired.instanceSoid = mutation.acquiredInstanceSoid;
+    expectedAcquired.definitionHash = mutation.acquiredDefinitionHash;
+    expectedAcquired.level = acquisition_level(mutation.beforeCharacter);
+    expectedAcquired.quantity = 1;
+    expectedAcquired.mutationSerial =
+        static_cast<std::int32_t>(mutation.expectedNextInventorySerial);
+    if (!same_stationary_item(mutation.afterCharacter.inventory.values[
+                                  mutation.expectedInventoryCount],
+                              expectedAcquired)) {
+        return false;
+    }
+
+    for (std::size_t index = 0; index < mutation.beforeCharacter.equipment.slots.size(); ++index) {
+        const auto& before = mutation.beforeCharacter.equipment.slots[index];
+        const auto& after = mutation.afterCharacter.equipment.slots[index];
+        if (before.has_value() != after.has_value()
+            || (before.has_value() && !same_stationary_item(*before, *after))) {
+            return false;
+        }
+    }
+    for (std::size_t index = 0; index < mutation.expectedInventoryCount; ++index) {
+        if (index != mutation.updatedInventoryIndex
+            && !same_stationary_item(mutation.beforeCharacter.inventory.values[index],
+                                     mutation.afterCharacter.inventory.values[index])) {
+            return false;
+        }
+    }
+    for (std::size_t index = mutation.afterCharacter.inventory.count;
+         index < mutation.afterCharacter.inventory.values.size();
+         ++index) {
+        if (!same_stationary_item(mutation.beforeCharacter.inventory.values[index],
+                                  mutation.afterCharacter.inventory.values[index])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+} // namespace
+
 /** Prepares one native-row-checked selected-character inventory insertion. */
-bool prepare_item_acquisition(std::uint16_t collectibleIndex,
-                              std::uint32_t definitionHash,
-                              PendingItemAcquisition& mutation,
-                              AcquisitionSource source,
-                              std::uint16_t rewardGlimmer) noexcept {
+static bool prepare_item_acquisition_impl(
+    std::uint16_t collectibleIndex,
+    std::uint32_t definitionHash,
+    PendingItemAcquisition& mutation,
+    std::span<const build_data::material_requirements::Requirement> cost,
+    ItemAcquisitionOptions options, AcquisitionSource source, std::uint16_t rewardGlimmer) noexcept {
     mutation = {};
     const AccountState account = account_snapshot();
     build_data::collectibles::Definition collectible{};
     build_data::items::Definition grantedDefinition{};
-    if ((source != AcquisitionSource::collections && source != AcquisitionSource::missionReward)
-        || (source == AcquisitionSource::collections && rewardGlimmer != 0)
-        || rewardGlimmer > 500
+    const bool hasCollectible = collectibleIndex != build_data::collectibles::kNoCollectibleIndex;
+    if (rewardGlimmer > 500 || (source != AcquisitionSource::missionReward && rewardGlimmer != 0)
         || definitionHash == authored_inventory::kNoDefinitionHash || !account::valid(account)
-        || !valid_profile_inventory(account)
-        || !build_data::find_collectible_definition(collectibleIndex, collectible)
-        || collectible.itemDefinitionIndex
-               == build_data::collectibles::kUnavailableItemDefinitionIndex
-        || !build_data::find_item_definition_index(collectible.itemDefinitionIndex,
-                                                   grantedDefinition)
-        || grantedDefinition.definitionHash != definitionHash) {
+        || !valid_profile_inventory(account)) {
         report_acquisition("prepare", "fail", "input", definitionHash, 0, 0, 0, 0, 0, 0);
         return false;
     }
+    if (hasCollectible) {
+        if (!build_data::find_collectible_definition(collectibleIndex, collectible)
+            || collectible.itemDefinitionIndex
+                   == build_data::collectibles::kUnavailableItemDefinitionIndex
+            || !build_data::find_item_definition_index(collectible.itemDefinitionIndex,
+                                                       grantedDefinition)
+            || grantedDefinition.definitionHash != definitionHash) {
+            report_acquisition("prepare", "fail", "input", definitionHash, 0, 0, 0, 0, 0, 0);
+            return false;
+        }
+    } else if (!build_data::find_item_definition_hash(definitionHash, grantedDefinition)
+               || grantedDefinition.definitionHash != definitionHash) {
+        report_acquisition("prepare", "fail", "item", definitionHash, 0, 0, 0, 0, 0, 0);
+        return false;
+    }
 
+    // An authored cost REPLACES the collectible's own installed set; the two never stack. The
+    // collectible's set is the Collections re-pull price, not a vendor's, and running both would
+    // bump the same rows' mutation serials twice over an array the first pass may have compacted.
     AccountState chargedAccount = account;
     bool profileChanged = false;
-    if (!(source == AcquisitionSource::missionReward
-        ? mission_glimmer(account, rewardGlimmer, chargedAccount, profileChanged)
-        : apply_collection_materials(account, collectible, chargedAccount, profileChanged))) {
+    if (source == AcquisitionSource::missionReward
+        ? !mission_glimmer(account, rewardGlimmer, chargedAccount, profileChanged)
+        : (hasCollectible && cost.empty()
+            && !apply_collection_materials(account, collectible, chargedAccount, profileChanged))) {
         report_acquisition("prepare", "fail", "materials", definitionHash, 0, 0, 0, 0, 0, 0);
         return false;
+    }
+    if (!cost.empty()) {
+        AccountState pricedAccount = chargedAccount;
+        bool costCharged = false;
+        if (!apply_authored_cost(chargedAccount, cost, pricedAccount, costCharged)) {
+            // `price` rather than `materials`, so an unaffordable authored cost is never read as
+            // an unaffordable collectible set.
+            report_acquisition("prepare", "fail", "price", definitionHash, 0, 0, 0, 0, 0, 0);
+            return false;
+        }
+        chargedAccount = pricedAccount;
+        profileChanged = profileChanged || costCharged;
     }
 
     inventory_buckets::Descriptor destination{};
@@ -153,6 +335,19 @@ bool prepare_item_acquisition(std::uint16_t collectibleIndex,
     acquired.quantity = 1;
     acquired.mutationSerial = static_cast<std::int32_t>(after.nextInventorySerial++);
     acquired.sockets.policy = authored_inventory::SocketPolicy::nativeDefaults;
+    // Collections reclaims retain their fixed roll. Direct rewards share installed legal pools.
+    if (!hasCollectible && options.allowRandomRoll) {
+        item_details::Definition detail{};
+        if (!build_data::find_configured_item_detail(grantedDefinition.definitionIndex, detail)
+            || detail.definitionHash != definitionHash || detail.bucketId != grantedDefinition.bucketId) {
+            report_acquisition("prepare", "fail", "roll_detail", definitionHash,
+                               before.soid, instanceSoid, before.inventory.count, 0, 0, 0);
+            return false;
+        }
+        const auto seed = options.seed != 0 ? options.seed
+            : static_cast<std::uint64_t>(std::chrono::steady_clock::now().time_since_epoch().count());
+        (void)roll_random_bytes(acquired, grantedDefinition, detail, seed);
+    }
     if(!authored_inventory::insert(after,acquired,removed)) {return false;}
     const std::size_t inventoryIndex=after.inventory.count-1;
 
@@ -214,12 +409,191 @@ bool prepare_item_acquisition(std::uint16_t collectibleIndex,
     return true;
 }
 
+bool prepare_item_acquisition(std::uint16_t collectibleIndex, std::uint32_t definitionHash,
+    PendingItemAcquisition& mutation,
+    std::span<const build_data::material_requirements::Requirement> cost,
+    ItemAcquisitionOptions options) noexcept {
+    const auto source = collectibleIndex != build_data::collectibles::kNoCollectibleIndex && cost.empty()
+        ? AcquisitionSource::collections : AcquisitionSource::vendorReward;
+    return prepare_item_acquisition_impl(collectibleIndex, definitionHash, mutation, cost, options, source, 0);
+}
+
+bool prepare_item_acquisition(std::uint16_t collectibleIndex, std::uint32_t definitionHash,
+    PendingItemAcquisition& mutation, AcquisitionSource source, std::uint16_t rewardGlimmer) noexcept {
+    if (source != AcquisitionSource::collections && source != AcquisitionSource::missionReward) {
+        mutation = {}; return false;
+    }
+    return prepare_item_acquisition_impl(collectibleIndex, definitionHash, mutation, {}, {}, source, rewardGlimmer);
+}
+
+/** Resolves a direct acquisition through the same priced, atomic insertion path. */
+bool prepare_item_acquisition_for_item(
+    std::uint16_t itemDefinitionIndex, PendingItemAcquisition& mutation,
+    ItemAcquisitionOptions options,
+    std::span<const build_data::material_requirements::Requirement> cost) noexcept {
+    build_data::items::Definition definition{};
+    if (!build_data::find_item_definition_index(itemDefinitionIndex, definition)) {
+        mutation = {};
+        return false;
+    }
+    return prepare_item_acquisition(build_data::collectibles::kNoCollectibleIndex,
+                                     definition.definitionHash, mutation, cost, options);
+}
+
+/** Adds one checked pre-existing item replacement without touching live State. */
+bool stage_item_replacement(PendingItemAcquisition& mutation,
+                            std::uint64_t instanceSoid,
+                            std::size_t inventoryIndex,
+                            std::uint32_t beforeDefinitionHash,
+                            std::uint32_t afterDefinitionHash) noexcept {
+    if (!mutation.prepared || mutation.updatedInstanceSoid != 0 || instanceSoid == 0
+        || instanceSoid == mutation.acquiredInstanceSoid
+        || beforeDefinitionHash == authored_inventory::kNoDefinitionHash
+        || afterDefinitionHash == authored_inventory::kNoDefinitionHash
+        || beforeDefinitionHash == afterDefinitionHash
+        || mutation.characterIndex >= kCharacterCapacity
+        || inventoryIndex >= mutation.expectedInventoryCount
+        || mutation.expectedInventoryCount >= authored_inventory::kCharacterItemCapacity) {
+        return false;
+    }
+
+    const AccountState current = account_snapshot();
+    if (mutation.characterIndex >= current.characterCount
+        || current.primarySoid != mutation.accountSoid
+        || !same_character(current.characters[mutation.characterIndex], mutation.beforeCharacter)
+        || !same_profile_inventory(
+            current, mutation.beforeProfileItems, mutation.expectedProfileItemCount)) {
+        return false;
+    }
+
+    const CharacterState& before = mutation.beforeCharacter;
+    if (before.inventory.count != mutation.expectedInventoryCount
+        || inventoryIndex >= before.inventory.count
+        || before.inventory.values[inventoryIndex].instanceSoid != instanceSoid
+        || before.inventory.values[inventoryIndex].definitionHash != beforeDefinitionHash
+        || !no_existing_definition(before, afterDefinitionHash)) {
+        return false;
+    }
+    CharacterItemLocation location{};
+    if (!find_character_item_location(before, instanceSoid, location) || location.equipped
+        || location.index != inventoryIndex) {
+        return false;
+    }
+
+    build_data::items::Definition beforeDefinition{};
+    build_data::items::Definition afterDefinition{};
+    if (!build_data::find_item_definition_hash(beforeDefinitionHash, beforeDefinition)
+        || beforeDefinition.definitionHash != beforeDefinitionHash
+        || !build_data::find_item_definition_hash(afterDefinitionHash, afterDefinition)
+        || afterDefinition.definitionHash != afterDefinitionHash
+        || before.nextInventorySerial >=
+               static_cast<std::uint32_t>((std::numeric_limits<std::int32_t>::max)())
+        || mutation.afterCharacter.inventory.count != mutation.expectedInventoryCount + 1U
+        || mutation.expectedNextInventorySerial != before.nextInventorySerial
+        || mutation.afterCharacter.nextInventorySerial != before.nextInventorySerial + 1U) {
+        return false;
+    }
+
+    PendingItemAcquisition staged = mutation;
+    const std::int32_t updatedMutationSerial =
+        static_cast<std::int32_t>(staged.afterCharacter.nextInventorySerial);
+    if (updatedMutationSerial >= (std::numeric_limits<std::int32_t>::max)()) {
+        return false;
+    }
+    // Copy the row, then change only what the step advance owns: the definition, a fresh serial
+    // and a native-default socket lane for the new definition. Level, quantity and the native
+    // item-state flags ride across unchanged.
+    account::inventory::Item replacement = before.inventory.values[inventoryIndex];
+    replacement.definitionHash = afterDefinitionHash;
+    replacement.mutationSerial = updatedMutationSerial;
+    replacement.sockets = {};
+    replacement.sockets.policy = authored_inventory::SocketPolicy::nativeDefaults;
+    staged.afterCharacter.inventory.values[inventoryIndex] = replacement;
+    ++staged.afterCharacter.nextInventorySerial;
+
+    // Resolve against the same after-image preview and commit will use: the charged profile view
+    // of the prepared acquisition, not the live one.
+    AccountState candidate = current;
+    candidate.profileItems = staged.afterProfileItems;
+    candidate.profileItemCount = staged.afterProfileItemCount;
+    candidate.characters[staged.characterIndex] = staged.afterCharacter;
+    family4_loadout::ResolvedLoadout resolved{};
+    std::uint16_t updatedInventoryRow = 0;
+    std::uint8_t updatedEquipmentSlot = 0;
+    if (!account::valid(candidate) || !valid_profile_inventory(candidate)
+        || !family4_loadout::resolve(candidate, staged.characterIndex, resolved)
+        || !find_unequipped_row(resolved,
+                                instanceSoid,
+                                updatedInventoryRow,
+                                updatedEquipmentSlot)) {
+        return false;
+    }
+
+    staged.updatedInstanceSoid = instanceSoid;
+    staged.updatedInventoryIndex = inventoryIndex;
+    staged.updatedInventoryRow = updatedInventoryRow;
+    staged.updatedEquipmentSlot = updatedEquipmentSlot;
+    staged.updatedBeforeDefinitionIndex = beforeDefinition.definitionIndex;
+    staged.updatedAfterDefinitionIndex = afterDefinition.definitionIndex;
+    staged.updatedBeforeDefinitionHash = beforeDefinitionHash;
+    staged.updatedAfterDefinitionHash = afterDefinitionHash;
+    staged.updatedBeforeMutationSerial = before.inventory.values[inventoryIndex].mutationSerial;
+    staged.updatedAfterMutationSerial = updatedMutationSerial;
+    if (!valid_item_replacement_image(staged)) {
+        return false;
+    }
+    mutation = staged;
+    report_acquisition("stage_update",
+                       "ok",
+                       "ready",
+                       afterDefinitionHash,
+                       mutation.characterSoid,
+                       instanceSoid,
+                       inventoryIndex,
+                       updatedInventoryRow,
+                       updatedEquipmentSlot,
+                       mutation.afterCharacter.nextInventorySerial);
+    return true;
+}
+
+bool stage_item_profile_rewards(PendingItemAcquisition& mutation,
+    std::span<const ProfileExchangePayout> payouts) noexcept {
+    AccountState candidate{};
+    if (!preview_item_acquisition(mutation, candidate)) return false;
+    std::int32_t serialFloor{};
+    for (std::size_t i = 0; i < mutation.expectedProfileItemCount; ++i) {
+        serialFloor = (std::max)(serialFloor, mutation.beforeProfileItems[i].mutationSerial);
+    }
+    const auto resolve = [](std::uint32_t hash, std::int32_t& maximum) noexcept {
+        build_data::items::Definition item{};
+        item_details::Definition detail{};
+        inventory_buckets::Descriptor bucket{};
+        if (!build_data::find_item_definition_hash(hash, item)
+            || !build_data::find_configured_item_detail(item.definitionIndex, detail)
+            || detail.definitionHash != hash || detail.bucketId != item.bucketId
+            || detail.instancedDefinitionState != item_details::InstancedDefinitionState::stackable
+            || !build_data::find_inventory_bucket_descriptor(detail.bucketId, bucket)
+            || bucket.arraySelector != inventory_buckets::ArraySelector::profile
+            || build_data::is_profile_action_source(item.definitionIndex, item.bucketId)) return false;
+        maximum = detail.maxStackSize;
+        return maximum > 0;
+    };
+    if (!runtime::detail::stage_profile_rewards(candidate, payouts, serialFloor, resolve)
+        || !account::valid(candidate) || !valid_profile_inventory(candidate)) return false;
+    mutation.afterProfileItems = candidate.profileItems;
+    mutation.afterProfileItemCount = candidate.profileItemCount;
+    mutation.profileChanged = !same_profile_inventory(
+        candidate, mutation.beforeProfileItems, mutation.expectedProfileItemCount);
+    return true;
+}
+
 /** Produces the full account after-image while a prepared character pull remains current. */
 bool preview_item_acquisition(const PendingItemAcquisition& mutation,
                               AccountState& after) noexcept {
     after = {};
     if (!mutation.prepared
-        || (mutation.source != AcquisitionSource::collections && mutation.source != AcquisitionSource::missionReward)
+        || (mutation.source != AcquisitionSource::collections && mutation.source != AcquisitionSource::missionReward
+            && mutation.source != AcquisitionSource::vendorReward)
         || (mutation.source == AcquisitionSource::collections && mutation.rewardGlimmer != 0)
         || mutation.rewardGlimmer > 500
         || mutation.accountSoid == 0 || mutation.characterSoid == 0
@@ -240,13 +614,29 @@ bool preview_item_acquisition(const PendingItemAcquisition& mutation,
     after.profileItems = mutation.afterProfileItems;
     after.profileItemCount = mutation.afterProfileItemCount;
     after.characters[mutation.characterIndex] = mutation.afterCharacter;
+    if (!valid_item_replacement_image(mutation)) {
+        return false;
+    }
     family4_loadout::ResolvedLoadout resolved{};
     std::uint16_t checkedRow = 0;
     std::uint8_t checkedSlot = 0;
-    return account::valid(after) && valid_profile_inventory(after)
-           && family4_loadout::resolve(after, mutation.characterIndex, resolved)
-           && find_acquired_row(resolved, mutation.acquiredInstanceSoid, checkedRow, checkedSlot)
-           && checkedRow == mutation.inventoryRow && checkedSlot == mutation.equipmentSlot;
+    if (!account::valid(after) || !valid_profile_inventory(after)) {
+        return false;
+    }
+    if (!family4_loadout::resolve(after, mutation.characterIndex, resolved)
+        || !find_acquired_row(resolved, mutation.acquiredInstanceSoid, checkedRow, checkedSlot)
+        || checkedRow != mutation.inventoryRow || checkedSlot != mutation.equipmentSlot) {
+        return false;
+    }
+    if (has_item_replacement_metadata(mutation)) {
+        return find_unequipped_row(resolved,
+                                   mutation.updatedInstanceSoid,
+                                   checkedRow,
+                                   checkedSlot)
+               && checkedRow == mutation.updatedInventoryRow
+               && checkedSlot == mutation.updatedEquipmentSlot;
+    }
+    return true;
 }
 
 /** Commits one prepared insertion only while its prepare-time loadout remains current. */
@@ -267,7 +657,8 @@ bool commit_item_acquisition(PendingItemAcquisition& mutation) noexcept {
         return false;
     };
     if (!prepared.prepared
-        || (prepared.source != AcquisitionSource::collections && prepared.source != AcquisitionSource::missionReward)
+        || (prepared.source != AcquisitionSource::collections && prepared.source != AcquisitionSource::missionReward
+            && prepared.source != AcquisitionSource::vendorReward)
         || (prepared.source == AcquisitionSource::collections && prepared.rewardGlimmer != 0)
         || prepared.rewardGlimmer > 500
         || prepared.characterSoid == 0 || prepared.acquiredInstanceSoid == 0
@@ -286,17 +677,23 @@ bool commit_item_acquisition(PendingItemAcquisition& mutation) noexcept {
         || prepared.afterProfileItemCount > authored_inventory::kProfileItemCapacity) {
         return fail("mutation");
     }
+    if (!valid_item_replacement_image(prepared)) {
+        return fail("update");
+    }
 
-    build_data::collectibles::Definition collectible{};
-    build_data::items::Definition grantedDefinition{};
-    if (!build_data::find_collectible_definition(prepared.collectibleIndex, collectible)
-        || !build_data::find_item_definition_index(collectible.itemDefinitionIndex, grantedDefinition)
-        || grantedDefinition.definitionHash != prepared.acquiredDefinitionHash
-        || collectible.itemDefinitionIndex
-               == build_data::collectibles::kUnavailableItemDefinitionIndex
-        || collectible.materialRequirementSetHash != prepared.materialRequirementSetHash
-        || collectible.materialRequirementCount != prepared.materialRequirementCount) {
-        return fail("collectible");
+    if (prepared.collectibleIndex == build_data::collectibles::kNoCollectibleIndex) {
+        if (prepared.materialRequirementSetHash != 0 || prepared.materialRequirementCount != 0) {
+            return fail("collectible");
+        }
+    } else {
+        build_data::collectibles::Definition collectible{};
+        if (!build_data::find_collectible_definition(prepared.collectibleIndex, collectible)
+            || collectible.itemDefinitionIndex
+                   == build_data::collectibles::kUnavailableItemDefinitionIndex
+            || collectible.materialRequirementSetHash != prepared.materialRequirementSetHash
+            || collectible.materialRequirementCount != prepared.materialRequirementCount) {
+            return fail("collectible");
+        }
     }
 
     report_acquisition("commit_begin",
@@ -326,24 +723,33 @@ bool commit_item_acquisition(PendingItemAcquisition& mutation) noexcept {
         return fail("stale");
     }
 
-    auto expectedCharacter=prepared.beforeCharacter;
-    const auto granted=prepared.afterCharacter.inventory.values[prepared.inventoryIndex];
-    std::uint64_t expectedRemoved{};
-    expectedCharacter.nextInventorySerial++;
-    if(granted.mutationSerial!=static_cast<std::int32_t>(prepared.beforeCharacter.nextInventorySerial)
-        || !authored_inventory::insert(expectedCharacter,granted,expectedRemoved)
-        || expectedRemoved!=prepared.removedInstanceSoid || !same_character(expectedCharacter,prepared.afterCharacter)) {
-        ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);return fail("placement");
+    if (!has_item_replacement_metadata(prepared)) {
+        auto expectedCharacter=prepared.beforeCharacter;
+        const auto granted=prepared.afterCharacter.inventory.values[prepared.inventoryIndex];
+        std::uint64_t expectedRemoved{};
+        expectedCharacter.nextInventorySerial++;
+        if(granted.mutationSerial!=static_cast<std::int32_t>(prepared.beforeCharacter.nextInventorySerial)
+            || !authored_inventory::insert(expectedCharacter,granted,expectedRemoved)
+            || expectedRemoved!=prepared.removedInstanceSoid || !same_character(expectedCharacter,prepared.afterCharacter)) {
+            ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);return fail("placement");
+        }
+    } else if (prepared.removedInstanceSoid) {
+        ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);return fail("replacement_eviction");
     }
-    AccountState expectedProfile{};
-    bool expectedProfileChanged{};
-    const bool profileValid = prepared.source == AcquisitionSource::missionReward
-        ? mission_glimmer(candidate, prepared.rewardGlimmer, expectedProfile, expectedProfileChanged)
-        : apply_collection_materials(candidate, collectible, expectedProfile, expectedProfileChanged);
-    if (!profileValid || expectedProfileChanged != prepared.profileChanged
-        || !same_profile_inventory(expectedProfile, prepared.afterProfileItems, prepared.afterProfileItemCount)) {
-        ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
-        return fail("profile_grant");
+    // Mission/Collections credits retain their exact-price validation. Festival
+    // transactions may also stage validated package payouts on their after-image.
+    if (prepared.source != AcquisitionSource::vendorReward) {
+        AccountState expectedProfile{};
+        bool expectedProfileChanged{};
+        build_data::collectibles::Definition collectible{};
+        const bool profileValid = prepared.source == AcquisitionSource::missionReward
+            ? mission_glimmer(candidate, prepared.rewardGlimmer, expectedProfile, expectedProfileChanged)
+            : (build_data::find_collectible_definition(prepared.collectibleIndex, collectible)
+                && apply_collection_materials(candidate, collectible, expectedProfile, expectedProfileChanged));
+        if (!profileValid || expectedProfileChanged != prepared.profileChanged
+            || !same_profile_inventory(expectedProfile, prepared.afterProfileItems, prepared.afterProfileItemCount)) {
+            ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);return fail("profile_grant");
+        }
     }
     candidate.profileItems = prepared.afterProfileItems;
     candidate.profileItemCount = prepared.afterProfileItemCount;
@@ -358,6 +764,15 @@ bool commit_item_acquisition(PendingItemAcquisition& mutation) noexcept {
         || checkedRow != prepared.inventoryRow || checkedSlot != prepared.equipmentSlot) {
         ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
         return fail("resolve");
+    }
+    // The updated row is gated here exactly as preview gated it, so commit can never publish a
+    // quest step whose native row drifted between the two.
+    if (has_item_replacement_metadata(prepared)
+        && (!find_unequipped_row(resolved, prepared.updatedInstanceSoid, checkedRow, checkedSlot)
+            || checkedRow != prepared.updatedInventoryRow
+            || checkedSlot != prepared.updatedEquipmentSlot)) {
+        ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
+        return fail("resolve_update");
     }
     if (!persistence::commit_account(runtime::storage::g_state.account, candidate)) {
         ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
@@ -379,9 +794,11 @@ bool commit_item_acquisition(PendingItemAcquisition& mutation) noexcept {
 }
 
 /** Prepares one checked profile-stack increment or append for a Collections pull. */
-bool prepare_profile_item_acquisition(std::uint16_t collectibleIndex,
-                                      std::uint32_t definitionHash,
-                                      PendingProfileItemAcquisition& mutation) noexcept {
+bool prepare_profile_item_acquisition(
+    std::uint16_t collectibleIndex,
+    std::uint32_t definitionHash,
+    PendingProfileItemAcquisition& mutation,
+    std::span<const build_data::material_requirements::Requirement> cost, std::int32_t quantity) noexcept {
     mutation = {};
     const AccountState account = account_snapshot();
     build_data::collectibles::Definition collectible{};
@@ -390,12 +807,13 @@ bool prepare_profile_item_acquisition(std::uint16_t collectibleIndex,
     inventory_buckets::Descriptor bucket{};
     if (definitionHash == authored_inventory::kNoDefinitionHash || !account::valid(account)
         || !valid_profile_inventory(account)
-        || !build_data::find_collectible_definition(collectibleIndex, collectible)
-        || collectible.itemDefinitionIndex
-               == build_data::collectibles::kUnavailableItemDefinitionIndex
         || !build_data::find_item_definition_hash(definitionHash, item)
         || item.definitionHash != definitionHash
-        || item.definitionIndex != collectible.itemDefinitionIndex
+        || (collectibleIndex != build_data::collectibles::kNoCollectibleIndex
+            && (!build_data::find_collectible_definition(collectibleIndex, collectible)
+                || collectible.itemDefinitionIndex
+                       == build_data::collectibles::kUnavailableItemDefinitionIndex
+                || item.definitionIndex != collectible.itemDefinitionIndex))
         || !build_data::find_configured_item_detail(item.definitionIndex, detail)
         || detail.definitionIndex != item.definitionIndex || detail.definitionHash != definitionHash
         || detail.bucketId != item.bucketId
@@ -417,9 +835,11 @@ bool prepare_profile_item_acquisition(std::uint16_t collectibleIndex,
                                    false);
         return false;
     }
-    AccountState chargedAccount{};
+    // As on the character path, an authored cost REPLACES the collectible's installed set.
+    AccountState chargedAccount = account;
     bool materialsChanged = false;
-    if (!apply_collection_materials(account, collectible, chargedAccount, materialsChanged)) {
+    if (collectibleIndex != build_data::collectibles::kNoCollectibleIndex && cost.empty()
+        && !apply_collection_materials(account, collectible, chargedAccount, materialsChanged)) {
         report_profile_acquisition("prepare",
                                    "fail",
                                    "materials",
@@ -434,6 +854,27 @@ bool prepare_profile_item_acquisition(std::uint16_t collectibleIndex,
                                    false);
         return false;
     }
+    if (!cost.empty()) {
+        AccountState pricedAccount = chargedAccount;
+        bool costCharged = false;
+        if (!apply_authored_cost(chargedAccount, cost, pricedAccount, costCharged)) {
+            report_profile_acquisition("prepare",
+                                       "fail",
+                                       "price",
+                                       definitionHash,
+                                       account.primarySoid,
+                                       0,
+                                       detail.bucketId,
+                                       0,
+                                       account.profileItemCount,
+                                       0,
+                                       0,
+                                       false);
+            return false;
+        }
+        chargedAccount = pricedAccount;
+        materialsChanged = materialsChanged || costCharged;
+    }
     (void)materialsChanged;
     const bool actionSource =
         build_data::is_profile_action_source(item.definitionIndex, item.bucketId);
@@ -443,6 +884,17 @@ bool prepare_profile_item_acquisition(std::uint16_t collectibleIndex,
     std::int32_t previousMutationSerial = 0;
     std::int32_t greatestMutationSerial = 0;
     bool appended = true;
+    // The serial has to clear BOTH images. `mutation.beforeItems` is the uncharged account and
+    // `valid_profile_mutation_shape` refuses any before-image row whose serial is not strictly
+    // below the acquired one - including a row the charge consumed to nothing and dropped. That
+    // row's serial is invisible in `chargedAccount`, and `apply_material_requirements` only
+    // re-serials rows whose position moved, so emptying the LAST row bumps nothing at all. Taking
+    // the maximum over both images is what keeps "spend the stack to exactly zero and buy the
+    // thing" from being refused as a malformed mutation.
+    for (std::size_t index = 0; index < account.profileItemCount; ++index) {
+        greatestMutationSerial =
+            (std::max)(greatestMutationSerial, account.profileItems[index].mutationSerial);
+    }
     for (std::size_t index = 0; index < chargedAccount.profileItemCount; ++index) {
         greatestMutationSerial =
             (std::max)(greatestMutationSerial, chargedAccount.profileItems[index].mutationSerial);
@@ -526,14 +978,15 @@ bool prepare_profile_item_acquisition(std::uint16_t collectibleIndex,
         return false;
     }
 
+    if(quantity<=0 || quantity>detail.maxStackSize-previousQuantity)return false;
     AccountState after = chargedAccount;
     const std::int32_t acquiredMutationSerial = greatestMutationSerial + 1;
     if (appended) {
         after.profileItems[profileIndex] = {
-            acquiredInstanceSoid, definitionHash, 1, acquiredMutationSerial};
+            acquiredInstanceSoid, definitionHash, quantity, acquiredMutationSerial};
         ++after.profileItemCount;
     } else {
-        ++after.profileItems[profileIndex].quantity;
+        after.profileItems[profileIndex].quantity+=quantity;
         after.profileItems[profileIndex].mutationSerial = acquiredMutationSerial;
     }
     const std::int32_t acquiredQuantity = after.profileItems[profileIndex].quantity;
@@ -566,6 +1019,7 @@ bool prepare_profile_item_acquisition(std::uint16_t collectibleIndex,
     mutation.profileIndex = profileIndex;
     mutation.previousQuantity = previousQuantity;
     mutation.acquiredQuantity = acquiredQuantity;
+    mutation.grantQuantity = quantity;
     mutation.previousMutationSerial = previousMutationSerial;
     mutation.acquiredMutationSerial = acquiredMutationSerial;
     mutation.collectibleIndex = collectibleIndex;

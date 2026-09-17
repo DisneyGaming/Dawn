@@ -1,8 +1,8 @@
 #include "web_service_runtime.h"
 
 #include <algorithm>
-#include <array>
 #include <chrono>
+#include <array>
 #include <cstdio>
 #include <cstring>
 #include <limits>
@@ -18,10 +18,13 @@
 #include "../../middleware/web_service/messages/opcode503.h"
 #include "../../middleware/web_service/messages/opcode504.h"
 #include "../../middleware/web_service/messages/opcode601/opcode601_codec.h"
+#include "../../state/account/festival_mask.h"
 #include "../../middleware/web_service/messages/opcode901/opcode901_codec.h"
 #include "../../middleware/web_service/messages/opcode903.h"
+#include "../../middleware/web_service/messages/opcode904/opcode904_codec.h"
 #include "../../middleware/web_service/web_service_envelope.h"
 #include "../../state/account/account_state.h"
+#include "../../state/activity/events/activity_event_selection.h"
 #include "../../state/build_data/runtime.h"
 #include "../../state/runtime/runtime.h"
 #include "opcode_routes.h"
@@ -185,9 +188,15 @@ bool consume(std::span<const std::byte> request,
 
     if(message.opcode==904) {
         namespace q=state::activity::newlight::launchpad::quest;
-        middleware::web_service::messages::opcode904::Request reply{};
+        middleware::web_service::messages::vendor_reply::Request reply{};
         middleware::web_service::StatusResponse status{};status.code=1;
-        if(middleware::web_service::messages::opcode904::parse(message,reply)) {
+        if(middleware::web_service::messages::vendor_reply::parse(message,reply)) {
+            if (reply.vendor == state::account::festival_mask::kEvaVendorDefinitionIndex) {
+                acquire_quest(message, outcome);
+                status.code = outcome.mutation.index() != kNoMutation ? 0 : kRefusedStatus;
+                return middleware::web_service::encode_response(message,
+                    middleware::web_service::ResponseShape::statusPair,status,response,written);
+            }
             const auto step=q::accepted_step(reply.vendor,reply.interaction,reply.reply,reply.selection);
             const auto run=state::activity::mission_run_generation();
             state::PendingNewlightQuest mutation{};
@@ -209,6 +218,7 @@ bool consume(std::span<const std::byte> request,
     }
 
     if (message.opcode == middleware::web_service::messages::opcode205::kOpcode) {
+        state::activity::events::ensure_loaded();
         const auto investment = state::investment_snapshot();
         return middleware::web_service::messages::opcode205::encode_response(
                    message, investment, response, written)
@@ -224,6 +234,7 @@ bool consume(std::span<const std::byte> request,
         if (!bootstrap.hasPrimarySoid) {
             bootstrap.primarySoid = state::account_snapshot().primarySoid;
         }
+        state::activity::events::ensure_loaded();
         const auto investment = state::investment_snapshot();
         if (!parsed
             || !middleware::web_service::messages::opcode503::encode_response(
@@ -244,26 +255,6 @@ bool consume(std::span<const std::byte> request,
             state::account::selected_character_soid(state::account_snapshot());
         return middleware::web_service::messages::opcode501::encode_response(
                    message, characterSoid, response, written)
-               || encode_echo(message, response, written);
-    }
-
-    // Runs before the shared response-shape path, which would answer the success status.
-    if (message.opcode == middleware::web_service::messages::opcode901::kOpcode) {
-        namespace codec=middleware::web_service::messages::opcode901;
-        codec::Request purchase{};state::vendors::Pending vendor;
-        if(codec::parse_request(message,purchase) && purchase.vendorIndex>=0 && purchase.saleIndex>=0
-            && (!purchase.hasClock || codec::check_clock(purchase,server_clock_seconds())==codec::ClockPolicy::accepted)
-            && state::vendors::prepare({static_cast<std::uint16_t>(purchase.vendorIndex),purchase.saleIndex,-1,0},vendor)) {
-            outcome.mutation=std::move(vendor);
-        }
-        middleware::web_service::StatusResponse status{};status.code=1;
-        return middleware::web_service::encode_response(message,
-            middleware::web_service::ResponseShape::statusPairWithBool,status,response,written);
-    }
-
-    if (message.opcode == middleware::web_service::messages::opcode601::kOpcode) {
-        return middleware::web_service::messages::opcode601::encode_response(
-                   message, response, written)
                || encode_echo(message, response, written);
     }
 
@@ -295,6 +286,27 @@ bool consume(std::span<const std::byte> request,
         mutate_item_state(message, outcome);
     } else if (message.opcode == kItemAcquisitionOpcode) {
         acquire_item(message, outcome);
+    } else if (message.opcode == middleware::web_service::messages::opcode901::kOpcode) {
+        namespace codec=middleware::web_service::messages::opcode901;
+        codec::Request purchase{};
+        if (codec::parse_request(message,purchase) && purchase.vendorIndex>=0 && purchase.saleIndex>=0
+            && (!purchase.hasClock || codec::check_clock(purchase,server_clock_seconds())==codec::ClockPolicy::accepted)) {
+            if (purchase.vendorIndex == state::account::festival_mask::kEvaVendorDefinitionIndex) {
+                purchase_item(message, outcome);
+            } else {
+                state::vendors::Pending vendor;
+                if(state::vendors::prepare({static_cast<std::uint16_t>(purchase.vendorIndex),purchase.saleIndex,-1,0},vendor))
+                    outcome.mutation=std::move(vendor);
+                // Vendor service success is published only with its Family-4 commit.
+                middleware::web_service::StatusResponse refused{};refused.code=kRefusedStatus;
+                return middleware::web_service::encode_response(message,
+                    middleware::web_service::ResponseShape::statusPairWithBool,refused,response,written);
+            }
+        }
+    } else if (message.opcode == middleware::web_service::messages::opcode904::kOpcode) {
+        acquire_quest(message, outcome);
+    } else if (message.opcode == middleware::web_service::messages::opcode601::kOpcode) {
+        pickup_loot(message, outcome);
     } else {
         dispatched = false;
     }
@@ -303,7 +315,10 @@ bool consume(std::span<const std::byte> request,
     middleware::web_service::ResponseShape shape{};
     resolve_response_shape(message.opcode, shape);
     middleware::web_service::StatusResponse status{};
-    if (dispatched && !prepared) {
+    // A pickup the server does not pay keeps the historical neutral answer: what the client does
+    // with a refused pickup status is not established, and the bauble is its own to reap.
+    if (dispatched && !prepared
+        && message.opcode != middleware::web_service::messages::opcode601::kOpcode) {
         status.code = kRefusedStatus;
     }
     if (!middleware::web_service::encode_response(message, shape, status, response, written)) {

@@ -180,21 +180,34 @@ bool append_item_acquisition_notification(Scratch& scratch,
     }
     const std::size_t objectCount = prepared.family.objects.size();
     const std::size_t beforeBytes = written;
-    const std::size_t expectedObjectCount = acquisition.updatesAccount ? 3U : 2U;
+    const bool hasUpdatedItem = mutation.updatedInstanceSoid != 0;
+    const std::size_t itemObjectCount = hasUpdatedItem ? 2U : 1U;
+    const std::size_t characterObjectIndex = itemObjectCount;
+    const std::size_t accountObjectIndex = characterObjectIndex + 1U;
+    const std::size_t expectedObjectCount = accountObjectIndex + (acquisition.updatesAccount ? 1U : 0U);
     if (objectCount != expectedObjectCount
         || prepared.family.objects[0].id != acquisition.itemInstanceDefinitionId
-        || prepared.family.objects[0].version != acquisition.acquiredInstanceSoid
+        || prepared.family.objects[0].version
+               != (hasUpdatedItem ? mutation.updatedInstanceSoid
+                                   : acquisition.acquiredInstanceSoid)
         || prepared.family.objects[0].encoding != middleware::queuez::Encoding::oodle
         || prepared.family.objects[0].payload.empty()
-        || prepared.family.objects[1].id != acquisition.characterDefinitionId
-        || prepared.family.objects[1].version != acquisition.characterSoid
-        || prepared.family.objects[1].encoding != middleware::queuez::Encoding::oodle
-        || prepared.family.objects[1].payload.empty()
+        || (hasUpdatedItem
+            && (prepared.family.objects[1].id != acquisition.itemInstanceDefinitionId
+                || prepared.family.objects[1].version != acquisition.acquiredInstanceSoid
+                || prepared.family.objects[1].encoding != middleware::queuez::Encoding::oodle
+                || prepared.family.objects[1].payload.empty()))
+        || prepared.family.objects[characterObjectIndex].id != acquisition.characterDefinitionId
+        || prepared.family.objects[characterObjectIndex].version != acquisition.characterSoid
+        || prepared.family.objects[characterObjectIndex].encoding
+               != middleware::queuez::Encoding::oodle
+        || prepared.family.objects[characterObjectIndex].payload.empty()
         || (acquisition.updatesAccount
-            && (prepared.family.objects[2].id != acquisition.accountDefinitionId
-                || prepared.family.objects[2].version != acquisition.accountSoid
-                || prepared.family.objects[2].encoding != middleware::queuez::Encoding::oodle
-                || prepared.family.objects[2].payload.empty()))
+            && (prepared.family.objects[accountObjectIndex].id != acquisition.accountDefinitionId
+                || prepared.family.objects[accountObjectIndex].version != acquisition.accountSoid
+                || prepared.family.objects[accountObjectIndex].encoding
+                       != middleware::queuez::Encoding::oodle
+                || prepared.family.objects[accountObjectIndex].payload.empty()))
         || !queuez_frame::append(scratch,
                                  prepared.family,
                                  prepared.rawClearSize,

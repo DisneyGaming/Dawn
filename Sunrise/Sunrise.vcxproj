@@ -177,6 +177,7 @@
     <ClCompile Include="src\client\hooks\graphics\renderer\graphics_renderer_device.cpp" />
     <ClCompile Include="src\middleware\web_service\messages\opcode504_codec.cpp" />
     <ClCompile Include="src\middleware\web_service\messages\opcode903_codec.cpp" />
+    <ClCompile Include="src\middleware\web_service\messages\opcode904\opcode904_codec.cpp" />
     <ClCompile Include="src\middleware\web_service\messages\opcode1901_codec.cpp" />
     <ClCompile Include="src\middleware\web_service\messages\opcode402_codec.cpp" />
     <ClCompile Include="src\middleware\web_service\messages\opcode403_codec.cpp" />
@@ -184,6 +185,7 @@
     <ClCompile Include="src\middleware\web_service\messages\opcode1820_codec.cpp" />
     <ClCompile Include="src\state\runtime\state_account_runtime.cpp" />
     <ClCompile Include="src\state\runtime\state_account_acquisition_runtime.cpp" />
+    <ClCompile Include="src\state\runtime\state_item_random_roll.cpp" />
     <ClCompile Include="src\state\runtime\state_account_dismantle_runtime.cpp" />
     <ClCompile Include="src\state\runtime\state_account_dismantle_staging.cpp" />
     <ClCompile Include="src\state\runtime\state_account_equipment_runtime.cpp" />
@@ -335,6 +337,7 @@
     <ClCompile Include="src\client\hooks\bootflow\deadly_trial_presentation.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\hijacked_presentation.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\hijacked_placements.cpp" />
+    <ClCompile Include="src\client\hooks\bootflow\forest_candy_drops.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\deadly_trial_revival.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\deadly_trial_lifetime.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\gateway_patrol.cpp" />
@@ -555,6 +558,8 @@
     <ClCompile Include="src\state\build_data\cache\records\cache_spawn_set_records.cpp" />
     <ClCompile Include="src\state\build_data\cache\records\cache_vendor_records.cpp" />
     <ClCompile Include="src\state\build_data\vendors\vendor_catalog.cpp" />
+    <ClCompile Include="src\state\account\pursuit_hold.cpp" />
+    <ClCompile Include="src\state\vendors\answered_interactions.cpp" />
     <ClCompile Include="src\state\build_data\vendors\vendor_expression.cpp" />
     <ClCompile Include="src\client\content\vendors\package_vendor_build.cpp" />
     <ClCompile Include="src\state\build_data\cache\records\cache_hash_name_records.cpp" />
@@ -569,6 +574,8 @@
     <ClCompile Include="src\state\build_data\spawn_sets\spawn_set_catalog.cpp" />
     <ClCompile Include="src\state\build_data\hash_names\hash_name_catalog.cpp" />
     <ClCompile Include="src\state\activity\forced\activity_forced_destination.cpp" />
+    <ClCompile Include="src\state\activity\events\activity_event_selection.cpp" />
+    <ClCompile Include="src\state\investment\investment_overrides.cpp" />
     <ClCompile Include="src\state\activity\omega\omega_scene_mailbox.cpp" />
     <ClCompile Include="src\state\activity\omega_scene_lifecycle.cpp" />
     <ClCompile Include="src\state\build_data\runtime\build_data_roster_runtime.cpp" />
@@ -637,6 +644,9 @@
     <ClCompile Include="src\server\bap\encrypted\reply\bap_encrypted_reply.cpp" />
     <ClCompile Include="src\server\bap\encrypted\activity_host_manager\activity_host_manager_route.cpp" />
     <ClCompile Include="src\server\bap\encrypted\activity_message\activity_message_route.cpp" />
+    <ClCompile Include="src\server\bap\encrypted\activity_message\festival_pickups.cpp" />
+    <ClCompile Include="src\server\bap\encrypted\activity_message\forest_chest_rewards.cpp" />
+    <ClCompile Include="src\server\bap\encrypted\activity_message\forest_loot_pickups.cpp" />
     <ClCompile Include="src\server\bap\encrypted\activity_message\patch_epoch\activity_patch_epoch_route.cpp" />
     <ClCompile Include="src\server\bap\encrypted\activity_message\membership\activity_membership_route.cpp" />
     <ClCompile Include="src\server\bap\encrypted\matchmaking\matchmaking_route.cpp" />
@@ -713,6 +723,7 @@
     <ClCompile Include="src\middleware\bap\activity_message\activity_entity_slots_decoder.cpp" />
     <ClCompile Include="src\middleware\bap\activity_message\activity_entity_authority_parser.cpp" />
     <ClCompile Include="src\middleware\bap\activity_message\activity_incident_parser.cpp" />
+    <ClCompile Include="src\middleware\bap\activity_message\loot_pickup.cpp" />
     <ClCompile Include="src\middleware\bap\activity_message\activity_entity_slots_encoder.cpp" />
     <ClCompile Include="src\middleware\bap\certificate.cpp" />
     <ClCompile Include="src\middleware\bap\client_config\client_config_response.cpp" />
@@ -888,6 +899,8 @@
     <ClInclude Include="src\client\hooks\banner\banner_hook_lifecycle.h" />
     <ClInclude Include="src\middleware\web_service\messages\opcode504.h" />
     <ClInclude Include="src\middleware\web_service\messages\opcode903.h" />
+    <ClInclude Include="src\middleware\web_service\messages\biased_field.h" />
+    <ClInclude Include="src\middleware\web_service\messages\opcode904\opcode904_codec.h" />
     <ClInclude Include="src\middleware\web_service\messages\opcode1901.h" />
     <ClInclude Include="src\core\ui\busy\busy.h" />
     <ClInclude Include="src\core\ui\busy\ui_busy_state.h" />
@@ -1044,6 +1057,10 @@
     <ClInclude Include="src\state\unlocks\unlocks_runtime.h" />
     <ClInclude Include="src\state\runtime\runtime.h" />
     <ClInclude Include="src\state\runtime\state_account_transaction_helpers.h" />
+    <ClInclude Include="src\state\runtime\state_item_random_roll.h" />
+    <ClInclude Include="src\server\web_service\festival_bag_gear.h" />
+    <ClInclude Include="src\server\web_service\festival_grab_bags.h" />
+    <ClInclude Include="src\state\runtime\profile_reward_staging.h" />
     <ClInclude Include="src\state\runtime\state.h" />
     <ClInclude Include="src\state\runtime\storage\internal.h" />
     <ClInclude Include="src\state\activity\definition.h" />
@@ -1053,6 +1070,8 @@
     <ClInclude Include="src\state\activity\destination\definition.h" />
     <ClInclude Include="src\state\activity\forced\definition.h" />
     <ClInclude Include="src\state\activity\forced\activity_forced_destination.h" />
+    <ClInclude Include="src\state\activity\events\definition.h" />
+    <ClInclude Include="src\state\activity\events\activity_event_selection.h" />
     <ClInclude Include="src\state\activity\lifecycle_generation.h" />
     <ClInclude Include="src\state\activity\omega\omega_scene_mailbox.h" />
     <ClInclude Include="src\state\activity\omega_scene_lifecycle.h" />
@@ -1075,6 +1094,7 @@
     <ClInclude Include="src\state\matchmaking\transactions\internal.h" />
     <ClInclude Include="src\state\runtime\equipment\configured_equipment_identity.h" />
     <ClInclude Include="src\state\account\account_state.h" />
+    <ClInclude Include="src\state\account\festival_mask.h" />
     <ClInclude Include="src\state\account\inventory\inventory_state.h" />
     <ClInclude Include="src\state\account\settings\settings_state.h" />
     <ClInclude Include="src\state\account\settings\key_bindings.h" />
@@ -1082,6 +1102,7 @@
     <ClInclude Include="src\state\equipment\light\calculation\equipment_light_calculation.h" />
     <ClInclude Include="src\state\equipment\light\resolution\configured_equipment_light_resolver.h" />
     <ClInclude Include="src\state\investment\investment.h" />
+    <ClInclude Include="src\state\investment\investment_overrides.h" />
     <ClInclude Include="src\state\content\content_catalog.h" />
     <ClInclude Include="src\state\content_manifest\cache\format.h" />
     <ClInclude Include="src\state\content_manifest\cache\internal.h" />
@@ -1109,6 +1130,9 @@
     <ClInclude Include="src\state\build_data\spawn_sets\definition.h" />
     <ClInclude Include="src\state\build_data\vendors\definition.h" />
     <ClInclude Include="src\state\build_data\vendors\vendor_catalog.h" />
+    <ClInclude Include="src\state\account\pursuit_hold.h" />
+    <ClInclude Include="src\state\vendors\answered_interactions.h" />
+    <ClInclude Include="src\core\settings\rule_text.h" />
     <ClInclude Include="src\state\build_data\vendors\vendor_expression.h" />
     <ClInclude Include="src\client\content\vendors\layout.h" />
     <ClInclude Include="src\client\content\vendors\vendor_build.h" />
@@ -1151,6 +1175,9 @@
     <ClInclude Include="src\server\bap\encrypted\activity_host_manager\activity_host_manager_route.h" />
     <ClInclude Include="src\server\bap\encrypted\activity_message\definition.h" />
     <ClInclude Include="src\server\bap\encrypted\activity_message\activity_message_route.h" />
+    <ClInclude Include="src\server\bap\encrypted\activity_message\festival_pickups.h" />
+    <ClInclude Include="src\server\bap\encrypted\activity_message\forest_chest_rewards.h" />
+    <ClInclude Include="src\server\bap\encrypted\activity_message\forest_loot_pickups.h" />
     <ClInclude Include="src\server\bap\encrypted\activity_message\patch_epoch\activity_patch_epoch_route.h" />
     <ClInclude Include="src\server\bap\encrypted\activity_message\membership\activity_membership_route.h" />
     <ClInclude Include="src\server\bap\encrypted\matchmaking\matchmaking_route.h" />
@@ -1217,6 +1244,7 @@
     <ClInclude Include="src\middleware\bap\activity_message\entity_slots.h" />
     <ClInclude Include="src\middleware\bap\activity_message\entity_authority.h" />
     <ClInclude Include="src\middleware\bap\activity_message\incident.h" />
+    <ClInclude Include="src\middleware\bap\activity_message\loot_pickup.h" />
     <ClInclude Include="src\middleware\bap\certificate.h" />
     <ClInclude Include="src\middleware\bap\client_config\client_config_response.h" />
     <ClInclude Include="src\middleware\bap\family_subscription.h" />
@@ -1499,13 +1527,15 @@
     <ClInclude Include="src\server\runtime\activity\registry_admission.h" />
     <ClInclude Include="src\server\runtime\activity\mercury_registries.h" />
     <ClInclude Include="src\server\runtime\activity\population_service.h" />
-    <ClInclude Include="src\server\runtime\activity\patrol_replenishment.h" />
     <ClInclude Include="src\server\runtime\activity\native_activity_runtime.h" />
+    <ClInclude Include="src\server\runtime\activity\native_activity_transit.h" />
+    <ClInclude Include="src\server\runtime\activity\mercury_populations.h" />
+    <ClCompile Include="src\state\activity\native_population_events.cpp" />
+    <ClCompile Include="src\server\runtime\activity\native_activity_transit.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClInclude Include="src\server\runtime\activity\patrol_replenishment.h" />
     <ClInclude Include="src\server\runtime\activity\open_world_census.h" />
     <ClInclude Include="src\state\activity\open_world_member_observations.h" />
     <ClInclude Include="src\state\activity\coo\open_world_member_catalog.h" />
-    <ClInclude Include="src\server\runtime\activity\mercury_populations.h" />
-    <ClCompile Include="src\state\activity\native_population_events.cpp" />
     <ClCompile Include="src\state\activity\open_world_member_observations.cpp" />
     <ClCompile Include="src\state\activity\vendors\lifetime.cpp" />
     <ClCompile Include="src\server\runtime\activity\native_activity_runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>

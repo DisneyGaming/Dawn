@@ -100,5 +100,5 @@ inline const NativeActivityDefinition kActivity{"mercury_freeroam",L"mercury_fre
     &kProfile,kRegistries,kActivityPopulations,kPlacements,kActions,kPersistentModule,kVanceAnimationCapabilities,
     adventure::mercury::kStartRoutes,kAmbientInitial,kPublicEventRallies,adventure::mercury::kOpenings,
     {},{},kOptionalRegistries,"host.tick_hz",{},{},{},{},{},public_events::kInitialDefinitions,true,
-    nullptr,lost::kRegistries,&kLostSectorDefinition,lost::kRewardRegistries};
+    {}, {}, false, {}, nullptr,lost::kRegistries,&kLostSectorDefinition,lost::kRewardRegistries};
 }

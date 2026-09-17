@@ -116,9 +116,11 @@ constexpr std::uint32_t kMaximumRegion = 0x7FFFFFFF;
     }
     if (snapshot.hasSpawnOverride
         && (snapshot.spawnSliceSet > kMaximumSpawnSliceSet || snapshot.spawnSetHash == 0
-            || snapshot.spawnSetHash == kAbsentSpawnSetHash)) {
+            || (snapshot.spawnSetHash == kAbsentSpawnSetHash && !snapshot.preferSpawnHistory))) {
         return false;
     }
+    if(snapshot.preferSpawnHistory && (!snapshot.hasSpawnOverride
+        || snapshot.spawnSetHash!=kAbsentSpawnSetHash))return false;
     if (snapshot.missionDirectorVariant > kMaximumMissionDirectorVariant) {
         return false;
     }

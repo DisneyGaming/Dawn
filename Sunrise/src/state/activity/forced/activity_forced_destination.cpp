@@ -270,6 +270,22 @@ void clear() noexcept {
     g_openingHostReady.store(false, std::memory_order_release);
 }
 
+bool release_haunted_forest_for_native_selection(std::int16_t source,
+    std::int16_t destination,std::string_view package) noexcept {
+    if (!prelaunch::native_haunted_forest(source,destination,package)) return false;
+    AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
+    auto& value=runtime::storage::g_state.activity.forced;
+    const bool matching=prelaunch::configured(value)==&prelaunch::kHauntedForest;
+    if (matching) {
+        value.enabled=false;
+        g_prelaunchCommitted.store(false,std::memory_order_release);
+        g_prelaunchStagedReported.store(false,std::memory_order_release);
+        g_openingHostReady.store(false,std::memory_order_release);
+    }
+    ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
+    return matching;
+}
+
 bool commit_prelaunch_authored_selection(std::int16_t sourceActivityIndex,
                                           std::int16_t destinationActivityIndex,
                                           ForcedDestination& committed) noexcept {
@@ -378,7 +394,7 @@ bool apply(destination::DestinationSelection& selection) noexcept {
         return true;
     }
 
-    if (const auto* profile=prelaunch::configured(value); profile==&prelaunch::kGateway || profile==&prelaunch::kDeadlyTrial || profile==&prelaunch::kBeyondInfinity || profile==&prelaunch::kDeepStorage) {
+    if (const auto* profile=prelaunch::configured(value); profile==&prelaunch::kGateway || profile==&prelaunch::kDeadlyTrial || profile==&prelaunch::kBeyondInfinity || profile==&prelaunch::kDeepStorage || profile==&prelaunch::kHauntedForest) {
         const std::string_view incoming(reinterpret_cast<const char*>(selection.packageName.data()),
             selection.packageNameLength <= selection.packageName.size() ? selection.packageNameLength : 0);
         if (!g_prelaunchCommitted.load(std::memory_order_acquire)
@@ -390,7 +406,7 @@ bool apply(destination::DestinationSelection& selection) noexcept {
                 selection.activityIndex, incoming)) {
             if (!g_prelaunchStagedReported.exchange(true, std::memory_order_acq_rel)) {
                 core::log::write(core::log::Channel::server, core::log::Level::info,
-                    profile==&prelaunch::kGateway ? "ev=activity_override stage=activation result=staged destination=mission_abs trigger=awaiting_native_gateway_contract_292" : "ev=activity_override stage=activation result=staged destination=adventure_ginger trigger=awaiting_native_trial_contract_293");
+                    profile==&prelaunch::kGateway ? "ev=activity_override stage=activation result=staged destination=mission_abs trigger=awaiting_native_gateway_contract_292" : profile==&prelaunch::kHauntedForest ? "ev=activity_override stage=activation result=staged destination=infinite_abyss trigger=awaiting_native_haunted_forest_contract_78" : "ev=activity_override stage=activation result=staged destination=adventure_ginger trigger=awaiting_native_trial_contract_293");
             }
             return false;
         }

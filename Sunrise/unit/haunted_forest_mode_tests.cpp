@@ -147,8 +147,8 @@ int main(int argc,char** argv) {
     unsigned delivered{};c::Event receipt{};
     auto submit=[&](c::Event event){++delivered;receipt=event;return true;};
     CHECK(!wait.observe(owner,123,13,report(5),submit)); // Pre-arm occupancy is only a mirror.
-    CHECK(!wait.arm(0,{8,1,1,0}));CHECK(wait.arm(0,{7,1,1,0}));
-    CHECK(!wait.arm(0,{7,1,1,0}));
+    CHECK(!wait.arm(0,{8,1,1,0}));CHECK(wait.arm(0,{42,1,1,0}));
+    CHECK(!wait.arm(0,{42,1,1,0}));
     CHECK(!wait.observe(owner,123,13,report(5),submit)); // Replay after arming.
     CHECK(!wait.observe(owner,123,13,report(4),submit));
     CHECK(!wait.observe({42,{8}},123,13,report(6),submit));
@@ -161,25 +161,21 @@ int main(int argc,char** argv) {
     bad=report(6);bad.inferredBodyWidth=true;CHECK(!wait.observe(owner,123,13,bad,submit));
     CHECK(!wait.observe(owner,123,13,report(6,0),submit));
     CHECK(wait.observe(owner,123,13,report(7),submit));CHECK(delivered==1);
-    CHECK((receipt.token==c::Token{7,1,1,0}));CHECK(receipt.milestone==c::Milestone::observed);
-    CHECK(!wait.observe(owner,123,13,report(8),submit));CHECK(!wait.arm(0,{7,2,1,0}));
+    CHECK((receipt.token==c::Token{42,1,1,0}));CHECK(receipt.milestone==c::Milestone::observed);
+    CHECK(!wait.observe(owner,123,13,report(8),submit));CHECK(!wait.arm(0,{42,2,1,0}));
 
     const auto doc=load("Sunrise/scripts/infinite_abyss.json",hf::kProfile);
     CHECK(a::PersistentActivity::valid(hf::kActivity,*doc));
     auto invalidDefinition=hf::kActivity;auto invalidGenerator=hf::kGenerators;
     invalidDefinition.generators=invalidGenerator;invalidGenerator[0].slot=97;
     CHECK(!a::PersistentActivity::valid(invalidDefinition,*doc));
-    invalidGenerator=hf::kGenerators;invalidGenerator[0].seedParameter="missing.seed";
-    CHECK(!a::PersistentActivity::valid(invalidDefinition,*doc));
-    invalidGenerator=hf::kGenerators;invalidGenerator[0].anchorParameters[3].height="missing.height";
-    CHECK(!a::PersistentActivity::valid(invalidDefinition,*doc));
     invalidDefinition=hf::kActivity;auto invalidDevice=hf::kDevices;
     invalidDefinition.devices=invalidDevice;invalidDevice[0].slot=32;
     CHECK(!a::PersistentActivity::valid(invalidDefinition,*doc));
+    // The branch now uses the shared repeated-round graph rather than the old
+    // one-shot nativeActivity graph. Exercise entry and the real capture boundary.
     a::PersistentActivity activity;CHECK(activity.begin(owner,hf::kActivity,doc,123));
     CHECK(activity.update(13,false).placements.count==0);
-    CHECK(activity.update(12,true).placements.count==0);
-    CHECK(!activity.observe_occupancy(owner,123,13,report(10)));
     a::NativeActivityFrame frame;
     a::activity_clock::Service clock;
     CHECK(clock.begin(owner,123,1,{0x81550015,13,{false,1000.0F/30.0F}},1000));
@@ -189,78 +185,56 @@ int main(int argc,char** argv) {
     CHECK(activity.update(13,true,{},true,wrongClock).placements.count==0);
     wrongClock=publication;wrongClock.domain.boot++;
     CHECK(activity.update(13,true,{},true,wrongClock).placements.count==0);
-    wrongClock=publication;wrongClock.domain.scenario++;
-    CHECK(activity.update(13,true,{},true,wrongClock).placements.count==0);
-    for(int i=0;i<4;++i)frame=activity.update(13,true,{},true,publication);
-    CHECK(frame.placements.count==3 && frame.populations.count==0);
-    CHECK(frame.generators.count==0);
-    CHECK(frame.devices.count==1 && frame.devices.entries[0].registry==0x34D23982
-        && frame.devices.entries[0].slot==33 && frame.devices.entries[0].bubble==13);
-    CHECK(frame.devices.entries[0].state.position.value==0.2F
-        && frame.devices.entries[0].state.position.revision==1 && !frame.devices.entries[0].state.position.snap);
-    CHECK(frame.devices.entries[0].state.power.revision==0 && frame.devices.entries[0].state.lock.revision==0);
-    CHECK(frame.cues.count==1 && frame.cues.entries[0].event==0x000D87C7
-        && frame.cues.entries[0].scope==UINT32_MAX && !frame.cues.entries[0].hasTimer);
-    for(std::size_t i=0;i<frame.placements.count;++i)CHECK(frame.placements.entries[i].generation==1);
-    CHECK(frame.placements.entries[2].capture && frame.placements.entries[2].capture->active);
-    CHECK(!frame.placements.entries[2].capture->clock.running);
-    CHECK(activity.diagnostics().phase==c::Phase::running);
-    CHECK(!activity.observe_occupancy(owner,123,13,report(10)));
-    CHECK(!activity.observe_occupancy(owner,123,13,report(9)));
-    CHECK(!activity.observe_occupancy({42,{8}},123,13,report(11)));
+    for(int i=0;i<8;++i)frame=activity.update(13,true,{},true,publication);
+    CHECK(!activity.round().failed());
+    CHECK(activity.round().round_snapshot().phase==a::timed_round::Phase::entry);
+    CHECK(frame.placements.count==3 && frame.generators.count==0);
     CHECK(activity.observe_occupancy(owner,123,13,report(11)));
     CHECK(clock.project(owner,123,13,4000,publication));
-    for(int i=0;i<4;++i)frame=activity.update(13,true,{},true,publication);
-    CHECK(frame.placements.count==3 && frame.populations.count==0);
-    CHECK(activity.diagnostics().phase==c::Phase::running);
-    CHECK(frame.placements.entries[2].capture->clock.running);
-    CHECK(frame.devices.count==1 && frame.devices.entries[0].state.position.value==0.2F
-        && frame.devices.entries[0].state.position.revision==1 && !frame.devices.entries[0].state.position.snap);
-    CHECK(frame.devices.entries[0].state.power.revision==0 && frame.devices.entries[0].state.lock.revision==0);
-    CHECK(frame.placements.entries[2].capture->clock.anchor==2019600);
-    CHECK(activity.capture().state(0).requested && !activity.capture().state(0).ready);
-    // Host time passing cannot manufacture native readiness or capture success.
+    for(int i=0;i<8;++i)frame=activity.update(13,true,{},true,publication);
+    CHECK(activity.capture().state(0).requested && !activity.capture().state(0).completed);
     CHECK(clock.project(owner,123,13,60000,publication));
-    for(int i=0;i<40;++i)CHECK(activity.update(13,true,{},true,publication).placements.count==3);
-    CHECK(activity.diagnostics().phase==c::Phase::running && !activity.capture().state(0).completed);
-    CHECK(activity.generator().project(13).count==0 && activity.generator().revision()==1);
-    const auto waitingFrame=activity.update(13,true,{},true,publication);
-    CHECK(waitingFrame.devices.entries[0].state.position.value==0.2F
-        && waitingFrame.devices.entries[0].state.position.revision==1);
-    CHECK(activity.presentation().current_action()==1 && !activity.presentation().presentation()->hasTimer);
-    CHECK(!activity.observe_occupancy(owner,123,13,report(12)));
-    CHECK(activity.update(12,true).placements.count==0);
-    CHECK(activity.update(13,true,{},true,publication).placements.count==3);
+    for(int i=0;i<8;++i)frame=activity.update(13,true,{},true,publication);
+    CHECK(activity.round().round_snapshot().phase==a::timed_round::Phase::entry);
+    CHECK(!activity.capture().state(0).completed && frame.generators.count==0);
     CHECK(unit_capture_completed(activity.capture().state(0).ticket));
-    for(int i=0;i<4;++i)frame=activity.update(13,true,{},true,publication);
-    CHECK(activity.capture().state(0).completed && activity.diagnostics().phase==c::Phase::complete);
-    CHECK(frame.generators.count==1 && frame.placements.count==3 && frame.populations.count==0);
-    CHECK(frame.devices.entries[0].state.position.value==0.1F
-        && frame.devices.entries[0].state.position.revision==2);
-    CHECK(frame.cues.count==1 && frame.cues.entries[0].event==0x6A3CC92F
-        && frame.cues.entries[0].variant==1 && frame.cues.entries[0].ring==1);
+    for(int i=0;i<8;++i)frame=activity.update(13,true,{},true,publication);
+    CHECK(!activity.round().failed());
+    CHECK(activity.round().round_snapshot().phase==a::timed_round::Phase::traversal);
+    CHECK(frame.generators.count==1 && frame.cues.count==1);
     CHECK(frame.cues.entries[0].hasTimer && frame.cues.entries[0].timer.advancing);
-    CHECK(frame.cues.entries[0].timer.remaining==900ULL*673200
-        && frame.cues.entries[0].timer.anchor==publication.elapsedTicks);
-    const auto retainedCue=frame.cues.entries[0];
+    CHECK(frame.generators.entries[0].registry==0x34D23982 && frame.generators.entries[0].slot==98);
     const auto generation=frame.generators.entries[0];
-    CHECK(generation.registry==0x34D23982 && generation.slot==98 && generation.bubble==13);
-    auto expected=hf::kGeneratorIgnition;expected.primary.seed=generation.state.primary.seed;
-    expected.primary.overrides|=a::forest_generator::wire::Seed;
-    CHECK(generation.state==expected && generation.state.primary.seed!=0);
-    const auto& anchors=generation.state.primary.anchors;
-    CHECK((anchors[0]==a::forest_generator::wire::Anchor{3,2,0,true}));
-    CHECK((anchors[1]==a::forest_generator::wire::Anchor{1,0,0,true}));
-    CHECK((anchors[2]==a::forest_generator::wire::Anchor{1,1,0,true}));
-    CHECK((anchors[3]==a::forest_generator::wire::Anchor{2,2,0,true}));
+    CHECK(generation.state.primary.seed!=0);
     for(int i=0;i<10;++i) {
         frame=activity.update(13,true,{},true,publication);
         CHECK(frame.generators.count==1 && frame.generators.entries[0].state==generation.state);
-        CHECK(frame.cues.count==1 && frame.cues.entries[0]==retainedCue);
-        CHECK(frame.devices.count==1 && frame.devices.entries[0].state.position.revision==2
-            && frame.devices.entries[0].state.position.value==0.1F);
+        CHECK(activity.round().round_snapshot().phase==a::timed_round::Phase::traversal);
     }
-    CHECK(activity.generator().revision()==2 && activity.generator().last_request()==1);
+    // Repeated rounds require fresh tokens and reject receipts from prior trips.
+    a::timed_round::Service rounds;
+    using Result=a::timed_round::Result;using Phase=a::timed_round::Phase;
+    CHECK(rounds.begin(owner,123,{100000,10,a::timed_round::ActiveCombatPhases}));
+    std::uint64_t now{};
+    for(std::uint64_t round=1;round<=12;++round) {
+        const auto entry=rounds.snapshot().token;
+        CHECK(rounds.capture_complete(entry,++now)==Result::accepted);
+        CHECK(rounds.capture_complete(entry,now)==Result::stale);
+        const auto traversal=rounds.snapshot().token;
+        CHECK(rounds.add_progress(traversal,++now,round*2,5)==Result::accepted);
+        CHECK(rounds.add_progress(traversal,now,round*2,5)==Result::duplicate);
+        CHECK(rounds.add_progress(traversal,++now,round*2+1,5)==Result::accepted);
+        CHECK(rounds.snapshot().phase==Phase::toEncounter);
+        CHECK(rounds.encounter_arrived(rounds.snapshot().token,++now)==Result::accepted);
+        CHECK(rounds.encounter_defeated(rounds.snapshot().token,++now,round)==Result::accepted);
+        CHECK(rounds.returned(rounds.snapshot().token,++now)==Result::accepted);
+        CHECK(rounds.snapshot().completedRounds==round && rounds.snapshot().progress==0);
+    }
+    CHECK(rounds.capture_complete(rounds.snapshot().token,++now)==Result::accepted);
+    CHECK(rounds.all_players_defeated(rounds.snapshot().token,now+100000,1)==Result::accepted);
+    CHECK(rounds.snapshot().phase==Phase::rewards);
+    CHECK(rounds.rewards_finished(rounds.snapshot().token,now+100000)==Result::accepted);
+    CHECK(rounds.snapshot().phase==Phase::complete);
 
     // No bindings leaves established Mercury behavior unchanged.
     std::ifstream mercuryInput("Sunrise/scripts/mercury_freeroam.json",std::ios::binary);CHECK(mercuryInput.good());

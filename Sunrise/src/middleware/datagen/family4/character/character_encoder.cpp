@@ -8,10 +8,14 @@
 #include <cstring>
 #include <limits>
 #include <optional>
+#include <utility>
 
-#include "../../../../state/activity/nightfall/native_power.h"
 #include "../../../../state/unlocks/unlocks_runtime.h"
 #include "../../../../state/activity/Newlight/launchpad/quest.h"
+#include "../../../../state/account/festival_projection.h"
+#include "../../../../state/account/festival_mask.h"
+#include "../../../../state/activity/events/activity_event_selection.h"
+#include "../../../../state/activity/nightfall/native_power.h"
 #include "../instance/layout.h"
 #include "../progression/progression_bank_keys.h"
 #include "abi.h"
@@ -163,7 +167,10 @@ bool encode(const state::CharacterState& state,
     object.identity.characterClass = static_cast<std::int8_t>(state.characterClass);
     object.lastOrbitedDestination = state.lastOrbitedDestination;
     object.previewMirrors.fill(state.previewAvailable ? kNativeTrue : kNativeFalse);
-    object.contentBypass = state.contentBypass ? kNativeTrue : kNativeFalse;
+    const bool festivalActive = !state::activity::events::withheld(0x7C6DE64FU);
+    // Native QA bypass promotes hidden Director nodes to selectable and suppresses
+    // requirement messages. Festival selection must honor the event and equipment gates.
+    object.contentBypass = state.contentBypass && !festivalActive ? kNativeTrue : kNativeFalse;
     object.seenMessages.fill(kSeenMessageByte);
     for (inventory::layout::Entry& item : object.inventoryItems) {
         item.definitionIndex = kEmptyDefinitionIndex;
@@ -186,6 +193,7 @@ bool encode(const state::CharacterState& state,
         if(!state::vendors::project_active_progress(*account,state,object)) {return false;}
     }
     state::activity::newlight::launchpad::quest::project(state,object);
+    if (!state::account::festival_projection::project(state,festivalActive,object)) return false;
     if (!build_equipment_summary(effectiveLight, object.equipmentSummary)) {
         return false;
     }

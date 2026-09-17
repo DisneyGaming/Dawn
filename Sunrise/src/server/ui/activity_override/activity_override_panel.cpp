@@ -389,6 +389,9 @@ void draw() noexcept {
     if (ImGui::Button("Tree of Probabilities opening")) {
         changed = apply_opening_profile(value, rows, forced::profiles::kStrikePactOpening) || changed;
     }
+    if (ImGui::Button("Haunted Forest opening")) {
+        changed = apply_opening_profile(value, rows, forced::profiles::kHauntedForestOpening) || changed;
+    }
     ImGui::SameLine();
     if (ImGui::Button("Clear")) {
         forced::clear();

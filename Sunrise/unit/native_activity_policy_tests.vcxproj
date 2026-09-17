@@ -31,6 +31,8 @@
     <ClCompile Include="..\src\server\runtime\activity\public_event_engagement_bridge.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="..\src\server\runtime\activity\ambient_population_named_points.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="..\src\server\runtime\activity\adventure_dialogue_bridge.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="..\src\state\activity\native_population_events.cpp" />
+    <ClCompile Include="..\src\server\runtime\activity\native_activity_transit.cpp" />
   </ItemGroup>
   <Import Project="..\lua-items.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

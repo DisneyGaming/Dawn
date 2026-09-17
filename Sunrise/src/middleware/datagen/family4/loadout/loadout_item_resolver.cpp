@@ -125,6 +125,7 @@ bool resolve_item(const authored_inventory::Item& authored,
                   const state::CharacterState& character,
                   std::size_t itemDefinitionCount,
                   std::size_t socketEntryListCount,
+                  bool requireEquipmentSlot,
                   Candidate& output) noexcept {
     if (!authored_inventory::valid(authored) || itemDefinitionCount == 0
         || itemDefinitionCount > build_items::kDefinitionCapacity || socketEntryListCount == 0
@@ -140,6 +141,8 @@ bool resolve_item(const authored_inventory::Item& authored,
         || !state::build_data::find_configured_item_detail(itemDefinition.definitionIndex,
                                                            itemDetail)
         || itemDefinition.bucketId != itemDetail.bucketId
+        || (requireEquipmentSlot && !itemDetail.equipmentSlot.has_value())
+        || (itemDetail.equipmentSlot.has_value() && *itemDetail.equipmentSlot < 0)
         || !state::build_data::find_inventory_bucket_descriptor(itemDetail.bucketId, bucket)
         || (!authored.postmaster && bucket.arraySelector != build_buckets::ArraySelector::character)
         || itemDetail.equipmentSlot.value_or(build_buckets::kUnavailableEquipmentSlot)
@@ -180,6 +183,10 @@ bool resolve_item(const authored_inventory::Item& authored,
     candidate.item.instance.level = authored.level;
     candidate.item.instance.curveSelector = instance::layout::kInitialLevelCurveX;
     candidate.item.instance.capSelector = instance::layout::kInitialLevelCapRow;
+    candidate.item.instance.randomRoll = authored.randomRoll;
+    // The owned-row masks are instance state, not definition data; carry them so the encoded
+    // record tells the Client which randomized-set rows this instance owns.
+    candidate.item.instance.ordinarySockets.availablePlugRows = authored.availablePlugRows;
     candidate.item.instance.socketEntryListIndex = socketList.definitionIndex;
     candidate.item.instance.socketEntryCount = socketList.entryCount;
     candidate.item.instance.socketEntryContentsResolved = true;

@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <array>
 
+#include "../../../encoding/bit_reader.h"
 #include "../../../encoding/bit_writer.h"
 #include "../../../encoding/byte_order.h"
 #include "../../status_fields.h"
@@ -29,6 +30,35 @@ bool parse_request(const Message& message) noexcept {
     return message.opcode == kOpcode;
 }
 
+/** Decodes the pickup report body; tolerant of a longer body, exact only when fully consumed. */
+bool parse_request(const Message& message, Request& output) noexcept {
+    output = {};
+    if (message.opcode != kOpcode) {
+        return false;
+    }
+    output.payloadBits = static_cast<std::uint32_t>(message.payload.size() * 8U);
+    encoding::bits::Reader reader(message.payload);
+    std::uint64_t value{};
+    if (!reader.read(5U, value)) {
+        return false;
+    }
+    output.rawKind = static_cast<std::uint8_t>(value);
+    output.kind = static_cast<std::int32_t>(value) - 1;
+    if (!reader.read(32U, value)) {
+        return false;
+    }
+    output.rawSourceTag = static_cast<std::uint32_t>(value);
+    output.sourceTag = static_cast<std::int32_t>(static_cast<std::int64_t>(value) - 0x80000000LL);
+    if (!reader.read(64U, output.sourceHandle) || !reader.read(32U, value)) {
+        return false;
+    }
+    output.rawSequence = static_cast<std::uint32_t>(value);
+    output.sequence = static_cast<std::int32_t>(static_cast<std::int64_t>(value) - 0x80000000LL);
+    output.consumedBits = 5U + 32U + 64U + 32U;
+    output.exact = reader.remaining_bits() < 8U;
+    return true;
+}
+
 /** Encodes the status pair and its three-field tail in descriptor order. */
 bool encode_response(const Message& message,
                      std::span<std::byte> output,
@@ -43,14 +73,14 @@ bool encode_response(const Message& message,
     encoding::write_u32_be(std::span(staged).subspan<encoding::kU16Size, encoding::kU32Size>(),
                            message.transactionId);
 
-    // The status value is the Family-4 version the Client waits for. This route pushes no update,
-    // so the default value is right. It names a version the Client already has.
+    // A neutral answer: status 0 and an unset version, so it names a version the Client already
+    // has. The three tail fields echo the request's source reference and drop sequence.
     encoding::bits::Writer writer(std::span(staged).subspan(kEnvelopeHeaderSize));
     bool encoded = status::write_fields(writer, ResponseShape::statusPair, StatusResponse{});
-    encoded = encoded && writer.write(kUnusedValue, kTailIntegerWidth)
-              && writer.write(kUnusedValue, kTailLongWidth)
-              && writer.write(kUnusedValue, kTailIntegerWidth)
-              && writer.write(0U, kAbsentTrailerWidth);
+    static_cast<void>(kUnusedValue);
+    static_cast<void>(kTailIntegerWidth);
+    static_cast<void>(kTailLongWidth);
+    encoded = encoded && write_tail(writer, message) && writer.write(0U, kAbsentTrailerWidth);
 
     std::size_t payloadSize = 0;
     if (!encoded || !writer.finish(payloadSize)) {

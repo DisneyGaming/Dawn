@@ -1,4 +1,4 @@
-﻿#include <Windows.h>
+#include <Windows.h>
 
 #include <algorithm>
 #include <array>
@@ -12,11 +12,12 @@
 #include "../../core/logging/log.h"
 #include "../../middleware/datagen/family4/loadout/loadout_resolver.h"
 #include "../build_data/runtime.h"
-#include "../activity/nightfall/rules.h"
 #include "runtime.h"
 #include "state.h"
 #include "state_account_transaction_helpers.h"
 #include "storage/internal.h"
+#include "../account/festival_mask.h"
+#include "../activity/nightfall/rules.h"
 #include "../persistence/persistence.h"
 #include "../unlocks/unlocks_runtime.h"
 
@@ -508,6 +509,12 @@ AccountState account_snapshot() noexcept {
     const AccountState snapshot = runtime::storage::g_state.account;
     ReleaseSRWLockShared(&runtime::storage::g_stateLock);
     return snapshot;
+}
+
+/** Checks the current account snapshot once; the pure predicate validates the character id. */
+bool has_current_equipped_festival_mask(std::uint64_t characterId) noexcept {
+    const AccountState snapshot = account_snapshot();
+    return account::festival_mask::has_current_equipped_festival_mask(characterId, snapshot);
 }
 
 } // namespace sunrise::state

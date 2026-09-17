@@ -60,8 +60,9 @@ inline constexpr std::size_t kPreviewProgressionPaddingSize = 5;
 inline constexpr std::size_t kPeriodicResetRecordSize = 56;
 /** 18,224 reserved bytes come before the acquired-state flags. */
 inline constexpr std::size_t kResetFlagsPaddingSize = 18224;
-/** 1,464 reserved bytes follow objective values. */
-inline constexpr std::size_t kValuesContentPaddingSize = 1464;
+inline constexpr std::size_t kOverrideCapacity = 20;
+inline constexpr std::size_t kValuesContentPrefixSize = 1196;
+inline constexpr std::size_t kValuesContentSuffixSize = 20;
 /** 591 reserved bytes follow the content-bypass policy byte. */
 inline constexpr std::size_t kContentTailPaddingSize = 591;
 /** The runtime Family-4 character schema owns exactly 46,928 bytes. */
@@ -203,6 +204,10 @@ static_assert(offsetof(InventoryChangeRecord, flags)
 static_assert(sizeof(InventoryChangeList)
               == 2 * sizeof(std::uint16_t)
                      + kInventoryChangeRecordCapacity * sizeof(InventoryChangeRecord));
+static_assert(offsetof(Object, unlockFlagCount) == 46068);
+static_assert(offsetof(Object, unlockValueCount) == 46152);
+static_assert(offsetof(Object, contentBypass) == 46336);
+static_assert(offsetof(Object, valuesOverridePadding) == 44872);
 static_assert(offsetof(InventoryChangeList, records) == 2 * sizeof(std::uint16_t));
 static_assert(sizeof(Object) == kObjectSize);
 static_assert(offsetof(Object,unlockFlagCount)==46068);

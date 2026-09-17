@@ -6,6 +6,7 @@
 #include "../../../../state/activity/runtime.h"
 #include "../../../../state/matchmaking/matchmaking_state.h"
 #include "../../../../state/runtime/runtime.h"
+#include "../../../../state/vendors/answered_interactions.h"
 #include "../internal.h"
 
 namespace sunrise::server::bap::encrypted::transactions {
@@ -136,6 +137,9 @@ bool commit(ServiceOutcome& outcome, Publication& publication) noexcept {
     }
     if (auto* transaction = transaction_if<ItemAcquisitionTransaction>(outcome)) {
         const bool committed = state::commit_item_acquisition(transaction->pending);
+        if (committed && transaction->answeredVendor != state::vendors::kAbsentIndex) {
+            (void)state::vendors::answer_shown(transaction->answeredVendor);
+        }
         core::log::write(core::log::Channel::server,
                          committed ? core::log::Level::debug : core::log::Level::warn,
                          committed ? "ev=acquire stage=transaction_commit result=ok"
@@ -160,6 +164,10 @@ bool commit(ServiceOutcome& outcome, Publication& publication) noexcept {
     }
     if (auto* transaction = transaction_if<ProfileItemAcquisitionTransaction>(outcome)) {
         const bool committed = state::commit_profile_item_acquisition(transaction->pending);
+        web_service::forest_loot::finish_pickup(transaction->pickup, committed);
+        if (committed && transaction->answeredVendor != state::vendors::kAbsentIndex) {
+            (void)state::vendors::answer_shown(transaction->answeredVendor);
+        }
         core::log::write(core::log::Channel::server,
                          committed ? core::log::Level::debug : core::log::Level::warn,
                          committed ? "ev=profile_acquire stage=transaction_commit result=ok"

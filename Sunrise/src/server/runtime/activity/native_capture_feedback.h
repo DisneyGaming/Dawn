@@ -10,6 +10,17 @@ namespace wire=middleware::bap::activity_message::native::capture_controller;
 namespace coo=state::activity::coo;
 inline constexpr std::uint32_t kTickRva=0x1006F20;
 inline constexpr std::size_t kSourceBytes=0x448,kControllerBytes=0x1D0;
+enum class RunIdentity : std::uint8_t { activityIncarnation, activitySession };
+[[nodiscard]] constexpr bool valid(RunIdentity value) noexcept {
+    return value==RunIdentity::activityIncarnation || value==RunIdentity::activitySession;
+}
+[[nodiscard]] inline bool token_matches(const activity_clock::Domain& domain,
+    const coo::Token& token,RunIdentity identity) noexcept {
+    if(!domain || !valid(identity) || !token.incarnation)return false;
+    const auto expected=identity==RunIdentity::activitySession
+        ? domain.owner.sessionId : domain.owner.incarnation.value;
+    return expected && token.run==expected;
+}
 struct Ticket final {
     activity_clock::Domain domain{};
     coo::Token token{};
@@ -19,6 +30,7 @@ struct Ticket final {
     activity_clock::wire::Configuration clockConfiguration{};
     wire::State requested{};
     std::uint64_t armEpoch{};
+    RunIdentity runIdentity{RunIdentity::activityIncarnation};
 };
 [[nodiscard]] inline bool same(const Ticket& a,const Ticket& b) noexcept {
     return a.domain==b.domain && a.token==b.token && a.source==b.source
@@ -27,10 +39,10 @@ struct Ticket final {
         && a.controllerDefinitionOffset==b.controllerDefinitionOffset
         && a.clockConfiguration.field0==b.clockConfiguration.field0
         && std::bit_cast<std::uint32_t>(a.clockConfiguration.timing)==std::bit_cast<std::uint32_t>(b.clockConfiguration.timing)
-        && a.requested==b.requested && a.armEpoch==b.armEpoch;
+        && a.requested==b.requested && a.armEpoch==b.armEpoch && a.runIdentity==b.runIdentity;
 }
 [[nodiscard]] inline bool valid(const Ticket& t) noexcept {
-    return static_cast<bool>(t.domain) && t.token.run==t.domain.owner.incarnation.value && t.token.incarnation
+    return static_cast<bool>(t.domain) && token_matches(t.domain,t.token,t.runIdentity)
         && t.source.registry && t.source.definition && t.source.type==4 && t.source.slot<=32767
         && t.generation && t.generation<=0x7FFFFFFF && t.entityDefinition && t.controllerDefinition
         && t.sourceDefinitionOffset>0 && t.controllerDefinitionOffset>0 && t.armEpoch

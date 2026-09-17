@@ -126,7 +126,7 @@ void test_vendor_migrations(const AccountState& legacy,const unlocks::Table& ini
     newlight::project_start(loaded.characters[1],startFlags);
     CHECK(startFlags[20]==std::byte{} && startFlags[59]==std::byte{2});
     durable::shutdown();
-    CHECK(database_integer("PRAGMA user_version")==3);
+    CHECK(database_integer("PRAGMA user_version")==4);
     // Recreate the old local branch's exact scoped layout, including all unused slots.
     edit_database(R"sql(
 ALTER TABLE vendor_progress RENAME TO current_progress;
@@ -161,10 +161,23 @@ PRAGMA user_version=2;
     CHECK(durable::initialize(GetModuleHandleW(nullptr),legacy,initialUnlocks,family,loaded,unlocks,loadedFamily));
     CHECK(loaded==expected);CHECK(unlocks==unlocks::expand(initialUnlocks,expected));CHECK(loadedFamily==family);
     CHECK(durable::commit_account(loaded,loaded));durable::shutdown();
-    CHECK(database_integer("PRAGMA user_version")==3);
+    CHECK(database_integer("PRAGMA user_version")==4);
     CHECK(database_integer("SELECT COUNT(*) FROM vendor_progress")==2);
     CHECK(durable::initialize(GetModuleHandleW(nullptr),legacy,initialUnlocks,family,loaded,unlocks,loadedFamily));
-    CHECK(loaded==expected);durable::shutdown();remove_database();
+    CHECK(loaded==expected);durable::shutdown();
+    // Upgrade our deployed v3 save without modifying inventory or New Light progress.
+    edit_database("DROP TABLE item_rolls;PRAGMA user_version=3;");
+    CHECK(durable::initialize(GetModuleHandleW(nullptr),legacy,initialUnlocks,family,loaded,unlocks,loadedFamily));
+    CHECK(loaded==expected);
+    auto rolled=loaded;
+    auto& item=rolled.characters[0].inventory.values[0];
+    item.randomRoll={7,19,31,43,59,71,89,101};
+    item.rolledLaneMask=3;item.availablePlugRows[0]=5;item.availablePlugRows[1]=9;
+    CHECK(durable::commit_account(loaded,rolled));durable::shutdown();
+    CHECK(database_integer("PRAGMA user_version")==4);
+    CHECK(durable::initialize(GetModuleHandleW(nullptr),legacy,initialUnlocks,family,loaded,unlocks,loadedFamily));
+    CHECK(loaded==rolled);CHECK(newlight::escaped(loaded.characters[1]));
+    durable::shutdown();remove_database();
 }
 }
 

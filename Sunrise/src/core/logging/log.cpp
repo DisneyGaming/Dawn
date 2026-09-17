@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <cstdarg>
 #include <cstdio>
 #include <cstring>
 
@@ -260,6 +261,22 @@ bool accepts(Channel channel, Level level) noexcept {
 /** Formats and emits one bounded structured event. */
 void write(Channel channel, Level level, std::string_view event) noexcept {
     write_record(channel, level, event, true);
+}
+
+void writef(Channel channel, Level level, const char* format, ...) noexcept {
+    if (format == nullptr || !accepts(channel, level)) {
+        return;
+    }
+    std::array<char, kLineCapacity> line{};
+    va_list arguments;
+    va_start(arguments, format);
+    const int count = std::vsnprintf(line.data(), line.size(), format, arguments);
+    va_end(arguments);
+    if (count <= 0) {
+        return;
+    }
+    const std::size_t length = (std::min)(static_cast<std::size_t>(count), line.size() - 1);
+    write(channel, level, std::string_view(line.data(), length));
 }
 
 /** Emits a required informational startup record even at the default warning threshold. */

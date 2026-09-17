@@ -55,6 +55,16 @@ $BuiltDll = Join-Path $RepoRoot 'build\x64\Release\steam_api64.dll'
 $Scripts  = Join-Path $RepoRoot 'Sunrise\scripts'
 $Defaults = Join-Path $RepoRoot 'Sunrise\resources\default_settings.json'
 
+# Runtime rules are read beside settings.json; event presets remain selectable files.
+$runtimeResources = @(
+    Get-ChildItem -LiteralPath (Join-Path $RepoRoot 'Sunrise\resources\vendor_rules') -File | ForEach-Object {
+        [pscustomobject]@{ Source = $_.FullName; Relative = $_.Name }
+    }
+    Get-ChildItem -LiteralPath (Join-Path $RepoRoot 'Sunrise\resources\event_presets') -File | ForEach-Object {
+        [pscustomobject]@{ Source = $_.FullName; Relative = "event_presets\$($_.Name)" }
+    }
+)
+
 # JSON activity graphs are runtime inputs too (including Mercury's population
 # and quarter-hour war settings). Keep both supported script formats together.
 function Get-RuntimeScripts ($directory) {
@@ -245,6 +255,7 @@ function Backup-File ($absolute) {
 foreach ($dll in Get-DllTargets $root) { Backup-File $dll }
 foreach ($dll in Get-DllTargets $root) { Backup-File ([IO.Path]::ChangeExtension($dll, '.pdb')) }
 foreach ($tree in Get-RuntimeTrees $root) {
+    foreach ($resource in $runtimeResources) { Backup-File (Join-Path $tree $resource.Relative) }
     foreach ($name in @('settings.json', 'hud.json', 'movement.json', 'player.json',
                         'player-state.db', 'player-state.db-wal', 'player-state.db-shm')) {
         Backup-File (Join-Path $tree $name)
@@ -287,6 +298,14 @@ foreach ($tree in Get-RuntimeTrees $root) {
         }
     }
     Note "scripts -> $($scriptDir.Substring($root.Length).TrimStart('\'))  ($scriptCount scripts)"
+
+    foreach ($resource in $runtimeResources) {
+        $dst = Join-Path $tree $resource.Relative
+        New-Item -ItemType Directory -Path (Split-Path -Parent $dst) -Force | Out-Null
+        if ([IO.Path]::GetFullPath($resource.Source) -ne [IO.Path]::GetFullPath($dst)) {
+            Copy-Item -LiteralPath $resource.Source -Destination $dst -Force
+        }
+    }
 
     # hud/movement/player are optional at runtime - each store keeps its compiled defaults when the
     # file is absent - but a tester who never gets them runs on those defaults instead of Dawn's
@@ -406,6 +425,14 @@ foreach ($dll in Get-DllTargets $root) {
 }
 foreach ($tree in Get-RuntimeTrees $root) {
     if (-not (Test-Path -LiteralPath (Split-Path -Parent $tree))) { continue }
+    foreach ($resource in $runtimeResources) {
+        $dst = Join-Path $tree $resource.Relative
+        $hash = (Get-FileHash -LiteralPath $dst -Algorithm SHA256).Hash
+        if ($hash -ne (Get-FileHash -LiteralPath $resource.Source -Algorithm SHA256).Hash) {
+            Die "Installed Festival resource differs from source: $dst"
+        }
+        $installedFiles += [pscustomobject]@{ path = (Get-Relative $dst); sha256 = $hash }
+    }
     foreach ($src in $runtimeScripts) {
         $dst = Join-Path (Join-Path $tree 'scripts') $src.Name
         $hash = (Get-FileHash -LiteralPath $dst -Algorithm SHA256).Hash

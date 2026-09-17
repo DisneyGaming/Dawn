@@ -7,15 +7,18 @@
 #include "../../../../core/logging/log.h"
 #include "../../../../middleware/secure_channel/runtime.h"
 #include "../../../../state/account/account_state.h"
-#include "../../../../state/activity/nightfall/rules.h"
-#include "../../../../state/activity/eater_of_worlds/contest.h"
-#include "../../../../state/activity/nightfall/completion_reward.h"
 #include "../../../../state/runtime/runtime.h"
 #include "../internal.h"
+#include "../activity_message/festival_pickups.h"
+#include "../activity_message/forest_chest_rewards.h"
+#include "../activity_message/forest_loot_pickups.h"
 #include "../push/activity/activity_keepalive_push.h"
 #include "../push/activity/launchpad_inventory.h"
 #include "../push/activity/newlight_quest.h"
 #include "../push/activity/quest_progress.h"
+#include "../../../../state/activity/nightfall/rules.h"
+#include "../../../../state/activity/eater_of_worlds/contest.h"
+#include "../../../../state/activity/nightfall/completion_reward.h"
 #include "queuez_state_validation.h"
 #include "../activity_message/lost_sector_rewards.h"
 
@@ -337,6 +340,15 @@ bool consume_deferred(Session& session,
         return true;
     }
     if (consume_completion_reward(session, scratch, response, written, touchesScratch)) {
+        return true;
+    }
+    if (festival_pickups::consume(session, scratch, response, written, touchesScratch)) {
+        return true;
+    }
+    if (forest_chest_rewards::consume(session, scratch, response, written, touchesScratch)) {
+        return true;
+    }
+    if (forest_loot_pickups::consume(session, scratch, response, written, touchesScratch)) {
         return true;
     }
     if (!session.family4RepushArmed || session.family4RepushRoot == 0

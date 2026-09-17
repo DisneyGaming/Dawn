@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <span>
 
+#include "../build_data/material_requirements/material_requirement_catalog.h"
 #include "state.h"
 #include "../activity/Newlight/launchpad/quest_runtime.h"
 
@@ -42,7 +43,7 @@ struct PendingEquipmentSwap {
     bool prepared{};
 };
 
-enum class AcquisitionSource : std::uint8_t { collections, missionReward };
+enum class AcquisitionSource : std::uint8_t { collections, missionReward, vendorReward };
 
 /** Prepared selected-character inventory insertion kept private until its reply and push fit. */
 struct PendingItemAcquisition {
@@ -73,8 +74,31 @@ struct PendingItemAcquisition {
     std::uint8_t equipmentSlot{};
     std::uint8_t materialRequirementCount{};
     bool profileChanged{};
+    /** Optional one-item replacement staged on this acquisition. Zero means no update. */
+    std::uint64_t updatedInstanceSoid{};
+    /** Authored dense inventory index of the pre-existing item being replaced. */
+    std::size_t updatedInventoryIndex{};
+    /** Native row/slot of the updated item in the canonical after-image. */
+    std::uint16_t updatedInventoryRow{};
+    std::uint8_t updatedEquipmentSlot{};
+    /** Before/after installed definition identities and item-row mutation serials. */
+    std::uint16_t updatedBeforeDefinitionIndex{};
+    std::uint16_t updatedAfterDefinitionIndex{};
+    std::uint32_t updatedBeforeDefinitionHash{};
+    std::uint32_t updatedAfterDefinitionHash{};
+    std::int32_t updatedBeforeMutationSerial{};
+    std::int32_t updatedAfterMutationSerial{};
     bool prepared{};
 };
+
+/** One profile row an exchange changed, named by its account change-ring serial. */
+struct ProfileStackChange {
+    std::int32_t mutationSerial{};
+    std::int32_t afterQuantity{};
+};
+
+/** Maximum number of profile rows one vendor exchange may announce. */
+inline constexpr std::size_t kProfileStackChangeCapacity = 4;
 
 /** Prepared account-profile stack insertion kept private until its reply and account upsert fit. */
 struct PendingProfileItemAcquisition {
@@ -94,11 +118,15 @@ struct PendingProfileItemAcquisition {
     std::size_t profileIndex{};
     std::int32_t previousQuantity{};
     std::int32_t acquiredQuantity{};
+    std::int32_t grantQuantity{1};
     std::int32_t previousMutationSerial{};
     std::int32_t acquiredMutationSerial{};
     std::uint16_t collectibleIndex{};
     std::uint8_t bucketId{};
     std::uint8_t materialRequirementCount{};
+    /** Non-empty only for a vendor exchange that credits these rows. */
+    std::array<ProfileStackChange, kProfileStackChangeCapacity> changes{};
+    std::size_t changeCount{};
     /** True only for installed profile mod/shader rows materialized as Family-4 residents. */
     bool actionSource{};
     bool appended{};
@@ -163,7 +191,7 @@ inline constexpr std::size_t kDismantleRewardCapacity = kDismantleRewardPolicyCa
 struct PendingItemDismantle {
     /** Exact prepare-time character view used as the commit staleness guard. */
     CharacterState beforeCharacter{};
-    /** Canonical dense inventory after-image, including row-change mutation generations. */
+    /** Canonical dense inventory after-image; array compaction shifts rows without renumbering. */
     CharacterState afterCharacter{};
     /** Exact profile material view observed before and after applying the dismantle payout. */
     std::array<account::inventory::ProfileItem, account::inventory::kProfileItemCapacity>
@@ -322,23 +350,49 @@ void shutdown() noexcept;
  */
 [[nodiscard]] bool commit_equipment_swap(PendingEquipmentSwap& mutation) noexcept;
 
+/** Acquisition policy: actual drops roll eligible weapons; Collections keep authored defaults. */
+struct ItemAcquisitionOptions {
+    bool allowRandomRoll{true};
+    std::uint64_t seed{};
+};
+
+/** Prepares a direct item grant without a Collections price or entitlement. */
+[[nodiscard]] bool prepare_item_acquisition_for_item(
+    std::uint16_t itemDefinitionIndex,
+    PendingItemAcquisition& mutation,
+    ItemAcquisitionOptions options = {},
+    std::span<const build_data::material_requirements::Requirement> cost = {}) noexcept;
+
 /**
  * Prepares one installed equippable definition as a new selected-character inventory instance.
  *
  * Native-default sockets, a unique runtime SOID, and the selected character's current item level
  * are used. Full loadout resolution is the authoritative bucket-capacity check.
  *
- * @param collectibleIndex Installed collectible linked to this item.
- * @param definitionHash Installed item definition to acquire.
+ * An authored cost REPLACES the collectible's own installed material set rather than adding to
+ * it: the collectible's set is the Collections re-pull price, which has nothing to do with what a
+ * vendor row charges. It rides purely as the before/after profile delta - `materialRequirementSetHash`
+ * and `materialRequirementCount` keep describing only the collectible, because that pair is what
+ * `commit_item_acquisition` compares against the installed collectible.
+ *
+ * @param collectibleIndex Collections row the Client pulled from.
+ * @param definitionHash Installed item definition requested by the Client.
  * @param mutation Gets a checked after-image without changing account State.
- * @param source Collections charges its native costs; an accepted mission reward is free.
+ * @param cost Explicit vendor price; empty uses Collections cost only when collectibleIndex is set.
+ * @param options Roll policy for direct rewards; ignored for Collections reclaims.
  * @return True when the item and every existing loadout row resolve with one free native row.
  */
+[[nodiscard]] bool prepare_item_acquisition(
+    std::uint16_t collectibleIndex,
+    std::uint32_t definitionHash,
+    PendingItemAcquisition& mutation,
+    std::span<const build_data::material_requirements::Requirement> cost = {},
+    ItemAcquisitionOptions options = {}) noexcept;
+
+/** Mission reward overload; preserves atomic quest reward and Glimmer credit. */
 [[nodiscard]] bool prepare_item_acquisition(std::uint16_t collectibleIndex,
-                                            std::uint32_t definitionHash,
-                                            PendingItemAcquisition& mutation,
-                                            AcquisitionSource source = AcquisitionSource::collections,
-                                            std::uint16_t rewardGlimmer = 0) noexcept;
+    std::uint32_t definitionHash, PendingItemAcquisition& mutation,
+    AcquisitionSource source, std::uint16_t rewardGlimmer = 0) noexcept;
 
 /** Builds the exact full-account after-image while a prepared item pull remains current. */
 [[nodiscard]] bool preview_item_acquisition(const PendingItemAcquisition& mutation,
@@ -353,21 +407,33 @@ void shutdown() noexcept;
  */
 [[nodiscard]] bool commit_item_acquisition(PendingItemAcquisition& mutation) noexcept;
 
+/** Stages one pre-existing unequipped item replacement on an already prepared acquisition. */
+[[nodiscard]] bool stage_item_replacement(PendingItemAcquisition& mutation,
+                                           std::uint64_t instanceSoid,
+                                           std::size_t inventoryIndex,
+                                           std::uint32_t beforeDefinitionHash,
+                                           std::uint32_t afterDefinitionHash) noexcept;
+
 /**
  * Prepares one installed profile-owned stackable definition for a Collections pull.
  *
  * An existing non-full stack is incremented. Otherwise a new dense State entry is appended only
  * when the installed profile bucket still owns a free native row.
  *
+ * An authored cost REPLACES the collectible's own installed material set, exactly as it does on
+ * the character path, and reaches State only as the before/after profile delta.
+ *
  * @param collectibleIndex Collections row the Client pulled from.
  * @param definitionHash Installed stackable definition requested by the Client.
  * @param mutation Gets the checked profile before/after images without changing account State.
+ * @param cost Authored cost charged inside this same transaction; empty charges nothing.
  * @return True when the definition belongs to the main profile array and one unit fits.
  */
-[[nodiscard]] bool
-prepare_profile_item_acquisition(std::uint16_t collectibleIndex,
-                                 std::uint32_t definitionHash,
-                                 PendingProfileItemAcquisition& mutation) noexcept;
+[[nodiscard]] bool prepare_profile_item_acquisition(
+    std::uint16_t collectibleIndex,
+    std::uint32_t definitionHash,
+    PendingProfileItemAcquisition& mutation,
+    std::span<const build_data::material_requirements::Requirement> cost = {}, std::int32_t quantity = 1) noexcept;
 
 /**
  * Materializes a prepared profile acquisition over the current account only while its complete
@@ -403,11 +469,27 @@ prepare_profile_currency_grant(std::uint32_t definitionHash,
                                std::int32_t quantity,
                                PendingProfileItemAcquisition& mutation) noexcept;
 
+/** One credited side of a vendor exchange. */
+struct ProfileExchangePayout {
+    std::uint32_t definitionHash{};
+    std::int32_t quantity{};
+};
+
+/** Stages package materials on an existing gear grant; its charge and rewards commit together. */
+[[nodiscard]] bool stage_item_profile_rewards(PendingItemAcquisition& mutation,
+    std::span<const ProfileExchangePayout> payouts) noexcept;
+
+/** Prepares an atomic profile-stack charge and one or more credited payouts. */
+[[nodiscard]] bool prepare_vendor_exchange(std::uint32_t costDefinitionHash,
+                                           std::int32_t costQuantity,
+                                           std::span<const ProfileExchangePayout> payouts,
+                                           PendingProfileItemAcquisition& mutation) noexcept;
+
 /**
  * Prepares removal of one unequipped instance from the selected character.
  *
- * The authored inventory prefix is compacted. Any surviving item whose installed native row
- * changes receives a fresh mutation generation. Equipped items are never accepted.
+ * The authored inventory prefix is compacted. Surviving items retain their mutation generations
+ * while their native rows shift. Equipped items are never accepted.
  *
  * @param instanceSoid Unequipped item-instance key selected by the Client.
  * @param mutation Gets checked before/after images without changing account State.
@@ -490,6 +572,9 @@ prepare_profile_currency_grant(std::uint32_t definitionHash,
 
 /** @return A copy of the active account state, read under the lock. */
 [[nodiscard]] AccountState account_snapshot() noexcept;
+
+/** @return True when the named existing character currently equips an allowed Festival mask. */
+[[nodiscard]] bool has_current_equipped_festival_mask(std::uint64_t characterId) noexcept;
 
 /** @return A copy of the evaluated content state, read under the lock. */
 [[nodiscard]] InvestmentState investment_snapshot() noexcept;

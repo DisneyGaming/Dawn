@@ -1,9 +1,11 @@
 #include <Windows.h>
 
 #include <array>
+#include <span>
 
 #include "../../../../core/filesystem/path.h"
 #include "../../../../core/logging/log.h"
+#include "../../../../core/settings/rule_text.h"
 #include "../../../../middleware/content/packages/reader/reader.h"
 #include "../../../../middleware/content/packages/tables/definition_index_table.h"
 #include "../../../../middleware/content/packages/tables/items.h"
@@ -14,6 +16,7 @@
 #include "../../../../state/build_data/progressions/definition.h"
 #include "../../../../state/build_data/runtime.h"
 #include "../../../../state/build_data/socket_entry_lists/definition.h"
+#include "../../../../state/build_data/vendors/vendor_catalog.h"
 #include "../../../../state/content/content_catalog.h"
 #include "../../../../state/runtime/runtime.h"
 #include "../../../memory/current_process_memory.h"
@@ -26,11 +29,40 @@
 #include "../../hash_names/hash_name_build.h"
 #include "../../scenarios/scenario_build.h"
 #include "../../spawn_sets/spawn_set_build.h"
+#include "../../vendors/vendor_build.h"
 #include "build.h"
 #include "internal.h"
 
 namespace sunrise::client::content::items::packages {
 namespace {
+
+/** Reads the authored vendor definition hashes, in priority order. */
+[[nodiscard]] std::size_t read_vendor_hashes(std::span<std::uint32_t> hashes) noexcept {
+    static std::array<char, core::rule_text::kRuleTextCapacity> text{};
+    if (!core::path::read_artifact_text(L"vendor_catalog.txt", text)) {
+        return 0;
+    }
+    std::size_t count = 0;
+    core::rule_text::Cursor rules{text.data()};
+    while (count < hashes.size() && rules.seek_field()) {
+        const std::uint32_t parsed = rules.read_hex();
+        if (parsed != 0) {
+            hashes[count++] = parsed;
+        }
+    }
+    return count;
+}
+
+/** Publishes named vendor definitions using the package pass's existing reader scratch. */
+void build_vendor_catalog(const reader::Source& source, reader::Scratch& scratch) noexcept {
+    namespace vendor_domain = state::build_data::vendors;
+    if (state::build_data::vendor_catalog_ready()) {
+        return;
+    }
+    static std::array<std::uint32_t, vendor_domain::kDefinitionCapacity> named{};
+    const std::size_t namedCount = read_vendor_hashes(named);
+    (void)content::vendors::build(source, scratch, std::span(named).first(namedCount));
+}
 
 /** @return True when every domain owned by the package pass is published. */
 [[nodiscard]] bool package_domains_ready() noexcept {
@@ -70,7 +102,7 @@ bool build() noexcept {
     static bool omegaPropertyScanAttempted = false;
     const bool domainsReady = package_domains_ready();
     if (domainsReady && homecomingDumped && omegaPropertyScanAttempted
-        && state::build_data::activities::ready() && state::build_data::vendors::services::ready()) {
+        && state::build_data::activities::ready() && state::build_data::vendors::services::ready() && state::build_data::vendor_catalog_ready()) {
         return true;
     }
     static Storage storage{};
@@ -91,6 +123,7 @@ bool build() noexcept {
     // storage. Both are independent of the item table, so a failure here leaves it alone.
     {
         const reader::Source packageSource{directory.chars.data(), &keys};
+        build_vendor_catalog(packageSource, storage.scratch);
         (void)content::activity::build_catalog(packageSource, storage.scratch);
         (void)content::vendors::build_services(packageSource, storage.scratch);
         if (!homecomingDumped) {

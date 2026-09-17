@@ -45,6 +45,7 @@ struct Output {
     case 2: return 0x80807DA2;
     case 4: return 0x8080992E;
     case 23: return 0x80804F47;
+    case 26: return 0x8080954A;
     case 30: return 0x80809531;
     case 37: return native::forest_generator_sense::kSchema;
     case 39: return 0x80804EE4;
@@ -144,6 +145,8 @@ template<class Reader>
         if (type==2 && !combatant_sense::read_delta(reader,result.combatant)) return false;
         if (type==4 && !object_sense::read(reader,result.object)) return false;
         if (type==23 && !device_sense::read(reader,result.device)) return false;
+        // 8080954A: three biased s32 acknowledgement counters, then one bool.
+        if (type==26 && !reader.skip(97)) return false;
         if (type==30 && !monitor_sense::read(reader,result.monitor)) return false;
         if(type==39) {
             if(!reader.read(31,value)) return false;result.passenger.revision=static_cast<std::uint32_t>(value);

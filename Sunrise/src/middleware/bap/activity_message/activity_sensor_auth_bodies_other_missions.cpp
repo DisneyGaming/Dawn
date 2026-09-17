@@ -12,6 +12,7 @@
 #include "../../../state/activity/eater_of_worlds/authority.h"
 
 #include "sensor_auth_update.h"
+#include "../../../state/activity/coo/native_clock_authority.h"
 #include "../../../state/activity/omega/omega_progression.h"
 #include "../../../state/activity/omega/omega_forest_encounters.h"
 #include "../../../state/activity/omega/omega_portal_entry.h"
@@ -36,6 +37,10 @@ namespace mission = state::activity::omega::mission;
 namespace mission_devices = state::activity::omega::mission_devices;
 namespace rescue = state::activity::omega::rescue;
 namespace transit = state::activity::omega::transit;
+namespace round = native::round_authority;
+namespace status_effect = native::status_effect;
+namespace forest_switches = native::forest_switches;
+namespace player_trigger = state::activity::coo::native_player_trigger;
 
 /** Slot types whose auth body this module fills. Every other block is seed-only. */
 constexpr std::uint8_t kSlotTypeParticipation = 13;
@@ -135,6 +140,10 @@ constexpr std::size_t kOmegaLifetimeBits = kLifetimeBits + encounters::kSwitchBi
 static_assert(kOmegaLifetimeBits == 617);
 /** Select the mission's typed population inputs before its generator creates encounters. */
 [[nodiscard]] std::size_t forest_switch_count(const Snapshot& snapshot) noexcept {
+    if (snapshot.nativeRound.controlled) {
+        return forest_switches::valid(snapshot.nativeForestSwitches)
+            ? snapshot.nativeForestSwitches.count : 0;
+    }
     if(snapshot.strike_bond.enabled) { return std::size(state::activity::strike_bond::kForestHashSwitches); }
     return snapshot.strike_pact.services
         ? state::activity::strike_pact::kForestHashSwitches.size()
@@ -203,13 +212,15 @@ constexpr std::size_t kSpawnKeyCount = 32;
     const auto names=native::player_predicates::compose(snapshot.playerPredicates,snapshot.omegaPortalPlayerHash,
         state::activity::omega::portal_entry::kRequiredPlayerHash);
     encoded=encoded && names && native::player_predicates::write(writer,*names);
-    return encoded && writer.write(0, 6)
-           // Byte 736 skips the respawn delay, whose countdown never expires when the content
-           // delay is negative. Byte 737 holds the spawn while the client loads.
+    encoded = encoded && writer.write(0, 6)
            && writer.write(1, kPresenceWidth)
            && writer.write(snapshot.awaitClientSync ? kAwaitingClientSync : 0U, 4)
-           && writer.write(0, 3) && writer.write(0, kPresenceWidth) && writer.write(128, 8)
-           && writer.write(kSignedZero, 32);
+           && writer.write(0, 1) && writer.write(snapshot.nativeRespawnRestricted ? 1U : 0U, 1);
+    // Same optional half-float revive delay used by 1AU-UnEx. The three-second wipe
+    // precedes this thirty-second delay; ordinary participation stays byte-identical.
+    if(snapshot.nativeRespawnRestricted) encoded=encoded && writer.write(0x4F80U,16);
+    return encoded && writer.write(0,1) && writer.write(0,kPresenceWidth) && writer.write(128,8)
+           && writer.write(kSignedZero,32);
 }
 
 /**
@@ -221,6 +232,8 @@ constexpr std::size_t kSpawnKeyCount = 32;
 [[nodiscard]] bool write_lifetime(bits::Writer& writer, const Snapshot& snapshot,
                                   std::uint32_t restrictionOrdinal,
                                   std::optional<std::uint32_t> scenarioOrdinal) noexcept {
+    if (snapshot.nativeRound.controlled
+        && !forest_switches::valid(snapshot.nativeForestSwitches)) return false;
     if (scenarioOrdinal && *scenarioOrdinal > kMaximumGrantBubble) { return false; }
     const auto ordinal=restrictionOrdinal?restrictionOrdinal:scenarioOrdinal.value_or(0U);
     // Shared terminal publication: native mission-complete phase 6 / success 1.
@@ -229,10 +242,15 @@ constexpr std::size_t kSpawnKeyCount = 32;
     bool encoded = writer.write(lifetime + 1, 4) && writer.write(completed?2U:1U, 3)
                    && writer.write(0, kPresenceWidth) && writer.write(kSignedZero, 32)
                    && writer.write(0, 32) && writer.write(kSignedZero+ordinal, 32)
-                   && writer.write(state::activity::beyond_infinity::forest::selected(snapshot.beyond_infinity) ? 3U : 1U + forest_switch_count(snapshot), 6)
+                   && writer.write(snapshot.nativeRound.controlled
+                       ? 1U + forest_switch_count(snapshot)
+                       : state::activity::beyond_infinity::forest::selected(snapshot.beyond_infinity)
+                           ? 3U : 1U + forest_switch_count(snapshot), 6)
                    && writer.write(kWaitingSwitchKey, 32) && writer.write(1, kPresenceWidth)
                    && writer.write(kWaitingSwitchClass, 32) && writer.write(kSignedZero, 32);
-    if (snapshot.strike_bond.enabled) {
+    if (snapshot.nativeRound.controlled) {
+        encoded = encoded && forest_switches::write(writer, snapshot.nativeForestSwitches);
+    } else if (snapshot.strike_bond.enabled) {
         for (const auto& row : state::activity::strike_bond::kForestHashSwitches) {
             encoded = encoded && writer.write(row.key,32) && writer.write(1,1)
                 && writer.write(encounters::kHashClass,32) && writer.write(row.value,32);
@@ -289,11 +307,18 @@ write_shared_mission_state(bits::Writer& writer, bool active) noexcept {
 
 /** Writes the neutral mission-director state that makes its authority datum persistent. */
 [[nodiscard]] bool write_mission_director(bits::Writer& writer,
-                                          const Snapshot& snapshot,bool missionOwned) noexcept {
+                                          const Snapshot& snapshot,bool missionOwned,
+                                          bool nativeRoundOwned=false) noexcept {
     if(missionOwned) {
         // Constructed 808099BF state: no countdown, with an explicit on/off
         // level. The lifetime filter uses each mission's scenario bubble ordinal.
-        return writer.write((snapshot.strike_bond.enabled?snapshot.strike_bond.restricted:snapshot.hijacked.enabled?snapshot.hijacked.restricted:snapshot.deep_storage.enabled?snapshot.deep_storage.restricted:snapshot.omegaMission.restriction)?1U:0U,1) && writer.write(0,1)
+        const bool restricted = nativeRoundOwned
+            ? snapshot.nativeRound.restricted
+            : (snapshot.strike_bond.enabled ? snapshot.strike_bond.restricted
+                : snapshot.hijacked.enabled ? snapshot.hijacked.restricted
+                : snapshot.deep_storage.enabled ? snapshot.deep_storage.restricted
+                : snapshot.omegaMission.restriction);
+        return writer.write(restricted ? 1U : 0U,1) && writer.write(0,1)
             && writer.write(1,2) && writer.write(0,2) && writer.write(0,1)
             && writer.write(0,64) && writer.write(0x134F00C00000ULL,64)
             && writer.write(0,64) && writer.write(0,64) && writer.write(UINT64_MAX,64)
@@ -759,6 +784,20 @@ legacy_auth_body_bits(const Snapshot& snapshot,
                std::uint8_t slotType,
                std::uint16_t slotIndex,
                bool carriesPlayerKey) noexcept {
+    if (round::timer(snapshot.nativeRound,key,slotType,slotIndex)) return round::kBodyBits;
+    if (round::lifetime(snapshot.nativeRound,key,slotType,slotIndex)) {
+        if (snapshot.nativeRound.controlled
+            && !forest_switches::valid(snapshot.nativeForestSwitches)) return 0;
+        return kLifetimeBits + forest_switch_count(snapshot) * encounters::kSwitchBits;
+    }
+    if (round::director(snapshot.nativeRound,key,slotType,slotIndex)) return kMissionDirectorBits;
+    if (const auto* request = status_effect::find(snapshot.statusEffects,key,slotType,slotIndex);
+        request != nullptr && status_effect::valid(snapshot.statusEffects,snapshot.roster,snapshot.region)) {
+        return status_effect::bits(*request);
+    }
+    if(const auto* request=player_trigger::find(snapshot.playerTriggers,key,slotIndex);
+        request && slotType==31 && player_trigger::valid(snapshot.playerTriggers,snapshot.roster,snapshot.region))
+        return player_trigger::kAuthBits;
     if(const auto count=state::activity::deadly_trial::body_bits(snapshot.deadly_trial,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::gateway::body_bits(snapshot.gateway,key,slotType,slotIndex)) { return count; }
     if(const auto count=state::activity::beyond_infinity::body_bits(snapshot.beyond_infinity,key,slotType,slotIndex)) { return count; }
@@ -784,6 +823,8 @@ legacy_auth_body_bits(const Snapshot& snapshot,
     if(const auto* request=native::placement::find(snapshot.placements,key,slotType,slotIndex)) return native::placement::body_bits(*request);
     if(const auto* request=native::population::find(snapshot.populations,key,slotType,slotIndex))
         return native::population::bits(*request);
+    if(const auto* request=native::population::find_member(snapshot.populations,key,slotType,slotIndex))
+        return native::population::member_bits(request->source.retireOwned);
     if(snapshot.omegaEndingSelected && state::activity::omega::ending::slot(key,slotType,slotIndex)) return 263;
     if (snapshot.omegaBossAuthority && boss::parent_slot(key, slotType, slotIndex)) return boss::kParentBits;
     if (snapshot.omegaBossAuthority && boss::member_slot(key, slotType, slotIndex))
@@ -849,6 +890,7 @@ legacy_auth_body_bits(const Snapshot& snapshot,
     if (slotType == kSlotTypeParticipation) {
         return carriesPlayerKey
                    ? kParticipationBits + (snapshot.hasRegion ? kParticipationRegionBits : 0)
+                         + (snapshot.nativeRespawnRestricted ? 16U : 0U)
                          + 32U*native::player_predicates::compose(snapshot.playerPredicates,snapshot.omegaPortalPlayerHash,
                              state::activity::omega::portal_entry::kRequiredPlayerHash).value().count
                    : 0;
@@ -900,6 +942,27 @@ bool legacy_write_auth_body(bits::Writer& writer,
                      std::uint8_t slotType,
                      std::uint16_t slotIndex,
                      bool carriesPlayerKey) noexcept {
+    if (round::timer(snapshot.nativeRound,key,slotType,slotIndex)) {
+        return state::activity::coo::native_clock::countdown(writer,
+            snapshot.nativeRound.completion.valid(),
+            snapshot.nativeRound.endEpoch);
+    }
+    if (round::lifetime(snapshot.nativeRound,key,slotType,slotIndex)) {
+        return write_lifetime(writer,snapshot,
+            snapshot.nativeRound.restricted ? snapshot.nativeRound.bubble : 0U,
+            snapshot.lifetimeScenarioOrdinal);
+    }
+    if (round::director(snapshot.nativeRound,key,slotType,slotIndex)) {
+        return write_mission_director(writer,snapshot,true,true);
+    }
+    if (const auto* request = status_effect::find(snapshot.statusEffects,key,slotType,slotIndex);
+        request != nullptr && status_effect::valid(snapshot.statusEffects,snapshot.roster,snapshot.region)) {
+        return status_effect::write_authority(writer,*request);
+    }
+    if(const auto* request=player_trigger::find(snapshot.playerTriggers,key,slotIndex);
+        request && slotType==31 && player_trigger::valid(snapshot.playerTriggers,snapshot.roster,snapshot.region)) {
+        return player_trigger::arm(writer,request->generation);
+    }
     if(state::activity::deadly_trial::body_bits(snapshot.deadly_trial,key,slotType,slotIndex)) {
         return state::activity::deadly_trial::write_body(writer,snapshot.deadly_trial,key,slotType,slotIndex);
     }
@@ -951,6 +1014,9 @@ bool legacy_write_auth_body(bits::Writer& writer,
     if(const auto* request=native::placement::find(snapshot.placements,key,slotType,slotIndex)) return native::placement::write(writer,*request);
     if(const auto* request=native::population::find(snapshot.populations,key,slotType,slotIndex))
         return native::combatant_source::write_source(writer,request->source);
+    if(const auto* request=native::population::find_member(snapshot.populations,key,slotType,slotIndex))
+        return native::population::write_member(writer,request->source.generation,
+            request->source.retireOwned);
     const std::size_t start = writer.bit_count();
     const std::size_t expected =
         legacy_auth_body_bits(snapshot, key, slotType, slotIndex, carriesPlayerKey);

@@ -161,7 +161,7 @@ read_index(const reader::Source& source, reader::Scratch& scratch, Storage& stor
         value.rowIndex = static_cast<std::uint16_t>(row);
         if (!read(blob, at + kSaleItemIndexOffset, value.itemIndex)
             || !read(blob, at + kSaleSecondaryItemOffset, value.secondaryItemIndex)
-            || !read(blob, at + kSaleInstalledIndexOffset, value.installedIndex)
+            || !read(blob, at + kSaleCategoryIndexOffset, value.categoryIndex)
             || !read(blob, at + kSaleRaw104Offset, value.raw104)
             || !read(blob, at + kSaleRaw108Offset, value.raw108)
             || !read(blob, at + kSaleRaw172Offset, value.raw172)
@@ -251,15 +251,61 @@ read_index(const reader::Source& source, reader::Scratch& scratch, Storage& stor
     definition.thirdCount = third.count;
     definition.saleRowOffset = static_cast<std::uint32_t>(storage.saleRowCount);
     definition.installedRowOffset = static_cast<std::uint32_t>(storage.installedRowCount);
+    const std::size_t saleRowsBefore = storage.saleRowCount;
+    const std::size_t installedRowsBefore = storage.installedRowCount;
     if (!read(blob, kResetIntervalOffset, definition.resetIntervalRaw)
         || !read(blob, kResetPhaseOffset, definition.resetPhaseRaw)
         || !read_sale_rows(blob, definition, storage)
         || !read_installed_rows(blob, definition, storage)) {
+        storage.saleRowCount = saleRowsBefore;
+        storage.installedRowCount = installedRowsBefore;
         return false;
     }
     storage.definitions[storage.definitionCount] = definition;
     ++storage.definitionCount;
     return true;
+}
+
+/** Selects named definitions first, then fills remaining capacity from the index head. */
+[[nodiscard]] std::size_t select_definitions(const Storage& storage,
+                                             std::span<const std::uint32_t> namedHashes,
+                                             std::span<std::uint32_t> hashes) noexcept {
+    std::size_t wanted = 0;
+    for (const std::uint32_t named : namedHashes) {
+        if (wanted == hashes.size()) {
+            break;
+        }
+        bool duplicate = false;
+        for (std::size_t index = 0; index < wanted; ++index) {
+            duplicate = duplicate || hashes[index] == named;
+        }
+        if (duplicate) {
+            continue;
+        }
+        bool present = false;
+        for (std::size_t index = 0; index < storage.indexCount; ++index) {
+            present = present || storage.index[index].definitionHash == named;
+        }
+        if (present) {
+            hashes[wanted++] = named;
+        } else {
+            core::log::writef(core::log::Channel::state,
+                              core::log::Level::warn,
+                              "ev=vendor stage=catalog result=skip reason=unknown_hash hash=0x%08X",
+                              named);
+        }
+    }
+    for (std::size_t index = 0; index < storage.indexCount && wanted < hashes.size(); ++index) {
+        const std::uint32_t candidate = storage.index[index].definitionHash;
+        bool duplicate = false;
+        for (std::size_t held = 0; held < wanted; ++held) {
+            duplicate = duplicate || hashes[held] == candidate;
+        }
+        if (!duplicate) {
+            hashes[wanted++] = candidate;
+        }
+    }
+    return wanted;
 }
 
 /** @param hashes Requested hashes. @param hash Index row hash. @return True when requested. */
@@ -277,20 +323,22 @@ read_index(const reader::Source& source, reader::Scratch& scratch, Storage& stor
  * @param storage Pass storage holding every count.
  * @param result Outcome text for the log line.
  */
-void report(const Storage& storage, const char* result) noexcept {
+void report(const Storage& storage, std::size_t skipped, const char* result) noexcept {
     std::array<char, core::log::kLineCapacity> line{};
     const int written = std::snprintf(line.data(),
                                       line.size(),
                                       "ev=build_data stage=vendors index=%zu definitions=%zu "
-                                      "sale=%zu installed=%zu result=%s",
+                                      "sale=%zu installed=%zu skipped=%zu result=%s",
                                       storage.indexCount,
                                       storage.definitionCount,
                                       storage.saleRowCount,
                                       storage.installedRowCount,
+                                      skipped,
                                       result);
     if (written > 0) {
         core::log::write(core::log::Channel::state,
-                         storage.indexCount != 0 ? core::log::Level::info : core::log::Level::warn,
+                         storage.indexCount != 0 && skipped == 0 ? core::log::Level::info
+                                                                 : core::log::Level::warn,
                          {line.data(), static_cast<std::size_t>(written)});
     }
 }
@@ -307,16 +355,23 @@ bool build(const reader::Source& source,
     static Storage storage{};
     storage = {};
     if (!read_index(source, scratch, storage)) {
-        report(storage, "index");
+        report(storage, 0, "index");
         return false;
     }
+    static std::array<std::uint32_t, domain::kDefinitionCapacity> chosen{};
+    const std::span<const std::uint32_t> selected =
+        std::span(chosen).first(select_definitions(storage, definitionHashes, chosen));
+    std::size_t skipped = 0;
     // Walking the index in order gives the ascending definition order the catalog requires.
     for (std::size_t row = 0; row < storage.indexCount; ++row) {
         const domain::IndexEntry entry = storage.index[row];
-        if (requested(definitionHashes, entry.definitionHash)
-            && !read_definition(source, scratch, entry, storage)) {
-            report(storage, "definition");
-            return false;
+        if (requested(selected, entry.definitionHash) && !read_definition(source, scratch, entry, storage)) {
+            ++skipped;
+            core::log::writef(core::log::Channel::state,
+                              core::log::Level::warn,
+                              "ev=build_data stage=vendors result=skip hash=0x%08X row=%zu",
+                              entry.definitionHash,
+                              row);
         }
     }
     const bool published = state::build_data::publish_vendor_catalog(
@@ -324,7 +379,7 @@ bool build(const reader::Source& source,
         std::span(storage.definitions).first(storage.definitionCount),
         std::span(storage.saleRows).first(storage.saleRowCount),
         std::span(storage.installedRows).first(storage.installedRowCount));
-    report(storage, published ? "ok" : "publish");
+    report(storage, skipped, published ? "ok" : "publish");
     return published;
 }
 

@@ -17,7 +17,7 @@ struct Request final {
 };
 [[nodiscard]] inline bool valid(const Request &r) noexcept {
     if (!r.registry || r.registry == UINT32_MAX || r.registry == cue::kAbsent || r.slot > 32767 || !r.candidateCount ||
-        r.candidateCount > kCapacity || r.scope > 63 || !cue::valid(r.readiness))
+        r.candidateCount > kCapacity || (r.scope != UINT32_MAX && r.scope > 63) || !cue::valid(r.readiness))
         return false;
     for (std::size_t i = 0; i < kCapacity; ++i) {
         const auto &g = r.guards[i];
@@ -92,8 +92,53 @@ template <class Roster> [[nodiscard]] bool valid(const Batch &b, const Roster &r
     }
     for (std::size_t i = 0; i < b.count; ++i) {
         const auto &r = b.entries[i];
-        if (!valid(r) || !authority_scope::valid(roster, r.registry, r.scope, region))
+        if (!valid(r))
             return false;
+        if (r.scope == UINT32_MAX) {
+            if (roster.bubbleSubBlocks.size() > 64)
+                return false;
+            for (const auto &block : roster.bubbleSubBlocks) {
+                if (block.bubble > 63 || block.keys.size() > 96
+                    || (!block.presence.empty() && block.presence.size() != block.keys.size()))
+                    return false;
+                for (const auto present : block.presence)
+                    if (present > 1) return false;
+                if constexpr (requires { block.states; }) {
+                    if (!block.states.empty() && block.states.size() != block.keys.size())
+                        return false;
+                    for (const auto state : block.states)
+                        if (state < 0x80U) return false;
+                }
+                for (const auto key : block.keys)
+                    if (key == r.registry) return false;
+            }
+            if (roster.topLevelKeys.empty()) {
+                if (!roster.topLevelPresence.empty() || !roster.topLevelStates.empty())
+                    return false;
+            } else {
+                if ((!roster.topLevelPresence.empty()
+                        && roster.topLevelPresence.size() != roster.topLevelKeys.size())
+                    || (!roster.topLevelStates.empty()
+                        && roster.topLevelStates.size() != roster.topLevelKeys.size()))
+                    return false;
+                for (const auto present : roster.topLevelPresence)
+                    if (present > 1) return false;
+                for (const auto state : roster.topLevelStates)
+                    if (state < 0x80U) return false;
+                unsigned keyMatches{};
+                std::size_t keyOrdinal{};
+                for (std::size_t k = 0; k < roster.topLevelKeys.size(); ++k) {
+                    if (roster.topLevelKeys[k] != r.registry) continue;
+                    keyOrdinal = k;
+                    ++keyMatches;
+                }
+                if (keyMatches != 1 || (!roster.topLevelPresence.empty()
+                    && roster.topLevelPresence[keyOrdinal] != 1))
+                    return false;
+            }
+        } else if (!authority_scope::valid(roster, r.registry, r.scope, region)) {
+            return false;
+        }
         for (std::size_t j = 0; j < i; ++j)
             if (b.entries[j].registry == r.registry && b.entries[j].slot == r.slot)
                 return false;
@@ -102,7 +147,8 @@ template <class Roster> [[nodiscard]] bool valid(const Batch &b, const Roster &r
             const auto &row = roster.groups[g];
             if (row.key != r.registry)
                 continue;
-            if (g < roster.topLevelGroupCount || row.slotTypes.size() != row.slotIndices.size() ||
+            if ((r.scope == UINT32_MAX ? g >= roster.topLevelGroupCount : g < roster.topLevelGroupCount)
+                || row.slotTypes.size() != row.slotIndices.size() ||
                 row.slotFlags.size() != row.slotIndices.size())
                 return false;
             for (std::size_t s = 0; s < row.slotIndices.size(); ++s)

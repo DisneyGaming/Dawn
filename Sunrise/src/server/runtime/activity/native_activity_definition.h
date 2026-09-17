@@ -12,10 +12,12 @@
 #include "forest_generator_service.h"
 #include "cue_presentation_service.h"
 #include "world_device_service.h"
+#include "equipment_interaction_gate.h"
 #include "../../../state/activity/coo/mission_script.h"
 
 namespace sunrise::server::runtime::activity {
 namespace coo=state::activity::coo;
+namespace round_activity { struct Definition; }
 namespace open_world { struct Definition; }
 namespace lost_sector { struct Definition; }
 // Trusted package/profile data. Files select registered operations; they do
@@ -24,6 +26,11 @@ struct NativeAction final {
     coo::CommandSpec command{};
     std::uint16_t capability{};
     std::string_view countParameter{};
+};
+struct TriggeredPlacementPose final {
+    std::uint32_t registry{};
+    std::uint16_t placementSlot{},triggerSlot{};
+    float closed{},opened{1.F};
 };
 struct NativeActivityDefinition final {
     std::string_view activity;
@@ -64,6 +71,13 @@ struct NativeActivityDefinition final {
     std::span<const world_device::Capability> devices{};
     std::span<const public_event::InitialDefinition> publicEventInitials{};
     bool retainRosterOrdinals{false};
+    /** Optional generic repeated timed-round contract; null preserves legacy activity state. */
+    const round_activity::Definition* rounds{};
+    /** Optional bounded equipment gates; empty preserves native interaction behavior. */
+    std::span<const equipment_interaction::Gate> equipmentInteractionGates{};
+    /** Persistent social services may start after world arrival from a co-resident region; native capabilities retain their authored registry bubbles. */
+    bool activateAcrossRegions{false};
+    std::span<const TriggeredPlacementPose> triggeredPlacementPoses{};
     /** Shared package-derived free-roam behavior. Empty preserves specialized profiles. */
     const open_world::Definition* openWorld{};
     /** Additional package registries used only by the staged Lost Sector suffix. */

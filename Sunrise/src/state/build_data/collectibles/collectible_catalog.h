@@ -11,6 +11,9 @@ namespace sunrise::state::build_data::collectibles {
 inline constexpr std::size_t kDefinitionCapacity = 1U << 15U;
 /** Some collectible rows deliberately do not resolve to an inventory item. */
 inline constexpr std::uint16_t kUnavailableItemDefinitionIndex = 0xFFFFU;
+
+/** Item index meaning the acquisition has no collectible row to validate or charge. */
+inline constexpr std::uint16_t kNoCollectibleIndex = 0xFFFEU;
 /** A collectible with no acquisition charge carries this native requirement-set sentinel. */
 inline constexpr std::uint16_t kUnavailableMaterialRequirementSetIndex = 0xFFFFU;
 /** Installed requirement sets contain at most six material rows. */
@@ -53,6 +56,10 @@ void clear() noexcept;
  * @return True when Collections can grant that item, so an account can come to own it.
  */
 [[nodiscard]] bool grants_item(std::uint16_t itemDefinitionIndex) noexcept;
+
+/** Finds the collectible row that grants one installed item, if one exists. */
+[[nodiscard]] bool find_granting(std::uint16_t itemDefinitionIndex,
+                                 std::uint16_t& collectibleIndex) noexcept;
 
 /** Copies every row in native collectible-index order. */
 [[nodiscard]] bool snapshot(std::span<Definition> output, std::size_t& count) noexcept;

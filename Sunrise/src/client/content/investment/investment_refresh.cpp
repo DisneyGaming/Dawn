@@ -50,6 +50,14 @@ bool refresh() noexcept {
         // The same lock as the extraction path. A cache write holds its own lock across file
         // calls, so a held thread stopped inside one would deadlock the freeze below.
         AcquireSRWLockExclusive(&g_refreshLock);
+        // A restored cache can predate vendor definitions even when every ordinary package domain
+        // is ready. Retry that bounded catalog pass once before final persistence.
+        static bool vendorRetryDone = false;
+        if (!vendorRetryDone && !state::build_data::vendor_catalog_ready()
+            && items::packages::readable()) {
+            vendorRetryDone = true;
+            (void)items::packages::build();
+        }
         const bool persisted =
             state::ensure_profile_item_identities() && state::build_data::persist();
         // Nothing reads a package again until the next boot, so the open files and the held

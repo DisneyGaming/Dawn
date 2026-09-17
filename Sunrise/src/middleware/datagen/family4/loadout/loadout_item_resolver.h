@@ -22,6 +22,7 @@ struct Candidate {
  * @param character Authored character that owns the item.
  * @param itemDefinitionCount Stable dense item-table row count.
  * @param socketEntryListCount Stable dense socket-list row count.
+ * @param requireEquipmentSlot True when the item must resolve to an equipment slot.
  * @param output Receives a complete candidate only on success.
  * @return True when every base, plug, bucket, and initial socket mapping resolves.
  */
@@ -29,6 +30,7 @@ struct Candidate {
                                 const state::CharacterState& character,
                                 std::size_t itemDefinitionCount,
                                 std::size_t socketEntryListCount,
+                                bool requireEquipmentSlot,
                                 Candidate& output) noexcept;
 
 } // namespace sunrise::middleware::datagen::family4::loadout

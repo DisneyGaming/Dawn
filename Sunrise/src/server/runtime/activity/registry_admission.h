@@ -74,9 +74,67 @@ template<class Storage,class FindGroup>
     if(layout.bubbleCount<=expected.bubble || layout.bubbleHashes[expected.bubble]!=expected.bubbleHash) {
         return Admission::missingLayout;
     }
-    if(roster.groupCount>roster.groups.size() || roster.bubbleSubBlocks.size()>storage.rosterSubBlocks.size()) {
+    if(roster.groupCount>roster.groups.size() || roster.topLevelGroupCount>roster.groupCount
+        || roster.bubbleSubBlocks.size()>storage.rosterSubBlocks.size()) {
         return Admission::invalid;
     }
+
+    // Top-level definitions describe roots already published by the native
+    // roster. They are never extracted into the activity bubble or appended
+    // here; the bubble remains the arrival context for the definition.
+    if(expected.topLevel) {
+        if(roster.topLevelKeys.empty()
+            && (!roster.topLevelPresence.empty() || !roster.topLevelStates.empty())) {
+            return Admission::invalid;
+        }
+        if(!roster.topLevelKeys.empty()) {
+            if((!roster.topLevelPresence.empty()
+                    && roster.topLevelPresence.size()!=roster.topLevelKeys.size())
+                || (!roster.topLevelStates.empty()
+                    && roster.topLevelStates.size()!=roster.topLevelKeys.size())) {
+                return Admission::invalid;
+            }
+            for(const auto present:roster.topLevelPresence) if(present>1) return Admission::invalid;
+            for(const auto state:roster.topLevelStates) if(state<0x80U) return Admission::invalid;
+        }
+
+        std::size_t found=roster.groupCount;
+        unsigned groups{};
+        for(std::size_t i=0;i<roster.groupCount;++i) {
+            if(roster.groups[i].key!=expected.key) continue;
+            found=i;
+            ++groups;
+        }
+        if(groups>1) return Admission::conflict;
+        if(groups==0) return Admission::missingGroup;
+        if(found>=roster.topLevelGroupCount) return Admission::conflict;
+
+        for(const auto& block:roster.bubbleSubBlocks) {
+            if(!block.presence.empty() && block.presence.size()!=block.keys.size()) {
+                return Admission::invalid;
+            }
+            for(const auto key:block.keys) if(key==expected.key) return Admission::conflict;
+        }
+
+        if(!roster.topLevelKeys.empty()) {
+            unsigned keys{};
+            std::size_t ordinal{};
+            for(std::size_t i=0;i<roster.topLevelKeys.size();++i) {
+                if(roster.topLevelKeys[i]!=expected.key) continue;
+                ordinal=i;
+                ++keys;
+            }
+            if(keys!=1 || (!roster.topLevelPresence.empty()
+                && roster.topLevelPresence[ordinal]!=1)) return Admission::conflict;
+        }
+
+        catalog::RosterGroup resolved{};
+        if(!findGroup(expected.key,resolved)) return Admission::missingGroup;
+        if(!matches(resolved,expected)) return Admission::schemaMismatch;
+        if(!matches(roster.groups[found],expected)) return Admission::conflict;
+        return Admission::present;
+    }
+
     const auto blocks=roster.bubbleSubBlocks;
     std::size_t target=blocks.size(), keyCount{}, groupCount{};
     for(std::size_t b=0;b<blocks.size();++b) {

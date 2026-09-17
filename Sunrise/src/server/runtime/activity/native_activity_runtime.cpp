@@ -8,11 +8,13 @@
 #include "open_world_census.h"
 #include "../../../state/activity/native_population_events.h"
 #include "../../../state/activity/vendors/catalog.h"
+#include "../../../client/hooks/bootflow/native_local_placement_probe.h"
 #include "../../../state/activity/open_world_member_observations.h"
 #include "../../../state/activity/coo/open_world_member_catalog.h"
 #include "../../../core/filesystem/path.h"
 #include "../../../core/logging/log.h"
 #include "../../../state/activity/runtime.h"
+#include "../../../state/runtime/runtime.h"
 #include "../../../middleware/crypto/random_bytes.h"
 #include <cstdio>
 #include <memory>
@@ -25,15 +27,20 @@ using population::Result;
 using population::parse;
 namespace {
 namespace nativeEvents=state::activity::native_population;
+namespace placementProbe=sunrise::client::hooks::bootflow::native_local_placement_probe;
+namespace gatewayRead=sunrise::client::hooks::bootflow::gateway_native;
 namespace members=state::activity::open_world_members;
 struct Entry {
-    PersistentActivity activity{};std::uint64_t nextPoll{},lastText{};
+    PersistentActivity activity{};std::uint64_t nextPoll{},nextTransitPoll{},lastText{};
     activity_clock::Service clock{};
     // A loose request can create an authored group. The largest Mercury wave
     // raises one source by five requests before renewal, so retain a bounded
     // cohort rather than assuming one request equals one actor.
     std::array<coo::NativePopulationLedger<128>,population::kSourceCapacity> ledgers{};
     std::array<std::uint32_t,population::kSourceCapacity> sourceHandles{};
+    nativeEvents::Lease generatorLease{};
+    std::uint32_t generatorSeed{};
+    bool generatorBound{};
     mercury::freeroam::Director mercuryFreeroam{};
     open_world::Director openWorld{};
     lost_sector::Director lostSectors{};
@@ -45,6 +52,7 @@ struct Entry {
     bool lostSectorsReady{};
     bool lastArrived{};
     bool observationFailure{};
+    std::uint64_t lastTransitKey{UINT64_MAX};
     struct CensusSource final {
         std::uint32_t generation{},observationRevision{},tacticalRevision{};std::uint64_t renewalRequest{};
         std::uint32_t first{},second{};std::int8_t tacticalRow{-1};bool seen{},observationSeen{};
@@ -163,6 +171,96 @@ void report_animation(const npc_animation::Service& service,const char* phase,
     if(size>0 && static_cast<std::size_t>(size)<text.size())
         core::log::write(core::log::Channel::server,core::log::Level::info,{text.data(),static_cast<std::size_t>(size)});
 }
+bool bind_round_generator(Entry& entry,Owner owner,const NativeActivityDefinition& definition,
+    const NativeActivityFrame& frame) noexcept {
+    if(!definition.rounds || definition.rounds->generatorIndex>=definition.generators.size())return true;
+    const auto& capability=definition.generators[definition.rounds->generatorIndex];
+    const forest_generator::wire::Request* request{};
+    for(std::size_t i=0;i<frame.generators.count;++i) {
+        const auto& candidate=frame.generators.entries[i];
+        if(candidate.registry==capability.registry->key && candidate.slot==capability.slot) {request=&candidate;break;}
+    }
+    if(!request || !request->state.primary.enabled)return true;
+    const registry::Slot* descriptor{};
+    for(const auto& slot:capability.registry->slots)if(slot.index==capability.slot)descriptor=&slot;
+    if(!descriptor)return false;
+    const auto round=entry.activity.round().round_snapshot().token.round;
+    if(!round || round>UINT32_MAX)return false;
+    const coo::Asset asset{capability.registry->key,descriptor->descriptorTag,37,capability.slot};
+    const coo::PopulationOwner source{owner.sessionId,entry.activity.population().boot(),
+        owner.incarnation.value,asset,static_cast<std::uint32_t>(round)};
+    const nativeEvents::GeneratorBinding binding{{owner,source,capability.registry->bubble},
+        request->state.primary.seed,definition.rounds->generatorPalette.resourceTag,
+        definition.rounds->generatorPalette.workerDefinitionTag,
+        definition.rounds->generatorPalette.workerDefinitionOffset,
+        definition.rounds->generatorPalette.palettes};
+    if(!entry.generatorBound) {
+        if(!nativeEvents::bind_generator(binding)) return false;
+        entry.generatorLease=binding.lease;entry.generatorSeed=binding.seed;
+        entry.generatorBound=true;return true;
+    }
+    if(entry.generatorLease==binding.lease && entry.generatorSeed==binding.seed)
+        return nativeEvents::bind_generator(binding);
+    if(!entry.activity.round().generated_source_retired(entry.generatorLease.source))
+        return true;
+    const auto oldSource=entry.generatorLease.source;
+    if(!nativeEvents::rebind_generator(entry.generatorLease,binding))return false;
+    if(!entry.activity.round().release_retired_generated_source(oldSource,binding.lease.source))
+        return false;
+    entry.generatorLease=binding.lease;entry.generatorSeed=binding.seed;return true;
+}
+void poll_transit_targets(Entry& entry,std::uint64_t now) noexcept {
+    if(now<entry.nextTransitPoll)return;
+    std::array<transit_effect::TargetRequest,21> pending{};
+    const auto count=entry.activity.pending_transit_targets(pending);
+    if(!count)return;
+    entry.nextTransitPoll=now+100;
+    const auto image=reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
+    for(std::size_t i=0;i<count;++i) {
+        const auto& target=pending[i];
+        const placementProbe::Request request{
+            target.registry,target.slot,target.definitionTag,target.definitionOffset,
+            target.generation,target.active};
+        gatewayRead::Read read{image};
+        if(placementProbe::probe(read,request))
+            static_cast<void>(entry.activity.observe_transit_target(target));
+    }
+}
+// Logs the native transit chain state whenever any of its gates or receipts change.
+void log_transit_state(Entry& entry,Owner owner) noexcept {
+    const auto* definition=entry.activity.definition();
+    if(!definition || !definition->rounds || !entry.activity.round().started())return;
+    const auto d=entry.activity.transit_diagnostics();
+    const auto& rt=entry.activity.round();
+    const auto r=rt.round_snapshot();
+    const auto gates=entry.activity.transit_gates();
+    const auto b=[](bool value) noexcept {return static_cast<std::uint64_t>(value?1U:0U);};
+    const std::uint64_t key=(static_cast<std::uint64_t>(static_cast<unsigned>(r.phase)&0xFU)<<60)
+        |(b(r.expired)<<59)|(b(rt.travel_pending())<<58)|(b(rt.travel_arrival_pending())<<57)
+        |(b(rt.travel_arrival_qualified())<<56)|(static_cast<std::uint64_t>(gates)<<48)
+        |(static_cast<std::uint64_t>(d.lastFailure)<<40)|(static_cast<std::uint64_t>(d.targetsPending)<<32)
+        |(b(d.prepared)<<31)|(b(d.targetReady)<<30)|(b(d.triggerArmed)<<29)|(b(d.requested)<<28)
+        |(b(d.applied)<<27)|(b(d.arrivalCandidate)<<26)|(b(d.arrivalQualified)<<25)
+        |(static_cast<std::uint64_t>(r.progress&0xFFFFU)<<8)|(r.token.round&0xFFU);
+    if(key==entry.lastTransitKey)return;
+    entry.lastTransitKey=key;
+    std::array<char,448> line{};
+    const auto size=std::snprintf(line.data(),line.size(),
+        "ev=forest_transit stage=state owner=%016llX round=%llu phase=%u progress=%u expired=%u "
+        "travel_pending=%u cohort=%llu destination=%08X effect=%u arrival_kind=%u gates=%02X "
+        "prepared=%u targets_pending=%u target_ready=%u trigger_armed=%u requested=%u expected=%d "
+        "applied=%u arrival_candidate=%u arrival_qualified=%u arrival_armed=%u arrival_ok=%u fail=%u",
+        owner.sessionId,static_cast<unsigned long long>(r.token.round),static_cast<unsigned>(r.phase),
+        static_cast<unsigned>(r.progress),r.expired?1U:0U,rt.travel_pending()?1U:0U,
+        static_cast<unsigned long long>(d.cohort),d.destination,static_cast<unsigned>(d.effect),
+        static_cast<unsigned>(d.arrivalKind),static_cast<unsigned>(gates),d.prepared?1U:0U,
+        static_cast<unsigned>(d.targetsPending),d.targetReady?1U:0U,d.triggerArmed?1U:0U,
+        d.requested?1U:0U,d.expected,d.applied?1U:0U,d.arrivalCandidate?1U:0U,d.arrivalQualified?1U:0U,
+        rt.travel_arrival_pending()?1U:0U,rt.travel_arrival_qualified()?1U:0U,
+        static_cast<unsigned>(d.lastFailure));
+    if(size>0 && static_cast<std::size_t>(size)<line.size())
+        core::log::write(core::log::Channel::server,core::log::Level::info,{line.data(),static_cast<std::size_t>(size)});
+}
 // Small explicit developer mailbox. The sender atomically renames a complete
 // file into place. Unsupported/partial input does not change retained authority.
 // No file watcher can reinterpret an old file as a command for a new activity.
@@ -204,10 +302,16 @@ bool snapshot_placements(Owner owner,const NativeActivityDefinition*& definition
     placement::wire::Batch& output) noexcept {
     definition=nullptr;output={};
     if(!owner || !state::activity::contains(owner)) return false;
+    const auto account=state::account_snapshot();
     std::lock_guard lock(mutex);
     for(const auto& entry:entries) {
         if(entry.activity.population().owner()!=owner) continue;
-        definition=entry.activity.definition();output=entry.activity.placements();
+        definition=entry.activity.definition();
+        output=entry.activity.placements();
+        if (!definition || !equipment_interaction::project(
+                definition->equipmentInteractionGates, account, output)) {
+            definition=nullptr;output={};return false;
+        }
         if(definition && definition->openWorld && (!entry.lastArrived
             || !open_world::append_placements(definition->placements,entry.lastBubble,output))) {
             definition=nullptr;output={};return false;
@@ -225,6 +329,33 @@ void observe(Owner owner,std::uint32_t bubble,
         if(entry.activity.population().owner()!=owner) continue;
         for(std::size_t i=0;i<update.objectCount;++i) {
             const auto& object=update.objects[i];
+            if(entry.activity.observe_transit_effect(owner,entry.activity.population().boot(),bubble,object)) {
+                std::array<char,224> line{};
+                const auto size=std::snprintf(line.data(),line.size(),
+                    "ev=native_transit_effect phase=applied owner=%016llX registry=%08X slot=%u native_revision=%u",
+                    owner.sessionId,object.registryKey,object.slotIndex,object.nativeRevision);
+                if(size>0 && static_cast<std::size_t>(size)<line.size())core::log::write(core::log::Channel::server,
+                    core::log::Level::info,{line.data(),static_cast<std::size_t>(size)});
+            } else if(object.slotType==26 && !(entry.activity.transit_diagnostics().applied
+                && entry.activity.transit_diagnostics().lastFailure==0)) {
+                // Every type-26 receipt that did not qualify, with the fields the matcher reads;
+                // echoes after a successful application are expected and not logged.
+                const auto d=entry.activity.transit_diagnostics();
+                std::array<char,448> line{};
+                const auto size=std::snprintf(line.data(),line.size(),
+                    "ev=forest_transit stage=sense26 owner=%016llX bubble=%u registry=%08X slot=%u "
+                    "has_schema=%u schema=%08X inferred=%u root_delta=%u body_bits=%u first=%016llX "
+                    "second=%016llX third=%016llX fourth=%016llX native_revision=%u expected=%d fail=%u",
+                    owner.sessionId,bubble,object.registryKey,object.slotIndex,object.hasNativeSchema?1U:0U,
+                    object.nativeSchema,object.inferredBodyWidth?1U:0U,object.hasRootDelta?1U:0U,
+                    object.bodyBits,static_cast<unsigned long long>(object.bodyFirst),
+                    static_cast<unsigned long long>(object.bodySecond),
+                    static_cast<unsigned long long>(object.bodyThird),
+                    static_cast<unsigned long long>(object.bodyFourth),object.nativeRevision,d.expected,
+                    static_cast<unsigned>(d.lastFailure));
+                if(size>0 && static_cast<std::size_t>(size)<line.size())core::log::write(core::log::Channel::server,
+                    core::log::Level::info,{line.data(),static_cast<std::size_t>(size)});
+            }
             if(object.slotType==70 && object.hasNativeSchema)
                 static_cast<void>(entry.activity.public_initial().observe(object.registryKey,object.slotIndex,bubble,object.nativeSchema,object.engagement));
             if(entry.activity.observe_occupancy(owner,entry.activity.population().boot(),bubble,object)) {
@@ -339,10 +470,77 @@ bool lost_sector_object_observed(const moon_lost_sector::ObjectReceipt& receipt,
  return entry->moonLostSectors.observe_object(receipt,dead,replaced);
 }
 
+
+bool observe_player_trigger(Owner owner,
+    const state::activity::coo::native_player_trigger::Receipt& receipt) noexcept {
+    if(!owner || receipt.slot<0)return false;
+    const std::lock_guard lock(mutex);
+    for(auto& entry:entries) {
+        if(entry.activity.population().owner()!=owner)continue;
+        return entry.activity.observe_player_trigger(owner,entry.activity.population().boot(),
+            receipt.registry,static_cast<std::uint16_t>(receipt.slot),receipt.object);
+    }
+    return false;
+}
+
+bool round_progress(Owner owner,timed_round::Phase& phase,
+    std::uint64_t& completedRounds,std::uint64_t& boot) noexcept {
+    phase=timed_round::Phase::entry;completedRounds=0;boot=0;
+    if(!owner || !state::activity::contains(owner))return false;
+    const std::lock_guard lock(mutex);
+    for(const auto& entry:entries) {
+        if(entry.activity.population().owner()!=owner)continue;
+        if(!entry.activity.definition() || !entry.activity.round().started())return false;
+        const auto status=entry.activity.round().round_snapshot();
+        phase=status.phase;completedRounds=status.completedRounds;boot=status.token.boot;
+        return true;
+    }
+    return false;
+}
+
+void observe_player_life(Owner owner,std::uint64_t boot,std::uint32_t entity,bool alive) noexcept {
+    if(!owner || !state::activity::contains(owner) || entity==UINT32_MAX)return;
+    const std::lock_guard lock(mutex);
+    for(auto& entry:entries) {
+        if(entry.activity.population().owner()!=owner || entry.activity.population().boot()!=boot
+            || !entry.activity.round().started())continue;
+        if(native_activity_transit::observed_member_count(owner,boot)!=1)return;
+        if(entry.activity.round().observe_player_life(entity,alive,GetTickCount64()))
+            core::log::write(core::log::Channel::server,core::log::Level::info,
+                "ev=native_round stage=defeat_qualified destination=rewards");
+        return;
+    }
+}
+
+RespawnState respawn_state(Owner owner) noexcept {
+    RespawnState result{};
+    if(!owner || !state::activity::contains(owner))return result;
+    const std::lock_guard lock(mutex);
+    for(const auto& entry:entries) {
+        if(entry.activity.population().owner()!=owner || !entry.activity.definition())continue;
+        if(!entry.activity.round().started())return result;
+        result.valid=true;
+        result.suppressed=entry.activity.traversal_respawn();
+        result.restricted=entry.activity.round().restricted();
+        result.travelArrivalQualified=entry.activity.round().travel_arrival_qualified();
+        result.latched=entry.activity.respawn_latched();
+        result.phase=entry.activity.round().round_snapshot().phase;
+        return result;
+    }
+    return result;
+}
+bool publication_pending(Owner owner) noexcept {
+    if(!owner)return false;
+    const std::lock_guard lock(mutex);
+    for(const auto& entry:entries)
+        if(entry.activity.population().owner()==owner)return entry.activity.publication_pending();
+    return false;
+}
 NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
     const NativeActivityDefinition& definition,const adventure_start::wire::Request& selected,
-    bool openingAdmissionReady,std::uint32_t populationPrefetchBubble) noexcept {
+    bool openingAdmissionReady,std::uint32_t populationPrefetchBubble,bool experimentalRewardPlacements) noexcept {
     if(!owner || bubble>63 || !state::activity::contains(owner)) return {};
+    const auto account=state::account_snapshot();
     const auto document=document_for(definition);if(!document) return {};
     std::lock_guard lock(mutex);
     Entry* current{};Entry* empty{};
@@ -350,6 +548,7 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
         // Detach only when the authoritative activity incarnation was released.
         // This is not a reusable native-source retirement acknowledgement.
         if(entry.activity.population().owner() && !state::activity::contains(entry.activity.population().owner())) {
+            entry.activity.release_owner();
             nativeEvents::release(entry.activity.population().owner());
             members::release(entry.activity.population().owner());
             adventure::native_bridge::release(entry.activity.population().owner());
@@ -360,7 +559,10 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
             public_event::deferred_bridge::release(entry.activity.population().owner());
             public_event::keys::bridge::release(entry.activity.population().owner());
             public_event::participant_bridge::release(entry.activity.population().owner());
-            public_event::engagement_bridge::release(entry.activity.population().owner());reset_entry(entry);
+            public_event::engagement_bridge::release(entry.activity.population().owner());
+            if(entry.activity.definition() && entry.activity.definition()->rounds)
+                native_activity_transit::release(entry.activity.population().owner(),entry.activity.population().boot());
+            reset_entry(entry);
         }
         if(entry.activity.population().owner()==owner) current=&entry;
         if(!entry.activity.population().owner() && !empty) empty=&entry;
@@ -405,6 +607,7 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
         if(current->activity.animation().owner()) report_animation(current->activity.animation(),"ready");
     }
     if(current->activity.definition()!=&definition) return {};
+    current->activity.admit_experimental_reward_placements(experimentalRewardPlacements);
     if(current->lastBubble!=bubble || current->lastArrived!=arrived) {
         auto boundary=census_record(definition,current->activity.population(),definition.populations.size(),bubble,arrived,
             open_world_census::Event::boundary,arrived?(current->lastArrived?"bubble_transition":"arrive_or_return"):"leave");
@@ -419,16 +622,75 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
     }
     const bool populationLifecycleReady=current->mercuryFreeroamReady || current->openWorldReady
         || current->lostSectorsReady;
-    // Apply native observations before building this authority frame. Otherwise
-    // an accepted death waits for another periodic snapshot to reach the HUD.
+    const auto prior=current->activity.population().revision();
+    const auto priorAnimation=current->activity.animation().revision();
+    const auto priorGenerator=current->activity.generator().revision();
+    const auto priorDevice=current->activity.device().revision();
+    const auto priorPresentation=current->activity.presentation().revision();
+    const auto priorRally=current->activity.rally().diagnostics().phase;
+    const auto priorRallyFailure=current->activity.rally().failed();
+    std::array<ambient_population::InitialState,128> priorAmbient{};
+    for(std::size_t i=0;i<current->activity.ambient().size();++i) priorAmbient[i]=current->activity.ambient().state(i);
+    const auto priorOpening=current->activity.opening().frame();
+    const auto priorPublicInitial=current->activity.public_initial().state();
+    activity_clock::Publication clock{};
+    const bool retainedClock=current->clock.domain()
+        && (definition.retainRosterOrdinals || current->activity.opening().retains_region(bubble,selected));
+    if(!definition.clockFrequencyParameter.empty()
+        && (definition.openWorld || definition.lostSectors || bubble==definition.bubble || retainedClock)) {
+        const auto now=GetTickCount64();
+        if(!current->clock.domain() && arrived) {
+            const auto* frequency=document->views().parameter(definition.clockFrequencyParameter);
+            if(!frequency || !frequency->value || nextClockEpoch==UINT64_MAX)return {};
+            const activity_clock::Policy policy{definition.registries.front().scenario,definition.bubble,
+                {false,1000.0F/static_cast<float>(frequency->value)}};
+            if(!current->clock.begin(owner,boot_token(),++nextClockEpoch,policy,now))return {};
+            std::array<char,256> line{};const auto size=std::snprintf(line.data(),line.size(),
+                "ev=native_clock phase=start owner=%016llX incarnation=%llu epoch=%llu scenario=%08X timing_hz=%u policy=reconstructed",
+                owner.sessionId,owner.incarnation.value,nextClockEpoch,policy.scenario,frequency->value);
+            if(size>0 && static_cast<std::size_t>(size)<line.size())core::log::write(core::log::Channel::server,
+                core::log::Level::info,{line.data(),static_cast<std::size_t>(size)});
+        }
+        // Arrival admits a new clock once. A transient loading/visibility step
+        // must not publish legacy zero and rewind an already admitted domain.
+        if(current->clock.domain()) {
+            const bool projected=(definition.openWorld || definition.lostSectors || retainedClock)
+                ?current->clock.project_retained(owner,boot_token(),current->clock.domain(),now,clock)
+                :current->clock.project(owner,boot_token(),bubble,now,clock);
+            if(!projected)return {};
+        }
+    }
+    // Establish the elapsed-tick publication before native activity intake.
+    // Round deaths are queued until this owner has a current clock and round;
+    // they are never scored with the prior frame's timestamp.
     std::array<nativeEvents::Event,256> native{};bool overflow{};
-    const auto received=nativeEvents::drain(owner,native,overflow);current->observationFailure|=overflow;
+    const bool deferRoundEvents=definition.rounds && (!clock || !current->activity.round().started());
+    const auto received=deferRoundEvents?0:nativeEvents::drain(owner,native,overflow);
+    current->observationFailure|=overflow;
     if(overflow) {
         auto failed=census_record(definition,current->activity.population(),definition.populations.size(),bubble,arrived,
             open_world_census::Event::failure,"native_receipt_overflow");failed.failed=true;open_world_census::emit(failed);
     }
     for(std::size_t e=0;e<received;++e) {
         const auto& event=native[e];
+        if(definition.rounds && event.lease.source.source.type==37) {
+            bool accepted{};
+            if(event.kind==nativeEvents::Kind::admitted)
+                accepted=current->activity.round().admit_generated(event.actor,event.lease.source,
+                    event.memberPrefabTag,event.completionGroup);
+            else if(event.kind==nativeEvents::Kind::died) {
+                const auto result=current->activity.round().generated_death(event.actor,event.lease.source,
+                    event.memberPrefabTag,event.completionGroup,false,clock.elapsedTicks);
+                // Unknown/non-scoring authored prefabs are a bounded diagnostic,
+                // not a round fault.
+                accepted=result==timed_round::Result::accepted || result==timed_round::Result::unsupported;
+            } else accepted=current->activity.round().retire_generated(event.actor,event.lease.source);
+            // A generated lease can legitimately report after traversal or
+            // after a rebind has begun. The round ledger scores only deaths
+            // in the current traversal; late/stale identities remain useful for
+            // retirement accounting and never become a global activity fault.
+            continue;
+        }
         for(std::size_t i=0;i<definition.populations.size();++i) {
             auto& ledger=current->ledgers[i];if(ledger.owner()!=event.lease.source) continue;
             coo::PopulationIntake result=coo::PopulationIntake::conflict;
@@ -472,15 +734,23 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
                 else result=ledger.actor_retired(event.actor);
             }
             if(result!=coo::PopulationIntake::accepted && result!=coo::PopulationIntake::duplicate) current->observationFailure=true;
+            if(definition.rounds && (result==coo::PopulationIntake::accepted
+                || result==coo::PopulationIntake::duplicate)) {
+                const bool wasDead=current->activity.round().boss_death_qualified();
+                static_cast<void>(current->activity.round().population_event(
+                    static_cast<std::uint16_t>(i),event.lease.source,event.actor,event.kind,
+                    clock.elapsedTicks));
+                if(!wasDead && current->activity.round().boss_death_qualified())
+                    static_cast<void>(current->activity.pause_round_hud());
+            }
             if(result==coo::PopulationIntake::accepted && event.kind!=nativeEvents::Kind::sourceRecreated)static_cast<void>(current->activity.public_initial().observe_accepted(event,result));
             const auto counts=ledger.counts();
             std::array<char,384> line{};
             const auto size=std::snprintf(line.data(),line.size(),
-                "ev=native_population kind=%s owner=%016llX registry=%08X slot=%u generation=%u actor=%08X source=%08X result=%u admitted=%zu alive=%zu dead=%zu resident=%zu incomplete=%u",
-                event.kind==nativeEvents::Kind::admitted?"admitted":event.kind==nativeEvents::Kind::died?"died":
-                    event.kind==nativeEvents::Kind::sourceRecreated?"source_recreated":"retired",owner.sessionId,
+                "ev=native_population kind=%s owner=%016llX registry=%08X slot=%u generation=%u actor=%08X entity=%08X source=%08X result=%u admitted=%zu alive=%zu dead=%zu resident=%zu incomplete=%u",
+                event.kind==nativeEvents::Kind::admitted?"admitted":event.kind==nativeEvents::Kind::died?"died":"retired",owner.sessionId,
                 event.lease.source.source.registry,event.lease.source.source.slot,event.lease.source.generation,
-                event.actor.actor,event.sourceHandle,static_cast<unsigned>(result),counts.admitted,counts.alive,
+                event.actor.actor,event.actor.entity,event.sourceHandle,static_cast<unsigned>(result),counts.admitted,counts.alive,
                 counts.dead,counts.resident,current->observationFailure?1U:0U);
             if(size>0 && static_cast<std::size_t>(size)<line.size())
                 core::log::write(core::log::Channel::server,core::log::Level::info,{line.data(),static_cast<std::size_t>(size)});
@@ -500,50 +770,46 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
             }
         }
     }
-    const auto prior=current->activity.population().revision();
-    const auto priorAnimation=current->activity.animation().revision();
-    const auto priorGenerator=current->activity.generator().revision();
-    const auto priorDevice=current->activity.device().revision();
-    const auto priorPresentation=current->activity.presentation().revision();
-    const auto priorRally=current->activity.rally().diagnostics().phase;
-    const auto priorRallyFailure=current->activity.rally().failed();
-    std::array<ambient_population::InitialState,32> priorAmbient{};
-    for(std::size_t i=0;i<current->activity.ambient().size();++i) priorAmbient[i]=current->activity.ambient().state(i);
-    const auto priorOpening=current->activity.opening().frame();
-    const auto priorPublicInitial=current->activity.public_initial().state();
-    activity_clock::Publication clock{};
-    const bool retainedClock=current->clock.domain()
-        && (definition.retainRosterOrdinals || current->activity.opening().retains_region(bubble,selected));
-    if(!definition.clockFrequencyParameter.empty()
-        && (definition.openWorld || definition.lostSectors || bubble==definition.bubble || retainedClock)) {
-        const auto now=GetTickCount64();
-        if(!current->clock.domain() && arrived) {
-            const auto* frequency=document->views().parameter(definition.clockFrequencyParameter);
-            if(!frequency || !frequency->value || nextClockEpoch==UINT64_MAX)return {};
-            const activity_clock::Policy policy{definition.registries.front().scenario,definition.bubble,
-                {false,1000.0F/static_cast<float>(frequency->value)}};
-            if(!current->clock.begin(owner,boot_token(),++nextClockEpoch,policy,now))return {};
-            std::array<char,256> line{};const auto size=std::snprintf(line.data(),line.size(),
-                "ev=native_clock phase=start owner=%016llX incarnation=%llu epoch=%llu scenario=%08X timing_hz=%u policy=reconstructed",
-                owner.sessionId,owner.incarnation.value,nextClockEpoch,policy.scenario,frequency->value);
-            if(size>0 && static_cast<std::size_t>(size)<line.size())core::log::write(core::log::Channel::server,
-                core::log::Level::info,{line.data(),static_cast<std::size_t>(size)});
+    if(definition.rounds && (current->activity.round().round_snapshot().phase==timed_round::Phase::returning
+        || current->activity.round().round_snapshot().phase==timed_round::Phase::rewards)) {
+        bool allActorsRetired=true,allSourcesAcknowledged=true;std::size_t requestedCount{};
+        for(std::size_t j=0;j<current->activity.round().encounter_population_count();++j) {
+            const auto index=current->activity.round().encounter_population_index(j);
+            if(index>=definition.populations.size()) {allActorsRetired=false;allSourcesAcknowledged=false;continue;}
+            ++requestedCount;auto& ledger=current->ledgers[index];const auto counts=ledger.counts();
+            allActorsRetired&=counts.resident==0;
+            const auto& capability=definition.populations[index];
+            const auto* status=current->activity.population().status(capability.registry->key,capability.slot);
+            bool acknowledged=status && status->retirementAcknowledged
+                && status->generation>ledger.owner().generation;
+            if(!acknowledged && status && counts.resident==0 && ledger.owner().valid())
+                acknowledged=current->activity.population().retirement_acknowledged(owner,
+                    current->activity.population().boot(),capability.registry->key,capability.slot,
+                    status->generation,true);
+            if(acknowledged && !counts.sourceRetired)
+                static_cast<void>(ledger.source_retired(ledger.owner()));
+            const auto settled=ledger.counts();
+            allSourcesAcknowledged&=acknowledged && settled.sourceRetired && status
+                && status->phase==population::Phase::retired && status->retirementAcknowledged;
         }
-        // Arrival admits a new clock once. A transient loading/visibility step
-        // must not publish legacy zero and rewind an already admitted domain.
-        if(current->clock.domain()) {
-            const bool projected=(definition.openWorld || definition.lostSectors || retainedClock)
-                ?current->clock.project_retained(owner,boot_token(),current->clock.domain(),now,clock)
-                :current->clock.project(owner,boot_token(),bubble,now,clock);
-            if(!projected)return {};
-        }
+        if(requestedCount) static_cast<void>(current->activity.round().retirement_acknowledged(
+            allActorsRetired,allSourcesAcknowledged));
     }
     std::array<std::uint8_t,4> priorCapture{};
     for(std::size_t i=0;i<current->activity.capture().size();++i) {
         const auto& s=current->activity.capture().state(i);priorCapture[i]=(s.requested?1:0)|(s.ready?2:0)|(s.completed?4:0);
     }
     const auto local=public_event::participant_bridge::local_identity(GetTickCount64());
+    // Poll authenticated local placement state before the activity update. A
+    // successful observation can therefore unlock the one-shot source-26 pulse
+    // in this same server frame; publication alone never marks a target ready.
+    poll_transit_targets(*current,GetTickCount64());
     auto frame=current->activity.update(bubble,arrived,selected,openingAdmissionReady,clock,local.identity);
+    log_transit_state(*current,owner);
+    // Bind generator evidence before the final authority projection can expose
+    // the generated population request.
+    if(definition.rounds && !bind_round_generator(*current,owner,definition,frame))
+        current->observationFailure=true;
     std::array<std::uint8_t,population::kSourceCapacity> nativePending{};
     if(populationLifecycleReady) {
         for(std::size_t i=0;i<definition.populations.size();++i) {
@@ -857,7 +1123,7 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
         frame.animations=current->activity.animation().project(bubble);
         if(definition.openWorld && arrived
             && !open_world::append_placements(definition.placements,bubble,frame.placements))return {};
-    } else if(definition.retainRosterOrdinals || (arrived && bubble==definition.bubble)) {
+    } else if(definition.retainRosterOrdinals || (arrived && (bubble==definition.bubble || definition.activateAcrossRegions))) {
         // The mailbox may have changed a request after update(). Projection is
         // tied to the live activity lease, while command admission stays scoped.
         frame.populations=current->activity.population().project(definition.bubble);
@@ -886,6 +1152,8 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
             frame.animations.entries[kept++]=request;
     }
     frame.animations.count=kept;
+    if (!equipment_interaction::project(definition.equipmentInteractionGates, account,
+            frame.placements)) return {};
     // Publish the observation capability before the authority frame can create
     // actors. Native callbacks enqueue values; this owner drains them in order.
     for(std::size_t r=0;r<frame.populations.count;++r) {
@@ -897,11 +1165,37 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
             for(const auto& slot:cap.registry->slots) if(slot.index==cap.slot) asset.definition=slot.descriptorTag;
             const coo::PopulationOwner source{owner.sessionId,current->activity.population().boot(),
                 owner.incarnation.value,asset,request.source.generation};
+            if(populationLifecycleReady) {
             auto& ledger=current->ledgers[i];const auto priorOwner=ledger.owner();
             if(priorOwner.valid() && priorOwner!=source){current->observationFailure=true;return {};}
             if(!priorOwner.valid() && (!ledger.begin(source)
                 || !nativeEvents::bind({owner,source,static_cast<std::uint8_t>(cap.registry->bubble),populationLifecycleReady}))) {
                 current->observationFailure=true;return {};
+            }
+            } else {
+            const auto priorSource=current->ledgers[i].owner();
+            const bool newCycle=priorSource.valid() && priorSource.source==source.source
+                && source.generation>priorSource.generation;
+            // The source authority accepts retirement before native actors and
+            // the new generation acknowledge it. Put the old ledger into that
+            // lifecycle now; source_retired correctly rejects an active ledger.
+            if(newCycle && request.source.retireOwned
+                && current->ledgers[i].phase()==coo::PopulationPhase::active
+                && !current->ledgers[i].retiring(priorSource)) current->observationFailure=true;
+            if(newCycle && !request.source.retireOwned) {
+                const auto counts=current->ledgers[i].counts();
+                if(counts.resident==0 && !current->observationFailure) {
+                    const nativeEvents::Lease oldLease{owner,priorSource,cap.registry->bubble};
+                    const nativeEvents::Lease newLease{owner,source,cap.registry->bubble};
+                    if(!nativeEvents::rebind(oldLease,newLease)) current->observationFailure=true;
+                    else {
+                        current->ledgers[i]={};current->sourceHandles[i]=0;
+                        if(!current->ledgers[i].begin(source)) current->observationFailure=true;
+                    }
+                } else current->observationFailure=true;
+            } else if(!priorSource.valid() && !current->ledgers[i].begin(source)) current->observationFailure=true;
+            if(!(newCycle && request.source.retireOwned)
+                && !nativeEvents::bind({owner,source,cap.registry->bubble})) current->observationFailure=true;
             }
         }
     }

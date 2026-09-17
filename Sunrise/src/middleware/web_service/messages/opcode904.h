@@ -2,7 +2,7 @@
 #include "../../encoding/bit_reader.h"
 #include "../web_service_envelope.h"
 
-namespace sunrise::middleware::web_service::messages::opcode904 {
+namespace sunrise::middleware::web_service::messages::vendor_reply {
 struct Request {std::int16_t vendor{},interaction{},reply{};std::int32_t selection{};};
 // Native schema 808075D4: three biased i16 fields and one biased i32, exactly 80 bits.
 inline bool parse(const Message& message,Request& out) noexcept {

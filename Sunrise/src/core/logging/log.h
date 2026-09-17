@@ -51,6 +51,8 @@ void shutdown() noexcept;
 /** Emits one structured event when allowed by the channel threshold. */
 void write(Channel channel, Level level, std::string_view event) noexcept;
 
+void writef(Channel channel, Level level, const char* format, ...) noexcept;
+
 /**
  * Emits one required startup/provenance record through every enabled sink while bypassing the
  * channel severity threshold. The record remains informational and retains normal locking/caps.

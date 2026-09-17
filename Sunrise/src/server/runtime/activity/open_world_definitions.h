@@ -120,7 +120,7 @@ inline const coo::script::Profile kProfile{PROFILE_ID,"nativeOtherActivities", \
 inline const NativeActivityDefinition kActivity{authored::kDestination.activity,SCRIPT_FILE, \
     authored::kDestination.primaryBubble,&kProfile,authored::kRegistries,kPopulations, \
     Storage::placements,kActions,kPersistentModule,{},Storage::routes,{},{},{},{},ACTIVITY_ORDINALS,{}, \
-    "host.tick_hz",{},{},{},{},{},{},true,&Storage::runtime,lost::kRegistries, \
+    "host.tick_hz",{},{},{},{},{},{},true,{}, {}, false, {}, &Storage::runtime,lost::kRegistries, \
     lost::kSectors.empty()?nullptr:&kLostSectorDefinition,lost::kRewardRegistries}; \
 }
 

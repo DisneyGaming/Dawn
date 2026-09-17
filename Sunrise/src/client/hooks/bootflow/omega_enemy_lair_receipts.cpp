@@ -3,6 +3,9 @@
 #include "vendor_network_presence.h"
 #include "vendor_lifetime_native.h"
 #include "../../../state/activity/Newlight/launchpad/runtime.h"
+#include "forest_candy_drops.h"
+#include "native_generated_population_identity.h"
+#include "native_generated_roster.h"
 #include <Windows.h>
 #include <intrin.h>
 #include <bit>
@@ -662,9 +665,30 @@ __declspec(noinline) void observe_candidate(void* instance,std::uint32_t event,
 }
 namespace nativeEvents=state::activity::native_population;
 namespace pending=native_population_pending;
+namespace generatedIdentity=native_generated_population_identity;
+namespace generatedRoster=native_generated_roster;
 std::mutex g_pendingMutex;
+std::mutex g_generatedRosterCacheMutex;
+generatedRoster::Cache<> g_generatedRosterCache;
+std::atomic_uint64_t g_generatedRosterCacheEpoch{};
+struct GeneratedRosterWorker final {
+    std::uint32_t self{generatedRoster::kInvalidHandle};
+    generatedRoster::ScheduleCursor cursor{};
+    std::uint64_t lastSeen{};
+};
+SRWLOCK g_generatedRosterWorkerLock=SRWLOCK_INIT;
+std::array<GeneratedRosterWorker,generatedRoster::kMaximumWorkers> g_generatedRosterWorkers{};
 pending::Queue<state::activity::native_population::kProvisionalCapacity> g_pendingBirths;
 pending::Queue<8192> g_admittedActors;
+struct GeneratedDeathWitness final {
+    std::uint32_t actor{UINT32_MAX};
+    std::uint32_t entity{UINT32_MAX};
+    std::uint32_t parent{UINT32_MAX};
+    std::uint8_t healthFlags{};
+    std::uint64_t epoch{};
+};
+std::array<GeneratedDeathWitness,generatedRoster::kMaximumCachedActors> g_earlyGeneratedDeaths{};
+std::size_t g_earlyGeneratedDeathCount{};
 std::atomic_uint g_nativeLines{};
 template<class... Args> void native_report(const char* format,Args... args) noexcept {
     if(g_nativeLines.fetch_add(1,std::memory_order_relaxed)>=128) return;
@@ -676,6 +700,536 @@ template<class... Args> void native_report(const char* format,Args... args) noex
 // Shared observer for explicitly registered activity sources. Package definitions,
 // salted actor backlinks, typed health interfaces and source generations are
 // qualified before copying an event into the state mailbox. No spawn or AI call.
+struct SourceIdentity final {
+    nativeEvents::Lease lease{};
+    std::uint32_t sourceHandle{UINT32_MAX};
+    std::uint32_t memberPrefabTag{};
+    std::uint32_t completionGroup{UINT32_MAX};
+};
+bool cached_generated_source(const Actor& actorState,SourceIdentity& output) noexcept;
+bool generated_source(Read& read,const Actor& actorState,SourceIdentity& output) noexcept {
+    output={};output.completionGroup=UINT32_MAX;
+    if(actorState.source.kind==generatedIdentity::kSourceRuntimeClass) {
+        generatedIdentity::Identity generated{};
+        if(generatedIdentity::qualify(read,g_image,actorState.source,actorState.member,generated)) {
+            const auto lease=nativeEvents::lookup_generated(generated.resourceTag,generated.seed,
+                generated.workerDefinitionTag,generated.workerDefinitionOffset,
+                generated.paletteDefinitionTag,generated.paletteDefinitionOffset);
+            if(lease.activity && lease.source.valid()) {
+                output.lease=lease;output.sourceHandle=actorState.source.handle;
+                output.memberPrefabTag=generated.memberPrefabTag;
+                output.completionGroup=generated.completionGroup;return true;
+            }
+        }
+        return cached_generated_source(actorState,output);
+    }
+    if(actorState.source.handle==UINT32_MAX && cached_generated_source(actorState,output)) return true;
+    return false;
+}
+
+constexpr std::size_t kGeneratedRosterEntriesPerTick=2U;
+constexpr std::size_t kGeneratedRosterCandidateAttemptsPerTick=8U;
+// Each selected encounter gets its own original 8192-byte Read budget.  The
+// worker and encounter-header/roster reads are separate from each candidate's
+// fresh proof read.  This explicit product is the maximum observer work per
+// native tick; Read's existing fixed-path budget is not changed.
+constexpr std::size_t kGeneratedRosterReadBudget=kCopyLimit;
+constexpr std::size_t kGeneratedRosterTickReadBudget=
+    (1U+kGeneratedRosterEntriesPerTick+kGeneratedRosterCandidateAttemptsPerTick)
+        *kGeneratedRosterReadBudget;
+constexpr std::size_t kGeneratedRosterWorkerBytes=0x970U;
+constexpr std::size_t kGeneratedRosterSourceBytes=0x150U;
+constexpr std::size_t kGeneratedRosterParentBytes=0x28U;
+constexpr std::size_t kGeneratedRosterEntityBytes=0x50U;
+constexpr std::size_t kGeneratedRosterSceneBytes=8U;
+constexpr std::size_t kGeneratedRosterArrayHeaderBytes=20U;
+constexpr std::int64_t kGeneratedRosterRowsHeaderOffset=0x118LL;
+constexpr std::int64_t kGeneratedRosterPaletteRowsHeaderOffset=0x114LL;
+constexpr std::int64_t kGeneratedRosterPaletteFirstRowOffset=0x128LL;
+constexpr std::int64_t kGeneratedRosterSourceCountOffset=0x100LL;
+constexpr std::int64_t kGeneratedRosterSourceRowsOffset=0x108LL;
+constexpr std::int64_t kGeneratedRosterWorkerEntryCountOffset=0x924LL;
+constexpr std::int64_t kGeneratedRosterWorkerEntryCapacityOffset=0x850LL;
+constexpr std::int64_t kGeneratedRosterWorkerEntriesOffset=0x858LL;
+constexpr std::int64_t kGeneratedRosterWorkerEntriesBaseOffset=0x868LL;
+constexpr std::int64_t kGeneratedRosterWorkerSeedOffset=generatedIdentity::kWorkerEffectiveSeedOffset;
+constexpr std::int64_t kGeneratedRosterWorkerResourceOffset=0x96CL;
+constexpr std::int64_t kGeneratedRosterWorkerSelfOffset=0x24LL;
+constexpr std::int64_t kGeneratedRosterSourceWorkerOffset=0x148LL;
+constexpr std::int64_t kGeneratedRosterSourceEntryOffset=0x14CL;
+constexpr std::int64_t kGeneratedRosterSourceDefinitionOffset=0x0LL;
+constexpr std::int64_t kGeneratedRosterDefinitionRuntimeOffset=0x8LL;
+constexpr std::int64_t kGeneratedRosterDefinitionRowCountOffset=0x110LL;
+constexpr std::int64_t kGeneratedRosterDefinitionRowsOffset=0x118LL;
+constexpr std::int64_t kGeneratedRosterActorSceneOffset=0x4CL;
+constexpr std::int64_t kGeneratedRosterEntitySelfOffset=0x0CL;
+constexpr std::int64_t kGeneratedRosterScenePrefabOffset=0x4LL;
+constexpr std::int64_t kGeneratedRosterParentSelfOffset=0x24LL;
+constexpr std::int64_t kGeneratedRosterParentActorOffset=0x1470LL;
+constexpr std::uint32_t kGeneratedRosterParentClass=0x808082ECU;
+constexpr std::array<std::byte,16> kGeneratedRosterGetterPrefix{
+    std::byte{0x48},std::byte{0x89},std::byte{0x5C},std::byte{0x24},std::byte{0x08},
+    std::byte{0x48},std::byte{0x89},std::byte{0x6C},std::byte{0x24},std::byte{0x10},
+    std::byte{0x48},std::byte{0x89},std::byte{0x74},std::byte{0x24},std::byte{0x18},
+    std::byte{0x57}};
+
+void sync_generated_roster_cache(std::uint64_t epochValue) noexcept {
+    if(g_generatedRosterCacheEpoch.load(std::memory_order_acquire)==epochValue) return;
+    std::array<generatedRoster::Provenance,generatedRoster::kMaximumCachedActors> snapshot{};
+    std::size_t count{};
+    {
+        std::lock_guard lock(g_generatedRosterCacheMutex);
+        count=g_generatedRosterCache.snapshot(snapshot);
+    }
+    // Do not call the mailbox while holding the cache lock.  Active
+    // provenance survives unrelated epoch changes; only released leases are
+    // pruned, so a roster absence can never become a death.
+    for(std::size_t i=0;i<count;++i) {
+        if(nativeEvents::has_lease(snapshot[i].lease)) continue;
+        std::lock_guard lock(g_generatedRosterCacheMutex);
+        g_generatedRosterCache.erase(snapshot[i].actorHandle,snapshot[i].entityHandle,
+            snapshot[i].parentHandle,snapshot[i].lease);
+    }
+    g_generatedRosterCacheEpoch.store(epochValue,std::memory_order_release);
+}
+
+bool cached_generated_source(const Actor& actorState,SourceIdentity& output) noexcept {
+    const auto epochValue=nativeEvents::generator_epoch();
+    sync_generated_roster_cache(epochValue);
+    generatedRoster::Provenance provenance{};
+    {
+        std::lock_guard lock(g_generatedRosterCacheMutex);
+        if(!g_generatedRosterCache.find(actorState.handle,actorState.entity,actorState.parent,provenance)) return false;
+    }
+    if(!nativeEvents::has_lease(provenance.lease)) return false;
+    output.lease=provenance.lease;output.sourceHandle=provenance.sourceHandle;
+    output.memberPrefabTag=provenance.memberPrefabTag;output.completionGroup=provenance.completionGroup;
+    return true;
+}
+
+// Caller owns g_pendingMutex.  This is only a retained native health witness;
+// it has no lease and cannot publish a death until roster admission supplies
+// the authoritative generated lease.
+void discard_early_generated_death(std::uint32_t actor,std::uint32_t entity,
+    std::uint32_t parent) noexcept {
+    for(std::size_t i=0;i<g_earlyGeneratedDeathCount;) {
+        const auto& witness=g_earlyGeneratedDeaths[i];
+        if(witness.actor==actor && witness.entity==entity && witness.parent==parent)
+            g_earlyGeneratedDeaths[i]=g_earlyGeneratedDeaths[--g_earlyGeneratedDeathCount];
+        else ++i;
+    }
+}
+
+void retain_early_generated_death(std::uint32_t actor,std::uint32_t entity,
+    std::uint32_t parent,std::uint8_t healthFlags,std::uint64_t epochValue) noexcept {
+    if(!epochValue) return;
+    for(std::size_t i=0;i<g_earlyGeneratedDeathCount;++i) {
+        const auto& witness=g_earlyGeneratedDeaths[i];
+        if(witness.actor==actor && witness.entity==entity && witness.parent==parent) return;
+    }
+    if(g_earlyGeneratedDeathCount==g_earlyGeneratedDeaths.size()) {
+        for(std::size_t i=1;i<g_earlyGeneratedDeathCount;++i)
+            g_earlyGeneratedDeaths[i-1]=g_earlyGeneratedDeaths[i];
+        --g_earlyGeneratedDeathCount;
+    }
+    g_earlyGeneratedDeaths[g_earlyGeneratedDeathCount++]={actor,entity,parent,healthFlags,epochValue};
+}
+
+// Caller owns g_pendingMutex.  Admission is already queued before this
+// function runs, preserving admitted-before-died ordering for an early kill.
+void flush_early_generated_death(const generatedRoster::Provenance& provenance,
+    std::uint64_t epochValue) noexcept {
+    const auto currentEpoch=nativeEvents::generator_epoch();
+    for(std::size_t i=0;i<g_earlyGeneratedDeathCount;) {
+        const auto& witness=g_earlyGeneratedDeaths[i];
+        if(!generatedRoster::current_early_death_epoch(witness.epoch,epochValue,currentEpoch)) {
+            g_earlyGeneratedDeaths[i]=g_earlyGeneratedDeaths[--g_earlyGeneratedDeathCount];
+            continue;
+        }
+        if(witness.actor!=provenance.actorHandle || witness.entity!=provenance.entityHandle
+            || witness.parent!=provenance.parentHandle) { ++i;continue; }
+        const bool healthDeath=omega_enemy_native_health::death(true,0x80804C54U,true,
+            witness.healthFlags,provenance.lease.source.generation,
+            provenance.lease.source.generation);
+        if(!healthDeath) { ++i;continue; }
+        nativeEvents::Event death{};death.lease=provenance.lease;
+        death.actor={provenance.lease.source,provenance.actorHandle,provenance.entityHandle};
+        death.sourceHandle=provenance.sourceHandle;death.kind=nativeEvents::Kind::died;
+        death.memberPrefabTag=provenance.memberPrefabTag;
+        death.completionGroup=provenance.completionGroup;
+        const bool accepted=nativeEvents::submit(death,epochValue);
+        if(!accepted && nativeEvents::has_lease(death.lease)) nativeEvents::observation_lost();
+        g_earlyGeneratedDeaths[i]=g_earlyGeneratedDeaths[--g_earlyGeneratedDeathCount];
+    }
+}
+
+bool encounter_source_reference(Read& read,std::uint32_t encounterHandle,Ref& output) noexcept {
+    output={};
+    std::array<std::byte,kGeneratedRosterGetterPrefix.size()> prefix{};
+    if(!read.copy(g_image+0x4F0290,prefix) || prefix!=kGeneratedRosterGetterPrefix) return false;
+    using Getter=std::uint8_t(__fastcall*)(std::uint32_t,Ref*) noexcept;
+    __try {
+        if(reinterpret_cast<Getter>(g_image+0x4F0290)(encounterHandle,&output)==0) return false;
+    }
+    __except(EXCEPTION_EXECUTE_HANDLER) { return false; }
+    // 4F0290 returns the source definition reference.  Its resolved object
+    // carries the runtime source header checked by the caller.
+    return generatedRoster::valid_getter_reference(output);
+}
+
+bool generated_worker(Read& read,std::uintptr_t workerAddress,generatedRoster::WorkerTuple& tuple,
+    std::uint32_t& workerSelf,std::int32_t& entryCount,std::uintptr_t& entriesAddress,
+    std::array<std::byte,kGeneratedRosterWorkerBytes>& workerBytes) noexcept {
+    if(workerAddress<0x10000 || workerAddress>UINTPTR_MAX-kGeneratedRosterWorkerBytes
+        || !read.copy(workerAddress,workerBytes)
+        || generatedIdentity::field<std::uint32_t>(workerBytes,4)!=generatedIdentity::kWorkerRuntimeClass) return false;
+    const auto workerDefinition=generatedIdentity::field<Ref>(workerBytes,0);
+    workerSelf=generatedIdentity::field<std::uint32_t>(workerBytes,kGeneratedRosterWorkerSelfOffset);
+    const auto seed=generatedIdentity::field<std::uint32_t>(workerBytes,kGeneratedRosterWorkerSeedOffset);
+    const auto resourceTag=generatedIdentity::field<std::uint32_t>(workerBytes,kGeneratedRosterWorkerResourceOffset);
+    const auto entryCapacity=generatedIdentity::field<std::int32_t>(workerBytes,kGeneratedRosterWorkerEntryCapacityOffset);
+    entryCount=generatedIdentity::field<std::int32_t>(workerBytes,kGeneratedRosterWorkerEntryCountOffset);
+    if(workerSelf==generatedRoster::kInvalidHandle || workerDefinition.handle==generatedRoster::kInvalidHandle
+        || workerDefinition.kind!=generatedIdentity::kWorkerRuntimeClass || workerDefinition.offset<=0
+        || workerDefinition.offset>=generatedIdentity::kMaximumResourceOffset || (workerDefinition.offset&3)!=0
+        || !seed || seed==generatedRoster::kInvalidHandle || !resourceTag || resourceTag==generatedRoster::kInvalidHandle
+        || entryCapacity<1 || entryCapacity>4096 || entryCount<0 || entryCount>entryCapacity) return false;
+    std::uintptr_t workerDefinitionAddress{};
+    if(!read.resolve(workerDefinition,workerDefinitionAddress)
+        || workerDefinitionAddress>UINTPTR_MAX-0x28U) return false;
+    std::array<std::byte,kGeneratedRosterParentBytes> definitionHeader{};
+    if(!read.copy(workerDefinitionAddress,definitionHeader)
+        || generatedIdentity::field<std::uint32_t>(definitionHeader,0)!=workerDefinition.handle
+        || generatedIdentity::field<std::uint32_t>(definitionHeader,4)!=generatedIdentity::kWorkerReferenceClass) return false;
+    const auto entriesRelative=generatedIdentity::field<std::int64_t>(workerBytes,kGeneratedRosterWorkerEntriesOffset);
+    return add(workerAddress,entriesRelative,entriesAddress)
+        && add(entriesAddress,kGeneratedRosterWorkerEntriesBaseOffset,entriesAddress)
+        && (tuple={resourceTag,seed,workerDefinition.handle,static_cast<std::uint32_t>(workerDefinition.offset)},true);
+}
+
+bool generated_palette_member(Read& read,
+    const std::array<std::byte,kGeneratedRosterSourceBytes>& source,std::int32_t rowIndex,
+    std::uint32_t& paletteTag,std::uint32_t& paletteOffset,std::uint32_t& rowCount,
+    std::uint32_t& memberPrefabTag,std::uint32_t& completionGroup) noexcept {
+    const auto paletteDefinition=generatedIdentity::field<Ref>(source,0);
+    const auto sourceCount=generatedIdentity::field<std::int64_t>(source,0xC0);
+    const auto sourceRowsRelative=generatedIdentity::field<std::int64_t>(source,0xC8);
+    if(paletteDefinition.handle==generatedRoster::kInvalidHandle
+        || paletteDefinition.kind!=generatedIdentity::kSourceRuntimeClass
+        || paletteDefinition.offset<=0 || paletteDefinition.offset>=generatedIdentity::kMaximumResourceOffset
+        || sourceCount<1 || sourceCount>512 || sourceRowsRelative<0
+        || sourceRowsRelative>=generatedIdentity::kMaximumResourceOffset) return false;
+    std::uintptr_t definitionAddress{};
+    if(!read.resolve(paletteDefinition,definitionAddress)
+        || definitionAddress>UINTPTR_MAX-0x120U) return false;
+    std::array<std::byte,0x120> definition{};
+    if(!read.copy(definitionAddress,definition)
+        || generatedIdentity::field<std::uint32_t>(definition,0)!=paletteDefinition.handle
+        || generatedIdentity::field<std::uint32_t>(definition,4)!=generatedIdentity::kSourceDefinitionClass) return false;
+    const auto definitionRuntimeOffset=generatedIdentity::field<std::int64_t>(definition,kGeneratedRosterDefinitionRuntimeOffset);
+    const auto authoredRowCount=generatedIdentity::field<std::int64_t>(definition,kGeneratedRosterDefinitionRowCountOffset);
+    const auto actorRowsRelative=generatedIdentity::field<std::int64_t>(definition,kGeneratedRosterDefinitionRowsOffset);
+    if(authoredRowCount<1 || authoredRowCount>512 || authoredRowCount!=sourceCount
+        || definitionRuntimeOffset<0 || definitionRuntimeOffset>=generatedIdentity::kMaximumResourceOffset
+        || actorRowsRelative<0 || actorRowsRelative>=generatedIdentity::kMaximumResourceOffset
+        || rowIndex<0 || rowIndex>=authoredRowCount) return false;
+    if(paletteDefinition.offset>generatedIdentity::kMaximumResourceOffset
+        -kGeneratedRosterPaletteFirstRowOffset-actorRowsRelative) return false;
+    std::uintptr_t arrayHeaderAddress{};
+    if(!add(definitionAddress,actorRowsRelative,arrayHeaderAddress)
+        || !add(arrayHeaderAddress,kGeneratedRosterPaletteRowsHeaderOffset,arrayHeaderAddress)
+        || arrayHeaderAddress>UINTPTR_MAX-kGeneratedRosterArrayHeaderBytes) return false;
+    std::array<std::byte,kGeneratedRosterArrayHeaderBytes> arrayHeader{};
+    if(!read.copy(arrayHeaderAddress,arrayHeader)
+        || generatedIdentity::field<std::uint32_t>(arrayHeader,0)!=generatedIdentity::kArrayHeaderMarker
+        || generatedIdentity::field<std::uint64_t>(arrayHeader,4)!=static_cast<std::uint64_t>(authoredRowCount)
+        || generatedIdentity::field<std::uint32_t>(arrayHeader,12)!=generatedIdentity::kPaletteArrayElementClass) return false;
+    std::uintptr_t firstRows{};
+    if(!add(arrayHeaderAddress,0x14,firstRows)
+        || !add(firstRows,static_cast<std::int64_t>(rowIndex)*generatedRoster::kActorRowStride,firstRows)
+        || firstRows>UINTPTR_MAX-generatedRoster::kActorRowStride) return false;
+    std::array<std::byte,generatedRoster::kActorRowStride> actorRow{};
+    if(!read.copy(firstRows,actorRow)) return false;
+    const auto rowReference=generatedIdentity::field<Ref>(actorRow,0);
+    const auto expectedRowReferenceOffset=definitionRuntimeOffset+sourceRowsRelative
+        +generatedIdentity::kActorRowReferenceBaseOffset
+        +static_cast<std::int64_t>(rowIndex)*generatedIdentity::kActorRowReferenceStride;
+    if(expectedRowReferenceOffset<=0 || expectedRowReferenceOffset>=generatedIdentity::kMaximumResourceOffset
+        || rowReference.kind!=generatedIdentity::kPaletteRowReferenceClass
+        || rowReference.handle!=paletteDefinition.handle || rowReference.offset!=expectedRowReferenceOffset) return false;
+    paletteTag=paletteDefinition.handle;paletteOffset=static_cast<std::uint32_t>(paletteDefinition.offset);
+    rowCount=static_cast<std::uint32_t>(authoredRowCount);
+    // The authored member/prefab field is the row's +0x10 value; it is only
+    // copied as evidence and is never assigned to the native actor.
+    memberPrefabTag=generatedIdentity::field<std::uint32_t>(actorRow,0x10);
+    completionGroup=generatedIdentity::field<std::uint32_t>(actorRow,0xA8);
+    return memberPrefabTag!=0 && memberPrefabTag!=generatedRoster::kInvalidHandle
+        && memberPrefabTag!=generatedRoster::kInvalidNativeTag;
+}
+
+bool generated_links(Read& read,const generatedRoster::RosterRow& row,std::uint32_t actorRowCount,
+    generatedRoster::LinkEvidence& evidence,Actor& actorState) noexcept {
+    if(!actor(read,row.actorHandle,actorState) || actorState.entity==generatedRoster::kInvalidHandle
+        || actorState.parent==generatedRoster::kInvalidHandle) return false;
+    std::uintptr_t parentAddress{};
+    std::array<std::byte,0x30> parent{};std::uint32_t parentActor{};
+    if(!read.resolve({actorState.parent,0,0},parentAddress) || parentAddress>UINTPTR_MAX-0x1470
+        || !read.copy(parentAddress,parent) || !read.value(parentAddress+kGeneratedRosterParentActorOffset,parentActor)) return false;
+    std::uintptr_t entityAddress{};std::array<std::byte,kGeneratedRosterEntityBytes> entity{};
+    if(!read.resolve({actorState.entity,0,0},entityAddress) || entityAddress>UINTPTR_MAX-kGeneratedRosterEntityBytes
+        || !read.copy(entityAddress,entity)) return false;
+    const auto sceneHandle=generatedIdentity::field<std::uint32_t>(entity,kGeneratedRosterActorSceneOffset);
+    std::uintptr_t sceneAddress{};std::array<std::byte,kGeneratedRosterSceneBytes> scene{};
+    if(!read.resolve({sceneHandle,0,0},sceneAddress) || !read.copy(sceneAddress,scene)) return false;
+    evidence.row=row;evidence.actorRowCount=actorRowCount;evidence.actorHandle=actorState.handle;
+    evidence.actorSelf=actorState.self;evidence.actorParent=actorState.parent;
+    evidence.entityHandle=actorState.entity;evidence.entitySelf=generatedIdentity::field<std::uint32_t>(entity,0xC);
+    evidence.parentSelf=generatedIdentity::field<std::uint32_t>(parent,0x24);
+    evidence.parentEntity=generatedIdentity::field<std::uint32_t>(parent,0x2C);
+    evidence.parentActor=parentActor;evidence.sceneHandle=sceneHandle;
+    evidence.scenePrefab=generatedIdentity::field<std::uint32_t>(scene,4);
+    return evidence.parentSelf!=generatedRoster::kInvalidHandle
+        && generatedIdentity::field<std::uint32_t>(parent,4)==kGeneratedRosterParentClass
+        && generatedRoster::qualifies(evidence);
+}
+
+bool generated_row_stable(Read& read,std::uintptr_t workerAddress,std::uint32_t workerSelf,
+    const generatedRoster::WorkerTuple& tuple,std::uintptr_t sourceAddress,const Ref& sourceReference,
+    std::uint32_t encounterHandle,std::uint32_t entryIndex,std::uint32_t rosterIndex,
+    const generatedRoster::RosterRow& expectedRow,
+    std::uint32_t paletteTag,std::uint32_t paletteOffset,const nativeEvents::Lease& lease) noexcept {
+    std::uint32_t currentSelf{},currentSeed{},currentResource{};Ref currentDefinition{};
+    if(!read.value(workerAddress+kGeneratedRosterWorkerSelfOffset,currentSelf)
+        || !read.value(workerAddress+kGeneratedRosterWorkerSeedOffset,currentSeed)
+        || !read.value(workerAddress+kGeneratedRosterWorkerResourceOffset,currentResource)
+        || !read.copy(workerAddress,std::as_writable_bytes(std::span{&currentDefinition,std::size_t{1}}))
+        || currentSelf!=workerSelf || currentSeed!=tuple.seed || currentResource!=tuple.resourceTag
+        || currentDefinition.handle!=tuple.workerDefinitionTag
+        || currentDefinition.offset!=static_cast<std::int64_t>(tuple.workerDefinitionOffset)) return false;
+    std::array<std::byte,kGeneratedRosterSourceBytes> source{};
+    if(!read.copy(sourceAddress,source) || !generatedRoster::valid_runtime_source_header(generatedIdentity::field<std::uint32_t>(source,4))
+        || generatedIdentity::field<std::uint32_t>(source,kGeneratedRosterSourceWorkerOffset)!=workerSelf
+        || generatedIdentity::field<std::int32_t>(source,kGeneratedRosterSourceEntryOffset)!=static_cast<std::int32_t>(entryIndex)) return false;
+    Ref currentSource{};
+    if(!encounter_source_reference(read,encounterHandle,currentSource)
+        || currentSource.handle!=sourceReference.handle || currentSource.kind!=sourceReference.kind
+        || currentSource.offset!=sourceReference.offset) return false;
+    const auto slots=generatedIdentity::field<std::int32_t>(source,kGeneratedRosterSourceCountOffset);
+    const auto rowsRelative=generatedIdentity::field<std::int64_t>(source,kGeneratedRosterSourceRowsOffset);
+    if(slots<1 || slots>static_cast<std::int32_t>(generatedRoster::kMaximumRosterSlots)
+        || expectedRow.authoredActorRow<0 || rowsRelative<0) return false;
+    std::uintptr_t rowAddress{};
+    if(!add(sourceAddress,rowsRelative+kGeneratedRosterRowsHeaderOffset,rowAddress)
+        || !add(rowAddress,static_cast<std::int64_t>(rosterIndex)*generatedRoster::kRosterRowStride,rowAddress)) return false;
+    std::array<std::byte,generatedRoster::kRosterRowStride> row{};
+    if(!read.copy(rowAddress,row)) return false;
+    const generatedRoster::RosterRow current{generatedIdentity::field<std::uint32_t>(row,0),
+        generatedIdentity::field<std::uint32_t>(row,4),generatedIdentity::field<std::int32_t>(row,8)};
+    if(current!=expectedRow) return false;
+    const auto currentLease=nativeEvents::lookup_generated(tuple.resourceTag,tuple.seed,tuple.workerDefinitionTag,
+        tuple.workerDefinitionOffset,paletteTag,paletteOffset);
+    return currentLease==lease && nativeEvents::has_lease(lease);
+}
+
+struct GeneratedRosterCandidate final { generatedRoster::Provenance provenance{}; };
+constexpr std::size_t kGeneratedRosterCandidateCapacity=
+    generatedRoster::kMaximumRosterSlots*kGeneratedRosterEntriesPerTick;
+
+GeneratedRosterWorker& select_generated_roster_worker(std::uint32_t self,std::uint64_t now) noexcept {
+    GeneratedRosterWorker* selected{};
+    for(auto& worker:g_generatedRosterWorkers) if(worker.self==self) { selected=&worker;break; }
+    if(!selected) {
+        for(auto& worker:g_generatedRosterWorkers) if(worker.self==generatedRoster::kInvalidHandle) { selected=&worker;break; }
+    }
+    if(!selected) {
+        selected=&g_generatedRosterWorkers.front();
+        for(auto& worker:g_generatedRosterWorkers) if(worker.lastSeen<selected->lastSeen) selected=&worker;
+        *selected={};
+    }
+    if(selected->self!=self) { *selected={};selected->self=self; }
+    selected->lastSeen=now;return *selected;
+}
+
+bool cached_generated_roster_row(const generatedRoster::RosterRow& row,
+    const Ref& sourceReference,std::uint32_t workerSelf,std::uint32_t entryIndex,
+    std::uint64_t epochValue,generatedRoster::Provenance& provenance) noexcept {
+    sync_generated_roster_cache(epochValue);
+    {
+        std::lock_guard lock(g_generatedRosterCacheMutex);
+        if(!g_generatedRosterCache.find_matching(row.actorHandle,row.nativeSpawnId,
+            static_cast<std::uint32_t>(row.authoredActorRow),sourceReference.handle,
+            sourceReference.kind,sourceReference.offset,workerSelf,entryIndex,provenance)) return false;
+    }
+    return nativeEvents::has_lease(provenance.lease);
+}
+
+std::size_t sample_generated_roster(void* workerInstance,std::uint64_t epochValue,
+    std::array<GeneratedRosterCandidate,kGeneratedRosterCandidateCapacity>& output) noexcept {
+    if(!workerInstance || !epochValue) return 0;
+    if(!TryAcquireSRWLockExclusive(&g_generatedRosterWorkerLock)) return 0;
+    Read workerRead;std::array<std::byte,kGeneratedRosterWorkerBytes> workerBytes{};
+    generatedRoster::WorkerTuple tuple{};std::uint32_t workerSelf{};std::int32_t entryCount{};std::uintptr_t entries{};
+    const auto workerAddress=reinterpret_cast<std::uintptr_t>(workerInstance);
+    if(!generated_worker(workerRead,workerAddress,tuple,workerSelf,entryCount,entries,workerBytes)
+        || !nativeEvents::has_generator(tuple.resourceTag,tuple.seed,tuple.workerDefinitionTag,tuple.workerDefinitionOffset)) {
+        ReleaseSRWLockExclusive(&g_generatedRosterWorkerLock);return 0;
+    }
+    auto& workerState=select_generated_roster_worker(workerSelf,GetTickCount64());
+    workerState.cursor.synchronize(workerSelf,tuple);
+    std::size_t found{};
+    std::size_t qualificationAttempts{};
+    for(std::size_t visited=0;visited<kGeneratedRosterEntriesPerTick && entryCount>0;++visited) {
+        const auto entryIndex=workerState.cursor.select_entry(static_cast<std::uint32_t>(entryCount));
+        if(entryIndex==generatedRoster::kInvalidHandle) continue;
+        // Keep the one worker read above separate from each selected
+        // encounter's header/source/full bounded roster read.
+        Read encounterRead;
+        std::uintptr_t entryAddress{};
+        if(!add(entries,static_cast<std::int64_t>(entryIndex)*generatedRoster::kEntryStride,entryAddress)) continue;
+        std::array<std::byte,generatedRoster::kEntryStride> entry{};
+        if(!encounterRead.copy(entryAddress,entry) || generatedIdentity::field<std::uint8_t>(entry,0x18)!=0) continue;
+        const auto encounterHandle=generatedIdentity::field<std::uint32_t>(entry,0x34);
+        if(encounterHandle==generatedRoster::kInvalidHandle) continue;
+        Ref sourceReference{};std::uintptr_t sourceAddress{};
+        if(!encounter_source_reference(encounterRead,encounterHandle,sourceReference)
+            || !encounterRead.resolve(sourceReference,sourceAddress) || sourceAddress>UINTPTR_MAX-kGeneratedRosterSourceBytes) continue;
+        std::array<std::byte,kGeneratedRosterSourceBytes> source{};
+        if(!encounterRead.copy(sourceAddress,source)
+            || !generatedRoster::valid_runtime_source_header(generatedIdentity::field<std::uint32_t>(source,4))
+            || generatedIdentity::field<std::uint32_t>(source,kGeneratedRosterSourceWorkerOffset)!=workerSelf
+            || generatedIdentity::field<std::int32_t>(source,kGeneratedRosterSourceEntryOffset)!=static_cast<std::int32_t>(entryIndex)) continue;
+        const auto slots=generatedIdentity::field<std::int32_t>(source,kGeneratedRosterSourceCountOffset);
+        const auto rowsRelative=generatedIdentity::field<std::int64_t>(source,kGeneratedRosterSourceRowsOffset);
+        if(slots<1 || slots>static_cast<std::int32_t>(generatedRoster::kMaximumRosterSlots) || rowsRelative<0) continue;
+        std::uintptr_t firstRowAddress{};
+        constexpr auto rosterBytes=generatedRoster::kMaximumRosterSlots*generatedRoster::kRosterRowStride;
+        if(!add(sourceAddress,rowsRelative+kGeneratedRosterRowsHeaderOffset,firstRowAddress)
+            || firstRowAddress>UINTPTR_MAX-rosterBytes) continue;
+        std::array<std::byte,rosterBytes> roster{};
+        if(!encounterRead.copy(firstRowAddress,roster)) continue;
+        const auto rowCount=static_cast<std::uint32_t>(slots);
+        const auto initialRow=workerState.cursor.row_cursor(entryIndex,rowCount);
+        if(initialRow==generatedRoster::kInvalidHandle) continue;
+        for(std::uint32_t rowVisits=0;rowVisits<rowCount;++rowVisits) {
+            const auto rosterIndex=workerState.cursor.row_cursor(entryIndex,rowCount);
+            if(rosterIndex==generatedRoster::kInvalidHandle) break;
+            std::array<std::byte,generatedRoster::kRosterRowStride> rowBytes{};
+            std::memcpy(rowBytes.data(),roster.data()+static_cast<std::size_t>(rosterIndex)*generatedRoster::kRosterRowStride,
+                rowBytes.size());
+            const generatedRoster::RosterRow row{generatedIdentity::field<std::uint32_t>(rowBytes,0),
+                generatedIdentity::field<std::uint32_t>(rowBytes,4),generatedIdentity::field<std::int32_t>(rowBytes,8)};
+            if(!generatedRoster::valid_row(row,generatedRoster::kMaximumAuthoredRows)) {
+                workerState.cursor.advance_row(entryIndex,rowCount);continue;
+            }
+            generatedRoster::Provenance cached{};
+            if(cached_generated_roster_row(row,sourceReference,workerSelf,entryIndex,epochValue,cached)) {
+                // A cache hit is only a skip. It does not re-emit admission or
+                // flush a death witness; the original admission already did so.
+                workerState.cursor.advance_row(entryIndex,rowCount);continue;
+            }
+            if(qualificationAttempts>=kGeneratedRosterCandidateAttemptsPerTick) break;
+            ++qualificationAttempts; // Failed proof attempts consume budget too.
+            Read candidateRead;
+            std::uint32_t paletteTag{},paletteOffset{},actorRowCount{},memberPrefab{},completionGroup{};
+            if(!generated_palette_member(candidateRead,source,row.authoredActorRow,paletteTag,paletteOffset,actorRowCount,memberPrefab,completionGroup)) {
+                workerState.cursor.advance_row(entryIndex,static_cast<std::uint32_t>(slots));continue;
+            }
+            const auto lease=nativeEvents::lookup_generated(tuple.resourceTag,tuple.seed,tuple.workerDefinitionTag,
+                tuple.workerDefinitionOffset,paletteTag,paletteOffset);
+            if(!lease.activity || !lease.source.valid()) {
+                workerState.cursor.advance_row(entryIndex,static_cast<std::uint32_t>(slots));continue;
+            }
+            generatedRoster::LinkEvidence evidence{};evidence.worker=tuple;evidence.expectedWorker=tuple;
+            evidence.workerSelf=workerSelf;evidence.expectedWorkerSelf=workerSelf;evidence.entryIndex=entryIndex;
+            evidence.expectedEntryIndex=entryIndex;evidence.authoredPrefab=memberPrefab;
+            Actor actorState{};
+            if(!generated_links(candidateRead,row,actorRowCount,evidence,actorState)
+                || !generated_row_stable(candidateRead,workerAddress,workerSelf,tuple,sourceAddress,sourceReference,encounterHandle,
+                    entryIndex,rosterIndex,row,paletteTag,paletteOffset,lease)) {
+                workerState.cursor.advance_row(entryIndex,static_cast<std::uint32_t>(slots));continue;
+            }
+            // Repeat actor/entity/parent/scene proof after the stability read.
+            if(!generated_links(candidateRead,row,actorRowCount,evidence,actorState)
+                || !generated_row_stable(candidateRead,workerAddress,workerSelf,tuple,sourceAddress,sourceReference,encounterHandle,
+                    entryIndex,rosterIndex,row,paletteTag,paletteOffset,lease)) {
+                workerState.cursor.advance_row(entryIndex,static_cast<std::uint32_t>(slots));continue;
+            }
+            if(found>=output.size()) continue;
+            auto& candidate=output[found++].provenance;candidate={};
+            candidate.lease=lease;candidate.sourceHandle=sourceReference.handle;
+            candidate.sourceKind=sourceReference.kind;candidate.sourceOffset=sourceReference.offset;
+            candidate.actorHandle=actorState.handle;candidate.entityHandle=actorState.entity;
+            candidate.parentHandle=actorState.parent;candidate.workerSelf=workerSelf;
+            candidate.entryIndex=entryIndex;candidate.rosterRowIndex=static_cast<std::uint32_t>(rosterIndex);
+            candidate.authoredActorRow=static_cast<std::uint32_t>(row.authoredActorRow);
+            candidate.nativeSpawnId=row.nativeSpawnId;candidate.memberPrefabTag=memberPrefab;
+            candidate.completionGroup=completionGroup;
+            workerState.cursor.advance_row(entryIndex,static_cast<std::uint32_t>(slots));
+        }
+    }
+    ReleaseSRWLockExclusive(&g_generatedRosterWorkerLock);return found;
+}
+
+void emit_generated_roster_admissions(std::span<const GeneratedRosterCandidate> candidates,
+    std::uint64_t epochValue) noexcept {
+    for(const auto& candidate:candidates) {
+        const auto& provenance=candidate.provenance;
+        if(epochValue!=nativeEvents::generator_epoch()) continue;
+        sync_generated_roster_cache(epochValue);
+        std::lock_guard pendingLock(g_pendingMutex);
+        if(epochValue!=nativeEvents::generator_epoch()) continue;
+        generatedRoster::CacheIntake intake{};
+        {
+            std::lock_guard lock(g_generatedRosterCacheMutex);
+            intake=g_generatedRosterCache.observe(provenance);
+        }
+        if(intake==generatedRoster::CacheIntake::duplicate) {
+            flush_early_generated_death(provenance,epochValue);
+            continue;
+        }
+        if(intake!=generatedRoster::CacheIntake::accepted) {
+            if(intake==generatedRoster::CacheIntake::conflict || intake==generatedRoster::CacheIntake::overflow)
+                nativeEvents::observation_lost();
+            continue;
+        }
+        const nativeEvents::Event event{provenance.lease,
+            {provenance.lease.source,provenance.actorHandle,provenance.entityHandle},provenance.sourceHandle,
+            nativeEvents::Kind::admitted,provenance.memberPrefabTag,provenance.completionGroup};
+        if(!nativeEvents::submit(event,epochValue)) {
+            std::lock_guard lock(g_generatedRosterCacheMutex);
+            g_generatedRosterCache.erase(provenance.actorHandle,provenance.entityHandle,provenance.parentHandle,provenance.lease);
+            if(epochValue==nativeEvents::generator_epoch()) nativeEvents::observation_lost();
+            continue;
+        }
+        const auto retained=g_admittedActors.add({event,provenance.parentHandle,nativeEvents::capture(event.lease)});
+        if(retained!=pending::Intake::accepted && retained!=pending::Intake::duplicate) nativeEvents::observation_lost();
+        flush_early_generated_death(provenance,epochValue);
+        observe_vance_contact_admission(event,provenance.parentHandle);
+        native_report("ev=native_population_capture stage=generated_roster_admitted actor=%08X entity=%08X parent=%08X source=%08X row=%u spawn=%08X",
+            provenance.actorHandle,provenance.entityHandle,provenance.parentHandle,provenance.sourceHandle,
+            provenance.authoredActorRow,provenance.nativeSpawnId);
+    }
+}
+void observe_native_generated_population_impl(void* worker) noexcept {
+    const auto epochValue=nativeEvents::generator_epoch();
+    static_assert(kGeneratedRosterTickReadBudget==(1U+kGeneratedRosterEntriesPerTick
+        +kGeneratedRosterCandidateAttemptsPerTick)*kGeneratedRosterReadBudget);
+    std::array<GeneratedRosterCandidate,kGeneratedRosterCandidateCapacity> candidates{};
+    const auto count=sample_generated_roster(worker,epochValue,candidates);
+    if(count && epochValue==nativeEvents::generator_epoch())
+        emit_generated_roster_admissions(std::span{candidates}.first(count),epochValue);
+}
+void retire_generated_roster(std::uint32_t actor,std::uint32_t entity,std::uint32_t parent,
+    const nativeEvents::Lease& lease) noexcept {
+    const auto epochValue=nativeEvents::generator_epoch();
+    {
+        std::lock_guard lock(g_pendingMutex);
+        discard_early_generated_death(actor,entity,parent);
+    }
+    sync_generated_roster_cache(epochValue);
+    std::lock_guard lock(g_generatedRosterCacheMutex);
+    g_generatedRosterCache.erase(actor,entity,parent,lease);
+}
 bool registered_source(Read& read,const Actor& actorState,nativeEvents::Receipt& receipt) noexcept {
     std::uintptr_t address{},definitionAddress{};Ref definition{};std::uint32_t marker{};
     if(actorState.source.kind!=0x80809A3BU || actorState.source.offset!=0
@@ -841,6 +1395,7 @@ void observe_native_candidate(void* instance,std::uint32_t event) noexcept {
     if(vendorPopulation::lifetime::owns(lease)) return;
     // A death can beat the next frame poll. Deliver that actor's captured birth
     // first under the same lock, then its independently qualified native death.
+    forest_candy_drops::observe_death(actorState.entity,address);
     std::lock_guard lock(g_pendingMutex);
     finish_native_admissions(actorState.handle);
     bool admitted{};nativeEvents::Event death{};
@@ -852,6 +1407,52 @@ void observe_native_candidate(void* instance,std::uint32_t event) noexcept {
     }
     if(admitted && !nativeEvents::submit(death,receipt)
         && nativeEvents::capture(lease)==receipt) nativeEvents::observation_lost();
+}
+void observe_generated_candidate(void* instance,std::uint32_t event,std::uint64_t epochValue) noexcept {
+    if(!epochValue) return;
+    Read read;std::array<std::byte,0x3C> eventHeader{};std::array<std::byte,0x38> payload{};
+    std::uint32_t eventDefinition{};
+    if(!event_payload(read,event,eventHeader,payload,eventDefinition) || eventDefinition!=0x80804C54U) return;
+    const auto address=reinterpret_cast<std::uintptr_t>(instance);std::uintptr_t resolved{},healthAddress{};
+    std::array<std::byte,0xC4> character{};Actor actorState;SourceIdentity sourceIdentity;
+    if(address>UINTPTR_MAX-0x2E8 || !read.copy(address,character)
+        || at<std::uint32_t>(character.data()+4)!=0x80806832U
+        || !actor(read,at<std::uint32_t>(character.data()+0xC0),actorState)
+        || actorState.entity==UINT32_MAX || actorState.parent==UINT32_MAX
+        || !read.resolve({at<std::uint32_t>(character.data()+0x24),0,0},resolved) || resolved!=address) return;
+    Ref healthRef{};std::array<std::byte,0x340> health{};
+    if(!omega_enemy_native_health::owner(actorState.entity,at<std::uint32_t>(character.data()+0x2C))
+        || !read.value(address+0x2E8,healthRef) || healthRef.kind!=0x80804BEEU || healthRef.offset!=0
+        || !read.resolve(healthRef,healthAddress) || !read.copy(healthAddress,health)
+        || !omega_enemy_native_health::identity(healthRef.handle,healthRef.kind,healthRef.offset,
+            at<std::uint32_t>(health.data()+4),at<std::uint32_t>(health.data()+0x24),
+            actorState.entity,at<std::uint32_t>(health.data()+0x2C))
+        ) return;
+    const auto healthFlags=at<std::uint8_t>(health.data()+0x338);
+    if(!generated_source(read,actorState,sourceIdentity)) {
+        // Generated actors may have no actor source backlink.  Keep only a
+        // genuine typed-health death witness; the matching roster lease will
+        // provide the owner/generation before a death event is published.
+        if(actorState.source.handle!=UINT32_MAX || (healthFlags&1U)==0) return;
+        // Forest candy: one native drop per witnessed death, before the pending lock (native calls).
+        forest_candy_drops::observe_death(actorState.entity,address);
+        std::lock_guard lock(g_pendingMutex);
+        retain_early_generated_death(actorState.handle,actorState.entity,actorState.parent,healthFlags,epochValue);
+        return;
+    }
+    if(!omega_enemy_native_health::death(true,eventDefinition,true,healthFlags,
+        sourceIdentity.lease.source.generation,sourceIdentity.lease.source.generation)) return;
+    forest_candy_drops::observe_death(actorState.entity,address);
+    // A death can beat the next frame poll. Deliver that actor's captured birth
+    // first under the same lock, then its independently qualified native death.
+    std::lock_guard lock(g_pendingMutex);
+    finish_native_admissions(actorState.handle);
+    const bool generated=sourceIdentity.lease.source.source.type==37;
+    const nativeEvents::Event death{sourceIdentity.lease,
+        {sourceIdentity.lease.source,actorState.handle,actorState.entity},sourceIdentity.sourceHandle,
+        nativeEvents::Kind::died,sourceIdentity.memberPrefabTag,sourceIdentity.completionGroup};
+    if(!nativeEvents::submit(death,epochValue)
+        && !(generated && !nativeEvents::has_lease(death.lease))) nativeEvents::observation_lost();
 }
 __declspec(noinline) std::uint64_t __fastcall admission_hook(void* instance,const void* context) noexcept {
     const hooking::CallGate::Scope scope{g_gate};
@@ -880,6 +1481,7 @@ __declspec(noinline) std::uint64_t __fastcall candidate_hook(void* instance,std:
     const auto original=hooking::await_original(g_candidate);
     if(scope.accepts_side_effects()) {omega_boss_health::observe_native_death(instance,event,scope);}
     if(scope.accepts_side_effects()) {observe_candidate(instance,event,scope);
+        observe_generated_candidate(instance,event,nativeEvents::generator_epoch());
         observe_native_candidate(instance,event);}
     return original(instance,event);
 }
@@ -912,8 +1514,8 @@ __declspec(noinline) void __fastcall retirement_hook(std::uint32_t handle,std::u
         vendorPopulation::poll();
         for(std::size_t i=0;i<g_admittedActors.size();++i) {
             const auto& birth=g_admittedActors[i];if(birth.event.actor.actor!=handle) continue;
-            const auto& source=birth.event.lease.source;Read read;Actor current;
-            qualified=nativeEvents::capture(source.source.definition,source.source.registry,source.source.slot,source.generation)==birth.receipt
+            Read read;Actor current;
+            qualified=nativeEvents::capture(birth.event.lease)==birth.receipt
                 && actor(read,handle,current)
                 && native_population_retirement::identity(birth.event.actor.actor,birth.event.actor.entity,birth.parent,
                     birth.event.sourceHandle,current.handle,current.entity,current.parent,current.source.handle)
@@ -934,6 +1536,8 @@ __declspec(noinline) void __fastcall retirement_hook(std::uint32_t handle,std::u
         Read read;native_population_retirement::Slot after;
         const bool released=retirement_slot(read,handle,after) && native_population_retirement::released(before,after);
         auto event=captured.event;event.kind=nativeEvents::Kind::retired;
+        if(released && event.lease.source.source.type==37)
+            retire_generated_roster(event.actor.actor,event.actor.entity,captured.parent,event.lease);
         std::lock_guard lock(g_pendingMutex);
         const bool vendor=vendorPopulation::lifetime::owns(event.lease);
         const bool accepted=released && (vendor || nativeEvents::submit(event,captured.receipt));
@@ -969,6 +1573,105 @@ void* target(std::uintptr_t rva,const std::array<std::uint8_t,16>& expected) noe
     return reinterpret_cast<void*>(g_image+rva);
 }
 } // namespace
+
+void observe_native_generated_population(void* worker) noexcept {
+    const hooking::CallGate::Scope scope{g_gate};
+    if(!scope.accepts_side_effects())return;
+    // This is after the original tick. State 6 queues the native reset;
+    // 1001FF0 clears pieces/gateways and state 1 settles disabled workers at
+    // state 0. Observe that result instead of treating a sent disable as done.
+    const auto epochValue=nativeEvents::generator_epoch();
+    Read read;generatedRoster::WorkerTuple tuple{};
+    std::array<std::byte,kGeneratedRosterWorkerBytes> bytes{};
+    std::uint32_t self{};std::int32_t count{};std::uintptr_t entries{};
+    std::uint8_t enabled{},state{};
+    if(generated_worker(read,reinterpret_cast<std::uintptr_t>(worker),tuple,self,count,entries,bytes)
+        && read.value(reinterpret_cast<std::uintptr_t>(worker)+0x9BA,enabled)
+        && read.value(reinterpret_cast<std::uintptr_t>(worker)+0x9BC,state)) {
+        const nativeEvents::GeneratorObservation observation{
+            tuple.resourceTag,tuple.seed,tuple.workerDefinitionTag,tuple.workerDefinitionOffset,
+            generatedIdentity::field<std::uint32_t>(bytes,0x2C),count,
+            generatedIdentity::field<std::int32_t>(bytes,0x928),
+            generatedIdentity::field<std::int32_t>(bytes,0x92C),
+            state,enabled!=0};
+        static_cast<void>(nativeEvents::observe_generator(observation,epochValue));
+    }
+    observe_native_generated_population_impl(worker);
+}
+
+std::uint32_t registered_native_forest_owner(void* worker) noexcept {
+    const hooking::CallGate::Scope scope{g_gate};
+    if(!scope.accepts_side_effects() || !worker)return UINT32_MAX;
+    Read read;
+    std::array<std::byte,kGeneratedRosterWorkerBytes> bytes{};
+    generatedRoster::WorkerTuple tuple{};
+    std::uint32_t self{};std::int32_t count{};std::uintptr_t entries{};
+    if(!generated_worker(read,reinterpret_cast<std::uintptr_t>(worker),tuple,self,count,entries,bytes)
+        || !nativeEvents::has_generator(tuple.resourceTag,tuple.seed,
+            tuple.workerDefinitionTag,tuple.workerDefinitionOffset))return UINT32_MAX;
+    const auto owner=generatedIdentity::field<std::uint32_t>(bytes,0x2C);
+    std::uintptr_t pool{};std::uint32_t stride{},identity{},flags{};
+    if(owner==UINT32_MAX || !read.value(g_image+0x1F93428,pool)
+        || !read.value(g_image+0x1F93430,stride) || stride<0x50 || stride>0x100000)
+        return UINT32_MAX;
+    std::uintptr_t entity{};
+    if(!add(pool,static_cast<std::int64_t>(owner&0x1FFFU)*stride,entity)
+        || !read.value(entity+0xC,identity) || identity!=owner
+        || !read.value(entity+4,flags) || (flags&4U))return UINT32_MAX;
+    return owner;
+}
+
+std::size_t registered_native_forest_gate_owners(void* worker,
+    std::span<std::uint32_t> owners) noexcept {
+    const hooking::CallGate::Scope scope{g_gate};
+    if(!scope.accepts_side_effects() || registered_native_forest_owner(worker)==UINT32_MAX)return 0;
+    const auto address=reinterpret_cast<std::uintptr_t>(worker);
+    Read header;std::int32_t count{};std::int64_t relative{};std::uintptr_t gates{};
+    if(!header.value(address+0x92C,count) || count<0 || count>128
+        || !header.value(address+0x890,relative) || !add(address,relative,gates)
+        || !add(gates,0x8A0,gates))return 0;
+    std::size_t used{};
+    for(std::int32_t i=0;i<count;++i) {
+        Read group;std::int32_t parts{};
+        const auto gateway=gates+static_cast<std::uintptr_t>(i)*0x360U;
+        if(!group.value(gateway,parts) || parts<0 || parts>17)continue;
+        for(std::int32_t j=0;j<parts && used<owners.size();++j) {
+            Read read;std::array<std::uint32_t,2> weak{};
+            if(!read.value(gateway+0x10U+static_cast<std::uintptr_t>(j)*0x30U,weak)
+                || weak[1]==UINT32_MAX)continue;
+            // Same serial check as native 352310. A reused entity slot is
+            // not a child of this generator even if its address is readable.
+            const auto handle=weak[1];
+            std::uintptr_t directory{},registry{},metadata{},head{},elements{};
+            std::int32_t directoryStride{};
+            if(!read.value(g_image+0x2439C70,directory) || !read.value(directory,registry)
+                || !read.value(directory+0x10,directoryStride)
+                || directoryStride<=0 || directoryStride>0x1000)continue;
+            const auto index=((static_cast<std::int32_t>(handle)>>31&0x3C00U)|0x3FFU)
+                &(handle>>13)&0xFFFFU;
+            if(!read.value(registry+static_cast<std::uintptr_t>(index)*directoryStride+0x10,metadata)
+                || !metadata || !read.value(metadata,head) || !read.value(metadata+8,elements)
+                || !elements)continue;
+            std::uint16_t capacity{};std::uint32_t offset{},stride{},serial{};
+            if(!read.value(head+0x1C,capacity) || (handle&0x1FFFU)>=capacity
+                || !read.value(metadata+0x1C,offset) || !read.value(metadata+0x20,stride)
+                || !stride || stride>0x100000)continue;
+            std::uintptr_t serialAddress{};
+            if(!add(elements,static_cast<std::int64_t>(offset)
+                +static_cast<std::int64_t>(handle&0x1FFFU)*stride,serialAddress)
+                || !read.value(serialAddress,serial) || serial!=weak[0])continue;
+            std::uintptr_t pool{};std::uint32_t entityStride{},identity{},flags{};
+            if(!read.value(g_image+0x1F93428,pool) || !read.value(g_image+0x1F93430,entityStride)
+                || entityStride<0x50 || entityStride>0x100000)continue;
+            std::uintptr_t entity{};
+            if(!add(pool,static_cast<std::int64_t>(handle&0x1FFFU)*entityStride,entity)
+                || !read.value(entity+0xC,identity) || identity!=handle
+                || !read.value(entity+4,flags) || (flags&4U))continue;
+            owners[used++]=handle;
+        }
+    }
+    return used;
+}
 
 __declspec(noinline) void dispatch_native_population_source(std::uint32_t* instance,std::uint32_t reason,
     const std::byte* authority,NativePopulationDispatch original) noexcept {
@@ -1006,8 +1709,8 @@ __declspec(noinline) void poll_native_population_admissions() noexcept {
     vendorPopulation::poll();
     streaming::prune();
     for(std::size_t i=0;i<g_admittedActors.size();) {
-        const auto& birth=g_admittedActors[i];const auto& source=birth.event.lease.source;
-        if(nativeEvents::capture(source.source.definition,source.source.registry,source.source.slot,source.generation)!=birth.receipt)
+        const auto& birth=g_admittedActors[i];
+        if(nativeEvents::capture(birth.event.lease)!=birth.receipt)
             g_admittedActors.erase(i);
         else {if(!vendorPopulation::lifetime::owns(birth.event.lease)) streaming::remember(birth);++i;}
     }

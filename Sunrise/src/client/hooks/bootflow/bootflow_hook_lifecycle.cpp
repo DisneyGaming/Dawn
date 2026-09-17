@@ -1,4 +1,5 @@
 #include "hijacked_placements.h"
+#include "forest_candy_drops.h"
 #include "bootflow_hook_lifecycle.h"
 
 #include <Windows.h>
@@ -129,7 +130,7 @@ void report_omega_experiment_manifest(const core::settings::experiments::Omega& 
         "vfx_rebind=%u requested_scene_authority=%u requested_gate_authority=%u "
         "requested_portal_mutation=%u synthetic_stage_machine=%u unsafe_diagnostics=%u "
         "effective_scene_authority=%u effective_gate_authority=%u "
-        "effective_portal_mutation=%u dependency_missing=%u",
+        "effective_portal_mutation=%u dependency_missing=%u forest_candy_drops=%u",
         anyRequested ? "enabled" : "all_off",
         omega.directiveUi ? 1U : 0U,
         omega.ikoraCarrierModelSuppression ? 1U : 0U,
@@ -142,7 +143,8 @@ void report_omega_experiment_manifest(const core::settings::experiments::Omega& 
         effectiveScene ? 1U : 0U,
         effectiveGate ? 1U : 0U,
         effectivePortal ? 1U : 0U,
-        dependencyMissing ? 1U : 0U);
+        dependencyMissing ? 1U : 0U,
+        omega.forestCandyDrops ? 1U : 0U);
     if (written <= 0) {
         return;
     }
@@ -273,6 +275,8 @@ bool install() noexcept {
     const bool gatewayPatrol = gateway_patrol::install();
     const bool eaterReinforcements = eater_reinforcements::install();
     const bool hijackedPlacements = hijacked_placements::install();
+    const bool forestCandyInstalled = omega.forestCandyDrops && forest_candy_drops::install();
+    const bool forestCandy = !omega.forestCandyDrops || forestCandyInstalled;
     const bool omegaLatticeProbe = omega_vex_lattice_probe::install();
     const bool prologueFiller = install_prologue_filler_ready();
     const bool regionPrivate = install_region_private();
@@ -289,7 +293,7 @@ bool install() noexcept {
                         || omegaSceneRetirementInstalled
                         || type31CaptureInstalled || dialogueDispatchProbe || omegaNavigation || omegaLairCinematic
                         || omegaLairReceipts || vanceContactInstalled || ambientNamedPoints || nativeCapture || replicationObserver || omegaCannonReceipt || omegaArcCharge || publicEventParticipant || omegaRescueScenes || trialRevival || trialLifetime || hijackedPlacements
-                        || omegaLatticeProbe || gatewayPatrol || eaterReinforcements
+                        || forestCandyInstalled || omegaLatticeProbe || gatewayPatrol || eaterReinforcements
                         || featureFlagInstalled
                         || prologueFiller || regionPrivate || cleanupOwnerGuard || propertyListGuard || localReconnect
                         || worldStep || spawn || towerfallExecutor || fade;
@@ -304,7 +308,7 @@ bool install() noexcept {
                               && omegaSceneRetirement && type31Capture && dialogueDispatchProbe
                               && omegaNavigation && omegaLairCinematic
                               && omegaLairReceipts && vanceContact && ambientNamedPoints && nativeCapture && omegaCannonReceipt && omegaArcCharge && publicEventParticipant && omegaRescueScenes && trialRevival && trialLifetime && hijackedPlacements
-                              && featureFlag && prologueFiller && regionPrivate
+                              && forestCandy && featureFlag && prologueFiller && regionPrivate
                               && worldStep && spawn && towerfallExecutor && fade && gatewayPatrol && eaterReinforcements;
     // Admission opens only for this fresh lifecycle and before its installed publication. The
     // exclusive lock keeps retail callbacks from observing either half of that publication.
@@ -327,6 +331,7 @@ void quiesce() noexcept {
     quiesce_native_property_list_guard();
     quiesce_local_reconnect();
     hijacked_placements::quiesce();
+    forest_candy_drops::quiesce();
     quiesce_spawn_hold();
     quiesce_towerfall_executor_bootstrap();
     quiesce_omega_navigation();
@@ -394,6 +399,7 @@ bool uninstall() noexcept {
     }
     uninstall_world_step();
     if (!hijacked_placements::uninstall()) { return false; }
+    if (!forest_candy_drops::uninstall()) { return false; }
     uninstall_fade_release();
 
     uninstall_secure_channel_predicate_probe();

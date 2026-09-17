@@ -3,6 +3,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string_view>
 
 #include "../../middleware/datagen/family4/loadout/loadout_resolver.h"
@@ -111,6 +112,11 @@ apply_collection_materials(const AccountState& before,
                            AccountState& after,
                            bool& changed) noexcept;
 [[nodiscard]] bool
+apply_authored_cost(const AccountState& before,
+                    std::span<const build_data::material_requirements::Requirement> cost,
+                    AccountState& after,
+                    bool& changed) noexcept;
+[[nodiscard]] bool
 valid_profile_mutation_shape(const PendingProfileItemAcquisition& mutation) noexcept;
 [[nodiscard]] bool materialize_profile_acquisition(const AccountState& current,
                                                    const PendingProfileItemAcquisition& mutation,
@@ -133,6 +139,16 @@ find_resolved_position(const middleware::datagen::family4::loadout::ResolvedLoad
     CharacterState& after,
     std::size_t& movedItemCount) noexcept;
 [[nodiscard]] bool same_character(const CharacterState& left, const CharacterState& right) noexcept;
+/**
+ * Answers whether one exact ordinary socket lane of one instance offers one plug for insertion:
+ * the definition's curated allowed pool, plus the randomized-set rows the instance owns on a
+ * rolled lane. This is the single rule both the lane resolution and the staging apply, so a plug
+ * the inspection grid shows never resolves to no lane.
+ */
+[[nodiscard]] bool plug_offered_in_lane(const account::inventory::Item& item,
+                                        std::uint16_t itemDefinitionIndex,
+                                        std::uint8_t lane,
+                                        std::uint16_t plugDefinitionIndex) noexcept;
 [[nodiscard]] bool stage_socket_plug(const AccountState& snapshot,
                                      std::size_t characterIndex,
                                      std::uint64_t targetInstanceSoid,

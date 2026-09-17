@@ -79,12 +79,21 @@ bool build_item_rows(const reader::Source& source,
                                                item)) {
             continue;
         }
+        const auto firstStat =
+            item.statCount != 0 && item.statValues[0] >= 0 && item.statValues[0] <= 255
+                ? static_cast<std::uint8_t>(item.statValues[0])
+                : std::uint8_t{0};
+        const auto firstStatRow = item.statCount != 0 ? item.statRows[0] : std::uint8_t{0xFF};
         storage.rows[rowCount++] =
             state::build_data::items::Definition{item.definitionHash,
                                                  item.definitionIndex,
                                                  item.bucketId,
                                                  item.insertionMaterialRequirementSetIndex,
-                                                 item.enabledMaterialRequirementSetIndex};
+                                                 item.enabledMaterialRequirementSetIndex,
+                                                 item.tier,
+                                                 item.plugCategoryHash,
+                                                 firstStat,
+                                                 firstStatRow};
         if (needSocketPlugs) {
             storage.specialPlugCategories[item.definitionIndex] =
                 special_plug_category(item.plugCategoryHash);
@@ -143,9 +152,9 @@ bool build_item_rows(const reader::Source& source,
             }
             if (needSocketPlugs) {
                 (void)socketPlugBuild.append(item,
-                                             std::span<const std::byte>{storage.definition},
-                                             std::span<const std::byte>{storage.plugSetTable},
-                                             table.count);
+                                                   std::span<const std::byte>{storage.definition},
+                                                   std::span<const std::byte>{storage.plugSetTable},
+                                                   table.count);
             }
         }
         if (needDetails) {

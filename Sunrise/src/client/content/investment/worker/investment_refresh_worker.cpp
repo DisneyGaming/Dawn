@@ -6,6 +6,7 @@
 #include "../internal.h"
 #include "../runtime.h"
 #include "../worker.h"
+#include "../../vendors/festival_catalogue.h"
 
 namespace sunrise::client::content::investment::worker {
 namespace {
@@ -39,6 +40,7 @@ void activate() noexcept {
 /** Runs one due bounded refresh slice on the caller-owned game thread. */
 void service(std::uint64_t nowMilliseconds) noexcept {
     AcquireSRWLockExclusive(&g_lifecycleLock);
+    if (g_accepting) vendors::service_festival_catalogue(nowMilliseconds);
     if (!g_accepting || g_complete || !sunrise::client::targets::game::content::is_resolved()
         || nowMilliseconds < g_nextEligible) {
         ReleaseSRWLockExclusive(&g_lifecycleLock);

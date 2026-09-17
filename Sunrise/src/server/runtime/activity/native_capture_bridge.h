@@ -20,6 +20,33 @@ public:
         // observation state before admitting this exact new ticket.
         rows_[count_]={};rows_[count_++].ticket=ticket;return true;
     }
+    // Re-arm one completed capture in place. The old ticket is an
+    // authenticated receipt identity, not merely a lookup key: every field,
+    // including armEpoch, must match the completed row. The new ticket keeps
+    // the physical binding and duration contract while receiving a fresh
+    // native source generation and CoO token.
+    [[nodiscard]] bool rebind(const feedback::Ticket& oldTicket,
+        const feedback::Ticket& newTicket) noexcept {
+        if(!feedback::valid(oldTicket) || !feedback::valid(newTicket)
+            || oldTicket.token==newTicket.token
+            || newTicket.generation<=oldTicket.generation
+            || !samePhysical(oldTicket,newTicket))return false;
+        std::size_t found=count_;
+        for(std::size_t i=0;i<count_;++i) {
+            if(!rows_[i].completed || !feedback::same(rows_[i].ticket,oldTicket))continue;
+            if(found!=count_)return false;
+            found=i;
+        }
+        if(found==count_)return false;
+        for(std::size_t i=0;i<count_;++i)
+            if(i!=found && rows_[i].ticket.source==newTicket.source)return false;
+        for(std::size_t i=0;i<queued_;)
+            if(feedback::same(events_[i].observation.ticket,oldTicket))erase(i);else ++i;
+        rows_[found].ticket=newTicket;
+        rows_[found].first={};rows_[found].sequence=0;rows_[found].ready=false;
+        rows_[found].completed=false;
+        return true;
+    }
     [[nodiscard]] feedback::Ticket lookup(std::uint32_t definition,std::uint32_t registry,std::uint16_t slot) const noexcept {
         const feedback::Ticket* found{};
         for(std::size_t i=0;i<count_;++i) {
@@ -68,6 +95,20 @@ public:
     [[nodiscard]] bool overflow() const noexcept {return overflow_;}
     [[nodiscard]] std::size_t size() const noexcept {return count_;}
 private:
+    [[nodiscard]] static bool samePhysical(const feedback::Ticket& a,
+        const feedback::Ticket& b) noexcept {
+        return a.domain==b.domain && a.source==b.source
+            && a.entityDefinition==b.entityDefinition
+            && a.controllerDefinition==b.controllerDefinition
+            && a.sourceDefinitionOffset==b.sourceDefinitionOffset
+            && a.controllerDefinitionOffset==b.controllerDefinitionOffset
+            && a.clockConfiguration.field0==b.clockConfiguration.field0
+            && std::bit_cast<std::uint32_t>(a.clockConfiguration.timing)
+                ==std::bit_cast<std::uint32_t>(b.clockConfiguration.timing)
+            && a.requested.clock.minimum==b.requested.clock.minimum
+            && a.requested.clock.maximum==b.requested.clock.maximum
+            && a.runIdentity==b.runIdentity;
+    }
     void erase(std::size_t at) noexcept {
         for(std::size_t i=at+1;i<queued_;++i)events_[i-1]=events_[i];
         events_[--queued_]={};
@@ -82,6 +123,16 @@ inline std::uint64_t nextArm{};
 [[nodiscard]] inline bool bind(feedback::Ticket& ticket) noexcept {
     std::lock_guard lock(mutex);if(nextArm==UINT64_MAX)return false;
     ticket.armEpoch=++nextArm;const bool ok=mailbox.bind(ticket);activeCount.store(mailbox.size());return ok;
+}
+[[nodiscard]] inline bool rebind(const feedback::Ticket& oldTicket,
+    feedback::Ticket& newTicket) noexcept {
+    std::lock_guard lock(mutex);
+    if(nextArm==UINT64_MAX)return false;
+    auto candidate=newTicket;
+    candidate.armEpoch=nextArm+1;
+    if(!mailbox.rebind(oldTicket,candidate))return false;
+    nextArm=candidate.armEpoch;newTicket=candidate;
+    activeCount.store(mailbox.size());return true;
 }
 [[nodiscard]] inline feedback::Ticket lookup(std::uint32_t definition,std::uint32_t registry,std::uint16_t slot) noexcept {
     if(!activeCount.load())return {};

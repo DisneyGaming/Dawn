@@ -13,11 +13,13 @@
 // that count and rejects any body whose length disagrees, so the stub's shape can never be
 // accepted. The 8080500C tile array is variable: only tileCount entries are on the wire.
 #pragma once
+#include "../../../middleware/bap/activity_message/native/forest_generator_route.h"
 #include <array>
 #include <bit>
 #include <cstddef>
 #include <cstdint>
 namespace sunrise::state::activity::coo::native_generator {
+namespace wire=middleware::bap::activity_message::native::forest_generator;
 
 // Publication gate. The host refuses any slot that is not an exact type-37 generator, so a caller
 // must match all four before writing (mission_script_lua_slot_api.cpp), and the SDK export carries
@@ -123,6 +125,20 @@ struct Request final {
             |(selectAnchors?kOverrideAnchors:0U));
     }
 };
+
+/** Build the legacy request form from the shared, explicitly selected route. */
+[[nodiscard]] constexpr bool build_route_request(const Request& source,const wire::Route& route,
+                                                 Request& destination) noexcept {
+    wire::State state{};
+    if(!wire::resolve_route(route,state))return false;
+    auto resolved=source;
+    for(std::size_t i=0;i<kAnchorCount;++i)
+        resolved.anchors[i]={state.primary.anchors[i].a,state.primary.anchors[i].b,
+            state.primary.anchors[i].weight,state.primary.anchors[i].active};
+    resolved.selectAnchors=true;
+    destination=resolved;
+    return true;
+}
 
 /** One 8080500B record. Bias arithmetic wraps in 32 bits exactly as the Sunrise encoder's does;
  *  the explicit masks only make the writer's low-bit truncation visible at the call site. */
