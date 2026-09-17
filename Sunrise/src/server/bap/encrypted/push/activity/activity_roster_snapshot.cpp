@@ -14,6 +14,7 @@
 #include <memory>
 #include <new>
 #include "native_roster_lifetime_projection.h"
+#include "tower_spawn_recovery.h"
 #include "native_activity_publisher.h"
 
 #include "../../../../../core/logging/log.h"
@@ -758,6 +759,12 @@ RosterOutcome build_roster_snapshot(Session& session,
             ownsVendor);
         if(role==native_publisher::Role::invalid) {return RosterOutcome::noGroups;}
         if(role==native_publisher::Role::creator) {
+            if(!tower_spawn_recovery::retain_global_bodies(scratch,snapshot.roster,
+                session.activity.rosterLifetimes,session.activity.instance,layout.tag,
+                [](std::uint32_t key,layouts::RosterGroup& group) noexcept {
+                    std::uint16_t index{};
+                    return layouts::find_group_index(key,index) && state::build_data::find_roster_group(index,group);
+                })) {return RosterOutcome::noGroups;}
             if(!vendor_roster::admit(scratch,snapshot.roster,layout.tag,
                 [](std::uint32_t key,layouts::RosterGroup& group) noexcept {
                     std::uint16_t index{};
@@ -1651,6 +1658,11 @@ RosterOutcome build_roster_snapshot(Session& session,
             snapshot.roster, session.activity.rosterLifetimes);
         if(towerVendors && result==roster_lifetime::Result::ready) {
             vendor_roster::retain(session.activity.rosterLifetimes,layout.tag);
+            if(!warmup && session.activity.lineage.owns(session.activity.instance)) {
+                (void)tower_spawn_recovery::project(session.activity.rosterLifetimes,
+                    session.activity.instance,state::activity::mission_run_generation(),
+                    state::activity::tower_spawn_recovery::snapshot());
+            }
         }
         const bool projected = result == roster_lifetime::Result::ready
             && roster_lifetime::project(session.activity.rosterLifetimes, snapshot.roster,

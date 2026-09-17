@@ -1362,6 +1362,7 @@ __declspec(noinline) void __fastcall gate_apply(std::byte* component,
     if (component != nullptr && verbose) {
         log_gate("apply_post", component, count);
     }
+    state::activity::newlight::launchpad::observe_native_shutter_gate(component);
 }
 
 void log_device_setter(const char* channel,

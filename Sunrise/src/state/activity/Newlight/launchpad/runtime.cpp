@@ -18,6 +18,7 @@ std::unique_ptr<coo::script::MissionDocument> document;
 std::uint64_t selectedRun{},nextPublication{};
 coo::StallDiagnostics stalled;
 std::uint32_t lastActive{UINT32_MAX},lastComplete{UINT32_MAX};std::uint8_t lastSection{UINT8_MAX};
+std::uint32_t lastPresentation{UINT32_MAX};
 cinematics::Phase lastCinematic{cinematics::Phase::dormant};
 ghost::Phase lastGhost{ghost::Phase::dormant};std::uint8_t lastGhostNode{UINT8_MAX};
 bool selected() noexcept {return selectedRun && selectedRun==mission_run_generation();}
@@ -67,13 +68,21 @@ bool prepare(std::uint64_t run,bool active) noexcept {
     }
     if(run && selectedRun==run && document && controller.owner().run==run) {return true;}
     if(!load() || !entry.select(document->views(),controller,run,GetTickCount64())) {return false;}
-    selectedRun=run;lastActive=lastComplete=UINT32_MAX;lastSection=UINT8_MAX;lastCinematic=cinematics::Phase::dormant;lastGhost=ghost::Phase::dormant;lastGhostNode=UINT8_MAX;stalled.reset();return true;
+    selectedRun=run;lastActive=lastComplete=lastPresentation=UINT32_MAX;lastSection=UINT8_MAX;lastCinematic=cinematics::Phase::dormant;lastGhost=ghost::Phase::dormant;lastGhostNode=UINT8_MAX;stalled.reset();return true;
 }
 Frame snapshot(std::uint64_t run,std::uint64_t now,bool ready) noexcept {
     poll_readiness(run,now);const std::lock_guard lock(mutex);
     if(!selected() || run!=selectedRun) {return {};}
     const auto f=ready?entry.update(controller,run,now,true):controller.frame();nextPublication=now+100;
     const auto d=controller.diagnostics();
+    if(f.presentation.published && f.presentation.revision!=lastPresentation) {
+        lastPresentation=f.presentation.revision;
+        std::array<char,256> line{};
+        std::snprintf(line.data(),line.size(),"ev=launchpad stage=presentation run=%llu section=%u objective=%08X revision=%u active=%u marker=%08X/%u/%u",
+            static_cast<unsigned long long>(run),f.section,f.presentation.event,f.presentation.revision,f.presentation.active?1U:0U,
+            f.presentation.marker.asset.registry,f.presentation.marker.asset.type,f.presentation.marker.asset.slot);
+        log(line.data());
+    }
     if(f.ghost.phase!=lastGhost || f.ghost.node!=lastGhostNode) {
         lastGhost=f.ghost.phase;lastGhostNode=f.ghost.node;
         std::array<char,192> line{};std::snprintf(line.data(),line.size(),"ev=launchpad stage=ghost phase=%u generation=%u native_graph_node=%u lights_complete=%u",

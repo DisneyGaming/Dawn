@@ -9,6 +9,23 @@ using native::Source;
 using native::Retirement;
 using native::read;
 
+// This player-only registry is shared with the public Divide session. Native
+// world cleanup can retain its private sync records even though it is catalogued
+// inside a bubble rather than among the three top-level groups.
+inline constexpr std::uint32_t kSharedPlayers=0xEAAF16E2U;
+inline constexpr bool retained_sync_group(const mission::Group& group) noexcept {
+    return group.topLevel || group.key==kSharedPlayers;
+}
+static_assert([] {
+    for(const auto& group:mission::kGroups) if(group.key==kSharedPlayers) {
+        if(group.slots.size()!=16) {return false;}
+        for(const auto& slot:group.slots) {if(slot.asset.type!=13) {return false;}}
+        return true;
+    }
+    return false;
+}());
+inline constexpr std::size_t kRetainedGroups=4;
+
 // 3CCE50 receives the complete decoded roster. Its applied mirror is context+8;
 // owner+28 is the actual native registry list, not a server acknowledgement.
 inline bool owner(const Source& source,std::uintptr_t context,Retirement& result) noexcept {
@@ -82,7 +99,10 @@ inline Retirement begin(const Source& source,std::uintptr_t context,std::uintptr
     if(reason) {*reason=1;}
     if(movie<1 || movie>2 || !owner(source,context,result)) {return {};}
     if(reason) {*reason=5;}
-    if(movie==1 && !groups(source,result.owner,false)) {return {};}
+    // A retry may arrive after 3CCE50 has removed the mission root. Its exact
+    // fully retired catalog still authenticates that private owner, as it does
+    // for the second movie. finish/retire_globals must still prove actual cleanup.
+    if(movie==1 && !groups(source,result.owner,false) && !roster(source,context+8,true)) {return {};}
     if(reason) {*reason=2;}
     // The first movie already retired the gameplay root. For its authenticated
     // continuation, the complete applied catalog (including that root's exact
@@ -123,14 +143,14 @@ inline bool finish(const Source& source,const Retirement& lease) noexcept {
 inline bool globals_only(const Source& source,const Retirement& lease) noexcept {
     if(!same_owner(source,lease) || !roster(source,lease.context+8,true)) {return false;}
     const auto list=lease.owner+0x28;std::int32_t count{};
-    if(!read(source,list,count) || count<0 || count>3) {return false;}
-    std::array<std::uint32_t,3> keys{};
+    if(!read(source,list,count) || count<0 || count>static_cast<std::int32_t>(kRetainedGroups)) {return false;}
+    std::array<std::uint32_t,kRetainedGroups> keys{};
     for(std::int32_t i=0;i<count;++i) {
         const auto row=list+4+static_cast<std::uintptr_t>(i)*16;
         std::uint32_t key{},node{},tail{};const mission::Group* group{};
         if(!read(source,row,key) || !read(source,row+4,node) || !read(source,row+8,tail)
             || node==UINT32_MAX || tail==UINT32_MAX) {return false;}
-        for(const auto& candidate:mission::kGroups) if(candidate.topLevel && candidate.key==key) {group=&candidate;}
+        for(const auto& candidate:mission::kGroups) if(retained_sync_group(candidate) && candidate.key==key) {group=&candidate;}
         if(!group) {return false;}
         for(std::int32_t j=0;j<i;++j) {if(keys[j]==key) {return false;}}keys[i]=key;
         std::uint32_t prior=UINT32_MAX;std::size_t nodes{};
@@ -151,7 +171,7 @@ template<class Unregister> bool retire_globals(const Source& source,const Retire
     if(!globals_only(source,lease)) {return false;}
     // Each native removal must shrink the list or advance its head. Bound the
     // work by the authored global slot count; no repaired links or pool writes.
-    std::size_t limit{};for(const auto& group:mission::kGroups) if(group.topLevel) {limit+=group.slots.size();}
+    std::size_t limit{};for(const auto& group:mission::kGroups) if(retained_sync_group(group)) {limit+=group.slots.size();}
     while(limit--) {
         const auto list=lease.owner+0x28;std::int32_t count{};std::uint32_t head{},after{};
         if(!same_owner(source,lease) || !read(source,list,count)) {return false;}

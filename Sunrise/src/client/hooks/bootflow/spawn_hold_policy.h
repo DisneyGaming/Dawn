@@ -20,18 +20,18 @@ struct Input final {
     bool timedOut{};
     bool alreadyReleased{};
     bool loaderBusy{};
-    /** A patrol player replacement must finish on the frame's readiness witnesses. */
+    /** A fast-travel player replacement must finish on the frame's readiness witnesses. */
     bool playerReplacement{};
 };
 
 inline constexpr std::uint32_t kNoControlledEntity = UINT32_MAX;
 
-/** Only implemented patrols use player replacement as an in-world arrival boundary. */
-[[nodiscard]] constexpr bool patrol_destination(std::string_view name) noexcept {
+/** Implemented patrols and the Tower replace players without a new boot transition. */
+[[nodiscard]] constexpr bool fast_travel_destination(std::string_view name) noexcept {
     return name == "mercury_freeroam" || name == "polaris_freeroam"
         || name == "fleet_freeroam" || name == "planet_x_freeroam"
         || name == "eden_freeroam" || name == "tangled_shore_freeroam"
-        || name == "dreaming_city_freeroam";
+        || name == "dreaming_city_freeroam" || name == "city_tower_social_d2";
 }
 
 /**

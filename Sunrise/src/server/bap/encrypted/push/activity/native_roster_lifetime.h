@@ -32,6 +32,8 @@ struct Block final { std::uint32_t bubble{};List<kBlockKeyCapacity> entries{}; }
  * States are complete wire bytes, including the encoder's 0x80 bias. */
 struct State final {
     Identity identity{};
+    /** Last explicit initialization request committed with this publication. */
+    std::uint64_t reinitializationRevision{};
     List<kTopCapacity> top{};
     std::array<Block,kBlockCapacity> blocks{};
     std::size_t blockCount{};

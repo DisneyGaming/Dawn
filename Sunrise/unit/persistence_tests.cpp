@@ -10,6 +10,7 @@
 #include <string_view>
 
 #include "../src/core/logging/log.h"
+#include "../src/state/activity/Newlight/launchpad/quest.h"
 #include "../src/core/settings/settings.h"
 #include "../src/state/persistence/persistence.h"
 #include "../src/state/runtime/state.h"
@@ -111,13 +112,20 @@ void test_vendor_migrations(const AccountState& legacy,const unlocks::Table& ini
     expected.vendorUnlocks.flags.push_back({91,2});expected.vendorUnlocks.values.push_back({92,1234});
     expected.characters[0].vendorUnlocks.flags.push_back({91,1});
     expected.characters[1].vendorUnlocks.values.push_back({92,5678});
+    namespace newlight=sunrise::state::activity::newlight::launchpad::quest;
+    CHECK(newlight::record_escape(expected.characters[1]));
     expected.characters[0].vendorCampaigns=3;
     expected.characters[0].inventory.values[0].postmaster=true;
     CHECK(durable::commit_account(loaded,expected));durable::shutdown();
     // Vendor-branch v2 uses the same codec as v3 and needs no data conversion.
     edit_database("PRAGMA user_version=2");
     CHECK(durable::initialize(GetModuleHandleW(nullptr),legacy,initialUnlocks,family,loaded,unlocks,loadedFamily));
-    CHECK(loaded==expected);durable::shutdown();
+    CHECK(loaded==expected);
+    CHECK(newlight::escaped(loaded.characters[1]) && !newlight::escaped(loaded.characters[0]));
+    std::array<std::byte,60> startFlags{};startFlags[20]=std::byte{2};
+    newlight::project_start(loaded.characters[1],startFlags);
+    CHECK(startFlags[20]==std::byte{} && startFlags[59]==std::byte{2});
+    durable::shutdown();
     CHECK(database_integer("PRAGMA user_version")==3);
     // Recreate the old local branch's exact scoped layout, including all unused slots.
     edit_database(R"sql(

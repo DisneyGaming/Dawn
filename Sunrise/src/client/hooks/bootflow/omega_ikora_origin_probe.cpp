@@ -17,6 +17,8 @@
 #include "../../../core/logging/log.h"
 #include "../../../core/settings/settings.h"
 #include "../../../state/activity/forced/activity_forced_destination.h"
+#include "../../../state/activity/Newlight/launchpad/runtime.h"
+#include "../../../state/activity/Newlight/launchpad/shutter.h"
 #include "../../hooking/call_gate.h"
 #include "../../hooking/detour.h"
 #include "internal.h"
@@ -558,6 +560,34 @@ std::int32_t* entity_factory_body(
     const EntityFactory original = hooking::await_original(g_entityFactoryOriginal);
 
     const std::uint32_t definition = safe_read<std::uint32_t>(descriptor, kInvalidHandle);
+    namespace launchpad = state::activity::newlight::launchpad;
+    state::activity::coo::Generation shutterOwner{};
+    if (call.accepts_side_effects() && result != nullptr
+        && definition == launchpad::shutter::kEntity) {
+        // Selection exists before initial world streaming. native_run() would
+        // be too late here because it requires arrival in the loaded world.
+        const auto owner = launchpad::native_owner();
+        const float x = safe_read<float>(descriptor + 0x20U);
+        const float y = safe_read<float>(descriptor + 0x24U);
+        const float z = safe_read<float>(descriptor + 0x28U);
+        const bool matches = launchpad::shutter::matches(owner.valid(), definition, x, y, z);
+        const bool suppress = matches && launchpad::native_shutter_present(owner);
+        if (matches && !suppress) {shutterOwner=owner;}
+        static std::atomic_uint32_t attempts{};
+        const auto attempt = attempts.fetch_add(1U, std::memory_order_relaxed) + 1U;
+        if (attempt <= 16U || (attempt & (attempt - 1U)) == 0U) {
+            report("ev=launchpad stage=breach_shutter_factory attempt=%u run=%llu "
+                   "definition=%08X table=%08X record=%d pos=%.3f,%.3f,%.3f action=%s",
+                   attempt, static_cast<unsigned long long>(owner.run), definition, table,
+                   record, x, y, z, suppress ? "suppress" : "native");
+        }
+        if (suppress) {
+            // Keep the existing authenticated animated grate; reject only the
+            // duplicate before constructing render or physics components.
+            *result = -1;
+            return result;
+        }
+    }
     // Forest generator lane: log any construction of the six 808099D6 worker containers or
     // their placed platform entities (all class 80809C0F), regardless of the Ikora filter.
     // Whether these ever construct decides the whole platform lane (WORKLOG 2026-08-27).
@@ -631,6 +661,9 @@ std::int32_t* entity_factory_body(
         g_ikoraFactoryScene = context.sceneHandle;
     }
     std::int32_t* const returned = original(result, descriptor, table, record);
+    if(shutterOwner.valid()) {
+        launchpad::observe_native_shutter(shutterOwner,safe_read<std::uint32_t>(returned,kInvalidHandle));
+    }
     g_ikoraFactoryActive = previousFactoryActive;
     g_ikoraFactoryScene = previousFactoryScene;
     if (boss && call.accepts_side_effects()) {

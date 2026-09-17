@@ -82,6 +82,9 @@ bool build(const AccountState& account,std::uint8_t expected,PendingNewlightQues
     }
     if(!out.questInstanceSoid) {return false;}
     if(expected==0) {
+        // Persist the character's launch/completion flags with the quest and
+        // rewards, before the Tower handoff. Abandoning the Pursuit cannot undo it.
+        if(!q::record_escape(after)) {return false;}
         for(std::size_t i=0;i<q::kEscapeRewards.size();++i)
             if(!award(candidate,ci,q::kEscapeRewards[i],q::kEscapeSlots[i],out)) {return false;}
         for(const auto currency:q::kEscapeCurrencies) if(!credit(candidate,currency)) {return false;}
@@ -145,7 +148,7 @@ bool prepare_newlight_start(AccountState& account) noexcept {
         account::inventory::EquipmentSlot::ship,
     };
     for(std::size_t ci=0;ci<candidate.characterCount;++ci) {
-        auto& character=candidate.characters[ci];if(q::step(character)!=0) {continue;}
+        auto& character=candidate.characters[ci];if(q::step(character)!=0 || q::escaped(character)) {continue;}
         // Character selection still needs the Guardian's authored armor, Ghost,
         // subclass and identity rows. New Light begins without weapons or travel
         // gear; the mission grants those through its native pickups and rewards.

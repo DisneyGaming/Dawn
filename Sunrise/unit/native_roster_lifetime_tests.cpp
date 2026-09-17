@@ -1,9 +1,11 @@
 #include "../src/server/bap/encrypted/push/activity/native_roster_lifetime.h"
+#include "../src/server/bap/encrypted/push/activity/tower_spawn_recovery.h"
 
 #include <array>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 
 namespace life=sunrise::server::bap::encrypted::push::activity::roster_lifetime;
 namespace {
@@ -234,6 +236,77 @@ void shared_bubble_keys() {
         unchanged_on_failure(committed,request,life::Result::keyScopeChanged);
     }
 }
+void tower_recovery_is_transactional_and_scoped() {
+    namespace recovery=sunrise::server::bap::encrypted::push::activity::tower_spawn_recovery;
+    namespace request=sunrise::state::activity::tower_spawn_recovery;
+    using sunrise::state::activity::ActivityInstanceKey;
+    constexpr ActivityInstanceKey activity{0x9EAA30010020000CULL,{1}};
+    constexpr life::Identity tower{activity.sessionId,1,0x1122,0x3344,request::kScenario};
+    constexpr std::array globals{request::kRoot,0x12345678U};
+    constexpr std::array vendors{0x50CC9C7DU};
+    const std::array blocks{life::WireBlock{6,{vendors,one,state}}};
+    life::State prior;CHECK(life::seed(tower,{globals,present,states},blocks,prior)==life::Result::ready);
+    const request::Request wanted{activity,3,1,0x67F90024U};
+    auto candidate=prior;
+    CHECK(recovery::project(candidate,activity,3,wanted));
+    CHECK(candidate.top.states[0]==0x88 && candidate.top.states[1]==states[1]);
+    CHECK(candidate.blocks[0].entries.states[0]==state[0] && candidate.top.presence[0]==1);
+    CHECK(candidate.reinitializationRevision==1 && prior.reinitializationRevision==0);
+    CHECK(!recovery::project(candidate,activity,3,wanted));
+    // Discarded candidate retries exactly the same generation.
+    auto retry=prior;CHECK(recovery::project(retry,activity,3,wanted));
+    CHECK(retry.top.states[0]==candidate.top.states[0]);
+    life::Request next{tower,0,0xF0,{globals,{}},{}};
+    CHECK(life::plan(candidate,next,retry)==life::Result::ready);
+    CHECK(retry.reinitializationRevision==1 && retry.top.states[0]==0x88);
+    CHECK(!recovery::project(retry,activity,3,wanted));
+    auto bad=wanted;bad.activity.incarnation.value++;CHECK(!recovery::project(prior,activity,3,bad));
+    CHECK(!recovery::project(prior,activity,4,wanted));
+    bad=wanted;bad.lifetime=UINT32_MAX;CHECK(!recovery::project(prior,activity,3,bad));
+    auto other=prior;other.identity.scenario=0x80F4696A;CHECK(!recovery::project(other,activity,3,wanted));
+    other=prior;other.top.presence[0]=0;CHECK(!recovery::project(other,activity,3,wanted));
+    other=prior;other.top.states[0]=0xFF;CHECK(recovery::project(other,activity,3,wanted));
+    CHECK(other.top.states[0]==0x80);
+}
 } // namespace
 
-int main(){normal();rejected();limits();mercury_acknowledgement();dormant_registration();shared_bubble_keys();std::printf("PASS %u checks\n",checks);}
+void tower_revisit_keeps_global_initialization() {
+    namespace recovery=sunrise::server::bap::encrypted::push::activity::tower_spawn_recovery;
+    namespace wire=sunrise::middleware::bap::activity_message::sensor_auth_update;
+    namespace data=sunrise::state::build_data::scenarios;
+    constexpr sunrise::state::activity::ActivityInstanceKey activity{0x12345678,{1}};
+    constexpr life::Identity tower{activity.sessionId,1,2,3,recovery::request::kScenario};
+    constexpr std::array keys{recovery::request::kRoot,0x8A4E2843U};
+    life::State prior;CHECK(life::seed(tower,{keys,present,states},{},prior)==life::Result::ready);
+    struct Storage {std::array<data::RosterGroup,3> rosterGroups;};
+    auto storage=std::make_unique<Storage>();
+    const auto find=[](std::uint32_t key,data::RosterGroup& group) {
+        if(key!=0x8A4E2843U) {return false;}
+        group={};group.registryKey=key;group.slotCount=3;
+        group.slotTypes[0]=68;group.slotTypes[1]=11;group.slotTypes[2]=53;
+        for(unsigned i=0;i<3;++i) {group.slotIndices[i]=static_cast<std::uint16_t>(i);group.slotFlags[i]=2;}
+        return true;
+    };
+    auto& root=storage->rosterGroups[0];root.registryKey=keys[0];root.slotCount=1;root.slotTypes[0]=17;
+    auto& vendor=storage->rosterGroups[1];vendor.registryKey=0x50CC9C7D;vendor.slotCount=1;vendor.slotTypes[0]=1;
+    wire::Roster base{};base.groupCount=2;base.topLevelGroupCount=1;base.playerKeyGroup=keys[0];
+    base.groups[0]={keys[0],std::span(root.slotTypes).first(1),std::span(root.slotFlags).first(1),std::span(root.slotIndices).first(1)};
+    base.groups[1]={vendor.registryKey,std::span(vendor.slotTypes).first(1),std::span(vendor.slotFlags).first(1),std::span(vendor.slotIndices).first(1)};
+    for(unsigned travel=0;travel<12;++travel) {
+        auto roster=base;
+        CHECK(recovery::retain_global_bodies(*storage,roster,prior,activity,tower.scenario,find));
+        CHECK(roster.groupCount==3 && roster.topLevelGroupCount==2 && roster.groups[1].key==keys[1]);
+        CHECK(roster.groups[1].slotTypes[0]==68 && roster.groups[1].slotTypes[1]==11 && roster.groups[1].slotTypes[2]==53);
+        CHECK(roster.groups[2].slotTypes.data()==vendor.slotTypes.data() && roster.playerKeyGroup==base.playerKeyGroup);
+        CHECK(recovery::retain_global_bodies(*storage,roster,prior,activity,tower.scenario,find));
+        CHECK(roster.groupCount==3 && prior.top.states[0]==states[0] && prior.top.states[1]==states[1]);
+    }
+    auto roster=base;auto removed=prior;removed.top.presence[1]=0;
+    CHECK(recovery::retain_global_bodies(*storage,roster,removed,activity,tower.scenario,find) && roster.groupCount==2);
+    roster=base;auto foreign=activity;foreign.incarnation.value++;
+    CHECK(!recovery::retain_global_bodies(*storage,roster,prior,foreign,tower.scenario,find) && roster.groupCount==2);
+    CHECK(recovery::retain_global_bodies(*storage,roster,prior,activity,0x80F4696A,find) && roster.groupCount==2);
+    CHECK(!recovery::retain_global_bodies(*storage,roster,prior,activity,tower.scenario,
+        [](std::uint32_t,data::RosterGroup&) {return false;}) && roster.groupCount==2);
+}
+int main(){normal();rejected();limits();mercury_acknowledgement();dormant_registration();shared_bubble_keys();tower_recovery_is_transactional_and_scoped();tower_revisit_keeps_global_initialization();std::printf("PASS %u checks\n",checks);}

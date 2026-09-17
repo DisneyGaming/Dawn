@@ -11,6 +11,7 @@
 #include "../../../core/logging/log.h"
 #include "../../../core/settings/settings.h"
 #include "../../../state/activity/runtime.h"
+#include "../../../state/activity/tower_spawn_recovery.h"
 #include "../../../state/activity/destination/activity_destination_snapshot.h"
 #include "../../../state/activity/forced/activity_forced_destination.h"
 #include "../../hooking/call_gate.h"
@@ -86,6 +87,7 @@ std::atomic_uint64_t g_holdStartedTick{};
 std::atomic_uint32_t g_observedControlledEntity{spawn_hold_policy::kNoControlledEntity};
 /** Blocks the spawn hook's early fade release during an in-world player replacement. */
 std::atomic_bool g_playerReplacementPending{};
+state::activity::tower_spawn_recovery::Watch g_towerRecovery;
 hooking::CallGate g_callGate{};
 
 /** @return True when no spawn replacement call owns this owner's retained state. */
@@ -94,19 +96,20 @@ hooking::CallGate g_callGate{};
 }
 
 /** Prefer the joined destination, not a panel selection which may name the next launch. */
-[[nodiscard]] bool current_patrol_destination() noexcept {
+[[nodiscard]] bool current_fast_travel_destination(state::activity::ActivityInstanceKey& tower) noexcept {
     state::activity::destination::DestinationSelection committed{};
     const auto activity = state::activity::newest_joined_activity();
     if (state::activity::destination::snapshot(activity, committed)) {
-        return spawn_hold_policy::patrol_destination(
-            {reinterpret_cast<const char*>(committed.packageName.data()), committed.packageNameLength});
+        const std::string_view name{reinterpret_cast<const char*>(committed.packageName.data()), committed.packageNameLength};
+        if(name=="city_tower_social_d2") {tower=activity;}
+        return spawn_hold_policy::fast_travel_destination(name);
     }
     // During public-region teardown the joined record can temporarily be absent. Only an
     // enabled, validated override may provide the route in that interval.
     state::activity::forced::ForcedDestination forced{};
     state::activity::forced::snapshot(forced);
     return state::activity::forced::active(forced)
-        && spawn_hold_policy::patrol_destination(
+        && spawn_hold_policy::fast_travel_destination(
             {forced.packageName.data(), forced.packageNameLength});
 }
 
@@ -572,6 +575,41 @@ __declspec(noinline) bool __fastcall spawn_gate(std::int32_t datum) noexcept {
     return call.accepts_side_effects() ? decision.result : allowed;
 }
 
+// Observe only the camera thread's normal native accessors. The server owns
+// reinitialization through a type-5 publication on its existing receive path.
+void poll_tower_recovery(state::activity::ActivityInstanceKey tower,bool hasPlayer) noexcept {
+    if(!tower) {g_towerRecovery.reset();return;}
+    const auto lookup=g_activitySlotLookup.load(std::memory_order_acquire);
+    const auto readWorld=g_worldState.load(std::memory_order_acquire);
+    const auto ready=g_localReady.load(std::memory_order_acquire);
+    ActivitySlotRecord lifetime{};std::int32_t world=-2;
+    bool found{},initialized{},local{};
+    __try {
+        found=lookup && lookup(17,0,&lifetime) && lifetime.datum!=-1
+            && lifetime.component==0x80809915U && lifetime.relativeOffset==0;
+        initialized=readWorld && readWorld(&world);
+        local=ready && ready();
+    } __except(EXCEPTION_EXECUTE_HANDLER) {return;}
+    if(hasPlayer && initialized) {
+        state::activity::tower_spawn_recovery::cancel(tower,state::activity::mission_run_generation());
+    }
+    const auto loader=hasPlayer?LoaderObservation{}:observe_loader();
+    if(g_towerRecovery.observe({found?static_cast<std::uint32_t>(lifetime.datum):UINT32_MAX,
+            hasPlayer,initialized,g_playerReplacementPending.load(std::memory_order_acquire),
+            loader.readable && !loader.busy,local},GetTickCount64())) {
+        const auto recovery=state::activity::tower_spawn_recovery::request(tower,
+            state::activity::mission_run_generation(),static_cast<std::uint32_t>(lifetime.datum));
+        if(recovery.revision) {
+            std::array<char,224> line{};
+            std::snprintf(line.data(),line.size(),
+                "ev=bootflow stage=tower_spawn_recovery result=requested owner=%016llX run=%llu revision=%llu lifetime=%08X reason=replaced_uninitialized_runtime",
+                static_cast<unsigned long long>(tower.sessionId),static_cast<unsigned long long>(recovery.run),
+                static_cast<unsigned long long>(recovery.revision),recovery.lifetime);
+            core::log::write(core::log::Channel::client,core::log::Level::info,line.data());
+        }
+    }
+}
+
 } // namespace
 
 /**
@@ -589,6 +627,7 @@ __declspec(noinline) void poll_spawn_arrival() noexcept {
     }
     const auto phase = state::activity::world_phase();
     if (phase != state::activity::WorldPhase::arrived) {
+        g_towerRecovery.reset();
         g_observedControlledEntity.store(spawn_hold_policy::kNoControlledEntity,
             std::memory_order_relaxed);
         g_playerReplacementPending.store(false, std::memory_order_release);
@@ -605,7 +644,8 @@ __declspec(noinline) void poll_spawn_arrival() noexcept {
     if (!hasPlayer) {
         controlledEntity = spawn_hold_policy::kNoControlledEntity;
     }
-    const bool patrol = current_patrol_destination();
+    state::activity::ActivityInstanceKey tower{};
+    const bool patrol = current_fast_travel_destination(tower);
     const auto previous = g_observedControlledEntity.exchange(
         patrol ? controlledEntity : spawn_hold_policy::kNoControlledEntity,
         std::memory_order_relaxed);
@@ -622,13 +662,14 @@ __declspec(noinline) void poll_spawn_arrival() noexcept {
         rearm_fade_release();
         std::array<char, 192> line{};
         const int written = std::snprintf(line.data(), line.size(),
-            "ev=bootflow stage=spawn_arrival result=rearmed reason=patrol_player_replaced previous=%08X current=%08X",
+            "ev=bootflow stage=spawn_arrival result=rearmed reason=fast_travel_player_replaced previous=%08X current=%08X",
             previous, controlledEntity);
         if (written > 0 && static_cast<std::size_t>(written) < line.size()) {
             core::log::write(core::log::Channel::client, core::log::Level::info,
                 {line.data(), static_cast<std::size_t>(written)});
         }
     }
+    if(call.accepts_side_effects()) {poll_tower_recovery(tower,hasPlayer);}
     if (!hasPlayer || (g_arrivalReported.load(std::memory_order_relaxed)
         && g_flyInReported.load(std::memory_order_relaxed))) {
         return;
@@ -763,6 +804,7 @@ bool uninstall_spawn_hold() noexcept {
     g_observedControlledEntity.store(spawn_hold_policy::kNoControlledEntity,
         std::memory_order_release);
     g_playerReplacementPending.store(false, std::memory_order_release);
+    g_towerRecovery.reset();
     core::log::write(core::log::Channel::client,
                      core::log::Level::info,
                      "ev=bootflow stage=spawn_hold_uninstall result=ok retained=0");

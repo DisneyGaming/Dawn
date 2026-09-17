@@ -7,6 +7,7 @@
 
 #include "client/hooking/call_gate.h"
 #include "client/hooks/bootflow/spawn_hold_policy.h"
+#include "state/activity/tower_spawn_recovery.h"
 
 namespace {
 
@@ -300,10 +301,12 @@ void patrol_fast_travel_rearms_without_a_boot_transition() {
     constexpr auto oldPlayer = 0x3DFAA417U;
     constexpr auto newPlayerSameSlot = 0x3EFAA417U;
     constexpr auto absent = policy::kNoControlledEntity;
-    CHECK(policy::patrol_destination("tangled_shore_freeroam"));
-    CHECK(policy::patrol_destination("planet_x_freeroam"));
-    CHECK(!policy::patrol_destination("mission_scot"));
-    CHECK(!policy::patrol_destination(""));
+    CHECK(policy::fast_travel_destination("tangled_shore_freeroam"));
+    CHECK(policy::fast_travel_destination("planet_x_freeroam"));
+    CHECK(policy::fast_travel_destination("city_tower_social_d2"));
+    CHECK(!policy::fast_travel_destination("mission_launchpad"));
+    CHECK(!policy::fast_travel_destination("mission_scot"));
+    CHECK(!policy::fast_travel_destination(""));
     CHECK(!policy::player_replaced(policy::Phase::arrived, true, absent, oldPlayer));
     CHECK(!policy::player_replaced(policy::Phase::arrived, true, oldPlayer, oldPlayer));
     CHECK(policy::player_replaced(policy::Phase::arrived, true, oldPlayer, absent));
@@ -383,6 +386,28 @@ void patrol_arrival_sequences() {
     CHECK(releases == 6); // Mission player replacements do not gain this patrol-only behavior.
 }
 
+void tower_recovery_requires_rebuilt_uninitialized_world() {
+    namespace recovery=sunrise::state::activity::tower_spawn_recovery;
+    recovery::Watch watch;
+    recovery::Observation o{0x3EF90002,false,false,true,true,true};
+    CHECK(!watch.observe(o,1000));CHECK(!watch.observe(o,2000)); // No prior arrival.
+    o.player=o.worldReady=true;CHECK(!watch.observe(o,2001));
+    o.player=false;o.worldReady=false;
+    CHECK(!watch.observe(o,3000));CHECK(!watch.observe(o,4000)); // Same salted object.
+    o.lifetime=0x67F90024;o.loaderIdle=false;
+    CHECK(!watch.observe(o,5000));CHECK(!watch.observe(o,6000)); // Still loading.
+    o.loaderIdle=true;CHECK(!watch.observe(o,7000));
+    CHECK(!watch.observe(o,7499));CHECK(watch.observe(o,7500));
+    CHECK(!watch.observe(o,10000)); // No retry loop that keeps destroying the spawn root.
+    o.lifetime=0x68F90024;CHECK(!watch.observe(o,12000));
+    o.player=o.worldReady=true;CHECK(!watch.observe(o,12001));
+    o.player=false;CHECK(!watch.observe(o,13000)); // Normal death with initialized world.
+    o.worldReady=false;o.lifetime=0x69F90024;o.localReady=false;
+    CHECK(!watch.observe(o,14000));o.localReady=true;
+    CHECK(!watch.observe(o,15000));CHECK(watch.observe(o,15500)); // Second travel.
+    watch.reset();CHECK(!watch.observe(o,20000));CHECK(!watch.observe(o,25000));
+}
+
 void generic_quiesced_call_forwards_without_side_effects() {
     reset_native_barrier();
     GenericCallGateForwarder forwarder{};
@@ -427,6 +452,7 @@ int main() {
     frame_completion_requires_current_native_evidence();
     patrol_fast_travel_rearms_without_a_boot_transition();
     patrol_arrival_sequences();
+    tower_recovery_requires_rebuilt_uninitialized_world();
     generic_publication_window_waits_then_forwards_exactly_once();
     generic_quiesced_call_forwards_without_side_effects();
     generic_active_call_stays_owned_through_native_interval();

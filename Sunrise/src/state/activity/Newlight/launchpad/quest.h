@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <span>
 #include <array>
+#include <utility>
 
 namespace sunrise::state::activity::newlight::launchpad::quest {
 inline constexpr std::uint32_t kEscapeCosmodrome=0xD267D4BB;
@@ -46,18 +47,31 @@ inline int accepted_step(std::int16_t vendor,std::int16_t interaction,std::int16
 // Start-destination row 0 selects activity 1 from f753 AND NOT f1041.
 // Native mapping 81319322/+40 maps those slots to character-object bytes 20/59.
 // Owning the first Pursuit opts only that Guardian into the native sign-in launch.
+inline bool escaped(const CharacterState& character) noexcept {
+    std::int32_t value{};
+    return ::sunrise::state::vendors::lookup(character.vendorUnlocks.flags,1041,value) && value==2;
+}
+inline bool record_escape(CharacterState& character) noexcept {
+    auto flags=character.vendorUnlocks.flags;
+    if(!::sunrise::state::vendors::store(flags,753,1)
+        || !::sunrise::state::vendors::store(flags,1041,2)) {return false;}
+    character.vendorUnlocks.flags=std::move(flags);return true;
+}
 inline void project_start(const CharacterState& character,std::span<std::byte> flags) noexcept {
     if(flags.size()<=59 || character.inventory.count>character.inventory.values.size()) {return;}
+    // Earned completion survives removal of the quest and wins over a stale
+    // opening Pursuit or configured start flags. This bank belongs to one Guardian.
+    if(escaped(character)) {flags[20]=std::byte{};flags[59]=std::byte{2};return;}
     const int current=step(character);
     if(current<0) {return;}
-    // Ikora hands the Guardian over to ordinary play at Become Legend. Retain
-    // opening completion, but release New Light's forced-start restriction.
-    flags[20]=current<5?std::byte{2}:std::byte{};
+    // Escape completion is persisted by advancing this character's Pursuit.
+    // Vendor introductions must not retain the sign-in launch restriction.
+    flags[20]=current==0?std::byte{2}:std::byte{};
     flags[59]=current==0?std::byte{}:std::byte{2};
 }
 template<class CharacterObject> inline void project(const CharacterState& character,CharacterObject& object) noexcept {
-    const auto current=step(character);if(current<0) {return;}
     project_start(character,object.acquiredFlags);
+    const auto current=step(character);if(current<0) {return;}
     // 81319094/8E/8F introduction expressions read these exact flag slots.
     // Character override arrays are consumed by native 540650; the existing
     // Family-5 bit-0 arm (FA7FE0, context vtable +68) enables this per-character bank.

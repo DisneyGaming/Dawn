@@ -4,6 +4,7 @@
 #include "lighting_native.h"
 #include "entrance_native.h"
 #include "cache_native.h"
+#include "shutter_native.h"
 #include "../../coo/native_device_authority.h"
 #include "../../../../client/hooks/bootflow/gateway_native_read.h"
 #include "../../../../client/hooks/bootflow/coo_native_player_mount.h"
@@ -19,8 +20,58 @@ namespace cn=client::hooks::bootflow::coo_native;
 std::mutex mutex;
 coo::Generation observedOwner{};
 std::array<std::uintptr_t,kObjects.size()> sources{};
+coo::Generation shutterOwner{};
+shutter::Physical physicalShutter{};
+std::uintptr_t shutterGate{};
 template<class T> T at(const std::byte* bytes) noexcept {T v{};std::memcpy(&v,bytes,sizeof v);return v;}
 std::uintptr_t image() noexcept {return reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));}
+void poll_shutter(const Request& req) noexcept {
+    if(!req.owner.valid() || req.frame.cinematic.ending()) {return;}
+    shutter::Physical physical{};std::uintptr_t source{};
+    {const std::lock_guard lock(mutex);if(shutterOwner!=req.owner) {return;}physical=physicalShutter;source=shutterGate;}
+    if(!source || !physical.address || native_owner()!=req.owner) {return;}
+    struct Exchange {
+        std::uint64_t compare_exchange(std::uintptr_t address,std::uint64_t expected,std::uint64_t desired) noexcept {
+            return static_cast<std::uint64_t>(InterlockedCompareExchange64(reinterpret_cast<volatile LONG64*>(address),
+                static_cast<LONG64>(desired),static_cast<LONG64>(expected)));
+        }
+        void enable(std::uintptr_t address,std::uint32_t mask) noexcept {
+            InterlockedOr(reinterpret_cast<volatile LONG*>(address),static_cast<LONG>(mask));
+        }
+    } exchange;
+    gn::Read read{image()};const auto result=shutter::bind(read,exchange,image(),source,physical);
+    static coo::Generation lastOwner{};static shutter::Bound lastResult{shutter::Bound::invalid};
+    static gn::Weak lastDevice{};
+    if(lastOwner!=req.owner || lastResult!=result || lastDevice!=physical.device) {
+        lastOwner=req.owner;lastResult=result;lastDevice=physical.device;
+        std::array<char,192> line{};std::snprintf(line.data(),line.size(),
+            "ev=launchpad stage=breach_shutter_binding result=%u entity=%08X device=%08X source=%p",
+            static_cast<unsigned>(result),physical.entity.handle,physical.device.handle,reinterpret_cast<void*>(source));
+        core::log::write(core::log::Channel::client,core::log::Level::info,line.data());
+    }
+}
+}
+bool native_shutter_present(coo::Generation owner) noexcept {
+    shutter::Physical physical{};
+    {const std::lock_guard lock(mutex);if(shutterOwner!=owner) {return false;}physical=physicalShutter;}
+    gn::Read read{image()};std::uintptr_t row{};
+    return owner.valid() && shutter::identity(read,physical,row);
+}
+void observe_native_shutter(coo::Generation owner,std::uint32_t entity) noexcept {
+    if(!owner.valid() || native_owner()!=owner) {return;}
+    gn::Read read{image()};shutter::Physical physical{};
+    if(!shutter::capture(read,entity,physical)) {return;}
+    const std::lock_guard lock(mutex);
+    if(shutterOwner!=owner) {shutterOwner=owner;shutterGate=0;}
+    physicalShutter=physical;
+}
+void observe_native_shutter_gate(void* raw) noexcept {
+    const auto source=reinterpret_cast<std::uintptr_t>(raw);gn::Read read{image()};
+    if(!shutter::gate(read,source)) {return;}
+    const auto owner=native_owner();if(!owner.valid()) {return;}
+    const std::lock_guard lock(mutex);
+    if(shutterOwner!=owner) {shutterOwner=owner;physicalShutter={};}
+    shutterGate=source;
 }
 void observe_native_object(void* raw) noexcept {
     const auto req=request();if(!req.frame.enabled) {return;}
@@ -52,6 +103,7 @@ void observe_native_object(void* raw) noexcept {
 }
 void poll_native_objects() noexcept {
     const auto req=request();if(!req.frame.enabled) {return;}
+    poll_shutter(req);
     // Only the loose first Vandal needs a direct native start. Named members
     // already own their entry programs; observe those rather than queuing twice.
     static coo::Generation entranceOwner{};static EnemyReceipt queuedEntrance{};

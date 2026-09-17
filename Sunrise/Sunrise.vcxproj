@@ -1164,6 +1164,8 @@
     <ClInclude Include="src\server\bap\encrypted\push\activity\activity_message_push.h" />
     <ClInclude Include="src\server\bap\encrypted\push\activity\activity_roster_push.h" />
     <ClInclude Include="src\server\bap\encrypted\push\activity\native_roster_lifetime.h" />
+    <ClInclude Include="src\server\bap\encrypted\push\activity\tower_spawn_recovery.h" />
+    <ClInclude Include="src\state\activity\tower_spawn_recovery.h" />
     <ClInclude Include="src\server\bap\encrypted\push\activity\native_roster_lifetime_projection.h" />
     <ClInclude Include="src\server\bap\encrypted\push\activity\activity_global_state_push.h" />
     <ClInclude Include="src\server\bap\encrypted\push\activity\activity_keepalive_push.h" />
@@ -1700,6 +1702,8 @@
     <ClInclude Include="src\state\activity\Newlight\launchpad\rewards.h" />
     <ClInclude Include="src\state\activity\Newlight\launchpad\native_catalog.h" />
     <ClInclude Include="src\state\activity\Newlight\launchpad\quest.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\shutter.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\shutter_native.h" />
     <ClCompile Include="src\state\activity\Newlight\launchpad\native_observer.cpp"><ObjectFileName>$(IntDir)launchpad_native_observer.obj</ObjectFileName><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\state\activity\Newlight\launchpad\runtime.cpp"><ObjectFileName>$(IntDir)launchpad_runtime.obj</ObjectFileName><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClInclude Include="src\state\activity\Newlight\launchpad\runtime.h" />
