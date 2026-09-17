@@ -281,15 +281,10 @@ bool initialize(void* module,
     initialized.investment.family5.flagCount = persistedFamily5.flagCount;
     initialized.investment.family5.values = persistedFamily5.values;
     initialized.investment.family5.valueCount = persistedFamily5.valueCount;
-    // The arm is account-wide and rides the first ws-503, which goes out before any pick. Nothing
-    // is selected at boot, so it is armed when any authored character carries the bypass. The
-    // per-character objB byte is the other half, and it still decides which character it opens.
-    for (std::size_t index = 0; index < runtimeAccount.characterCount; ++index) {
-        if (runtimeAccount.characters[index].contentBypass) {
-            initialized.investment.family5.contentGateArm = true;
-            break;
-        }
-    }
+    // This arm also enables the server's per-character unlock override rows (Eva
+    // quests and equipped-mask requirement). Keep it armed independently of QA
+    // bypass; each character's separate contentBypass byte controls that shortcut.
+    initialized.investment.family5.contentGateArm = true;
 
     investment_clock::Clock clock;
     const auto utcSeconds = std::chrono::duration_cast<std::chrono::seconds>(

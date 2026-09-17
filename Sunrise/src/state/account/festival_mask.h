@@ -24,6 +24,20 @@ inline constexpr std::array<std::uint32_t, 3> kDefinitionHashes{
     0x83EF679BU,
 };
 
+/** Activity 78/79 equipment requirement, paired with the native mask lock message. */
+inline constexpr std::int16_t kEquippedRequirementFlag = 6836;
+
+[[nodiscard]] inline bool equipped(const CharacterState& character) noexcept {
+    if (!character.soid) return false;
+    const auto helmetIndex = static_cast<std::size_t>(inventory::EquipmentSlot::helmet);
+    const auto& helmet = character.equipment.slots[helmetIndex];
+    if (!helmet || !helmet->instanceSoid) return false;
+    for (const auto hash : kDefinitionHashes) {
+        if (helmet->definitionHash == hash) return true;
+    }
+    return false;
+}
+
 /**
  * Checks only the exact helmet equipment slot on the named character.
  * Inventory ownership, ornaments, and similarly named helmet definitions are not accepted.
@@ -53,17 +67,7 @@ inline constexpr std::array<std::uint32_t, 3> kDefinitionHashes{
         return false;
     }
 
-    const auto helmetIndex = static_cast<std::size_t>(inventory::EquipmentSlot::helmet);
-    const auto& helmet = character->equipment.slots[helmetIndex];
-    if (!helmet.has_value() || helmet->instanceSoid == 0) {
-        return false;
-    }
-    for (const std::uint32_t definitionHash : kDefinitionHashes) {
-        if (helmet->definitionHash == definitionHash) {
-            return true;
-        }
-    }
-    return false;
+    return equipped(*character);
 }
 
 } // namespace sunrise::state::account::festival_mask

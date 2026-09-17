@@ -10,6 +10,7 @@
 
 #include "../../../../state/unlocks/unlocks_runtime.h"
 #include "../../../../state/account/festival_quest.h"
+#include "../../../../state/account/festival_mask.h"
 #include "../../../../state/activity/events/activity_event_selection.h"
 #include "../../../../state/activity/nightfall/native_power.h"
 #include "../instance/layout.h"
@@ -161,15 +162,21 @@ bool encode(const state::CharacterState& state,
     object.identity.characterClass = static_cast<std::int8_t>(state.characterClass);
     object.lastOrbitedDestination = state.lastOrbitedDestination;
     object.previewMirrors.fill(state.previewAvailable ? kNativeTrue : kNativeFalse);
-    object.contentBypass = state.contentBypass ? kNativeTrue : kNativeFalse;
+    const bool festivalActive = !state::activity::events::withheld(0x7C6DE64FU);
+    // Native QA bypass promotes hidden Director nodes to selectable and suppresses
+    // requirement messages. Festival selection must honor the event and equipment gates.
+    object.contentBypass = state.contentBypass && !festivalActive ? kNativeTrue : kNativeFalse;
     const auto eva = state::account::festival_quest::available(
-        state, !state::activity::events::withheld(0x7C6DE64FU));
-    const std::array<std::pair<std::int16_t, bool>, 3> evaFlags{{
-        {20826, eva.intro}, {20829, eva.wearingMasks}, {20831, eva.finalStage}}};
-    object.flagOverrides.count = static_cast<std::uint32_t>(evaFlags.size());
-    for (std::size_t i = 0; i < evaFlags.size(); ++i) {
-        object.flagOverrides.rows[i].slot = evaFlags[i].first;
-        object.flagOverrides.rows[i].value = evaFlags[i].second ? 2 : 0;
+        state, festivalActive);
+    const std::array<std::pair<std::int16_t, bool>, 4> festivalFlags{{
+        {std::int16_t{20826}, eva.intro}, {std::int16_t{20829}, eva.wearingMasks},
+        {std::int16_t{20831}, eva.finalStage},
+        {state::account::festival_mask::kEquippedRequirementFlag,
+         state::account::festival_mask::equipped(state)}}};
+    object.flagOverrides.count = static_cast<std::uint32_t>(festivalFlags.size());
+    for (std::size_t i = 0; i < festivalFlags.size(); ++i) {
+        object.flagOverrides.rows[i].slot = festivalFlags[i].first;
+        object.flagOverrides.rows[i].value = festivalFlags[i].second ? 2 : 0;
     }
     object.seenMessages.fill(kSeenMessageByte);
     for (inventory::layout::Entry& item : object.inventoryItems) {
