@@ -131,12 +131,29 @@ template <std::size_t Size>
     return writer.write(0, 1);
 }
 
+/** D6's five scalars are copied from the native client; auxiliary children stay unchanged. */
+[[nodiscard]] bool write_region_leg(encoding::bits::Writer& writer,const RegionLeg& leg) noexcept {
+    return writer.write(leg.present?1U:0U,1) && (!leg.present
+        || (writer.write(static_cast<std::uint32_t>(leg.sliceSetIndex+1),10)
+            && writer.write(leg.sliceSetHash,32)
+            && writer.write(std::bit_cast<std::uint32_t>(leg.regionIndex)+0x80000000U,32)
+            && writer.write(static_cast<std::uint8_t>(leg.publicState+1),2)
+            && writer.write(static_cast<std::uint8_t>(leg.auxState+1),2)
+            && writer.write(0,2)));
+}
+[[nodiscard]] bool valid_leg(const RegionLeg& leg) noexcept {
+    return !leg.present || (leg.sliceSetIndex>=-1 && leg.sliceSetIndex<=1022
+        && leg.publicState>=-1 && leg.publicState<=2 && leg.auxState>=-1 && leg.auxState<=2);
+}
+
 /** B1.D4.field3 maps to native PAH peer+2A91. Other D4 fields and C9/C0 stay absent. */
 [[nodiscard]] bool write_synchronization(encoding::bits::Writer& writer,
-                                         bool present,std::uint8_t token) noexcept {
-    return writer.write(present?1U:0U,1)
-           && (!present || (writer.write(0,3) && writer.write(1,1)
-                            && writer.write(token,8) && writer.write(0,1)))
+                                         bool present,std::uint8_t token,const RegionLeg& current={},const RegionLeg& pending={}) noexcept {
+    const bool active=present || current.present || pending.present;
+    return writer.write(active?1U:0U,1)
+           && (!active || (write_region_leg(writer,current) && write_region_leg(writer,pending)
+                            && writer.write(0,1) && writer.write(present?1U:0U,1)
+                            && (!present || writer.write(token,8)) && writer.write(0,1)))
            && writer.write(0,2);
 }
 
@@ -174,7 +191,7 @@ bool valid(const MembershipSnapshot& snapshot) noexcept {
                            || (snapshot.citizen.memberKey != 0
                                && snapshot.citizen.memberKey != snapshot.identity.memberKey
                                && snapshot.citizen.ambassadorSlot == 1 && citizenRegionValid);
-    return sliceSetValid && hostValid
+    return valid_leg(snapshot.currentLeg) && valid_leg(snapshot.pendingLeg) && sliceSetValid && hostValid
            && (!snapshot.hasHostSynchronizationToken || snapshot.citizen.present);
 }
 
@@ -190,7 +207,7 @@ bool write_member_table(encoding::bits::Writer& writer,
                    && writer.write(identity.accountSoid, 64) && writer.write(identity.field5, 64)
                    && writer.write(identity.field6, 64) && writer.write(1, 1) && writer.write(1, 1)
                    && write_player_identity(writer, identity)
-                   && write_synchronization(writer,snapshot.hasSynchronizationToken,snapshot.synchronizationToken)
+                   && write_synchronization(writer,snapshot.hasSynchronizationToken,snapshot.synchronizationToken,snapshot.currentLeg,snapshot.pendingLeg)
                    && writer.write(1, 1) && writer.write(kLeaveReasonWire, 5);
     std::size_t firstAbsent = 1;
     if (encoded && snapshot.citizen.present) {

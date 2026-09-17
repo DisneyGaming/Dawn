@@ -37,6 +37,7 @@ namespace {
 // Guarded by the root State lock. This is the global investment/Director clock,
 // separate from an activity's scenario clock and retired only with root State.
 investment_clock::Clock investmentClock;
+bool newlightPending{};
 
 /** Network-order IPv4 loopback returned by the in-process SignOn route. */
 constexpr std::uint32_t kLoopbackAddress = 0x7F000001;
@@ -275,7 +276,6 @@ bool initialize(void* module,
     // The published relay port is the one the listener binds, so both move with one setting.
     initialized.signOn.relayPort = core::settings::get().server.bapPort;
     initialized.signOn.tokenLifetimeSeconds = kDefaultTokenLifetimeSeconds;
-    initialized.account = runtimeAccount;
     initialized.activity.defaults = activityDefaults;
     initialized.investment.family5.objectSoid = kGlobalFamily5Soid;
     // Only the override lists come from settings. Identity and gate stay owned by State.
@@ -299,12 +299,23 @@ bool initialize(void* module,
         build_data::shutdown();
         return false;
     }
+    const bool newlightReady=build_data::item_definitions_ready() && build_data::configured_item_details_ready()
+        && build_data::inventory_bucket_descriptors_ready() && build_data::socket_entry_lists_ready();
+    if(newlightReady) {
+        const AccountState beforeNewlight=runtimeAccount;
+        if(!prepare_newlight_start(runtimeAccount)
+            || (beforeNewlight!=runtimeAccount && !persistence::commit_account(beforeNewlight,runtimeAccount))) {
+            persistence::shutdown();build_data::shutdown();return false;
+        }
+    }
+    initialized.account=runtimeAccount;
     // Publish one complete State and its clock only after every generated secret is valid.
     activity::nightfall::rewards::clear();
     activity::progress::reset();
     unlocks::publish(persistedUnlocks);
     AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
     runtime::storage::g_state = initialized;
+    newlightPending=!newlightReady;
     investmentClock = clock;
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
     SecureZeroMemory(&initialized.signOn, sizeof initialized.signOn);
@@ -323,6 +334,7 @@ void shutdown() noexcept {
     SecureZeroMemory(&runtime::storage::g_state.bap, sizeof runtime::storage::g_state.bap);
     runtime::storage::g_state = {};
     investmentClock = {};
+    newlightPending=false;
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
     build_data::shutdown();
 }
@@ -336,12 +348,14 @@ const SignOnState& sign_on() noexcept {
 bool ensure_profile_item_identities() noexcept {
     AcquireSRWLockExclusive(&runtime::storage::g_stateLock);
     AccountState candidate = runtime::storage::g_state.account;
-    const bool ready = canonicalize_profile_item_identities(candidate);
+    const bool ready = canonicalize_profile_item_identities(candidate)
+        && (!newlightPending || prepare_newlight_start(candidate));
     const bool committed = ready
-        && (same_profile_identities(runtime::storage::g_state.account, candidate)
+        && (runtime::storage::g_state.account == candidate
             || persistence::commit_account(runtime::storage::g_state.account, candidate));
     if (committed) {
         runtime::storage::g_state.account = candidate;
+        newlightPending=false;
     }
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
     return committed;

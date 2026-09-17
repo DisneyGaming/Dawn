@@ -14,7 +14,7 @@ namespace sunrise::server::bap::encrypted::activity_message::membership {
         || destination == "fleet_freeroam" || destination == "polaris_freeroam"
         || destination == "planet_x_freeroam" || destination == "tangled_shore_freeroam"
         || destination == "dreaming_city_freeroam"
-        || destination == "adventure_rumba" || destination == "raid_envy_v310";
+        || destination == "adventure_rumba" || destination == "raid_envy_v310" || destination == "mission_launchpad";
 }
 
 /** Maps parsed membership fields without changing legacy destination routing. */
@@ -43,6 +43,12 @@ namespace sunrise::server::bap::encrypted::activity_message::membership {
     if(retains_held_region(destination)) {
         update.currentRegion={parsed.currentRegion.index,parsed.currentRegion.hash};
         update.hasCurrentRegion=parsed.hasCurrentRegion;
+    }
+    if(destination=="mission_launchpad") {
+        const auto leg=[](const auto& v) -> state::activity::membership::RegionLeg {
+            return {v.sliceSetIndex,v.sliceSetHash,v.regionIndex,v.publicState,v.auxState,v.present};
+        };
+        update.currentLeg=leg(parsed.currentLeg);update.pendingLeg=leg(parsed.pendingLeg);
     }
     return update;
 }

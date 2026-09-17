@@ -3,6 +3,7 @@
 #include "../../state/activity/beyond_infinity/runtime.h"
 #include "../../state/activity/deep_storage/runtime.h"
 #include "../../state/activity/hijacked/runtime.h"
+#include "../../state/activity/Newlight/launchpad/runtime.h"
 #include "../../state/activity/strike_bond/runtime.h"
 #include "../../state/activity/eater_of_worlds/runtime.h"
 /**
@@ -156,6 +157,7 @@ void observe_crown_route(void* component,const teleport::Vector& position) noexc
     state::activity::beyond_infinity::observe_position(position[0],position[1],position[2]);
     state::activity::deep_storage::observe_position(position[0],position[1],position[2]);
     state::activity::hijacked::observe_position(position[0],position[1],position[2]);
+    state::activity::newlight::launchpad::observe_position(position[0],position[1],position[2]);
     state::activity::strike_bond::observe_position(position[0],position[1],position[2]);
     state::activity::eater_of_worlds::observe_player(before);
     state::activity::eater_of_worlds::observe_position(position[0],position[1],position[2]);

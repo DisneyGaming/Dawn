@@ -21,6 +21,7 @@ struct Outcome {
     /** A request prepares at most one State mutation; the alternative owns only that payload. */
     using Mutation = std::variant<std::monostate,
                                   state::PendingEquipmentSwap,
+                                  state::PendingNewlightQuest,
                                   state::vendors::Pending,
                                   state::PendingItemAcquisition,
                                   state::PendingProfileItemAcquisition,

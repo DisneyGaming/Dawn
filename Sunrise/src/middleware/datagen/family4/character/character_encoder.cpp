@@ -11,6 +11,7 @@
 
 #include "../../../../state/activity/nightfall/native_power.h"
 #include "../../../../state/unlocks/unlocks_runtime.h"
+#include "../../../../state/activity/Newlight/launchpad/quest.h"
 #include "../instance/layout.h"
 #include "../progression/progression_bank_keys.h"
 #include "abi.h"
@@ -184,6 +185,7 @@ bool encode(const state::CharacterState& state,
         state::vendors::project_inventory(*account,state,object);
         if(!state::vendors::project_active_progress(*account,state,object)) {return false;}
     }
+    state::activity::newlight::launchpad::quest::project(state,object);
     if (!build_equipment_summary(effectiveLight, object.equipmentSummary)) {
         return false;
     }
@@ -194,9 +196,6 @@ bool encode(const state::CharacterState& state,
         return false;
     }
     state::vendors::project(state.vendorProgress,object);
-    // Requested native character flags, applied after saved quest/vendor state.
-    object.acquiredFlags[20] = std::byte{2}; // Flag 753 enabled.
-    object.acquiredFlags[59] = std::byte{0}; // Flag 1041 disabled.
     object.nextInventorySerial = resolvedLoadout.nextInventorySerial;
     for (std::size_t index = 0; index < resolvedLoadout.itemCount; ++index) {
         const loadout::ResolvedItem& item = resolvedLoadout.items[index];

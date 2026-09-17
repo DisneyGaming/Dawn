@@ -1,3 +1,4 @@
+#include "../../../../../state/activity/Newlight/launchpad/transit.h"
 #include "activity_membership_push.h"
 
 #include <Windows.h>
@@ -81,6 +82,19 @@ make_wire_snapshot(state::activity::ActivityInstanceKey activity,
         state::activity::mission_run_generation(),snapshot.identity.memberKey,
         name=="adventure_vod" && layout.tag==state::activity::beyond_infinity::kScenario,nativeTransit);
     if(beyond.publish) { terminal=beyond; }
+    const auto launchpad=state::activity::newlight::launchpad::transit::project(activity,
+        state::activity::mission_run_generation(),snapshot.identity.memberKey,
+        name=="mission_launchpad" && layout.tag==state::activity::newlight::launchpad::kScenario,nativeTransit,
+        state::activity::newlight::launchpad::transit::dock_arrived(snapshot.currentLeg,snapshot.pendingLeg),
+        state::activity::newlight::launchpad::transit::divide_retained(snapshot.currentLeg,snapshot.pendingLeg),snapshot.transitionToken);
+    if(name=="mission_launchpad" && layout.tag==state::activity::newlight::launchpad::kScenario) {
+        state::activity::newlight::launchpad::transit::echo_regions(snapshot,wire);
+    }
+    if(launchpad.publish) {terminal=launchpad;}
+    const auto approach=state::activity::newlight::launchpad::tower::project(activity,
+        state::activity::mission_run_generation(),snapshot.identity.memberKey,
+        name=="cine_110_twr" && layout.tag==state::activity::newlight::launchpad::tower::kApproachScenario,nativeTransit,GetTickCount64());
+    if(approach.publish) {terminal=approach;}
     if(terminal.publish) {
         wire.teleport={terminal.host.state,terminal.host.token,terminal.host.sliceSetIndex,
             terminal.host.sliceSetHash};

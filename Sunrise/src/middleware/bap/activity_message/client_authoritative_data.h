@@ -45,11 +45,19 @@ struct RegionState final {
     bool hasHash{};
 };
 
+/** Native D4 area leg. Absent deltas retain the previous leg; an explicit unset clears it. */
+struct RegionLeg final {
+    std::int32_t sliceSetIndex{-1};std::uint32_t sliceSetHash{};
+    std::int32_t regionIndex{-1};std::int8_t publicState{-1},auxState{-1};bool present{};
+    friend constexpr bool operator==(const RegionLeg&,const RegionLeg&) noexcept = default;
+};
+
 /** Typed changes kept from one sparse client-authoritative delta. */
 struct ClientAuthoritativeData final {
     SpawnState spawn{};
     TeleportState teleport{};
     RegionState region{};
+    RegionLeg currentLeg{},pendingLeg{};
     std::uint8_t transitionToken{};
     bool hasTransitionToken{};
     bool hasSpawn{};

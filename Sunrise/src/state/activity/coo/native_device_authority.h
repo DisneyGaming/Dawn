@@ -56,6 +56,21 @@ template<class Writer> bool linked_effect(Writer& w,std::uint32_t registry,std::
     for(unsigned i=0;i<4;++i) { if(!w.write(0x80000000U,32)) { return false; } }
     return w.write(registry,32) && w.write(35,7) && w.write(32768U+collection,16) && w.write(0,1);
 }
+// Writes a source header for callers supplying their own native component records.
+template<class Writer> bool object_header(Writer& writer,std::uint32_t generation,bool active,std::uint8_t states) noexcept {
+    if(states>3 || (!active && states)) return false;
+    return writer.write(generation ^ 0x80000000U, 32) // decoded generation
+        && writer.write(0x80000000U, 32)              // decoded candidate index 0
+        && writer.write(active ? 1U : 0U, 1)
+        && writer.write(0U, 1)                       // no placement override
+        && writer.write(0x7FFFFFFFU, 32)              // retain authored auxiliary integer -1
+        && writer.write(0x811C9DC5U, 32)             // canonical absent scoped ref
+        && writer.write(0U, 7)                       // decoded type -1
+        && writer.write(0x7FFFU, 16)                 // decoded index -1
+        && writer.write(0U, 32) && writer.write(0U, 32) && writer.write(0U, 32)
+        && writer.write(0U, 1)                       // auxiliary object flag off
+        && writer.write(states,2);
+}
 // Inactive preparation has no entity to receive component state. Preserve its
 // canonical empty dynamic list; otherwise inactive_state rejects the source
 // and the server never publishes the active generation that creates the plate.

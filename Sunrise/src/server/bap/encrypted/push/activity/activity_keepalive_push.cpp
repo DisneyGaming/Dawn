@@ -1,9 +1,11 @@
+#include "../../../../../state/activity/Newlight/launchpad/transit.h"
 #include "activity_keepalive_push.h"
 #include "../../../../../state/activity/gateway/runtime.h"
 #include "../../../../../state/activity/deadly_trial/runtime.h"
 #include "../../../../../state/activity/beyond_infinity/runtime.h"
 #include "../../../../../state/activity/deep_storage/runtime.h"
 #include "../../../../../state/activity/hijacked/runtime.h"
+#include "../../../../../state/activity/Newlight/launchpad/runtime.h"
 #include "../../../../../state/activity/beyond_infinity/transit.h"
 #include "../../../../../state/activity/strike_pact/runtime.h"
 #include "../../../../../state/activity/strike_bond/runtime.h"
@@ -269,6 +271,8 @@ bool consume_activity_keepalive(Session& session,
         && (vendorPresenceDue || vendorPopulationDue || scheduledBurst);
     const bool endingMembershipDue=!session.activity.joinedForeignSession
         && (state::activity::strike_bond::ending_membership_due(now)
+            || state::activity::newlight::launchpad::transit::membership_due(session.activity.instance,
+                state::activity::mission_run_generation(),now)
             || state::activity::omega_ending::membership_due(session.activity.instance,
             state::activity::mission_run_generation(),now)
             || state::activity::beyond_infinity::transit::membership_due(session.activity.instance,
@@ -285,7 +289,8 @@ bool consume_activity_keepalive(Session& session,
                 || state::activity::strike_bond::publication_due(now)
                 || state::activity::eater_of_worlds::publication_due(now)
                 || state::activity::strike_pact::publication_due(now)
-                || state::activity::hijacked::publication_due(now)));
+                || state::activity::hijacked::publication_due(now)
+                || (state::activity::newlight::launchpad::publication_due(now) || state::activity::newlight::launchpad::tower::active())));
     if (session.activity.joinedForeignSession) {
         // This link exists only so the client's second activity instance sees traffic. A roster or
         // membership push on it leaves the transition running with no world entered.

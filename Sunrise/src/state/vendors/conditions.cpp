@@ -2,6 +2,7 @@
 #include "projection.h"
 #include "quest_state.h"
 #include "../unlocks/unlocks_runtime.h"
+#include "../activity/Newlight/launchpad/quest.h"
 #include "../equipment/light/resolution/configured_equipment_light_resolver.h"
 #include <bit>
 #include <algorithm>
@@ -20,11 +21,20 @@ std::int32_t leaf(bool value,std::uint16_t slot,const AccountState& account,
     std::size_t ci,const Family5State& overrides,const unlocks::ScopedTable& table,
     const unlocks::CharacterTable* characterUnlocks) noexcept {
     const auto& c=account.characters[ci];
+    namespace q=activity::newlight::launchpad::quest;
+    const auto step=q::step(c);
     if(!value && slot==239) {return c.characterClass==CharacterClass::hunter;}
     if(!value && slot==264) {return c.characterClass==CharacterClass::titan;}
     if(!value && slot==271) {return c.characterClass==CharacterClass::warlock;}
     for(const auto& f:factions) if(!value && f.turnInFlag && slot==f.turnInFlag) {
         return quantity(account,c,f.token)>0 || (f.secondToken && quantity(account,c,f.secondToken)>0) || (f.thirdToken && quantity(account,c,f.thirdToken)>0);
+    }
+    if(step>=0) {
+        if(!value && slot>=20483 && slot<=20486) {return slot==20483 || step==slot-20482;}
+        if(value && slot==12740) {return q::kTracking[step];}
+        if(value && slot>=12741 && slot<=12745) {return step>slot-12741;}
+        if(!value && slot==753) {return step<5;}
+        if(!value && slot==1041) {return step>0;}
     }
     if(value) {
         for(const auto& f:factions) {

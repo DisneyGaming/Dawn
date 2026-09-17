@@ -1,3 +1,4 @@
+#include "../../../../state/activity/Newlight/launchpad/runtime.h"
 #include "activity_message_route.h"
 #include "lost_sector_rewards.h"
 #include "../push/activity/native_activity_publisher.h"
@@ -572,6 +573,17 @@ void report_sense_update(Session& session, const service::Request& request) noex
                 reinterpret_cast<const char*>(selection.packageName.data()),
                 selection.packageNameLength);
             state::build_data::scenarios::export_cue_observation_mapping(activity, update);
+        }
+    }
+    if(parsed && handleBound && session.activityPatchEpochSeen && same_epoch(update.epoch,session.activityPatchEpoch)
+        && state::activity::newlight::launchpad::native_run()) {
+        for(std::size_t i=0;i<update.objectCount;++i) {
+            const auto& o=update.objects[i];
+            if(o.hasCombatantOutput) {state::activity::newlight::launchpad::observe_actor(o.registryKey,o.slotType,o.slotIndex,o.combatantOutput);}
+            if(o.hasSquadOutput) {state::activity::newlight::launchpad::observe_source(o.registryKey,o.slotType,o.slotIndex,o.squadOutput);}
+            if(o.hasObjectOutput) {state::activity::newlight::launchpad::observe_use(o.registryKey,o.slotType,o.slotIndex,o.objectOutput);}
+            if(o.hasPassengerOutput) {state::activity::newlight::launchpad::observe_passenger(o.registryKey,o.slotType,o.slotIndex,o.passengerOutput);}
+            if(o.hasDeviceOutput) {state::activity::newlight::launchpad::observe_device(o.registryKey,o.slotType,o.slotIndex,o.deviceOutput);}
         }
     }
     // The native task evaluator answers a published combat objective inside the squad's own sense
@@ -1216,8 +1228,12 @@ void report_incident(const service::Request& request,bool liveBinding) noexcept 
     // stop authority, which the ending runtime does for a movie it is currently playing.
     const bool skipRequested = verdict == incident::Verdict::accepted
                                && parsed.primaryTarget == ending::kCinematicSkipIncident;
-    const bool skipAccepted =
-        skipRequested && ending::request_skip(state::activity::mission_run_generation());
+    state::activity::newlight::launchpad::cinematics::Incident movie{};
+    middleware::encoding::bits::Reader movieReader(request.payload);
+    const bool launchpadAccepted=liveBinding && verdict==incident::Verdict::accepted && parsed.hasPayload
+        && state::activity::newlight::launchpad::cinematics::decode(movieReader,movie)
+        && state::activity::newlight::launchpad::observe_cinematic(movie);
+    const bool skipAccepted=skipRequested && (launchpadAccepted || ending::request_skip(state::activity::mission_run_generation()));
     std::array<char, core::log::kLineCapacity> line{};
     const int written = std::snprintf(line.data(),
                                       line.size(),

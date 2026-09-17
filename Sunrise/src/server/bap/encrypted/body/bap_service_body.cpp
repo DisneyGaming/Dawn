@@ -225,6 +225,15 @@ bool process(const ServiceRoute& route,
                 message.opcode==901?middleware::web_service::ResponseShape::statusPairWithBool:middleware::web_service::ResponseShape::statusPair,
                 status,output,written);
         }
+        if (const auto* quest = web_service::mutation_if<state::PendingNewlightQuest>(webOutcome)) {
+            auto& tx=outcome.transaction.emplace<NewlightQuestTransaction>();
+            middleware::web_service::StatusResponse status{};status.code=1;
+            if(queuez::stage_newlight_quest(queuezState,*quest,tx.update)) {
+                tx.pending=*quest;status.code=0;status.value=tx.update.after.family4Version;
+            } else {outcome.transaction=std::monostate{};}
+            return middleware::web_service::encode_response(message,
+                middleware::web_service::ResponseShape::statusPair,status,output,written);
+        }
         if (equipmentSwap != nullptr) {
             // Equip is an optimistic Character-screen action. Its status-pair value is the exact
             // Family-4 revision whose following Queuez frame makes the action authoritative. Stage

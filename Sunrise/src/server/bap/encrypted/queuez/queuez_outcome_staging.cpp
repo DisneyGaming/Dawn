@@ -60,6 +60,13 @@ bool stage_service_outcome(Scratch& scratch,
             || before.family4Version==INT32_MAX || update.after.family4Version!=before.family4Version+1
             || !push::append_vendor_transaction_notification(scratch,update,vendor->pending,key,nonce,response,written)) {return false;}
         middleware::secure_channel::advance_nonce(nonce);after=update.after;
+    } else if (const auto* quest=transaction_if<NewlightQuestTransaction>(outcome)) {
+        const auto& update=quest->update;
+        if(!valid(update.after) || update.after.family4RootSoid!=before.family4RootSoid
+            || before.family4Version==INT32_MAX || update.after.family4Version!=before.family4Version+1
+            || !push::append_newlight_quest_notification(scratch,update,quest->pending,key,nonce,response,written)) {return false;}
+        middleware::secure_channel::advance_nonce(nonce);after=update.after;
+        if(!push::append_newlight_appearance(scratch,after,quest->pending,key,nonce,response,written)) {return false;}
     } else if (equipment != nullptr) {
         // Body processing already staged this exact after-image so the correlated opcode-403
         // response could promise its version. Reuse it here; staging a second revision would make

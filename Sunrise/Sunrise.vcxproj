@@ -119,8 +119,8 @@
     <ClCompile Include="src\client\hooks\bootflow\native_property_list_guard.cpp" />
     <ClCompile Include="src\client\hooks\bootflow\local_reconnect.cpp" />
     <ClCompile Include="src\state\activity\coo\omega_script.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
-    <ClCompile Include="src\state\activity\gateway\runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
-    <ClCompile Include="src\state\activity\gateway\controller.cpp" />
+    <ClCompile Include="src\state\activity\gateway\runtime.cpp"><ObjectFileName>$(IntDir)gateway_runtime.obj</ObjectFileName><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="src\state\activity\gateway\controller.cpp"><ObjectFileName>$(IntDir)gateway_controller.obj</ObjectFileName><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\state\activity\deep_storage\runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling><ObjectFileName>$(IntDir)deep_storage_runtime.obj</ObjectFileName></ClCompile>
     <ClCompile Include="src\state\activity\hijacked\runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling><ObjectFileName>$(IntDir)hijacked_runtime.obj</ObjectFileName></ClCompile>
     <ClCompile Include="src\state\activity\deep_storage\controller.cpp"><ExceptionHandling>Sync</ExceptionHandling><ObjectFileName>$(IntDir)deep_storage_controller.obj</ObjectFileName></ClCompile>
@@ -1505,6 +1505,7 @@
     <ClInclude Include="src\server\runtime\activity\mercury_populations.h" />
     <ClCompile Include="src\state\activity\native_population_events.cpp" />
     <ClCompile Include="src\state\activity\open_world_member_observations.cpp" />
+    <ClCompile Include="src\state\activity\vendors\lifetime.cpp" />
     <ClCompile Include="src\server\runtime\activity\native_activity_runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
     <ClCompile Include="src\server\runtime\activity\open_world_census.cpp" />
     <ClCompile Include="src\server\runtime\activity\public_event_native_bridge.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
@@ -1667,7 +1668,6 @@
     <ClInclude Include="src\state\account\inventory\placement.h" />
     <ClInclude Include="src\state\activity\coo\native_asset_catalog.h" />
     <ClInclude Include="src\state\activity\vendors\catalog.h" />
-    <ClCompile Include="src\state\activity\vendors\lifetime.cpp" />
     <ClInclude Include="src\state\activity\vendors\lifetime.h" />
     <ClInclude Include="src\state\activity\vendors\presentation.h" />
     <ClCompile Include="src\state\build_data\vendors\service_catalog.cpp" />
@@ -1682,5 +1682,56 @@
     <ClCompile Include="src\state\vendors\transaction.cpp" />
     <ClInclude Include="src\state\vendors\transaction.h" />
     <ClInclude Include="src\state\vendors\unlocks.h" />
+    <None Include="scripts\launchpad.lua" />
+    <ClInclude Include="src\server\bap\encrypted\push\activity\launchpad_roster.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\authority.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\cinematics.h" />
+    <ClCompile Include="src\state\activity\Newlight\launchpad\controller.cpp"><ObjectFileName>$(IntDir)launchpad_controller.obj</ObjectFileName><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClInclude Include="src\state\activity\Newlight\launchpad\controller.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\ghost.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\ghost_native.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\lighting_native.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\entrance_native.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\performances.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\entry.h" />
+    <ClCompile Include="src\state\activity\Newlight\launchpad\geometry.cpp"><ObjectFileName>$(IntDir)launchpad_geometry.obj</ObjectFileName><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="src\state\activity\Newlight\launchpad\mission.cpp"><ObjectFileName>$(IntDir)launchpad_mission.obj</ObjectFileName><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClInclude Include="src\state\activity\Newlight\launchpad\mission.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\rewards.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\native_catalog.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\quest.h" />
+    <ClCompile Include="src\state\activity\Newlight\launchpad\native_observer.cpp"><ObjectFileName>$(IntDir)launchpad_native_observer.obj</ObjectFileName><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClCompile Include="src\state\activity\Newlight\launchpad\runtime.cpp"><ObjectFileName>$(IntDir)launchpad_runtime.obj</ObjectFileName><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+    <ClInclude Include="src\state\activity\Newlight\launchpad\runtime.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\transit.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\transit_rules.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\state\activity\Newlight\launchpad\tower.h" />
+    <ClInclude Include="src\server\bap\encrypted\push\activity\launchpad_inventory.h" />
+    <ClInclude Include="src\client\hooks\bootflow\launchpad_handoff.inl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\state\activity\Newlight\launchpad\transport.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\server\bap\encrypted\push\snapshot\family4_newlight_quest.cpp" />
+    <ClInclude Include="src\server\bap\encrypted\push\activity\newlight_quest.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\state\activity\Newlight\launchpad\cache_native.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\lighting.h" />
+    <ClInclude Include="src\state\activity\Newlight\launchpad\quest_runtime.h" />
+    <ClCompile Include="src\state\activity\Newlight\launchpad\quest_runtime.cpp"><ObjectFileName>$(IntDir)launchpad_quest_runtime.obj</ObjectFileName><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\state\activity\Newlight\launchpad\welcome.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\server\bap\encrypted\push\activity\newlight_tower_roster.h" />
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
   </ItemGroup>
 </Project>

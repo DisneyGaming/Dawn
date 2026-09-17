@@ -73,7 +73,12 @@ void report_dropped(std::string_view name, std::uint32_t hash) noexcept {
 /** Drops a spawn set the destination cannot load. Only a proved miss is dropped. */
 std::uint32_t attachable_spawn_set_hash(const DestinationSelection& selection,
                                         std::uint32_t fallback) noexcept {
-    const std::uint32_t hash = resolve_spawn_set_hash(selection, fallback);
+    // The standard Tower uses its authored courtyard default when the request
+    // has no valid spawn set. Preserve explicit district landing selections.
+    const bool welcome=selection.activityIndex==20 && name_of(selection)=="city_tower_social_d2"
+        && !selection.hasSpawnSetOverride
+        && !usable_spawn_set_hash(selection.hasSpawnSetHash,selection.spawnSetHash);
+    const std::uint32_t hash = welcome?0x2EA8FB98U:resolve_spawn_set_hash(selection, fallback);
     if (hash == 0 || hash == kAbsentSpawnSetHash) {
         return hash;
     }

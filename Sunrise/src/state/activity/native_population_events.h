@@ -587,6 +587,7 @@ private:
     std::uint32_t registry,std::uint16_t slot,std::uint32_t seed) noexcept;
 [[nodiscard]] std::uint64_t generator_epoch() noexcept;
 [[nodiscard]] RenewResult renew(const Lease&,const Lease&) noexcept;
+void unbind(const Lease&) noexcept;
 void release(ActivityInstanceKey) noexcept;
 [[nodiscard]] std::uint64_t epoch() noexcept;
 [[nodiscard]] bool pending(ActivityInstanceKey) noexcept;

@@ -78,6 +78,8 @@ std::atomic<ActivitySlotLookup> g_activitySlotLookup{nullptr};
 std::atomic<LoaderManager> g_loaderManager{nullptr};
 std::atomic<std::byte*> g_image{nullptr};
 std::atomic_bool g_arrivalReported{};
+// A timeout can release the fade without proving that native loading finished.
+std::atomic_bool g_flyInReported{};
 std::atomic_bool g_loaderHoldReported{};
 std::atomic_uint64_t g_holdStartedTick{};
 /** Frame-owned observation; full handles distinguish reused player pool slots. */
@@ -285,6 +287,31 @@ struct LoaderObservation final {
     return result;
 }
 
+/** Both native spawn paths must deliver the same confirmed, one-shot arrival. */
+[[nodiscard]] bool complete_native_arrival(bool playerReady, const LoaderObservation& loader,
+                                          const char* source) noexcept {
+    const auto readWorld = g_worldState.load(std::memory_order_acquire);
+    const auto readLocal = g_localReady.load(std::memory_order_acquire);
+    std::int32_t worldState = -1;
+    const bool worldReadable = readWorld != nullptr && readWorld(&worldState);
+    const bool localReady = readLocal != nullptr && readLocal();
+    const spawn_hold_policy::FrameArrival evidence{
+        state::activity::world_phase() == state::activity::WorldPhase::arrived
+            ? spawn_hold_policy::Phase::arrived : spawn_hold_policy::Phase::idle,
+        g_flyInReported.load(std::memory_order_relaxed), playerReady,
+        worldReadable, worldState, localReady, loader.readable, loader.busy};
+    if (!spawn_hold_policy::frame_arrival_ready(evidence)
+        || g_flyInReported.exchange(true, std::memory_order_relaxed)) {
+        return false;
+    }
+    release_world_fade(true);
+    std::array<char, 192> line{};
+    std::snprintf(line.data(), line.size(),
+        "ev=bootflow stage=fly_in_complete source=%s world_state=3 local_ready=1 loader_idle=1", source);
+    core::log::write(core::log::Channel::client, core::log::Level::info, line.data());
+    return true;
+}
+
 void report_loader_hold(const LoaderObservation& loader,
                         std::uint64_t age,
                         const char* result) noexcept {
@@ -490,8 +517,10 @@ __declspec(noinline) bool __fastcall spawn_gate(std::int32_t datum) noexcept {
         (void)g_holdStartedTick.compare_exchange_strong(
             expected, now, std::memory_order_relaxed, std::memory_order_relaxed);
         g_arrivalReported.store(false, std::memory_order_relaxed);
+        g_flyInReported.store(false, std::memory_order_relaxed);
         g_loaderHoldReported.store(false, std::memory_order_relaxed);
     } else if (phase == state::activity::WorldPhase::idle) {
+        g_flyInReported.store(false, std::memory_order_relaxed);
         g_holdStartedTick.store(0U, std::memory_order_relaxed);
         g_loaderHoldReported.store(false, std::memory_order_relaxed);
     } else if (phase == state::activity::WorldPhase::arrived
@@ -508,7 +537,7 @@ __declspec(noinline) bool __fastcall spawn_gate(std::int32_t datum) noexcept {
     const bool gaveUp = age >= client.spawnHoldMs;
     const bool released = g_arrivalReported.load(std::memory_order_relaxed);
     LoaderObservation loader{};
-    if (phase == state::activity::WorldPhase::arrived && client.holdSpawn && !released) {
+    if (phase == state::activity::WorldPhase::arrived && !released) {
         loader = observe_loader();
     }
     const spawn_hold_policy::Decision decision = spawn_hold_policy::decide(
@@ -530,7 +559,9 @@ __declspec(noinline) bool __fastcall spawn_gate(std::int32_t datum) noexcept {
         }
         report_arrival(datum, allowed);
         if (call.accepts_side_effects()) {
-            release_world_fade();
+            if (!complete_native_arrival(allowed, loader, "spawn_gate")) {
+                release_world_fade();
+            }
         }
         g_holdStartedTick.store(0U, std::memory_order_relaxed);
     }
@@ -562,6 +593,7 @@ __declspec(noinline) void poll_spawn_arrival() noexcept {
             std::memory_order_relaxed);
         g_playerReplacementPending.store(false, std::memory_order_release);
         g_arrivalReported.store(false, std::memory_order_relaxed);
+        g_flyInReported.store(false, std::memory_order_relaxed);
         g_loaderHoldReported.store(false, std::memory_order_relaxed);
         if (phase == state::activity::WorldPhase::idle) {
             g_holdStartedTick.store(0U, std::memory_order_relaxed);
@@ -583,6 +615,7 @@ __declspec(noinline) void poll_spawn_arrival() noexcept {
     if (spawn_hold_policy::player_replaced(spawn_hold_policy::Phase::arrived,
             patrol, previous, controlledEntity)) {
         g_playerReplacementPending.store(true, std::memory_order_release);
+        g_flyInReported.store(false, std::memory_order_relaxed);
         g_arrivalReported.store(false, std::memory_order_relaxed);
         g_loaderHoldReported.store(false, std::memory_order_relaxed);
         g_holdStartedTick.store(GetTickCount64(), std::memory_order_relaxed);
@@ -596,34 +629,25 @@ __declspec(noinline) void poll_spawn_arrival() noexcept {
                 {line.data(), static_cast<std::size_t>(written)});
         }
     }
-    if (g_arrivalReported.load(std::memory_order_relaxed) || !hasPlayer) {
+    if (!hasPlayer || (g_arrivalReported.load(std::memory_order_relaxed)
+        && g_flyInReported.load(std::memory_order_relaxed))) {
         return;
     }
-    const auto readWorld = g_worldState.load(std::memory_order_acquire);
-    const auto readLocal = g_localReady.load(std::memory_order_acquire);
-    std::int32_t worldState = -1;
-    const bool worldReadable = readWorld != nullptr && readWorld(&worldState);
-    const bool localReady = readLocal != nullptr && readLocal();
     const LoaderObservation loader = observe_loader();
-    const spawn_hold_policy::FrameArrival evidence{
-        spawn_hold_policy::Phase::arrived,
-        g_arrivalReported.load(std::memory_order_relaxed), true,
-        worldReadable, worldState, localReady, loader.readable, loader.busy};
     std::uint32_t confirmedEntity = UINT32_MAX;
-    if (!spawn_hold_policy::frame_arrival_ready(evidence)
-        || !teleport::read_controlled_entity(confirmedEntity) || confirmedEntity != controlledEntity
+    if (!teleport::read_controlled_entity(confirmedEntity) || confirmedEntity != controlledEntity
         || !call.accepts_side_effects()
-        || g_arrivalReported.exchange(true, std::memory_order_relaxed)) {
+        || !complete_native_arrival(true, loader, "frame")) {
         return;
     }
-    release_world_fade();
+    g_arrivalReported.store(true, std::memory_order_relaxed);
     g_playerReplacementPending.store(false, std::memory_order_release);
     g_holdStartedTick.store(0U, std::memory_order_relaxed);
     g_loaderHoldReported.store(false, std::memory_order_relaxed);
     std::array<char, 240> line{};
     const int written = std::snprintf(line.data(), line.size(),
         "ev=bootflow stage=spawn_arrival result=completed source=frame controlled=%08X world_state=%d local_ready=1 loader_idle=1",
-        controlledEntity, worldState);
+        controlledEntity, 3);
     if (written > 0 && static_cast<std::size_t>(written) < line.size()) {
         core::log::write(core::log::Channel::client, core::log::Level::info,
             {line.data(), static_cast<std::size_t>(written)});
@@ -733,6 +757,7 @@ bool uninstall_spawn_hold() noexcept {
     g_loaderManager.store(nullptr, std::memory_order_release);
     g_image.store(nullptr, std::memory_order_release);
     g_arrivalReported.store(false, std::memory_order_release);
+    g_flyInReported.store(false, std::memory_order_release);
     g_loaderHoldReported.store(false, std::memory_order_release);
     g_holdStartedTick.store(0U, std::memory_order_release);
     g_observedControlledEntity.store(spawn_hold_policy::kNoControlledEntity,

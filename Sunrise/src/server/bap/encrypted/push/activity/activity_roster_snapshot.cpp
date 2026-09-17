@@ -1,5 +1,6 @@
 #include "../../../../../state/activity/coo/native_mission_forest_authority.h"
 #include "../../../../../state/activity/vendors/lifetime.h"
+#include "../../../../../state/activity/Newlight/launchpad/transit.h"
 #include <Windows.h>
 #include "../../../../../client/player/player_position.h"
 
@@ -47,6 +48,9 @@
 #include "deep_storage_roster.h"
 #include "hijacked_roster.h"
 #include "vendor_roster.h"
+#include "launchpad_roster.h"
+#include "newlight_tower_roster.h"
+#include "../../../../../state/activity/Newlight/launchpad/runtime.h"
 #include "../../../../../state/activity/beyond_infinity/runtime.h"
 #include "../../../../../state/activity/deep_storage/runtime.h"
 #include "../../../../../state/activity/hijacked/runtime.h"
@@ -542,6 +546,9 @@ RosterOutcome build_roster_snapshot(Session& session,
     const bool strikeDestination=(name=="strike_pact" || name=="mission_pact") && !session.activity.joinedForeignSession;
     const bool strikePrepared=!session.activity.joinedForeignSession && state::activity::strike_pact::prepare(state::activity::mission_run_generation(),strikeDestination,name=="mission_pact");
     if(strikeDestination && !strikePrepared) { return RosterOutcome::noGroups; }
+    const bool launchpadDestination=name=="mission_launchpad" && !session.activity.joinedForeignSession;
+    const bool launchpadPrepared=state::activity::newlight::launchpad::prepare(state::activity::mission_run_generation(),launchpadDestination);
+    if(launchpadDestination && !launchpadPrepared) {return RosterOutcome::noGroups;}
     const bool hijackedDestination=name=="adventure_rumba" && !session.activity.joinedForeignSession;
     const bool hijackedPrepared=!session.activity.joinedForeignSession && state::activity::hijacked::prepare(state::activity::mission_run_generation(),hijackedDestination);
     if(hijackedDestination && !hijackedPrepared) { return RosterOutcome::noGroups; }
@@ -741,6 +748,10 @@ RosterOutcome build_roster_snapshot(Session& session,
     namespace vendorWorld=state::activity::vendors::presentation;
     const bool towerVendors=!vendorWorld::groups(layout.tag).empty();
     const auto ownsVendor=[scenario=layout.tag](std::uint32_t key) noexcept {return vendorWorld::owns(key,scenario);};
+    if(!session.activity.joinedForeignSession) {
+        state::activity::newlight::launchpad::quest::selected(
+            state::activity::mission_run_generation(),selection.activityIndex,layout.tag);
+    }
     if(towerVendors) {
         const auto role=native_publisher::prepare(session.activity.instance,session.activity.lineage,
             session.activity.rosterLifetimes,scratch,snapshot.roster,
@@ -773,6 +784,11 @@ RosterOutcome build_roster_snapshot(Session& session,
             snapshot.gameplayClockTicks=state::activity::coo::native_activity_ticks(now-session.activity.vendorClockOrigin);
         }
     }
+    if(name==state::activity::newlight::launchpad::kPackage
+        && layout.tag==state::activity::newlight::launchpad::kScenario
+        && native_publisher::prepare(session.activity.instance,session.activity.lineage,
+            session.activity.rosterLifetimes,scratch,snapshot.roster,launchpad_roster::owns_key)
+            ==native_publisher::Role::invalid) {return RosterOutcome::noGroups;}
     if (name == "mission_scot") {
         const auto admission = omega_lair::admit(layout, scratch, snapshot.roster,
             [](std::size_t index, layouts::RosterGroup& group) noexcept {
@@ -1071,6 +1087,23 @@ RosterOutcome build_roster_snapshot(Session& session,
             snapshot.gameplayClockTicks=snapshot.strike_pact.activityTime;
         }
     }
+    if(!session.activity.joinedForeignSession) {
+        namespace tower=state::activity::newlight::launchpad::tower;
+        tower::selected(state::activity::mission_run_generation(),selection.activityIndex,layout.tag,GetTickCount64());
+        snapshot.launchpadTower=tower::frame(state::activity::mission_run_generation());
+        if(snapshot.launchpadTower.enabled && !launchpad_roster::approach(scratch,snapshot.roster)) {return RosterOutcome::noGroups;}
+    }
+    if(launchpadPrepared) {
+        std::uint32_t failedKey{};
+        if(!launchpad_roster::admit(layout,scratch,snapshot.roster,
+            [](std::size_t index,layouts::RosterGroup& group) noexcept {return state::build_data::find_roster_group(index,group);},failedKey)) {
+            std::array<char,128> line{};std::snprintf(line.data(),line.size(),"ev=launchpad stage=roster result=failed registry=%08X",failedKey);
+            core::log::write(core::log::Channel::server,core::log::Level::error,line.data());return RosterOutcome::noGroups;
+        }
+        snapshot.launchpad=state::activity::newlight::launchpad::snapshot(state::activity::mission_run_generation(),GetTickCount64(),state::activity::mission_seed_armed());
+        snapshot.missionCompletion=snapshot.launchpad.completion;snapshot.gameplayClockTicks=snapshot.launchpad.gameplayClockTicks;
+        launchpad_roster::movies(scratch,snapshot.roster,snapshot.launchpad.cinematic);
+    }
     if(hijackedPrepared) {
         std::uint32_t failedKey{};
         const bool admitted=hijacked_roster::admit(layout,scratch,snapshot.roster,
@@ -1326,6 +1359,12 @@ RosterOutcome build_roster_snapshot(Session& session,
         snapshot.spawnSliceSet = snapshot.eater_of_worlds.checkpointSliceSet;
         snapshot.spawnSetHash = snapshot.eater_of_worlds.checkpointSpawnSet;
         snapshot.hasSpawnOverride = true;
+    }
+    if(snapshot.launchpad.enabled
+        && snapshot.launchpad.cinematic.phase==state::activity::newlight::launchpad::cinematics::Phase::gameplay
+        && snapshot.launchpad.section<std::size(state::activity::newlight::launchpad::kCheckpoints)) {
+        const auto point=state::activity::newlight::launchpad::kCheckpoints[snapshot.launchpad.section];
+        snapshot.spawnSliceSet=point.region;snapshot.spawnSetHash=point.spawnSet;snapshot.hasSpawnOverride=true;
     }
     // The archived opening packages need one registration-only packet on the primary/private
     // activity before their object state arrives. Publishing phase 1 and phase 2 together there
@@ -1596,6 +1635,7 @@ RosterOutcome build_roster_snapshot(Session& session,
     if(adventureAdditive)session.activity.rosterGroups=fold_groups(snapshot.roster);
     // The phase-one removal must be the whole preparation packet. Even an
     // empty reset block in phase two can seed a new sync record after cleanup.
+    if(snapshot.launchpad.enabled && snapshot.launchpad.cinematic.retiring()) {snapshot.phaseOneOnly=true;}
     const auto folded = fold_groups(snapshot.roster);
     const bool retainOrdinals = towerVendors || (nativeProfile && nativeProfile->retainRosterOrdinals);
     const bool warmup = session.activity.rosterSends < kWarmupSends;
@@ -1655,7 +1695,7 @@ namespace {
 
 /** Maps one copied membership after-image into the fixed wire schema. */
 [[nodiscard]] bool make_membership_wire(
-    state::activity::ActivityInstanceKey activity,bool validatedOmega,bool validatedBeyond,bool validatedGarden,
+    state::activity::ActivityInstanceKey activity,bool validatedOmega,bool validatedBeyond,bool validatedGarden,bool validatedLaunchpad,bool validatedApproach,
     const state::activity::membership::MembershipState& membership,
     const gameplay::AdvertisementSnapshot& advertisement,
     membership_message::MembershipSnapshot& wire) noexcept {
@@ -1686,6 +1726,15 @@ namespace {
     const auto beyond=state::activity::beyond_infinity::transit::project(activity,
         state::activity::mission_run_generation(),membership.identity.memberKey,validatedBeyond,nativeTransit);
     if(beyond.publish) { terminal=beyond; }
+    const auto launchpad=state::activity::newlight::launchpad::transit::project(activity,
+        state::activity::mission_run_generation(),membership.identity.memberKey,validatedLaunchpad,nativeTransit,
+        state::activity::newlight::launchpad::transit::dock_arrived(membership.currentLeg,membership.pendingLeg),
+        state::activity::newlight::launchpad::transit::divide_retained(membership.currentLeg,membership.pendingLeg),membership.transitionToken);
+    if(validatedLaunchpad) {state::activity::newlight::launchpad::transit::echo_regions(membership,wire);}
+    if(launchpad.publish) {terminal=launchpad;}
+    const auto approach=state::activity::newlight::launchpad::tower::project(activity,
+        state::activity::mission_run_generation(),membership.identity.memberKey,validatedApproach,nativeTransit,GetTickCount64());
+    if(approach.publish) {terminal=approach;}
     if(terminal.publish) {
         wire.teleport={terminal.host.state,terminal.host.token,terminal.host.sliceSetIndex,
             terminal.host.sliceSetHash};
@@ -1885,6 +1934,8 @@ namespace {
                 && hasLayout && layout.tag==0x80F47522U,
             allowArrival && name=="adventure_vod" && hasLayout && layout.tag==state::activity::beyond_infinity::kScenario,
             allowArrival && name=="mission_bond" && hasLayout && layout.tag==0x80F47445U,
+            allowArrival && name=="mission_launchpad" && hasLayout && layout.tag==state::activity::newlight::launchpad::kScenario,
+            allowArrival && name=="cine_110_twr" && hasLayout && layout.tag==state::activity::newlight::launchpad::tower::kApproachScenario,
             membershipAfter, advertisement, output.membershipWire)) {
         gameplay::group::release_host_activity_lineage(advertisementLease);
         return RegionSnapshotBuildResult::failed;

@@ -444,7 +444,8 @@ void uninstall_fade_release() noexcept;
  * Releases the world-transition fade channel.
  * The spawn gate owns the timing. Does nothing unless `client.fade_release` is set.
  */
-void release_world_fade() noexcept;
+void release_world_fade(bool flyInComplete=false) noexcept;
+void poll_opening_fade() noexcept;
 
 /** Re-arms the one line the release logs, so the next load reports its own. */
 void rearm_fade_release() noexcept;

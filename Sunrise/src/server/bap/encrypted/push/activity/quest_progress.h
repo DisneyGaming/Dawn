@@ -7,6 +7,7 @@
 #include "../../queuez/queuez_outcome_staging.h"
 #include "../../../../../middleware/secure_channel/runtime.h"
 #include "../../../../../core/logging/log.h"
+#include "newlight_quest.h"
 
 namespace sunrise::server::bap::encrypted::push::activity::quest_progress {
 inline bool consume(Session& session,Scratch& scratch,std::span<std::byte> response,

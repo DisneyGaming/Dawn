@@ -30,6 +30,7 @@
 #include "../../../state/activity/beyond_infinity/runtime.h"
 #include "../../../state/activity/deep_storage/runtime.h"
 #include "../../../state/activity/hijacked/runtime.h"
+#include "../../../state/activity/Newlight/launchpad/runtime.h"
 #include "../../../state/activity/hijacked/controller.h"
 #include "../../../state/activity/hijacked/plate_presentation.h"
 #include "../../../state/activity/strike_bond/runtime.h"

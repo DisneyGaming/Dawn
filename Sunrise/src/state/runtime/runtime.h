@@ -7,6 +7,7 @@
 #include <span>
 
 #include "state.h"
+#include "../activity/Newlight/launchpad/quest_runtime.h"
 
 namespace sunrise::state {
 

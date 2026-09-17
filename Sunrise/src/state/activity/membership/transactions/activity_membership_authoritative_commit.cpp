@@ -12,10 +12,7 @@ bool commit_authoritative(ActivityState& state,
                           const PendingMutation& prepared) noexcept {
     const PreparedRegionTransition& transition = prepared.regionTransition;
     if (!equal(prepared.authoritativeInput, prepared.authoritativeGuard)
-        || std::memcmp(&transition,
-                       &prepared.regionTransitionGuard,
-                       sizeof transition)
-               != 0
+        || !transactions::equal(transition, prepared.regionTransitionGuard)
         || transition.activity != activity::transactions::instance_key(record)
         || transition.expectedHostRegion != activity::transactions::host_region_key(record)
         || transition.expectedStateRevision != state.stateRevision

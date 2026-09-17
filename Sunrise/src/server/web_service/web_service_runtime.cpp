@@ -184,14 +184,22 @@ bool consume(std::span<const std::byte> request,
     }
 
     if(message.opcode==904) {
+        namespace q=state::activity::newlight::launchpad::quest;
         middleware::web_service::messages::opcode904::Request reply{};
         middleware::web_service::StatusResponse status{};status.code=1;
-        if(middleware::web_service::messages::opcode904::parse(message,reply)
-            && reply.vendor>=0 && reply.interaction>=0 && reply.reply>=0) {
-            state::vendors::Pending vendor;
-            if(state::vendors::prepare({static_cast<std::uint16_t>(reply.vendor),reply.selection,
-                reply.interaction,reply.reply},vendor)) {
-                outcome.mutation=std::move(vendor);
+        if(middleware::web_service::messages::opcode904::parse(message,reply)) {
+            const auto step=q::accepted_step(reply.vendor,reply.interaction,reply.reply,reply.selection);
+            const auto run=state::activity::mission_run_generation();
+            state::PendingNewlightQuest mutation{};
+            if(step>=2 && run && q::towerRun.load()==run
+                && state::activity::world_phase()==state::activity::WorldPhase::arrived
+                && state::prepare_newlight_quest(static_cast<std::uint8_t>(step),mutation)) {
+                outcome.mutation=mutation;
+            } else if(step<0 && reply.vendor>=0 && reply.interaction>=0 && reply.reply>=0) {
+                state::vendors::Pending vendor;
+                if(state::vendors::prepare({static_cast<std::uint16_t>(reply.vendor),reply.selection,reply.interaction,reply.reply},vendor)) {
+                    outcome.mutation=std::move(vendor);
+                }
             }
         }
         // Success is encoded by the BAP publisher only after the matching Family-4

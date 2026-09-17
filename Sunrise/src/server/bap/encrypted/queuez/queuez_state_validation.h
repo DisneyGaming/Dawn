@@ -6,9 +6,11 @@
 #include "../../../../middleware/queuez/queuez_update.h"
 #include "../../../../middleware/queuez/subscription.h"
 #include "definition.h"
+#include "../../../../state/activity/Newlight/launchpad/quest_runtime.h"
 
 namespace sunrise::server::bap::encrypted::queuez {
 [[nodiscard]] bool stage_vendor_transaction(const SessionState&,const state::vendors::Pending&,VendorTransaction&) noexcept;
+[[nodiscard]] bool stage_newlight_quest(const SessionState&,const state::PendingNewlightQuest&,NewlightQuest&) noexcept;
 
 /** @return True when one peer queuez state is canonical for the implemented versions. */
 [[nodiscard]] bool valid(const SessionState& state) noexcept;

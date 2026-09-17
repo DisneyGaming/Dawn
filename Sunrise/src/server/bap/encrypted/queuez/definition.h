@@ -124,6 +124,9 @@ struct RosterAppearanceRefresh {
 /** Pursuit advancement and up to two new item residents at one Family-4 revision. */
 struct VendorTransaction : EquipmentSwap {};
 
+struct NewlightQuest : EquipmentSwap {
+    std::uint32_t accountDefinitionId{},itemInstanceDefinitionId{};
+};
 
 struct ItemAcquisition {
     SessionState after{};

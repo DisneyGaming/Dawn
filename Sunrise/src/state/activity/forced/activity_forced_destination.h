@@ -30,6 +30,7 @@ void snapshot(ForcedDestination& value) noexcept;
  * Returns false if the run is stale or the operator has selected another override. */
 [[nodiscard]] bool suspend_omega_for_completed_run(std::uint64_t run) noexcept;
 [[nodiscard]] bool omega_completion_suspended() noexcept;
+[[nodiscard]] bool suspend_launchpad_for_completed_run(std::uint64_t run) noexcept;
 
 /**
  * Copies the operator's raw stored panel selection, exactly as set in the activity-override panel

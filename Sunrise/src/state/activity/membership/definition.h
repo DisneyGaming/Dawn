@@ -76,6 +76,13 @@ struct RegionState final {
     std::uint32_t hash{};
 };
 
+/** Native D4 area leg. Absent deltas retain the previous leg; an explicit unset clears it. */
+struct RegionLeg final {
+    std::int32_t sliceSetIndex{-1};std::uint32_t sliceSetHash{};
+    std::int32_t regionIndex{-1};std::int8_t publicState{-1},auxState{-1};bool present{};
+    friend constexpr bool operator==(const RegionLeg&,const RegionLeg&) noexcept = default;
+};
+
 /** Sparse activity-host changes taken by one State transaction. */
 struct AuthoritativeUpdate final {
     SpawnState spawn{};
@@ -88,6 +95,7 @@ struct AuthoritativeUpdate final {
     bool hasRegion{};
     std::uint8_t synchronizationToken{};
     bool hasSynchronizationToken{};
+    RegionLeg currentLeg{},pendingLeg{};
     /** Opt-in held receipt; callers retaining only the second leg keep legacy semantics. */
     RegionState currentRegion{};
     bool hasCurrentRegion{};
@@ -105,6 +113,7 @@ struct Snapshot final {
     bool hasTeleportReceipt{};
     std::uint8_t synchronizationToken{};
     bool hasSynchronizationToken{};
+    RegionLeg currentLeg{},pendingLeg{};
 };
 
 /** Mutable membership fields owned by one activity session. */
@@ -125,6 +134,7 @@ struct MembershipState final {
     /** Retained D4 field3 receipt; zero is valid and absent deltas leave it unchanged. */
     std::uint8_t synchronizationToken{};
     bool hasSynchronizationToken{};
+    RegionLeg currentLeg{},pendingLeg{};
     /** Actual held region, distinct from region's roster prefetch destination. */
     RegionState currentRegion{};
 };
