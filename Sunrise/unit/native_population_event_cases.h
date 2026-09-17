@@ -60,7 +60,7 @@ void native_population_event_cases() {
         CHECK(!stream::retained_facet(0,-2,0,1));
         events::Mailbox streaming;auto opted=lease;opted.discardStreamedReplicas=true;
         CHECK(streaming.bind(opted));const auto receipt=streaming.capture(opted);
-        const events::Event recreated{opted,{opted.source},0x4567,events::Kind::sourceRecreated,0,UINT32_MAX,0x3456};
+        const events::Event recreated{opted,{opted.source},0x4567,events::Kind::sourceRecreated,0x3456};
         CHECK(streaming.submit(recreated,receipt));
         auto bad=recreated;bad.previousSourceHandle=bad.sourceHandle;CHECK(!streaming.submit(bad,receipt));
         bad=recreated;bad.previousSourceHandle=UINT32_MAX;CHECK(!streaming.submit(bad,receipt));

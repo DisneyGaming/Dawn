@@ -792,38 +792,23 @@ static void music_regressions() {
     check(!m::raise_music(f,255),"invalid score rejected");
 }
 static void forest_endpoint_regressions() {
-    // Exercise the same type-37 authority publication that the Garden
-    // controller feeds to the native packet encoder.
-    m::Frame frame{};frame.enabled=true;frame.spawnGeneration=1;frame.generatorSeed=12345;
-    Wire wire;check(m::body_bits(frame,m::kGenerator.registry,37,m::kGenerator.slot)==coo::native_generator::kActivationBits
-        && m::write_body(wire,frame,m::kGenerator.registry,37,m::kGenerator.slot)
-        && wire.bits==coo::native_generator::kMinimumBits,"Garden authority publishes a complete Forest activation");
-    check(wire.fields[0]==std::pair<std::uint64_t,unsigned>{12345,32}
-        && wire.fields[18]==std::pair<std::uint64_t,unsigned>{13,7}
-        && wire.fields[20]==std::pair<std::uint64_t,unsigned>{0xBF800000U,32}
-        && wire.fields[21]==std::pair<std::uint64_t,unsigned>{0xBF800000U,32}
-        && wire.fields[22]==std::pair<std::uint64_t,unsigned>{0x80000006U,32},
-        "Garden authority retains the selected seed, budget6 and authored topology");
-    check(wire.fields[2]==std::pair<std::uint64_t,unsigned>{127,8}
-        && wire.fields[3]==std::pair<std::uint64_t,unsigned>{129,8}
-        && wire.fields[5]==std::pair<std::uint64_t,unsigned>{0,1}
-        && wire.fields[6]==std::pair<std::uint64_t,unsigned>{127,8}
-        && wire.fields[7]==std::pair<std::uint64_t,unsigned>{128,8}
-        && wire.fields[9]==std::pair<std::uint64_t,unsigned>{0,1},
-        "Garden authority preserves the two unused side heights as absent endpoints");
+    const auto request=m::forest_request(12345);
+    check(request.seed==12345 && request.selectAnchors,"Forest endpoint override retains layout seed");
+    for(const auto& a:request.anchors)
+        check(a.column>=0 && a.column<3 && a.height>=0 && a.height<3,"Forest C anchor is admitted by native three-column solver");
+    const auto& exit=request.anchors[2];
+    check(exit.column==1 && exit.height==1 && exit.progress==1.F,"Forest exit uses measured middle column and lower tier");
+    check(request.anchors[0].column==1 && request.anchors[0].height==1
+        && request.anchors[1].column==2 && request.anchors[1].height==0
+        && request.anchors[3].column==1 && request.anchors[3].height==0,"Forest correction preserves other endpoints");
+    Wire wire;check(coo::native_generator::write_activation(wire,request)
+        && wire.bits==coo::native_generator::kMinimumBits,"Corrected endpoints reach a complete native activation packet");
+    // The first record begins with seed/mode; every endpoint contributes four
+    // fields. Verify the north coordinates and unique goal on the wire too.
     check(wire.fields[10]==std::pair<std::uint64_t,unsigned>{129,8}
-        && wire.fields[11]==std::pair<std::uint64_t,unsigned>{130,8}
-        && wire.fields[12]==std::pair<std::uint64_t,unsigned>{0x3F800000U,32}
-        && wire.fields[13]==std::pair<std::uint64_t,unsigned>{1,1}
-        && wire.fields[14]==std::pair<std::uint64_t,unsigned>{129,8}
-        && wire.fields[15]==std::pair<std::uint64_t,unsigned>{128,8}
-        && wire.fields[16]==std::pair<std::uint64_t,unsigned>{0,32}
-        && wire.fields[17]==std::pair<std::uint64_t,unsigned>{1,1},
-        "Garden authority publishes south entrance and tier2 north exit with independent active flags");
-    check(wire.fields[28+2]==std::pair<std::uint64_t,unsigned>{127,8}
-        && wire.fields[28+10]==std::pair<std::uint64_t,unsigned>{127,8}
-        && wire.fields[56]==std::pair<std::uint64_t,unsigned>{12345,32},
-        "Garden authority retains the authored second record and selected tail seed");
+        && wire.fields[11]==std::pair<std::uint64_t,unsigned>{129,8},"North column and height survive authority serialization");
+    for(unsigned i=0;i<4;++i)
+        check(wire.fields[4+4*i].first==(i==2?0x3F800000U:0U),"Only the fixed north exit is the maximum-progress goal");
 }
 static void boss_shield_regressions() {
     namespace shield=sunrise::client::hooks::bootflow::strike_bond_boss_shield;

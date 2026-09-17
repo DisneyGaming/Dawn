@@ -1,5 +1,4 @@
 #include "../src/server/runtime/activity/native_capture_bridge.h"
-#include "../src/server/runtime/activity/native_capture_runtime.h"
 #include <array>
 #include <cstdio>
 #include <limits>
@@ -8,7 +7,6 @@
 #include <vector>
 
 namespace f=sunrise::server::runtime::activity::capture_feedback;
-namespace activity_clock=sunrise::server::runtime::activity::activity_clock;
 int checks{},failures{};
 void check(bool value,const char* label) {++checks;if(!value){++failures;std::printf("FAIL %s\n",label);}}
 template<class Array,class T> void put(Array& bytes,std::size_t offset,T value) {std::memcpy(bytes.data()+offset,&value,sizeof value);}
@@ -28,7 +26,6 @@ struct Fixture {
     std::array<std::byte,0x10> scene{};
     std::array<std::byte,0x1D0> before{},after{};
     std::array<std::byte,0x80> context{};
-    std::uint64_t sequence{33};
     f::Ticket ticket{{{0x9EAA300100200001ULL,{1}},7,4,0x81550015,13},
         {1,2,3,0},{0x34D23982,0x815500A9,4,32},1,0x80C01781,0x815B8B3B,0x4C8,0x248,
         {false,1000.0F/30.0F},{true,{true,0,5385600,0,5385600,12000000,1.0F},false},9};
@@ -67,194 +64,9 @@ struct Fixture {
     }
     f::Capture capture() const {
         return {ticket,source,sourceDefinition,entity,scene,before,after,context,0x26F9204C,0x08F9004C,
-            0x7BFAA098,0x36F9E667,0x7DF9E672,0x00FBC000,0x00FBC000,f::kTickRva,sequence};
+            0x7BFAA098,0x36F9E667,0x7DF9E672,0x00FBC000,0x00FBC000,f::kTickRva,33};
     }
 };
-void match_fixture_to_ticket(Fixture& fixture,const f::Ticket& ticket,
-    std::uint64_t sequence=1,bool complete=false) {
-    fixture.ticket=ticket;
-    put(fixture.source,0x180,ticket.generation);put(fixture.source,0x2F0,ticket.generation);
-    put(fixture.sourceDefinition,0x30,ticket.source.registry);
-    put(fixture.sourceDefinition,0x36,ticket.source.slot);
-    put(fixture.sourceDefinition,0x38,static_cast<std::uint32_t>(ticket.domain.bubble));
-    put(fixture.context,0x48,ticket.domain.scenario);
-    put(fixture.context,0x18,std::bit_cast<std::uint32_t>(ticket.clockConfiguration.timing));
-    const auto& state=ticket.requested.clock;
-    for(auto* bytes:{&fixture.before,&fixture.after}) {
-        (*bytes)[0x30]=std::byte{1};(*bytes)[0x38]=std::byte{1};
-        put(*bytes,0x40,state.minimum);put(*bytes,0x48,state.maximum);
-        put(*bytes,0x50,state.elapsed);put(*bytes,0x58,state.remaining);
-        put(*bytes,0x60,state.anchor);put(*bytes,0x68,state.rate);
-        (*bytes)[0x79]=std::byte{};
-    }
-    if(complete) {put(fixture.after,0x1B8,1.0F);fixture.after[0x79]=std::byte{1};}
-    else {put(fixture.after,0x1B8,0.25F);put(fixture.after,0x1BC,6.0F);}
-    fixture.context[0x10]=std::byte{1};fixture.context[0x14]=std::byte{static_cast<unsigned char>(ticket.clockConfiguration.field0)};
-    fixture.sequence=sequence;
-}
-void mailbox_rebind_checks() {
-    namespace bridge=sunrise::server::runtime::activity::capture_bridge;
-    bridge::Mailbox mailbox;
-    Fixture first,second,incomplete;
-    second.ticket.source.slot=33;put(second.sourceDefinition,0x36,std::uint16_t{33});
-    incomplete.ticket.source.slot=34;put(incomplete.sourceDefinition,0x36,std::uint16_t{34});
-    check(mailbox.bind(first.ticket) && mailbox.bind(second.ticket) && mailbox.bind(incomplete.ticket),
-        "two controllers and an incomplete controller bind independently");
-    check(mailbox.submit(first.capture()),"first controller readiness is accepted");
-    std::array<bridge::Event,4> events{};
-    check(mailbox.drain(first.ticket.domain.owner,events)==1 && events[0].ready,
-        "first controller readiness is consumed");
-    auto old=first.ticket;put(first.after,0x1B8,1.0F);first.after[0x1BC]=std::byte{};first.after[0x79]=std::byte{1};
-    first.sequence=34;check(mailbox.submit(first.capture()),"completed old controller row is accepted");
-    check(mailbox.submit(second.capture()),"other controller event remains queued");
-    auto fresh=old;fresh.generation++;fresh.token.incarnation++;fresh.requested.clock.anchor++;
-    fresh.armEpoch=old.armEpoch+1;
-    auto modeChanged=old;modeChanged.generation++;modeChanged.token.incarnation++;
-    modeChanged.token.run=old.domain.owner.sessionId;
-    modeChanged.runIdentity=f::RunIdentity::activitySession;
-    modeChanged.requested.clock.anchor++;modeChanged.armEpoch=old.armEpoch+1;
-    check(!mailbox.rebind(old,modeChanged),"same-domain rebind cannot change capture run identity");
-    check(mailbox.rebind(old,fresh),"completed row rebinds with a newer generation and token");
-    check(mailbox.drain(old.domain.owner,events)==1 && f::same(events[0].observation.ticket,second.ticket)
-        && events[0].ready,"rebind purges only queued old events and preserves the other controller");
-    auto stale=first.capture();stale.sequence=35;
-    check(!mailbox.submit(stale),"old capture observation cannot complete the fresh row");
-    check(f::same(mailbox.lookup(fresh.controllerDefinition,fresh.source.registry,fresh.source.slot),fresh),
-        "lookup exposes the fresh ticket after rebind");
-    match_fixture_to_ticket(first,fresh,1,false);
-    check(mailbox.submit(first.capture()),"fresh controller readiness is accepted");
-    check(mailbox.drain(fresh.domain.owner,events)==1 && events[0].ready,
-        "fresh controller readiness is consumed");
-    match_fixture_to_ticket(first,fresh,2,true);
-    check(mailbox.submit(first.capture()),"fresh controller accepts its actual completion");
-    check(mailbox.drain(fresh.domain.owner,events)==1 && events[0].completed,
-        "fresh controller completion is an actual native receipt");
-
-    auto candidate=old;candidate.generation++;candidate.token.incarnation++;
-    check(!mailbox.rebind(old,candidate),"stale old ticket cannot be rebound after replacement");
-    auto foreign=old;foreign.domain.owner.sessionId++;
-    candidate=old;candidate.generation++;
-    check(!mailbox.rebind(foreign,candidate),"wrong-owner old ticket cannot rebind");
-    auto lower=fresh;lower.generation--;
-    check(!mailbox.rebind(fresh,lower),"backward native source generation is rejected");
-    auto sameToken=fresh;sameToken.generation++;
-    check(!mailbox.rebind(fresh,sameToken),"identical CoO token is rejected");
-    auto invalid=fresh;invalid.generation++;invalid.armEpoch=0;
-    check(!mailbox.rebind(fresh,invalid),"invalid fresh ticket is rejected");
-
-    check(mailbox.bind(incomplete.ticket),"incomplete row remains available for rejection coverage");
-    auto incompleteFresh=incomplete.ticket;incompleteFresh.generation++;incompleteFresh.token.incarnation++;
-    incompleteFresh.armEpoch++;
-    check(!mailbox.rebind(incomplete.ticket,incompleteFresh),"incomplete prior native state cannot rebind");
-}
-void runtime_rearm_checks() {
-    namespace activity=sunrise::server::runtime::activity;
-    namespace coo=sunrise::state::activity::coo;
-    namespace registry=coo::registry;
-    namespace placement=activity::placement;
-    std::array<registry::Slot,2> slots{{
-        {32,4,0x80809927,0x8080992E,0x8080992F,0x815500A9},
-        {33,4,0x80809927,0x8080992E,0x8080992F,0x815500A9}}};
-    registry::Definition registryDefinition{"capture-test",0x81550015,0x34D23982,1,1,13,slots};
-    std::array<placement::Capability,2> placements{{
-        {&registryDefinition,32,1},{&registryDefinition,33,1}}};
-    std::array<activity::native_capture::Binding,2> bindings{{
-        {0,0x80C01781,0x815B8B3B,0x4C8,0x248,"duration"},
-        {1,0x80C01781,0x815B8B3B,0x4C8,0x248,"duration"}}};
-    struct Definition final {
-        std::uint8_t bubble{};
-        std::string_view clockFrequencyParameter{};
-        std::span<const activity::native_capture::Binding> captures{};
-        std::span<const placement::Capability> placements{};
-    } definition{};
-    definition.bubble=13;definition.clockFrequencyParameter="frequency";
-    definition.placements=placements;definition.captures=bindings;
-    struct Document final {
-        coo::script::PolicyValue duration{"duration",8000,false};
-        coo::script::Views view{};
-        Document() {view.parameters=std::span(&duration,1);}
-        [[nodiscard]] const coo::script::Views& views() const noexcept {return view;}
-    } document;
-    activity::native_capture::Runtime runtime;
-    check(runtime.begin(definition,document),"runtime begins two native capture controllers");
-    const activity_clock::Owner owner{0xAABBCCDD,{1}};
-    const activity_clock::Domain domain{owner,7,1,0x81550015,13};
-    activity_clock::Publication clock{domain,{false,1000.0F/30.0F},100};runtime.clock(clock);
-    check(runtime.start(0,{1,1,0,0}) && runtime.start(1,{1,1,0,1}),
-        "both controllers start under one activity owner");
-    placement::wire::Batch beforeStart{};beforeStart.count=2;
-    beforeStart.entries[0]={0x34D23982,32,13,{},91};beforeStart.entries[1]={0x34D23982,33,13,{},92};
-    check(runtime.append(beforeStart) && beforeStart.entries[0].generation==1
-        && beforeStart.entries[1].generation==1,"start projection carries actual current source generations");
-    Fixture first,second;match_fixture_to_ticket(first,runtime.state(0).ticket);
-    match_fixture_to_ticket(second,runtime.state(1).ticket);
-    namespace bridge=sunrise::server::runtime::activity::capture_bridge;
-    check(bridge::submit(first.capture()) && bridge::submit(second.capture()),
-        "both controllers accept native readiness observations");
-    check(runtime.poll([](coo::Event) noexcept {return true;}),"runtime consumes both readiness receipts");
-    match_fixture_to_ticket(first,runtime.state(0).ticket,2,true);
-    match_fixture_to_ticket(second,runtime.state(1).ticket,2,true);
-    check(bridge::submit(first.capture()) && bridge::submit(second.capture()),
-        "both controllers accept actual native completion observations");
-    check(runtime.poll([](coo::Event) noexcept {return true;}) && runtime.state(0).completed
-        && runtime.state(1).completed,"runtime records actual completion for both controllers");
-    const auto oldFirst=runtime.state(0).ticket;const auto oldSecond=runtime.state(1).ticket;
-    clock.elapsedTicks=200;runtime.clock(clock);
-    check(!runtime.rearm(0,{2,2,0,0},2),"rearm rejects a token owned by another activity incarnation");
-    check(!runtime.rearm(0,{1,2,0,0},oldFirst.generation),"rearm rejects a backward source generation");
-    check(!runtime.rearm(0,oldFirst.token,oldFirst.generation+1),"rearm rejects an identical CoO token");
-    check(runtime.rearm(0,{1,2,0,0},oldFirst.generation+1),
-        "completed controller re-arms through the locked bridge wrapper");
-    check(runtime.state(0).ticket.armEpoch>oldFirst.armEpoch
-        && runtime.state(0).firstStartGeneration==oldFirst.generation
-        && !runtime.state(0).ready && !runtime.state(0).completed
-        && f::same(runtime.state(1).ticket,oldSecond) && runtime.state(1).completed,
-        "rearm is row-local, clears evidence, and preserves the original first generation");
-    placement::wire::Batch afterRearm{};afterRearm.count=2;
-    afterRearm.entries[0]={0x34D23982,32,13,{},99};afterRearm.entries[1]={0x34D23982,33,13,{},99};
-    check(runtime.append(afterRearm) && afterRearm.entries[0].generation==oldFirst.generation+1
-        && afterRearm.entries[1].generation==oldSecond.generation
-        && afterRearm.entries[0].capture.has_value(),
-        "projection generation follows the rearmed ticket while the other stays unchanged");
-    auto stale=first;stale.ticket=oldFirst;stale.sequence=3;
-    check(!bridge::submit(stale.capture()),"old queued/callback identity cannot satisfy rearmed controller");
-    match_fixture_to_ticket(first,runtime.state(0).ticket,1,false);
-    check(bridge::submit(first.capture()) && runtime.poll([](coo::Event) noexcept {return true;})
-        && runtime.state(0).ready && !runtime.state(0).completed,"fresh rearm begins at native readiness");
-    match_fixture_to_ticket(first,runtime.state(0).ticket,2,true);
-    check(bridge::submit(first.capture()) && runtime.poll([](coo::Event) noexcept {return true;})
-        && runtime.state(0).completed,"fresh controller completes only from its current native receipt");
-    check(runtime.state(1).completed,"second controller remains completed after one-controller rearm");
-    bridge::release(owner);
-    activity::native_capture::Runtime sessionRuntime;
-    check(sessionRuntime.begin(definition,document,f::RunIdentity::activitySession),
-        "runtime accepts explicit activity-session capture identity");
-    sessionRuntime.clock(clock);
-    check(!sessionRuntime.start(0,{owner.incarnation.value,3,0,3}),
-        "explicit session identity rejects an incarnation-run token");
-    check(sessionRuntime.start(0,{owner.sessionId,3,0,3}),
-        "explicit session identity accepts a session-run token");
-    check(sessionRuntime.state(0).ticket.runIdentity==f::RunIdentity::activitySession
-        && sessionRuntime.state(0).ticket.token.run==owner.sessionId,
-        "runtime ticket records the selected session namespace");
-    bridge::release(owner);
-}
-void run_identity_checks() {
-    Fixture fixture;
-    auto session=fixture.ticket;session.runIdentity=f::RunIdentity::activitySession;
-    session.token.run=session.domain.owner.sessionId;
-    check(f::valid(session),"explicit session ticket accepts its session run");
-    check(f::token_matches(session.domain,session.token,f::RunIdentity::activitySession),
-        "shared validator accepts only the selected session namespace");
-    auto incarnation=session;incarnation.token.run=session.domain.owner.incarnation.value;
-    check(!f::valid(incarnation),"session ticket rejects the activity-incarnation run");
-    auto foreign=session;foreign.token.run++;
-    check(!f::valid(foreign),"capture ticket rejects a foreign run");
-    auto unknown=session;unknown.runIdentity=static_cast<f::RunIdentity>(99);
-    check(!f::valid(unknown),"capture ticket rejects an unknown run identity");
-    auto wrongToken=session;wrongToken.token.incarnation=0;
-    check(!f::valid(wrongToken),"capture ticket rejects a missing command incarnation");
-}
 int main(int argc,char** argv) {
     if(argc==3){archivedCapture=argv[1];archivedDefinition=argv[2];}
     Fixture v;f::Observation o{};
@@ -386,8 +198,5 @@ int main(int argc,char** argv) {
     for(auto& item:entries)compact.release(item.ticket.domain.owner);
     check(compact.size()==1 && compact.interested(replacement.ticket.controllerDefinition),"unrelated owner stays active");
     compact.release(replacement.ticket.domain.owner);check(compact.size()==0,"final tail retirement is empty");
-    mailbox_rebind_checks();
-    runtime_rearm_checks();
-    run_identity_checks();
     std::printf("native capture feedback: %d checks, %d failures\n",checks,failures);return failures?1:0;
 }

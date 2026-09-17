@@ -38,10 +38,6 @@ The route proceeds through the Lighthouse, Infinite Forest C, Simulant Past and
 Spire. The Forest retains native island generation, gateway placement and Daemon
 rules. Regional checkpoint publication follows arrival in the Past and Spire.
 
-Forest C's two-endpoint selection uses the shared typed route contract; its grid,
-side coordinates, retained unused-side heights, budget and authored topology live
-in the Garden binding data, and the existing type-37 authority path applies it.
-
 1. Defend the Lighthouse approach, open the Forest entrance and cross the Forest.
 2. Clear the exit defense and enter the Past through its native gateway.
 3. Cross the terraces, destroy the security modules and defeat the shielded

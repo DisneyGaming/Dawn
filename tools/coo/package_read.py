@@ -5,22 +5,17 @@ Key material is borrowed from the pinned mapped image, never printed or saved.
 from pathlib import Path
 from functools import lru_cache
 import ctypes as C
-import os
 import re
 import struct as S
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'build/coo/native-tags'
-PACKAGE_IMAGE = Path(os.environ.get('DAWN_PACKAGE_IMAGE', str(ROOT / 'destiny2_unpacked.bin')))
-PACKAGE_ROOT = Path(os.environ.get('DAWN_PACKAGE_ROOT', str(ROOT / 'packages')))
-PACKAGE_CODEC = Path(os.environ.get(
-    'DAWN_PACKAGE_CODEC', str(ROOT / 'bin/x64/oo2core_3_win64.dll')))
 u32 = lambda b, o: S.unpack_from('<I', b, o)[0]
 u64 = lambda b, o: S.unpack_from('<Q', b, o)[0]
 
 def borrowed_material():
-    image = PACKAGE_IMAGE.read_bytes()
+    image = (ROOT / 'destiny2_unpacked.bin').read_bytes()
     hits = list(re.finditer(rb'\x0f\x10\x05....\x48\x8d\x64\x24\xf8\x48\x89\x2c\x24\x48\x8d\x2d....\xe9', image, re.S))
     assert len(hits) == 1, 'Package key-table signature is not unique'
     pos = hits[0].start()
@@ -33,14 +28,14 @@ def borrowed_material():
     return primary, image[table:table+16], image[table+32:table+44]
 
 _primary, _alternate, _nonce_base = borrowed_material()
-_codec = C.CDLL(str(PACKAGE_CODEC))
+_codec = C.CDLL(str(ROOT / 'bin/x64/oo2core_3_win64.dll'))
 _decode = _codec.OodleLZ_Decompress
 _decode.restype = C.c_int64
 _decode.argtypes = [C.c_void_p,C.c_int64,C.c_void_p,C.c_int64,C.c_int,C.c_int,C.c_int64,C.c_void_p,C.c_int64,C.c_void_p,C.c_void_p,C.c_void_p,C.c_int64,C.c_int]
 
 @lru_cache(maxsize=12)
 def package(pid):
-    candidates = list(PACKAGE_ROOT.glob(f'*_{pid:04x}_*.pkg'))
+    candidates = list((ROOT/'packages').glob(f'*_{pid:04x}_*.pkg'))
     assert candidates, f'Missing package {pid:04X}'
     latest = max(candidates, key=lambda p: int(p.stem.rsplit('_', 1)[1]))
     blob = latest.read_bytes()

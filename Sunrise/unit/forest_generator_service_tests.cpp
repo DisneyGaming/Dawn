@@ -1,25 +1,13 @@
 #include "../src/server/runtime/activity/forest_generator_service.h"
 #include "../src/server/runtime/activity/haunted_forest_registries.h"
-#include "../src/state/activity/coo/native_generator_authority.h"
 #include <cstdio>
 #include <cstdlib>
-#include <vector>
 namespace service=sunrise::server::runtime::activity::forest_generator;
 namespace fg=service::wire;
 namespace hf=sunrise::server::runtime::activity::haunted_forest::mode;
 namespace roster=sunrise::middleware::bap::activity_message::sensor_auth_update;
 unsigned checks{};
-void expect(bool value,const char* reason="") {
-    ++checks;if(!value){std::fprintf(stderr,"failed check %u: %s\n",checks,reason);std::exit(1);}
-}
-struct PacketWriter final {
-    std::size_t bits{};
-    std::vector<std::pair<std::uint64_t,unsigned>> fields{};
-    std::size_t bit_count() const noexcept {return bits;}
-    bool write(std::uint64_t value,std::size_t width) {
-        bits+=width;fields.push_back({value,static_cast<unsigned>(width)});return true;
-    }
-};
+void expect(bool value) {++checks;if(!value){std::fprintf(stderr,"failed check %u\n",checks);std::exit(1);}}
 int main() {
     fg::State active;active.primary.overrides=fg::Enabled;active.primary.enabled=true;
     auto stopped=active;stopped.primary.enabled=false;
@@ -113,66 +101,6 @@ int main() {
     expect(replay.project(13).entries[0].state.primary.seed==seed);
     expect(other.project(13).entries[0].state.primary.seed!=seed);
     expect(fixedRun.project(13).entries[0].state.primary.seed==9001);
-    auto cycleCapability=seeded;cycleCapability.allowCycles=true;
-    service::Service cycles;
-    expect(cycles.begin({1,{2}},3,{&cycleCapability,1},fixed));
-    service::CycleCommand cycle{{1,{2}},3,1,10,0x34D23982,98,1,1};
-    expect(cycles.begin_cycle(cycle,13)==service::Result::accepted);
-    const auto firstCycle=cycles.project(13);
-    expect(firstCycle.count==1 && firstCycle.entries[0].state.primary.enabled
-        && firstCycle.entries[0].state.primary.seed!=9001 && firstCycle.entries[0].state.primary.seed!=0);
-    const auto firstCycleState=firstCycle.entries[0].state;const auto firstCycleRevision=cycles.revision();
-    cycle.expectedRevision=firstCycleRevision;
-    expect(cycles.begin_cycle(cycle,13)==service::Result::duplicate
-        && cycles.revision()==firstCycleRevision && cycles.last_request()==10
-        && cycles.project(13).entries[0].state==firstCycleState);
-    auto invalidCycle=cycle;invalidCycle.request=11;
-    expect(cycles.begin_cycle(invalidCycle,13)==service::Result::stale
-        && cycles.revision()==firstCycleRevision && cycles.project(13).entries[0].state==firstCycleState);
-    cycle={ {1,{2}},3,firstCycleRevision,11,0x34D23982,98,1,2};
-    expect(cycles.begin_cycle(cycle,13)==service::Result::accepted);
-    const auto secondCycle=cycles.project(13).entries[0].state.primary.seed;
-    expect(secondCycle!=firstCycleState.primary.seed && cycles.revision()==firstCycleRevision+1);
-    cycle={ {1,{2}},3,cycles.revision(),12,0x34D23982,98,1,3};
-    expect(cycles.begin_cycle(cycle,13)==service::Result::accepted);
-    const auto thirdCycle=cycles.project(13).entries[0].state.primary.seed;
-    expect(thirdCycle!=secondCycle && thirdCycle!=firstCycleState.primary.seed);
-    const std::array<std::uint32_t,3> cycleSeeds{firstCycleState.primary.seed,secondCycle,thirdCycle};
-    const auto beforeStale=cycles.project(13).entries[0].state;const auto staleRevision=cycles.revision();
-    auto staleCycle=cycle;staleCycle.expectedRevision=staleRevision;staleCycle.request=13;staleCycle.cycle=1;
-    expect(cycles.begin_cycle(staleCycle,13)==service::Result::stale
-        && cycles.revision()==staleRevision && cycles.project(13).entries[0].state==beforeStale);
-    service::Command disable{{1,{2}},3,cycles.revision(),14,0x34D23982,2,98};
-    expect(cycles.request(disable,13)==service::Result::accepted);
-    expect(!cycles.project(13).entries[0].state.primary.enabled
-        && cycles.project(13).entries[0].state.primary.seed==thirdCycle);
-    service::Command enable{{1,{2}},3,cycles.revision(),15,0x34D23982,1,98};
-    expect(cycles.request(enable,13)==service::Result::accepted);
-    expect(cycles.project(13).entries[0].state.primary.enabled
-        && cycles.project(13).entries[0].state.primary.seed==thirdCycle);
-    auto badCycle=cycle;badCycle.expectedRevision=cycles.revision();badCycle.request=16;badCycle.cycle=4;
-    badCycle.action=2;
-    const auto beforeInvalid=cycles.project(13).entries[0].state;const auto invalidRevision=cycles.revision();
-    expect(cycles.begin_cycle(badCycle,13)==service::Result::unsupported
-        && cycles.revision()==invalidRevision && cycles.project(13).entries[0].state==beforeInvalid);
-    auto wrongBubble=cycle;wrongBubble.expectedRevision=cycles.revision();wrongBubble.request=17;wrongBubble.cycle=4;
-    expect(cycles.begin_cycle(wrongBubble,12)==service::Result::stale
-        && cycles.revision()==invalidRevision && cycles.project(13).entries[0].state==beforeInvalid);
-    service::Service nonOptIn;
-    expect(nonOptIn.begin({1,{2}},3,{&seeded,1},fixed));
-    service::CycleCommand rejected{{1,{2}},3,1,1,0x34D23982,98,1,1};
-    expect(nonOptIn.begin_cycle(rejected,13)==service::Result::unsupported
-        && nonOptIn.revision()==1 && nonOptIn.project(13).count==0);
-    service::Service cycleReplay;
-    expect(cycleReplay.begin({1,{2}},3,{&cycleCapability,1},fixed));
-    for(std::uint64_t round=1;round<=3;++round) {
-        service::CycleCommand replayCommand{{1,{2}},3,cycleReplay.revision(),20+round,
-            0x34D23982,98,1,round};
-        expect(cycleReplay.begin_cycle(replayCommand,13)==service::Result::accepted);
-        expect(cycleReplay.project(13).entries[0].state.primary.seed
-            ==cycleSeeds[round-1]);
-    }
-    expect(cycleReplay.project(13).entries[0].state.primary.seed==thirdCycle);
     // The wire replaces the complete anchor block. Coordinate bindings must
     // preserve unrelated groups, weights, enabled flags and recipe fields.
     auto anchored=active;anchored.primary.overrides|=fg::Anchors;
@@ -215,116 +143,5 @@ int main() {
     expectedAnchored.primary.enabled=true;expectedAnchored.primary.anchors[3].a=4;
     expectedAnchored.primary.anchors[3].b=1;
     expect(positioned.project(13).entries[0].state==expectedAnchored);
-    // The route contract is independent of mission IDs and maps both pairs of
-    // native side groups through the same resolver used by admission.
-    fg::State routeState=active;
-    routeState.primary.overrides=fg::Enabled;
-    routeState.primary.seed=41;routeState.primary.densityA=.25F;routeState.primary.densityB=.5F;
-    routeState.primary.scalarOverrides={1,2,3,4,5};routeState.primary.blockedCount=1;
-    routeState.primary.blockedCells[0]={7,8,9};
-    routeState.secondary.seed=73;routeState.secondary.densityA=.75F;routeState.reportedSeed=99;
-    routeState.areas[3]=4;routeState.groups[5]=6;
-    const fg::Route eastWest{{3,2},{fg::Side::positiveX,2,1,true},{fg::Side::negativeX,0,0,false},{1,0,0,1}};
-    auto eastWestResolved=routeState;expect(fg::resolve_route(eastWest,eastWestResolved));
-    auto expectedEastWest=routeState;
-    expectedEastWest.primary.anchors={{{2,1,0.F,true},{0,0,1.F,false},{-1,0,0.F,false},{-1,1,0.F,false}}};
-    expectedEastWest.primary.overrides=static_cast<std::uint8_t>(expectedEastWest.primary.overrides|fg::Anchors);
-    expect(eastWestResolved==expectedEastWest,
-        "route resolution changes only primary anchors and the Anchors override");
-    const fg::Route northSouth{{3,3},{fg::Side::positiveY,1,0,true},{fg::Side::negativeY,2,2,true},{0,1,0,1}};
-    auto northSouthResolved=routeState;expect(fg::resolve_route(northSouth,northSouthResolved));
-    expect(northSouthResolved.primary.anchors[2]==fg::Anchor{1,0,0.F,true}
-        && northSouthResolved.primary.anchors[3]==fg::Anchor{2,2,1.F,true}
-        && northSouthResolved.primary.anchors[0].a==-1
-        && northSouthResolved.primary.anchors[1].a==-1,
-        "north/south route selects the two requested sides and one exit goal");
-    auto opaqueHeights=eastWest;opaqueHeights.unusedHeights[2]=-1;opaqueHeights.unusedHeights[3]=100;
-    auto opaqueResolved=routeState;
-    expect(fg::valid(opaqueHeights) && fg::resolve_route(opaqueHeights,opaqueResolved)
-        && opaqueResolved.primary.anchors[0]==fg::Anchor{2,1,0.F,true}
-        && opaqueResolved.primary.anchors[1]==fg::Anchor{0,0,1.F,false}
-        && opaqueResolved.primary.anchors[2]==fg::Anchor{-1,-1,0.F,false}
-        && opaqueResolved.primary.anchors[3]==fg::Anchor{-1,100,0.F,false},
-        "unused heights accept opaque signed metadata while selected coordinates remain valid");
-    for(unsigned invalidKind=0;invalidKind<7;++invalidKind) {
-        auto badRouteConfig=eastWest;
-        if(invalidKind==0)badRouteConfig.entrance.side=static_cast<fg::Side>(4);
-        if(invalidKind==1)badRouteConfig.exit.side=badRouteConfig.entrance.side;
-        if(invalidKind==2)badRouteConfig.entrance.column=3;
-        if(invalidKind==3)badRouteConfig.entrance.height=2;
-        if(invalidKind==4)badRouteConfig.grid.columns=0;
-        if(invalidKind==5)badRouteConfig.grid.heights=129;
-        if(invalidKind==6)badRouteConfig.exit.height=-1;
-        auto unchanged=eastWestResolved;
-        expect(!fg::resolve_route(badRouteConfig,unchanged) && unchanged==eastWestResolved);
-    }
-
-    namespace native=sunrise::state::activity::coo::native_generator;
-    native::Request baseRequest{};baseRequest.seed=12345;baseRequest.values[0]=6;
-    baseRequest.topology=native::kAuthoredTopologies;baseRequest.regions[0]=9;baseRequest.groups[0]=7;
-    native::Request routedRequest{};
-    expect(native::build_route_request(baseRequest,eastWest,routedRequest)
-        && routedRequest.selectAnchors && routedRequest.seed==12345
-        && routedRequest.values[0]==6 && routedRequest.topology==native::kAuthoredTopologies
-        && routedRequest.regions[0]==9 && routedRequest.groups[0]==7
-        && routedRequest.anchors[1].column==0 && routedRequest.anchors[1].height==0
-        && routedRequest.anchors[1].progress==1.F && !routedRequest.anchors[1].enabled,
-        "legacy request builder uses the shared east/west route resolver");
-    PacketWriter packet;expect(native::write_activation(packet,routedRequest)
-        && packet.bits==native::kMinimumBits && packet.fields.size()>89
-        && packet.fields[28]==std::pair<std::uint64_t,unsigned>{0,32}
-        && packet.fields[55]==std::pair<std::uint64_t,unsigned>{0,7}
-        && packet.fields[56]==std::pair<std::uint64_t,unsigned>{12345,32}
-        && packet.fields[57]==std::pair<std::uint64_t,unsigned>{9,8}
-        && packet.fields[89]==std::pair<std::uint64_t,unsigned>{7,8},
-        "full route packet preserves the second record and activation tail");
-    auto invalidOutput=baseRequest;
-    const bool rejectedRequest=!native::build_route_request(baseRequest,
-        fg::Route{{0,2},eastWest.entrance,eastWest.exit,{0,0,0,0}},invalidOutput);
-    bool anchorsUnchanged=true;
-    for(std::size_t i=0;i<native::kAnchorCount;++i)
-        anchorsUnchanged&=invalidOutput.anchors[i].column==baseRequest.anchors[i].column
-            && invalidOutput.anchors[i].height==baseRequest.anchors[i].height
-            && invalidOutput.anchors[i].progress==baseRequest.anchors[i].progress
-            && invalidOutput.anchors[i].enabled==baseRequest.anchors[i].enabled;
-    expect(rejectedRequest && invalidOutput.seed==baseRequest.seed && anchorsUnchanged
-        && invalidOutput.topology==baseRequest.topology,
-        "invalid route builder leaves its output request unchanged");
-
-    const std::array<service::Action,1> routedActions{{{1,routeState,eastWest}}};
-    auto routedCapability=cap;routedCapability.actions=routedActions;
-    service::Service routedService;
-    expect(service::valid(routedCapability)
-        && routedService.begin({1,{2}},3,{&routedCapability,1}));
-    request={{1,{2}},3,1,1,0x34D23982,1,98};
-    expect(routedService.request(request,13)==service::Result::accepted);
-    const auto routedState=routedService.project(13).entries[0].state;
-    expect(routedState.primary.anchors==eastWestResolved.primary.anchors
-        && routedState.primary.anchors[1].a==0 && !routedState.primary.anchors[1].active,
-        "service admission applies the same route policy, including a disabled exit");
-
-    auto routedWithParameters=routedCapability;
-    routedWithParameters.anchorParameters[0]={"east.column","east.height"};
-    expect(service::valid(routedWithParameters));
-    auto absentParameter=routedWithParameters;absentParameter.anchorParameters[2]={"north.column","north.height"};
-    expect(!service::valid(absentParameter));
-    std::array<service::AnchorConfiguration,1> routeCoordinates{};routeCoordinates[0][0]={2,1};
-    service::Service positionedRoute;
-    expect(positionedRoute.begin({1,{2}},3,{&routedWithParameters,1},{},routeCoordinates));
-    auto badCoordinates=routeCoordinates;badCoordinates[0][0]={3,1};
-    service::Service rejectedRoute;
-    expect(!rejectedRoute.begin({1,{2}},3,{&routedWithParameters,1},{},badCoordinates)
-        && rejectedRoute.revision()==0 && !rejectedRoute.owner(),
-        "routed coordinate bounds fail admission atomically");
-    badCoordinates=routeCoordinates;badCoordinates[0][0]={2,2};
-    expect(!rejectedRoute.begin({1,{2}},3,{&routedWithParameters,1},{},badCoordinates)
-        && rejectedRoute.revision()==0 && !rejectedRoute.owner(),
-        "routed height bounds fail admission atomically");
-    auto badRouteActions=routedActions;auto badRoute=eastWest;badRoute.grid.columns=0;
-    badRouteActions[0].route=badRoute;auto badRouteCapability=routedCapability;badRouteCapability.actions=badRouteActions;
-    service::Service badRouteService;
-    expect(!badRouteService.begin({1,{2}},3,{&badRouteCapability,1})
-        && badRouteService.revision()==0 && !badRouteService.owner(),
-        "invalid routed capability cannot commit ownership or bindings");
     std::printf("forest generator service: %u checks, zero failures\n",checks);
 }

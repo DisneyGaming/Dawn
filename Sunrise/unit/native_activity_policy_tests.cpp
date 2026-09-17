@@ -55,8 +55,6 @@ struct Ports final:c::MissionPorts<unsigned> {
 #include "activity_live_definition_cases.h"
 #include "native_population_ledger_cases.h"
 #include "native_combatant_source_cases.h"
-#include "festival_mask_cases.h"
-#include "equipment_interaction_gate_cases.h"
 #include "activity_registry_cases.h"
 #include "population_service_cases.h"
 #include "persistent_activity_cases.h"
@@ -80,8 +78,6 @@ int main() {
     live_definition_cases(s::json::Reader(text).parse());
     native_population_cases();
     native_combatant_source_cases();
-    festival_mask_cases();
-    equipment_interaction_gate_cases();
     activity_registry_cases();
     population_service_cases();
     CHECK(doc->views().missionId=="pump_station");CHECK(doc->views().profileId==profile.id);CHECK(doc->views().graphs.size()==2);

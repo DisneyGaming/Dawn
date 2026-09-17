@@ -17,8 +17,6 @@ Gateway now uses the shared services in `src/state/activity/coo/`. The independe
 
 Keep registry IDs, native definitions, tactical assignments, scene event IDs, marker targets and device state values in the mission's trusted binding profile. Keep graph dependencies, encounter counts, dialogue choices, marker selections and allowed timing values in the mission Lua. Supply native observers that authenticate the relevant receipt before calling a service.
 
-Forest generator capabilities may opt into the shared typed two-endpoint route contract. The resolver validates the grid and selected sides, preserves native active flags and unused-side heights, and is reused by service admission and the legacy native authority adapter; each mission supplies its own route data.
-
 The native adapters in `client/hooks/bootflow/coo_native_components.h` and `coo_enemy_readiness.h` reuse the current engine's component layout. They validate scoped source identity, generation, actor links, health type and AI ownership. They recheck identity before accepting a sample. These probes are read-only and bounded; they are not a repair mechanism for arbitrary engine versions.
 
 Gateway requests unresolved enemy readiness at most every 500 ms, with at most 12 pending actors per batch, plus the admission-time sample. The guarded client population observer samples those identities on the game thread; server snapshots do not read client actor memory. It keeps the existing actor limit and spawn schedule. Initializing objects uses the existing 100 ms publication cadence until the controllers acknowledge their state. Missing readiness is logged without replacing genuine kill requirements.

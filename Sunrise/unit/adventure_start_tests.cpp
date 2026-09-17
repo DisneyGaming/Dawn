@@ -245,9 +245,6 @@ int main(int argc,char** argv) {
     CHECK(host::prepare(changed,parsed,mercury::kStartRoutes,plan)==host::Result::placementUnavailable);
     changed=context;changed.published.entries[0].bubble=14;
     CHECK(host::prepare(changed,parsed,mercury::kStartRoutes,plan)==host::Result::placementUnavailable);
-    changed=context;changed.published.entries[0].interactionMode=
-        sunrise::middleware::bap::activity_message::native::interaction::Mode::disabled;
-    CHECK(host::prepare(changed,parsed,mercury::kStartRoutes,plan)==host::Result::placementUnavailable);
     changed=context;changed.scenario=0x80F47522;
     CHECK(host::prepare(changed,parsed,mercury::kStartRoutes,plan)==host::Result::unsupportedRoute);
     CHECK(host::prepare(context,request(encode(342)),mercury::kStartRoutes,plan)==host::Result::unsupportedRoute);

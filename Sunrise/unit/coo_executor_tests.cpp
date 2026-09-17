@@ -127,42 +127,6 @@ void contracts() {
     CHECK(coo::resolve(catalog, {1, 2, 3, 4}) == nullptr);
 }
 
-void scheduling() {
-    constexpr std::array<coo::CommandSpec, 1> request{{
-        {coo::Operation::mechanic, {}, 1, coo::Wait::requested}}};
-    constexpr std::array<coo::CommandSpec, 1> observation{{
-        {coo::Operation::observation, {}, 1, coo::Wait::observed}}};
-    const std::array<coo::Step, 4> graph{{
-        {"request", 0, request}, {"native receipt", 1, observation},
-        {"next request", 2, request}, {"final request", 4, request}}};
-    const coo::Definition fixture{"scheduling", coo::Schema::otherMissions, graph};
-    Services services;
-    coo::Executor e;
-    CHECK(!e.update_pending());
-    CHECK(e.start(fixture, 1));
-    CHECK(e.update_pending());
-    e.update(services);
-    CHECK(!e.update_pending()); // Waiting on a real native observation.
-    CHECK(e.enqueue({e.token(1, 0), coo::Milestone::observed}));
-    CHECK(e.update_pending());
-    e.update(services);
-    CHECK(e.diagnostics().queued == 0);
-    CHECK(e.update_pending()); // A requested-only successor still needs to join.
-    e.update(services);
-    CHECK(e.update_pending());
-    e.update(services);
-    CHECK(e.diagnostics().phase == coo::Phase::complete);
-    CHECK(services.published.size() == graph.size());
-    CHECK(!e.update_pending());
-    e.cancel(services);
-    CHECK(!e.update_pending());
-    CHECK(e.start(fixture, 2));
-    Services refused; refused.refuse = 0;
-    e.update(refused);
-    CHECK(e.diagnostics().phase == coo::Phase::failed);
-    CHECK(!e.update_pending());
-}
-
 struct Controllers final : omega::Controllers {
     omega::Frame frame;
     std::array<bool, 8> observed{};
@@ -281,6 +245,6 @@ void deep_restriction_wire() {
 }
 
 int main() {
-    contracts(); scheduling(); adapter_parity(); deep_restriction_wire();
+    contracts(); adapter_parity(); deep_restriction_wire();
     std::printf("PASS: %u checks; concurrent joins, stale receipts, teardown, and 12 adapter wire phases\n", checks);
 }
