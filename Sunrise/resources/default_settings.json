@@ -170,7 +170,52 @@
           "quantity": 3
         }
       ],
-      "profile_items": [],
+      "profile_items": [
+        {
+          "definition_hash": "0xBC53E66E",
+          "quantity": 250000
+        },
+        {
+          "definition_hash": "0x3CF2E8E2",
+          "quantity": 999999
+        },
+        {
+          "definition_hash": "0xA7EE4765",
+          "quantity": 999999
+        },
+        {
+          "definition_hash": "0xB19439E5",
+          "quantity": 25
+        },
+        {
+          "definition_hash": "0x28D6AC07",
+          "quantity": 9999
+        },
+        {
+          "definition_hash": "0xE5B38AD2",
+          "quantity": 999
+        },
+        {
+          "definition_hash": "0xFDC50EA0",
+          "quantity": 50
+        },
+        {
+          "definition_hash": "0xFDC50EA1",
+          "quantity": 10
+        },
+        {
+          "definition_hash": "0x54CCDFF2",
+          "quantity": 1000
+        },
+        {
+          "definition_hash": "0xDAAB73B4",
+          "quantity": 1000
+        },
+        {
+          "definition_hash": "0xCD8DA6F2",
+          "quantity": 1000
+        }
+      ],
       "settings": {
         "controls": {
           "button_layout": 0,
@@ -317,8 +362,507 @@
         "appearance_value": 1.0,
         "last_orbited_destination": "0x125CF0E7",
         "content_bypass": false,
-        "equipment": {},
+        "equipment": {
+          "kinetic": {
+            "instance_soid": "0x4000000000000001",
+            "definition_hash": "0xE516CF40",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0xAB5218B6",
+              "0xCCA5773B",
+              "0x065F4ED0",
+              "0x45A0BDD7",
+              "0x1B6B4DB8",
+              "0xFD368D30",
+              "0x8A8536B5",
+              "0x8C84EA53",
+              null,
+              "0x8838B9DA",
+              null,
+              "0xE713379A"
+            ]
+          },
+          "energy": {
+            "instance_soid": "0x4000000000000002",
+            "definition_hash": "0x4156C94D",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0x3B667F9C",
+              "0x4F68703D",
+              "0x065F4ED0",
+              "0xF2A907DF",
+              "0x8CB6409D",
+              "0xFD368D30",
+              "0x8A8536B5",
+              null,
+              null,
+              "0x8838B9DA"
+            ]
+          },
+          "heavy": {
+            "instance_soid": "0x4000000000000003",
+            "definition_hash": "0x6F22FCEC",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0xD91C01C9",
+              "0x37F1078F",
+              "0x8CE3FE36",
+              "0x151FBDCC",
+              "0x9A6B194D",
+              null,
+              "0xAEBAE371",
+              "0x9B283E92"
+            ]
+          },
+          "helmet": {
+            "instance_soid": "0x4000000000000004",
+            "definition_hash": "0xF2994B80",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0xEC2137DA",
+              "0x301CB225",
+              "0x301CB225",
+              null,
+              "0x54CCDFF2",
+              "0xA4D6D964",
+              "0x39CBE5E4",
+              "0x85480BD0",
+              "0xA81461CE",
+              "0x01E90FE0",
+              "0x29E6A60B"
+            ]
+          },
+          "gauntlets": {
+            "instance_soid": "0x4000000000000005",
+            "definition_hash": "0x61868551",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0xEC2137DA",
+              "0x6DE9E6FF",
+              "0x6DE9E6FF",
+              null,
+              "0x54CCDFF2",
+              "0xA4D6D964",
+              "0x39CBE5E4",
+              "0x85480BD0",
+              "0xA81461CE",
+              "0x01E90FE0",
+              "0x29E6A60B"
+            ]
+          },
+          "chest": {
+            "instance_soid": "0x4000000000000006",
+            "definition_hash": "0x6F0DBB07",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0xEC2137DA",
+              "0x62E854BB",
+              "0x62E854BB",
+              null,
+              "0x54CCDFF2",
+              "0xA4D6D964",
+              "0x39CBE5E4",
+              "0x85480BD0",
+              "0xA81461CE",
+              "0x01E90FE0",
+              "0x29E6A60B"
+            ]
+          },
+          "legs": {
+            "instance_soid": "0x4000000000000007",
+            "definition_hash": "0x0B8E36D0",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0xEC2137DA",
+              "0x22299393",
+              "0x22299393",
+              "0x64FC1692",
+              "0x54CCDFF2",
+              "0x13EFAFB3",
+              "0x85480BD0",
+              "0xE92D2525",
+              "0x056CABAD",
+              "0x37661C63",
+              "0x29E6A60B"
+            ]
+          },
+          "class_item": {
+            "instance_soid": "0x4000000000000008",
+            "definition_hash": "0xB578E716",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0x1CB5C883",
+              "0x43C9A775",
+              "0x43C9A775",
+              null,
+              "0x54CCDFF2",
+              "0xA4D6D964",
+              "0x29E6A60B"
+            ]
+          },
+          "ghost": {
+            "instance_soid": "0x4000000000000009",
+            "definition_hash": "0xF6856969",
+            "level": 0,
+            "quantity": 1,
+            "plugs": ["0xF17B4841", null, "0xE9B5CF11", "0x909FBBEE"]
+          },
+          "vehicle": {
+            "instance_soid": "0x400000000000000A",
+            "definition_hash": "0xC5C22F78",
+            "level": 0,
+            "quantity": 1,
+            "plugs": [
+              "0xFD368D30",
+              "0xB185D1D6",
+              "0x8A78C491",
+              "0x41219514",
+              "0x5084C54E"
+            ]
+          },
+          "ship": {
+            "instance_soid": "0x400000000000000B",
+            "definition_hash": "0x1174E2EA",
+            "level": 0,
+            "quantity": 1,
+            "plugs": ["0xFD368D30", "0x52E2AE2F"]
+          },
+          "subclass": {
+            "instance_soid": "0x400000000000000C",
+            "definition_hash": "0xD8B8D1FC",
+            "level": 0,
+            "quantity": 1,
+            "plugs": []
+          },
+          "clan_banner": {
+            "instance_soid": "0x400000000000000D",
+            "definition_hash": "0x570EAA71",
+            "level": 0,
+            "quantity": 1,
+            "plugs": [
+              "0x36BF5F04",
+              "0x2249F5C8",
+              "0xE01AE367",
+              "0x63A3BA12",
+              "0x5CE104E5",
+              "0x7CCC4828"
+            ]
+          },
+          "emblem": {
+            "instance_soid": "0x400000000000000E",
+            "definition_hash": "0x71B4CC1A",
+            "level": 0,
+            "quantity": 1,
+            "plugs": []
+          },
+          "emote": {
+            "instance_soid": "0x400000000000000F",
+            "definition_hash": "0x7979AE7D",
+            "level": 0,
+            "quantity": 1,
+            "plugs": []
+          },
+          "finisher": {
+            "instance_soid": "0x4000000000000100",
+            "definition_hash": "0x09183EEF",
+            "level": 0,
+            "quantity": 1,
+            "plugs": []
+          }
+        },
         "inventory": [
+          {
+            "instance_soid": "0x4000000000000011",
+            "definition_hash": "0x3E7B47F8",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000012",
+            "definition_hash": "0x26275FBA",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000013",
+            "definition_hash": "0xE9E6B958",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000014",
+            "definition_hash": "0xCA3F1095",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000015",
+            "definition_hash": "0xC4916786",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000016",
+            "definition_hash": "0xA25B8F8F",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000017",
+            "definition_hash": "0xDC0DA337",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000018",
+            "definition_hash": "0xDEF8BAA5",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000019",
+            "definition_hash": "0xDBF8EB6E",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000001A",
+            "definition_hash": "0xA1D55C26",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000001B",
+            "definition_hash": "0x670F94F7",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000001C",
+            "definition_hash": "0x40B7F441",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000001D",
+            "definition_hash": "0xD2DBA199",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000001E",
+            "definition_hash": "0x6F5C089C",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000001F",
+            "definition_hash": "0xA859BCA8",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000020",
+            "definition_hash": "0x65AD4E39",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000021",
+            "definition_hash": "0x5EFA7F9F",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000022",
+            "definition_hash": "0x1489642B",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000023",
+            "definition_hash": "0xC5162C2E",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000024",
+            "definition_hash": "0x27559F11",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000025",
+            "definition_hash": "0xD4DFDFE8",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000026",
+            "definition_hash": "0x34AD4160",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000027",
+            "definition_hash": "0x1684FA42",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000028",
+            "definition_hash": "0x0B8D3D9D",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000029",
+            "definition_hash": "0xF685696A",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000002A",
+            "definition_hash": "0x3083B063",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000002B",
+            "definition_hash": "0x35EE8905",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000002C",
+            "definition_hash": "0x4E86F9EC",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000002D",
+            "definition_hash": "0x71A87B55",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000002E",
+            "definition_hash": "0xA984374D",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000002F",
+            "definition_hash": "0xD8ACA0CE",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000030",
+            "definition_hash": "0xC7CBC15C",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000031",
+            "definition_hash": "0x11C83768",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000032",
+            "definition_hash": "0x5A6603AD",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null,
+            "flags": 0
+          },
+          {
+            "instance_soid": "0x4000000000000033",
+            "definition_hash": "0x4D24AB5D",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null,
+            "flags": 0
+          },
+          {
+            "instance_soid": "0x4000000000000034",
+            "definition_hash": "0x564C7E4C",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null,
+            "flags": 0
+          },
+          {
+            "instance_soid": "0x4000000000000010",
+            "definition_hash": "0xEF255BFB",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null,
+            "flags": 0
+          },
+          {
+            "instance_soid": "0x4000000000000035",
+            "definition_hash": "0x05B1C785",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000036",
+            "definition_hash": "0xA3CE6FD4",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000037",
+            "definition_hash": "0xE0B2E67F",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
           {
             "instance_soid": "0x4000000000001000",
             "definition_hash": "0xD267D4BB",
@@ -344,8 +888,507 @@
         "appearance_value": 1.0,
         "last_orbited_destination": "0x125CF0E7",
         "content_bypass": false,
-        "equipment": {},
+        "equipment": {
+          "kinetic": {
+            "instance_soid": "0x4000000000000065",
+            "definition_hash": "0xE516CF40",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0xAB5218B6",
+              "0xCCA5773B",
+              "0x065F4ED0",
+              "0x45A0BDD7",
+              "0x1B6B4DB8",
+              "0xFD368D30",
+              "0x8A8536B5",
+              "0x8C84EA53",
+              null,
+              "0x8838B9DA",
+              null,
+              "0xE713379A"
+            ]
+          },
+          "energy": {
+            "instance_soid": "0x4000000000000066",
+            "definition_hash": "0x4156C94D",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0x3B667F9C",
+              "0x4F68703D",
+              "0x065F4ED0",
+              "0xF2A907DF",
+              "0x8CB6409D",
+              "0xFD368D30",
+              "0x8A8536B5",
+              null,
+              null,
+              "0x8838B9DA"
+            ]
+          },
+          "heavy": {
+            "instance_soid": "0x4000000000000067",
+            "definition_hash": "0x6F22FCEC",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0xD91C01C9",
+              "0x37F1078F",
+              "0x8CE3FE36",
+              "0x151FBDCC",
+              "0x9A6B194D",
+              null,
+              "0xAEBAE371",
+              "0x9B283E92"
+            ]
+          },
+          "helmet": {
+            "instance_soid": "0x4000000000000068",
+            "definition_hash": "0xECB479E4",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0xEC2137DA",
+              "0x301CB225",
+              "0x301CB225",
+              null,
+              "0x54CCDFF2",
+              "0xA4D6D964",
+              "0x39CBE5E4",
+              "0x85480BD0",
+              "0xA81461CE",
+              "0x01E90FE0",
+              "0x29E6A60B"
+            ]
+          },
+          "gauntlets": {
+            "instance_soid": "0x4000000000000069",
+            "definition_hash": "0xE98EBABD",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0xEC2137DA",
+              "0x6DE9E6FF",
+              "0x6DE9E6FF",
+              null,
+              "0x54CCDFF2",
+              "0xA4D6D964",
+              "0x39CBE5E4",
+              "0x85480BD0",
+              "0xA81461CE",
+              "0x01E90FE0",
+              "0x29E6A60B"
+            ]
+          },
+          "chest": {
+            "instance_soid": "0x400000000000006A",
+            "definition_hash": "0x542FC543",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0xEC2137DA",
+              "0x62E854BB",
+              "0x62E854BB",
+              null,
+              "0x54CCDFF2",
+              "0xA4D6D964",
+              "0x39CBE5E4",
+              "0x85480BD0",
+              "0xA81461CE",
+              "0x01E90FE0",
+              "0x29E6A60B"
+            ]
+          },
+          "legs": {
+            "instance_soid": "0x400000000000006B",
+            "definition_hash": "0xD2F64E86",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0xEC2137DA",
+              "0x22299393",
+              "0x22299393",
+              "0xC130B5BC",
+              "0x54CCDFF2",
+              "0x13EFAFB3",
+              "0x85480BD0",
+              "0xE92D2525",
+              "0x01E90FE0",
+              "0x37661C63",
+              "0x29E6A60B"
+            ]
+          },
+          "class_item": {
+            "instance_soid": "0x400000000000006C",
+            "definition_hash": "0x295F70BA",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0xEC2137DA",
+              "0x43C9A775",
+              "0x43C9A775",
+              null,
+              "0x54CCDFF2",
+              "0xA4D6D964",
+              "0x29E6A60B"
+            ]
+          },
+          "ghost": {
+            "instance_soid": "0x400000000000006D",
+            "definition_hash": "0xF6856969",
+            "level": 0,
+            "quantity": 1,
+            "plugs": ["0xF17B4841", null, "0xE9B5CF11", "0x909FBBEE"]
+          },
+          "vehicle": {
+            "instance_soid": "0x400000000000006E",
+            "definition_hash": "0xC5C22F78",
+            "level": 0,
+            "quantity": 1,
+            "plugs": [
+              "0xFD368D30",
+              "0xB185D1D6",
+              "0x8A78C491",
+              "0x41219514",
+              "0x5084C54E"
+            ]
+          },
+          "ship": {
+            "instance_soid": "0x400000000000006F",
+            "definition_hash": "0x1174E2EA",
+            "level": 0,
+            "quantity": 1,
+            "plugs": ["0xFD368D30", "0x52E2AE2F"]
+          },
+          "subclass": {
+            "instance_soid": "0x4000000000000070",
+            "definition_hash": "0xB920CE9A",
+            "level": 0,
+            "quantity": 1,
+            "plugs": []
+          },
+          "clan_banner": {
+            "instance_soid": "0x4000000000000071",
+            "definition_hash": "0x570EAA71",
+            "level": 0,
+            "quantity": 1,
+            "plugs": [
+              "0x36BF5F04",
+              "0x2249F5C8",
+              "0xE01AE367",
+              "0x63A3BA12",
+              "0x5CE104E5",
+              "0x7CCC4828"
+            ]
+          },
+          "emblem": {
+            "instance_soid": "0x4000000000000072",
+            "definition_hash": "0x71B4CC1B",
+            "level": 0,
+            "quantity": 1,
+            "plugs": []
+          },
+          "emote": {
+            "instance_soid": "0x4000000000000073",
+            "definition_hash": "0x7979AE7D",
+            "level": 0,
+            "quantity": 1,
+            "plugs": []
+          },
+          "finisher": {
+            "instance_soid": "0x4000000000000101",
+            "definition_hash": "0x09183EEF",
+            "level": 0,
+            "quantity": 1,
+            "plugs": []
+          }
+        },
         "inventory": [
+          {
+            "instance_soid": "0x4000000000000075",
+            "definition_hash": "0x3E7B47F8",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000076",
+            "definition_hash": "0x26275FBA",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000077",
+            "definition_hash": "0xE9E6B958",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000078",
+            "definition_hash": "0xCA3F1095",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000079",
+            "definition_hash": "0xC4916786",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000007A",
+            "definition_hash": "0xA25B8F8F",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000007B",
+            "definition_hash": "0xDC0DA337",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000007C",
+            "definition_hash": "0xDEF8BAA5",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000007D",
+            "definition_hash": "0xDBF8EB6E",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000007E",
+            "definition_hash": "0x51ADBEB4",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000007F",
+            "definition_hash": "0xF2AF51CD",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000080",
+            "definition_hash": "0x966B9873",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000081",
+            "definition_hash": "0x1AAAE68F",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000082",
+            "definition_hash": "0x19DFB9AA",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000083",
+            "definition_hash": "0xF435CE34",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000084",
+            "definition_hash": "0x9537614D",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000085",
+            "definition_hash": "0xF29BFEF3",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000086",
+            "definition_hash": "0xBD32F60F",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000087",
+            "definition_hash": "0x7610202A",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000088",
+            "definition_hash": "0x103CB34D",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000089",
+            "definition_hash": "0x3723973C",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000008A",
+            "definition_hash": "0x9918CAA4",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000008B",
+            "definition_hash": "0x1287C646",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000008C",
+            "definition_hash": "0xC56EBCF9",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000008D",
+            "definition_hash": "0xF6856968",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000008E",
+            "definition_hash": "0xAA583AC8",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000008F",
+            "definition_hash": "0x45F41F39",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000090",
+            "definition_hash": "0x7B387201",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000091",
+            "definition_hash": "0xCAE2C4B0",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000092",
+            "definition_hash": "0xF322966C",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000093",
+            "definition_hash": "0xEAE9FA4A",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000094",
+            "definition_hash": "0xC7CBC15C",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000095",
+            "definition_hash": "0x11C83768",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x4000000000000096",
+            "definition_hash": "0xBB3CAA51",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null,
+            "flags": 0
+          },
+          {
+            "instance_soid": "0x4000000000000097",
+            "definition_hash": "0xCF1C4EF3",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null,
+            "flags": 0
+          },
+          {
+            "instance_soid": "0x4000000000000098",
+            "definition_hash": "0x29905E7A",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null,
+            "flags": 0
+          },
+          {
+            "instance_soid": "0x4000000000000074",
+            "definition_hash": "0xAA223B79",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null,
+            "flags": 0
+          },
+          {
+            "instance_soid": "0x4000000000000099",
+            "definition_hash": "0x1FA2AD3E",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000009A",
+            "definition_hash": "0x30A14DDC",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x400000000000009B",
+            "definition_hash": "0x46D82092",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
           {
             "instance_soid": "0x4000000000001001",
             "definition_hash": "0xD267D4BB",
@@ -371,8 +1414,507 @@
         "appearance_value": 1.0,
         "last_orbited_destination": "0x125CF0E7",
         "content_bypass": false,
-        "equipment": {},
+        "equipment": {
+          "kinetic": {
+            "instance_soid": "0x40000000000000C9",
+            "definition_hash": "0xE516CF40",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0xAB5218B6",
+              "0xCCA5773B",
+              "0x065F4ED0",
+              "0x45A0BDD7",
+              "0x1B6B4DB8",
+              "0xFD368D30",
+              "0x8A8536B5",
+              "0x8C84EA53",
+              null,
+              "0x8838B9DA",
+              null,
+              "0xE713379A"
+            ]
+          },
+          "energy": {
+            "instance_soid": "0x40000000000000CA",
+            "definition_hash": "0x4156C94D",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0x3B667F9C",
+              "0x4F68703D",
+              "0x065F4ED0",
+              "0xF2A907DF",
+              "0x8CB6409D",
+              "0xFD368D30",
+              "0x8A8536B5",
+              null,
+              null,
+              "0x8838B9DA"
+            ]
+          },
+          "heavy": {
+            "instance_soid": "0x40000000000000CB",
+            "definition_hash": "0x6F22FCEC",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0xD91C01C9",
+              "0x37F1078F",
+              "0x8CE3FE36",
+              "0x151FBDCC",
+              "0x9A6B194D",
+              null,
+              "0xAEBAE371",
+              "0x9B283E92"
+            ]
+          },
+          "helmet": {
+            "instance_soid": "0x40000000000000CC",
+            "definition_hash": "0xEA042965",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0xEC2137DA",
+              "0x301CB225",
+              "0x301CB225",
+              null,
+              "0x54CCDFF2",
+              "0xA4D6D964",
+              "0x39CBE5E4",
+              "0x85480BD0",
+              "0xA81461CE",
+              "0x01E90FE0",
+              "0x29E6A60B"
+            ]
+          },
+          "gauntlets": {
+            "instance_soid": "0x40000000000000CD",
+            "definition_hash": "0x188C5834",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0xEC2137DA",
+              "0x6DE9E6FF",
+              "0x6DE9E6FF",
+              null,
+              "0x54CCDFF2",
+              "0xA4D6D964",
+              "0x39CBE5E4",
+              "0x85480BD0",
+              "0xA81461CE",
+              "0x01E90FE0",
+              "0x29E6A60B"
+            ]
+          },
+          "chest": {
+            "instance_soid": "0x40000000000000CE",
+            "definition_hash": "0xF8689C4C",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0xEC2137DA",
+              "0x62E854BB",
+              "0x62E854BB",
+              null,
+              "0x54CCDFF2",
+              "0xA4D6D964",
+              "0x39CBE5E4",
+              "0x85480BD0",
+              "0xA81461CE",
+              "0x01E90FE0",
+              "0x29E6A60B"
+            ]
+          },
+          "legs": {
+            "instance_soid": "0x40000000000000CF",
+            "definition_hash": "0x083E04B6",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0xEC2137DA",
+              "0x22299393",
+              "0x22299393",
+              "0xC78E19B1",
+              "0x54CCDFF2",
+              "0x13EFAFB3",
+              "0x85480BD0",
+              "0xBAE01BEB",
+              "0x056CABAD",
+              "0xF37F6509",
+              "0x29E6A60B"
+            ]
+          },
+          "class_item": {
+            "instance_soid": "0x40000000000000D0",
+            "definition_hash": "0x99446581",
+            "level": 106,
+            "quantity": 1,
+            "plugs": [
+              "0x1CB5C883",
+              "0x43C9A775",
+              "0x43C9A775",
+              null,
+              "0x54CCDFF2",
+              "0xA4D6D964",
+              "0x29E6A60B"
+            ]
+          },
+          "ghost": {
+            "instance_soid": "0x40000000000000D1",
+            "definition_hash": "0xF6856969",
+            "level": 0,
+            "quantity": 1,
+            "plugs": ["0xF17B4841", null, "0xE9B5CF11", "0x909FBBEE"]
+          },
+          "vehicle": {
+            "instance_soid": "0x40000000000000D2",
+            "definition_hash": "0xC5C22F78",
+            "level": 0,
+            "quantity": 1,
+            "plugs": [
+              "0xFD368D30",
+              "0xB185D1D6",
+              "0x8A78C491",
+              "0x41219514",
+              "0x5084C54E"
+            ]
+          },
+          "ship": {
+            "instance_soid": "0x40000000000000D3",
+            "definition_hash": "0x1174E2EA",
+            "level": 0,
+            "quantity": 1,
+            "plugs": ["0xFD368D30", "0x52E2AE2F"]
+          },
+          "subclass": {
+            "instance_soid": "0x40000000000000D4",
+            "definition_hash": "0xCF88FEA5",
+            "level": 0,
+            "quantity": 1,
+            "plugs": []
+          },
+          "clan_banner": {
+            "instance_soid": "0x40000000000000D5",
+            "definition_hash": "0x570EAA71",
+            "level": 0,
+            "quantity": 1,
+            "plugs": [
+              "0x36BF5F04",
+              "0x2249F5C8",
+              "0xE01AE367",
+              "0x63A3BA12",
+              "0x5CE104E5",
+              "0x7CCC4828"
+            ]
+          },
+          "emblem": {
+            "instance_soid": "0x40000000000000D6",
+            "definition_hash": "0x71B4CC19",
+            "level": 0,
+            "quantity": 1,
+            "plugs": []
+          },
+          "emote": {
+            "instance_soid": "0x40000000000000D7",
+            "definition_hash": "0x7979AE7D",
+            "level": 0,
+            "quantity": 1,
+            "plugs": []
+          },
+          "finisher": {
+            "instance_soid": "0x4000000000000102",
+            "definition_hash": "0x09183EEF",
+            "level": 0,
+            "quantity": 1,
+            "plugs": []
+          }
+        },
         "inventory": [
+          {
+            "instance_soid": "0x40000000000000D9",
+            "definition_hash": "0x3E7B47F8",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000DA",
+            "definition_hash": "0x26275FBA",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000DB",
+            "definition_hash": "0xE9E6B958",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000DC",
+            "definition_hash": "0xCA3F1095",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000DD",
+            "definition_hash": "0xC4916786",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000DE",
+            "definition_hash": "0xA25B8F8F",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000DF",
+            "definition_hash": "0xDC0DA337",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000E0",
+            "definition_hash": "0xDEF8BAA5",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000E1",
+            "definition_hash": "0xDBF8EB6E",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000E2",
+            "definition_hash": "0x5CA160F5",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000E3",
+            "definition_hash": "0x0DB45944",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000E4",
+            "definition_hash": "0xC9F7B53C",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000E5",
+            "definition_hash": "0x80C7AB6E",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000E6",
+            "definition_hash": "0x326316B1",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000E7",
+            "definition_hash": "0x0B117DAB",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000E8",
+            "definition_hash": "0xA496C19A",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000E9",
+            "definition_hash": "0xAA71C8EE",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000EA",
+            "definition_hash": "0x0B4089D4",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000EB",
+            "definition_hash": "0xD6B2A7B7",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000EC",
+            "definition_hash": "0x5B1ACD6C",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000ED",
+            "definition_hash": "0x28B26925",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000EE",
+            "definition_hash": "0xDC124D7B",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000EF",
+            "definition_hash": "0x3D663DA7",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000F0",
+            "definition_hash": "0x7A1FC812",
+            "level": 106,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000F1",
+            "definition_hash": "0x3083B063",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000F2",
+            "definition_hash": "0x2E71E54E",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000F3",
+            "definition_hash": "0x4E86F9EC",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000F4",
+            "definition_hash": "0xC9993382",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000F5",
+            "definition_hash": "0xA984374D",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000F6",
+            "definition_hash": "0x28155DF4",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000F7",
+            "definition_hash": "0xD4753C25",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000F8",
+            "definition_hash": "0xC7CBC15C",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000F9",
+            "definition_hash": "0x11C83768",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000FA",
+            "definition_hash": "0x58E8183A",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null,
+            "flags": 0
+          },
+          {
+            "instance_soid": "0x40000000000000FB",
+            "definition_hash": "0x58F778E0",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null,
+            "flags": 0
+          },
+          {
+            "instance_soid": "0x40000000000000FC",
+            "definition_hash": "0xCABFBE57",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null,
+            "flags": 0
+          },
+          {
+            "instance_soid": "0x40000000000000D8",
+            "definition_hash": "0x0F2B9504",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null,
+            "flags": 0
+          },
+          {
+            "instance_soid": "0x40000000000000FD",
+            "definition_hash": "0xF5095792",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000FE",
+            "definition_hash": "0xEEF8905A",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
+          {
+            "instance_soid": "0x40000000000000FF",
+            "definition_hash": "0x6846D9F9",
+            "level": 0,
+            "quantity": 1,
+            "plugs": null
+          },
           {
             "instance_soid": "0x4000000000001002",
             "definition_hash": "0xD267D4BB",

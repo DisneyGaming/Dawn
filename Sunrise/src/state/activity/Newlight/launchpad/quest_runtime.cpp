@@ -137,18 +137,30 @@ bool commit_newlight_quest(PendingNewlightQuest& p) noexcept {
 bool prepare_newlight_start(AccountState& account) noexcept {
     if(!account::valid(account)) {return false;}
     auto candidate=account;
+    constexpr account::inventory::EquipmentSlot kUnequippedAtResurrection[]{
+        account::inventory::EquipmentSlot::kinetic,
+        account::inventory::EquipmentSlot::energy,
+        account::inventory::EquipmentSlot::heavy,
+        account::inventory::EquipmentSlot::vehicle,
+        account::inventory::EquipmentSlot::ship,
+    };
     for(std::size_t ci=0;ci<candidate.characterCount;++ci) {
         auto& character=candidate.characters[ci];if(q::step(character)!=0) {continue;}
-        for(const auto slot:q::kEscapeSlots) {character.equipment.slots[static_cast<std::size_t>(slot)].reset();}
+        // Character selection still needs the Guardian's authored armor, Ghost,
+        // subclass and identity rows. New Light begins without weapons or travel
+        // gear; the mission grants those through its native pickups and rewards.
+        for(const auto slot:kUnequippedAtResurrection) {
+            character.equipment.slots[static_cast<std::size_t>(slot)].reset();
+        }
         std::size_t kept{};
         for(std::size_t i=0;i<character.inventory.count;++i) {
-            const auto item=character.inventory.values[i];build_data::items::Definition definition{};
-            build_data::inventory::buckets::Descriptor bucket{};
-            if(!build_data::find_item_definition_hash(item.definitionHash,definition)
-                || !build_data::find_inventory_bucket_descriptor(definition.bucketId,bucket)) {return false;}
-            // Native equipment rows 10/11 are ship/Sparrow; row 9 is a weapon.
-            if(bucket.equipmentSlot==10 || bucket.equipmentSlot==11) {continue;}
-            character.inventory.values[kept++]=item;
+            const auto item=character.inventory.values[i];
+            // Keep only the Pursuit that opts this Guardian into Launchpad. The
+            // authored test inventory must not leak weapons or completed gear
+            // into the resurrection sequence.
+            if(!item.postmaster && item.definitionHash==q::kEscapeCosmodrome) {
+                character.inventory.values[kept++]=item;
+            }
         }
         std::fill(character.inventory.values.begin()+kept,character.inventory.values.end(),account::inventory::Item{});
         character.inventory.count=kept;

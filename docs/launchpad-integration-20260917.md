@@ -11,7 +11,7 @@ The previous workspace shipped `launchpad.lua` without the native Launchpad cont
 - Preserve shared population admission receipts, streaming leases, source variants, Eater/Garden callbacks and patrol respawn checks while adding Launchpad observations and fly-in completion.
 - Append New Light's native overrides without clearing the vendor overrides already in those banks.
 - Let the starting Pursuit project `acquiredFlags[20] = 2` and `acquiredFlags[59] = 0`. Quest completion changes these flags through the upstream progression rules, avoiding an unconditional restart of New Light after completion.
-- Seed Escape the Cosmodrome in each default test Guardian's inventory. Per the follow-up request, start with empty equipment, no spare items and no stocked profile currencies. These remain the repository's three authored identities; mission pickups supply the weapons.
+- Seed Escape the Cosmodrome in each default test Guardian's inventory. Per the follow-up request, remove all three weapon slots, ship, Sparrow and spare character inventory. Retain armor, Ghost, subclass, emblem and the other identity rows required by character selection. These remain the repository's three authored identities; mission pickups supply the weapons.
 - Cache format 63 forces extraction of the merged Launchpad and existing Lost Sector catalogs.
 - Give Launchpad and Gateway distinct object filenames in MSBuild; otherwise their `runtime.cpp` and `controller.cpp` objects overwrite one another.
 
@@ -39,4 +39,10 @@ The failing log is preserved at `.codex-tools/launchpad-baboon-before-fix.log`. 
 
 Live verification of the corrected build is recorded below when observed. Automated tests do not establish a complete in-game playthrough.
 
-Corrected-build startup succeeded (`ev=initialize phase=complete ms=218 result=ok`), and the running process mapped `C:/Destiny 2 Development/steam_api64.dll`. SQLite quick-check passed: exactly three character-item rows, all the starting Pursuit, no equipped rows, no profile items, and no mission checkpoints. The game is at its start screen; a corrected-build cinematic/gameplay retest is pending user input.
+Corrected-build startup succeeded (`ev=initialize phase=complete ms=218 result=ok`), and the running process mapped `C:/Destiny 2 Development/steam_api64.dll`.
+
+An initial attempt to make the account completely empty was too aggressive. Selecting a Guardian failed at `family4 stage=prepare result=fail step=move_character_object`, leaving the client on a black screen because the character object could not be moved into the selected slot. New Light requires an unarmed Guardian, but character selection still requires its authored armor, Ghost, subclass and identity equipment. The corrected reset removes kinetic, energy and heavy weapons, ship, Sparrow and all spare character inventory while preserving those required rows.
+
+The black-screen save and settings are backed up at `C:/Destiny 2 Development/.dawn/backup/black-screen-empty-loadout-20260917-125946`. The replacement DLL SHA-256 is `5D18168582059F03663101C2B4830196111C95548E0FFCC49E45B79FDA6D30D0`; installation receipt: `C:/Destiny 2 Development/.dawn/installations/20260917-125953.json`. Live SQLite validation passed: 11 required equipped identity rows per Guardian, no equipment rows 0/1/2/9/10, one starting Pursuit per Guardian, and no mission checkpoints.
+
+The corrected live retest selected Guardian `0x9EAA300100100102` successfully (`queuez stage=select result=ok`), launched `mission_launchpad`, played the resurrection cinematic, entered gameplay phase 6, and remained connected beyond the prior 20-second timeout. Mission execution advanced from section 0 into section 1 and reached the Ghost/lights sequence with `failure=0` and `fault=0`. No `publication result=blocked`, activity-host loss or fatal connection error occurred after the handoff.
