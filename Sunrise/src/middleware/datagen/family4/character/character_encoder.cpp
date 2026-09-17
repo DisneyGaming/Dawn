@@ -178,6 +178,12 @@ bool encode(const state::CharacterState& state,
         object.flagOverrides.rows[i].slot = festivalFlags[i].first;
         object.flagOverrides.rows[i].value = festivalFlags[i].second ? 2 : 0;
     }
+    if (festivalActive) {
+        // Keep the Werewolf catalogue; the alternate Festival catalogue repeats its rewards.
+        auto& alternate = object.flagOverrides.rows[object.flagOverrides.count++];
+        alternate.slot = state::account::festival_quest::kAlternateRewardsFlag;
+        alternate.value = 0;
+    }
     object.seenMessages.fill(kSeenMessageByte);
     for (inventory::layout::Entry& item : object.inventoryItems) {
         item.definitionIndex = kEmptyDefinitionIndex;

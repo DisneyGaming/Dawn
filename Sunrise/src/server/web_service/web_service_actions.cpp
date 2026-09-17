@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <cstdio>
 #include <cstring>
@@ -36,6 +37,7 @@
 #include "../../state/runtime/runtime.h"
 #include "../../state/vendors/answered_interactions.h"
 #include "forest_loot_pickups.h"
+#include "festival_grab_bags.h"
 
 namespace sunrise::server::web_service {
 
@@ -1375,8 +1377,8 @@ enum class GrantResult : std::uint8_t {
  * Grants one item, given the collectible that owns it and its definition index.
  *
  * Split out of `acquire_item` so a vendor purchase reaches the same grant instead of growing a
- * second acquisition path. The acquisition state is keyed by collectible, so a caller has to arrive
- * with one; `find_collectible_for_item` is how a purchase gets there.
+ * second acquisition path. Character gear is a direct reward with its vendor price; its
+ * Collections identity is retained for diagnostics without charging a reclaim price.
  *
  * An authored cost rides the same prepared transaction as the grant, so the item and the charge
  * commit together or not at all. An empty cost is the uncharged grant this build shipped with.
@@ -1477,8 +1479,8 @@ GrantResult grant_item_definition(
     }
 
     state::PendingItemAcquisition mutation{};
-    if (!state::prepare_item_acquisition(
-            collectibleIndex, definition.definitionHash, mutation, cost)) {
+    if (!state::prepare_item_acquisition_for_item(
+            itemDefinitionIndex, mutation, {}, cost)) {
         report_acquisition_preparation(message,
                                        "fail",
                                        "state",
@@ -1497,6 +1499,105 @@ GrantResult grant_item_definition(
                                    definition.definitionHash,
                                    mutation.acquiredInstanceSoid);
     return GrantResult::granted;
+}
+
+[[nodiscard]] bool festival_of_the_lost_active() noexcept;
+
+/** Installed Festival offers distinguish the curated weapon from its random-roll voucher. */
+constexpr std::uint32_t kWerewolfRandomOffer = 0xD9469DB5U;
+constexpr std::uint32_t kWerewolfWeapon = 0x1F855E14U;
+constexpr std::uint32_t kFestivalLegendaryShards = 0x3CF2E8E2U;
+
+/** Eva's repeatable voucher produces gear, charging its three authored materials once. */
+[[nodiscard]] bool prepare_festival_werewolf(std::int32_t vendorIndex,
+                                             std::uint32_t offer,
+                                             Outcome& outcome) noexcept {
+    namespace data = state::build_data;
+    data::vendors::IndexEntry vendor{};
+    data::vendors::Definition vendorDefinition{};
+    if (!find_vendor(vendorIndex, vendor, vendorDefinition)
+        || vendor.definitionHash != festival_bags::kEva || !festival_of_the_lost_active()) return false;
+    const bool random = offer == kWerewolfRandomOffer;
+    // Installed Eva offer: curated 1,000 Candy, or random 250 Candy + 5,000 Glimmer + 5 Shards.
+    const std::array<state::ProfileExchangePayout, 3> materials{{
+        {festival_bags::kCandy, random ? 250 : 1000},
+        {festival_bags::kGlimmer, 5000}, {kFestivalLegendaryShards, 5}}};
+    const std::size_t count = random ? materials.size() : 1;
+    std::array<data::material_requirements::Requirement, 3> cost{};
+    for (std::size_t i = 0; i < count; ++i) {
+        data::items::Definition material{};
+        if (!data::find_item_definition_hash(materials[i].definitionHash, material)) return false;
+        cost[i] = {static_cast<std::uint32_t>(materials[i].quantity), material.definitionIndex,
+                   data::material_requirements::kUnconditionalRequirement, true, false};
+    }
+    data::items::Definition weapon{};
+    state::PendingItemAcquisition mutation{};
+    if (!data::find_item_definition_hash(kWerewolfWeapon, weapon)
+        || !state::prepare_item_acquisition_for_item(weapon.definitionIndex, mutation,
+              {.allowRandomRoll = random}, std::span(cost).first(count))) return false;
+    outcome.mutation = mutation;
+    core::log::writef(core::log::Channel::server, core::log::Level::info,
+        "ev=festival_werewolf stage=prepared random=%u instance=0x%llX", random ? 1U : 0U,
+        static_cast<unsigned long long>(mutation.acquiredInstanceSoid));
+    return true;
+}
+
+/** Auto-use packages settle as one gear acquisition plus profile rewards, never as a bag. */
+[[nodiscard]] bool prepare_festival_bag(std::int32_t vendorIndex, std::uint32_t bag,
+    Outcome& outcome) noexcept {
+    namespace data = state::build_data;
+    data::vendors::IndexEntry vendor{};
+    data::vendors::Definition vendorDefinition{};
+    if (!find_vendor(vendorIndex, vendor, vendorDefinition)
+        || vendor.definitionHash != festival_bags::kEva || !festival_of_the_lost_active()) return false;
+    const auto account = state::account_snapshot();
+    const state::CharacterState* character = nullptr;
+    for (std::size_t i = 0; i < account.characterCount; ++i) {
+        if (account.characters[i].selected) character = &account.characters[i];
+    }
+    if (!character) return false;
+    std::array<std::uint32_t, festival_bags::kRareGear.size() + festival_bags::kLegendaryGear.size()> eligible{};
+    std::size_t count{};
+    for (const auto& gear : festival_bags::gear_pool(bag)) {
+        if (gear.characterClass != 3 && gear.characterClass != static_cast<std::uint8_t>(character->characterClass)) continue;
+        data::items::Definition item{};
+        data::items::details::Definition detail{};
+        data::inventory::buckets::Descriptor bucket{};
+        if (data::find_item_definition_hash(gear.hash, item)
+            && data::find_configured_item_detail(item.definitionIndex, detail)
+            && detail.definitionHash == gear.hash && detail.bucketId == item.bucketId
+            && detail.equipmentSlot.has_value()
+            && detail.instancedDefinitionState == data::items::details::InstancedDefinitionState::instanced
+            && data::find_inventory_bucket_descriptor(detail.bucketId, bucket)
+            && bucket.arraySelector == data::inventory::buckets::ArraySelector::character) {
+            eligible[count++] = gear.hash;
+        }
+    }
+    if (!count) return false;
+    static std::atomic<std::uint64_t> sequence{};
+    std::uint64_t seed = static_cast<std::uint64_t>(std::chrono::steady_clock::now().time_since_epoch().count())
+        ^ sequence.fetch_add(1, std::memory_order_relaxed) ^ character->soid;
+    const auto plan = festival_bags::roll(bag, seed);
+    std::array<data::material_requirements::Requirement, 2> cost{};
+    for (std::size_t i = 0; i < plan.costCount; ++i) {
+        data::items::Definition item{};
+        if (!data::find_item_definition_hash(plan.costs[i].definitionHash, item)) return false;
+        cost[i].itemDefinitionIndex = item.definitionIndex;
+        cost[i].quantity = static_cast<std::uint32_t>(plan.costs[i].quantity);
+        cost[i].deleteOnAction = true;
+    }
+    const auto gear = eligible[festival_bags::next(seed) % count];
+    state::PendingItemAcquisition mutation{};
+    // No collectible: a package reward must not also charge the Collections reclaim price.
+    if (!state::prepare_item_acquisition(data::collectibles::kNoCollectibleIndex, gear, mutation,
+            std::span(cost).first(plan.costCount))
+        || !state::stage_item_profile_rewards(mutation, std::span(plan.materials).first(plan.materialCount))) return false;
+    outcome.mutation = mutation;
+    core::log::writef(core::log::Channel::server, core::log::Level::info,
+        "ev=festival_bag stage=prepared bag=0x%08X gear=0x%08X pool=%zu reward0=0x%08X quantity0=%d reward1=0x%08X quantity1=%d",
+        bag, gear, count, plan.materials[0].definitionHash, plan.materials[0].quantity,
+        plan.materials[1].definitionHash, plan.materials[1].quantity);
+    return true;
 }
 
 /**
@@ -1777,6 +1878,18 @@ RowOutcome settle_vendor_row(const middleware::web_service::Message& message,
     state::build_data::items::Definition offeredDefinition{};
     const bool offeredResolved =
         state::build_data::find_item_definition_index(itemDefinitionIndex, offeredDefinition);
+    state::build_data::vendors::IndexEntry offeredVendor{};
+    const bool evaVendor = vendorIndex >= 0 && vendorIndex <= UINT16_MAX
+        && state::build_data::vendors::find_index(static_cast<std::uint16_t>(vendorIndex), offeredVendor)
+        && offeredVendor.definitionHash == festival_bags::kEva;
+    if (evaVendor && offeredResolved && (offeredDefinition.definitionHash == kWerewolfRandomOffer
+                            || offeredDefinition.definitionHash == kWerewolfWeapon)) {
+        if (!prepare_festival_werewolf(vendorIndex, offeredDefinition.definitionHash, outcome)) {
+            report_purchase(opcode, "fail", "werewolf_reward", vendorIndex, rowIndex, itemDefinitionIndex);
+            return RowOutcome::grantRefused;
+        }
+        return RowOutcome::granted;
+    }
     const bool maskOfferShape =
         opcode == state::account::festival_quest::kMaskReceiptOpcode
         && vendorIndex == state::account::festival_quest::kMaskReceiptVendor
@@ -1843,6 +1956,12 @@ RowOutcome settle_vendor_row(const middleware::web_service::Message& message,
         report_purchase(opcode, "ok", "mask_and_quest_ready", vendorIndex, rowIndex,
                         itemDefinitionIndex);
         return RowOutcome::granted;
+    }
+    if (offeredResolved && festival_bags::matches(offeredDefinition.definitionHash)) {
+        const bool ready = prepare_festival_bag(vendorIndex, offeredDefinition.definitionHash, outcome);
+        report_purchase(opcode, ready ? "ok" : "fail", "festival_bag", vendorIndex, rowIndex, itemDefinitionIndex);
+        if (!ready) outcome.mutation = std::monostate{};
+        return ready ? RowOutcome::granted : RowOutcome::grantRefused;
     }
     // The row's price is resolved once here and threaded into every grant below, so whatever a
     // row turns out to be, its charge lands inside the same prepared transaction as its item.

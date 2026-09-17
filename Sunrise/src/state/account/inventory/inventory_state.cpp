@@ -73,6 +73,15 @@ bool valid(const Sockets& sockets) noexcept {
 
 /** Checks one whole authored item without reading installed build data. */
 bool valid(const Item& item) noexcept {
+    if ((item.rolledLaneMask >> kPlugCapacity) != 0
+        || (item.rolledLaneMask != 0 && item.sockets.policy != SocketPolicy::authored)) {
+        return false;
+    }
+    for (std::size_t lane = 0; lane < item.availablePlugRows.size(); ++lane) {
+        const bool rolled = (item.rolledLaneMask & (1U << lane)) != 0;
+        if ((rolled && lane >= item.sockets.plugCount)
+            || (!rolled && item.availablePlugRows[lane] != 0)) return false;
+    }
     return item.instanceSoid != 0 && item.definitionHash != kNoDefinitionHash && item.level >= 0
            && item.quantity > 0 && item.mutationSerial >= 0 && valid(item.sockets);
 }

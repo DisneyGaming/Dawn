@@ -4,6 +4,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <chrono>
 #include <limits>
 #include <span>
 
@@ -11,6 +12,8 @@
 #include "../build_data/runtime.h"
 #include "runtime.h"
 #include "state_account_transaction_helpers.h"
+#include "state_item_random_roll.h"
+#include "profile_reward_staging.h"
 #include "storage/internal.h"
 #include "../persistence/persistence.h"
 
@@ -184,7 +187,8 @@ bool prepare_item_acquisition(
     std::uint16_t collectibleIndex,
     std::uint32_t definitionHash,
     PendingItemAcquisition& mutation,
-    std::span<const build_data::material_requirements::Requirement> cost) noexcept {
+    std::span<const build_data::material_requirements::Requirement> cost,
+    ItemAcquisitionOptions options) noexcept {
     mutation = {};
     const AccountState account = account_snapshot();
     build_data::collectibles::Definition collectible{};
@@ -287,6 +291,19 @@ bool prepare_item_acquisition(
     acquired.quantity = 1;
     acquired.mutationSerial = static_cast<std::int32_t>(after.nextInventorySerial++);
     acquired.sockets.policy = authored_inventory::SocketPolicy::nativeDefaults;
+    // Collections reclaims retain their fixed roll. Direct rewards share installed legal pools.
+    if (!hasCollectible && options.allowRandomRoll) {
+        item_details::Definition detail{};
+        if (!build_data::find_configured_item_detail(grantedDefinition.definitionIndex, detail)
+            || detail.definitionHash != definitionHash || detail.bucketId != grantedDefinition.bucketId) {
+            report_acquisition("prepare", "fail", "roll_detail", definitionHash,
+                               before.soid, instanceSoid, inventoryIndex, 0, 0, 0);
+            return false;
+        }
+        const auto seed = options.seed != 0 ? options.seed
+            : static_cast<std::uint64_t>(std::chrono::steady_clock::now().time_since_epoch().count());
+        (void)roll_random_bytes(acquired, grantedDefinition, detail, seed);
+    }
     after.inventory.values[inventoryIndex] = acquired;
     ++after.inventory.count;
 
@@ -343,6 +360,20 @@ bool prepare_item_acquisition(
                        equipmentSlot,
                        after.nextInventorySerial);
     return true;
+}
+
+/** Resolves a direct acquisition through the same priced, atomic insertion path. */
+bool prepare_item_acquisition_for_item(
+    std::uint16_t itemDefinitionIndex, PendingItemAcquisition& mutation,
+    ItemAcquisitionOptions options,
+    std::span<const build_data::material_requirements::Requirement> cost) noexcept {
+    build_data::items::Definition definition{};
+    if (!build_data::find_item_definition_index(itemDefinitionIndex, definition)) {
+        mutation = {};
+        return false;
+    }
+    return prepare_item_acquisition(build_data::collectibles::kNoCollectibleIndex,
+                                     definition.definitionHash, mutation, cost, options);
 }
 
 /** Adds one checked pre-existing item replacement without touching live State. */
@@ -458,6 +489,37 @@ bool stage_item_replacement(PendingItemAcquisition& mutation,
                        updatedInventoryRow,
                        updatedEquipmentSlot,
                        mutation.afterCharacter.nextInventorySerial);
+    return true;
+}
+
+bool stage_item_profile_rewards(PendingItemAcquisition& mutation,
+    std::span<const ProfileExchangePayout> payouts) noexcept {
+    AccountState candidate{};
+    if (!preview_item_acquisition(mutation, candidate)) return false;
+    std::int32_t serialFloor{};
+    for (std::size_t i = 0; i < mutation.expectedProfileItemCount; ++i) {
+        serialFloor = (std::max)(serialFloor, mutation.beforeProfileItems[i].mutationSerial);
+    }
+    const auto resolve = [](std::uint32_t hash, std::int32_t& maximum) noexcept {
+        build_data::items::Definition item{};
+        item_details::Definition detail{};
+        inventory_buckets::Descriptor bucket{};
+        if (!build_data::find_item_definition_hash(hash, item)
+            || !build_data::find_configured_item_detail(item.definitionIndex, detail)
+            || detail.definitionHash != hash || detail.bucketId != item.bucketId
+            || detail.instancedDefinitionState != item_details::InstancedDefinitionState::stackable
+            || !build_data::find_inventory_bucket_descriptor(detail.bucketId, bucket)
+            || bucket.arraySelector != inventory_buckets::ArraySelector::profile
+            || build_data::is_profile_action_source(item.definitionIndex, item.bucketId)) return false;
+        maximum = detail.maxStackSize;
+        return maximum > 0;
+    };
+    if (!runtime::detail::stage_profile_rewards(candidate, payouts, serialFloor, resolve)
+        || !account::valid(candidate) || !valid_profile_inventory(candidate)) return false;
+    mutation.afterProfileItems = candidate.profileItems;
+    mutation.afterProfileItemCount = candidate.profileItemCount;
+    mutation.profileChanged = !same_profile_inventory(
+        candidate, mutation.beforeProfileItems, mutation.expectedProfileItemCount);
     return true;
 }
 

@@ -1,8 +1,11 @@
 #include "instance_encoder.h"
 
 #include <algorithm>
+#include <array>
+#include <cstdio>
 #include <cstring>
 
+#include "../../../../core/logging/log.h"
 #include "abi.h"
 #include "layout.h"
 
@@ -140,6 +143,7 @@ bool encode(const ResolvedInstance& input, std::span<std::byte> output) noexcept
     object.ordinarySockets.gateMask = layout::kAllSocketBits;
     object.roll.progress = layout::kInitialInstanceProgress;
     object.roll.socketEntryListIndex = input.socketEntryListIndex;
+    object.roll.randomRoll = input.randomRoll;
 
     if (input.ordinarySockets.state == OrdinarySocketBlockState::present) {
         // Both permit masks are filled. The plug walk reads the definition's declared plugs as
@@ -151,8 +155,16 @@ bool encode(const ResolvedInstance& input, std::span<std::byte> output) noexcept
             if (plug.has_value()) {
                 object.ordinarySockets.sockets[index].plugDefinitionIndex = *plug;
             }
+            // The two lanes the native record calls auxiliary hashes are one 64-bit mask of the
+            // randomized plug-set rows this instance owns, low half first.
+            const std::uint64_t rows = input.ordinarySockets.availablePlugRows[index];
+            object.ordinarySockets.sockets[index].auxiliaryHashes[0] =
+                static_cast<std::uint32_t>(rows & 0xFFFFFFFFULL);
+            object.ordinarySockets.sockets[index].auxiliaryHashes[1] =
+                static_cast<std::uint32_t>(rows >> 32U);
         }
     }
+
     std::transform(input.socketEntryStates.begin(),
                    input.socketEntryStates.end(),
                    object.roll.socketEntryStates.begin(),
@@ -170,6 +182,21 @@ bool encode(const ResolvedInstance& input, std::span<std::byte> output) noexcept
     // Commit only after validation so a rejected mapping leaves caller-owned storage unchanged.
     std::fill(output.begin(), output.end(), std::byte{});
     std::memcpy(output.data(), &object, sizeof object);
+
+    std::array<char, core::log::kLineCapacity> line{};
+    const int count = std::snprintf(line.data(),
+                                    line.size(),
+                                    "ev=encode_instance soid=0x%llX base_def=%u def_mask=0x%08X "
+                                    "expr_mask=0x%08X",
+                                    static_cast<unsigned long long>(input.instanceSoid),
+                                    input.baseDefinitionIndex,
+                                    object.ordinarySockets.definitionUnlockMask,
+                                    object.ordinarySockets.expressionUnlockMask);
+    if (count > 0) {
+        core::log::write(core::log::Channel::server,
+                         core::log::Level::debug,
+                         {line.data(), static_cast<std::size_t>(count)});
+    }
     return true;
 }
 

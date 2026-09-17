@@ -20,6 +20,32 @@ struct Definition {
     std::uint8_t bucketId{kUnresolvedBucketId};
     std::uint16_t insertionMaterialRequirementSetIndex{kUnavailableMaterialRequirementSetIndex};
     std::uint16_t enabledMaterialRequirementSetIndex{kUnavailableMaterialRequirementSetIndex};
+    /** Native rarity ladder: 1 common through 5 exotic; 0 outside the ladder. */
+    std::uint8_t tier{};
+    /** Plug category the definition declares, or 0 when it declares none. */
+    std::uint32_t plugCategoryHash{};
+    /**
+     * The definition's first investment-stat value, clamped into a byte. A masterwork stat plug
+     * declares its tier here (1..10); other plugs carry whatever their first stat says, which the
+     * roll only reads to detect a Tier-1 masterwork. Zero when the definition declares no stat.
+     */
+    std::uint8_t actionStatValue{};
+    /**
+     * Stat table row of the first investment stat, naming the stat the definition contributes
+     * to. A masterwork stat plug carries the stat it boosts here; a definition with no stat
+     * carries no row, which never matches a weapon stat.
+     */
+    std::uint8_t actionStatRow{};
+};
+
+/** Native item tiers, as the definition's rarity byte encodes them. */
+enum class Tier : std::uint8_t {
+    none = 0,
+    common = 1,
+    uncommon = 2,
+    rare = 3,
+    legendary = 4,
+    exotic = 5,
 };
 
 /** Clears every generated item mapping. */

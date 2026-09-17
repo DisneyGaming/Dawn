@@ -344,6 +344,19 @@ void shutdown() noexcept;
  */
 [[nodiscard]] bool commit_equipment_swap(PendingEquipmentSwap& mutation) noexcept;
 
+/** Acquisition policy: actual drops roll eligible weapons; Collections keep authored defaults. */
+struct ItemAcquisitionOptions {
+    bool allowRandomRoll{true};
+    std::uint64_t seed{};
+};
+
+/** Prepares a direct item grant without a Collections price or entitlement. */
+[[nodiscard]] bool prepare_item_acquisition_for_item(
+    std::uint16_t itemDefinitionIndex,
+    PendingItemAcquisition& mutation,
+    ItemAcquisitionOptions options = {},
+    std::span<const build_data::material_requirements::Requirement> cost = {}) noexcept;
+
 /**
  * Prepares one installed equippable definition as a new selected-character inventory instance.
  *
@@ -359,14 +372,16 @@ void shutdown() noexcept;
  * @param collectibleIndex Collections row the Client pulled from.
  * @param definitionHash Installed item definition requested by the Client.
  * @param mutation Gets a checked after-image without changing account State.
- * @param cost Authored cost charged inside this same transaction; empty charges nothing.
+ * @param cost Explicit vendor price; empty uses Collections cost only when collectibleIndex is set.
+ * @param options Roll policy for direct rewards; ignored for Collections reclaims.
  * @return True when the item and every existing loadout row resolve with one free native row.
  */
 [[nodiscard]] bool prepare_item_acquisition(
     std::uint16_t collectibleIndex,
     std::uint32_t definitionHash,
     PendingItemAcquisition& mutation,
-    std::span<const build_data::material_requirements::Requirement> cost = {}) noexcept;
+    std::span<const build_data::material_requirements::Requirement> cost = {},
+    ItemAcquisitionOptions options = {}) noexcept;
 
 /** Builds the exact full-account after-image while a prepared item pull remains current. */
 [[nodiscard]] bool preview_item_acquisition(const PendingItemAcquisition& mutation,
@@ -448,6 +463,10 @@ struct ProfileExchangePayout {
     std::uint32_t definitionHash{};
     std::int32_t quantity{};
 };
+
+/** Stages package materials on an existing gear grant; its charge and rewards commit together. */
+[[nodiscard]] bool stage_item_profile_rewards(PendingItemAcquisition& mutation,
+    std::span<const ProfileExchangePayout> payouts) noexcept;
 
 /** Prepares an atomic profile-stack charge and one or more credited payouts. */
 [[nodiscard]] bool prepare_vendor_exchange(std::uint32_t costDefinitionHash,

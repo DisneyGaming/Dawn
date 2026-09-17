@@ -8,6 +8,9 @@
 
 namespace sunrise::state::account::festival_quest {
 
+/** Eva's alternate Rewards display group repeats masks and bags from the Werewolf catalogue. */
+inline constexpr std::int16_t kAlternateRewardsFlag = 950;
+
 struct EvaInteraction { bool intro{}; bool wearingMasks{}; bool finalStage{}; };
 
 inline constexpr std::uint16_t kMaskReceiptOpcode = 904;

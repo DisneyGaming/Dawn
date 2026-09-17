@@ -62,6 +62,10 @@ bool encode(const items::Definition& value, ItemRecord& record) noexcept {
         kReservedFieldValue,
         value.insertionMaterialRequirementSetIndex,
         value.enabledMaterialRequirementSetIndex,
+        value.plugCategoryHash,
+        value.tier,
+        value.actionStatValue,
+        value.actionStatRow,
     };
     return true;
 }
@@ -76,7 +80,11 @@ bool decode(const ItemRecord& record, items::Definition& value) noexcept {
              record.definitionIndex,
              record.bucketId,
              record.insertionMaterialRequirementSetIndex,
-             record.enabledMaterialRequirementSetIndex};
+             record.enabledMaterialRequirementSetIndex,
+             record.tier,
+             record.plugCategoryHash,
+             record.actionStatValue,
+             record.actionStatRow};
     return true;
 }
 

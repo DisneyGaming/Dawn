@@ -532,8 +532,33 @@ bool prepare_item_acquisition(Scratch& scratch,
             return report_failure("acquire_account_storage");
         }
         const auto accountBytes = rawStorage.first(family4_datagen::account::layout::kObjectSize);
-        if (!family4_datagen::account::encode(account, accountBytes)
-            || !append_object(scratch,
+        if (!family4_datagen::account::encode(account, accountBytes)) {
+            clear_after(scratch, reservation);
+            return report_failure("acquire_account_object");
+        }
+        // A package grants gear and materials in the same publication. Announce positive
+        // profile deltas as well as the gear so the native observer draws every reward.
+        state::PendingProfileItemAcquisition rewards{};
+        for (std::size_t i = 0; i < mutation.afterProfileItemCount; ++i) {
+            const auto& item = mutation.afterProfileItems[i];
+            std::int64_t previous{};
+            for (std::size_t j = 0; j < mutation.expectedProfileItemCount; ++j) {
+                if (mutation.beforeProfileItems[j].definitionHash == item.definitionHash)
+                    previous += mutation.beforeProfileItems[j].quantity;
+            }
+            if (item.instanceSoid != 0 || item.quantity <= previous) continue;
+            if (rewards.changeCount == rewards.changes.size()) {
+                clear_after(scratch, reservation);
+                return report_failure("acquire_reward_capacity");
+            }
+            rewards.changes[rewards.changeCount++] = {item.mutationSerial, item.quantity};
+        }
+        auto& accountObject = *reinterpret_cast<family4_datagen::account::layout::Object*>(accountBytes.data());
+        if (const auto* error = write_exchange_changes(accountObject, rewards)) {
+            clear_after(scratch, reservation);
+            return report_failure(error);
+        }
+        if (!append_object(scratch,
                               accountBytes,
                               acquisition.accountDefinitionId,
                               acquisition.accountSoid,
