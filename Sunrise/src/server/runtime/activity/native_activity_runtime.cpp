@@ -63,6 +63,10 @@ struct Entry {
 std::mutex mutex;
 std::array<Entry,16> entries{};
 std::uint64_t nextClockEpoch{};
+// Returning {} at each early exit made MSVC reserve a separate 63 KiB frame
+// temporary per branch (over 2 MiB in update). Copy one immutable default value
+// so rejected updates preserve every native default without exhausting the game stack.
+const NativeActivityFrame emptyFrame{};
 void reset_entry(Entry& entry) noexcept {
     // Entry is process-static and now retains up to 384 actor ledgers. Rebuild it
     // in its own storage so reset never needs a multi-megabyte stack temporary.
@@ -539,9 +543,9 @@ bool publication_pending(Owner owner) noexcept {
 NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
     const NativeActivityDefinition& definition,const adventure_start::wire::Request& selected,
     bool openingAdmissionReady,std::uint32_t populationPrefetchBubble,bool experimentalRewardPlacements) noexcept {
-    if(!owner || bubble>63 || !state::activity::contains(owner)) return {};
+    if(!owner || bubble>63 || !state::activity::contains(owner)) return emptyFrame;
     const auto account=state::account_snapshot();
-    const auto document=document_for(definition);if(!document) return {};
+    const auto document=document_for(definition);if(!document) return emptyFrame;
     std::lock_guard lock(mutex);
     Entry* current{};Entry* empty{};
     for(auto& entry:entries) {
@@ -568,23 +572,23 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
         if(!entry.activity.population().owner() && !empty) empty=&entry;
     }
     if(!current) {
-        if(!empty || !empty->activity.begin(owner,definition,document,boot_token())) return {};
+        if(!empty || !empty->activity.begin(owner,definition,document,boot_token())) return emptyFrame;
         current=empty;
         if(&definition==&mercury::kActivity) {
             mercury::freeroam::Configuration configuration{};SYSTEMTIME local{};GetLocalTime(&local);
             if(!mercury::freeroam::configure(*document,configuration)
                 || !current->mercuryFreeroam.begin(owner,current->activity.population().boot(),
-                    static_cast<std::uint8_t>(local.wMinute),configuration)) {reset_entry(*current);return {};}
+                    static_cast<std::uint8_t>(local.wMinute),configuration)) {reset_entry(*current);return emptyFrame;}
             current->mercuryFreeroamReady=true;
         }
         if(definition.openWorld) {
             open_world::Configuration configuration{};
             const auto ordinaryCount=definition.openWorld->authored->populations.size();
-            if(ordinaryCount>definition.populations.size()) {reset_entry(*current);return {};}
+            if(ordinaryCount>definition.populations.size()) {reset_entry(*current);return emptyFrame;}
             if(!open_world::configure(*document,configuration)
                 || !current->openWorld.begin(owner,current->activity.population().boot(),
                     *definition.openWorld,definition.populations.first(ordinaryCount),configuration)) {
-                reset_entry(*current);return {};
+                reset_entry(*current);return emptyFrame;
             }
             current->openWorldReady=true;
         }
@@ -593,11 +597,11 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
             if(base>definition.populations.size()
                 || !current->lostSectors.begin(owner,current->activity.population().boot(),
                     *definition.lostSectors,definition.populations.subspan(base))) {
-                reset_entry(*current);return {};
+                reset_entry(*current);return emptyFrame;
             }
             current->lostSectorsReady=true;
             if(definition.activity=="luna_freeroam") {
-                if(!current->moonLostSectors.begin(owner,current->activity.population().boot(),definition.lostSectors->capabilityBase))return {};
+                if(!current->moonLostSectors.begin(owner,current->activity.population().boot(),definition.lostSectors->capabilityBase))return emptyFrame;
                 current->moonLostSectorsReady=true;
             }
         }
@@ -606,7 +610,7 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
             bubble,arrived,open_world_census::Event::runStart,"activity_admitted"));
         if(current->activity.animation().owner()) report_animation(current->activity.animation(),"ready");
     }
-    if(current->activity.definition()!=&definition) return {};
+    if(current->activity.definition()!=&definition) return emptyFrame;
     current->activity.admit_experimental_reward_placements(experimentalRewardPlacements);
     if(current->lastBubble!=bubble || current->lastArrived!=arrived) {
         auto boundary=census_record(definition,current->activity.population(),definition.populations.size(),bubble,arrived,
@@ -641,10 +645,10 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
         const auto now=GetTickCount64();
         if(!current->clock.domain() && arrived) {
             const auto* frequency=document->views().parameter(definition.clockFrequencyParameter);
-            if(!frequency || !frequency->value || nextClockEpoch==UINT64_MAX)return {};
+            if(!frequency || !frequency->value || nextClockEpoch==UINT64_MAX)return emptyFrame;
             const activity_clock::Policy policy{definition.registries.front().scenario,definition.bubble,
                 {false,1000.0F/static_cast<float>(frequency->value)}};
-            if(!current->clock.begin(owner,boot_token(),++nextClockEpoch,policy,now))return {};
+            if(!current->clock.begin(owner,boot_token(),++nextClockEpoch,policy,now))return emptyFrame;
             std::array<char,256> line{};const auto size=std::snprintf(line.data(),line.size(),
                 "ev=native_clock phase=start owner=%016llX incarnation=%llu epoch=%llu scenario=%08X timing_hz=%u policy=reconstructed",
                 owner.sessionId,owner.incarnation.value,nextClockEpoch,policy.scenario,frequency->value);
@@ -657,7 +661,7 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
             const bool projected=(definition.openWorld || definition.lostSectors || retainedClock)
                 ?current->clock.project_retained(owner,boot_token(),current->clock.domain(),now,clock)
                 :current->clock.project(owner,boot_token(),bubble,now,clock);
-            if(!projected)return {};
+            if(!projected)return emptyFrame;
         }
     }
     // Establish the elapsed-tick publication before native activity intake.
@@ -706,13 +710,13 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
                     bool any{};
                     for(std::size_t category=0;category<streamedSurvivors.size();++category) {
                         if(category>=definition.populations[i].categories && streamedSurvivors[category]) {
-                            current->observationFailure=true;return {};
+                            current->observationFailure=true;return emptyFrame;
                         }
                         any=any || replacements[category]!=0;
                     }
                     auto stagedPopulation=current->activity.population();
                     if(any) {
-                        if(stagedPopulation.last_request()==UINT64_MAX) {current->observationFailure=true;return {};}
+                        if(stagedPopulation.last_request()==UINT64_MAX) {current->observationFailure=true;return emptyFrame;}
                         population::Command command{owner,stagedPopulation.revision(),
                             stagedPopulation.last_request()+1,cap.registry->key,cap.slot,
                             replacements[0],stagedPopulation.boot(),replacements[1]};
@@ -720,7 +724,7 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
                             command.additionalRequested[category-2]=replacements[category];
                         command.categoryCount=cap.categories;
                         if(stagedPopulation.rehydrate(command,cap.registry->bubble)!=population::Result::accepted) {
-                            current->observationFailure=true;return {};
+                            current->observationFailure=true;return emptyFrame;
                         }
                     }
                     current->activity.population()=std::move(stagedPopulation);ledger=std::move(stagedLedger);
@@ -822,11 +826,11 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
     if(current->openWorldReady
         && !current->openWorld.update(freeroamNow,bubble,arrived,current->activity.population(),
             std::span<const coo::NativePopulationLedger<128>>(current->ledgers),nativePending,
-            populationPrefetchBubble))return {};
+            populationPrefetchBubble))return emptyFrame;
     if(current->mercuryFreeroamReady) {
         if(!current->mercuryFreeroam.update(GetTickCount64(),bubble,arrived,current->activity.population(),
             std::span<const coo::NativePopulationLedger<128>>(current->ledgers),nativePending,
-            populationPrefetchBubble))return {};
+            populationPrefetchBubble))return emptyFrame;
     }
     if(current->lostSectorsReady) {
         const auto base=definition.lostSectors->capabilityBase;
@@ -848,8 +852,8 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
             return nativeEvents::quiescent(std::span(leases).first(stage.count));
         };
         if(!current->lostSectors.update(bubble,arrived,current->activity.population(),quiescent,
-            populationPrefetchBubble))return {};
-        if(!current->lostSectors.append_rewards(bubble,arrived,frame.placements))return {};
+            populationPrefetchBubble))return emptyFrame;
+        if(!current->lostSectors.append_rewards(bubble,arrived,frame.placements))return emptyFrame;
     }
     if(current->moonLostSectorsReady) {
         const auto defeated=[&](std::size_t index,std::uint32_t generation) noexcept {
@@ -868,7 +872,7 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
         if(!current->moonLostSectors.update(bubble,arrived,current->lostSectors,
             current->activity.population(),frame.placements,shields,traversalDevices,defeated)
             || frame.lostSectorShields.count+shields.count>frame.lostSectorShields.entries.size()
-            || frame.devices.count+traversalDevices.count>frame.devices.entries.size())return {};
+            || frame.devices.count+traversalDevices.count>frame.devices.entries.size())return emptyFrame;
         for(std::size_t i=0;i<shields.count;++i) {
             const auto& source=shields.entries[i];
             frame.lostSectorShields.entries[frame.lostSectorShields.count++]={source.registry->key,
@@ -915,7 +919,7 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
                 auto failed=census_record(definition,current->activity.population(),i,bubble,arrived,
                     open_world_census::Event::failure,"renewal_precondition");failed.counts=counts;failed.hasCounts=true;failed.failed=true;
                 open_world_census::emit(failed);
-                current->observationFailure=true;return {};
+                current->observationFailure=true;return emptyFrame;
             }
             auto renewalRecord=census_record(definition,current->activity.population(),i,bubble,arrived,
                 open_world_census::Event::renewalStarted,"director_ticket");renewalRecord.counts=counts;
@@ -936,7 +940,7 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
                 current->censusSources[i].renewalRequest=0;current->censusSources[i].renewalBusy=false;continue;
             }
             auto staged=ledger;
-            if(!staged.renew(priorOwner,nextOwner)) {current->observationFailure=true;return {};}
+            if(!staged.renew(priorOwner,nextOwner)) {current->observationFailure=true;return emptyFrame;}
             const auto result=nativeEvents::renew(
                 {owner,priorOwner,static_cast<std::uint8_t>(cap.registry->bubble),true},
                 {owner,nextOwner,static_cast<std::uint8_t>(cap.registry->bubble),true});
@@ -947,7 +951,7 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
             }
             if(result!=nativeEvents::RenewResult::renewed
                 || !current->activity.population().commit_renewal(i)) {
-                current->observationFailure=true;return {};
+                current->observationFailure=true;return emptyFrame;
             }
             ledger=std::move(staged);current->sourceHandles[i]=0;
             members::release_source(priorOwner);
@@ -969,9 +973,9 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
                 validWave&=source.valid() && current->activity.population().consumed(capability);
                 waveLeases[side]={owner,source,static_cast<std::uint8_t>(definition.populations[capability].registry->bubble),true};
             }
-            if(!validWave) {current->observationFailure=true;return {};}
+            if(!validWave) {current->observationFailure=true;return emptyFrame;}
             if(nativeEvents::quiescent(waveLeases) && !current->mercuryFreeroam.commit_wave_clear()) {
-                current->observationFailure=true;return {};
+                current->observationFailure=true;return emptyFrame;
             }
         }
         std::uint32_t announcement{};
@@ -1122,7 +1126,7 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
         frame.populations=current->activity.population().project_retained();
         frame.animations=current->activity.animation().project(bubble);
         if(definition.openWorld && arrived
-            && !open_world::append_placements(definition.placements,bubble,frame.placements))return {};
+            && !open_world::append_placements(definition.placements,bubble,frame.placements))return emptyFrame;
     } else if(definition.retainRosterOrdinals || (arrived && (bubble==definition.bubble || definition.activateAcrossRegions))) {
         // The mailbox may have changed a request after update(). Projection is
         // tied to the live activity lease, while command admission stays scoped.
@@ -1153,7 +1157,7 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
     }
     frame.animations.count=kept;
     if (!equipment_interaction::project(definition.equipmentInteractionGates, account,
-            frame.placements)) return {};
+            frame.placements)) return emptyFrame;
     // Publish the observation capability before the authority frame can create
     // actors. Native callbacks enqueue values; this owner drains them in order.
     for(std::size_t r=0;r<frame.populations.count;++r) {
@@ -1167,10 +1171,10 @@ NativeActivityFrame update(Owner owner,std::uint32_t bubble,bool arrived,
                 owner.incarnation.value,asset,request.source.generation};
             if(populationLifecycleReady) {
             auto& ledger=current->ledgers[i];const auto priorOwner=ledger.owner();
-            if(priorOwner.valid() && priorOwner!=source){current->observationFailure=true;return {};}
+            if(priorOwner.valid() && priorOwner!=source){current->observationFailure=true;return emptyFrame;}
             if(!priorOwner.valid() && (!ledger.begin(source)
                 || !nativeEvents::bind({owner,source,static_cast<std::uint8_t>(cap.registry->bubble),populationLifecycleReady}))) {
-                current->observationFailure=true;return {};
+                current->observationFailure=true;return emptyFrame;
             }
             } else {
             const auto priorSource=current->ledgers[i].owner();

@@ -32,6 +32,47 @@ std::shared_ptr<const c::script::MissionDocument> load(const char* file,const c:
     auto document=c::script::MissionDocument::parse(text,profile,error);
     if(!document)std::printf("parse: %s\n",error.c_str());CHECK(document);return document;
 }
+// The main harness retains large fixtures on its 16 MiB stack. Exercise real
+// startup and publication on a separate 1 MiB stack so it cannot hide runtime
+// stack growth. Production activity instances also live outside the stack.
+struct StackCase {
+    const a::NativeActivityDefinition* definition{};
+    std::shared_ptr<const c::script::MissionDocument> document;
+};
+DWORD WINAPI limited_stack_activity(void* parameter) {
+    const auto& input=*static_cast<StackCase*>(parameter);
+    const auto owner=a::population::Owner{10000,{1}};
+    const auto activity=std::make_unique<a::PersistentActivity>();
+    CHECK(activity->begin(owner,*input.definition,input.document,123));
+    CHECK(activity->population().owner()==owner);
+    a::activity_clock::Service clock;
+    a::activity_clock::Publication publication;
+    if(!input.definition->clockFrequencyParameter.empty()) {
+        CHECK(clock.begin(owner,123,1,{input.definition->registries.front().scenario,
+            input.definition->bubble,{false,1000.0F/30.0F}},1000));
+        CHECK(clock.project(owner,123,input.definition->bubble,1000,publication));
+    }
+    for(unsigned index=0;index<16;++index) {
+        const auto frame=activity->update(input.definition->bubble,index!=0,{},true,publication);
+        CHECK(frame.populations.count<=frame.populations.entries.size());
+        CHECK(frame.placements.count<=frame.placements.entries.size());
+    }
+    if(input.definition->rounds) {
+        CHECK(activity->round().started() && !activity->round().failed());
+        a::native_activity_transit::release(owner,123);
+    }
+    a::capture_bridge::release(owner);
+    return 0;
+}
+void stack_smoke(const char* file,const a::NativeActivityDefinition& definition) {
+    StackCase input{&definition,load(file,*definition.profile)};
+    const auto thread=CreateThread(nullptr,1024*1024,limited_stack_activity,&input,
+        STACK_SIZE_PARAM_IS_A_RESERVATION,nullptr);
+    CHECK(thread!=nullptr);
+    CHECK(WaitForSingleObject(thread,10000)==WAIT_OBJECT_0);
+    DWORD result{};CHECK(GetExitCodeThread(thread,&result) && result==0);
+    CHECK(CloseHandle(thread));
+}
 // Fabricated UNIT INPUT, passed through the same qualification and mailbox as
 // the native observer. These bytes are never emitted to the running game.
 bool unit_capture_completed(const a::capture_feedback::Ticket& t) {
@@ -255,5 +296,8 @@ int main(int argc,char** argv) {
     CHECK(prior.diagnostics().phase==c::Phase::complete);
     CHECK(!prior.observe_occupancy({99,{1}},999,15,report(1)));
     a::capture_bridge::release(owner);
+    stack_smoke("Sunrise/scripts/city_tower_social_d2.json",a::city_tower_social_d2::kActivity);
+    stack_smoke("Sunrise/scripts/mercury_freeroam.json",a::mercury::kActivity);
+    stack_smoke("Sunrise/scripts/infinite_abyss.json",hf::kActivity);
     std::printf("Haunted Forest native entry/capture: %u checks passed.\n",checks);
 }
