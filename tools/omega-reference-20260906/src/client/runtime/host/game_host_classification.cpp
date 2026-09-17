@@ -5,7 +5,7 @@
 #include <array>
 #include <string_view>
 
-namespace sunrise::client::runtime::host {
+namespace dawn::client::runtime::host {
 namespace {
 
 /** The production game host requires the early game-owned network hook group. */
@@ -52,4 +52,4 @@ NetworkRequirement current_requirement() noexcept {
     return classify(std::wstring_view(path.data(), length));
 }
 
-} // namespace sunrise::client::runtime::host
+} // namespace dawn::client::runtime::host

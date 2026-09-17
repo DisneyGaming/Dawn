@@ -8,7 +8,7 @@
 
 #include "layout.h"
 
-namespace sunrise::middleware::datagen::family4::instance {
+namespace dawn::middleware::datagen::family4::instance {
 
 /** Native socket-entry states safe for an initial replicated item record. */
 enum class SocketEntryState : std::uint8_t {
@@ -76,4 +76,4 @@ struct ResolvedInstance {
  */
 [[nodiscard]] bool encode(const ResolvedInstance& input, std::span<std::byte> output) noexcept;
 
-} // namespace sunrise::middleware::datagen::family4::instance
+} // namespace dawn::middleware::datagen::family4::instance

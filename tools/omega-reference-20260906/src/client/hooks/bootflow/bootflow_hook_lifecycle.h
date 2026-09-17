@@ -3,7 +3,7 @@
 #include <array>
 #include <cstdint>
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 
 /**
  * Attaches the boot-step fixes that carry sign-in through to character select.
@@ -52,4 +52,4 @@ struct MissionTriggerSnapshot final {
  */
 [[nodiscard]] MissionTriggerSnapshot mission_trigger_snapshot() noexcept;
 
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

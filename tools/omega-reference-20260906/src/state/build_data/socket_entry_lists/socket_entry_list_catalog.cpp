@@ -4,7 +4,7 @@
 
 #include "../table.h"
 
-namespace sunrise::state::build_data::socket_entry_lists {
+namespace dawn::state::build_data::socket_entry_lists {
 namespace {
 
 // One lock covers both tables: an entry table is only meaningful against its own list rows.
@@ -138,4 +138,4 @@ bool snapshot_entry_tables(std::span<EntryTable> output, std::size_t& count) noe
     return g_entryTables.snapshot(output, count);
 }
 
-} // namespace sunrise::state::build_data::socket_entry_lists
+} // namespace dawn::state::build_data::socket_entry_lists

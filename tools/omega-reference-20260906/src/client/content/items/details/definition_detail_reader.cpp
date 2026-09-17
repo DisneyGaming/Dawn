@@ -10,11 +10,11 @@
 #include "relative.h"
 #include "socket_detail_reader.h"
 
-namespace sunrise::client::content::items::details::reader {
+namespace dawn::client::content::items::details::reader {
 namespace {
 
 namespace build_details = state::build_data::items::details;
-namespace dense_layout = sunrise::client::content::items::layout;
+namespace dense_layout = dawn::client::content::items::layout;
 
 /**
  * Reads the optional signed equipment slot from one item definition.
@@ -97,4 +97,4 @@ bool read_definition(const investment::Source& source,
     return true;
 }
 
-} // namespace sunrise::client::content::items::details::reader
+} // namespace dawn::client::content::items::details::reader

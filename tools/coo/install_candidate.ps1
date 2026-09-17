@@ -16,8 +16,8 @@ $receiptPath = Join-Path $validation 'installation.json'
 if (Test-Path -LiteralPath $receiptPath) { throw 'This candidate has an installation receipt; preserve that evidence.' }
 $manifest = Get-Content -Raw -LiteralPath (Join-Path $validation 'package.json') | ConvertFrom-Json
 $names = @('steam_api64.dll', 'steam_api64.pdb', 'Lua_LICENSE.txt',
-    'Sunrise/scripts/omega.lua', 'Sunrise/scripts/deadly_trial.lua', 'Sunrise/scripts/gateway.lua', 'Sunrise/scripts/beyond_infinity.lua', 'Sunrise/scripts/deep_storage.lua', 'Sunrise/scripts/hijacked.lua', 'Sunrise/scripts/strike_pact.lua', 'Sunrise/scripts/strike_bond.lua', 'Sunrise/scripts/mission_pact.lua', 'Sunrise/scripts/mission_bond.lua', 'Sunrise/scripts/eater_of_worlds.lua', 'Sunrise/scripts/mercury_freeroam.json',
-    'Sunrise/scripts/eden_freeroam.json', 'Sunrise/scripts/fleet_freeroam.json', 'Sunrise/scripts/polaris_freeroam.json', 'Sunrise/scripts/planet_x_freeroam.json', 'Sunrise/scripts/tangled_shore_freeroam.json', 'Sunrise/scripts/dreaming_city_freeroam.json', 'Sunrise/scripts/infinite_abyss.json')
+    'Dawn/scripts/omega.lua', 'Dawn/scripts/deadly_trial.lua', 'Dawn/scripts/gateway.lua', 'Dawn/scripts/beyond_infinity.lua', 'Dawn/scripts/deep_storage.lua', 'Dawn/scripts/hijacked.lua', 'Dawn/scripts/strike_pact.lua', 'Dawn/scripts/strike_bond.lua', 'Dawn/scripts/mission_pact.lua', 'Dawn/scripts/mission_bond.lua', 'Dawn/scripts/eater_of_worlds.lua', 'Dawn/scripts/mercury_freeroam.json',
+    'Dawn/scripts/eden_freeroam.json', 'Dawn/scripts/fleet_freeroam.json', 'Dawn/scripts/polaris_freeroam.json', 'Dawn/scripts/planet_x_freeroam.json', 'Dawn/scripts/tangled_shore_freeroam.json', 'Dawn/scripts/dreaming_city_freeroam.json', 'Dawn/scripts/infinite_abyss.json')
 $scopeProperty = $manifest.PSObject.Properties['validationScope']
 $validationScope = if ($scopeProperty) { [string]$scopeProperty.Value } else { 'full-lua' }
 $expectedCount = switch ($validationScope) {
@@ -52,11 +52,11 @@ if ($validationScope -eq 'full-lua-release') {
 }
 if ($validationScope -in @('hijacked-release', 'deep-storage-release', 'mercury-reentry-release', 'eater-reactor-release', 'eater-contest-release')) {
     $missionProjects = switch ($validationScope) {
-        'hijacked-release' { @('hijacked_tests', 'hijacked_catalog_tests', 'Sunrise') }
-        'deep-storage-release' { @('deep_storage_tests', 'Sunrise') }
-        'mercury-reentry-release' { @('retained_authority_scope_tests', 'Sunrise') }
-        'eater-reactor-release' { @('eater_of_worlds_tests', 'eater_of_worlds_roster_tests', 'player_position_tests', 'other_mission_protocol_tests', 'Sunrise') }
-        'eater-contest-release' { @('eater_of_worlds_tests', 'eater_of_worlds_roster_tests', 'player_position_tests', 'other_mission_protocol_tests', 'native_nightfall_power_tests', 'nightfall_rules_tests', 'mission_launch_lifecycle_tests', 'mission_launch_visual_tests', 'Sunrise') }
+        'hijacked-release' { @('hijacked_tests', 'hijacked_catalog_tests', 'Dawn') }
+        'deep-storage-release' { @('deep_storage_tests', 'Dawn') }
+        'mercury-reentry-release' { @('retained_authority_scope_tests', 'Dawn') }
+        'eater-reactor-release' { @('eater_of_worlds_tests', 'eater_of_worlds_roster_tests', 'player_position_tests', 'other_mission_protocol_tests', 'Dawn') }
+        'eater-contest-release' { @('eater_of_worlds_tests', 'eater_of_worlds_roster_tests', 'player_position_tests', 'other_mission_protocol_tests', 'native_nightfall_power_tests', 'nightfall_rules_tests', 'mission_launch_lifecycle_tests', 'mission_launch_visual_tests', 'Dawn') }
     }
     foreach ($project in $missionProjects) {
         if (@($results | Where-Object { $_.project -eq $project -and $_.configuration -eq 'Release' }).Count -ne 1) {
@@ -82,7 +82,7 @@ foreach ($name in $names) {
 if (-not $before.ContainsKey('steam_api64.dll')) { throw 'Expected an installed DLL to back up.' }
 if ($ValidateOnly) { Write-Output 'Package and installed baseline verified. No files changed.'; return }
 if (Get-Process -Name destiny2 -ErrorAction SilentlyContinue) { throw 'Close Destiny 2 before installation.' }
-$backup = Join-Path $taskRoot ('.sunrise\backups\lua-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [guid]::NewGuid().ToString('N').Substring(0,8))
+$backup = Join-Path $taskRoot ('.dawn\backups\lua-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [guid]::NewGuid().ToString('N').Substring(0,8))
 New-Item -ItemType Directory -Path $backup | Out-Null
 foreach ($name in $before.Keys) {
     $saved = Join-Path $backup $name

@@ -5,7 +5,7 @@
 
 #include "internal.h"
 
-namespace sunrise::middleware::content::packages::reader::locator_cache {
+namespace dawn::middleware::content::packages::reader::locator_cache {
 
 /** @param value Directory text. @return Its case-sensitive key. */
 [[nodiscard]] std::uint64_t directory_hash(std::wstring_view value) noexcept;
@@ -47,4 +47,4 @@ void store(std::uint64_t directoryHash,
 /** @param directoryHash Key of the directory whose package files are now all recorded. */
 void mark_complete(std::uint64_t directoryHash) noexcept;
 
-} // namespace sunrise::middleware::content::packages::reader::locator_cache
+} // namespace dawn::middleware::content::packages::reader::locator_cache

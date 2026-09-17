@@ -4,7 +4,7 @@
 #include "signature_text.h"
 #include "steam.h"
 
-namespace sunrise::client::patterns::steam {
+namespace dawn::client::patterns::steam {
 namespace {
 
 // Matches the authentication availability reader used by Client startup.
@@ -38,4 +38,4 @@ std::span<const patterns::Pattern> definitions() noexcept {
     return kDefinitions;
 }
 
-} // namespace sunrise::client::patterns::steam
+} // namespace dawn::client::patterns::steam

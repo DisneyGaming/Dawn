@@ -4,7 +4,7 @@
 #include "../../../../core/logging/log.h"
 #include "../internal.h"
 
-namespace sunrise::server::bap::encrypted::diagnostics {
+namespace dawn::server::bap::encrypted::diagnostics {
 
 /**
  * Logs one request the Server could not answer as meant.
@@ -28,4 +28,4 @@ void report_failure(std::uint16_t service, std::string_view stage) noexcept {
     }
 }
 
-} // namespace sunrise::server::bap::encrypted::diagnostics
+} // namespace dawn::server::bap::encrypted::diagnostics

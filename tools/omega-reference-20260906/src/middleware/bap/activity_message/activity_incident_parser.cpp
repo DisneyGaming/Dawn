@@ -12,7 +12,7 @@
 #include "../../encoding/bit_reader.h"
 #include "incident.h"
 
-namespace sunrise::middleware::bap::activity_message::incident {
+namespace dawn::middleware::bap::activity_message::incident {
 namespace {
 
 /** @return True when one target index is safe to hand to the Client's table lookup. */
@@ -111,4 +111,4 @@ Verdict validate(std::span<const std::byte> payload, Incident& parsed) noexcept 
     return Verdict::accepted;
 }
 
-} // namespace sunrise::middleware::bap::activity_message::incident
+} // namespace dawn::middleware::bap::activity_message::incident

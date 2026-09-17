@@ -10,7 +10,7 @@ new chat. Read this first, then `project-notes/FAILED_EXPERIMENTS.md` (do-not-re
 The mission loads to **map + banner only** because the authored activity **manager never activates**.
 We traced the entire activation chain and found the single missing trigger:
 
-> **Activation is driven by a session-stream message of kind 22 ("host-reestablish"). Sunrise's group
+> **Activation is driven by a session-stream message of kind 22 ("host-reestablish"). Dawn's group
 > host never sent it. We added a send, but with the WRONG body (8 bytes). The client needs a
 > 136-byte body. Writing the correct 136-byte encoder is the next step.**
 
@@ -25,7 +25,7 @@ We traced the entire activation chain and found the single missing trigger:
 The client's activity session-stream consumer switches on a message **kind**. Per launch only three
 kinds arrive:
 
-| kind | meaning | Sunrise sends it? | picker/manager |
+| kind | meaning | Dawn sends it? | picker/manager |
 |------|---------|-------------------|----------------|
 | 8  | connect-establish | (handshake) | no manager lookup |
 | 30 | membership-update | ✅ `SessionMessageId::membershipUpdate = 30` | picker resolves mgr by **session id** → succeeds |
@@ -65,7 +65,7 @@ Current stub (build `67d58c1`) sends kind 22 with an 8-byte session-id-only body
    - 144-bit identity field
    - total **136 bytes** decoded size → set `kHostReestablishSize = 136` (currently 8).
 2. **Fill it** in `publish_host_reestablish()` (already exists in `server/gameplay/group/group_host.cpp`)
-   from data Sunrise already has:
+   from data Dawn already has:
    - `sessionId` → `record.sessionId`
    - `machineId` → member key (`state::activity::membership::member_key(...)`, as `publish_snapshot`
      already computes `peerMachineId`)
@@ -124,7 +124,7 @@ mission inert
     └ +0x1AF00 ("active") = 0 for every manager  (activation never runs)
        └ activate fn never called
           └ the client only calls activate from session-stream case 0x16 = KIND 22
-             └ kind 22 (host-reestablish) NEVER SENT by Sunrise   <-- THE GAP
+             └ kind 22 (host-reestablish) NEVER SENT by Dawn   <-- THE GAP
 ```
 
 Manager offsets (our dump, base `0x7FF618070000`): mode `+0x1AEF8`, component/active `+0x1AF00`,
@@ -136,15 +136,15 @@ activity `+0x24` (default -1). These are verified in our build.
 ## Build / deploy / test loop
 
 ```bash
-powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\sunrise-dev.ps1" -Config Release
+powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\dawn-dev.ps1" -Config Release
 ```
-- Builds `Sunrise-src\Sunrise.sln` and deploys to `bin\x64\steam_api64.dll` (backs up the old one).
+- Builds `Dawn-src\Dawn.sln` and deploys to `bin\x64\steam_api64.dll` (backs up the old one).
 - `-Restore` rolls back the DLL; `-BuildOnly` compiles without deploying.
 - Toolchain: **VS 2026/18 BuildTools, PlatformToolset v145, Windows SDK 10.0.26100**. There is **no
   `A:` drive** on this machine (older docs reference it — ignore).
-- **MAX_PATH gotcha:** keep the repo at a short path (`C:\Destiny 2 Development\Sunrise-src`). A few
+- **MAX_PATH gotcha:** keep the repo at a short path (`C:\Destiny 2 Development\Dawn-src`). A few
   `#include`s are backslash-continued and blow the 260-char limit under long parent dirs.
-- Log: `bin\x64\Sunrise\logs\sunrise.log` (client=debug, file_sink on). The game's retail log is piped
+- Log: `bin\x64\Dawn\logs\dawn.log` (client=debug, file_sink on). The game's retail log is piped
   in as `ev=retail`.
 - **Verify the deployed DLL hash matches the build** before trusting a run — `-Restore` between runs can
   leave a stale DLL live.
@@ -186,7 +186,7 @@ _connection_failure_suicide                              # FAH/GAH death (should
 ## Git state
 
 - Branch **`red-war-gameplay-host`** (deployed base; divergent fork from `spawner`, which holds the old
-  authored/AI/spawner work — preserved, plus filesystem backup `_Sunrise-src_spawner_backup_20260818`).
+  authored/AI/spawner work — preserved, plus filesystem backup `_Dawn-src_spawner_backup_20260818`).
 - Recent commits:
   - `67d58c1` — kind-22 host-reestablish stub (8-byte body) ← **latest; fix the body here**
   - `68f897a` — activity feature-flag recorder + poke (Path C; dead end)
@@ -197,7 +197,7 @@ _connection_failure_suicide                              # FAH/GAH death (should
 
 - **Ghidra project** `C:\Users\gauta\Ghidra.gpr`, program **`destiny2_unpacked.bin`** (145 MB memory
   dump, base `0x7FF618070000`, **file offset == RVA**). `destiny2.exe` on disk is packed — always use
-  the dump. Debuggers get killed (anti-debug); in-process Sunrise hooks are the reliable channel.
+  the dump. Debuggers get killed (anti-debug); in-process Dawn hooks are the reliable channel.
 - **Ghidra headless** works (GUI must be closed first):
   ```
   "C:\Users\gauta\Downloads\ghidra_12.1.2_PUBLIC_20260605\ghidra_12.1.2_PUBLIC\support\analyzeHeadless.bat" ^
@@ -216,13 +216,13 @@ _connection_failure_suicide                              # FAH/GAH death (should
 
 ## One-paragraph summary to paste into a new chat
 
-> Continuing Destiny 2 Sunrise (offline mod) Homecoming mission work. We proved the authored activity
+> Continuing Destiny 2 Dawn (offline mod) Homecoming mission work. We proved the authored activity
 > manager never activates because the client only activates from a session-stream message of **kind 22
-> ("host-reestablish")** which Sunrise never sent. The manager is otherwise resolved fine by session id
+> ("host-reestablish")** which Dawn never sent. The manager is otherwise resolved fine by session id
 > from the membership(30)/parameters(38) messages we already send. We added a kind-22 send in
 > `group_host.cpp` (`publish_host_reestablish`, commit `67d58c1`) but with an **8-byte** body; the client
 > needs a **136-byte** body: `sessionId, machineId, host NetAddr, 128-bit + 144-bit identity`. **Next
-> step: write the real 136-byte encoder** (all fields are data Sunrise already has — see
+> step: write the real 136-byte encoder** (all fields are data Dawn already has — see
 > `publish_snapshot`), confirm the exact bit layout against the client's kind-22 reader in the Ghidra
 > dump, build/deploy, and check whether `activity_script_identity_enable` finally fires. Branch
 > `red-war-gameplay-host`; see `HOMECOMING-KIND22-HANDOFF.md`.

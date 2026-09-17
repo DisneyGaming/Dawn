@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <imgui.h>
 
-namespace sunrise::core::ui::animation::transition {
+namespace dawn::core::ui::animation::transition {
 namespace {
 
 /** 256 lanes cover 128 two-state controls with no heap storage. */
@@ -120,4 +120,4 @@ void reset() noexcept {
     g_slots = {};
 }
 
-} // namespace sunrise::core::ui::animation::transition
+} // namespace dawn::core::ui::animation::transition

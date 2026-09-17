@@ -6,7 +6,7 @@
 #include "../../../../core/logging/log.h"
 #include "../graphics_hook_replacements.h"
 
-namespace sunrise::client::hooks::graphics {
+namespace dawn::client::hooks::graphics {
 namespace {
 
 /** A 64-pixel hidden surface is enough to get the system DXGI vtable. */
@@ -245,4 +245,4 @@ void release(Targets& targets) noexcept {
 }
 
 } // namespace discovery
-} // namespace sunrise::client::hooks::graphics
+} // namespace dawn::client::hooks::graphics

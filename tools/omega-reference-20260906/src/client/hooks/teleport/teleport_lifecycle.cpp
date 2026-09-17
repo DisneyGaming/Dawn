@@ -22,7 +22,7 @@
 #include "internal.h"
 #include "runtime.h"
 
-namespace sunrise::client::hooks::teleport {
+namespace dawn::client::hooks::teleport {
 namespace {
 
 /** Runs per frame on the thread owning the camera and the player, and writes the camera pose. */
@@ -213,7 +213,7 @@ __declspec(noinline) void invoke_sync(void* component) noexcept {
     (void)next(static_cast<std::byte*>(component), flags.data());
 }
 
-/** Stops Sunrise-owned work before the camera producer is detached. */
+/** Stops Dawn-owned work before the camera producer is detached. */
 void quiesce() noexcept {
     g_callGate.quiesce();
 }
@@ -261,4 +261,4 @@ bool uninstall() noexcept {
     return true;
 }
 
-} // namespace sunrise::client::hooks::teleport
+} // namespace dawn::client::hooks::teleport

@@ -8,7 +8,7 @@
 
 #include "../../../../state/build_data/runtime.h"
 
-namespace sunrise::middleware::datagen::family4::loadout {
+namespace dawn::middleware::datagen::family4::loadout {
 namespace {
 
 namespace build_socket_lists = state::build_data::socket_entry_lists;
@@ -107,4 +107,4 @@ void resolve_socket_states(
     }
 }
 
-} // namespace sunrise::middleware::datagen::family4::loadout
+} // namespace dawn::middleware::datagen::family4::loadout

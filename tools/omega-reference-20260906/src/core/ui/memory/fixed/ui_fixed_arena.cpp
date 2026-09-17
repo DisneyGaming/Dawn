@@ -7,7 +7,7 @@
 #include "../allocator.h"
 #include "internal.h"
 
-namespace sunrise::core::ui::memory::fixed {
+namespace dawn::core::ui::memory::fixed {
 namespace {
 
 /** Native maximum alignment covers every type Dear ImGui allocates. */
@@ -206,4 +206,4 @@ ArenaStats snapshot() noexcept {
             g_freeHead != nullptr ? largest_free() : 0};
 }
 
-} // namespace sunrise::core::ui::memory::fixed
+} // namespace dawn::core::ui::memory::fixed

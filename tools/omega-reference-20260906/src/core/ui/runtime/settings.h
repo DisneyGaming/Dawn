@@ -2,7 +2,7 @@
 
 #include <Windows.h>
 
-namespace sunrise::core::ui::runtime {
+namespace dawn::core::ui::runtime {
 
 /** UI visibility settings, read at boot. */
 struct Settings {
@@ -12,4 +12,4 @@ struct Settings {
     UINT toggleVirtualKey{VK_INSERT};
 };
 
-} // namespace sunrise::core::ui::runtime
+} // namespace dawn::core::ui::runtime

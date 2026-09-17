@@ -6,7 +6,7 @@
 
 #include "../definition.h"
 
-namespace sunrise::state::matchmaking::transactions {
+namespace dawn::state::matchmaking::transactions {
 
 /** @return The value that means a variant is not in the context table. */
 inline constexpr std::size_t no_variant() noexcept {
@@ -100,4 +100,4 @@ inline bool valid_descriptor(const PendingMutation& mutation) noexcept {
     return mutation.descriptorData == nullptr && mutation.descriptorSize == 0;
 }
 
-} // namespace sunrise::state::matchmaking::transactions
+} // namespace dawn::state::matchmaking::transactions

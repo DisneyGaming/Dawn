@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace sunrise::client::movement {
+namespace dawn::client::movement {
 
 /** Default distance, in world units along the camera's forward vector. */
 inline constexpr float kDefaultDistance = 10.0F;
@@ -54,4 +54,4 @@ void shutdown() noexcept;
  */
 bool publish(const Settings& settings) noexcept;
 
-} // namespace sunrise::client::movement
+} // namespace dawn::client::movement

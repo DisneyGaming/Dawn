@@ -6,7 +6,7 @@
 #include "../destination/activity_destination_validation.h"
 #include "../transactions/internal.h"
 
-namespace sunrise::state::activity::membership {
+namespace dawn::state::activity::membership {
 
 /** Tests whether the client has applied the current membership revision. */
 bool acknowledged(std::uint64_t sessionId) noexcept {
@@ -222,4 +222,4 @@ std::uint64_t join_identity(ActivityInstanceKey key) noexcept {
     return identity;
 }
 
-} // namespace sunrise::state::activity::membership
+} // namespace dawn::state::activity::membership

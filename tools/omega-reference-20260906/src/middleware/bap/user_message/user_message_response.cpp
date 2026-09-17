@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace sunrise::middleware::bap::user_message {
+namespace dawn::middleware::bap::user_message {
 namespace {
 
 /** Svc 33 stores its required value in protobuf field 4. */
@@ -37,4 +37,4 @@ bool encode_minimal_response(std::span<std::byte> output, std::size_t& written) 
     return true;
 }
 
-} // namespace sunrise::middleware::bap::user_message
+} // namespace dawn::middleware::bap::user_message

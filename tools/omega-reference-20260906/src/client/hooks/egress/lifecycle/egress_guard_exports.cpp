@@ -7,7 +7,7 @@
 #include "../winsock/replacements.h"
 #include "internal.h"
 
-namespace sunrise::client::hooks::egress::lifecycle {
+namespace dawn::client::hooks::egress::lifecycle {
 namespace {
 
 struct ExportDefinition {
@@ -128,4 +128,4 @@ bool resolve_specs(std::span<hooking::detour::Spec, kHookCount> specs,
     return count >= kRequiredHookCount;
 }
 
-} // namespace sunrise::client::hooks::egress::lifecycle
+} // namespace dawn::client::hooks::egress::lifecycle

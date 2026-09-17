@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cstdint>
 
-namespace sunrise::middleware::signon::config {
+namespace dawn::middleware::signon::config {
 namespace {
 
 /** Blob layout the Client's config applier parses; key 0 ends its entry loop. */
@@ -42,4 +42,4 @@ void build(std::span<const std::byte> token, std::span<std::byte> output) noexce
     write_fixed32(output, kTokenOffset + token.size(), kTerminator);
 }
 
-} // namespace sunrise::middleware::signon::config
+} // namespace dawn::middleware::signon::config

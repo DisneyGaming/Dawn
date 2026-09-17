@@ -5,7 +5,7 @@
 
 #include "../platform.h"
 
-namespace sunrise::client::hooks::network::lifecycle {
+namespace dawn::client::hooks::network::lifecycle {
 
 /**
  * Game-owned hooks needed before the first SignOn request. The BAP transport is not one of them:
@@ -58,4 +58,4 @@ void set_accepting(std::span<const HookSlot> slots, bool accepting) noexcept;
 uninstall_group(std::span<const HookSlot> slots,
                 std::span<const hooking::detour::ProtectedCodeEntry> protectedEntries) noexcept;
 
-} // namespace sunrise::client::hooks::network::lifecycle
+} // namespace dawn::client::hooks::network::lifecycle

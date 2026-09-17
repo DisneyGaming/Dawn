@@ -17,7 +17,7 @@
 #include "../../state/build_data/runtime.h"
 #include "../../state/runtime/runtime.h"
 
-namespace sunrise::server::web_service {
+namespace dawn::server::web_service {
 
 namespace {
 
@@ -722,4 +722,4 @@ void acquire_item(const middleware::web_service::Message& message, Outcome& outc
                             mutation.acquiredInstanceSoid);
 }
 
-} // namespace sunrise::server::web_service
+} // namespace dawn::server::web_service

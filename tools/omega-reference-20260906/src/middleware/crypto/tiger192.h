@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <span>
 
-namespace sunrise::middleware::crypto::tiger {
+namespace dawn::middleware::crypto::tiger {
 
 /** Tiger/192 produces 24 bytes. */
 inline constexpr std::size_t kDigestSize = 24;
@@ -20,4 +20,4 @@ using Digest = std::array<std::byte, kDigestSize>;
  */
 void hash(std::span<const std::byte> input, Digest& output) noexcept;
 
-} // namespace sunrise::middleware::crypto::tiger
+} // namespace dawn::middleware::crypto::tiger

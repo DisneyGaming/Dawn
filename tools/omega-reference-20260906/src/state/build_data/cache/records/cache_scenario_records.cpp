@@ -2,7 +2,7 @@
 
 #include "codec.h"
 
-namespace sunrise::state::build_data::cache::records {
+namespace dawn::state::build_data::cache::records {
 namespace {
 
 /** @return True when every field of the row fits its disk form. */
@@ -189,4 +189,4 @@ bool decode(const RosterGroupRecord& record, scenarios::RosterGroup& value) noex
     return true;
 }
 
-} // namespace sunrise::state::build_data::cache::records
+} // namespace dawn::state::build_data::cache::records

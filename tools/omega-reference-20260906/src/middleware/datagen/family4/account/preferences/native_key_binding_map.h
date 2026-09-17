@@ -5,7 +5,7 @@
 
 #include "../../../../../state/account/settings/key_bindings.h"
 
-namespace sunrise::middleware::datagen::family4::account::preferences {
+namespace dawn::middleware::datagen::family4::account::preferences {
 
 using state::account::settings::bindings::Action;
 
@@ -93,4 +93,4 @@ inline constexpr std::array<Action, state::account::settings::bindings::kActionC
 
 static_assert(complete());
 
-} // namespace sunrise::middleware::datagen::family4::account::preferences
+} // namespace dawn::middleware::datagen::family4::account::preferences

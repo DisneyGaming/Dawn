@@ -33,7 +33,7 @@ def main():
             raise AssertionError(f'Identity corruption accepted: {name}')
     verify.OUT = out
     for name in ('beyond_infinity_catalog_tests', 'beyond_infinity_tests'):
-        project = verify.ROOT / f'Sunrise/unit/{name}.vcxproj'
+        project = verify.ROOT / f'Dawn/unit/{name}.vcxproj'
         for configuration in ('Debug', 'Release'):
             checks.append(verify.build(project, configuration))
     (out / 'results.json').write_text(json.dumps({'scope': 'offline package parity, mission/runtime, native guards, roster, serialization', 'liveAcceptance': False,

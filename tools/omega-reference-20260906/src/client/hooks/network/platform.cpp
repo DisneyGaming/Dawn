@@ -2,7 +2,7 @@
 
 #include "coordinator/network_call_coordinator.h"
 
-namespace sunrise::client::hooks::network::platform {
+namespace dawn::client::hooks::network::platform {
 namespace {
 
 using TransportKind = std::int64_t(__fastcall*)();
@@ -93,4 +93,4 @@ void* set_certificate_entry_point() noexcept {
     return reinterpret_cast<void*>(&set_certificate_body);
 }
 
-} // namespace sunrise::client::hooks::network::platform
+} // namespace dawn::client::hooks::network::platform

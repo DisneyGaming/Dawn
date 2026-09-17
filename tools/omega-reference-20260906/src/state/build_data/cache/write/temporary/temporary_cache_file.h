@@ -6,7 +6,7 @@
 #include "../../../definition.h"
 #include "../../records/domains.h"
 
-namespace sunrise::state::build_data::cache::temporary {
+namespace dawn::state::build_data::cache::temporary {
 
 /**
  * Writes one whole cache under a new sibling name only this writer owns.
@@ -23,4 +23,4 @@ namespace sunrise::state::build_data::cache::temporary {
                          std::uint64_t checksum,
                          core::path::Buffer& temporaryPath) noexcept;
 
-} // namespace sunrise::state::build_data::cache::temporary
+} // namespace dawn::state::build_data::cache::temporary

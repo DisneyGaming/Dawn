@@ -8,7 +8,7 @@
 #include "../../family4/loadout/definition.h"
 #include "../layout.h"
 
-namespace sunrise::middleware::datagen::character_record::appearance {
+namespace dawn::middleware::datagen::character_record::appearance {
 
 namespace details = state::build_data::items::details;
 
@@ -107,4 +107,4 @@ void apply_perk_banks(const family4::loadout::ResolvedInstances& instances,
                                std::int32_t light,
                                layout::Appearance& appearance) noexcept;
 
-} // namespace sunrise::middleware::datagen::character_record::appearance
+} // namespace dawn::middleware::datagen::character_record::appearance

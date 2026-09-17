@@ -7,7 +7,7 @@ from extract_gateway_bindings import array,u32,i64
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[2]
-OUT=ROOT/'Sunrise/src/state/activity/beyond_infinity/bindings.h'
+OUT=ROOT/'Dawn/src/state/activity/beyond_infinity/bindings.h'
 PREFIX={0x233E7149:'well',0x1194F70F:'reflections',0x338D8E1D:'reveal',
         0x8E70632B:'forest',0x15FFBE16:'future',0x0FF26BCC:'ambush',
         0xC7FB7155:'past',0xDA02FEF1:'lighthouse',0xA908C5F7:'well_objectives',
@@ -92,7 +92,7 @@ def render():
     def asset(a):return '{'+','.join(f'0x{x:X}U' for x in a)+'}'
     lines=['// Generated native capabilities; Lua owns progression.', '#pragma once',
            '#include "native_catalog.h"','#include "../coo/mission_script.h"',
-           'namespace sunrise::state::activity::beyond_infinity {',
+           'namespace dawn::state::activity::beyond_infinity {',
            f'inline constexpr coo::Asset kModule={asset(module)},kDialogueAsset={asset(dialogue)};',
            'inline constexpr coo::script::Capability kCapabilities[]{']
     for name,domain,op,a,arg,wait in caps:

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::hooks::graphics::renderer::report {
+namespace dawn::client::hooks::graphics::renderer::report {
 
 /** Stage of the presentation stack that produced an outcome. */
 enum class Stage : unsigned {
@@ -49,4 +49,4 @@ void note(Stage stage, Reason reason) noexcept;
 /** Records that the stack is active, so a later failure is written again. */
 void note_active() noexcept;
 
-} // namespace sunrise::client::hooks::graphics::renderer::report
+} // namespace dawn::client::hooks::graphics::renderer::report

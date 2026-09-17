@@ -6,7 +6,7 @@
 
 #include "../../definition.h"
 
-namespace sunrise::state::activity::entity_slots::transactions {
+namespace dawn::state::activity::entity_slots::transactions {
 
 /** @return True when no lease bit is set. */
 inline bool empty(const LeaseMask& mask) noexcept {
@@ -97,4 +97,4 @@ inline bool exceeds(const LeaseMask& selected, const LeaseMask& available) noexc
     return false;
 }
 
-} // namespace sunrise::state::activity::entity_slots::transactions
+} // namespace dawn::state::activity::entity_slots::transactions

@@ -8,7 +8,7 @@
 
 #include "../../hooking/detour.h"
 
-namespace sunrise::client::hooks::polled_input {
+namespace dawn::client::hooks::polled_input {
 
 /** Windows reports a key that is not held with a zero state. */
 inline constexpr SHORT kKeyReleased = 0;
@@ -71,4 +71,4 @@ void clear_game_range() noexcept;
  */
 void apply_policy(bool visible) noexcept;
 
-} // namespace sunrise::client::hooks::polled_input
+} // namespace dawn::client::hooks::polled_input

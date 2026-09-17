@@ -8,7 +8,7 @@ from pathlib import Path
 from package_read import read,ROOT
 from extract_gateway_bindings import array
 OUT=ROOT/'build/coo/gateway-ai-lattice'
-TARGET=ROOT/'Sunrise/src/state/activity/gateway/ai_bindings.h'
+TARGET=ROOT/'Dawn/src/state/activity/gateway/ai_bindings.h'
 u32=lambda b,o:struct.unpack_from('<I',b,o)[0]
 u64=lambda b,o:struct.unpack_from('<Q',b,o)[0]
 i64=lambda b,o:struct.unpack_from('<q',b,o)[0]
@@ -98,7 +98,7 @@ def assignment(registry,slot):
 
 def generate():
  report=recover()
- lines=['// Generated from package tactical groups and placement policy by generate_gateway_ai.py.','#pragma once','#include "traversal_catalog.h"','#include "../coo/native_combatant_authority.h"','namespace sunrise::state::activity::gateway {',
+ lines=['// Generated from package tactical groups and placement policy by generate_gateway_ai.py.','#pragma once','#include "traversal_catalog.h"','#include "../coo/native_combatant_authority.h"','namespace dawn::state::activity::gateway {',
  'struct TacticalJoin { std::uint32_t registry; std::uint16_t source,group; std::int8_t row; };','inline constexpr TacticalJoin kTacticalJoins[]{']
  for j in report['joins']:lines.append('    {0x%08XU,%d,%d,%d}, // %s'%(j['registry'],j['source'],j['group'],j['row'],j['name']))
  lines += ['};','[[nodiscard]] constexpr coo::native_combatant::TacticalGroup tactical_group(const Spawn& source) noexcept {',

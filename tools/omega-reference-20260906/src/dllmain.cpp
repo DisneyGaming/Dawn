@@ -14,39 +14,39 @@ HMODULE g_module{};
 }
 
 /** @return True when the egress guard and Core initialize from this DLL module. */
-extern "C" __declspec(dllexport) bool SunriseInitialize() noexcept {
-    if (!sunrise::client::hooks::egress::install() || !sunrise::core::initialize(g_module)) {
+extern "C" __declspec(dllexport) bool DawnInitialize() noexcept {
+    if (!dawn::client::hooks::egress::install() || !dawn::core::initialize(g_module)) {
         return false;
     }
     // This export is one of two entry points; the guard reports once, whichever ran first.
-    sunrise::client::hooks::egress::report_installation();
+    dawn::client::hooks::egress::report_installation();
     return true;
 }
 
 /** @return True when the guard is in place and Client hooks activate. */
-extern "C" __declspec(dllexport) bool SunriseActivateClient() noexcept {
-    return sunrise::client::hooks::egress::is_installed()
-           && sunrise::steam::runtime::activate_main_once();
+extern "C" __declspec(dllexport) bool DawnActivateClient() noexcept {
+    return dawn::client::hooks::egress::is_installed()
+           && dawn::steam::runtime::activate_main_once();
 }
 
 /** @return True when the whole runtime shuts down cleanly. */
-extern "C" __declspec(dllexport) bool SunriseShutdown() noexcept {
-    return sunrise::steam::shutdown();
+extern "C" __declspec(dllexport) bool DawnShutdown() noexcept {
+    return dawn::steam::shutdown();
 }
 
 /** @return True when the Steam-compatible runtime initializes. */
 extern "C" __declspec(dllexport) bool SteamAPI_Init() noexcept {
-    return sunrise::steam::initialize(g_module);
+    return dawn::steam::initialize(g_module);
 }
 
 /** Stops the Steam-compatible runtime. */
 extern "C" __declspec(dllexport) void SteamAPI_Shutdown() noexcept {
-    (void)sunrise::steam::shutdown();
+    (void)dawn::steam::shutdown();
 }
 
 /** Delivers one batch of callbacks on the caller thread. */
 extern "C" __declspec(dllexport) void SteamAPI_RunCallbacks() noexcept {
-    sunrise::steam::run_callbacks();
+    dawn::steam::run_callbacks();
 }
 
 /**
@@ -54,23 +54,23 @@ extern "C" __declspec(dllexport) void SteamAPI_RunCallbacks() noexcept {
  * @return False because the in-process shim never asks for a restart.
  */
 extern "C" __declspec(dllexport) bool SteamAPI_RestartAppIfNecessary(DWORD appId) noexcept {
-    sunrise::steam::set_app_id(appId);
+    dawn::steam::set_app_id(appId);
     return false;
 }
 
 /** @return True because this DLL provides the process-local Steam runtime. */
 extern "C" __declspec(dllexport) bool SteamAPI_IsSteamRunning() noexcept {
-    return sunrise::steam::is_running();
+    return dawn::steam::is_running();
 }
 
 /** @return The shim's single Steam user handle. */
-extern "C" __declspec(dllexport) sunrise::steam::UserHandle SteamAPI_GetHSteamUser() noexcept {
-    return sunrise::steam::user_handle();
+extern "C" __declspec(dllexport) dawn::steam::UserHandle SteamAPI_GetHSteamUser() noexcept {
+    return dawn::steam::user_handle();
 }
 
 /** @return The shim's single Steam pipe handle. */
-extern "C" __declspec(dllexport) sunrise::steam::PipeHandle SteamAPI_GetHSteamPipe() noexcept {
-    return sunrise::steam::pipe_handle();
+extern "C" __declspec(dllexport) dawn::steam::PipeHandle SteamAPI_GetHSteamPipe() noexcept {
+    return dawn::steam::pipe_handle();
 }
 
 /**
@@ -80,12 +80,12 @@ extern "C" __declspec(dllexport) sunrise::steam::PipeHandle SteamAPI_GetHSteamPi
  */
 extern "C" __declspec(dllexport) void SteamAPI_RegisterCallback(void* callback,
                                                                 int callbackId) noexcept {
-    sunrise::steam::register_callback(callback, callbackId);
+    dawn::steam::register_callback(callback, callbackId);
 }
 
 /** @param callback Steam-owned callback object removed from registrations. */
 extern "C" __declspec(dllexport) void SteamAPI_UnregisterCallback(void* callback) noexcept {
-    sunrise::steam::unregister_callback(callback);
+    dawn::steam::unregister_callback(callback);
 }
 
 /**
@@ -94,8 +94,8 @@ extern "C" __declspec(dllexport) void SteamAPI_UnregisterCallback(void* callback
  * @param call Async API call id. Must not be zero.
  */
 extern "C" __declspec(dllexport) void
-SteamAPI_RegisterCallResult(void* callback, sunrise::steam::ApiCall call) noexcept {
-    sunrise::steam::register_call_result(callback, call);
+SteamAPI_RegisterCallResult(void* callback, dawn::steam::ApiCall call) noexcept {
+    dawn::steam::register_call_result(callback, call);
 }
 
 /**
@@ -104,18 +104,18 @@ SteamAPI_RegisterCallResult(void* callback, sunrise::steam::ApiCall call) noexce
  * @param call API call to remove, or zero for every call owned by the object.
  */
 extern "C" __declspec(dllexport) void
-SteamAPI_UnregisterCallResult(void* callback, sunrise::steam::ApiCall call) noexcept {
-    sunrise::steam::unregister_call_result(callback, call);
+SteamAPI_UnregisterCallResult(void* callback, dawn::steam::ApiCall call) noexcept {
+    dawn::steam::unregister_call_result(callback, call);
 }
 
 /** @param data Steam-owned context table. @return Address of the interface field, after init. */
 extern "C" __declspec(dllexport) void* SteamInternal_ContextInit(void* data) noexcept {
-    return sunrise::steam::context_init(data);
+    return dawn::steam::context_init(data);
 }
 
 /** @param version Interface version. @return Supported client interface or null. */
 extern "C" __declspec(dllexport) void* SteamInternal_CreateInterface(const char* version) noexcept {
-    return sunrise::steam::create_interface(version, _ReturnAddress());
+    return dawn::steam::create_interface(version, _ReturnAddress());
 }
 
 /**
@@ -125,9 +125,9 @@ extern "C" __declspec(dllexport) void* SteamInternal_CreateInterface(const char*
  * @return Supported user interface or null.
  */
 extern "C" __declspec(dllexport) void*
-SteamInternal_FindOrCreateUserInterface(sunrise::steam::UserHandle user,
+SteamInternal_FindOrCreateUserInterface(dawn::steam::UserHandle user,
                                         const char* version) noexcept {
-    return sunrise::steam::find_or_create_user_interface(user, version);
+    return dawn::steam::find_or_create_user_interface(user, version);
 }
 
 /**

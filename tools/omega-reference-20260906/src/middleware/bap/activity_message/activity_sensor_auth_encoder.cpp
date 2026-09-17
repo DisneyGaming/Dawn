@@ -8,7 +8,7 @@
 #include "../../../state/activity/omega_lair_full_roster_catalog.h"
 #include "../../../state/activity/omega_ending_rules.h"
 
-namespace sunrise::middleware::bap::activity_message::sensor_auth_update {
+namespace dawn::middleware::bap::activity_message::sensor_auth_update {
 namespace {
 
 namespace bits = encoding::bits;
@@ -747,4 +747,4 @@ bool encode_sensor_auth_update(const Snapshot& snapshot,
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_message::sensor_auth_update
+} // namespace dawn::middleware::bap::activity_message::sensor_auth_update

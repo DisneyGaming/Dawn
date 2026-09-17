@@ -7,7 +7,7 @@
 #include "../../../state/gameplay/definition.h"
 #include "established_packet.h"
 
-namespace sunrise::middleware::gameplay::peer {
+namespace dawn::middleware::gameplay::peer {
 
 /** One message reassembled from a contiguous run of fragments. */
 struct AssembledMessage {
@@ -43,4 +43,4 @@ std::size_t accept_records(const QueueRecords& records,
 [[nodiscard]] bool drain_message(state::gameplay::ReliableQueue& queue,
                                  AssembledMessage& output) noexcept;
 
-} // namespace sunrise::middleware::gameplay::peer
+} // namespace dawn::middleware::gameplay::peer

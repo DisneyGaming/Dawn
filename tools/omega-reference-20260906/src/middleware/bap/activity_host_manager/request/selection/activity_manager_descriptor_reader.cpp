@@ -2,7 +2,7 @@
 
 #include "internal.h"
 
-namespace sunrise::middleware::bap::activity_host_manager::request::selection {
+namespace dawn::middleware::bap::activity_host_manager::request::selection {
 namespace {
 
 /** A presence marker takes 1 schema bit. */
@@ -83,4 +83,4 @@ bool read_hash(encoding::bits::Reader& reader, bool& present, std::uint32_t& val
 }
 
 } // namespace
-  // sunrise::middleware::bap::activity_host_manager::request::selection
+  // dawn::middleware::bap::activity_host_manager::request::selection

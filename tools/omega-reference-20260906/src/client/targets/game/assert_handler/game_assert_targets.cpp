@@ -6,7 +6,7 @@
 #include "../../../patterns/game/assert_handler/assert_signature_bytes.h"
 #include "../assert_handler.h"
 
-namespace sunrise::client::targets::game::assert_handler {
+namespace dawn::client::targets::game::assert_handler {
 namespace {
 
 Targets g_targets;
@@ -143,4 +143,4 @@ bool is_resolved() noexcept {
     return g_resolved;
 }
 
-} // namespace sunrise::client::targets::game::assert_handler
+} // namespace dawn::client::targets::game::assert_handler

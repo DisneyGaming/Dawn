@@ -9,7 +9,7 @@
 #include "../../../../state/build_data/runtime.h"
 #include "internal.h"
 
-namespace sunrise::client::content::items::packages {
+namespace dawn::client::content::items::packages {
 namespace {
 
 /**
@@ -202,4 +202,4 @@ bool build_material_requirements(const reader::Source& source,
     return published;
 }
 
-} // namespace sunrise::client::content::items::packages
+} // namespace dawn::client::content::items::packages

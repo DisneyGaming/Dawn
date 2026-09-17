@@ -3,7 +3,7 @@
 #include "../../modules/ui_module_descriptor.h"
 #include "../layout.h"
 
-namespace sunrise::core::ui::layout::navigation {
+namespace dawn::core::ui::layout::navigation {
 
 /** Selected descriptor copied out of one registry snapshot. */
 struct Selection {
@@ -18,4 +18,4 @@ struct Selection {
  */
 [[nodiscard]] Selection draw(const StateSnapshot& state) noexcept;
 
-} // namespace sunrise::core::ui::layout::navigation
+} // namespace dawn::core::ui::layout::navigation

@@ -8,7 +8,7 @@
 #include "../../../../state/build_data/socket_entry_lists/definition.h"
 #include "../instance/instance_encoder.h"
 
-namespace sunrise::middleware::datagen::family4::loadout {
+namespace dawn::middleware::datagen::family4::loadout {
 
 /** Selector lanes one item instance publishes, one per semantic ability bucket. */
 inline constexpr std::size_t kSelectorBucketCount = 12;
@@ -50,4 +50,4 @@ void resolve_socket_states(
     std::array<instance::SocketEntryState, instance::layout::kSocketEntryStateCapacity>& output,
     std::array<instance::SocketSelector, kSelectorBucketCount>& selectors) noexcept;
 
-} // namespace sunrise::middleware::datagen::family4::loadout
+} // namespace dawn::middleware::datagen::family4::loadout

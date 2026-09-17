@@ -12,7 +12,7 @@
 #include "../dtls/dtls_host.h"
 #include "../gameplay_log.h"
 
-namespace sunrise::server::gameplay::endpoint {
+namespace dawn::server::gameplay::endpoint {
 
 namespace {
 
@@ -313,4 +313,4 @@ Identity identity() noexcept {
     return value;
 }
 
-} // namespace sunrise::server::gameplay::endpoint
+} // namespace dawn::server::gameplay::endpoint

@@ -9,7 +9,7 @@
 #include "../executable/image.h"
 #include "registry.h"
 
-namespace sunrise::client::patterns {
+namespace dawn::client::patterns {
 
 /** Scans the main image for one signature, independently of the shared registry. */
 std::byte* scan_main_image_unique(std::span<const PatternByte> signature,
@@ -38,4 +38,4 @@ std::byte* resolve_relative(const std::byte* operand, const std::byte* nextInstr
     return const_cast<std::byte*>(nextInstruction) + displacement;
 }
 
-} // namespace sunrise::client::patterns
+} // namespace dawn::client::patterns

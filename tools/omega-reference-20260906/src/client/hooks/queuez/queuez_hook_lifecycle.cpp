@@ -2,7 +2,7 @@
 
 #include "internal.h"
 
-namespace sunrise::client::hooks::queuez {
+namespace dawn::client::hooks::queuez {
 
 /** Attaches the queuez fixes. */
 bool install() noexcept {
@@ -22,4 +22,4 @@ bool is_installed() noexcept {
     return family0_subscription_installed() || null_payload_guard_installed();
 }
 
-} // namespace sunrise::client::hooks::queuez
+} // namespace dawn::client::hooks::queuez

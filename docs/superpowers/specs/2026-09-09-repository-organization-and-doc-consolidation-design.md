@@ -19,7 +19,7 @@ This clutter makes navigating active projects difficult and scatters critical mi
    - Curated documentation placed under `docs/` (`docs/handbook/`, `docs/missions/`, `docs/research/`).
    - Reverse-engineering text dumps placed under `docs/research/dumps/`.
    - Probes and binary analysis tools placed under `tools/re/`.
-4. **No Broken Workflows**: Keep essential execution launchers (`launch-destiny.cmd`, `launch-scot-reveal-debug.cmd`, `sunrise-dev.ps1`) in the root directory.
+4. **No Broken Workflows**: Keep essential execution launchers (`launch-destiny.cmd`, `launch-scot-reveal-debug.cmd`, `dawn-dev.ps1`) in the root directory.
 
 ---
 
@@ -33,7 +33,7 @@ After restructuring, the repository root will contain:
 | `.gitignore` | File | Git ignore rules |
 | `.hermes.md` | File | Hermes agent prompt & context |
 | `.orchestrator/` | Directory | Internal workspace orchestration |
-| `.sunrise/` | Directory | Sunrise workspace state |
+| `.dawn/` | Directory | Dawn workspace state |
 | `.superpowers/` | Directory | Superpowers plugin workspace state |
 | `.worktrees/` | Directory | Git worktrees |
 | `bin/` | Directory | Prebuilt binaries and tool outputs |
@@ -43,8 +43,8 @@ After restructuring, the repository root will contain:
 | `launch-destiny.cmd` | Script | Primary game client launcher |
 | `launch-scot-reveal-debug.cmd` | Script | Debug launcher for Scot mission |
 | `packages` | Junction | Filesystem junction to game data packages (`G:\Games\d2\packages`) |
-| `Sunrise/` | Directory | Core Sunrise C++ source tree and project files |
-| `sunrise-dev.ps1` | Script | Sunrise local development & build script |
+| `Dawn/` | Directory | Core Dawn C++ source tree and project files |
+| `dawn-dev.ps1` | Script | Dawn local development & build script |
 | `tools/` | Directory | Diagnostic, compilation, and reverse-engineering tools |
 
 *Note: The empty 0-byte file `activity` in root will be removed.*
@@ -77,7 +77,7 @@ Houses campaign mission reconstruction guides, grouped by campaign:
     - `HANDOFF-HOMECOMING-TOWERFALL-2026-08-27.md` (Towerfall crash fault and type-43 publication)
     - `HANDOFF-HOMECOMING-TOWERFALL-SAFE-TRACE-2026-08-27.md` (Safe trace execution flow)
     - `SCENE-ENTRY-RESOLVER-CHAIN-2026-08-27.txt` (Native Scene-entry resolver chain disassembly)
-    - `SUNRISE-HOMECOMING-BRIEFING-FOR-CODEX.md` (Architecture briefing & client expectations)
+    - `DAWN-HOMECOMING-BRIEFING-FOR-CODEX.md` (Architecture briefing & client expectations)
     - `HOMECOMING-NEW-CHAT-PROMPT.md` (Contextual notes & operational prompts)
 
 #### B. Curse of Osiris (`docs/missions/coo/`)
@@ -117,14 +117,14 @@ Houses general research documents, gap comparisons, and raw evidence:
 - **`edz_freeroam_objects.csv`**: Moved from root.
 - **`gaps/`**:
   - `implemented-gaps-summary.md`: Merged synthesis of `IMPLEMENTED-GAPS.md` and `IMPLEMENTED-VS-MISSING.md`.
-  - `deep-dives/`: Directory relocated from `Sunrise-Implemented-Gaps-MDs-2026-09-09-035039/`.
+  - `deep-dives/`: Directory relocated from `Dawn-Implemented-Gaps-MDs-2026-09-09-035039/`.
 - **`dumps/`**:
   - Relocates all ~150+ `*_out.txt` and `*_decomp.txt` trace files from root (including `c8_state_out.txt`, `omega_*_out.txt`, `qos_*_out.txt`, `service7_*_out.txt`, `authority_*_decomp.txt`, etc.).
 
 ### 3.4. `tools/re/`
 Houses reverse-engineering scripts and probes:
 - `scan_manager_active_writers.py`: Capstone memory scanner.
-- `sunrise_ai_probe.py`: Ghidra decompilation and scalar reference locator.
+- `dawn_ai_probe.py`: Ghidra decompilation and scalar reference locator.
 - `deploy-omega.ps1`: Deployment automation script.
 
 ---
@@ -146,8 +146,8 @@ When combining files into the consolidated guides:
    - Verify that all ~150+ `.txt` dump files are present in `docs/research/dumps/`.
    - Verify that all Python/PS1 tools are present in `tools/re/`.
 2. **Root Cleanliness Check**:
-   - Run `dir` / `ls` on root to confirm only approved files (`launch-destiny.cmd`, `launch-scot-reveal-debug.cmd`, `sunrise-dev.ps1`, `packages`, `destiny2_unpacked.bin`, `.gitignore`, `.hermes.md`, and core directories) remain.
+   - Run `dir` / `ls` on root to confirm only approved files (`launch-destiny.cmd`, `launch-scot-reveal-debug.cmd`, `dawn-dev.ps1`, `packages`, `destiny2_unpacked.bin`, `.gitignore`, `.hermes.md`, and core directories) remain.
 3. **Script Execution Check**:
-   - Verify that `launch-destiny.cmd` and `sunrise-dev.ps1` continue to resolve paths properly from root.
+   - Verify that `launch-destiny.cmd` and `dawn-dev.ps1` continue to resolve paths properly from root.
 4. **Git Status Cleanliness**:
    - Verify git status tracks all new paths and renames accurately.

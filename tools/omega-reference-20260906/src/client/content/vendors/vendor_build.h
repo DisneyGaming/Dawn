@@ -5,7 +5,7 @@
 
 #include "../../../middleware/content/packages/reader/reader.h"
 
-namespace sunrise::client::content::vendors {
+namespace dawn::client::content::vendors {
 
 /**
  * Extracts the vendor catalog from the installed packages, once.
@@ -19,4 +19,4 @@ namespace sunrise::client::content::vendors {
                          middleware::content::packages::reader::Scratch& scratch,
                          std::span<const std::uint32_t> definitionHashes) noexcept;
 
-} // namespace sunrise::client::content::vendors
+} // namespace dawn::client::content::vendors

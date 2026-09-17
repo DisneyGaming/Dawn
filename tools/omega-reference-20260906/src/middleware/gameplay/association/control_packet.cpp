@@ -4,7 +4,7 @@
 #include "../../encoding/bit_reader.h"
 #include "../../encoding/bit_writer.h"
 
-namespace sunrise::middleware::gameplay::association {
+namespace dawn::middleware::gameplay::association {
 
 namespace {
 
@@ -149,4 +149,4 @@ bool encode(const ControlPacket& packet,
     return true;
 }
 
-} // namespace sunrise::middleware::gameplay::association
+} // namespace dawn::middleware::gameplay::association

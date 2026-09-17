@@ -1,4 +1,4 @@
-# Sunrise activity and mission systems handbook
+# Dawn activity and mission systems handbook
 
 General architecture, protocol, reconstruction, and debugging reference
 
@@ -6,7 +6,7 @@ Document date: 2026-08-22
 
 Evidence date: 2026-08-22
 
-Project: Sunrise
+Project: Dawn
 
 Primary branch during this investigation: `red-war-gameplay-host`
 
@@ -14,7 +14,7 @@ Observed source revision: `1ea4cb7`
 
 ## 1. Document status
 
-This document describes the general Sunrise activity and mission system.
+This document describes the general Dawn activity and mission system.
 
 It is not a specification from Bungie.
 
@@ -46,7 +46,7 @@ Use this handbook to do these tasks:
 
 The primary goal is faithful mission reconstruction.
 
-Faithful reconstruction means that Sunrise supplies the native client with the state that the retail service supplied.
+Faithful reconstruction means that Dawn supplies the native client with the state that the retail service supplied.
 
 The native client should then use its own world, activity, scene, actor, effect, and presentation systems.
 
@@ -79,7 +79,7 @@ This handbook covers these systems:
 - Mission completion and progression
 - Logging, capture, and test methods
 
-This handbook does not claim that Sunrise has a complete implementation of these systems.
+This handbook does not claim that Dawn has a complete implementation of these systems.
 
 Section 53 identifies the current implementation boundaries and known gaps.
 
@@ -172,7 +172,7 @@ The retail client contains maps, models, animations, effects, and many native sy
 
 The retail service supplies session state, authority, membership, mission state, and event inputs.
 
-Sunrise must reproduce enough of that service state for the native client to continue.
+Dawn must reproduce enough of that service state for the native client to continue.
 
 Loading a package does not create a mission.
 
@@ -237,11 +237,11 @@ Do not change a lower layer after it has stable proof unless new evidence invali
 
 ### 6.2 The two execution paths
 
-Sunrise can use two broad execution paths.
+Dawn can use two broad execution paths.
 
 #### Host simulation path
 
-Sunrise publishes session, authority, script, and scene state.
+Dawn publishes session, authority, script, and scene state.
 
 The native client creates and updates the mission objects.
 
@@ -389,7 +389,7 @@ Log the full handle, generation, definition, scene handle, and time.
 
 The source tree divides responsibilities by layer.
 
-### 9.1 `Sunrise/src/client`
+### 9.1 `Dawn/src/client`
 
 This directory contains client hooks, package readers, content extraction, and in-process retail-client integration.
 
@@ -397,7 +397,7 @@ Client code observes or changes native state in the installed executable.
 
 This code is usually build-specific.
 
-### 9.2 `Sunrise/src/middleware`
+### 9.2 `Dawn/src/middleware`
 
 This directory contains wire schemas, bit codecs, protobuf codecs, and gameplay protocols.
 
@@ -405,13 +405,13 @@ Middleware code should not own long-lived process state.
 
 It parses borrowed input and writes caller-owned output.
 
-### 9.3 `Sunrise/src/server`
+### 9.3 `Dawn/src/server`
 
 This directory contains the embedded BAP server, gameplay transport, peer sessions, group sessions, and web endpoints.
 
 Server routes coordinate codecs and process state.
 
-### 9.4 `Sunrise/src/state`
+### 9.4 `Dawn/src/state`
 
 This directory contains process-owned transactional state.
 
@@ -419,13 +419,13 @@ It stores activity sessions, matchmaking records, group-host mappings, inventory
 
 Do not store a borrowed packet span in this layer.
 
-### 9.5 `Sunrise/src/steam`
+### 9.5 `Dawn/src/steam`
 
 This directory contains Steam interface emulation.
 
 It supplies the platform behavior that the retail client expects.
 
-### 9.6 `Sunrise/src/core`
+### 9.6 `Dawn/src/core`
 
 This directory contains settings, logging, runtime controls, and user-interface support.
 
@@ -467,7 +467,7 @@ The response must use the matching task identifier.
 
 A request service that has a response service must receive a response.
 
-If Sunrise stays silent, the client can keep the task in its pending ring.
+If Dawn stays silent, the client can keep the task in its pending ring.
 
 Enough unanswered requests can stop later service work.
 
@@ -538,7 +538,7 @@ CURRENT SOURCE: The matching response services are:
 
 ### 10.4 Current server notifications
 
-CURRENT SOURCE: Sunrise sends these uncorrelated notification services:
+CURRENT SOURCE: Dawn sends these uncorrelated notification services:
 
 - 9: activity message
 - 123: queue update
@@ -586,7 +586,7 @@ Use a private analysis directory for an approved opaque capture.
 
 The client sends its activity selection to BAP service 6.
 
-Sunrise returns the allocated activity-session identifier on service 7.
+Dawn returns the allocated activity-session identifier on service 7.
 
 This exchange selects a destination. It does not create mission objects.
 
@@ -611,7 +611,7 @@ The selected record can contain these values:
 - Spawn-set hash
 - Exact raw selection descriptor
 
-The raw descriptor contains fields that Sunrise does not fully decode.
+The raw descriptor contains fields that Dawn does not fully decode.
 
 Preserve the exact descriptor bits when they are available.
 
@@ -908,7 +908,7 @@ A known spawn hash is not sufficient.
 
 The destination must load a package that declares the spawn set.
 
-If the row is known but its package is not loaded, Sunrise uses the absent spawn hash.
+If the row is known but its package is not loaded, Dawn uses the absent spawn hash.
 
 An absent catalog row is not always proof that the source content lacks the spawn.
 
@@ -933,7 +933,7 @@ These counts depend on the extracted build data.
 
 ### 13.6 World phase
 
-CURRENT SOURCE: Sunrise tracks three broad world phases:
+CURRENT SOURCE: Dawn tracks three broad world phases:
 
 - Idle
 - Transitioning
@@ -949,7 +949,7 @@ This timing prevents mission objects from filtering the first player citizen dur
 
 The client polls a native spawn gate during world loading.
 
-Sunrise can hold the spawn while the world loader or activity loader is active.
+Dawn can hold the spawn while the world loader or activity loader is active.
 
 Release the spawn only after the world reaches `Arrived`.
 
@@ -1882,7 +1882,7 @@ Do not truncate a high slice silently.
 
 ## 26. Build-data and content extraction
 
-Sunrise reads installed client content to build scenario, roster, and spawn catalogs.
+Dawn reads installed client content to build scenario, roster, and spawn catalogs.
 
 This layer discovers authored definitions.
 
@@ -2473,7 +2473,7 @@ The number is resource-specific.
 
 Do not create one global meaning for all missions.
 
-For the investigated Omega opening, the observed Sunrise interpretation was:
+For the investigated Omega opening, the observed Dawn interpretation was:
 
 - 0: inactive
 - 1: ready
@@ -3103,7 +3103,7 @@ Test the objective owner, completion condition, and next-stage transition.
 
 ### 41.4 Current general gap
 
-UNKNOWN: Sunrise does not have a complete general mission-graph interpreter.
+UNKNOWN: Dawn does not have a complete general mission-graph interpreter.
 
 UNKNOWN: The complete AI authority and encounter system is not reconstructed.
 
@@ -3305,8 +3305,8 @@ Archive these items for each important A/B test:
 - Built DLL hash
 - Installed DLL hash
 - Settings
-- Sunrise log
-- Old Sunrise log when relevant
+- Dawn log
+- Old Dawn log when relevant
 - Screenshot or video
 - Short expected-result statement
 - Actual-result statement
@@ -3468,7 +3468,7 @@ Use one repeatable build and deployment path.
 The current development helper is:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\sunrise-dev.ps1"
+powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\dawn-dev.ps1"
 ```
 
 ### 46.1 Before the build
@@ -3496,8 +3496,8 @@ List them separately.
 
 The primary logs are:
 
-- `C:\Destiny 2 Development\bin\x64\Sunrise\logs\sunrise.log`
-- `C:\Destiny 2 Development\bin\x64\Sunrise\logs\sunrise.log.old`
+- `C:\Destiny 2 Development\bin\x64\Dawn\logs\dawn.log`
+- `C:\Destiny 2 Development\bin\x64\Dawn\logs\dawn.log.old`
 
 The current log contains the latest process.
 
@@ -4119,111 +4119,111 @@ State the selected architecture before implementation.
 
 Use this section to find the current implementation.
 
-All paths are relative to `C:\Destiny 2 Development\Sunrise-src`.
+All paths are relative to `C:\Destiny 2 Development\Dawn-src`.
 
 ### 54.1 BAP frames and routing
 
-- `Sunrise/src/middleware/bap/frame.h`
-- `Sunrise/src/server/bap/encrypted/routing/bap_service_routing.cpp`
-- `Sunrise/src/server/bap/encrypted/transactions/service_outcome_commit.cpp`
+- `Dawn/src/middleware/bap/frame.h`
+- `Dawn/src/server/bap/encrypted/routing/bap_service_routing.cpp`
+- `Dawn/src/server/bap/encrypted/transactions/service_outcome_commit.cpp`
 
 These files define service identifiers, route selection, and staged commits.
 
 ### 54.2 Destination and activity allocation
 
-- `Sunrise/src/server/bap/encrypted/activity_host_manager/activity_host_manager_route.cpp`
-- `Sunrise/src/middleware/bap/activity_host_manager/request/activity_manager_request.cpp`
-- `Sunrise/src/middleware/bap/activity_host_manager/request/selection/activity_manager_selection_parser.cpp`
-- `Sunrise/src/middleware/bap/activity_host_manager/request/selection/activity_manager_selection_descriptor.cpp`
-- `Sunrise/src/middleware/bap/activity_host_manager/response/activity_manager_response.cpp`
-- `Sunrise/src/state/activity/definition.h`
-- `Sunrise/src/state/activity/destination/definition.h`
-- `Sunrise/src/state/activity/destination/activity_destination_validation.cpp`
-- `Sunrise/src/state/activity/destination/activity_destination_spawn_binding.cpp`
-- `Sunrise/src/state/activity/forced/activity_forced_destination.cpp`
+- `Dawn/src/server/bap/encrypted/activity_host_manager/activity_host_manager_route.cpp`
+- `Dawn/src/middleware/bap/activity_host_manager/request/activity_manager_request.cpp`
+- `Dawn/src/middleware/bap/activity_host_manager/request/selection/activity_manager_selection_parser.cpp`
+- `Dawn/src/middleware/bap/activity_host_manager/request/selection/activity_manager_selection_descriptor.cpp`
+- `Dawn/src/middleware/bap/activity_host_manager/response/activity_manager_response.cpp`
+- `Dawn/src/state/activity/definition.h`
+- `Dawn/src/state/activity/destination/definition.h`
+- `Dawn/src/state/activity/destination/activity_destination_validation.cpp`
+- `Dawn/src/state/activity/destination/activity_destination_spawn_binding.cpp`
+- `Dawn/src/state/activity/forced/activity_forced_destination.cpp`
 
 ### 54.3 Matchmaking
 
-- `Sunrise/src/middleware/bap/matchmaking/definition.h`
-- `Sunrise/src/middleware/bap/matchmaking/request/matchmaking_request_parser.cpp`
-- `Sunrise/src/middleware/bap/matchmaking/response/matchmaking_response_encoder.cpp`
-- `Sunrise/src/server/bap/encrypted/matchmaking/matchmaking_route.cpp`
-- `Sunrise/src/state/matchmaking/definition.h`
-- `Sunrise/src/state/matchmaking/transactions/matchmaking_prepare.cpp`
-- `Sunrise/src/state/matchmaking/transactions/matchmaking_commit.cpp`
+- `Dawn/src/middleware/bap/matchmaking/definition.h`
+- `Dawn/src/middleware/bap/matchmaking/request/matchmaking_request_parser.cpp`
+- `Dawn/src/middleware/bap/matchmaking/response/matchmaking_response_encoder.cpp`
+- `Dawn/src/server/bap/encrypted/matchmaking/matchmaking_route.cpp`
+- `Dawn/src/state/matchmaking/definition.h`
+- `Dawn/src/state/matchmaking/transactions/matchmaking_prepare.cpp`
+- `Dawn/src/state/matchmaking/transactions/matchmaking_commit.cpp`
 
 ### 54.4 Gameplay advertisement and group host
 
-- `Sunrise/src/server/gameplay/gameplay_advertisement.cpp`
-- `Sunrise/src/server/gameplay/group/group_host.cpp`
-- `Sunrise/src/server/gameplay/group/group_host_sessions.cpp`
-- `Sunrise/src/middleware/gameplay/group/parameter_registry.h`
+- `Dawn/src/server/gameplay/gameplay_advertisement.cpp`
+- `Dawn/src/server/gameplay/group/group_host.cpp`
+- `Dawn/src/server/gameplay/group/group_host_sessions.cpp`
+- `Dawn/src/middleware/gameplay/group/parameter_registry.h`
 
 ### 54.5 Activity-message routing
 
-- `Sunrise/src/server/bap/encrypted/activity_message/activity_message_route.cpp`
-- `Sunrise/src/middleware/bap/activity_message/activity_message_request_parser.cpp`
-- `Sunrise/src/middleware/bap/activity_message/activity_message_notification_encoder.cpp`
-- `Sunrise/src/server/bap/encrypted/push/activity/activity_message_push.cpp`
+- `Dawn/src/server/bap/encrypted/activity_message/activity_message_route.cpp`
+- `Dawn/src/middleware/bap/activity_message/activity_message_request_parser.cpp`
+- `Dawn/src/middleware/bap/activity_message/activity_message_notification_encoder.cpp`
+- `Dawn/src/server/bap/encrypted/push/activity/activity_message_push.cpp`
 
 ### 54.6 Global state and membership
 
-- `Sunrise/src/middleware/bap/activity_message/activity_global_state_encoder.cpp`
-- `Sunrise/src/middleware/bap/activity_message/activity_replicate_membership_encoder.cpp`
-- `Sunrise/src/middleware/bap/activity_message/activity_membership_member_writer.cpp`
-- `Sunrise/src/middleware/bap/activity_message/activity_membership_region_writer.cpp`
-- `Sunrise/src/server/bap/encrypted/push/activity/activity_membership_push.cpp`
-- `Sunrise/src/state/activity/membership/definition.h`
-- `Sunrise/src/state/activity/membership/transactions/activity_membership_prepare.cpp`
-- `Sunrise/src/state/activity/membership/transactions/activity_membership_commit.cpp`
+- `Dawn/src/middleware/bap/activity_message/activity_global_state_encoder.cpp`
+- `Dawn/src/middleware/bap/activity_message/activity_replicate_membership_encoder.cpp`
+- `Dawn/src/middleware/bap/activity_message/activity_membership_member_writer.cpp`
+- `Dawn/src/middleware/bap/activity_message/activity_membership_region_writer.cpp`
+- `Dawn/src/server/bap/encrypted/push/activity/activity_membership_push.cpp`
+- `Dawn/src/state/activity/membership/definition.h`
+- `Dawn/src/state/activity/membership/transactions/activity_membership_prepare.cpp`
+- `Dawn/src/state/activity/membership/transactions/activity_membership_commit.cpp`
 
 ### 54.7 Entity slots and bubble authority
 
-- `Sunrise/src/middleware/bap/activity_message/activity_entity_slots_encoder.cpp`
-- `Sunrise/src/middleware/bap/activity_message/activity_entity_slots_decoder.cpp`
-- `Sunrise/src/state/activity/entity_slots/definition.h`
-- `Sunrise/src/state/activity/entity_slots/transactions/activity_entity_slot_prepare.cpp`
-- `Sunrise/src/state/activity/entity_slots/transactions/activity_entity_slot_commit.cpp`
-- `Sunrise/src/state/activity/bubble_authority/definition.h`
-- `Sunrise/src/state/activity/bubble_authority/transactions/activity_bubble_authority_grant.cpp`
+- `Dawn/src/middleware/bap/activity_message/activity_entity_slots_encoder.cpp`
+- `Dawn/src/middleware/bap/activity_message/activity_entity_slots_decoder.cpp`
+- `Dawn/src/state/activity/entity_slots/definition.h`
+- `Dawn/src/state/activity/entity_slots/transactions/activity_entity_slot_prepare.cpp`
+- `Dawn/src/state/activity/entity_slots/transactions/activity_entity_slot_commit.cpp`
+- `Dawn/src/state/activity/bubble_authority/definition.h`
+- `Dawn/src/state/activity/bubble_authority/transactions/activity_bubble_authority_grant.cpp`
 
 ### 54.8 Scenario and roster extraction
 
-- `Sunrise/src/client/content/scenarios/scenario_build.cpp`
-- `Sunrise/src/client/content/scenarios/scenario_collect.cpp`
-- `Sunrise/src/client/content/scenarios/scenario_roster_build.cpp`
-- `Sunrise/src/client/content/scenarios/scenario_roster_groups.cpp`
-- `Sunrise/src/client/content/scenarios/scenario_roster_publish.cpp`
-- `Sunrise/src/client/content/scenarios/scenario_slot_classification.cpp`
-- `Sunrise/src/state/build_data/scenarios/definition.h`
-- `Sunrise/src/state/build_data/scenarios/scenario_catalog.cpp`
-- `Sunrise/src/middleware/content/packages/tables/scenario_reader.cpp`
-- `Sunrise/src/middleware/content/packages/tables/scenario_walk.cpp`
+- `Dawn/src/client/content/scenarios/scenario_build.cpp`
+- `Dawn/src/client/content/scenarios/scenario_collect.cpp`
+- `Dawn/src/client/content/scenarios/scenario_roster_build.cpp`
+- `Dawn/src/client/content/scenarios/scenario_roster_groups.cpp`
+- `Dawn/src/client/content/scenarios/scenario_roster_publish.cpp`
+- `Dawn/src/client/content/scenarios/scenario_slot_classification.cpp`
+- `Dawn/src/state/build_data/scenarios/definition.h`
+- `Dawn/src/state/build_data/scenarios/scenario_catalog.cpp`
+- `Dawn/src/middleware/content/packages/tables/scenario_reader.cpp`
+- `Dawn/src/middleware/content/packages/tables/scenario_walk.cpp`
 
 ### 54.9 Spawn sets
 
-- `Sunrise/src/client/content/spawn_sets/spawn_set_build.cpp`
-- `Sunrise/src/client/content/spawn_sets/spawn_set_catalog_builder.cpp`
-- `Sunrise/src/state/build_data/spawn_sets/definition.h`
-- `Sunrise/src/state/build_data/spawn_sets/spawn_set_catalog.cpp`
+- `Dawn/src/client/content/spawn_sets/spawn_set_build.cpp`
+- `Dawn/src/client/content/spawn_sets/spawn_set_catalog_builder.cpp`
+- `Dawn/src/state/build_data/spawn_sets/definition.h`
+- `Dawn/src/state/build_data/spawn_sets/spawn_set_catalog.cpp`
 
 ### 54.10 Auth and sense data
 
-- `Sunrise/src/middleware/bap/activity_message/sensor_auth_update.h`
-- `Sunrise/src/middleware/bap/activity_message/activity_sensor_auth_encoder.cpp`
-- `Sunrise/src/middleware/bap/activity_message/activity_sensor_auth_blocks.cpp`
-- `Sunrise/src/middleware/bap/activity_message/activity_sensor_auth_bodies.cpp`
-- `Sunrise/src/middleware/bap/activity_message/activity_sense_update_parser.cpp`
-- `Sunrise/src/server/bap/encrypted/push/activity/activity_roster_push.cpp`
-- `Sunrise/src/server/bap/encrypted/activity_message/patch_epoch/activity_patch_epoch_route.cpp`
+- `Dawn/src/middleware/bap/activity_message/sensor_auth_update.h`
+- `Dawn/src/middleware/bap/activity_message/activity_sensor_auth_encoder.cpp`
+- `Dawn/src/middleware/bap/activity_message/activity_sensor_auth_blocks.cpp`
+- `Dawn/src/middleware/bap/activity_message/activity_sensor_auth_bodies.cpp`
+- `Dawn/src/middleware/bap/activity_message/activity_sense_update_parser.cpp`
+- `Dawn/src/server/bap/encrypted/push/activity/activity_roster_push.cpp`
+- `Dawn/src/server/bap/encrypted/activity_message/patch_epoch/activity_patch_epoch_route.cpp`
 
 ### 54.11 World and client hooks
 
-- `Sunrise/src/client/hooks/bootflow/spawn_hold.cpp`
-- `Sunrise/src/client/hooks/network/bubble_authority/bubble_authority_replacements.cpp`
-- `Sunrise/src/client/hooks/network/bubble_authority/scope/bubble_authority_scope.cpp`
-- `Sunrise/src/core/settings/client/definition.h`
-- `Sunrise/src/core/settings/client/client_settings_parser.cpp`
+- `Dawn/src/client/hooks/bootflow/spawn_hold.cpp`
+- `Dawn/src/client/hooks/network/bubble_authority/bubble_authority_replacements.cpp`
+- `Dawn/src/client/hooks/network/bubble_authority/scope/bubble_authority_scope.cpp`
+- `Dawn/src/core/settings/client/definition.h`
+- `Dawn/src/core/settings/client/client_settings_parser.cpp`
 
 ### 54.12 Case evidence documents
 
@@ -4237,7 +4237,7 @@ The general handbook uses evidence from these detailed records:
 - `C:\Destiny 2 Development\HOMECOMING-KIND22-HANDOFF.md`
 - `C:\Destiny 2 Development\HOMECOMING-AUTHORED-ROUTE-HANDOFF-20260819.md`
 - `C:\Destiny 2 Development\HOMECOMING-PHASE5-BUILDOUT.md`
-- `C:\Destiny 2 Development\SUNRISE-HOMECOMING-BRIEFING-FOR-CODEX.md`
+- `C:\Destiny 2 Development\DAWN-HOMECOMING-BRIEFING-FOR-CODEX.md`
 - `C:\Destiny 2 Development\OMEGA-PURPLE-VFX-HANDOFF-20260822.md`
 - `C:\Destiny 2 Development\OMEGA-MISSION-RECONSTRUCTION-COMPLETE-DOCUMENTATION-20260822.md`
 
@@ -4589,7 +4589,7 @@ An evidence label for behavior validated in an earlier branch, build, or run.
 
 ### Host simulation
 
-The path where Sunrise publishes service and authority state for native client systems to consume.
+The path where Dawn publishes service and authority state for native client systems to consume.
 
 ### HYPOTHESIS
 
@@ -4637,7 +4637,7 @@ The recovered type-35 authority object that coordinates mission-director state.
 
 The complete authored set of conditions, states, transitions, and outputs for a mission.
 
-Sunrise does not yet have a complete general interpreter for this graph.
+Dawn does not yet have a complete general interpreter for this graph.
 
 ### Native client
 
@@ -4822,13 +4822,13 @@ Use `rg` for focused log review.
 Set the log path once in PowerShell:
 
 ```powershell
-$sunriseLog = 'C:\Destiny 2 Development\bin\x64\Sunrise\logs\sunrise.log'
+$dawnLog = 'C:\Destiny 2 Development\bin\x64\Dawn\logs\dawn.log'
 ```
 
 ### 59.1 Process and build identity
 
 ```powershell
-rg -n "process|build|hash|image|module|startup" $sunriseLog
+rg -n "process|build|hash|image|module|startup" $dawnLog
 ```
 
 Confirm the process boundary before all other queries.
@@ -4836,55 +4836,55 @@ Confirm the process boundary before all other queries.
 ### 59.2 Destination and activity session
 
 ```powershell
-rg -n "service.?6|service.?7|destination|activity.?session|arrival|spawn.?set" $sunriseLog
+rg -n "service.?6|service.?7|destination|activity.?session|arrival|spawn.?set" $dawnLog
 ```
 
 ### 59.3 Matchmaking and advertisement
 
 ```powershell
-rg -n "matchmaking|advertisement|search|locate|configuration|ambassador" $sunriseLog
+rg -n "matchmaking|advertisement|search|locate|configuration|ambassador" $dawnLog
 ```
 
 ### 59.4 Gameplay group
 
 ```powershell
-rg -n "peer|application.?ready|membership|parameter|activityHost|handoff|reestablish" $sunriseLog
+rg -n "peer|application.?ready|membership|parameter|activityHost|handoff|reestablish" $dawnLog
 ```
 
 ### 59.5 Activity messages
 
 ```powershell
-rg -n "activity.?message|msg.?type|patch.?epoch|entity.?slot|bubble.?authority|state.?refresh" $sunriseLog
+rg -n "activity.?message|msg.?type|patch.?epoch|entity.?slot|bubble.?authority|state.?refresh" $dawnLog
 ```
 
 ### 59.6 Roster and runtime objects
 
 ```powershell
-rg -n "roster|sensor.?auth|phase.?1|phase.?2|runtime.?object|registry|slot.?type|stateSequence" $sunriseLog
+rg -n "roster|sensor.?auth|phase.?1|phase.?2|runtime.?object|registry|slot.?type|stateSequence" $dawnLog
 ```
 
 ### 59.7 Mission and sensors
 
 ```powershell
-rg -n "mission|director|activity.?script|sense|trigger|selector|scalar|latch" $sunriseLog
+rg -n "mission|director|activity.?script|sense|trigger|selector|scalar|latch" $dawnLog
 ```
 
 ### 59.8 Scene and actor lifecycle
 
 ```powershell
-rg -n "scene|cast|actor|entity.?factory|model|presentation|retire" $sunriseLog
+rg -n "scene|cast|actor|entity.?factory|model|presentation|retire" $dawnLog
 ```
 
 ### 59.9 Effect provenance
 
 ```powershell
-rg -n "effect|vfx|provider|transform.?bank|composite|renderer" $sunriseLog
+rg -n "effect|vfx|provider|transform.?bank|composite|renderer" $dawnLog
 ```
 
 ### 59.10 Failure-only view
 
 ```powershell
-rg -n -i "fail|reject|invalid|mismatch|absent|timeout|drop|overflow|exhaust" $sunriseLog
+rg -n -i "fail|reject|invalid|mismatch|absent|timeout|drop|overflow|exhaust" $dawnLog
 ```
 
 Do not interpret an isolated matched line without its activity and connection context.
@@ -4975,7 +4975,7 @@ Record the completion level for each case.
 
 The client already contains much of the mission content.
 
-Sunrise must supply the correct service state, authority, and lifecycle inputs.
+Dawn must supply the correct service state, authority, and lifecycle inputs.
 
 A successful lower layer does not prove the next layer.
 

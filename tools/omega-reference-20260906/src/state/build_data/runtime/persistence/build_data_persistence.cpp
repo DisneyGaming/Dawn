@@ -26,7 +26,7 @@
 #include "../build_data_catalog_runtime.h"
 #include "../domain_markers.h"
 
-namespace sunrise::state::build_data::runtime::persistence {
+namespace dawn::state::build_data::runtime::persistence {
 namespace {
 
 Context g_context;
@@ -333,9 +333,9 @@ bool persist_if_complete_locked(Context& state) noexcept {
     return true;
 }
 
-} // namespace sunrise::state::build_data::runtime::persistence
+} // namespace dawn::state::build_data::runtime::persistence
 
-namespace sunrise::state::build_data {
+namespace dawn::state::build_data {
 
 /** @return True only when every domain is ready and any needed cache write works. */
 bool persist() noexcept {
@@ -347,4 +347,4 @@ bool persist() noexcept {
     return result;
 }
 
-} // namespace sunrise::state::build_data
+} // namespace dawn::state::build_data

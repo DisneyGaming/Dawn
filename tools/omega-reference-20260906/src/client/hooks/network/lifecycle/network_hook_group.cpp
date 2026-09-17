@@ -7,7 +7,7 @@
 #include "../../../../core/logging/log.h"
 #include "../coordinator/network_call_coordinator.h"
 
-namespace sunrise::client::hooks::network {
+namespace dawn::client::hooks::network {
 
 SRWLOCK g_lock{SRWLOCK_INIT};
 std::array<hooking::detour::Handle, kHandleCount> g_handles{};
@@ -15,9 +15,9 @@ std::array<hooking::detour::Handle, kHandleCount> g_handles{};
 std::array<void*, kHandleCount> g_targetEntries{};
 std::array<bool, kHandleCount> g_accepting{};
 
-} // namespace sunrise::client::hooks::network
+} // namespace dawn::client::hooks::network
 
-namespace sunrise::client::hooks::network::lifecycle {
+namespace dawn::client::hooks::network::lifecycle {
 namespace {
 
 /** Slot names let an attach log be searched without a second lookup table. */
@@ -143,4 +143,4 @@ bool uninstall_group(
     return true;
 }
 
-} // namespace sunrise::client::hooks::network::lifecycle
+} // namespace dawn::client::hooks::network::lifecycle

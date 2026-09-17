@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::hooks::sword_skate {
+namespace dawn::client::hooks::sword_skate {
 
 /**
  * Clears the glide refusal for one physics tick of the local player.
@@ -13,4 +13,4 @@ namespace sunrise::client::hooks::sword_skate {
  */
 void apply(void* component) noexcept;
 
-} // namespace sunrise::client::hooks::sword_skate
+} // namespace dawn::client::hooks::sword_skate

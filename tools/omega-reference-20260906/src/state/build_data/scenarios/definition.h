@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::state::build_data::scenarios {
+namespace dawn::state::build_data::scenarios {
 
 /**
  * Destinations the class sweep finds in the installed packages. The live count is 468 and the
@@ -150,4 +150,4 @@ static_assert(kDestinationGroupCapacity + kDestinationBubbleGroupCapacity
               <= kDestinationWireGroupCapacity);
 static_assert(kDestinationAuthoredGroupCapacity <= kDestinationWireGroupCapacity);
 
-} // namespace sunrise::state::build_data::scenarios
+} // namespace dawn::state::build_data::scenarios

@@ -2,7 +2,7 @@
 
 #include "../../encoding/byte_order.h"
 
-namespace sunrise::middleware::bap::account_translation {
+namespace dawn::middleware::bap::account_translation {
 namespace {
 
 /** Fixed offsets for the complete svc-23 identity request. */
@@ -92,4 +92,4 @@ bool encode_response(std::span<const std::byte> requestBody,
     return true;
 }
 
-} // namespace sunrise::middleware::bap::account_translation
+} // namespace dawn::middleware::bap::account_translation

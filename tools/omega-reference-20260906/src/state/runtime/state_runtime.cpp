@@ -18,7 +18,7 @@
 #include "state.h"
 #include "storage/internal.h"
 
-namespace sunrise::state {
+namespace dawn::state {
 namespace runtime::storage {
 
 State g_state;
@@ -169,8 +169,8 @@ template <std::size_t Size>
 } // namespace
 
 /**
- * Loads build data and generates secrets with Sunrise's authored activity defaults.
- * @param module Loaded Sunrise module, or null to disable disk persistence.
+ * Loads build data and generates secrets with Dawn's authored activity defaults.
+ * @param module Loaded Dawn module, or null to disable disk persistence.
  * @param initialAccount Empty State, or a complete checked account from Core settings.
  * @return True when the cached data passes its checks and every secret gets random bytes.
  */
@@ -180,7 +180,7 @@ bool initialize(void* module, const AccountState& initialAccount) noexcept {
 
 /**
  * Loads build data and publishes fixed activity defaults in one step.
- * @param module Loaded Sunrise module, or null to disable disk persistence.
+ * @param module Loaded Dawn module, or null to disable disk persistence.
  * @param initialAccount Empty State, or a complete checked account from Core settings.
  * @param activityDefaults Complete local fallback policy from immutable Core settings.
  * @return True when account, defaults, cached data, and generated secrets are valid.
@@ -312,4 +312,4 @@ InvestmentState investment_snapshot() noexcept {
     return snapshot;
 }
 
-} // namespace sunrise::state
+} // namespace dawn::state

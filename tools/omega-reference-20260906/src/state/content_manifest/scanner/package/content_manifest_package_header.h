@@ -4,7 +4,7 @@
 
 #include "../internal.h"
 
-namespace sunrise::state::content_manifest::scanner::package {
+namespace dawn::state::content_manifest::scanner::package {
 
 /**
  * Reads one unchanged package header and copies its public build signature.
@@ -14,4 +14,4 @@ namespace sunrise::state::content_manifest::scanner::package {
  */
 [[nodiscard]] bool read_header(std::wstring_view directory, Candidate& candidate) noexcept;
 
-} // namespace sunrise::state::content_manifest::scanner::package
+} // namespace dawn::state::content_manifest::scanner::package

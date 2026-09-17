@@ -10,7 +10,7 @@
 #include "queuez_push_reporting.h"
 #include "queuez_update_frame.h"
 
-namespace sunrise::server::bap::encrypted::push {
+namespace dawn::server::bap::encrypted::push {
 namespace {
 
 /**
@@ -291,4 +291,4 @@ void append_queuez_notification(Scratch& scratch,
     }
 }
 
-} // namespace sunrise::server::bap::encrypted::push
+} // namespace dawn::server::bap::encrypted::push

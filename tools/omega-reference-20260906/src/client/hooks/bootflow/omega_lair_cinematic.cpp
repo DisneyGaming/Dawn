@@ -27,7 +27,7 @@
 #include "../../../state/activity/omega_first_lair_runtime.h"
 #include "../../../state/activity/omega_lair_chase_geometry.h"
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 namespace {
 namespace p = state::activity::omega_presentation;
 namespace ending = state::activity::omega_ending;
@@ -2069,4 +2069,4 @@ bool uninstall_omega_lair_cinematic() noexcept {
     g_endingResourceOwner.store(UINT32_MAX,std::memory_order_release);
     return true;
 }
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

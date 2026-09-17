@@ -6,7 +6,7 @@
 #include "../internal.h"
 #include "../policy/policy.h"
 
-namespace sunrise::client::hooks::egress::dns {
+namespace dawn::client::hooks::egress::dns {
 namespace {
 
 /** DNS refusal is the SDK status for a resolver that rejects the request. */
@@ -184,4 +184,4 @@ DNS_STATUS WINAPI query_raw(DNS_QUERY_RAW_REQUEST* request, DNS_QUERY_RAW_CANCEL
     return deny_query<char>(nullptr, 0, _ReturnAddress());
 }
 
-} // namespace sunrise::client::hooks::egress::dns
+} // namespace dawn::client::hooks::egress::dns

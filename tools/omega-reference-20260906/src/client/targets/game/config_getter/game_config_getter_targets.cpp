@@ -5,7 +5,7 @@
 #include "../../../patterns/game/config_getter/config_getter_signature_bytes.h"
 #include "../config_getter.h"
 
-namespace sunrise::client::targets::game::config_getter {
+namespace dawn::client::targets::game::config_getter {
 namespace {
 
 Targets g_targets;
@@ -59,4 +59,4 @@ bool is_resolved() noexcept {
     return g_resolved;
 }
 
-} // namespace sunrise::client::targets::game::config_getter
+} // namespace dawn::client::targets::game::config_getter

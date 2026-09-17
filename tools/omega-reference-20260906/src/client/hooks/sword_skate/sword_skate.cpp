@@ -22,7 +22,7 @@
 #include "../../movement/movement_settings_store.h"
 #include "../teleport/runtime.h"
 
-namespace sunrise::client::hooks::sword_skate {
+namespace dawn::client::hooks::sword_skate {
 namespace {
 
 /** Movement-state flags on the player's physics component. */
@@ -143,4 +143,4 @@ void apply(void* component) noexcept {
     (void)write_at(bytes + kMovementStateOffset, state & ~kGlideRefusedBit);
 }
 
-} // namespace sunrise::client::hooks::sword_skate
+} // namespace dawn::client::hooks::sword_skate

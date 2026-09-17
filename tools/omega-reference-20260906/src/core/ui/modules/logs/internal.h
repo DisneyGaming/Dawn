@@ -6,7 +6,7 @@
 
 #include "../../../logging/view/log_snapshot_view.h"
 
-namespace sunrise::core::ui::modules::logs::internal {
+namespace dawn::core::ui::modules::logs::internal {
 
 /** Draws the Logs page inside the active Core UI frame. */
 void draw() noexcept;
@@ -61,4 +61,4 @@ void dispatch_pending_copy(HWND owner) noexcept;
 /** Cancels pending work and clears the kept clipboard bytes at a UI lifecycle boundary. */
 void cancel_pending_copy() noexcept;
 
-} // namespace sunrise::core::ui::modules::logs::internal
+} // namespace dawn::core::ui::modules::logs::internal

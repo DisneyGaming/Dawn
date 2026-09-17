@@ -6,7 +6,7 @@
 #include <span>
 #include <string_view>
 
-namespace sunrise::state::entitlements {
+namespace dawn::state::entitlements {
 
 /** The Client allocates manifest entitlement handles upward from this fixed base. */
 inline constexpr std::uint32_t kHandleBase = 0xE0200001;
@@ -61,4 +61,4 @@ struct Table final {
     return std::span(table.entries).first(table.count);
 }
 
-} // namespace sunrise::state::entitlements
+} // namespace dawn::state::entitlements

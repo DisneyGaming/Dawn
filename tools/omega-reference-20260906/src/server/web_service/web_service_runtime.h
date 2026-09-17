@@ -8,7 +8,7 @@
 #include "../../middleware/web_service/messages/opcode206.h"
 #include "../../state/runtime/runtime.h"
 
-namespace sunrise::server::web_service {
+namespace dawn::server::web_service {
 
 /** Optional Server action produced while answering one Web Service request. */
 struct Outcome {
@@ -91,4 +91,4 @@ void report_socket_plug_response(const middleware::web_service::Message& message
                            std::size_t& written,
                            Outcome& outcome) noexcept;
 
-} // namespace sunrise::server::web_service
+} // namespace dawn::server::web_service

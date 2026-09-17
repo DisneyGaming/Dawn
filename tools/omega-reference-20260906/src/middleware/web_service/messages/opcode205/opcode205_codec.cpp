@@ -6,7 +6,7 @@
 #include "../family5/family5_codec.h"
 #include "../opcode205.h"
 
-namespace sunrise::middleware::web_service::messages::opcode205 {
+namespace dawn::middleware::web_service::messages::opcode205 {
 namespace {
 
 /** 897 bytes hold the largest bounded family-5 response. */
@@ -51,4 +51,4 @@ bool encode_response(const Message& message,
     return true;
 }
 
-} // namespace sunrise::middleware::web_service::messages::opcode205
+} // namespace dawn::middleware::web_service::messages::opcode205

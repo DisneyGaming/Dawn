@@ -4,7 +4,7 @@
 
 #include "../web_service_envelope.h"
 
-namespace sunrise::middleware::web_service::messages::opcode403 {
+namespace dawn::middleware::web_service::messages::opcode403 {
 
 /** Web Service opcode used by the Character screen's Equip action. */
 inline constexpr std::uint16_t kOpcode = 403;
@@ -28,4 +28,4 @@ struct Request {
  */
 [[nodiscard]] bool parse_request(const Message& message, Request& request) noexcept;
 
-} // namespace sunrise::middleware::web_service::messages::opcode403
+} // namespace dawn::middleware::web_service::messages::opcode403

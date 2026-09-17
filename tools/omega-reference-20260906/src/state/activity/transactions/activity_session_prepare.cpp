@@ -6,7 +6,7 @@
 #include "../runtime.h"
 #include "internal.h"
 
-namespace sunrise::state::activity {
+namespace dawn::state::activity {
 namespace {
 
 /** Account half of every soid this account owns, which the activity session shares. */
@@ -139,4 +139,4 @@ bool prepare_session(const destination::DestinationSelection& selection,
     return ready;
 }
 
-} // namespace sunrise::state::activity
+} // namespace dawn::state::activity

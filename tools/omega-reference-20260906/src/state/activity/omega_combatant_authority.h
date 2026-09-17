@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::state::activity::omega_combatant_authority {
+namespace dawn::state::activity::omega_combatant_authority {
 
 /** Optional native type-3 tactical group and zero-based authored row. */
 struct TacticalGroup final {
@@ -76,4 +76,4 @@ template<class Writer>
     return ok && writer.bit_count()-begin==(source.hasSecondCategory?kTwoCategorySourceBits:kSourceBits);
 }
 
-} // namespace sunrise::state::activity::omega_combatant_authority
+} // namespace dawn::state::activity::omega_combatant_authority

@@ -4,7 +4,7 @@
 
 #include "../table.h"
 
-namespace sunrise::state::build_data::vendors {
+namespace dawn::state::build_data::vendors {
 namespace {
 
 // One lock covers all four tables. A definition names its rows by range, so a reader must
@@ -323,4 +323,4 @@ std::size_t installed_row_count() noexcept {
     return g_installedRows.count();
 }
 
-} // namespace sunrise::state::build_data::vendors
+} // namespace dawn::state::build_data::vendors

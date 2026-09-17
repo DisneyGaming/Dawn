@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace sunrise::middleware::encoding::bits {
+namespace dawn::middleware::encoding::bits {
 
 namespace {
 
@@ -64,4 +64,4 @@ bool write_raw_u64(Writer& writer, std::uint64_t value) noexcept {
     return true;
 }
 
-} // namespace sunrise::middleware::encoding::bits
+} // namespace dawn::middleware::encoding::bits

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::core::ui::components::toggle {
+namespace dawn::core::ui::components::toggle {
 
 /**
  * Draws a full-row toggle with animated track and thumb positions.
@@ -11,4 +11,4 @@ namespace sunrise::core::ui::components::toggle {
  */
 [[nodiscard]] bool control(const char* label, bool& value, float width = 0.0F) noexcept;
 
-} // namespace sunrise::core::ui::components::toggle
+} // namespace dawn::core::ui::components::toggle

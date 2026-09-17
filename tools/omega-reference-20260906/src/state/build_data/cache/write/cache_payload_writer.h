@@ -6,7 +6,7 @@
 
 #include "../records/domains.h"
 
-namespace sunrise::state::build_data::cache::writer {
+namespace dawn::state::build_data::cache::writer {
 
 /**
  * Computes the checksum before the header is written.
@@ -24,4 +24,4 @@ namespace sunrise::state::build_data::cache::writer {
  */
 [[nodiscard]] bool write_payload(HANDLE file, records::Domains domains) noexcept;
 
-} // namespace sunrise::state::build_data::cache::writer
+} // namespace dawn::state::build_data::cache::writer

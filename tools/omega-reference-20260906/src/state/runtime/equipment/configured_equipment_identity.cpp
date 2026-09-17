@@ -3,7 +3,7 @@
 #include <limits>
 #include <optional>
 
-namespace sunrise::state::runtime::equipment {
+namespace dawn::state::runtime::equipment {
 namespace {
 
 /** FNV-1a's 64-bit offset basis gives the equipment fingerprint a stable nonzero start. */
@@ -118,4 +118,4 @@ std::uint64_t configured_hash(const AccountState& accountState) noexcept {
     return hash;
 }
 
-} // namespace sunrise::state::runtime::equipment
+} // namespace dawn::state::runtime::equipment

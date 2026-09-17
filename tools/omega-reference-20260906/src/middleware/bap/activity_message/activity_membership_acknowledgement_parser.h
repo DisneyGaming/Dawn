@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::bap::activity_message::membership_acknowledgement {
+namespace dawn::middleware::bap::activity_message::membership_acknowledgement {
 
 /** Membership acknowledgements use activity message type 38. */
 inline constexpr std::uint32_t kMessageType = 38;
@@ -26,4 +26,4 @@ struct MembershipAcknowledgement final {
 parse_membership_acknowledgement(std::span<const std::byte> input,
                                  MembershipAcknowledgement& acknowledgement) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_message::membership_acknowledgement
+} // namespace dawn::middleware::bap::activity_message::membership_acknowledgement

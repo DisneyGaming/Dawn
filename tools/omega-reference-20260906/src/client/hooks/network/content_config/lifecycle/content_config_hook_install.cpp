@@ -4,10 +4,10 @@
 #include "../runtime.h"
 #include "content_config_hook_storage.h"
 
-namespace sunrise::client::hooks::network::content_config {
+namespace dawn::client::hooks::network::content_config {
 namespace {
 
-#if defined(SUNRISE_BAP_HOOK_TEST)
+#if defined(DAWN_BAP_HOOK_TEST)
 bool g_failNextInstall{};
 #endif
 
@@ -56,7 +56,7 @@ bool install() noexcept {
     };
     std::array<hooking::detour::Handle, kHookCount> installed{};
     bool forcedInstallFailure{};
-#if defined(SUNRISE_BAP_HOOK_TEST)
+#if defined(DAWN_BAP_HOOK_TEST)
     forcedInstallFailure = g_failNextInstall;
     g_failNextInstall = false;
 #endif
@@ -79,7 +79,7 @@ bool install() noexcept {
     return true;
 }
 
-#if defined(SUNRISE_BAP_HOOK_TEST)
+#if defined(DAWN_BAP_HOOK_TEST)
 namespace testing {
 
 /** Makes the next hook install fail, for the lifecycle test. */
@@ -92,4 +92,4 @@ void fail_next_install() noexcept {
 } // namespace testing
 #endif
 
-} // namespace sunrise::client::hooks::network::content_config
+} // namespace dawn::client::hooks::network::content_config

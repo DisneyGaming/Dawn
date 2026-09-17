@@ -5,7 +5,7 @@
 
 #include "definition.h"
 
-namespace sunrise::state::build_data::abilities {
+namespace dawn::state::build_data::abilities {
 
 /** Clears every generated ability bucket row. */
 void clear() noexcept;
@@ -46,4 +46,4 @@ void clear() noexcept;
 /** @return Number of generated ability bucket rows, read under the lock. */
 [[nodiscard]] std::size_t count() noexcept;
 
-} // namespace sunrise::state::build_data::abilities
+} // namespace dawn::state::build_data::abilities

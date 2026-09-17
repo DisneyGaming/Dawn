@@ -7,10 +7,10 @@
 
 #include "../../components/navigation/ui_navigation_component.h"
 #include "../../modules/registry/ui_module_registry.h"
-#include "../credits/sunrise_credits_badge.h"
+#include "../credits/dawn_credits_badge.h"
 #include "../ui_layout_lifecycle.h"
 
-namespace sunrise::core::ui::layout::navigation {
+namespace dawn::core::ui::layout::navigation {
 namespace {
 
 /** One trailing null byte turns a descriptor label into a Dear ImGui label. */
@@ -112,4 +112,4 @@ Selection draw(const StateSnapshot& state) noexcept {
     return selected;
 }
 
-} // namespace sunrise::core::ui::layout::navigation
+} // namespace dawn::core::ui::layout::navigation

@@ -7,7 +7,7 @@
 #include "../internal.h"
 #include "definition.h"
 
-namespace sunrise::server::bap::encrypted::queuez {
+namespace dawn::server::bap::encrypted::queuez {
 
 /**
  * Stages any queuez frames and peer after-image that one service outcome asks for.
@@ -31,4 +31,4 @@ namespace sunrise::server::bap::encrypted::queuez {
                                          std::size_t& written,
                                          StagedPublication& publication) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::queuez
+} // namespace dawn::server::bap::encrypted::queuez

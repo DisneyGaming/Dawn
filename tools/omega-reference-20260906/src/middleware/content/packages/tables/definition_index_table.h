@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::content::packages::tables {
+namespace dawn::middleware::content::packages::tables {
 
 /** Definition tags sit in this closed range. */
 inline constexpr std::uint32_t kTagLowerBound = 0x80800000;
@@ -234,4 +234,4 @@ inline constexpr std::size_t kTableArrayDescriptor = 8;
                              std::uint64_t index,
                              IndexRow& row) noexcept;
 
-} // namespace sunrise::middleware::content::packages::tables
+} // namespace dawn::middleware::content::packages::tables

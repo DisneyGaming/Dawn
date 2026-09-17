@@ -8,7 +8,7 @@
 
 #include "../../../state/build_data/hash_names/definition.h"
 
-namespace sunrise::client::content::hash_names {
+namespace dawn::client::content::hash_names {
 
 namespace names_state = state::build_data::hash_names;
 
@@ -112,4 +112,4 @@ void merge(Storage& storage, std::span<const names_state::Name> rows) noexcept;
  */
 void finish(Storage& storage) noexcept;
 
-} // namespace sunrise::client::content::hash_names
+} // namespace dawn::client::content::hash_names

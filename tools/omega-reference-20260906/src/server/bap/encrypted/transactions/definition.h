@@ -3,7 +3,7 @@
 #include "../../../../state/activity/lifecycle_generation.h"
 #include "../../region_lineage.h"
 
-namespace sunrise::server::bap::encrypted::transactions {
+namespace dawn::server::bap::encrypted::transactions {
 
 /** Connection fields published only after State commits and caller output is copied. */
 struct Publication {
@@ -33,4 +33,4 @@ struct Publication {
                : state::activity::ActivityInstanceKey{};
 }
 
-} // namespace sunrise::server::bap::encrypted::transactions
+} // namespace dawn::server::bap::encrypted::transactions

@@ -2,7 +2,7 @@
 
 #include <d3d11.h>
 
-namespace sunrise::client::hooks::graphics::textures {
+namespace dawn::client::hooks::graphics::textures {
 
 /** One uploaded image: the texture we own and the view the interface draws with. */
 struct Uploaded {
@@ -21,4 +21,4 @@ struct Uploaded {
 /** @param uploaded Objects released and cleared, after the published slot is emptied. */
 void release_logo_sheet(Uploaded& uploaded) noexcept;
 
-} // namespace sunrise::client::hooks::graphics::textures
+} // namespace dawn::client::hooks::graphics::textures

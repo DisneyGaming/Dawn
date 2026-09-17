@@ -12,7 +12,7 @@
 #include "format.h"
 #include "internal.h"
 
-namespace sunrise::state::content_manifest::cache {
+namespace dawn::state::content_manifest::cache {
 namespace {
 
 /** 8 unique-name tries bound one all-or-nothing cache publish. */
@@ -225,4 +225,4 @@ bool write(const wchar_t* directory,
     return complete;
 }
 
-} // namespace sunrise::state::content_manifest::cache
+} // namespace dawn::state::content_manifest::cache

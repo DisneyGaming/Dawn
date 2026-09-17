@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::middleware::gameplay::descriptor {
+namespace dawn::middleware::gameplay::descriptor {
 
 /** The join descriptor is exactly 128 bytes, and a different count makes it absent. */
 inline constexpr std::size_t kDescriptorSize = 128;
@@ -45,4 +45,4 @@ void write_net_addr(std::uint32_t address,
 [[nodiscard]] bool build(const JoinEndpoint& endpoint,
                          std::array<std::byte, kDescriptorSize>& output) noexcept;
 
-} // namespace sunrise::middleware::gameplay::descriptor
+} // namespace dawn::middleware::gameplay::descriptor

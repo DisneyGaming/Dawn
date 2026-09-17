@@ -8,7 +8,7 @@
 #include "relative.h"
 #include "resolution/internal.h"
 
-namespace sunrise::client::targets::game::content {
+namespace dawn::client::targets::game::content {
 namespace {
 
 /** Rel32 begins 3 bytes into the schema-resolver load instruction. */
@@ -118,4 +118,4 @@ bool is_resolved() noexcept {
     return g_resolved.load(std::memory_order_acquire);
 }
 
-} // namespace sunrise::client::targets::game::content
+} // namespace dawn::client::targets::game::content

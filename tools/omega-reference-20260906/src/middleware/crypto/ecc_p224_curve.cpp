@@ -8,7 +8,7 @@
 
 #include <algorithm>
 
-namespace sunrise::middleware::crypto::ecc::curve {
+namespace dawn::middleware::crypto::ecc::curve {
 namespace {
 
 /** Bits in one field word. */
@@ -452,4 +452,4 @@ void store(const Field& value, std::span<std::byte> bytes) noexcept {
     }
 }
 
-} // namespace sunrise::middleware::crypto::ecc::curve
+} // namespace dawn::middleware::crypto::ecc::curve

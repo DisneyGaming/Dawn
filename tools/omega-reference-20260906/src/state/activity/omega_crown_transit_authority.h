@@ -3,7 +3,7 @@
 #include "omega_first_mancannon_authority.h"
 #include <bit>
 
-namespace sunrise::state::activity::omega_crown_transit {
+namespace dawn::state::activity::omega_crown_transit {
 
 // Only authenticated encounter state supplies these latches. Pickup/dunk are
 // native receipts; player position is never used to manufacture them.
@@ -268,4 +268,4 @@ template<class Writer>
         done?3U:current && dunked?2U:current && bridgeReady?1U:0U);
 }
 
-} // namespace sunrise::state::activity::omega_crown_transit
+} // namespace dawn::state::activity::omega_crown_transit

@@ -1,0 +1,40 @@
+#include "../../transactions/internal.h"
+#include "internal.h"
+
+namespace dawn::state::activity::membership::transactions {
+
+/** Captures one joined session and its shared transaction guards. */
+const SessionRecord* prepare_base(const ActivityState& state,
+                                  std::uint64_t primarySoid,
+                                  ActivityInstanceKey key,
+                                  PendingMutation& mutation) noexcept {
+    const std::size_t target = activity::transactions::find_session(state, key);
+    if (target == kInvalidSessionSlot) {
+        return nullptr;
+    }
+    const SessionRecord& record = state.sessions[target];
+    if (!record.joined || record.joinedRevision == kInvalidRevision
+        || record.recordRevision == kInvalidRevision) {
+        return nullptr;
+    }
+    const HostRegionKey hostRegion = activity::transactions::host_region_key(record);
+    if (!static_cast<bool>(hostRegion)) {
+        return nullptr;
+    }
+    mutation.expectedHostRegion = hostRegion;
+    mutation.instanceKey = key;
+    mutation.expectedStateRevision = state.stateRevision;
+    mutation.expectedRecordRevision = record.recordRevision;
+    mutation.expectedPrimarySoid = primarySoid;
+    mutation.targetSlot = target;
+    mutation.prepared = true;
+    return &record;
+}
+
+/** Advances root and record revisions after one stored membership change. */
+void publish_change(ActivityState& state, SessionRecord& record) noexcept {
+    ++state.stateRevision;
+    record.recordRevision = state.stateRevision;
+}
+
+} // namespace dawn::state::activity::membership::transactions

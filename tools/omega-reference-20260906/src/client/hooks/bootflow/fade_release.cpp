@@ -9,7 +9,7 @@
 #include "../../../core/settings/settings.h"
 #include "internal.h"
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 namespace {
 
 using core::log::kLineCapacity;
@@ -116,4 +116,4 @@ void uninstall_fade_release() noexcept {
     g_logged.store(false, std::memory_order_release);
 }
 
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

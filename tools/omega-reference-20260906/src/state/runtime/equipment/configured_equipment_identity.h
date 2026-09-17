@@ -4,7 +4,7 @@
 
 #include "../../account/account_state.h"
 
-namespace sunrise::state::runtime::equipment {
+namespace dawn::state::runtime::equipment {
 
 /**
  * Builds a nonsecret cache identity from ordered authored equipment.
@@ -13,4 +13,4 @@ namespace sunrise::state::runtime::equipment {
  */
 [[nodiscard]] std::uint64_t configured_hash(const AccountState& accountState) noexcept;
 
-} // namespace sunrise::state::runtime::equipment
+} // namespace dawn::state::runtime::equipment

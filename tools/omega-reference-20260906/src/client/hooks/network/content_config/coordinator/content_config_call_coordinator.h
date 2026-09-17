@@ -4,7 +4,7 @@
 
 #include "../internal.h"
 
-namespace sunrise::client::hooks::network::content_config::coordinator {
+namespace dawn::client::hooks::network::content_config::coordinator {
 
 /** State copied at ingress and kept until egress. */
 struct CallLease final {
@@ -41,7 +41,7 @@ extern const CallEgress g_callEgress;
 /** @return How many outermost replacement calls are running now, process-wide. */
 [[nodiscard]] LONG active_calls() noexcept;
 
-#if defined(SUNRISE_BAP_HOOK_TEST)
+#if defined(DAWN_BAP_HOOK_TEST)
 namespace testing {
 
 /** Arms a short pause before the next ContentConfig call is counted in. */
@@ -56,4 +56,4 @@ void release_ingress_pause() noexcept;
 } // namespace testing
 #endif
 
-} // namespace sunrise::client::hooks::network::content_config::coordinator
+} // namespace dawn::client::hooks::network::content_config::coordinator

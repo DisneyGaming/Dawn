@@ -5,7 +5,7 @@
 #include <array>
 #include <cstddef>
 
-namespace sunrise::client::process::freeze {
+namespace dawn::client::process::freeze {
 
 /** 1024 threads cover the game's pools without heap storage. */
 inline constexpr std::size_t kThreadLimit = 1024;
@@ -45,4 +45,4 @@ void enter_exclusive() noexcept;
 /** Releases the claim taken by enter_exclusive. */
 void leave_exclusive() noexcept;
 
-} // namespace sunrise::client::process::freeze
+} // namespace dawn::client::process::freeze

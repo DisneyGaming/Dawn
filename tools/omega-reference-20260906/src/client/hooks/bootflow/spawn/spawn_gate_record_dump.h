@@ -3,7 +3,7 @@
 #include <atomic>
 #include <cstdint>
 
-namespace sunrise::client::hooks::bootflow::spawn {
+namespace dawn::client::hooks::bootflow::spawn {
 
 using NoArgPointer = void*(__fastcall*)() noexcept;
 using PointerPredicate = bool(__fastcall*)(void*) noexcept;
@@ -36,4 +36,4 @@ inline std::atomic_bool g_ready{false};
 /** Dumps the head of the participation record once per run, with the player key's own offset. */
 void dump_record(const std::uint8_t* record) noexcept;
 
-} // namespace sunrise::client::hooks::bootflow::spawn
+} // namespace dawn::client::hooks::bootflow::spawn

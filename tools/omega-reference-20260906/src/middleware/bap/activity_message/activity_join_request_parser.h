@@ -5,7 +5,7 @@
 
 #include "definition.h"
 
-namespace sunrise::middleware::bap::activity_message::join_request {
+namespace dawn::middleware::bap::activity_message::join_request {
 
 /**
  * Reads the correlation, nonzero session and member key from an activity join request. Bytes
@@ -17,4 +17,4 @@ namespace sunrise::middleware::bap::activity_message::join_request {
 [[nodiscard]] bool parse_join_request(std::span<const std::byte> input,
                                       JoinRequest& request) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_message::join_request
+} // namespace dawn::middleware::bap::activity_message::join_request

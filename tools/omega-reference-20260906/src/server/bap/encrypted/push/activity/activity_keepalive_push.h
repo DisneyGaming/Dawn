@@ -5,7 +5,7 @@
 
 #include "../../../internal.h"
 
-namespace sunrise::server::bap::encrypted::push::activity {
+namespace dawn::server::bap::encrypted::push::activity {
 
 /**
  * Writes the periodic activity-link keepalive when one is due. The link tears down after about
@@ -24,4 +24,4 @@ namespace sunrise::server::bap::encrypted::push::activity {
                                               std::size_t& written,
                                               bool& touchesScratch) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::push::activity
+} // namespace dawn::server::bap::encrypted::push::activity

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <imgui.h>
 
-namespace sunrise::core::ui::components::drawing {
+namespace dawn::core::ui::components::drawing {
 
 /** @return The blend weight clamped to the normalized color range. */
 [[nodiscard]] inline float normalized(float value) noexcept {
@@ -41,4 +41,4 @@ namespace sunrise::core::ui::components::drawing {
     return cursor;
 }
 
-} // namespace sunrise::core::ui::components::drawing
+} // namespace dawn::core::ui::components::drawing

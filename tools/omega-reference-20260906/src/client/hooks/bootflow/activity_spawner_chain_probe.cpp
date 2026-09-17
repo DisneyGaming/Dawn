@@ -19,7 +19,7 @@
 #include "../../hooking/detour.h"
 #include "internal.h"
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 namespace {
 
 // Exact pinned-client sites from the 2026-08-20 headless decompile. This probe observes the native
@@ -12281,4 +12281,4 @@ void uninstall_activity_spawner_chain_probe() noexcept {
     ReleaseSRWLockExclusive(&g_sceneType23TraceStateLock);
 }
 
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::hooks::infinite_ammo {
+namespace dawn::client::hooks::infinite_ammo {
 
 /**
  * Attaches to the reserve, magazine and sword setters. The magazine amount is passed through, so
@@ -12,4 +12,4 @@ namespace sunrise::client::hooks::infinite_ammo {
 /** Detaches every detour. */
 void uninstall() noexcept;
 
-} // namespace sunrise::client::hooks::infinite_ammo
+} // namespace dawn::client::hooks::infinite_ammo

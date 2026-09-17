@@ -5,7 +5,7 @@
 
 #include "../queuez/subscription.h"
 
-namespace sunrise::middleware::bap::family_subscription {
+namespace dawn::middleware::bap::family_subscription {
 
 /**
  * Decodes the fixed authenticated family-subscription selector.
@@ -16,4 +16,4 @@ namespace sunrise::middleware::bap::family_subscription {
 [[nodiscard]] bool parse(std::span<const std::byte> input,
                          queuez::Subscription& subscription) noexcept;
 
-} // namespace sunrise::middleware::bap::family_subscription
+} // namespace dawn::middleware::bap::family_subscription

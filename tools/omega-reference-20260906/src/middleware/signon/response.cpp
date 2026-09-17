@@ -11,7 +11,7 @@
 #include "internal.h"
 #include "ownership/signon_ownership_encoder.h"
 
-namespace sunrise::middleware::signon {
+namespace dawn::middleware::signon {
 namespace {
 
 /** Scratch size covers every required and optional success field. */
@@ -121,4 +121,4 @@ bool encode_success(const state::SignOnState& state,
     return true;
 }
 
-} // namespace sunrise::middleware::signon
+} // namespace dawn::middleware::signon

@@ -2,7 +2,7 @@
 
 #include "policy.h"
 
-namespace sunrise::client::hooks::egress::policy {
+namespace dawn::client::hooks::egress::policy {
 
 /**
  * Logs one fixed debug event, with no endpoint or payload data.
@@ -12,4 +12,4 @@ namespace sunrise::client::hooks::egress::policy {
  */
 void log_decision(SocketOperation operation, bool targetsRedirect, bool allowed) noexcept;
 
-} // namespace sunrise::client::hooks::egress::policy
+} // namespace dawn::client::hooks::egress::policy

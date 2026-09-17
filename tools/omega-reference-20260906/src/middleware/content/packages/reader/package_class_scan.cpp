@@ -7,7 +7,7 @@
 
 #include "internal.h"
 
-namespace sunrise::middleware::content::packages::reader {
+namespace dawn::middleware::content::packages::reader {
 namespace {
 
 /** Entry indices are 13 bits of a tag handle, so a table cannot be larger than this. */
@@ -190,4 +190,4 @@ bool scan_class_entries(std::wstring_view directory,
     return FindClose(enumeration) != FALSE && complete;
 }
 
-} // namespace sunrise::middleware::content::packages::reader
+} // namespace dawn::middleware::content::packages::reader

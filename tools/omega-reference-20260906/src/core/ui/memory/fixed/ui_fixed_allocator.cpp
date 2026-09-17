@@ -5,7 +5,7 @@
 #include "../allocator.h"
 #include "internal.h"
 
-namespace sunrise::core::ui::memory {
+namespace dawn::core::ui::memory {
 namespace {
 
 ImGuiMemAllocFunc g_previousAllocate{};
@@ -101,4 +101,4 @@ Stats snapshot() noexcept {
     return result;
 }
 
-} // namespace sunrise::core::ui::memory
+} // namespace dawn::core::ui::memory

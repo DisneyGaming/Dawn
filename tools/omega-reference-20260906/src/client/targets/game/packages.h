@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::client::targets::game::packages {
+namespace dawn::client::targets::game::packages {
 
 /** Package block keys are AES-128. */
 inline constexpr std::size_t kBlockKeySize = 16;
@@ -46,4 +46,4 @@ void clear() noexcept;
  */
 [[nodiscard]] bool read(KeyTable& table) noexcept;
 
-} // namespace sunrise::client::targets::game::packages
+} // namespace dawn::client::targets::game::packages

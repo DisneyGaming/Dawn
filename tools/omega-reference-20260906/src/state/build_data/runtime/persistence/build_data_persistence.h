@@ -24,7 +24,7 @@
 #include "../../spawn_sets/definition.h"
 #include "../../vendors/definition.h"
 
-namespace sunrise::state::build_data::runtime::persistence {
+namespace dawn::state::build_data::runtime::persistence {
 
 /** Fixed cache paths, identity, and canonical snapshot storage guarded by one State lock. */
 struct Context {
@@ -99,4 +99,4 @@ occupied_domains(Context& state, const cache::records::DomainCounts& counts) noe
  */
 [[nodiscard]] bool persist_if_complete_locked(Context& state) noexcept;
 
-} // namespace sunrise::state::build_data::runtime::persistence
+} // namespace dawn::state::build_data::runtime::persistence

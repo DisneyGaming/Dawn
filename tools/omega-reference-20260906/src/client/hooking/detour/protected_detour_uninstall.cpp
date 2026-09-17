@@ -6,7 +6,7 @@
 #include "../detour.h"
 #include "transaction/detour_thread_transaction.h"
 
-namespace sunrise::client::hooking::detour {
+namespace dawn::client::hooking::detour {
 namespace {
 
 /** 32 hook slots bound each fixed-storage Detours transaction. */
@@ -133,4 +133,4 @@ UninstallResult uninstall(std::span<Handle> handles,
     return UninstallResult::removed;
 }
 
-} // namespace sunrise::client::hooking::detour
+} // namespace dawn::client::hooking::detour

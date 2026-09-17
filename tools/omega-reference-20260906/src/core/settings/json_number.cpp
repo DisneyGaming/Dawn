@@ -5,7 +5,7 @@
 
 #include "parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 namespace {
 
 /** JSON integers are base 10 with no prefix. */
@@ -186,4 +186,4 @@ bool Parser::number() noexcept {
     return position_ != start;
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

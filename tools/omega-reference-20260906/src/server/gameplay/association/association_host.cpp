@@ -13,7 +13,7 @@
 #include "../group/group_host.h"
 #include "../peer/peer_transport.h"
 
-namespace sunrise::server::gameplay::association {
+namespace dawn::server::gameplay::association {
 
 namespace {
 
@@ -332,4 +332,4 @@ void reset() noexcept {
     ReleaseSRWLockExclusive(&g_lock);
 }
 
-} // namespace sunrise::server::gameplay::association
+} // namespace dawn::server::gameplay::association

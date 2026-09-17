@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::hooks::network::content_config {
+namespace dawn::client::hooks::network::content_config {
 
 /** Installs the local ContentConfig replacements and native identity observers. */
 [[nodiscard]] bool install() noexcept;
@@ -14,4 +14,4 @@ namespace sunrise::client::hooks::network::content_config {
 /** @return True while any hook, gate or live call still needs cleanup. */
 [[nodiscard]] bool has_ownership() noexcept;
 
-} // namespace sunrise::client::hooks::network::content_config
+} // namespace dawn::client::hooks::network::content_config

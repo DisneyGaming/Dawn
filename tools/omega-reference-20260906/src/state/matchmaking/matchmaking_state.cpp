@@ -11,13 +11,13 @@
 #include "../runtime/storage/internal.h"
 #include "transactions/internal.h"
 
-#if defined(SUNRISE_ACTIVITY_RETIREMENT_TESTS)
+#if defined(DAWN_ACTIVITY_RETIREMENT_TESTS)
 #include "matchmaking_test_support.h"
 #endif
 
-namespace sunrise::state::matchmaking {
+namespace dawn::state::matchmaking {
 
-#if defined(SUNRISE_ACTIVITY_RETIREMENT_TESTS)
+#if defined(DAWN_ACTIVITY_RETIREMENT_TESTS)
 namespace {
 
 std::atomic_size_t g_releaseFailuresRemaining{};
@@ -73,7 +73,7 @@ bool acquire_context(ContextHandle& context) noexcept {
 
 /** Releases a context and securely erases every descriptor it owns. */
 bool release_context(ContextHandle context) noexcept {
-#if defined(SUNRISE_ACTIVITY_RETIREMENT_TESTS)
+#if defined(DAWN_ACTIVITY_RETIREMENT_TESTS)
     g_releaseAttempts.fetch_add(1U, std::memory_order_relaxed);
     g_lastReleaseSlot.store(context.slot, std::memory_order_relaxed);
     g_lastReleaseGeneration.store(context.generation, std::memory_order_relaxed);
@@ -93,7 +93,7 @@ bool release_context(ContextHandle context) noexcept {
     SecureZeroMemory(slot, sizeof *slot);
     slot->generation = generation;
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
-#if defined(SUNRISE_ACTIVITY_RETIREMENT_TESTS)
+#if defined(DAWN_ACTIVITY_RETIREMENT_TESTS)
     g_releaseSuccesses.fetch_add(1U, std::memory_order_relaxed);
 #endif
     return true;
@@ -141,7 +141,7 @@ void erase_snapshot(LatestSnapshot& snapshot) noexcept {
     SecureZeroMemory(&snapshot, sizeof snapshot);
 }
 
-#if defined(SUNRISE_ACTIVITY_RETIREMENT_TESTS)
+#if defined(DAWN_ACTIVITY_RETIREMENT_TESTS)
 namespace test_support {
 
 void fail_next_releases(std::size_t count) noexcept {
@@ -170,4 +170,4 @@ void reset() noexcept {
 } // namespace test_support
 #endif
 
-} // namespace sunrise::state::matchmaking
+} // namespace dawn::state::matchmaking

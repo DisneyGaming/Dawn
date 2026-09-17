@@ -3,7 +3,7 @@
 #include "runtime/domain_markers.h"
 #include "runtime/persistence/publication_transaction.h"
 
-namespace sunrise::state::build_data {
+namespace dawn::state::build_data {
 
 namespace {
 
@@ -30,4 +30,4 @@ bool publish_named_catalog() noexcept {
     return transaction.finish(true, rollback_named_publication);
 }
 
-} // namespace sunrise::state::build_data
+} // namespace dawn::state::build_data

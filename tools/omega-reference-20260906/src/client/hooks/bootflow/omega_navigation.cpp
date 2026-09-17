@@ -16,7 +16,7 @@
 #include "../../../core/logging/log.h"
 #include "../../../state/activity/omega_presentation.h"
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 namespace {
 namespace presentation = state::activity::omega_presentation;
 using RoutePoint = std::uint32_t(__fastcall*)(void*, void*, void*) noexcept;
@@ -318,4 +318,4 @@ bool uninstall_omega_navigation() noexcept {
     g_terminalGateRun.store(UINT64_MAX,std::memory_order_release);
     return true;
 }
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

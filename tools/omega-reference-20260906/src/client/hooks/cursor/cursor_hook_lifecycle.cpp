@@ -7,7 +7,7 @@
 #include "cursor_guard_replacements.h"
 #include "runtime.h"
 
-namespace sunrise::client::hooks::cursor {
+namespace dawn::client::hooks::cursor {
 namespace {
 
 /** The System32 name keeps the guard from finding exports in the game directory. */
@@ -102,4 +102,4 @@ bool is_installed() noexcept {
     return g_installed.load(std::memory_order_acquire);
 }
 
-} // namespace sunrise::client::hooks::cursor
+} // namespace dawn::client::hooks::cursor

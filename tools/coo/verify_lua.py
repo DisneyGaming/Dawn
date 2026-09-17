@@ -116,8 +116,8 @@ EATER_OFFLINE_CHECKS = (
 def validation_jobs(names=None, configurations=None):
     """Only request configurations declared by each project; native suites may be Release-only."""
     jobs = []
-    for name in names if names is not None else (*TESTS, "Sunrise"):
-        project = ROOT / ("Sunrise/Sunrise.vcxproj" if name == "Sunrise" else f"Sunrise/unit/{name}.vcxproj")
+    for name in names if names is not None else (*TESTS, "Dawn"):
+        project = ROOT / ("Dawn/Dawn.vcxproj" if name == "Dawn" else f"Dawn/unit/{name}.vcxproj")
         text = project.read_text(encoding="utf-8")
         for configuration in configurations if configurations is not None else ("Debug", "Release"):
             if f'Include="{configuration}|x64"' in text:
@@ -128,24 +128,24 @@ def validation_jobs(names=None, configurations=None):
 def source_manifest():
     """Files that define the DLL, Lua missions, regression tests, and delivery tools."""
     paths = set()
-    for folder in ('Sunrise/src', 'Sunrise/scripts', 'Sunrise/unit', 'Sunrise/vendor', 'Sunrise/resources', 'Sunrise/docs', 'Sunrise/analysis', 'tools/coo', 'tools/testing', 'tools/build'):
+    for folder in ('Dawn/src', 'Dawn/scripts', 'Dawn/unit', 'Dawn/vendor', 'Dawn/resources', 'Dawn/docs', 'Dawn/analysis', 'tools/coo', 'tools/testing', 'tools/build'):
         for path in (ROOT / folder).rglob('*'):
-            complete_tree = folder in ('Sunrise/src', 'Sunrise/scripts', 'Sunrise/vendor', 'Sunrise/resources') or path.is_relative_to(ROOT / 'Sunrise/unit/fixtures')
+            complete_tree = folder in ('Dawn/src', 'Dawn/scripts', 'Dawn/vendor', 'Dawn/resources') or path.is_relative_to(ROOT / 'Dawn/unit/fixtures')
             if path.is_file() and (complete_tree or path.suffix.lower() in ('.cpp', '.h', '.c', '.hpp', '.inl', '.vcxproj', '.props', '.lua', '.py', '.ps1', '.md', '.txt', '.rc', '.ico', '.json', '.mjs', '.cmake')):
                 paths.add(path)
-    paths.update((ROOT / 'Sunrise/Sunrise.vcxproj', ROOT / 'Sunrise/lua-items.props', ROOT / 'tools/coo/hijacked_squad_counts.json'))
+    paths.update((ROOT / 'Dawn/Dawn.vcxproj', ROOT / 'Dawn/lua-items.props', ROOT / 'tools/coo/hijacked_squad_counts.json'))
     return {p.relative_to(ROOT).as_posix(): verify.digest(p) for p in sorted(paths)}
 
 
 def check(name, configuration, compile_only=False):
-    project = ROOT / ("Sunrise/Sunrise.vcxproj" if name == "Sunrise" else f"Sunrise/unit/{name}.vcxproj")
+    project = ROOT / ("Dawn/Dawn.vcxproj" if name == "Dawn" else f"Dawn/unit/{name}.vcxproj")
     result = verify.build(project, configuration, compile_only=compile_only)
     return result
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
-    parser.add_argument("--project", action="append", choices=(*ALL_TESTS, "Sunrise"))
+    parser.add_argument("--project", action="append", choices=(*ALL_TESTS, "Dawn"))
     parser.add_argument("--configuration", action="append", choices=("Debug", "Release"))
     parser.add_argument("--tests-only", action="store_true")
     parser.add_argument("--compile-only", action="store_true", help="Compile selected tests without claiming execution or validation.")
@@ -161,8 +161,8 @@ def main():
     if (verify.OUT / "installation.json").exists() or (verify.OUT / "package.json").exists():
         raise SystemExit("Preserve installed-build evidence; choose a new --out directory.")
     verify.OUT.mkdir(parents=True, exist_ok=True)
-    names = args.project or list(TESTS) + ([] if args.tests_only else ["Sunrise"])
-    if not args.project or any(name == 'Sunrise' or name.startswith('eater_') for name in names):
+    names = args.project or list(TESTS) + ([] if args.tests_only else ["Dawn"])
+    if not args.project or any(name == 'Dawn' or name.startswith('eater_') for name in names):
         checks = []
         for script in EATER_OFFLINE_CHECKS:
             result = subprocess.run([sys.executable, str(ROOT / 'tools/coo' / script), '--check'],
@@ -189,7 +189,7 @@ def main():
             try:
                 result = future.result(); results.append(result)
                 if "dll" in result:
-                    print(f"Sunrise {job[1]} candidate: {result['sha256']}", flush=True)
+                    print(f"Dawn {job[1]} candidate: {result['sha256']}", flush=True)
             except Exception as exc:
                 failures.append({"project": job[0], "configuration": job[1], "error": str(exc)})
                 lines = str(exc).splitlines()

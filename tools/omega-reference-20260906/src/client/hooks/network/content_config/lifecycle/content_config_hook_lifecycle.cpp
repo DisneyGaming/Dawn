@@ -2,7 +2,7 @@
 #include "../runtime.h"
 #include "content_config_hook_storage.h"
 
-namespace sunrise::client::hooks::network::content_config {
+namespace dawn::client::hooks::network::content_config {
 
 /** @return True when every hook is in place and the signature gate is off. */
 bool is_installed() noexcept {
@@ -25,4 +25,4 @@ bool has_ownership() noexcept {
     return owned;
 }
 
-} // namespace sunrise::client::hooks::network::content_config
+} // namespace dawn::client::hooks::network::content_config

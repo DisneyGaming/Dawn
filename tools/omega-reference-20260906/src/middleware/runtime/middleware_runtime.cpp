@@ -6,7 +6,7 @@
 #include "../../state/build_data/runtime.h"
 #include "../content/packages/package_catalog.h"
 
-namespace sunrise::middleware {
+namespace dawn::middleware {
 namespace {
 
 /** Installed packages occupy the packages directory beside the main executable. */
@@ -37,4 +37,4 @@ bool initialize() noexcept {
 /** Releases no resources because State owns the generated content cache. */
 void shutdown() noexcept {}
 
-} // namespace sunrise::middleware
+} // namespace dawn::middleware

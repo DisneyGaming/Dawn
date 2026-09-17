@@ -8,7 +8,7 @@
 #include "snapshot.h"
 #include "snapshot_storage.h"
 
-namespace sunrise::server::bap::encrypted::push::snapshot {
+namespace dawn::server::bap::encrypted::push::snapshot {
 
 /** Initial family snapshots start at version zero. */
 inline constexpr std::int32_t kInitialFamilyVersion = 0;
@@ -274,4 +274,4 @@ append_items(Scratch& scratch,
                                         std::size_t& itemCursor,
                                         std::size_t& compressedExtent) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::push::snapshot
+} // namespace dawn::server::bap::encrypted::push::snapshot

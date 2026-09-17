@@ -20,7 +20,7 @@
 #include "../matchmaking/matchmaking_route.h"
 #include "../queuez/queuez_state_validation.h"
 
-namespace sunrise::server::bap::encrypted::body {
+namespace dawn::server::bap::encrypted::body {
 namespace {
 
 /** One line carries the family and the root soid and nothing else. */
@@ -196,7 +196,7 @@ bool process(const ServiceRoute& route,
             return true;
         }
         web_service::Outcome webOutcome;
-        if (!sunrise::server::web_service::consume(requestBody, output, written, webOutcome)) {
+        if (!dawn::server::web_service::consume(requestBody, output, written, webOutcome)) {
             return false;
         }
         outcome.hasSubscription = webOutcome.hasSubscription;
@@ -435,4 +435,4 @@ bool process(const ServiceRoute& route,
     return false;
 }
 
-} // namespace sunrise::server::bap::encrypted::body
+} // namespace dawn::server::bap::encrypted::body

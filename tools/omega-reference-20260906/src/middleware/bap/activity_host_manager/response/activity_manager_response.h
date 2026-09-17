@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::bap::activity_host_manager::response {
+namespace dawn::middleware::bap::activity_host_manager::response {
 
 /**
  * Encodes a service-7 response with the minimal local activity-data policy. The zero
@@ -18,4 +18,4 @@ namespace sunrise::middleware::bap::activity_host_manager::response {
                                    std::span<std::byte> output,
                                    std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_host_manager::response
+} // namespace dawn::middleware::bap::activity_host_manager::response

@@ -25,7 +25,7 @@
 #include "../ui/modules/registry/ui_module_registry.h"
 #include "../ui/runtime/ui_visibility_runtime.h"
 
-namespace sunrise::core {
+namespace dawn::core {
 namespace {
 
 std::atomic_bool g_initialized{false};
@@ -36,7 +36,7 @@ constexpr std::wstring_view kInstalledPackagesDirectory = L"packages";
 
 /**
  * Builds the local content manifest only for the production game host.
- * @param module Loaded Sunrise module used for generated cache placement.
+ * @param module Loaded Dawn module used for generated cache placement.
  * @return True when the host needs no manifest or one complete catalog is ready.
  */
 [[nodiscard]] bool initialize_content_manifest(void* module) noexcept {
@@ -208,4 +208,4 @@ bool is_initialized() noexcept {
     return g_initialized.load(std::memory_order_acquire);
 }
 
-} // namespace sunrise::core
+} // namespace dawn::core

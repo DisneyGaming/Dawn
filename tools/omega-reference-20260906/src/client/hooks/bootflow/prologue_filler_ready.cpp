@@ -15,11 +15,11 @@
 #include "../../hooking/detour.h"
 #include "internal.h"
 #include "prologue_filler_ready_lifecycle.h"
-#if defined(SUNRISE_PROLOGUE_FILLER_READY_TESTING)
+#if defined(DAWN_PROLOGUE_FILLER_READY_TESTING)
 #include "prologue_filler_ready_test_support.h"
 #endif
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 namespace {
 
 /** Runtime-decrypted local prologue-filler readiness accessor in the pinned client. */
@@ -92,7 +92,7 @@ prologue_filler_lifecycle::OwnerLifecycle g_lifecycle{};
 
 /** Resolves and validates the accessor, excluding only its two near-call displacements. */
 [[nodiscard]] std::byte* ready_target() noexcept {
-#if defined(SUNRISE_PROLOGUE_FILLER_READY_TESTING)
+#if defined(DAWN_PROLOGUE_FILLER_READY_TESTING)
     return prologue_filler_ready_test_support::resolve_target(
         prologue_filler_ready_test_support::TargetSlot::ready);
 #else
@@ -131,7 +131,7 @@ prologue_filler_lifecycle::OwnerLifecycle g_lifecycle{};
 
 /** Resolves and validates the prologue task update in the pinned client. */
 [[nodiscard]] std::byte* state_update_target() noexcept {
-#if defined(SUNRISE_PROLOGUE_FILLER_READY_TESTING)
+#if defined(DAWN_PROLOGUE_FILLER_READY_TESTING)
     return prologue_filler_ready_test_support::resolve_target(
         prologue_filler_ready_test_support::TargetSlot::state_update);
 #else
@@ -151,7 +151,7 @@ prologue_filler_lifecycle::OwnerLifecycle g_lifecycle{};
 
 /** Resolves and validates the retired activity-readiness task in the pinned client. */
 [[nodiscard]] std::byte* activity_ready_target() noexcept {
-#if defined(SUNRISE_PROLOGUE_FILLER_READY_TESTING)
+#if defined(DAWN_PROLOGUE_FILLER_READY_TESTING)
     return prologue_filler_ready_test_support::resolve_target(
         prologue_filler_ready_test_support::TargetSlot::activity_ready);
 #else
@@ -414,7 +414,7 @@ void arm_prologue_filler_ready() noexcept {
     }
 }
 
-/** Stops Sunrise-owned prologue work while retaining native forwarding. */
+/** Stops Dawn-owned prologue work while retaining native forwarding. */
 void quiesce_prologue_filler_ready() noexcept {
     const std::scoped_lock lock(g_ownerLock);
     PrologueOwnerOperations operations;
@@ -428,7 +428,7 @@ bool uninstall_prologue_filler_ready_checked() noexcept {
     return g_lifecycle.uninstall(operations);
 }
 
-#if defined(SUNRISE_PROLOGUE_FILLER_READY_TESTING)
+#if defined(DAWN_PROLOGUE_FILLER_READY_TESTING)
 namespace prologue_filler_ready_test_support {
 
 std::uint32_t active_calls() noexcept {
@@ -474,4 +474,4 @@ std::int32_t invoke_activity_ready(std::byte* state) noexcept {
 } // namespace prologue_filler_ready_test_support
 #endif
 
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

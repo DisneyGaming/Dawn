@@ -4,7 +4,7 @@
 #include "../../state/activity/defaults/activity_defaults_validation.h"
 #include "parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 
 /**
  * Fills one flag bank from [start, length] runs. A run outside the bank is refused.
@@ -302,4 +302,4 @@ bool Parser::account(state::AccountState& output) noexcept {
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

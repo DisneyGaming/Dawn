@@ -8,7 +8,7 @@
 #include "../../encoding/bit_writer.h"
 #include "../descriptor/join_descriptor.h"
 
-namespace sunrise::middleware::gameplay::peer {
+namespace dawn::middleware::gameplay::peer {
 
 /** The connect messages carry one NetAddr. */
 inline constexpr std::size_t kAddressBlobSize = descriptor::kNetAddrSize;
@@ -94,4 +94,4 @@ struct ConnectEnd {
 /** Reads a connect closed body. @return True when every field was present. */
 [[nodiscard]] bool read_closed(encoding::bits::Reader& reader, ConnectEnd& output) noexcept;
 
-} // namespace sunrise::middleware::gameplay::peer
+} // namespace dawn::middleware::gameplay::peer

@@ -7,7 +7,7 @@
 #include "../../../internal.h"
 #include "../../activity_message/definition.h"
 
-namespace sunrise::server::bap::encrypted::push::activity {
+namespace dawn::server::bap::encrypted::push::activity {
 
 /**
  * Appends the ordered join-result and entity-slot svc9 notifications.
@@ -46,4 +46,4 @@ append_entity_slot_notification(Scratch& scratch,
                                 std::span<std::byte> response,
                                 std::size_t& written) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::push::activity
+} // namespace dawn::server::bap::encrypted::push::activity

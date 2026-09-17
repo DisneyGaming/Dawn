@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-namespace sunrise::client::runtime::host {
+namespace dawn::client::runtime::host {
 
 /** Policy result for process-local game network readiness. */
 enum class NetworkRequirement {
@@ -20,4 +20,4 @@ enum class NetworkRequirement {
 /** @return Network readiness policy for the current process executable. */
 [[nodiscard]] NetworkRequirement current_requirement() noexcept;
 
-} // namespace sunrise::client::runtime::host
+} // namespace dawn::client::runtime::host

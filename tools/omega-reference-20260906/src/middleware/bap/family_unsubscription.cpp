@@ -2,7 +2,7 @@
 
 #include "../encoding/byte_order.h"
 
-namespace sunrise::middleware::bap::family_unsubscription {
+namespace dawn::middleware::bap::family_unsubscription {
 namespace {
 
 /** The opaque producer flag starts the authenticated request body. */
@@ -27,4 +27,4 @@ bool parse(std::span<const std::byte> input, Request& request) noexcept {
     return true;
 }
 
-} // namespace sunrise::middleware::bap::family_unsubscription
+} // namespace dawn::middleware::bap::family_unsubscription

@@ -3,7 +3,7 @@
 #include <array>
 #include <cstddef>
 
-namespace sunrise::core::settings::client::external {
+namespace dawn::core::settings::client::external {
 
 /** An IPv4 dotted quad and its trailing null byte. */
 inline constexpr std::size_t kHostCapacity = 16;
@@ -33,4 +33,4 @@ struct Settings {
     std::array<char, kConfigGuidCapacity> configGuid{"d2legacy-0000-0000-0000-000000000001"};
 };
 
-} // namespace sunrise::core::settings::client::external
+} // namespace dawn::core::settings::client::external

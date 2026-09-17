@@ -7,7 +7,7 @@
 #include "../runtime.h"
 #include "internal.h"
 
-namespace sunrise::state::activity::entity_slots {
+namespace dawn::state::activity::entity_slots {
 namespace {
 
 /**
@@ -96,7 +96,7 @@ bool commit(PendingMutation& mutation) noexcept {
     if (state.stateRevision == kMaximumRevision
         || state.stateRevision != prepared.expectedStateRevision || !record.occupied
         || record.sessionId != prepared.sessionId
-        || sunrise::state::activity::transactions::instance_key(record) != prepared.instanceKey
+        || dawn::state::activity::transactions::instance_key(record) != prepared.instanceKey
         || record.recordRevision != prepared.expectedRecordRevision) {
         ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
         return false;
@@ -165,4 +165,4 @@ bool commit(PendingMutation& mutation) noexcept {
     return true;
 }
 
-} // namespace sunrise::state::activity::entity_slots
+} // namespace dawn::state::activity::entity_slots

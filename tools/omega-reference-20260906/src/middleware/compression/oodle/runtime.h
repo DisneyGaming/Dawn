@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <span>
 
-namespace sunrise::middleware::compression::oodle {
+namespace dawn::middleware::compression::oodle {
 
 /**
  * Asks one installed Oodle module how big the output buffer must be.
@@ -64,4 +64,4 @@ required_capacity(HMODULE module, std::size_t inputSize, std::size_t& capacity) 
 [[nodiscard]] bool
 decompress(HMODULE module, std::span<const std::byte> input, std::span<std::byte> output) noexcept;
 
-} // namespace sunrise::middleware::compression::oodle
+} // namespace dawn::middleware::compression::oodle

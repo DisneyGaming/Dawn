@@ -1,7 +1,7 @@
 #include "../runtime.h"
 #include "../runtime/persistence/publication_transaction.h"
 
-namespace sunrise::state::build_data {
+namespace dawn::state::build_data {
 
 /** @return True when the whole item definition table is in State. */
 bool item_definitions_ready() noexcept {
@@ -37,4 +37,4 @@ bool find_item_definition_index(std::uint16_t definitionIndex,
            && definition.definitionIndex == definitionIndex;
 }
 
-} // namespace sunrise::state::build_data
+} // namespace dawn::state::build_data

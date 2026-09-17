@@ -6,7 +6,7 @@
 #include "../../../../middleware/content/packages/tables/definition_index_table.h"
 #include "internal.h"
 
-namespace sunrise::client::content::items::packages {
+namespace dawn::client::content::items::packages {
 namespace {
 
 std::atomic<bool> g_reported{};
@@ -191,4 +191,4 @@ void report(std::size_t published, const char* reason) noexcept {
     }
 }
 
-} // namespace sunrise::client::content::items::packages
+} // namespace dawn::client::content::items::packages

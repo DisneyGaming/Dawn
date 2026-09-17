@@ -8,7 +8,7 @@
 
 #include "reader.h"
 
-namespace sunrise::middleware::content::packages::reader {
+namespace dawn::middleware::content::packages::reader {
 
 /** Header fields the package readers use. */
 struct Header {
@@ -88,4 +88,4 @@ read_at(const Path& path, std::uint64_t offset, std::span<std::byte> output) noe
                            std::uint64_t offset,
                            std::span<std::byte> output) noexcept;
 
-} // namespace sunrise::middleware::content::packages::reader
+} // namespace dawn::middleware::content::packages::reader

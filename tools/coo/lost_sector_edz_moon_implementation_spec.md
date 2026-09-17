@@ -88,7 +88,7 @@ K1 Revelation `ADE66EB0` has four authored crystal objects and four matching cla
 - controllers 88-91: `ch_crystal_1`, `ch_crystal_2`, `ch_crystal_3`, `ch_crystal_boss`, descriptors `81570108`, `8157010B`, `8157010E`, `81570111`; component/sense/authority classes `80804F3B/80804F3D/80804F40`
 - guardian Wizard sources are 34, 41, and 48; boss Ogre is source/member 64/65; Nightmare generator is 80/81.
 
-All combat sources still activate together. Keep crystals 1-3 protected until their corresponding guardian Wizard dies, then accept destruction of that crystal. After all three crystal destruction receipts, expose the boss crystal. Its destruction removes protection from boss source 64. Do not substitute a proximity trigger for crystal destruction. A proven type-24 authority writer already exists at `Sunrise/src/state/activity/coo/native_atom_authority.h` (`write_channels`, schema `80804F40`, up to four revision/value/blend rows) and is exercised by `strike_pact/authority.h`.
+All combat sources still activate together. Keep crystals 1-3 protected until their corresponding guardian Wizard dies, then accept destruction of that crystal. After all three crystal destruction receipts, expose the boss crystal. Its destruction removes protection from boss source 64. Do not substitute a proximity trigger for crystal destruction. A proven type-24 authority writer already exists at `Dawn/src/state/activity/coo/native_atom_authority.h` (`write_channels`, schema `80804F40`, up to four revision/value/blend rows) and is exercised by `strike_pact/authority.h`.
 
 The exact joins are now recovered in `tools/coo/moon_revelation_crystal_channel_research.md`:
 controller slots 88/89/90/91 target type-4 slots 69/70/71/72 one-to-one. Their declared channel-row

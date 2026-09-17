@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace sunrise::core::ui::memory {
+namespace dawn::core::ui::memory {
 
 /** 8 MiB caps all Dear ImGui context, font, widget, and draw storage. */
 inline constexpr std::size_t kArenaCapacityBytes = 8'388'608;
@@ -32,4 +32,4 @@ struct Stats {
 /** @return One copy of the allocator counters, read under the lock. */
 [[nodiscard]] Stats snapshot() noexcept;
 
-} // namespace sunrise::core::ui::memory
+} // namespace dawn::core::ui::memory

@@ -4,7 +4,7 @@
 #include "runtime.h"
 #include "transactions/internal.h"
 
-namespace sunrise::state::activity {
+namespace dawn::state::activity {
 
 /** Tests whether a nonzero activity-session id is still in the bounded table. */
 bool contains(std::uint64_t sessionId) noexcept {
@@ -128,4 +128,4 @@ ActivityInstanceKey newest_joined_activity() noexcept {
     return selected;
 }
 
-} // namespace sunrise::state::activity
+} // namespace dawn::state::activity

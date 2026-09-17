@@ -8,7 +8,7 @@
 #include "../../../middleware/encoding/bit_writer.h"
 #include "../../../state/gameplay/definition.h"
 
-namespace sunrise::server::gameplay::peer {
+namespace dawn::server::gameplay::peer {
 
 /**
  * Consumes one decrypted transport payload.
@@ -136,4 +136,4 @@ void drop_endpoint(const state::gameplay::Endpoint& endpoint) noexcept;
 /** Drops every peer. */
 void reset() noexcept;
 
-} // namespace sunrise::server::gameplay::peer
+} // namespace dawn::server::gameplay::peer

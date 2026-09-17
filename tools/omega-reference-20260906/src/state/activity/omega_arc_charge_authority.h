@@ -3,7 +3,7 @@
 #include "omega_arc_charge_catalog.h"
 #include "omega_first_mancannon_authority.h"
 
-namespace sunrise::state::activity::omega_arc_charge {
+namespace dawn::state::activity::omega_arc_charge {
 
 struct Authority final {
     std::uint32_t generation{};
@@ -73,4 +73,4 @@ template<class Writer>
                                                   state == Lifecycle::active);
 }
 
-} // namespace sunrise::state::activity::omega_arc_charge
+} // namespace dawn::state::activity::omega_arc_charge

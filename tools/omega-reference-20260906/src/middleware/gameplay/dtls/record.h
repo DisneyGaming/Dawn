@@ -8,7 +8,7 @@
 #include "../../crypto/hmac.h"
 #include "association_keys.h"
 
-namespace sunrise::middleware::gameplay::dtls {
+namespace dawn::middleware::gameplay::dtls {
 
 /** Header, authentication tag and length open every record. */
 inline constexpr std::size_t kRecordPrefixSize = 18;
@@ -81,4 +81,4 @@ struct RecordContext {
                                  std::span<const std::byte> datagram,
                                  crypto::hmac::Algorithm& output) noexcept;
 
-} // namespace sunrise::middleware::gameplay::dtls
+} // namespace dawn::middleware::gameplay::dtls

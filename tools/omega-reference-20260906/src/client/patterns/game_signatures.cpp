@@ -6,7 +6,7 @@
 #include "game/signon/signon_readiness_signature_bytes.h"
 #include "signature_text.h"
 
-namespace sunrise::client::patterns::game {
+namespace dawn::client::patterns::game {
 namespace {
 
 // Matches the selector that distinguishes socket transport from SDR transport.
@@ -83,7 +83,7 @@ constexpr auto kQueuezFamily5Subscribe =
     signature<signature_length(kQueuezFamily5SubscribeText)>(kQueuezFamily5SubscribeText);
 
 // Matches the config-init site that loads the bootstrap content-id token. The token address
-// comes from the wildcarded rip-relative operand, so no token bytes live in Sunrise.
+// comes from the wildcarded rip-relative operand, so no token bytes live in Dawn.
 constexpr std::string_view kContentIdTokenLoadText =
     "0F 10 44 24 ? 41 B8 14 00 00 00 48 8D 15 ? ? ? ? 0F 10 4C 24 ? 48 8D 8C 24 ? ? ? ?";
 /** Compiled pattern bytes of the signature text above. */
@@ -135,4 +135,4 @@ std::span<const patterns::Pattern> definitions() noexcept {
     return kDefinitions;
 }
 
-} // namespace sunrise::client::patterns::game
+} // namespace dawn::client::patterns::game

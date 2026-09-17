@@ -11,7 +11,7 @@
 #include "family0/family0_source_seed.h"
 #include "internal.h"
 
-namespace sunrise::client::hooks::queuez {
+namespace dawn::client::hooks::queuez {
 namespace {
 
 using patterns::resolve_relative;
@@ -173,4 +173,4 @@ bool family0_subscription_installed() noexcept {
     return g_sweepHandle.attached || g_family0Handle.attached;
 }
 
-} // namespace sunrise::client::hooks::queuez
+} // namespace dawn::client::hooks::queuez

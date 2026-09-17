@@ -7,7 +7,7 @@
 #include "../graphics_renderer_report.h"
 #include "../state.h"
 
-namespace sunrise::client::hooks::graphics::renderer::selection {
+namespace dawn::client::hooks::graphics::renderer::selection {
 namespace {
 
 /** A 64-pixel minimum rejects hidden probe windows and short-lived zero-area ones. */
@@ -155,4 +155,4 @@ bool matches_output_window(IDXGISwapChain* swapChain, HWND window) noexcept {
            && candidateWindow == window;
 }
 
-} // namespace sunrise::client::hooks::graphics::renderer::selection
+} // namespace dawn::client::hooks::graphics::renderer::selection

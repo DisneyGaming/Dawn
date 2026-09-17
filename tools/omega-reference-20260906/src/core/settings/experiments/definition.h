@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::core::settings::experiments {
+namespace dawn::core::settings::experiments {
 
 /**
  * Experimental Omega paths. Every switch is deliberately off by default: a missing setting must
@@ -19,10 +19,10 @@ struct Omega final {
     bool gateAuthority{};
     /** Enables experimental portal visuals and region-transition mutation. */
     bool portalMutation{};
-    /** Enables Sunrise's provisional Omega stage policy; its numbers are not retail states. */
+    /** Enables Dawn's provisional Omega stage policy; its numbers are not retail states. */
     bool syntheticStageMachine{};
     /** Enables invasive/high-volume RE hooks which are unsuitable for a trusted baseline run. */
     bool unsafeDiagnostics{};
 };
 
-} // namespace sunrise::core::settings::experiments
+} // namespace dawn::core::settings::experiments

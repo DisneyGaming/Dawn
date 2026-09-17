@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::middleware {
+namespace dawn::middleware {
 
 /** Initializes protocol middleware state. */
 [[nodiscard]] bool initialize() noexcept;
@@ -8,4 +8,4 @@ namespace sunrise::middleware {
 /** Clears protocol middleware state. */
 void shutdown() noexcept;
 
-} // namespace sunrise::middleware
+} // namespace dawn::middleware

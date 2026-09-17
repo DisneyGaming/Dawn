@@ -8,7 +8,7 @@
 #include "network_hook_group.h"
 #include "sensor_state_heap_diagnostic.h"
 
-namespace sunrise::client::hooks::network {
+namespace dawn::client::hooks::network {
 namespace {
 
 /** One second caps the cleanup wait, so we never spin on game-owned work. */
@@ -64,7 +64,7 @@ bool install_game() noexcept {
         const bool investmentRemoved = investment::uninstall();
         const bool contentRemoved = !content_config::has_ownership() || content_config::uninstall();
         bool forcedRollbackFailure{};
-#if defined(SUNRISE_BAP_HOOK_TEST)
+#if defined(DAWN_BAP_HOOK_TEST)
         forcedRollbackFailure = testing::consume_game_rollback_failure();
 #endif
         if (investmentRemoved && contentRemoved && !forcedRollbackFailure) {
@@ -186,4 +186,4 @@ bool is_installed() noexcept {
     return installed;
 }
 
-} // namespace sunrise::client::hooks::network
+} // namespace dawn::client::hooks::network

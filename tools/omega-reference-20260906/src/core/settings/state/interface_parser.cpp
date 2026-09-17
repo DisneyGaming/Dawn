@@ -2,9 +2,9 @@
 
 #include "../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 
-/** Parses HUD and text settings under stable Sunrise-owned names. */
+/** Parses HUD and text settings under stable Dawn-owned names. */
 bool Parser::interface_settings(state::account::settings::Interface& output) noexcept {
     enum class Field : std::size_t {
         subtitlesMode,
@@ -113,4 +113,4 @@ bool Parser::interface_settings(state::account::settings::Interface& output) noe
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

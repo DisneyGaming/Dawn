@@ -3,7 +3,7 @@
 
 #include "codec.h"
 
-namespace sunrise::state::build_data::cache::records {
+namespace dawn::state::build_data::cache::records {
 namespace {
 
 /** Cache padding fields are always written as zero. */
@@ -284,4 +284,4 @@ bool decode(const InventoryBucketRecord& record, inventory::buckets::Descriptor&
     return true;
 }
 
-} // namespace sunrise::state::build_data::cache::records
+} // namespace dawn::state::build_data::cache::records

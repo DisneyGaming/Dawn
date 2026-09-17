@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::state::activity::entity_slots {
+namespace dawn::state::activity::entity_slots {
 
 /** One activity session owns exactly 8,192 simulation entity-slot lease bits. */
 inline constexpr std::size_t kSlotCount = 8'192;
@@ -24,4 +24,4 @@ enum class MutationKind : std::uint8_t {
     release,
 };
 
-} // namespace sunrise::state::activity::entity_slots
+} // namespace dawn::state::activity::entity_slots

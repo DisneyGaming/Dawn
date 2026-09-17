@@ -7,7 +7,7 @@
 #include "../../../hooking/detour.h"
 #include "../internal.h"
 
-namespace sunrise::client::hooks::egress::lifecycle {
+namespace dawn::client::hooks::egress::lifecycle {
 
 /** Stable module order holds the system-library references for the process lifetime. */
 enum class ModuleSlot : std::size_t {
@@ -45,4 +45,4 @@ void release_modules() noexcept;
                                  std::span<bool, kHookCount> resolved,
                                  std::size_t& count) noexcept;
 
-} // namespace sunrise::client::hooks::egress::lifecycle
+} // namespace dawn::client::hooks::egress::lifecycle

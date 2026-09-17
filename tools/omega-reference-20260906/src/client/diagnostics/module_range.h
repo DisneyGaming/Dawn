@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-namespace sunrise::client::diagnostics {
+namespace dawn::client::diagnostics {
 
 /** Half-open address range of one loaded image. */
 struct ModuleRange {
@@ -27,4 +27,4 @@ struct ModuleRange {
  */
 [[nodiscard]] bool contains(const ModuleRange& range, std::uintptr_t address) noexcept;
 
-} // namespace sunrise::client::diagnostics
+} // namespace dawn::client::diagnostics

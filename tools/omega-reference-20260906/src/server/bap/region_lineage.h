@@ -7,7 +7,7 @@
 #include "../../state/activity/membership/activity_membership_query.h"
 #include "../gameplay/gameplay_advertisement.h"
 
-namespace sunrise::server::bap {
+namespace dawn::server::bap {
 
 /** Why one binding may use an exact creator-root activity as its reported-region source. */
 enum class RegionLineageKind : std::uint8_t {
@@ -111,4 +111,4 @@ struct HudRegionAnchor final {
     state::activity::HostRegionKey hostRegion{};
 };
 
-} // namespace sunrise::server::bap
+} // namespace dawn::server::bap

@@ -12,7 +12,7 @@
 #include "graphics_renderer_report.h"
 #include "state.h"
 
-namespace sunrise::client::hooks::graphics::renderer {
+namespace dawn::client::hooks::graphics::renderer {
 namespace {
 
 /** Buffer 0 is the back buffer the overlay render target uses. */
@@ -328,4 +328,4 @@ void present(IDXGISwapChain* swapChain) noexcept {
     (void)input::install_raw_input_window();
 }
 
-} // namespace sunrise::client::hooks::graphics::renderer
+} // namespace dawn::client::hooks::graphics::renderer

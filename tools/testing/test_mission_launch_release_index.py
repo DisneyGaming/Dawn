@@ -9,7 +9,7 @@ from mission_launch_release_index import generate
 
 class LocalReleaseMapTests(unittest.TestCase):
     def setUp(self):
-        root = Path(__file__).resolve().parents[2] / "Sunrise"
+        root = Path(__file__).resolve().parents[2] / "Dawn"
         self.ledger = json.loads((root / "analysis/mission_launch_release_index.json").read_text(encoding="utf8"))
 
     def test_known_coverage_and_no_website_metadata(self):

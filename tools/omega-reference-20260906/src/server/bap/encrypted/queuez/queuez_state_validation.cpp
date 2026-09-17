@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace sunrise::server::bap::encrypted::queuez {
+namespace dawn::server::bap::encrypted::queuez {
 namespace {
 
 /** @return True for every implemented post-change roster phase. */
@@ -85,4 +85,4 @@ bool valid(const SessionState& state) noexcept {
     return state.family4Residents.front().objectSoid == state.family4RootSoid;
 }
 
-} // namespace sunrise::server::bap::encrypted::queuez
+} // namespace dawn::server::bap::encrypted::queuez

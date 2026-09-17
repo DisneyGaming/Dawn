@@ -1,6 +1,6 @@
 #include "parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 namespace {
 
 /** 16 nested containers cap unknown-value checks and parser stack use. */
@@ -92,4 +92,4 @@ void Parser::whitespace() noexcept {
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

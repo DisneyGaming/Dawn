@@ -7,7 +7,7 @@
 
 #include "reader.h"
 
-namespace sunrise::middleware::content::packages::reader::parallel {
+namespace dawn::middleware::content::packages::reader::parallel {
 
 /** Readers one batch may run at once, whatever the machine reports. */
 inline constexpr std::size_t kMaxWorkers = 4;
@@ -71,4 +71,4 @@ struct Held {
 /** Closes every reader's files and frees the batch storage. */
 void release() noexcept;
 
-} // namespace sunrise::middleware::content::packages::reader::parallel
+} // namespace dawn::middleware::content::packages::reader::parallel

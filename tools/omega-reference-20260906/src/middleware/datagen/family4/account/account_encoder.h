@@ -4,7 +4,7 @@
 
 #include "../../../../state/account/account_state.h"
 
-namespace sunrise::middleware::datagen::family4::account {
+namespace dawn::middleware::datagen::family4::account {
 
 /**
  * Encodes a sentinel-correct account object from authored State.
@@ -14,4 +14,4 @@ namespace sunrise::middleware::datagen::family4::account {
  */
 [[nodiscard]] bool encode(const state::AccountState& state, std::span<std::byte> output) noexcept;
 
-} // namespace sunrise::middleware::datagen::family4::account
+} // namespace dawn::middleware::datagen::family4::account

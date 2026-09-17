@@ -5,7 +5,7 @@
 
 #include "../../../../../core/logging/log.h"
 
-namespace sunrise::server::bap::encrypted::push::queuez_report {
+namespace dawn::server::bap::encrypted::push::queuez_report {
 namespace {
 
 /** Widest push report, sized for every field below. */
@@ -71,4 +71,4 @@ void subscription_state(const char* step) noexcept {
     report_step("unrecorded", step);
 }
 
-} // namespace sunrise::server::bap::encrypted::push::queuez_report
+} // namespace dawn::server::bap::encrypted::push::queuez_report

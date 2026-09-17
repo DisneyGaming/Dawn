@@ -3,7 +3,7 @@
 
 #include "replicate_membership.h"
 
-namespace sunrise::middleware::bap::activity_message::replicate_membership {
+namespace dawn::middleware::bap::activity_message::replicate_membership {
 namespace {
 
 /** 8 elements, low byte first, encode a member or host key. */
@@ -207,4 +207,4 @@ bool write_member_table(encoding::bits::Writer& writer,
     return encoded && writer.bit_count() + 1 == region_block_start_bit(snapshot);
 }
 
-} // namespace sunrise::middleware::bap::activity_message::replicate_membership
+} // namespace dawn::middleware::bap::activity_message::replicate_membership

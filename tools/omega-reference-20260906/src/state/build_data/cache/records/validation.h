@@ -2,7 +2,7 @@
 
 #include "domains.h"
 
-namespace sunrise::state::build_data::cache::records {
+namespace dawn::state::build_data::cache::records {
 
 /**
  * Sorts the filled rows into the only accepted disk order.
@@ -51,4 +51,4 @@ valid_collectible_links(std::span<const collectibles::Definition> collectibleDef
 /** @param domains Complete sorted domains. @return True when every domain passes its checks. */
 [[nodiscard]] bool valid_domains(Domains domains) noexcept;
 
-} // namespace sunrise::state::build_data::cache::records
+} // namespace dawn::state::build_data::cache::records

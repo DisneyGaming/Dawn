@@ -5,7 +5,7 @@
 #include <limits>
 #include <span>
 
-namespace sunrise::middleware::web_service {
+namespace dawn::middleware::web_service {
 
 /** The 6-byte Web Service header holds a big-endian opcode and transaction id. */
 inline constexpr std::size_t kEnvelopeHeaderSize = sizeof(std::uint16_t) + sizeof(std::uint32_t);
@@ -59,4 +59,4 @@ struct StatusResponse {
                                    std::span<std::byte> output,
                                    std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::web_service
+} // namespace dawn::middleware::web_service

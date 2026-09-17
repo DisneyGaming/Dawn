@@ -11,7 +11,7 @@
 
 #include "../../../../core/logging/log.h"
 
-namespace sunrise::client::hooks::queuez::family0 {
+namespace dawn::client::hooks::queuez::family0 {
 namespace {
 
 /** Fields of the queuez manager this hook reads. */
@@ -215,4 +215,4 @@ void reset() noexcept {
     g_hasLastHead = false;
 }
 
-} // namespace sunrise::client::hooks::queuez::family0
+} // namespace dawn::client::hooks::queuez::family0

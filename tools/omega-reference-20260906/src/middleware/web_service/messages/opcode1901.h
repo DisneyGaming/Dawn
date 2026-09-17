@@ -6,7 +6,7 @@
 
 #include "../web_service_envelope.h"
 
-namespace sunrise::middleware::web_service::messages::opcode1901 {
+namespace dawn::middleware::web_service::messages::opcode1901 {
 
 /** Web Service opcode used by the equipped-item shader application action. */
 inline constexpr std::uint16_t kOpcode = 1901;
@@ -68,4 +68,4 @@ struct Request {
  */
 [[nodiscard]] bool parse_request(const Message& message, Request& request) noexcept;
 
-} // namespace sunrise::middleware::web_service::messages::opcode1901
+} // namespace dawn::middleware::web_service::messages::opcode1901

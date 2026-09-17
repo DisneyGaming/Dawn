@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <span>
 
-namespace sunrise::middleware::crypto::sha256 {
+namespace dawn::middleware::crypto::sha256 {
 
 /** SHA-256 produces 32 bytes. */
 inline constexpr std::size_t kDigestSize = 32;
@@ -32,4 +32,4 @@ using Digest = std::array<std::byte, kDigestSize>;
                              std::span<const std::byte> second,
                              Digest& output) noexcept;
 
-} // namespace sunrise::middleware::crypto::sha256
+} // namespace dawn::middleware::crypto::sha256

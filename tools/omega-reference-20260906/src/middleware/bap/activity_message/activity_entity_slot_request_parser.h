@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::bap::activity_message::entity_slot_request {
+namespace dawn::middleware::bap::activity_message::entity_slot_request {
 
 /** Activity message type 20 carries the fixed entity-slot request payload. */
 inline constexpr std::uint32_t kMessageType = 20;
@@ -20,4 +20,4 @@ inline constexpr std::size_t kEncodedSize = sizeof(std::uint32_t);
 [[nodiscard]] bool parse_entity_slot_request(std::span<const std::byte> input,
                                              std::int32_t& value) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_message::entity_slot_request
+} // namespace dawn::middleware::bap::activity_message::entity_slot_request

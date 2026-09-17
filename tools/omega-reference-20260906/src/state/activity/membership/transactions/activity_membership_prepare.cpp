@@ -7,7 +7,7 @@
 #include "../activity_membership_query.h"
 #include "internal.h"
 
-namespace sunrise::state::activity::membership {
+namespace dawn::state::activity::membership {
 
 /** Prepares one exact identity for a joined activity session. */
 bool prepare_identity(ActivityInstanceKey key,
@@ -203,4 +203,4 @@ bool prepare_acknowledgement(ActivityInstanceKey key,
     return true;
 }
 
-} // namespace sunrise::state::activity::membership
+} // namespace dawn::state::activity::membership

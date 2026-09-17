@@ -9,7 +9,7 @@
 
 #include "../../../core/logging/log.h"
 
-namespace sunrise::steam::runtime::callbacks {
+namespace dawn::steam::runtime::callbacks {
 namespace {
 
 /** In Steam's callback base, the flags follow the vtable pointer. */
@@ -145,9 +145,9 @@ int callback_id(void* callback) noexcept {
     return callbackId;
 }
 
-} // namespace sunrise::steam::runtime::callbacks
+} // namespace dawn::steam::runtime::callbacks
 
-namespace sunrise::steam {
+namespace dawn::steam {
 
 /** Registers one Steam-owned callback object for a callback id. */
 void register_callback(void* callback, int callbackId) noexcept {
@@ -261,4 +261,4 @@ void clear() noexcept {
 }
 
 } // namespace runtime::callbacks
-} // namespace sunrise::steam
+} // namespace dawn::steam

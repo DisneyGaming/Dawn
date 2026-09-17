@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <span>
 
-namespace sunrise::middleware::bap::activity_host_manager {
+namespace dawn::middleware::bap::activity_host_manager {
 
 /** Checked service-6 request fields, borrowed from the caller's body. */
 struct Request final {
@@ -11,4 +11,4 @@ struct Request final {
     std::span<const std::byte> protobuf{};
 };
 
-} // namespace sunrise::middleware::bap::activity_host_manager
+} // namespace dawn::middleware::bap::activity_host_manager

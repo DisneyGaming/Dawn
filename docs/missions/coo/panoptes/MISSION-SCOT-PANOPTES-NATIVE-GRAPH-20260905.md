@@ -87,7 +87,7 @@ The previous DLL was `D874D6B54601536F054D925ACD55B417CC39464EE471E212DD18E7C103
 
 ## Logs to inspect after testing
 
-Read `C:/Destiny 2 Development/Sunrise/logs/sunrise.log` for these receipts:
+Read `C:/Destiny 2 Development/Dawn/logs/dawn.log` for these receipts:
 
 - `stage=install ... revision=9 ... animation=native_member_graph`
 - `stage=character_bound`

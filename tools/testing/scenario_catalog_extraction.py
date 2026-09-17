@@ -28,10 +28,10 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
-    cache = (ROOT / 'Sunrise/cache/build_data.bin').read_bytes()
+    cache = (ROOT / 'Dawn/cache/build_data.bin').read_bytes()
     version = struct.unpack_from('<I', cache, 8)[0]
     # These versions differ in extraction identity, not record layout.
-    if cache[:8] != b'SUNRISEB' or version not in (54, 55, 56):
+    if cache[:8] != b'DAWNDATA' or version not in (54, 55, 56):
         raise ValueError('Review the cache layout before reading a new version')
     counts = struct.unpack_from('<23I', cache, 92)
     if 201 + sum(c * s for c, s in zip(counts, SIZES)) != len(cache):
@@ -114,7 +114,7 @@ def main():
         report['preserved_core_rosters'] = scenario_count
         isolated = bytearray(cache[:offset] + produced[8:] + cache[old_end:])
         current_version = int(re.search(r'kCacheFormatVersion\s*=\s*(\d+)',
-            (ROOT/'Sunrise/src/state/build_data/cache/records/version.h').read_text())[1])
+            (ROOT/'Dawn/src/state/build_data/cache/records/version.h').read_text())[1])
         struct.pack_into('<I', isolated, 8, current_version)
         struct.pack_into('<I', isolated, 92+14*4, group_count)
         # It is not a deployable cache. Deliberately remove both producer identities.

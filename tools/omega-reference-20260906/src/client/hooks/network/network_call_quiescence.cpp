@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace sunrise::client::hooks::network::quiescence {
+namespace dawn::client::hooks::network::quiescence {
 namespace {
 
 /** 10 ms slices close the wake race before the decrement, without busy polling. */
@@ -35,7 +35,7 @@ bool wait_for_idle(volatile LONG& counter, DWORD timeoutMilliseconds) noexcept {
     return true;
 }
 
-#if defined(SUNRISE_BAP_HOOK_TEST)
+#if defined(DAWN_BAP_HOOK_TEST)
 /** @param gate Gate armed before the next call is counted in. */
 void arm(PauseGate& gate) noexcept {
     (void)InterlockedExchange(&gate.entered, 0);
@@ -75,4 +75,4 @@ bool held(const PauseGate& gate) noexcept {
 }
 #endif
 
-} // namespace sunrise::client::hooks::network::quiescence
+} // namespace dawn::client::hooks::network::quiescence

@@ -7,7 +7,7 @@
 #include "queuez_push_reporting.h"
 #include "queuez_update_frame.h"
 
-namespace sunrise::server::bap::encrypted::push {
+namespace dawn::server::bap::encrypted::push {
 
 /**
  * Appends the opcode-504 Family-4 move as one increment above the peer's current version.
@@ -297,4 +297,4 @@ bool append_item_dismantle_notification(Scratch& scratch,
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted::push
+} // namespace dawn::server::bap::encrypted::push

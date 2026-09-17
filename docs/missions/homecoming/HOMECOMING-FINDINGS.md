@@ -1,7 +1,7 @@
 # Homecoming Reimplementation — Complete Findings
 
 All findings from reverse-engineering Destiny 2's **Homecoming** (Red War opening) mission for
-offline revival under Sunrise. Written 2026-08-17. Reimplementing collaborator **George
+offline revival under Dawn. Written 2026-08-17. Reimplementing collaborator **George
 Ratington's** pipeline (`Wow.pdf`) from scratch, module by module, measured at each step.
 
 > **Direction as of this doc:** we are building our **own server-side** authored activity-selection
@@ -24,17 +24,17 @@ world loads (as `mission_towerfall`) but every manager stays local mode 6.
 ## 2. Build & test loop
 
 ```
-powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\sunrise-dev.ps1" -Config Release
+powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\dawn-dev.ps1" -Config Release
 ```
 - `-BuildOnly` compiles without deploying (game can stay open). Deploy requires the game closed.
 - `-Restore` rolls the DLL back to the last backup (use if a change won't boot).
-- Deploy overwrites `bin\x64\steam_api64.dll` (Sunrise is a `steam_api64` proxy; the real Steam DLL
-  is at `.sunrise\original\steam_api64.dll` — never overwrite it).
-- **Always confirm deploy:** `md5sum bin/x64/steam_api64.dll Sunrise-src/build/x64/Release/steam_api64.dll`
+- Deploy overwrites `bin\x64\steam_api64.dll` (Dawn is a `steam_api64` proxy; the real Steam DLL
+  is at `.dawn\original\steam_api64.dll` — never overwrite it).
+- **Always confirm deploy:** `md5sum bin/x64/steam_api64.dll Dawn-src/build/x64/Release/steam_api64.dll`
   must match; if the game was open the copy silently fails and you run the old DLL.
-- Repo: `C:\Destiny 2 Development\Sunrise-src`, branch **`spawner`** @ `6aae441`.
+- Repo: `C:\Destiny 2 Development\Dawn-src`, branch **`spawner`** @ `6aae441`.
   **George's Homecoming code is NOT in any branch** — we rebuild it.
-- Log: `bin\x64\Sunrise\logs\sunrise.log`. Retail log piped in as `ev=retail`. Probes emit `ev=…`.
+- Log: `bin\x64\Dawn\logs\dawn.log`. Retail log piped in as `ev=retail`. Probes emit `ev=…`.
 
 ---
 
@@ -370,7 +370,7 @@ no amount of correct descriptor content delivered that way can move the route.
 route byte at `+0x12` nonzero for authored, source at `+0x08`, dest at `+0x0C`.
 
 **Next action:** fill the root holder. Two routes, both needing the ~0x80-byte selection block:
-(a) call `FUN_7FF6197CB8F0` from Sunrise with a synthesized block — it is an ordinary function and
+(a) call `FUN_7FF6197CB8F0` from Dawn with a synthesized block — it is an ordinary function and
 publishes into exactly `ctx(0) + 0x18DD0`; or (b) call the holder's vtable `+0xB8` setter directly.
 Route (a) is preferred: it drives the game's own genuine publish path with complete data, which is
 what George said was required, rather than forcing a bit as in the §6.1 dead-end.
@@ -378,7 +378,7 @@ what George said was required, rather than forcing a bit as in the §6.1 dead-en
 ### 8c. MESSAGE-1 IS NOT THE ROUTE LEVER — falsified by direct experiment (2026-08-17)
 
 The §4/§6.2 premise that "the route is driven by the message-1 global activity-state selection push"
-is **experimentally false**. Sunrise now synthesizes a complete, structurally valid 620-bit authored
+is **experimentally false**. Dawn now synthesizes a complete, structurally valid 620-bit authored
 descriptor (source=282 dest=266, name `mission_towerfall`, real SOID, host-assigned nonce, all
 unknown fields reproduced from measured captures) and ships it in **every** periodic message-1 push
 via the existing `replay_descriptor` path.
@@ -412,7 +412,7 @@ content — the payload problem is solved (§8a) and delivery is proven; only th
 
 ### 8a. §5b WALL BROKEN — the authored 620-bit descriptor IS produced offline (2026-08-17, MEASURED)
 
-**The core premise of §5b is FALSE.** Instrumenting Sunrise's svc-6 parse (`ev=bap svc=6
+**The core premise of §5b is FALSE.** Instrumenting Dawn's svc-6 parse (`ev=bap svc=6
 stage=descbits`, in `activity_host_manager_route.cpp::report_descriptor_bits`) captured the client
 encoding a **complete 620-bit authored descriptor offline**, for `cine_farm_376` (activity 277):
 
@@ -443,8 +443,8 @@ could only hypothesise (and correctly flagged as not established by arithmetic a
 
 **Scalar #2 identified by the game's own retail log** (`ev=retail site=139`):
 `world_controller:state:activity_setup: snapshot, fireteam nonce=B52F3A23-0D4D8895, activity
-nonce=B52F3A23-0D4D8895`. It is minted **client-side at activity setup**, not by Sunrise — but that
-is not a blocker, because the client mints it **for our own live session** and Sunrise receives it on
+nonce=B52F3A23-0D4D8895`. It is minted **client-side at activity setup**, not by Dawn — but that
+is not a blocker, because the client mints it **for our own live session** and Dawn receives it on
 the wire. We do not need to forge it; we capture it.
 
 **What remains is the KNOWN timing/lever problem, not a data problem.** Same run: identity-1 manager
@@ -488,7 +488,7 @@ does not yet exist. Replaying a cached descriptor therefore necessarily means us
 from load N-1. Whether the client accepts a stale/foreign activity nonce is UNTESTED and is now the
 pivotal open question. Note the client sends its self-minted nonce to the host in the activity-host
 startup request (`ev=retail site=151 … (nonce: …)`), which suggests the nonce is normally
-**host-assigned** — Sunrise *is* the activity host, so having Sunrise assign it in the message-1 push
+**host-assigned** — Dawn *is* the activity host, so having Dawn assign it in the message-1 push
 (rather than replaying a stale one) is the architecturally correct variant to try.
 
 ### 8b. WIRE-CODEC HUNT — verified results (2026-08-17, Ghidra headless campaign)
@@ -498,11 +498,11 @@ startup request (`ev=retail site=151 … (nonce: …)`), which suggests the nonc
    `read_bits(stream,n)->uint` @ `0x7FF6183C13B0` (RVA 0x3513B0), `read_wide(stream,dst,n)` @
    `0x7FF6183C1070`, `read_bool(stream)` @ `0x7FF6183C0EF0`, `stream_status` @ `0x7FF6183BE9B0`.
    MSB-first, 64-bit accumulator at `+0x28`, bit cursor `+0x24`, byte ptr `+0x38` — semantics match
-   Sunrise's `encoding::bits::Reader` exactly.
+   Dawn's `encoding::bits::Reader` exactly.
 2. **The parser field model is CORRECT — it reproduces the minimal size exactly.** Modelling
    `activity_manager_descriptor_parser.cpp` field-by-field gives a fixed/presence skeleton of
    **52 bits**; with only the package name present the total is **372 bits exactly**, independently
-   corroborated by Sunrise's own comment ("the common form is 372"). The field model is therefore
+   corroborated by Dawn's own comment ("the common form is 372"). The field model is therefore
    trustworthy ground truth.
 3. **The descriptor codec is NOT hand-written with immediate widths.** Across the whole image:
    435 `read_bits` call sites, of which width 12 appears only **twice** and no site anywhere has the
@@ -525,10 +525,10 @@ finding the schema/width table in .rdata rather than signature-scanning code), a
 two 64-bit "sensitive scalars" remains unresolved. Earlier campaign (§8 above) established the
 related ingest-path identity values are deterministic build/capability data with **no nonce
 primitive anywhere in that cluster** (no rdtsc/RNG/crypto), which weakens but does not disprove the
-"runtime nonce" label the Sunrise author assigned by guess from a skip-parser.
+"runtime nonce" label the Dawn author assigned by guess from a skip-parser.
 
 ### Historical plan (now closed — kept for context)
-The route is driven by the **message-1 global activity-state selection push**, not service 6. Sunrise
+The route is driven by the **message-1 global activity-state selection push**, not service 6. Dawn
 server code:
 - `server/bap/encrypted/push/activity/` — the roster / global-state pushes (message 1 territory).
 - `server/bap/encrypted/activity_host_manager/activity_host_manager_route.cpp` — service 6 (echoes
@@ -549,7 +549,7 @@ require deriving the authored descriptor body, which is the hardest open problem
 
 ## 9. Authored content — CONFIRMED READABLE
 
-Sunrise reads any tag via `middleware/content/packages/reader.h :: read_tag`. Setup (from
+Dawn reads any tag via `middleware/content/packages/reader.h :: read_tag`. Setup (from
 `client/content/entity_names/entity_name_cache.cpp`): `packages::package_directory(buf)` +
 `packages::collect_keys(keys)` + heap `reader::Scratch` + `reader::Source{ wstring_view(dir), &keys }`.
 All 7 Homecoming tags present locally and decoded:
@@ -565,7 +565,7 @@ These are DEFINITION inputs, not the runtime 0x1B0 descriptor.
 
 ---
 
-## 10. Probes built (Sunrise-src/Sunrise/src/client/hooks/)
+## 10. Probes built (Dawn-src/Dawn/src/client/hooks/)
 
 All forward calls unchanged (diagnostic), except `authored_force` (disabled) and the svc-6 authroute
 rewrite (inert). Grep stages in the log:

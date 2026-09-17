@@ -4,7 +4,7 @@
 
 #include "../table.h"
 
-namespace sunrise::state::build_data::hash_names {
+namespace dawn::state::build_data::hash_names {
 namespace {
 
 Lock g_lock;
@@ -85,4 +85,4 @@ std::size_t count() noexcept {
     return g_names.count();
 }
 
-} // namespace sunrise::state::build_data::hash_names
+} // namespace dawn::state::build_data::hash_names

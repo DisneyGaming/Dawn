@@ -5,7 +5,7 @@
 #include "../bubble_authority/bubble_authority_replacements.h"
 #include "../coordinator/network_call_coordinator.h"
 
-namespace sunrise::client::hooks::network::lifecycle {
+namespace dawn::client::hooks::network::lifecycle {
 namespace {
 
 /** @return The game replacement bodies, in hook-slot order. */
@@ -78,4 +78,4 @@ PlatformProtectedEntries platform_protected_entries() noexcept {
     return entries;
 }
 
-} // namespace sunrise::client::hooks::network::lifecycle
+} // namespace dawn::client::hooks::network::lifecycle

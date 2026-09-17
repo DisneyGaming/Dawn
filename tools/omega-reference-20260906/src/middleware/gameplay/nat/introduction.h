@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <span>
 
-namespace sunrise::middleware::gameplay::nat {
+namespace dawn::middleware::gameplay::nat {
 
 /** One introduction is 29 bytes. A datagram of any other size is not one. */
 inline constexpr std::size_t kIntroductionSize = 29;
@@ -17,4 +17,4 @@ inline constexpr std::size_t kIntroductionSize = 29;
  */
 [[nodiscard]] bool make_introduction_reply(std::span<std::byte> datagram) noexcept;
 
-} // namespace sunrise::middleware::gameplay::nat
+} // namespace dawn::middleware::gameplay::nat

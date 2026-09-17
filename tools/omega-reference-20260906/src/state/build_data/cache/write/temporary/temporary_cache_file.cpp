@@ -10,7 +10,7 @@
 #include "../../records/format.h"
 #include "../cache_payload_writer.h"
 
-namespace sunrise::state::build_data::cache::temporary {
+namespace dawn::state::build_data::cache::temporary {
 namespace {
 
 /** One dot separates the writer id parts from the final cache name. */
@@ -171,4 +171,4 @@ bool write(const wchar_t* finalPath,
     return false;
 }
 
-} // namespace sunrise::state::build_data::cache::temporary
+} // namespace dawn::state::build_data::cache::temporary

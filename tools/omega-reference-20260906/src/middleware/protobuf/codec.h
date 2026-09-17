@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::protobuf {
+namespace dawn::middleware::protobuf {
 
 /** Supported primitive protobuf wire types; group encodings are rejected. */
 enum class WireType : std::uint8_t {
@@ -102,4 +102,4 @@ private:
     std::size_t size_{};
 };
 
-} // namespace sunrise::middleware::protobuf
+} // namespace dawn::middleware::protobuf

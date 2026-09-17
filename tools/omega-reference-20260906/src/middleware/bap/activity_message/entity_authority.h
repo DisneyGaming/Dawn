@@ -6,7 +6,7 @@
 
 #include "entity_slots.h"
 
-namespace sunrise::middleware::bap::activity_message::entity_authority {
+namespace dawn::middleware::bap::activity_message::entity_authority {
 
 /** The Client abandons slots for bubbles it has left. */
 inline constexpr std::uint32_t kAbandonMessageType = 26;
@@ -92,4 +92,4 @@ struct QueryAnswer {
                                       std::span<const std::byte> payload,
                                       QueryAnswer& answer) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_message::entity_authority
+} // namespace dawn::middleware::bap::activity_message::entity_authority

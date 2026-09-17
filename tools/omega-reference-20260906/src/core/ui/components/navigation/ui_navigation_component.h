@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::core::ui::components::navigation {
+namespace dawn::core::ui::components::navigation {
 
 /** Where the label sits, for list and compact navigation surfaces. */
 enum class LabelAlignment {
@@ -25,4 +25,4 @@ enum class LabelAlignment {
                        float height = 0.0F,
                        LabelAlignment alignment = LabelAlignment::leading) noexcept;
 
-} // namespace sunrise::core::ui::components::navigation
+} // namespace dawn::core::ui::components::navigation

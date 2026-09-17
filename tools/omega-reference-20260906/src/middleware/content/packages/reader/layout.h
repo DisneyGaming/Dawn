@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace sunrise::middleware::content::packages::reader::layout {
+namespace dawn::middleware::content::packages::reader::layout {
 
 /** Only header version 38 is supported. */
 inline constexpr std::uint16_t kSupportedVersion = 38;
@@ -93,4 +93,4 @@ static_assert(std::is_trivially_copyable_v<BlockRecord>);
     };
 }
 
-} // namespace sunrise::middleware::content::packages::reader::layout
+} // namespace dawn::middleware::content::packages::reader::layout

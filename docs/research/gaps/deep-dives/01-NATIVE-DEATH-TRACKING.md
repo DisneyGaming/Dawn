@@ -22,4 +22,4 @@ Identity is rechecked around native health reads. Readable memory alone is insuf
 
 Progress can depend on the deaths of the population actually admitted. Time, proximity, and generic counters cannot replace the identity match. This does not resolve every Sense field or implement authoritative server combat.
 
-Implementation landmarks beneath Sunrise/src/: state/activity/coo/population_service.h; client/hooks/bootflow/omega_mission_health.inl. Current bodies were inspected for this note. No new runtime test was performed.
+Implementation landmarks beneath Dawn/src/: state/activity/coo/population_service.h; client/hooks/bootflow/omega_mission_health.inl. Current bodies were inspected for this note. No new runtime test was performed.

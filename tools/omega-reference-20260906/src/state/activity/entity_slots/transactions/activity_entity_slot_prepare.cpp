@@ -8,7 +8,7 @@
 #include "../runtime.h"
 #include "internal.h"
 
-namespace sunrise::state::activity::entity_slots {
+namespace dawn::state::activity::entity_slots {
 namespace {
 
 /**
@@ -158,4 +158,4 @@ bool prepare_release(ActivityInstanceKey key,
     return true;
 }
 
-} // namespace sunrise::state::activity::entity_slots
+} // namespace dawn::state::activity::entity_slots

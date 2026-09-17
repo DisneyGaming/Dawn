@@ -1,6 +1,6 @@
 #include "internal.h"
 
-namespace sunrise::steam::interfaces::tables {
+namespace dawn::steam::interfaces::tables {
 namespace {
 
 /** SteamMatchMaking009 has 37 vtable slots. */
@@ -177,4 +177,4 @@ void* http() noexcept {
     return &g_http;
 }
 
-} // namespace sunrise::steam::interfaces::tables
+} // namespace dawn::steam::interfaces::tables

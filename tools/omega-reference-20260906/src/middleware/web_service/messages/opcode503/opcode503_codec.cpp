@@ -6,7 +6,7 @@
 #include "../family5/family5_codec.h"
 #include "../opcode503.h"
 
-namespace sunrise::middleware::web_service::messages::opcode503 {
+namespace dawn::middleware::web_service::messages::opcode503 {
 namespace {
 
 /** Request field 0 is one byte before the account key. */
@@ -78,4 +78,4 @@ bool encode_response(const Message& message,
     return true;
 }
 
-} // namespace sunrise::middleware::web_service::messages::opcode503
+} // namespace dawn::middleware::web_service::messages::opcode503

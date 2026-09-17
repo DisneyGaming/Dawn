@@ -2,7 +2,7 @@
 
 #include <climits>
 
-namespace sunrise::middleware::protobuf {
+namespace dawn::middleware::protobuf {
 namespace {
 
 /** Protobuf field keys reserve 3 low bits for the wire type. */
@@ -129,4 +129,4 @@ std::size_t write_raw_varint(std::uint64_t value, std::span<std::byte> output) n
     return written;
 }
 
-} // namespace sunrise::middleware::protobuf
+} // namespace dawn::middleware::protobuf

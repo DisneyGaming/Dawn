@@ -6,7 +6,7 @@
 
 #include "../../../state/activity/lifecycle_generation.h"
 
-namespace sunrise::server::gameplay::group {
+namespace dawn::server::gameplay::group {
 
 /** Region of a caller that knows none. Such a call keeps the region already on the row. */
 inline constexpr std::int32_t kUnknownRegion = -1;
@@ -111,4 +111,4 @@ void finish_host_session_source_retirement(
 /** Returns every held host session to State and clears the table. */
 void reset_host_sessions() noexcept;
 
-} // namespace sunrise::server::gameplay::group
+} // namespace dawn::server::gameplay::group

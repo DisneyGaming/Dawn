@@ -10,7 +10,7 @@
 #include "../internal.h"
 #include "../runtime.h"
 
-namespace sunrise::steam {
+namespace dawn::steam {
 namespace {
 
 /** One stable Steam user handle names the local user. */
@@ -115,13 +115,13 @@ void* find_or_create_user_interface(UserHandle user, const char* version) noexce
     return user == kUserHandle ? interfaces::find_user(version) : nullptr;
 }
 
-} // namespace sunrise::steam
+} // namespace dawn::steam
 
-namespace sunrise::steam::context {
+namespace dawn::steam::context {
 
 /** Invalidates every caller-owned Steam context table. */
 void advance_generation() noexcept {
     g_contextGeneration.fetch_add(1, std::memory_order_acq_rel);
 }
 
-} // namespace sunrise::steam::context
+} // namespace dawn::steam::context

@@ -8,7 +8,7 @@
 #include "../../../../state/build_data/runtime.h"
 #include "subclass_socket_selection.h"
 
-namespace sunrise::middleware::datagen::family4::loadout {
+namespace dawn::middleware::datagen::family4::loadout {
 namespace {
 
 namespace authored_inventory = state::account::inventory;
@@ -183,4 +183,4 @@ bool resolve_item(const authored_inventory::Item& authored,
     return true;
 }
 
-} // namespace sunrise::middleware::datagen::family4::loadout
+} // namespace dawn::middleware::datagen::family4::loadout

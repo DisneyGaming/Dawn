@@ -7,7 +7,7 @@
 #include "../../scaling/dpi/ui_dpi_scaling.h"
 #include "../drawing/drawing.h"
 
-namespace sunrise::core::ui::components::navigation {
+namespace dawn::core::ui::components::navigation {
 namespace {
 
 /** 34 authored pixels give a tab one clear pointer target. */
@@ -16,7 +16,7 @@ constexpr float kDefaultHeight = 34.0F;
 constexpr float kMinimumWidth = 1.0F;
 /** 16 authored pixels keep the rail positive between its end insets. */
 constexpr float kMinimumHeight = 16.0F;
-/** 7 authored pixels match the smaller rounded Sunrise controls. */
+/** 7 authored pixels match the smaller rounded Dawn controls. */
 constexpr float kCornerRadius = 7.0F;
 /** 10 authored pixels separate the tab label from its selection rail. */
 constexpr float kLabelInset = 10.0F;
@@ -118,4 +118,4 @@ bool tab(const char* label,
     return pressed;
 }
 
-} // namespace sunrise::core::ui::components::navigation
+} // namespace dawn::core::ui::components::navigation

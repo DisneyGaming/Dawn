@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::middleware::gameplay::group {
+namespace dawn::middleware::gameplay::group {
 
 /** Registry index of every group-session parameter. The names are the binary's own strings. */
 enum class Parameter : std::uint8_t {
@@ -49,4 +49,4 @@ enum class Parameter : std::uint8_t {
  */
 const char* parameter_names(std::uint64_t mask, char* output, std::size_t capacity) noexcept;
 
-} // namespace sunrise::middleware::gameplay::group
+} // namespace dawn::middleware::gameplay::group

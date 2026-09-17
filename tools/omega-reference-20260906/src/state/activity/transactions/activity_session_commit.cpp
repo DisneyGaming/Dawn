@@ -3,7 +3,7 @@
 #include "../runtime.h"
 #include "internal.h"
 
-namespace sunrise::state::activity {
+namespace dawn::state::activity {
 
 /** Commits one prepared activity-session allocation when its revisions still match. */
 bool commit(PendingAllocation& allocation) noexcept {
@@ -55,4 +55,4 @@ bool commit(PendingAllocation& allocation) noexcept {
     return true;
 }
 
-} // namespace sunrise::state::activity
+} // namespace dawn::state::activity

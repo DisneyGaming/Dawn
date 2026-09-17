@@ -6,7 +6,7 @@
 #include "../../internal.h"
 #include "../../policy/policy.h"
 
-namespace sunrise::client::hooks::egress::winsock::control {
+namespace dawn::client::hooks::egress::winsock::control {
 namespace {
 
 /**
@@ -55,4 +55,4 @@ int WSAAPI socket_control(SOCKET socket,
                 completion);
 }
 
-} // namespace sunrise::client::hooks::egress::winsock::control
+} // namespace dawn::client::hooks::egress::winsock::control

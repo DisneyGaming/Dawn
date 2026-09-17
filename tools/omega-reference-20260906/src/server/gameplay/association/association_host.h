@@ -6,7 +6,7 @@
 
 #include "../../../state/gameplay/definition.h"
 
-namespace sunrise::server::gameplay::association {
+namespace dawn::server::gameplay::association {
 
 /**
  * Routes one received datagram by its outer marker.
@@ -37,4 +37,4 @@ void expire(std::uint64_t now) noexcept;
 /** Drops every association and clears its key material. */
 void reset() noexcept;
 
-} // namespace sunrise::server::gameplay::association
+} // namespace dawn::server::gameplay::association

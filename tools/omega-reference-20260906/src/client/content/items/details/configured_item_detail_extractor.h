@@ -7,7 +7,7 @@
 #include "../../../../state/build_data/items/details/definition.h"
 #include "../../investment/source.h"
 
-namespace sunrise::client::content::items::details {
+namespace dawn::client::content::items::details {
 
 /**
  * Extracts full native details for configured definition indices.
@@ -24,4 +24,4 @@ namespace sunrise::client::content::items::details {
                            std::span<state::build_data::items::details::Definition> output,
                            std::size_t& count) noexcept;
 
-} // namespace sunrise::client::content::items::details
+} // namespace dawn::client::content::items::details

@@ -19,7 +19,7 @@
 #include "../../../state/activity/omega_arc_charge_authority.h"
 #include "../../../state/activity/omega_crown_eye_status.h"
 
-namespace sunrise::middleware::bap::activity_message::sensor_auth_update {
+namespace dawn::middleware::bap::activity_message::sensor_auth_update {
 namespace {
 
 namespace bits = encoding::bits;
@@ -1153,4 +1153,4 @@ bool write_auth_body(bits::Writer& writer,
     return encoded && writer.bit_count() == start + expected;
 }
 
-} // namespace sunrise::middleware::bap::activity_message::sensor_auth_update
+} // namespace dawn::middleware::bap::activity_message::sensor_auth_update

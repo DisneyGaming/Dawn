@@ -2,7 +2,7 @@
 
 #include <imgui.h>
 
-namespace sunrise::core::ui::components::card {
+namespace dawn::core::ui::components::card {
 
 /** Stack scope that always balances a successfully started Dear ImGui card child. */
 class [[nodiscard]] Scope final {
@@ -30,4 +30,4 @@ private:
     bool visible_{};
 };
 
-} // namespace sunrise::core::ui::components::card
+} // namespace dawn::core::ui::components::card

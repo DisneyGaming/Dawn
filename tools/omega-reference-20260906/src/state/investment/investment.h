@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::state {
+namespace dawn::state {
 
 /** Fixed runtime capacity for safe account unlock overrides. */
 inline constexpr std::size_t kUnlockOverrideCapacity = 100;
@@ -36,4 +36,4 @@ struct InvestmentState {
     Family5State family5;
 };
 
-} // namespace sunrise::state
+} // namespace dawn::state

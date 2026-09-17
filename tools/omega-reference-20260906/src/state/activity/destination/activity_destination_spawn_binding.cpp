@@ -10,7 +10,7 @@
 #include "../../../core/logging/log.h"
 #include "../../build_data/runtime.h"
 
-namespace sunrise::state::activity::destination {
+namespace dawn::state::activity::destination {
 namespace {
 
 /** Spawn-set rows read for one stem. The widest installed stem declares 294. */
@@ -103,4 +103,4 @@ std::uint32_t attachable_spawn_set_hash(const DestinationSelection& selection,
     return hash;
 }
 
-} // namespace sunrise::state::activity::destination
+} // namespace dawn::state::activity::destination

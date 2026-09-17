@@ -8,7 +8,7 @@
 #include "../../investment/source.h"
 #include "../layout.h"
 
-namespace sunrise::client::content::items::details::memory {
+namespace dawn::client::content::items::details::memory {
 
 [[nodiscard]] inline bool
 add_fits(std::uintptr_t left, std::uintptr_t right, std::uintptr_t& result) noexcept {
@@ -123,4 +123,4 @@ template <typename Value>
            && handles::resolve(source.handles, handle, child);
 }
 
-} // namespace sunrise::client::content::items::details::memory
+} // namespace dawn::client::content::items::details::memory

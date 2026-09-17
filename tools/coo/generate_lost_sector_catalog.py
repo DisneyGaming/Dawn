@@ -577,7 +577,7 @@ def emit(quota_document: dict | None = None, quota_file_sha256: str | None = Non
         by_namespace.setdefault(sector["namespace"], []).append(sector)
     lines = [
         "#pragma once", "", "#include \"lost_sector_runtime.h\"", "#include <array>", "",
-        "namespace sunrise::server::runtime::activity::lost_sector::catalog {", "",
+        "namespace dawn::server::runtime::activity::lost_sector::catalog {", "",
         "template<class T,std::size_t A,std::size_t B>",
         "[[nodiscard]] consteval std::array<T,A+B> concat(const std::array<T,A>& first,const std::array<T,B>& second) {",
         "    std::array<T,A+B> result{};std::size_t out{};",
@@ -794,13 +794,13 @@ def emit(quota_document: dict | None = None, quota_file_sha256: str | None = Non
                   "[[nodiscard]] constexpr Definition definition(std::uint16_t capabilityBase) noexcept {",
                   "    return {kSectors,kStages,kPolicies,capabilityBase};",
                   "}",
-                  "}", "", "} // namespace sunrise::server::runtime::activity::lost_sector::catalog", ""])
+                  "}", "", "} // namespace dawn::server::runtime::activity::lost_sector::catalog", ""])
     return "\n".join(lines), evidence
 
 
 def main() -> None:
     header, evidence = emit()
-    output = ROOT / "Sunrise/src/server/runtime/activity/lost_sector_catalog.h"
+    output = ROOT / "Dawn/src/server/runtime/activity/lost_sector_catalog.h"
     output.write_text(header, encoding="utf-8", newline="\r\n")
     evidence_output = ROOT / "tools/coo/lost_sector_mercury_mars_evidence.json"
     evidence_output.write_text(json.dumps(evidence, indent=2) + "\n")

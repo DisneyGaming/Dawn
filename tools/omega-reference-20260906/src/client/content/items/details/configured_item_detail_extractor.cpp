@@ -13,14 +13,14 @@
 #include "definition_detail_reader.h"
 #include "memory.h"
 
-namespace sunrise::client::content::items::details {
+namespace dawn::client::content::items::details {
 namespace {
 
 namespace build_details = state::build_data::items::details;
 namespace build_items = state::build_data::items;
 namespace build_socket_lists = state::build_data::socket_entry_lists;
-namespace dense_layout = sunrise::client::content::items::layout;
-namespace investment_layout = sunrise::client::content::investment::layout;
+namespace dense_layout = dawn::client::content::items::layout;
+namespace investment_layout = dawn::client::content::investment::layout;
 
 /**
  * Finds the installed item table once and checks its starting row count.
@@ -117,4 +117,4 @@ bool extract(const investment::Source& source,
     return true;
 }
 
-} // namespace sunrise::client::content::items::details
+} // namespace dawn::client::content::items::details

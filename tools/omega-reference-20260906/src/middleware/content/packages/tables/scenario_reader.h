@@ -6,7 +6,7 @@
 
 #include "definition_index_table.h"
 
-namespace sunrise::middleware::content::packages::tables {
+namespace dawn::middleware::content::packages::tables {
 
 /** Tag class of a destination's client scenario. */
 inline constexpr std::uint32_t kScenarioClass = 0x80809994U;
@@ -247,4 +247,4 @@ struct SliceEntry {
                                            std::uint64_t index,
                                            std::uint32_t& handle) noexcept;
 
-} // namespace sunrise::middleware::content::packages::tables
+} // namespace dawn::middleware::content::packages::tables

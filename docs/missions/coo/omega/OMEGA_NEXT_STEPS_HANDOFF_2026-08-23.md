@@ -2,7 +2,7 @@
 
 Date: 2026-08-23  
 Workspace: `C:\Destiny 2 Development`  
-Target: Destiny 2 PC / Sunrise / `mission_scot` (Omega)
+Target: Destiny 2 PC / Dawn / `mission_scot` (Omega)
 
 ## Executive summary
 
@@ -27,7 +27,7 @@ D00142CF / type 30 / index 20 entered
   -> outbound=none
 ```
 
-The missing boundary is now precise: Sunrise does not turn that validated client condition into
+The missing boundary is now precise: Dawn does not turn that validated client condition into
 authoritative mission state. Destiny's native script manager, scene, gate, director, and spawner
 systems remain dormant because no evidence-backed host transition is committed or published.
 
@@ -38,17 +38,17 @@ authority publication path.
 
 ## Current deployed build
 
-- Source: `C:\Destiny 2 Development\Sunrise-src`
-- Build DLL: `C:\Destiny 2 Development\Sunrise-src\build\x64\Release\steam_api64.dll`
+- Source: `C:\Destiny 2 Development\Dawn-src`
+- Build DLL: `C:\Destiny 2 Development\Dawn-src\build\x64\Release\steam_api64.dll`
 - Live DLL: `C:\Destiny 2 Development\bin\x64\steam_api64.dll`
 - Live/build size: `12,103,168` bytes
 - Live/build SHA-256:
   `68F944AA7BA903A9527B7E06860BEE02C83A4B496556E061D3125C454D06FB16`
 - Previous live DLL backup:
-  `C:\Destiny 2 Development\.sunrise\backup\steam_api64.20260823-103913.dll`
+  `C:\Destiny 2 Development\.dawn\backup\steam_api64.20260823-103913.dll`
 - Backup SHA-256:
   `CA166AFEB7A8A2253AED91BBB13D55CD0D25AD175CDEA09EA9EEC5CA7F66BA02`
-- Active log: `C:\Destiny 2 Development\bin\x64\Sunrise\logs\sunrise.log`
+- Active log: `C:\Destiny 2 Development\bin\x64\Dawn\logs\dawn.log`
 - Parser fixture harness:
   `C:\Destiny 2 Development\tmp\sense_update_fixture_test.cpp`
 
@@ -59,7 +59,7 @@ Runtime settings remain:
 "seed_authored_sensors": false
 ```
 
-Do not rerun the official Sunrise installer during this investigation. Its install state still
+Do not rerun the official Dawn installer during this investigation. Its install state still
 points at release 0.2.1, so the installer will replace the custom DLL.
 
 ## Latest proven runtime sequence
@@ -189,9 +189,9 @@ mission director active=0
 The experiment deliberately creates no `ActivityPlan`, no state transaction, and no outbound
 message. It proves event identity and ordering only.
 
-## What is Destiny-native versus Sunrise code
+## What is Destiny-native versus Dawn code
 
-The activity-script manager shown in the logs belongs to the Destiny client. Sunrise did not
+The activity-script manager shown in the logs belongs to the Destiny client. Dawn did not
 implement a mission-script interpreter.
 
 Destiny-native systems observed through hooks include:
@@ -202,7 +202,7 @@ Destiny-native systems observed through hooks include:
 - scene, gate, dialogue, monitor, and spawner runtime structures
 - authoritative changed-object collect/apply/finalize machinery
 
-Sunrise currently provides:
+Dawn currently provides:
 
 - roster discovery/publication and the exact Omega compatibility roster
 - ordinary activity authority messages used during registration
@@ -216,7 +216,7 @@ spawner, script manager, or durable activity state.
 ## Architecture supported by the evidence
 
 ```text
-Sunrise roster publication
+Dawn roster publication
   -> Destiny registers authored client objects
   -> Destiny constructs native mission/runtime components
   -> Destiny detects authored local conditions
@@ -274,7 +274,7 @@ Investigate three evidence sources in parallel conceptually, but do not merge sp
      component.
    - Do not infer an edge solely from proximity, ordering in the roster, or numeric adjacency.
 
-3. **Archived Sunrise experiment**
+3. **Archived Dawn experiment**
    - Treat archived scene/ready/trigger/portal bodies as candidate constants only.
    - Identify which candidate body was intended immediately after the opening latch.
    - Compare each candidate with the PC decoder and current object schema before considering it
@@ -418,16 +418,16 @@ Do not implement an outbound transition until that report exists.
 
 ## Relevant source files
 
-- `Sunrise-src/Sunrise/src/middleware/bap/activity_message/sense_update.h`
-- `Sunrise-src/Sunrise/src/middleware/bap/activity_message/activity_sense_update_parser.cpp`
-- `Sunrise-src/Sunrise/src/server/bap/encrypted/activity_message/activity_message_route.cpp`
-- `Sunrise-src/Sunrise/src/server/bap/internal.h`
-- `Sunrise-src/Sunrise/src/server/bap/encrypted/bap_connection_publication.cpp`
-- `Sunrise-src/Sunrise/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp`
-- `Sunrise-src/Sunrise/src/middleware/bap/activity_message/activity_sensor_auth_encoder.cpp`
-- `Sunrise-src/Sunrise/src/client/hooks/bootflow/activity_script_upstream_probe.cpp`
-- `Sunrise-src/Sunrise/src/client/hooks/bootflow/activity_schema_decode_probe.cpp`
-- `Sunrise-src/Sunrise/src/state/activity/activity_world_arrival.cpp`
+- `Dawn-src/Dawn/src/middleware/bap/activity_message/sense_update.h`
+- `Dawn-src/Dawn/src/middleware/bap/activity_message/activity_sense_update_parser.cpp`
+- `Dawn-src/Dawn/src/server/bap/encrypted/activity_message/activity_message_route.cpp`
+- `Dawn-src/Dawn/src/server/bap/internal.h`
+- `Dawn-src/Dawn/src/server/bap/encrypted/bap_connection_publication.cpp`
+- `Dawn-src/Dawn/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp`
+- `Dawn-src/Dawn/src/middleware/bap/activity_message/activity_sensor_auth_encoder.cpp`
+- `Dawn-src/Dawn/src/client/hooks/bootflow/activity_script_upstream_probe.cpp`
+- `Dawn-src/Dawn/src/client/hooks/bootflow/activity_schema_decode_probe.cpp`
+- `Dawn-src/Dawn/src/state/activity/activity_world_arrival.cpp`
 
 Reference analysis:
 
@@ -440,7 +440,7 @@ Reference analysis:
 Archived candidate implementation root:
 
 ```text
-C:\Destiny 2 Development\deliverables\Sunrise-complete-source-and-Release-20260822\source\Sunrise-src\Sunrise\src
+C:\Destiny 2 Development\deliverables\Dawn-complete-source-and-Release-20260822\source\Dawn-src\Dawn\src
 ```
 
 ## Build and deployment commands
@@ -448,13 +448,13 @@ C:\Destiny 2 Development\deliverables\Sunrise-complete-source-and-Release-202608
 Build without deploying:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\sunrise-dev.ps1" -BuildOnly
+powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\dawn-dev.ps1" -BuildOnly
 ```
 
 Deploy after Destiny 2 is closed:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\sunrise-dev.ps1"
+powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\dawn-dev.ps1"
 ```
 
 Do not clear the content cache for server-only routing, state, or logging changes. Clear it only if
@@ -494,6 +494,6 @@ The current deployed DLL backup is known and recoverable through the project dep
 
 > Omega authored navigation, runtime construction, sensor decoding, bootstrap readiness, and the
 > exact opening trigger are proven. Destiny's native mission machinery is present but dormant.
-> Sunrise still lacks the evidence-backed authoritative state transition that follows the opening
+> Dawn still lacks the evidence-backed authoritative state transition that follows the opening
 > condition. No manual scene spawn, guessed mission sequence, or ad hoc type-5 output has been
 > implemented.

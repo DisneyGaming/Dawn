@@ -28,4 +28,4 @@ Validation checks the active family root, nonzero character identity, matching c
 
 This does not prove every blank orbit card, unknown field, or subscription discrepancy is fixed. Family-2 social roster is separate. Family-4 companion/duplicate snapshots remain separate from the incremental refresh mechanism.
 
-Landmarks beneath Sunrise/src/server/bap/: encrypted/push/snapshot/roster_snapshot.cpp; encrypted/queuez/queuez_outcome_staging.cpp; encrypted/queuez/staging/queuez_character_staging.cpp; encrypted/push/queuez/queuez_banner_push.cpp. No game run was performed for these notes.
+Landmarks beneath Dawn/src/server/bap/: encrypted/push/snapshot/roster_snapshot.cpp; encrypted/queuez/queuez_outcome_staging.cpp; encrypted/queuez/staging/queuez_character_staging.cpp; encrypted/push/queuez/queuez_banner_push.cpp. No game run was performed for these notes.

@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::bap::activity_message::global_activity_state {
+namespace dawn::middleware::bap::activity_message::global_activity_state {
 
 /** Global activity state uses activity message type 1. */
 inline constexpr std::uint32_t kMessageType = 1;
@@ -89,4 +89,4 @@ struct GlobalActivityState final {
                                                 std::span<std::byte> output,
                                                 std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_message::global_activity_state
+} // namespace dawn::middleware::bap::activity_message::global_activity_state

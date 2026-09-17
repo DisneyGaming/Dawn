@@ -6,7 +6,7 @@
 
 #include "../../web_service_envelope.h"
 
-namespace sunrise::middleware::web_service::messages::opcode505 {
+namespace dawn::middleware::web_service::messages::opcode505 {
 
 /** Web Service opcode for the change-character transition. */
 inline constexpr std::uint16_t kOpcode = 505;
@@ -34,4 +34,4 @@ inline constexpr std::size_t kResponseSize = 11;
                                    std::span<std::byte> output,
                                    std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::web_service::messages::opcode505
+} // namespace dawn::middleware::web_service::messages::opcode505

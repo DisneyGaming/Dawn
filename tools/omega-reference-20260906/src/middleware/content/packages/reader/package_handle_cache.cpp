@@ -6,7 +6,7 @@
 
 #include "handle_cache.h"
 
-namespace sunrise::middleware::content::packages::reader::handle_cache {
+namespace dawn::middleware::content::packages::reader::handle_cache {
 namespace {
 
 /** Shared files kept open for the class sweeps, which run once and on one thread. */
@@ -157,4 +157,4 @@ void close(Scratch& scratch) noexcept {
     scratch.slotCounter = 0;
 }
 
-} // namespace sunrise::middleware::content::packages::reader::handle_cache
+} // namespace dawn::middleware::content::packages::reader::handle_cache

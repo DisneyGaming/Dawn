@@ -1,6 +1,6 @@
 #include "../internal.h"
 
-namespace sunrise::server::bap::encrypted::routing {
+namespace dawn::server::bap::encrypted::routing {
 
 /**
  * Maps an authenticated request service to its response codec and metadata.
@@ -165,4 +165,4 @@ bool resolve(std::uint16_t request, ServiceRoute& route) noexcept {
     }
 }
 
-} // namespace sunrise::server::bap::encrypted::routing
+} // namespace dawn::server::bap::encrypted::routing

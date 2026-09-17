@@ -6,7 +6,7 @@
 #include <array>
 #include <bcrypt.h>
 
-namespace sunrise::middleware::crypto::aes {
+namespace dawn::middleware::crypto::aes {
 
 namespace {
 
@@ -141,4 +141,4 @@ bool decrypt(std::span<const std::byte> key,
     return complete;
 }
 
-} // namespace sunrise::middleware::crypto::aes
+} // namespace dawn::middleware::crypto::aes

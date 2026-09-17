@@ -4,7 +4,7 @@
 
 #include "../../transactions/internal.h"
 
-namespace sunrise::state::activity::membership::transactions {
+namespace dawn::state::activity::membership::transactions {
 
 /** Merges and applies one sparse authoritative operation. */
 bool commit_authoritative(ActivityState& state,
@@ -68,4 +68,4 @@ bool commit_authoritative(ActivityState& state,
     return true;
 }
 
-} // namespace sunrise::state::activity::membership::transactions
+} // namespace dawn::state::activity::membership::transactions

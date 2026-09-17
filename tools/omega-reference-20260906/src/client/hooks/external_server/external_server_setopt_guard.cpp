@@ -15,7 +15,7 @@
 #include "internal.h"
 #include "route.h"
 
-namespace sunrise::client::hooks::external_server {
+namespace dawn::client::hooks::external_server {
 namespace {
 
 using Setopt = int (*)(void*, int, void*) noexcept;
@@ -141,4 +141,4 @@ bool is_installed() noexcept {
     return g_handle.attached;
 }
 
-} // namespace sunrise::client::hooks::external_server
+} // namespace dawn::client::hooks::external_server

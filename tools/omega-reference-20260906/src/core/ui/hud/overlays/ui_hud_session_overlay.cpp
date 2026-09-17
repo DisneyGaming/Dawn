@@ -17,7 +17,7 @@
 #include "../../../../server/gameplay/peer/peer_transport.h"
 #include "../../../../state/gameplay/definition.h"
 
-namespace sunrise::core::ui::hud::overlays::session {
+namespace dawn::core::ui::hud::overlays::session {
 namespace {
 
 namespace group = server::gameplay::group;
@@ -124,7 +124,7 @@ void draw() noexcept {
     std::size_t admittedCount = 0;
     group::snapshot_admitted(admitted, admittedCount);
 
-    if (!ImGui::BeginTable("##sunrise_hud_session_table", kColumnCount)) {
+    if (!ImGui::BeginTable("##dawn_hud_session_table", kColumnCount)) {
         return;
     }
     ImGui::TableSetupColumn("region");
@@ -155,4 +155,4 @@ void draw() noexcept {
     ImGui::EndTable();
 }
 
-} // namespace sunrise::core::ui::hud::overlays::session
+} // namespace dawn::core::ui::hud::overlays::session

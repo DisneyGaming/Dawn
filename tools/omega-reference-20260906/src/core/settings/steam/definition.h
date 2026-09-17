@@ -3,7 +3,7 @@
 #include <array>
 #include <cstddef>
 
-namespace sunrise::core::settings::steam {
+namespace dawn::core::settings::steam {
 
 /** Steam persona policy allows at most 63 printable ASCII bytes. */
 inline constexpr std::size_t kMaximumPersonaNameBytes = 63;
@@ -28,4 +28,4 @@ struct Settings {
     std::array<char, kLanguageCapacity> language{"english"};
 };
 
-} // namespace sunrise::core::settings::steam
+} // namespace dawn::core::settings::steam

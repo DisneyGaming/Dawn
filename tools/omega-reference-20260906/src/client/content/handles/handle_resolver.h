@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::client::content::handles {
+namespace dawn::client::content::handles {
 
 /** Memory-reader callback used by live and synthetic handle sources. */
 using Reader = bool (*)(void* context,
@@ -27,4 +27,4 @@ struct Source {
 [[nodiscard]] bool
 resolve(const Source& source, std::uint32_t handle, std::uintptr_t& address) noexcept;
 
-} // namespace sunrise::client::content::handles
+} // namespace dawn::client::content::handles

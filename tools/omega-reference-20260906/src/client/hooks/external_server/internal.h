@@ -5,7 +5,7 @@
 
 #include "../../patterns/image_scan.h"
 
-namespace sunrise::client::hooks::external_server {
+namespace dawn::client::hooks::external_server {
 
 using patterns::scan_main_image_unique;
 using patterns::signature;
@@ -26,4 +26,4 @@ inline constexpr int kUrl = 10002;
 /** The Client's own inline URL field is 512 bytes, and no request URL is longer. */
 inline constexpr std::size_t kUrlCapacity = 512;
 
-} // namespace sunrise::client::hooks::external_server
+} // namespace dawn::client::hooks::external_server

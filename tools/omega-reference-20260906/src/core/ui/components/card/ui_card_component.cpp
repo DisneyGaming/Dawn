@@ -7,7 +7,7 @@
 #include "../../scaling/dpi/ui_dpi_scaling.h"
 #include "../drawing/drawing.h"
 
-namespace sunrise::core::ui::components::card {
+namespace dawn::core::ui::components::card {
 namespace {
 
 /** One authored pixel keeps a child valid when its parent is almost fully clipped. */
@@ -26,7 +26,7 @@ constexpr float kBorderThickness = 1.0F;
 constexpr int kScopedStyleVariableCount = 3;
 /** Cards ease in and out slowly because their surface can cover a large area. */
 constexpr animation::transition::Rates kHoverRates{9.0F, 7.0F};
-/** Card children must not write Dear ImGui settings beside Sunrise settings. */
+/** Card children must not write Dear ImGui settings beside Dawn settings. */
 constexpr ImGuiWindowFlags kWindowFlags = ImGuiWindowFlags_NoSavedSettings;
 /** Card content always keeps the authored inset instead of touching the drawn edge. */
 constexpr ImGuiChildFlags kChildFlags = ImGuiChildFlags_AlwaysUseWindowPadding;
@@ -103,4 +103,4 @@ bool Scope::visible() const noexcept {
     return visible_;
 }
 
-} // namespace sunrise::core::ui::components::card
+} // namespace dawn::core::ui::components::card

@@ -7,7 +7,7 @@
 #include "../transactions/internal.h"
 #include "activity_destination_validation.h"
 
-namespace sunrise::state::activity::destination {
+namespace dawn::state::activity::destination {
 
 /** Copies the destination committed with one activity session. */
 bool snapshot(std::uint64_t sessionId, DestinationSelection& output) noexcept {
@@ -58,4 +58,4 @@ bool snapshot(ActivityInstanceKey key, DestinationSelection& output) noexcept {
     return true;
 }
 
-} // namespace sunrise::state::activity::destination
+} // namespace dawn::state::activity::destination

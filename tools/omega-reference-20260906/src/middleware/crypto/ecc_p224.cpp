@@ -8,7 +8,7 @@
 #include "ecc_p224_curve.h"
 #include "random_bytes.h"
 
-namespace sunrise::middleware::crypto::ecc {
+namespace dawn::middleware::crypto::ecc {
 
 namespace {
 
@@ -224,4 +224,4 @@ bool agree(std::span<const std::byte> peerPublicKey, Agreement& output) noexcept
     return true;
 }
 
-} // namespace sunrise::middleware::crypto::ecc
+} // namespace dawn::middleware::crypto::ecc

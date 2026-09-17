@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::bap::activity_message::join_result {
+namespace dawn::middleware::bap::activity_message::join_result {
 
 /** The known minimal local join-result encoding is 757 bytes. */
 inline constexpr std::size_t kEncodedSize = 757;
@@ -25,4 +25,4 @@ inline constexpr std::size_t kEncodedSize = 757;
                                       std::span<std::byte> output,
                                       std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_message::join_result
+} // namespace dawn::middleware::bap::activity_message::join_result

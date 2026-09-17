@@ -5,7 +5,7 @@
 #include "../../encoding/byte_order.h"
 #include "definition.h"
 
-namespace sunrise::middleware::bap::activity_message::join_result {
+namespace dawn::middleware::bap::activity_message::join_result {
 namespace {
 
 /** Fixed scalar fields echoed from the join request. */
@@ -84,4 +84,4 @@ bool encode_join_result(std::uint32_t correlation,
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_message::join_result
+} // namespace dawn::middleware::bap::activity_message::join_result

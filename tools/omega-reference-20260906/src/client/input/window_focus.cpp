@@ -7,7 +7,7 @@
 
 #include <Windows.h>
 
-namespace sunrise::client::input {
+namespace dawn::client::input {
 
 /** Reports whether a window of this process is in front. */
 bool game_focused() noexcept {
@@ -20,4 +20,4 @@ bool game_focused() noexcept {
     return processId == GetCurrentProcessId();
 }
 
-} // namespace sunrise::client::input
+} // namespace dawn::client::input

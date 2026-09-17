@@ -4,7 +4,7 @@
 
 #include "../web_service_envelope.h"
 
-namespace sunrise::middleware::web_service::messages::opcode504 {
+namespace dawn::middleware::web_service::messages::opcode504 {
 
 /** Web Service opcode for the select-character request. */
 inline constexpr std::uint16_t kOpcode = 504;
@@ -23,4 +23,4 @@ struct Request {
  */
 [[nodiscard]] bool parse_request(const Message& message, Request& request) noexcept;
 
-} // namespace sunrise::middleware::web_service::messages::opcode504
+} // namespace dawn::middleware::web_service::messages::opcode504

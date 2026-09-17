@@ -17,7 +17,7 @@
 #include "encrypted/queuez/definition.h"
 #include "region_lineage.h"
 
-namespace sunrise::server::bap {
+namespace dawn::server::bap {
 
 /** One session per transport peer slot, so a connection id indexes this array directly. */
 inline constexpr std::size_t kSessionCount = client::network::kBapConnectionCount;
@@ -621,4 +621,4 @@ namespace encrypted {
 
 } // namespace encrypted
 
-} // namespace sunrise::server::bap
+} // namespace dawn::server::bap

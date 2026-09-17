@@ -4,7 +4,7 @@
 
 #include <cstddef>
 
-namespace sunrise::core::ui::fonts::runtime {
+namespace dawn::core::ui::fonts::runtime {
 
 /** 16 pixels is the authored text height at the unscaled 96-DPI layout. */
 inline constexpr float kAuthoredBasePixelSize = 16.0F;
@@ -15,7 +15,7 @@ enum class Source {
     unavailable,
     /** Dear ImGui's built-in scalable font is active. */
     embeddedDefault,
-    /** The installed game font is borrowed from fixed Sunrise storage. */
+    /** The installed game font is borrowed from fixed Dawn storage. */
     installed,
 };
 
@@ -56,4 +56,4 @@ struct Snapshot {
 /** @return One snapshot of the font source, size, and scale, read under the lock. */
 [[nodiscard]] Snapshot snapshot() noexcept;
 
-} // namespace sunrise::core::ui::fonts::runtime
+} // namespace dawn::core::ui::fonts::runtime

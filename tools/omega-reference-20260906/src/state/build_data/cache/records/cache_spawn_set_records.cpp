@@ -2,7 +2,7 @@
 
 #include "codec.h"
 
-namespace sunrise::state::build_data::cache::records {
+namespace dawn::state::build_data::cache::records {
 
 /** Encodes one map-package stem summary. */
 bool encode(const spawn_sets::Stem& value, SpawnStemRecord& record) noexcept {
@@ -94,4 +94,4 @@ bool decode(const SpawnPointRecord& record, spawn_sets::Point& value) noexcept {
     return true;
 }
 
-} // namespace sunrise::state::build_data::cache::records
+} // namespace dawn::state::build_data::cache::records

@@ -5,7 +5,7 @@
 
 #include "layout.h"
 
-namespace sunrise::middleware::datagen::family4::character::abi {
+namespace dawn::middleware::datagen::family4::character::abi {
 
 /** The selected-character SOID starts at native byte 0. */
 inline constexpr std::size_t kCharacterSoidOffset = 0;
@@ -77,4 +77,4 @@ static_assert(offsetof(layout::Object, acquiredFlags) == kAcquiredFlagsOffset);
 static_assert(offsetof(layout::Object, objectiveValues) == kObjectiveValuesOffset);
 static_assert(offsetof(layout::Object, contentBypass) == kContentBypassOffset);
 
-} // namespace sunrise::middleware::datagen::family4::character::abi
+} // namespace dawn::middleware::datagen::family4::character::abi

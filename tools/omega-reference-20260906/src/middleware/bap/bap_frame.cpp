@@ -3,7 +3,7 @@
 #include "../encoding/byte_order.h"
 #include "frame.h"
 
-namespace sunrise::middleware::bap {
+namespace dawn::middleware::bap {
 namespace {
 
 /** First byte of every BAP outer frame the Server emits. */
@@ -157,4 +157,4 @@ bool encode_response(ResponseService service,
     return encode_frame(frameType, output.subspan(kOuterHeaderSize, payloadSize), output, written);
 }
 
-} // namespace sunrise::middleware::bap
+} // namespace dawn::middleware::bap

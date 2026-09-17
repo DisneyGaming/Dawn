@@ -32,7 +32,7 @@
 
 #pragma comment(lib, "bcrypt.lib")
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 namespace {
 
 /** Central unsigned bit reader used by the pinned Season of Arrivals authority decoder. */
@@ -628,9 +628,9 @@ void dump_publish_function(const wchar_t* phase, const std::byte* target) noexce
         return;
     }
 
-    const HMODULE sunrise = GetModuleHandleW(L"steam_api64.dll");
+    const HMODULE dawn = GetModuleHandleW(L"steam_api64.dll");
     core::path::Buffer path{};
-    if (sunrise == nullptr || !core::path::artifact_directory(sunrise, path)
+    if (dawn == nullptr || !core::path::artifact_directory(dawn, path)
         || !core::path::append(path, L"\\analysis")) {
         return;
     }
@@ -804,9 +804,9 @@ void dump_object_buffer(const wchar_t* phase,
         return;
     }
 
-    const HMODULE sunrise = GetModuleHandleW(L"steam_api64.dll");
+    const HMODULE dawn = GetModuleHandleW(L"steam_api64.dll");
     core::path::Buffer path{};
-    if (sunrise == nullptr || !core::path::artifact_directory(sunrise, path)
+    if (dawn == nullptr || !core::path::artifact_directory(dawn, path)
         || !core::path::append(path, L"\\analysis")) {
         return;
     }
@@ -5607,4 +5607,4 @@ void uninstall_activity_schema_decode_probe() noexcept {
     g_groupDecodeChildObjects = 0U;
 }
 
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

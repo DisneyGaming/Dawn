@@ -3,7 +3,7 @@
 #include "definition_index_table.h"
 #include "items.h"
 
-namespace sunrise::middleware::content::packages::tables::items {
+namespace dawn::middleware::content::packages::tables::items {
 namespace {
 
 /** The art block declares its gear art definition index here. */
@@ -174,4 +174,4 @@ void read_appearance(std::span<const std::byte> definition, Row& row) noexcept {
     read_sandbox_perks(definition, row);
 }
 
-} // namespace sunrise::middleware::content::packages::tables::items
+} // namespace dawn::middleware::content::packages::tables::items

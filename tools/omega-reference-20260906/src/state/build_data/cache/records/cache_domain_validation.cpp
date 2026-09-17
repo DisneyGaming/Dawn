@@ -17,7 +17,7 @@
 #include "../../vendors/vendor_catalog.h"
 #include "validation.h"
 
-namespace sunrise::state::build_data::cache::records {
+namespace dawn::state::build_data::cache::records {
 namespace {
 
 /** @return The row's name, limited to its stored length. */
@@ -267,4 +267,4 @@ bool valid_domains(Domains domains) noexcept {
                                       domains.itemDetails);
 }
 
-} // namespace sunrise::state::build_data::cache::records
+} // namespace dawn::state::build_data::cache::records

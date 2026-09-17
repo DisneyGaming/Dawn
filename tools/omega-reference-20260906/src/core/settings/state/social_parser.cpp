@@ -2,9 +2,9 @@
 
 #include "../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 
-/** Parses matchmaking and chat settings under stable Sunrise-owned names. */
+/** Parses matchmaking and chat settings under stable Dawn-owned names. */
 bool Parser::social_settings(state::account::settings::Social& output) noexcept {
     enum class Field : std::size_t {
         preferGoodConnection,
@@ -98,4 +98,4 @@ bool Parser::social_settings(state::account::settings::Social& output) noexcept 
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

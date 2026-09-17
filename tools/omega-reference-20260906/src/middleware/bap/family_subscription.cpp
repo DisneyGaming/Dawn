@@ -2,7 +2,7 @@
 
 #include "../encoding/byte_order.h"
 
-namespace sunrise::middleware::bap::family_subscription {
+namespace dawn::middleware::bap::family_subscription {
 namespace {
 
 /** The 1-byte family selector starts the authenticated request body. */
@@ -28,4 +28,4 @@ bool parse(std::span<const std::byte> input, queuez::Subscription& subscription)
     return true;
 }
 
-} // namespace sunrise::middleware::bap::family_subscription
+} // namespace dawn::middleware::bap::family_subscription

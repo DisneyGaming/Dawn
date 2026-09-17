@@ -8,7 +8,7 @@
 #include "../internal.h"
 #include "cache_payload_reader.h"
 
-namespace sunrise::state::build_data::cache {
+namespace dawn::state::build_data::cache {
 namespace {
 
 /** @return True when every required domain is nonempty. */
@@ -128,7 +128,7 @@ void set_diagnostic(LoadDiagnostic* diagnostic,
 
 } // namespace
 
-/** Reads Destiny's PE identity and consumes the one already captured Sunrise identity. */
+/** Reads Destiny's PE identity and consumes the one already captured Dawn identity. */
 bool current_build_identity(std::uint64_t configuredEquipmentHash,
                             BuildIdentity& identity) noexcept {
     identity = {};
@@ -282,4 +282,4 @@ LoadStatus load(const wchar_t* path,
     return LoadStatus::loaded;
 }
 
-} // namespace sunrise::state::build_data::cache
+} // namespace dawn::state::build_data::cache

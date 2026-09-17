@@ -6,7 +6,7 @@
 
 #include "definition.h"
 
-namespace sunrise::state::build_data::hash_names {
+namespace dawn::state::build_data::hash_names {
 
 /** Clears every resolved bubble name. */
 void clear() noexcept;
@@ -44,4 +44,4 @@ void clear() noexcept;
 /** @return Number of resolved names, read under the lock. */
 [[nodiscard]] std::size_t count() noexcept;
 
-} // namespace sunrise::state::build_data::hash_names
+} // namespace dawn::state::build_data::hash_names

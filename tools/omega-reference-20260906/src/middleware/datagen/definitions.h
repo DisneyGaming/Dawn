@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace sunrise::middleware::datagen {
+namespace dawn::middleware::datagen {
 
 /** Object id the client matches against the family-three roster slot. */
 inline constexpr std::uint32_t kRosterObjectId = 0x1C35451DU;
@@ -52,4 +52,4 @@ object_id(std::uint32_t familyType, std::uint32_t slotIndex, std::uint32_t& obje
     return objectId != 0;
 }
 
-} // namespace sunrise::middleware::datagen
+} // namespace dawn::middleware::datagen

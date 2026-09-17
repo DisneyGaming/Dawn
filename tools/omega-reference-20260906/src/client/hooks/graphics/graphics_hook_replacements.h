@@ -12,7 +12,7 @@
 #include "input/input.h"
 #include "renderer/renderer.h"
 
-namespace sunrise::client::hooks::graphics {
+namespace dawn::client::hooks::graphics {
 
 /** SDK ABI for IDXGISwapChain::Present. */
 using Present = HRESULT(STDMETHODCALLTYPE*)(IDXGISwapChain*, UINT, UINT);
@@ -125,4 +125,4 @@ HRESULT STDMETHODCALLTYPE present(IDXGISwapChain* swapChain,
 
 } // namespace replacement
 
-} // namespace sunrise::client::hooks::graphics
+} // namespace dawn::client::hooks::graphics

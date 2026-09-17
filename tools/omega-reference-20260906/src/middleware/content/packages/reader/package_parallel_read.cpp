@@ -6,7 +6,7 @@
 
 #include "parallel.h"
 
-namespace sunrise::middleware::content::packages::reader::parallel {
+namespace dawn::middleware::content::packages::reader::parallel {
 namespace {
 
 /** Cores left to the game, which is drawing frames while the batch reads. */
@@ -209,4 +209,4 @@ void release() noexcept {
     g_keep.shrink_to_fit();
 }
 
-} // namespace sunrise::middleware::content::packages::reader::parallel
+} // namespace dawn::middleware::content::packages::reader::parallel

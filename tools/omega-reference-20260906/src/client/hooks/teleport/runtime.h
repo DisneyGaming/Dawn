@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::client::hooks::teleport {
+namespace dawn::client::hooks::teleport {
 
 /** Three floats make one position or velocity vector. */
 inline constexpr std::size_t kVectorLanes = 3;
@@ -35,7 +35,7 @@ void clear_targets() noexcept;
  */
 [[nodiscard]] bool install() noexcept;
 
-/** Stops Sunrise-owned camera/physics work while both native forwarding paths remain live. */
+/** Stops Dawn-owned camera/physics work while both native forwarding paths remain live. */
 void quiesce() noexcept;
 
 /** Detaches both teleport hooks, retaining their state when protected calls are active. */
@@ -163,4 +163,4 @@ void request_move_to_spawn_set(std::uint32_t setHash) noexcept;
  */
 void request_face_direction(const Vector& direction) noexcept;
 
-} // namespace sunrise::client::hooks::teleport
+} // namespace dawn::client::hooks::teleport

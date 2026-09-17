@@ -4,7 +4,7 @@
 #include "../../encoding/bit_writer.h"
 #include "peer_container.h"
 
-namespace sunrise::middleware::gameplay::peer {
+namespace dawn::middleware::gameplay::peer {
 
 namespace {
 
@@ -125,4 +125,4 @@ bool drain_message(state::gameplay::ReliableQueue& queue, AssembledMessage& outp
     return true;
 }
 
-} // namespace sunrise::middleware::gameplay::peer
+} // namespace dawn::middleware::gameplay::peer

@@ -1,5 +1,5 @@
 // The content state machine asks the config singleton for a URL and a token before it fetches.
-// Nothing fills that singleton here, so both answers must come from Sunrise.
+// Nothing fills that singleton here, so both answers must come from Dawn.
 
 #include "config_getter_lifecycle.h"
 
@@ -13,7 +13,7 @@
 #include "../../targets/game/config_getter.h"
 #include "config_getter_answers.h"
 
-namespace sunrise::client::hooks::config_getter {
+namespace dawn::client::hooks::config_getter {
 
 namespace {
 
@@ -82,4 +82,4 @@ bool is_installed() noexcept {
     return installed;
 }
 
-} // namespace sunrise::client::hooks::config_getter
+} // namespace dawn::client::hooks::config_getter

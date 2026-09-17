@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::bap::activity_message::entity_slots {
+namespace dawn::middleware::bap::activity_message::entity_slots {
 
 /** Activity message type 0 carries this payload in a server notification. */
 inline constexpr std::uint32_t kNotificationMessageType = 0;
@@ -43,4 +43,4 @@ using EntitySlotMask = std::array<std::byte, kEncodedSize>;
                                        std::span<std::byte> output,
                                        std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_message::entity_slots
+} // namespace dawn::middleware::bap::activity_message::entity_slots

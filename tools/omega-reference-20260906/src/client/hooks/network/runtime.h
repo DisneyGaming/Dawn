@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::hooks::network {
+namespace dawn::client::hooks::network {
 
 /** Installs game-owned HTTP, BAP, and transport hooks. */
 [[nodiscard]] bool install_game() noexcept;
@@ -23,4 +23,4 @@ namespace sunrise::client::hooks::network {
 /** @return True when both networking hook groups are attached. */
 [[nodiscard]] bool is_installed() noexcept;
 
-} // namespace sunrise::client::hooks::network
+} // namespace dawn::client::hooks::network

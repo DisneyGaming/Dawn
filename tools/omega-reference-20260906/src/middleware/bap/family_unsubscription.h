@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::bap::family_unsubscription {
+namespace dawn::middleware::bap::family_unsubscription {
 
 /** Client-chosen family root released by one authenticated request. */
 struct Request {
@@ -20,4 +20,4 @@ struct Request {
  */
 [[nodiscard]] bool parse(std::span<const std::byte> input, Request& request) noexcept;
 
-} // namespace sunrise::middleware::bap::family_unsubscription
+} // namespace dawn::middleware::bap::family_unsubscription

@@ -5,7 +5,7 @@
 
 #include "../../../state/account/account_state.h"
 
-namespace sunrise::middleware::datagen::family3 {
+namespace dawn::middleware::datagen::family3 {
 
 /** The family-3 account roster occupies one 1,768-byte replicated object. */
 inline constexpr std::size_t kRosterSize = 1768;
@@ -21,4 +21,4 @@ inline constexpr std::size_t kRosterSize = 1768;
                                  std::span<std::byte> output,
                                  std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::datagen::family3
+} // namespace dawn::middleware::datagen::family3

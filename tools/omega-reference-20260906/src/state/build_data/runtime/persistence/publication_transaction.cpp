@@ -4,7 +4,7 @@
 
 #include "build_data_persistence.h"
 
-namespace sunrise::state::build_data::runtime::persistence {
+namespace dawn::state::build_data::runtime::persistence {
 
 /** Takes the persistence lock unless a saved cache already freezes all domains. */
 Transaction::Transaction() noexcept : state_(&context()) {
@@ -47,4 +47,4 @@ bool Transaction::finish(bool published, Rollback& rollback) noexcept {
     return result;
 }
 
-} // namespace sunrise::state::build_data::runtime::persistence
+} // namespace dawn::state::build_data::runtime::persistence

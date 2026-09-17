@@ -6,7 +6,7 @@
 #include "../../logging/log.h"
 #include "../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 namespace {
 
 /** Space is the first printable ASCII value accepted by fixed string storage. */
@@ -269,4 +269,4 @@ bool Parser::steam_user_settings(steam::User& output) noexcept {
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

@@ -4,7 +4,7 @@
 #include "../../protobuf/codec.h"
 #include "encoder.h"
 
-namespace sunrise::middleware::content::manifest {
+namespace dawn::middleware::content::manifest {
 namespace {
 
 /** MsgB field 1 is the manifest handle the Client finds the definition by. */
@@ -66,4 +66,4 @@ bool encode_entitlement(const state::entitlements::Entitlement& entry,
     return true;
 }
 
-} // namespace sunrise::middleware::content::manifest
+} // namespace dawn::middleware::content::manifest

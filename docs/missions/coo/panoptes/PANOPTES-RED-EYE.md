@@ -58,10 +58,10 @@ This notification is why we used the native function instead of writing directly
 
 The implementation lives in:
 
-- [`omega_boss_vfx_start.h`](Sunrise/src/client/hooks/bootflow/omega_boss_vfx_start.h), which identifies the scalar and validates the exact source layout.
-- [`omega_boss_vfx_start.inl`](Sunrise/src/client/hooks/bootflow/omega_boss_vfx_start.inl), which performs the guarded initialization and readback.
-- [`omega_boss_animation_glow.inl`](Sunrise/src/client/hooks/bootflow/omega_boss_animation_glow.inl), which reads the real native provider without changing it.
-- [`omega_boss_graph_runtime.inl`](Sunrise/src/client/hooks/bootflow/omega_boss_graph_runtime.inl), which calls the initializer immediately before queuing Panoptes's intro graph.
+- [`omega_boss_vfx_start.h`](Dawn/src/client/hooks/bootflow/omega_boss_vfx_start.h), which identifies the scalar and validates the exact source layout.
+- [`omega_boss_vfx_start.inl`](Dawn/src/client/hooks/bootflow/omega_boss_vfx_start.inl), which performs the guarded initialization and readback.
+- [`omega_boss_animation_glow.inl`](Dawn/src/client/hooks/bootflow/omega_boss_animation_glow.inl), which reads the real native provider without changing it.
+- [`omega_boss_graph_runtime.inl`](Dawn/src/client/hooks/bootflow/omega_boss_graph_runtime.inl), which calls the initializer immediately before queuing Panoptes's intro graph.
 
 At the start of a new Panoptes intro, `prepare_intro_vfx(owner, call)` does the following:
 
@@ -103,11 +103,11 @@ stage=vfx_values animation_CE0BA42D=1 input_CE0BA42D=1
 computed_20AA7FC1=1
 ```
 
-These entries are in [`Sunrise/logs/sunrise.log`](Sunrise/logs/sunrise.log) around lines 13458-13518. They show that the native provider accepted `1.0`, the controller received it, and the downstream filtered value ramped to `1.0`.
+These entries are in [`Dawn/logs/dawn.log`](Dawn/logs/dawn.log) around lines 13458-13518. They show that the native provider accepted `1.0`, the controller received it, and the downstream filtered value ramped to `1.0`.
 
 ## Verification
 
-The dedicated native fixture in [`omega_boss_vfx_native_tests.cpp`](Sunrise/unit/omega_boss_vfx_native_tests.cpp) executes Destiny's unchanged `A0FE60` and `A10180` implementations against the original `80F6690A` asset. It verifies every one of the 47 provider names, exact provider selection, native dirty notification, equal-value behavior, unknown-name behavior, ownership changes, run changes, disabled members, occupied queues, invalid layouts, intermediate values, idempotence, and no uncertain retry.
+The dedicated native fixture in [`omega_boss_vfx_native_tests.cpp`](Dawn/unit/omega_boss_vfx_native_tests.cpp) executes Destiny's unchanged `A0FE60` and `A10180` implementations against the original `80F6690A` asset. It verifies every one of the 47 provider names, exact provider selection, native dirty notification, equal-value behavior, unknown-name behavior, ownership changes, run changes, disabled members, occupied queues, invalid layouts, intermediate values, idempotence, and no uncertain retry.
 
 Results:
 

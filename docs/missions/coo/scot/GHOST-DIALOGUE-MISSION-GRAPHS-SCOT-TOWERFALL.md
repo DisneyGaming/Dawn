@@ -1,6 +1,6 @@
 # Ghost dialogue, mission graphs, SCOT, Towerfall, teleporting, and Infinite Forest seeding
 
-Compiled: **2026-09-03** from the local Sunrise source, exported package inventories, and dated investigation handoffs in `C:\Destiny 2 Development`.
+Compiled: **2026-09-03** from the local Dawn source, exported package inventories, and dated investigation handoffs in `C:\Destiny 2 Development`.
 
 This is a consolidated engineering reference for the work represented in this workspace. It is not a claim that the entire retail mission executor has been recovered. No game run, DLL build, or deployment was performed to produce this document. Native addresses below belong to the investigated binary/reference cohort; they are not portable offsets for arbitrary Destiny builds.
 
@@ -551,7 +551,7 @@ The implemented transition logic then:
 
 ### 7.4 Current reachability limitation
 
-**Source inspection finding:** searches across `Sunrise/src` found declarations, reads, and resets to false for `omegaSceneHandoffArmed` and `omegaSceneCompleted`, but no producer assigning either to true.
+**Source inspection finding:** searches across `Dawn/src` found declarations, reads, and resets to false for `omegaSceneHandoffArmed` and `omegaSceneCompleted`, but no producer assigning either to true.
 
 Consequently, the existence of the later stage branches is not evidence that the checked-out implementation can reach them through ordinary execution. Historical notes describe scene retirement/handoff behavior from earlier experiments; those observations must not be promoted into a claim that this tree has the same connected path.
 
@@ -1115,7 +1115,7 @@ Then establish a real encounter-active/clear signal and a typed successor before
 Choose the log that belongs to the exact run/DLL under investigation. Existing notes use both workspace and deployed `bin/x64` locations; do not silently mix runs.
 
 ```powershell
-$dialogueLog = 'C:\Destiny 2 Development\bin\x64\Sunrise\logs\sunrise.log'
+$dialogueLog = 'C:\Destiny 2 Development\bin\x64\Dawn\logs\dawn.log'
 rg -n 'ev=omega_dialogue|ev=omega_arm|dialogue_handoff' $dialogueLog
 rg -n 'omega_opening_observer|omega_opening_authority|omega_forest_entrance' $dialogueLog
 rg -n 'ev=omega_gate|ev=forest|seed_forced|authority_probe|entry_skip' $dialogueLog
@@ -1155,30 +1155,30 @@ The links below resolve to the workspace used for this compilation. The symbol n
 - [August 22 reconstruction][omega-complete]: historical Ikora/scene/VFX/portal experiments; do not assume all patches persist.
 - [General investigation guide][guide]: broader networking, authority, lifetime, and proof-boundary context.
 
-[ghost-h]: <C:/Destiny 2 Development/Sunrise/src/client/hooks/bootflow/opening_authority/ghost_vm_bridge_capture.h>
-[ghost-cpp]: <C:/Destiny 2 Development/Sunrise/src/client/hooks/bootflow/opening_authority/ghost_vm_bridge_capture.cpp>
-[capture-53-68]: <C:/Destiny 2 Development/Sunrise/src/client/hooks/bootflow/opening_authority/type53_68_capture.h>
-[bodies]: <C:/Destiny 2 Development/Sunrise/src/middleware/bap/activity_message/activity_sensor_auth_bodies.cpp>
-[auth-h]: <C:/Destiny 2 Development/Sunrise/src/middleware/bap/activity_message/sensor_auth_update.h>
-[encoder]: <C:/Destiny 2 Development/Sunrise/src/middleware/bap/activity_message/activity_sensor_auth_encoder.cpp>
-[route]: <C:/Destiny 2 Development/Sunrise/src/server/bap/encrypted/activity_message/activity_message_route.cpp>
-[snapshot]: <C:/Destiny 2 Development/Sunrise/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp>
-[push]: <C:/Destiny 2 Development/Sunrise/src/server/bap/encrypted/push/activity/activity_roster_push.cpp>
-[world]: <C:/Destiny 2 Development/Sunrise/src/state/activity/activity_world_arrival.cpp>
-[arrival-route]: <C:/Destiny 2 Development/Sunrise/src/server/bap/encrypted/activity_host_manager/activity_host_manager_route.cpp>
-[probe]: <C:/Destiny 2 Development/Sunrise/src/client/hooks/bootflow/omega_dialogue_dispatch_probe.cpp>
-[teleport]: <C:/Destiny 2 Development/Sunrise/src/client/hooks/teleport/runtime.h>
-[catalog]: <C:/Destiny 2 Development/Sunrise/src/state/build_data/runtime/build_data_catalog_runtime.cpp>
-[tuner]: <C:/Destiny 2 Development/Sunrise/src/client/hooks/bootflow/forest_tuner_state.h>
-[forest-ui]: <C:/Destiny 2 Development/Sunrise/src/client/ui/forest/forest_panel.cpp>
-[tower-beats]: <C:/Destiny 2 Development/Sunrise/src/middleware/bap/activity_message/tower_watch_cue_manifest.h>
-[bootstrap]: <C:/Destiny 2 Development/Sunrise/src/client/hooks/bootflow/towerfall_executor_bootstrap.cpp>
-[roster-groups]: <C:/Destiny 2 Development/Sunrise/src/client/content/scenarios/scenario_roster_groups.cpp>
-[omega-inventory]: <C:/Destiny 2 Development/Sunrise/exports/omega_inventory.md>
-[manifest]: <C:/Destiny 2 Development/Sunrise/exports/towerfall_cue_manifest.json>
-[mapping]: <C:/Destiny 2 Development/Sunrise/exports/towerfall_cue_mapping.json>
-[sources-json]: <C:/Destiny 2 Development/Sunrise/exports/towerfall_cue_sources.json>
-[edges]: <C:/Destiny 2 Development/Sunrise/exports/towerfall_cue_edges.md>
+[ghost-h]: <C:/Destiny 2 Development/Dawn/src/client/hooks/bootflow/opening_authority/ghost_vm_bridge_capture.h>
+[ghost-cpp]: <C:/Destiny 2 Development/Dawn/src/client/hooks/bootflow/opening_authority/ghost_vm_bridge_capture.cpp>
+[capture-53-68]: <C:/Destiny 2 Development/Dawn/src/client/hooks/bootflow/opening_authority/type53_68_capture.h>
+[bodies]: <C:/Destiny 2 Development/Dawn/src/middleware/bap/activity_message/activity_sensor_auth_bodies.cpp>
+[auth-h]: <C:/Destiny 2 Development/Dawn/src/middleware/bap/activity_message/sensor_auth_update.h>
+[encoder]: <C:/Destiny 2 Development/Dawn/src/middleware/bap/activity_message/activity_sensor_auth_encoder.cpp>
+[route]: <C:/Destiny 2 Development/Dawn/src/server/bap/encrypted/activity_message/activity_message_route.cpp>
+[snapshot]: <C:/Destiny 2 Development/Dawn/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp>
+[push]: <C:/Destiny 2 Development/Dawn/src/server/bap/encrypted/push/activity/activity_roster_push.cpp>
+[world]: <C:/Destiny 2 Development/Dawn/src/state/activity/activity_world_arrival.cpp>
+[arrival-route]: <C:/Destiny 2 Development/Dawn/src/server/bap/encrypted/activity_host_manager/activity_host_manager_route.cpp>
+[probe]: <C:/Destiny 2 Development/Dawn/src/client/hooks/bootflow/omega_dialogue_dispatch_probe.cpp>
+[teleport]: <C:/Destiny 2 Development/Dawn/src/client/hooks/teleport/runtime.h>
+[catalog]: <C:/Destiny 2 Development/Dawn/src/state/build_data/runtime/build_data_catalog_runtime.cpp>
+[tuner]: <C:/Destiny 2 Development/Dawn/src/client/hooks/bootflow/forest_tuner_state.h>
+[forest-ui]: <C:/Destiny 2 Development/Dawn/src/client/ui/forest/forest_panel.cpp>
+[tower-beats]: <C:/Destiny 2 Development/Dawn/src/middleware/bap/activity_message/tower_watch_cue_manifest.h>
+[bootstrap]: <C:/Destiny 2 Development/Dawn/src/client/hooks/bootflow/towerfall_executor_bootstrap.cpp>
+[roster-groups]: <C:/Destiny 2 Development/Dawn/src/client/content/scenarios/scenario_roster_groups.cpp>
+[omega-inventory]: <C:/Destiny 2 Development/Dawn/exports/omega_inventory.md>
+[manifest]: <C:/Destiny 2 Development/Dawn/exports/towerfall_cue_manifest.json>
+[mapping]: <C:/Destiny 2 Development/Dawn/exports/towerfall_cue_mapping.json>
+[sources-json]: <C:/Destiny 2 Development/Dawn/exports/towerfall_cue_sources.json>
+[edges]: <C:/Destiny 2 Development/Dawn/exports/towerfall_cue_edges.md>
 [tower-safe]: <C:/Destiny 2 Development/HANDOFF-HOMECOMING-TOWERFALL-SAFE-TRACE-2026-08-27.md>
 [omega-script]: <C:/Destiny 2 Development/OMEGA_ACTIVITY_SCRIPT_HANDOFF_2026-08-23.md>
 [omega-complete]: <C:/Destiny 2 Development/OMEGA-MISSION-RECONSTRUCTION-COMPLETE-DOCUMENTATION-20260822.md>

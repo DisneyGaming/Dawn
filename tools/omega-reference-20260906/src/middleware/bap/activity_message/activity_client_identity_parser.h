@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::bap::activity_message::client_identity {
+namespace dawn::middleware::bap::activity_message::client_identity {
 
 /** Logical fields in the client's per-join identity record. */
 struct ClientIdentity final {
@@ -38,4 +38,4 @@ inline constexpr std::size_t kEncodedSize = 46;
 [[nodiscard]] bool parse_client_identity(std::span<const std::byte> input,
                                          ClientIdentity& identity) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_message::client_identity
+} // namespace dawn::middleware::bap::activity_message::client_identity

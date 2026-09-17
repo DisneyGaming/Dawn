@@ -10,7 +10,7 @@
 #include "../../table.h"
 #include "../item_catalog.h"
 
-namespace sunrise::state::build_data::items::details {
+namespace dawn::state::build_data::items::details {
 namespace {
 
 /** A 16-bit native definition index can address 65,536 rows. */
@@ -157,4 +157,4 @@ std::size_t count() noexcept {
     return g_definitionCount;
 }
 
-} // namespace sunrise::state::build_data::items::details
+} // namespace dawn::state::build_data::items::details

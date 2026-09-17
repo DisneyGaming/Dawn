@@ -7,7 +7,7 @@
 #include "../../../core/logging/log.h"
 #include "../../../state/build_data/runtime.h"
 
-namespace sunrise::client::content::diagnostics {
+namespace dawn::client::content::diagnostics {
 namespace {
 
 /** How many build-data domains the cache-write report covers. */
@@ -68,4 +68,4 @@ void report_readiness() noexcept {
     }
 }
 
-} // namespace sunrise::client::content::diagnostics
+} // namespace dawn::client::content::diagnostics

@@ -12,11 +12,11 @@
 #include "internal.h"
 #include "runtime.h"
 
-#if defined(SUNRISE_ACTIVITY_RETIREMENT_TESTS)
+#if defined(DAWN_ACTIVITY_RETIREMENT_TESTS)
 #include "activity_retirement_test_support.h"
 #endif
 
-namespace sunrise::server::bap {
+namespace dawn::server::bap {
 namespace {
 
 SRWLOCK g_lock{SRWLOCK_INIT};
@@ -33,7 +33,7 @@ std::array<state::activity::ActivityInstanceKey, state::activity::kSessionCapaci
     g_pendingActivityRetirements{};
 std::size_t g_pendingActivityRetirementCount = 0;
 
-#if defined(SUNRISE_ACTIVITY_RETIREMENT_TESTS)
+#if defined(DAWN_ACTIVITY_RETIREMENT_TESTS)
 std::atomic<test_support::Hook> g_testHook{};
 
 void invoke_test_hook(test_support::Point point,
@@ -347,7 +347,7 @@ struct ActivityTreeRetirement final {
     std::size_t derivedCount = 0;
     const bool sourceReady = gameplay::group::begin_host_session_source_retirement(
         source, derived, derivedCount);
-#if defined(SUNRISE_ACTIVITY_RETIREMENT_TESTS)
+#if defined(DAWN_ACTIVITY_RETIREMENT_TESTS)
     invoke_test_hook(test_support::Point::sourceBeginComplete,
                      source,
                      state::activity::RetireResult::alreadyRetired,
@@ -374,7 +374,7 @@ struct ActivityTreeRetirement final {
     invalidate_borrowed_activity_locked(source);
     const state::activity::RetireResult result =
         state::activity::retire_session_exact(source);
-#if defined(SUNRISE_ACTIVITY_RETIREMENT_TESTS)
+#if defined(DAWN_ACTIVITY_RETIREMENT_TESTS)
     invoke_test_hook(test_support::Point::sourceStateRetired, source, result, true);
 #endif
     gameplay::group::finish_host_session_source_retirement(source);
@@ -627,7 +627,7 @@ bool consume(const client::network::BapRequest& request,
              client::network::BapResponse& response) noexcept {
     response = {};
     AcquireSRWLockExclusive(&g_lock);
-#if defined(SUNRISE_ACTIVITY_RETIREMENT_TESTS)
+#if defined(DAWN_ACTIVITY_RETIREMENT_TESTS)
     invoke_test_hook(test_support::Point::eventLockAcquired);
 #endif
     bool success = false;
@@ -679,7 +679,7 @@ void shutdown() noexcept {
     ReleaseSRWLockExclusive(&g_lock);
 }
 
-#if defined(SUNRISE_ACTIVITY_RETIREMENT_TESTS)
+#if defined(DAWN_ACTIVITY_RETIREMENT_TESTS)
 namespace test_support {
 
 void set_hook(Hook hook) noexcept {
@@ -796,4 +796,4 @@ void reset_storage() noexcept {
 } // namespace test_support
 #endif
 
-} // namespace sunrise::server::bap
+} // namespace dawn::server::bap

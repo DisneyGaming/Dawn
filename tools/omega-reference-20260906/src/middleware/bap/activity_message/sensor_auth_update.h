@@ -11,7 +11,7 @@
 #include "../../../state/activity/omega_rescue_scene_authority.h"
 #include "../../../state/activity/omega_music_authority.h"
 
-namespace sunrise::middleware::bap::activity_message::sensor_auth_update {
+namespace dawn::middleware::bap::activity_message::sensor_auth_update {
 
 /** The return-to-Lighthouse pool needs defaults only while the ending is offered. */
 [[nodiscard]] constexpr bool ending_runtime_seed_required(bool bookendState, bool arrived,
@@ -404,4 +404,4 @@ auth_body_bits(const Snapshot& snapshot,
                                       std::uint8_t flags,
                                       bool carriesPlayerKey) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_message::sensor_auth_update
+} // namespace dawn::middleware::bap::activity_message::sensor_auth_update

@@ -4,7 +4,7 @@
 
 #include "definition.h"
 
-namespace sunrise::state::content_manifest {
+namespace dawn::state::content_manifest {
 
 /** @param row Candidate public package row. @return True when its disk fields are canonical. */
 [[nodiscard]] bool valid(const Row& row) noexcept;
@@ -16,4 +16,4 @@ namespace sunrise::state::content_manifest {
  */
 [[nodiscard]] bool valid(std::span<const Row> rows) noexcept;
 
-} // namespace sunrise::state::content_manifest
+} // namespace dawn::state::content_manifest

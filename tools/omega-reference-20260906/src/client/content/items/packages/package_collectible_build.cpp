@@ -4,7 +4,7 @@
 #include "../../../../state/build_data/runtime.h"
 #include "internal.h"
 
-namespace sunrise::client::content::items::packages {
+namespace dawn::client::content::items::packages {
 
 /** Reads the fixed collectible table and publishes its native-index item links. */
 bool build_collectibles(const reader::Source& source,
@@ -173,4 +173,4 @@ bool build_collectibles(const reader::Source& source,
         std::span(storage.collectibleRows).first(static_cast<std::size_t>(rows.count)));
 }
 
-} // namespace sunrise::client::content::items::packages
+} // namespace dawn::client::content::items::packages

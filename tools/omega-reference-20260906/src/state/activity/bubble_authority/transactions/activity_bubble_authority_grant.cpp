@@ -4,7 +4,7 @@
 #include "../../transactions/internal.h"
 #include "../runtime.h"
 
-namespace sunrise::state::activity::bubble_authority {
+namespace dawn::state::activity::bubble_authority {
 
 /** Picks the bubble owed by one copied authority after-image. */
 bool select_grant(const AuthorityState& authority,
@@ -71,4 +71,4 @@ void clear_grants(ActivityInstanceKey key) noexcept {
     ReleaseSRWLockExclusive(&runtime::storage::g_stateLock);
 }
 
-} // namespace sunrise::state::activity::bubble_authority
+} // namespace dawn::state::activity::bubble_authority

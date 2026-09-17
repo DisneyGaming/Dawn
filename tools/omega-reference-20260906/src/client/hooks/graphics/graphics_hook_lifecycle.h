@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::hooks::graphics {
+namespace dawn::client::hooks::graphics {
 
 /** @return True when the whole D3D11 presentation hook surface is active. */
 [[nodiscard]] bool install() noexcept;
@@ -11,4 +11,4 @@ namespace sunrise::client::hooks::graphics {
 /** @return True when both DXGI method detours are attached. */
 [[nodiscard]] bool is_installed() noexcept;
 
-} // namespace sunrise::client::hooks::graphics
+} // namespace dawn::client::hooks::graphics

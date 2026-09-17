@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 INPUT = ROOT / 'build/coo/beyond-infinity-research/native-bindings.json'
-OUTPUT = ROOT / 'Sunrise/src/state/activity/beyond_infinity/catalog.h'
+OUTPUT = ROOT / 'Dawn/src/state/activity/beyond_infinity/catalog.h'
 
 
 def cpp(value):
@@ -30,7 +30,7 @@ def render(data, digest):
         '// Package facts, not a playable profile. Native controls/receipts remain unverified.',
         '#pragma once', '#include <array>', '#include <span>', '#include <string_view>',
         '#include "../coo/executor.h"',
-        'namespace sunrise::state::activity::beyond_infinity {',
+        'namespace dawn::state::activity::beyond_infinity {',
         f'inline constexpr std::string_view kEvidenceSha256={cpp(digest)};',
         'inline constexpr std::uint32_t kScenario=0x80F46015U, kRoot=0x03632571U, kBank=0x80F1FDF7U;',
         'inline constexpr std::string_view kPackage="adventure_vod";',
@@ -67,7 +67,7 @@ def render(data, digest):
               '[[nodiscard]] constexpr const Objective* objective(std::uint32_t event) noexcept {',
               '    for(const auto& item:kObjectives) { if(item.event==event) { return &item; } }',
               '    return nullptr;', '}',
-              '} // namespace sunrise::state::activity::beyond_infinity', '']
+              '} // namespace dawn::state::activity::beyond_infinity', '']
     return '\n'.join(lines)
 
 

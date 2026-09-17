@@ -5,7 +5,7 @@
 #include "../../../patterns/registry.h"
 #include "../assert_handler.h"
 
-namespace sunrise::client::targets::game::assert_handler {
+namespace dawn::client::targets::game::assert_handler {
 
 /**
  * Derives the assert handler setter and slot from the setter copies and the reading sites.
@@ -18,4 +18,4 @@ namespace sunrise::client::targets::game::assert_handler {
 /** @param targets Validated assert table published without failure. */
 void publish(const Targets& targets) noexcept;
 
-} // namespace sunrise::client::targets::game::assert_handler
+} // namespace dawn::client::targets::game::assert_handler

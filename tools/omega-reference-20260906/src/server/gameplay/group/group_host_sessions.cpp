@@ -6,7 +6,7 @@
 #include <array>
 #include <limits>
 
-#if defined(SUNRISE_ACTIVITY_RETIREMENT_TESTS)
+#if defined(DAWN_ACTIVITY_RETIREMENT_TESTS)
 #include <atomic>
 #endif
 
@@ -16,11 +16,11 @@
 #include "../gameplay_log.h"
 #include "group_host.h"
 
-#if defined(SUNRISE_ACTIVITY_RETIREMENT_TESTS)
+#if defined(DAWN_ACTIVITY_RETIREMENT_TESTS)
 #include "group_host_sessions_test_support.h"
 #endif
 
-namespace sunrise::server::gameplay::group {
+namespace dawn::server::gameplay::group {
 
 namespace {
 
@@ -67,7 +67,7 @@ std::size_t g_evictedCount = 0;
 /** Prevents a retired source from acquiring a new derived row between detach and State cleanup. */
 SourceRetirementFences g_retiringSources{};
 
-#if defined(SUNRISE_ACTIVITY_RETIREMENT_TESTS)
+#if defined(DAWN_ACTIVITY_RETIREMENT_TESTS)
 std::atomic<test_support::Hook> g_testHook{};
 
 void invoke_test_hook(test_support::Point point,
@@ -421,7 +421,7 @@ activity_host_session(std::uint64_t groupSessionId,
                static_cast<unsigned long long>(sourceActivity.incarnation.value));
         return state::activity::kAbsentSessionId;
     }
-#if defined(SUNRISE_ACTIVITY_RETIREMENT_TESTS)
+#if defined(DAWN_ACTIVITY_RETIREMENT_TESTS)
     if (static_cast<bool>(sourceActivity)) {
         invoke_test_hook(test_support::Point::sourcePrecheckComplete, sourceActivity);
     }
@@ -531,7 +531,7 @@ void allocate_claimed_host_sessions() noexcept {
             // The account half is not loaded yet on an early slice, so this retries next slice.
             return;
         }
-#if defined(SUNRISE_ACTIVITY_RETIREMENT_TESTS)
+#if defined(DAWN_ACTIVITY_RETIREMENT_TESTS)
         invoke_test_hook(
             test_support::Point::allocationCommittedBeforeStore, sourceActivity, allocated);
 #endif
@@ -693,7 +693,7 @@ void reset_host_sessions() noexcept {
     free_evicted_host_sessions();
 }
 
-#if defined(SUNRISE_ACTIVITY_RETIREMENT_TESTS)
+#if defined(DAWN_ACTIVITY_RETIREMENT_TESTS)
 namespace test_support {
 
 void set_hook(Hook hook) noexcept {
@@ -805,4 +805,4 @@ void reset_storage() noexcept {
 } // namespace test_support
 #endif
 
-} // namespace sunrise::server::gameplay::group
+} // namespace dawn::server::gameplay::group

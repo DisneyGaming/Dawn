@@ -2,7 +2,7 @@
 
 #include <Windows.h>
 
-namespace sunrise::client::hooks::graphics::input {
+namespace dawn::client::hooks::graphics::input {
 
 /** WM_USER + 13 makes the game run its presentation call right away. */
 inline constexpr UINT kRequiredForwardMessage = WM_USER + 13;
@@ -31,4 +31,4 @@ inline constexpr UINT kRequiredForwardMessage = WM_USER + 13;
 /** @return True when the raw-input window procedure is restored or the window is gone. */
 [[nodiscard]] bool uninstall_raw_input_window() noexcept;
 
-} // namespace sunrise::client::hooks::graphics::input
+} // namespace dawn::client::hooks::graphics::input

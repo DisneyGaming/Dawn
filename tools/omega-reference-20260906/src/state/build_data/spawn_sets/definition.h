@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::state::build_data::spawn_sets {
+namespace dawn::state::build_data::spawn_sets {
 
 /** Three floats make one world position, in the basis the game stores a body position in. */
 inline constexpr std::size_t kPositionComponents = 3;
@@ -80,4 +80,4 @@ struct Point {
     std::uint16_t stemIndex{};
 };
 
-} // namespace sunrise::state::build_data::spawn_sets
+} // namespace dawn::state::build_data::spawn_sets

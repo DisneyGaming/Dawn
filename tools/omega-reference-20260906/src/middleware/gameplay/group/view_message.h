@@ -7,7 +7,7 @@
 #include "../../encoding/bit_reader.h"
 #include "../../encoding/bit_writer.h"
 
-namespace sunrise::middleware::gameplay::group {
+namespace dawn::middleware::gameplay::group {
 
 /** Registry id of view establishment. */
 inline constexpr std::uint8_t kViewMessageId = 40;
@@ -50,4 +50,4 @@ struct ViewEstablishment {
 [[nodiscard]] bool compatible(const ViewEstablishment& left,
                               const ViewEstablishment& right) noexcept;
 
-} // namespace sunrise::middleware::gameplay::group
+} // namespace dawn::middleware::gameplay::group

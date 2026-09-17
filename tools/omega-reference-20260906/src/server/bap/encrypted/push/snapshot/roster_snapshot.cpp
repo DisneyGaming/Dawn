@@ -10,7 +10,7 @@
 #include "internal.h"
 #include "snapshot_storage.h"
 
-namespace sunrise::server::bap::encrypted::push::snapshot {
+namespace dawn::server::bap::encrypted::push::snapshot {
 namespace {
 
 namespace character_record = middleware::datagen::character_record;
@@ -211,4 +211,4 @@ bool prepare_roster_appearance_refresh(Scratch& scratch,
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted::push::snapshot
+} // namespace dawn::server::bap::encrypted::push::snapshot

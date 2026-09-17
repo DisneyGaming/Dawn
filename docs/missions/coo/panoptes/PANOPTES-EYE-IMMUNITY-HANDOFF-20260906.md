@@ -13,7 +13,7 @@ D2 is closed at handoff. Process status was checked again while writing this doc
 ## User preferences and scope
 
 - Work solo. The user explicitly asked to conserve tokens and stop spawning agents.
-- Follow the supplied documentation's reconstruction while preserving its stated limits. The retail mission controller was not recovered; the referenced `D:/Sunrise-port` tree is unavailable.
+- Follow the supplied documentation's reconstruction while preserving its stated limits. The retail mission controller was not recovered; the referenced `D:/Dawn-port` tree is unavailable.
 - Keep explanations concise and distinguish observations, hypotheses, implemented changes, and unverified behavior.
 - Current focus is eye damage and progression. Do not add unrelated FPS changes.
 - Do not force damage, write arbitrary health/immunity values, manufacture a threshold receipt, replay an already accepted effect speculatively, or replace the native sequence with a timer.
@@ -68,7 +68,7 @@ All paths in this section are relative to the workspace.
 - **Latest live snapshot:** `build/omega-full-20260905/eye-events-51632-1788671669/`
   - `capture.json`: captured component identities and addresses.
   - `capture-status.json`: explicitly lists captured and missing evidence.
-  - `sunrise.log`: log at snapshot time.
+  - `dawn.log`: log at snapshot time.
   - `closed-run.log`: log after process exit.
   - `character.bin`, `animation.bin`, `biped.bin`, and individual boss-owned component snapshots.
 - Earlier log from this same run: `build/omega-full-20260905/eye-immune-51632-1788671434.log`.
@@ -96,13 +96,13 @@ D2 exited during further investigation. A subsequent `OpenProcess` returned erro
 
 ## What the installed change actually does
 
-Production files under `Sunrise/src/client/hooks/bootflow`:
+Production files under `Dawn/src/client/hooks/bootflow`:
 
 - `omega_boss_graph_runtime.inl`: health sampling removed from the `AB6600` member hook. `graph_update` wraps original `F4E660` and calls the Crown observer.
 - `omega_mission_crown.inl`: calls `observe_mission_health` after validating the native Crown graph, full boss ownership, current cycle, queue, bank, and node.
 - `omega_mission_health.inl`: original regional getter, typed/full-handle guards, retained threshold crossing, and body checkpoint observation.
 - `omega_reveal_native.cpp`: install revision 25, `health_monitor=native_crown_callback`. Still 15 reveal hooks; this change added no hook.
-- `Sunrise/unit/omega_full_mission_native_fixture.inl`: three cycles exercise health sampling through production `graph_update`, including opening baseline, foreign-graph rejection, downward crossing, and body checkpoints.
+- `Dawn/unit/omega_full_mission_native_fixture.inl`: three cycles exercise health sampling through production `graph_update`, including opening baseline, foreign-graph rejection, downward crossing, and body checkpoints.
 
 The older member-only path produced no initial health sample. The new path does. Do not assert that a particular old native scheduler guard was conclusively identified: the exact cause of the missing old invocation was not established.
 

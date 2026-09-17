@@ -2,7 +2,7 @@
 
 #include <limits>
 
-namespace sunrise::middleware::web_service::messages::family5 {
+namespace dawn::middleware::web_service::messages::family5 {
 namespace {
 
 /** Every optional field and override member has one presence bit next to it. */
@@ -38,7 +38,7 @@ constexpr std::uint8_t kContentGateArmWidth = 32;
 /** Bit 0 arms the content-gate shortcut when its second State term is present. */
 constexpr std::uint32_t kContentGateArmValue = 1;
 
-/** Descriptor positions for the family-5 fields Sunrise can produce from State. */
+/** Descriptor positions for the family-5 fields Dawn can produce from State. */
 enum class NestedField : std::size_t {
     objectSoid = 0,
     flagOverrides = 4,
@@ -147,4 +147,4 @@ bool write(encoding::bits::Writer& writer, const state::Family5State& family) no
     return encoded;
 }
 
-} // namespace sunrise::middleware::web_service::messages::family5
+} // namespace dawn::middleware::web_service::messages::family5

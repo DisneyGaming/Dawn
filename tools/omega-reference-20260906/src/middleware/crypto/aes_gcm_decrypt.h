@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <span>
 
-namespace sunrise::middleware::crypto::aes_gcm {
+namespace dawn::middleware::crypto::aes_gcm {
 
 /** Package and channel material is AES-128. */
 inline constexpr std::size_t kKeySize = 16;
@@ -26,4 +26,4 @@ inline constexpr std::size_t kTagSize = 16;
                            std::span<const std::byte, kTagSize> tag,
                            std::span<std::byte> output) noexcept;
 
-} // namespace sunrise::middleware::crypto::aes_gcm
+} // namespace dawn::middleware::crypto::aes_gcm

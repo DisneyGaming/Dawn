@@ -13,19 +13,19 @@
 > - `HANDOFF-HOMECOMING-TOWERFALL-2026-08-27.md` (Towerfall mission handoff & Scene crash)
 > - `HANDOFF-HOMECOMING-TOWERFALL-SAFE-TRACE-2026-08-27.md` (Safe trace execution flow)
 > - `SCENE-ENTRY-RESOLVER-CHAIN-2026-08-27.txt` (Native Scene-entry resolver chain disassembly)
-> - `SUNRISE-HOMECOMING-BRIEFING-FOR-CODEX.md` (Architecture briefing & client expectations)
+> - `DAWN-HOMECOMING-BRIEFING-FOR-CODEX.md` (Architecture briefing & client expectations)
 > - `HOMECOMING-NEW-CHAT-PROMPT.md` (Contextual boundaries & baseline prompts)
 
 ---
 
 ## 1. Executive Summary & Operational Pipeline
 
-Reviving Destiny 2's opening Red War mission **Homecoming** (`266 / mission_towerfall`) offline under **Sunrise** requires coordinating prelaunch donor contracts, public matchmaking emulation, demonware QoS reachability, activity-host handshakes, and native scene authority parsing.
+Reviving Destiny 2's opening Red War mission **Homecoming** (`266 / mission_towerfall`) offline under **Dawn** requires coordinating prelaunch donor contracts, public matchmaking emulation, demonware QoS reachability, activity-host handshakes, and native scene authority parsing.
 
 ```
 [Game Boot / UI Selection]
   │  • Chosen (activity 282) provides authored prelaunch contract
-  │  • Sunrise rewrites launch contract to 266 (mission_towerfall) before publication
+  │  • Dawn rewrites launch contract to 266 (mission_towerfall) before publication
   ▼
 [Public-Region Matchmaking Connect (BAP svc 42 ➔ 43)]
   │  • region_force_public treats mission as PUBLIC (bubble PUB48.48, slice set 72)

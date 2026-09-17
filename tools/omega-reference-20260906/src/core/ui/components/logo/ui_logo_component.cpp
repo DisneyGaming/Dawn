@@ -1,5 +1,5 @@
 /**
- * The animated Sunrise logo. One bundled sprite sheet is uploaded as a single texture, and each
+ * The animated Dawn logo. One bundled sprite sheet is uploaded as a single texture, and each
  * frame is picked out of it with texture coordinates.
  */
 
@@ -10,7 +10,7 @@
 
 #include "../../textures/ui_texture_slots.h"
 
-namespace sunrise::core::ui::components::logo {
+namespace dawn::core::ui::components::logo {
 namespace {
 
 /** Sheet geometry of the bundled logo. It is a square 11 by 11 grid of square frames. */
@@ -74,7 +74,7 @@ void draw_gradient_quad(ImTextureID sheet,
 
 } // namespace
 
-/** Draws the current frame of the animated Sunrise logo at the cursor. */
+/** Draws the current frame of the animated Dawn logo at the cursor. */
 bool draw(float extent) noexcept {
     const ImTextureID sheet = textures::get(textures::Slot::logoSheet);
     if (sheet == ImTextureID_Invalid) {
@@ -95,4 +95,4 @@ bool draw(float extent) noexcept {
     return true;
 }
 
-} // namespace sunrise::core::ui::components::logo
+} // namespace dawn::core::ui::components::logo

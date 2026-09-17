@@ -1,6 +1,6 @@
 #include "internal.h"
 
-namespace sunrise::client::content::items::packages {
+namespace dawn::client::content::items::packages {
 
 /** Reads the progression definition table and the object array each definition routes to. */
 bool build_progressions(const reader::Source& source,
@@ -41,4 +41,4 @@ bool build_progressions(const reader::Source& source,
     return count != 0;
 }
 
-} // namespace sunrise::client::content::items::packages
+} // namespace dawn::client::content::items::packages

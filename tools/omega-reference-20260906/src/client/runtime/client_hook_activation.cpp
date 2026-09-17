@@ -31,7 +31,7 @@
 #include "internal.h"
 #include "runtime.h"
 
-namespace sunrise::client::runtime {
+namespace dawn::client::runtime {
 
 SRWLOCK g_lock{SRWLOCK_INIT};
 StageState g_mainStage{StageState::pending};
@@ -183,9 +183,9 @@ void clear_game_targets() noexcept {
 
 } // namespace
 
-} // namespace sunrise::client::runtime
+} // namespace dawn::client::runtime
 
-namespace sunrise::client {
+namespace dawn::client {
 
 /** Resolves main-image targets and installs required game hooks once. */
 bool activate_main_once() noexcept {
@@ -218,7 +218,7 @@ bool activate_main_once() noexcept {
                          core::log::Level::error,
                          "ev=activate stage=main result=fail");
         // The boot cannot reach orbit after this, so the user is told rather than left waiting.
-        core::ui::notice::raise("Sunrise could not attach to the game. The boot will not finish.");
+        core::ui::notice::raise("Dawn could not attach to the game. The boot will not finish.");
         ReleaseSRWLockExclusive(&runtime::g_lock);
         return false;
     }
@@ -260,4 +260,4 @@ bool activate_graphics_once() noexcept {
     return true;
 }
 
-} // namespace sunrise::client
+} // namespace dawn::client

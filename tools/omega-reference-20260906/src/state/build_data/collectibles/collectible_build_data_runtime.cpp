@@ -2,7 +2,7 @@
 #include "../runtime/persistence/publication_transaction.h"
 #include "collectible_catalog.h"
 
-namespace sunrise::state::build_data {
+namespace dawn::state::build_data {
 namespace {
 
 /** @return True when every available collectible link names a published item row. */
@@ -70,4 +70,4 @@ bool find_collectible_definition(std::uint16_t collectibleIndex,
            && definition.collectibleIndex == collectibleIndex;
 }
 
-} // namespace sunrise::state::build_data
+} // namespace dawn::state::build_data

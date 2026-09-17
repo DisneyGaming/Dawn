@@ -2,7 +2,7 @@
 
 #include "omega_presentation_rules.h"
 
-namespace sunrise::state::activity::omega_presentation {
+namespace dawn::state::activity::omega_presentation {
 
 // 80F47B42 +D10: tv_intro_area, A3928C71/60/4. This footprint covers the
 // approach where the retail 235..242-second Panoptes reveal occurs.
@@ -49,4 +49,4 @@ inline constexpr std::array<Volume, 6> kVolumes{{
      {{{2, 3, 4}, {1, 2, 4}, {4, 0, 1}}}, 3},
 }};
 
-} // namespace sunrise::state::activity::omega_presentation
+} // namespace dawn::state::activity::omega_presentation

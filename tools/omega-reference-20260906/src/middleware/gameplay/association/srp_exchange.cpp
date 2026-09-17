@@ -4,7 +4,7 @@
 
 #include "../../crypto/random_bytes.h"
 
-namespace sunrise::middleware::gameplay::association::srp {
+namespace dawn::middleware::gameplay::association::srp {
 
 namespace {
 
@@ -41,7 +41,7 @@ constexpr modular::Number kGroupModulus{
 };
 
 /**
- * Checks one exchanged public value against the Sunrise range policy.
+ * Checks one exchanged public value against the Dawn range policy.
  * @param value Imported integer.
  * @param modulus Prepared group.
  * @return True when the value is nonzero and below the modulus.
@@ -135,4 +135,4 @@ bool derive(Exchange& exchange) noexcept {
     return derived;
 }
 
-} // namespace sunrise::middleware::gameplay::association::srp
+} // namespace dawn::middleware::gameplay::association::srp

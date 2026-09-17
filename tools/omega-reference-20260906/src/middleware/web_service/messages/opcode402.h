@@ -4,7 +4,7 @@
 
 #include "../web_service_envelope.h"
 
-namespace sunrise::middleware::web_service::messages::opcode402 {
+namespace dawn::middleware::web_service::messages::opcode402 {
 
 /** Web Service opcode used by the Character screen's Dismantle action. */
 inline constexpr std::uint16_t kOpcode = 402;
@@ -33,4 +33,4 @@ struct Request {
  */
 [[nodiscard]] bool parse_request(const Message& message, Request& request) noexcept;
 
-} // namespace sunrise::middleware::web_service::messages::opcode402
+} // namespace dawn::middleware::web_service::messages::opcode402

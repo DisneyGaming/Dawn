@@ -5,7 +5,7 @@
 #include "../../../../state/build_data/runtime.h"
 #include "internal.h"
 
-namespace sunrise::middleware::datagen::character_record::appearance {
+namespace dawn::middleware::datagen::character_record::appearance {
 namespace {
 
 namespace constants = state::build_data::constants;
@@ -175,4 +175,4 @@ bool apply_stats(const family4::loadout::ResolvedInstances& instances,
     return true;
 }
 
-} // namespace sunrise::middleware::datagen::character_record::appearance
+} // namespace dawn::middleware::datagen::character_record::appearance

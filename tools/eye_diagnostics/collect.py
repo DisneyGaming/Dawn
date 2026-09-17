@@ -1,4 +1,4 @@
-"""Archive and correlate one explicit Sunrise log. Never opens the game process.
+"""Archive and correlate one explicit Dawn log. Never opens the game process.
 
 Exit 0: matching build and well-formed scoped traces; diagnosis may remain incomplete.
 Exit 2: invalid input or unsafe output path. Exit 3: evidence identity/integrity failure.
@@ -123,7 +123,7 @@ def main() -> int:
         result["source_log"] = str(args.log.resolve())
         result["candidate"] = str(args.candidate.resolve())
         args.output.mkdir(parents=True, exist_ok=False)
-        (args.output / "sunrise.log").write_bytes(raw)
+        (args.output / "dawn.log").write_bytes(raw)
         (args.output / "candidate-manifest.json").write_bytes(manifest_bytes)
         (args.output / "contract.json").write_bytes(contract_bytes)
         timeline = result.pop("events")

@@ -17,7 +17,7 @@
 #include "../../../core/logging/log.h"
 #include "../../hooking/detour.h"
 
-namespace sunrise::client::hooks::bitmap {
+namespace dawn::client::hooks::bitmap {
 namespace {
 
 using SetBitmapRef = void(__fastcall*)(void*, void*);
@@ -160,4 +160,4 @@ void uninstall_bitmap_ref_guard() noexcept {
     }
 }
 
-} // namespace sunrise::client::hooks::bitmap
+} // namespace dawn::client::hooks::bitmap

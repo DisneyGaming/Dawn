@@ -2,7 +2,7 @@
 #include "../platform.h"
 #include "internal.h"
 
-namespace sunrise::client::hooks::network::http {
+namespace dawn::client::hooks::network::http {
 namespace {
 
 /** Exact protected replacement body for the common HTTP executor. */
@@ -23,4 +23,4 @@ void* execute_request_entry_point() noexcept {
     return reinterpret_cast<void*>(&execute_request_body);
 }
 
-} // namespace sunrise::client::hooks::network::http
+} // namespace dawn::client::hooks::network::http

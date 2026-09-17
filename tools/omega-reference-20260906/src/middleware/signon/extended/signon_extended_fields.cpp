@@ -5,7 +5,7 @@
 #include <span>
 #include <string_view>
 
-namespace sunrise::middleware::signon::extended {
+namespace dawn::middleware::signon::extended {
 namespace {
 
 /** Success field 12 carries the optional extended sub-message. */
@@ -103,4 +103,4 @@ bool append(Writer& success, std::uint32_t relayAddress) noexcept {
     return true;
 }
 
-} // namespace sunrise::middleware::signon::extended
+} // namespace dawn::middleware::signon::extended

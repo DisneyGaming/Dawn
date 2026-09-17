@@ -30,4 +30,4 @@ If the connection changes activity between staging and settlement, the binding/i
 
 Caller acceptance is not proof that the client instantiated every object or consumed each effect. This supplies local publication ownership and rollback, not general effect acknowledgement or late-join reconstruction.
 
-Landmarks: Sunrise/src/server/bap/encrypted/push/activity/activity_roster_push.cpp; Sunrise/src/server/bap/internal.h, especially stage_roster_publication_generation and staged_roster_is_current. No new live test is claimed.
+Landmarks: Dawn/src/server/bap/encrypted/push/activity/activity_roster_push.cpp; Dawn/src/server/bap/internal.h, especially stage_roster_publication_generation and staged_roster_is_current. No new live test is claimed.

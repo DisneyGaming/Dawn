@@ -5,7 +5,7 @@
 
 #include "definition.h"
 
-namespace sunrise::state::build_data::progressions {
+namespace dawn::state::build_data::progressions {
 
 /** Clears every generated progression definition. */
 void clear() noexcept;
@@ -45,4 +45,4 @@ void clear() noexcept;
 /** @return Number of generated progression definitions, read under the lock. */
 [[nodiscard]] std::size_t count() noexcept;
 
-} // namespace sunrise::state::build_data::progressions
+} // namespace dawn::state::build_data::progressions

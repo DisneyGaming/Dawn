@@ -4,7 +4,7 @@
 
 #include "../web_service_envelope.h"
 
-namespace sunrise::middleware::web_service::messages::opcode903 {
+namespace dawn::middleware::web_service::messages::opcode903 {
 
 /** Web Service opcode used by an ordinary item socket-plug insertion. */
 inline constexpr std::uint16_t kOpcode = 903;
@@ -32,4 +32,4 @@ struct Request {
  */
 [[nodiscard]] bool parse_request(const Message& message, Request& request) noexcept;
 
-} // namespace sunrise::middleware::web_service::messages::opcode903
+} // namespace dawn::middleware::web_service::messages::opcode903

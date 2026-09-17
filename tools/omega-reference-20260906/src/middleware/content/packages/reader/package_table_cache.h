@@ -4,7 +4,7 @@
 
 #include "internal.h"
 
-namespace sunrise::middleware::content::packages::reader::table_cache {
+namespace dawn::middleware::content::packages::reader::table_cache {
 
 /**
  * Reports one entry record, holding the package's tables from the first use.
@@ -38,4 +38,4 @@ namespace sunrise::middleware::content::packages::reader::table_cache {
                                 std::uint32_t index,
                                 layout::BlockRecord& record) noexcept;
 
-} // namespace sunrise::middleware::content::packages::reader::table_cache
+} // namespace dawn::middleware::content::packages::reader::table_cache

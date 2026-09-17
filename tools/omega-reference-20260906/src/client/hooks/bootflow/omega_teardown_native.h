@@ -8,7 +8,7 @@
 
 #include "../../content/handles/handle_resolver.h"
 
-namespace sunrise::client::hooks::bootflow::omega_teardown_native {
+namespace dawn::client::hooks::bootflow::omega_teardown_native {
 
 using Source = content::handles::Source;
 
@@ -209,4 +209,4 @@ struct RosterBlock final { std::array<std::uint32_t,kRosterBlockBytes/4> words{}
         && lair_block(block,false) && same_retirement_owner(source,prior);
 }
 
-} // namespace sunrise::client::hooks::bootflow::omega_teardown_native
+} // namespace dawn::client::hooks::bootflow::omega_teardown_native

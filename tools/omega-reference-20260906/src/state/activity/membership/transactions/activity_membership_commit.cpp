@@ -8,7 +8,7 @@
 #include "../activity_membership_query.h"
 #include "internal.h"
 
-namespace sunrise::state::activity::membership {
+namespace dawn::state::activity::membership {
 namespace {
 
 /**
@@ -213,9 +213,9 @@ bool commit(PendingMutation& mutation) noexcept {
     SessionRecord& record = state.sessions[prepared.targetSlot];
     bool committed = state.stateRevision == prepared.expectedStateRevision && record.occupied
                      && record.joined && record.joinedRevision != kInvalidRevision
-                     && sunrise::state::activity::transactions::instance_key(record)
+                     && dawn::state::activity::transactions::instance_key(record)
                             == prepared.instanceKey
-                     && sunrise::state::activity::transactions::host_region_key(record)
+                     && dawn::state::activity::transactions::host_region_key(record)
                             == prepared.expectedHostRegion
                      && record.recordRevision == prepared.expectedRecordRevision
                      && root.account.primarySoid == prepared.expectedPrimarySoid;
@@ -236,4 +236,4 @@ bool commit(PendingMutation& mutation) noexcept {
     return committed;
 }
 
-} // namespace sunrise::state::activity::membership
+} // namespace dawn::state::activity::membership

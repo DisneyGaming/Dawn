@@ -6,7 +6,7 @@
 
 #include "../../../state/account/account_state.h"
 
-namespace sunrise::middleware::datagen::roster {
+namespace dawn::middleware::datagen::roster {
 
 /** Replicated account rosters reserve 10 fixed character rows. */
 inline constexpr std::size_t kCharacterCapacity = 10;
@@ -47,4 +47,4 @@ static_assert(sizeof(CharacterEntry)
 static_assert(sizeof(Block)
               == 2 * sizeof(std::uint32_t) + kCharacterCapacity * sizeof(CharacterEntry));
 
-} // namespace sunrise::middleware::datagen::roster
+} // namespace dawn::middleware::datagen::roster

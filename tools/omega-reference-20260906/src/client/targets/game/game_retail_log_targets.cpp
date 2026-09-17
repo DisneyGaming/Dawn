@@ -2,7 +2,7 @@
 #include "resolution/internal.h"
 #include "retail_log.h"
 
-namespace sunrise::client::targets::game::retail_log {
+namespace dawn::client::targets::game::retail_log {
 namespace {
 
 Targets g_targets;
@@ -57,4 +57,4 @@ bool is_resolved() noexcept {
     return g_resolved;
 }
 
-} // namespace sunrise::client::targets::game::retail_log
+} // namespace dawn::client::targets::game::retail_log

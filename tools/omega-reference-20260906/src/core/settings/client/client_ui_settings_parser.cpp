@@ -4,7 +4,7 @@
 
 #include "../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 namespace {
 
 /** One readable configuration name and its Windows virtual-key value. */
@@ -87,4 +87,4 @@ bool Parser::client_ui_settings(ui::runtime::Settings& output) noexcept {
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

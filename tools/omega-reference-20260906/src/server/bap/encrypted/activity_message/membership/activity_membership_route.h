@@ -3,7 +3,7 @@
 #include "../../../../../middleware/bap/activity_message/definition.h"
 #include "../definition.h"
 
-namespace sunrise::server::bap::encrypted::activity_message::membership {
+namespace dawn::server::bap::encrypted::activity_message::membership {
 
 /**
  * Stages a changed identity push or an unchanged transactional no-op.
@@ -46,4 +46,4 @@ prepare_acknowledgement(state::activity::ActivityInstanceKey key,
                         const middleware::bap::activity_message::Request& request,
                         ActivityPlan& plan) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::activity_message::membership
+} // namespace dawn::server::bap::encrypted::activity_message::membership

@@ -5,7 +5,7 @@
 #include "../../../../state/account/account_state.h"
 #include "definition.h"
 
-namespace sunrise::middleware::datagen::family4::loadout {
+namespace dawn::middleware::datagen::family4::loadout {
 
 /**
  * Resolves one selected character's authored equipment through installed build data.
@@ -40,4 +40,4 @@ namespace sunrise::middleware::datagen::family4::loadout {
                                            std::size_t characterIndex,
                                            ResolvedInstances& output) noexcept;
 
-} // namespace sunrise::middleware::datagen::family4::loadout
+} // namespace dawn::middleware::datagen::family4::loadout

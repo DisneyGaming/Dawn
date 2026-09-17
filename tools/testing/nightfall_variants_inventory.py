@@ -89,7 +89,7 @@ def main():
     start = relative(public, 16) + 16
     if count != 1170 or u32(public, start - 8) != 0x808076FC:
         raise ValueError('Unexpected public activity table')
-    header = (ROOT / 'Sunrise/src/state/activity/strike_variants.h').read_text()
+    header = (ROOT / 'Dawn/src/state/activity/strike_variants.h').read_text()
     rows = re.findall(r'\{"(strike_\w+)", Difficulty::(\w+), (\d+), 0x([0-9A-F]+)U\}', header)
     if len(rows) != 8:
         raise ValueError('Expected two strikes with four variants each')
@@ -98,7 +98,7 @@ def main():
     manifest = {'build': 86657, 'public_table': '81327CF0',
                 'public_table_class': f'{cls:08X}',
                 'public_table_sha256': hashlib.sha256(public).hexdigest(),
-                'sunrise_grandmaster_power_policy': {
+                'dawn_grandmaster_power_policy': {
                     'native_activity_power': 1100,
                     'minimum_disadvantage': 30,
                     'default_player_power_cap': 1070,

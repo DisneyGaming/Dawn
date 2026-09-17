@@ -5,7 +5,7 @@
 
 #include "../definition.h"
 
-namespace sunrise::middleware::bap::matchmaking::request {
+namespace dawn::middleware::bap::matchmaking::request {
 
 /** Checked first-occurrence fields borrowed from the service-42 root. */
 struct Root final {
@@ -33,4 +33,4 @@ struct Root final {
 [[nodiscard]] bool parse_update(std::span<const std::byte> input,
                                 AdvertisementUpdate& update) noexcept;
 
-} // namespace sunrise::middleware::bap::matchmaking::request
+} // namespace dawn::middleware::bap::matchmaking::request

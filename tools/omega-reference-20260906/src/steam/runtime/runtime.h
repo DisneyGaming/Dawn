@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::steam {
+namespace dawn::steam {
 
 /**
  * Stable platform identity of the single local user. Gameplay membership uses it only as the
@@ -101,4 +101,4 @@ void unregister_call_result(void* callback, ApiCall call) noexcept;
  */
 [[nodiscard]] void* find_or_create_user_interface(UserHandle user, const char* version) noexcept;
 
-} // namespace sunrise::steam
+} // namespace dawn::steam

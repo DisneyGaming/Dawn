@@ -6,7 +6,7 @@
 
 #include "../internal.h"
 
-namespace sunrise::steam::interfaces::methods {
+namespace dawn::steam::interfaces::methods {
 namespace {
 
 /** The default branch name. Content selection reads it. */
@@ -85,4 +85,4 @@ int app_build_id([[maybe_unused]] void* self) noexcept {
     return kBuildId;
 }
 
-} // namespace sunrise::steam::interfaces::methods
+} // namespace dawn::steam::interfaces::methods

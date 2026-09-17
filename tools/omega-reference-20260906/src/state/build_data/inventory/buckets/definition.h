@@ -5,7 +5,7 @@
 #include <limits>
 #include <type_traits>
 
-namespace sunrise::state::build_data::inventory::buckets {
+namespace dawn::state::build_data::inventory::buckets {
 
 /** Native inventory arrays a generated bucket descriptor can pick. */
 enum class ArraySelector : std::uint8_t {
@@ -45,4 +45,4 @@ struct Descriptor {
 static_assert(sizeof(Descriptor) == kDescriptorByteSize);
 static_assert(std::is_trivially_copyable_v<Descriptor>);
 
-} // namespace sunrise::state::build_data::inventory::buckets
+} // namespace dawn::state::build_data::inventory::buckets

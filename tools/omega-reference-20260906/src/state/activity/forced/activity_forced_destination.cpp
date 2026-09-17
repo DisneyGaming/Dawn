@@ -11,7 +11,7 @@
 #include "../runtime.h"
 #include "../../runtime/storage/internal.h"
 
-namespace sunrise::state::activity::forced {
+namespace dawn::state::activity::forced {
 namespace {
 
 /** Authored investment activity indices recovered from the pinned client's activity table. */
@@ -377,4 +377,4 @@ bool apply(destination::DestinationSelection& selection) noexcept {
     return true;
 }
 
-} // namespace sunrise::state::activity::forced
+} // namespace dawn::state::activity::forced

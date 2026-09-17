@@ -7,7 +7,7 @@
 #include "../../targets/game.h"
 #include "internal.h"
 
-namespace sunrise::client::content::investment {
+namespace dawn::client::content::investment {
 namespace {
 
 /** FNV-1 hash of the investment-globals bootstrap name, so the name itself is not shipped. */
@@ -17,4 +17,4 @@ constexpr std::size_t kBootstrapMatchCapacity = 8;
 
 } // namespace
 
-} // namespace sunrise::client::content::investment
+} // namespace dawn::client::content::investment

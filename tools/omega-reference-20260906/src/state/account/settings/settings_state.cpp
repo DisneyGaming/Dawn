@@ -3,7 +3,7 @@
 #include <array>
 #include <cstddef>
 
-namespace sunrise::state::account::settings {
+namespace dawn::state::account::settings {
 namespace {
 
 template <typename Value> struct Range {
@@ -60,7 +60,7 @@ constexpr std::int8_t kUnidentifiedTextValue = 0;
 constexpr Range<std::int8_t> kTextChatMode{0, 3};
 
 /**
- * Tests one scalar against an inclusive Sunrise settings policy range.
+ * Tests one scalar against an inclusive Dawn settings policy range.
  * @param range Inclusive supported range.
  * @return True when the value is inside the range.
  */
@@ -69,7 +69,7 @@ template <typename Value> [[nodiscard]] bool within(Value value, Range<Value> ra
 }
 
 /**
- * Tests one scalar against a Sunrise settings policy domain with gaps.
+ * Tests one scalar against a Dawn settings policy domain with gaps.
  * @param values Every supported value.
  * @return True when the candidate is one of them.
  */
@@ -160,4 +160,4 @@ bool valid(const AccountSettings& value) noexcept {
            && valid_interface(value.interface) && valid_social(value.social);
 }
 
-} // namespace sunrise::state::account::settings
+} // namespace dawn::state::account::settings

@@ -28,7 +28,7 @@ function Write-Utf8 {
     [IO.File]::WriteAllBytes($Path, [Text.UTF8Encoding]::new($false).GetBytes($Text))
 }
 
-$testRoot = Join-Path ([IO.Path]::GetTempPath()) ("sunrise-manifest-tests-" + [guid]::NewGuid().ToString('N'))
+$testRoot = Join-Path ([IO.Path]::GetTempPath()) ("dawn-manifest-tests-" + [guid]::NewGuid().ToString('N'))
 $rootA = Join-Path $testRoot 'absolute-a'
 $rootB = Join-Path $testRoot 'different-absolute-b'
 [IO.Directory]::CreateDirectory($rootA) | Out-Null
@@ -107,13 +107,13 @@ try {
     Write-Utf8 (Join-Path $rootA 'scratch.obj') 'ignored output'
     Write-Utf8 (Join-Path $rootA 'build/product.bin') 'ignored build tree'
     Write-Utf8 (Join-Path $rootA 'session.log') 'ignored log'
-    Write-Utf8 (Join-Path $rootA 'Sunrise/build/nested/test-product.exe') 'ignored project build'
-    Write-Utf8 (Join-Path $rootA 'Sunrise/standalone-test.obj') 'ignored nested object'
+    Write-Utf8 (Join-Path $rootA 'Dawn/build/nested/test-product.exe') 'ignored project build'
+    Write-Utf8 (Join-Path $rootA 'Dawn/standalone-test.obj') 'ignored nested object'
     Write-Utf8 (Join-Path $rootA 'standalone-test.exe') 'ignored root executable'
     $ignored = Get-SourceManifest -SourceRoot $rootA -Kind Git
     Assert-True ($ignored.SourceSha256 -ceq $untrackedChanged.SourceSha256) `
         'ignored outputs do not change source digest'
-    Assert-Throws { Assert-SourcePathHygiene -Paths @('Sunrise/build/escaped.obj') } `
+    Assert-Throws { Assert-SourcePathHygiene -Paths @('Dawn/build/escaped.obj') } `
         'explicit source hygiene rejects a build-tree artifact even if ignore rules regress'
 
     $beforeGuard = Get-SourceManifest -SourceRoot $rootB -Kind Tree

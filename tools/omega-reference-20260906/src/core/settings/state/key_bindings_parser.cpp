@@ -3,7 +3,7 @@
 
 #include "../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 namespace {
 
 namespace bindings = state::account::settings::bindings;
@@ -419,4 +419,4 @@ bool Parser::input_code_value(std::string_view name, std::uint16_t& output) noex
     return true;
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

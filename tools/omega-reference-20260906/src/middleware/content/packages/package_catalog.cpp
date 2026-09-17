@@ -2,7 +2,7 @@
 
 #include "../../../state/content/content_catalog.h"
 
-namespace sunrise::middleware::content::packages {
+namespace dawn::middleware::content::packages {
 namespace {
 
 /**
@@ -30,4 +30,4 @@ bool load_catalog(std::wstring_view directory, named_tags::DirectoryResult& resu
     return false;
 }
 
-} // namespace sunrise::middleware::content::packages
+} // namespace dawn::middleware::content::packages

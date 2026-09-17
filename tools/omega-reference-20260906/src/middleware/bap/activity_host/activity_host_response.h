@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::bap::activity_host {
+namespace dawn::middleware::bap::activity_host {
 
 /**
  * Checks one svc-16 host identity and encodes its svc-17 relay endpoint.
@@ -21,4 +21,4 @@ namespace sunrise::middleware::bap::activity_host {
                                    std::span<std::byte> output,
                                    std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_host
+} // namespace dawn::middleware::bap::activity_host

@@ -6,7 +6,7 @@
 #include "../../crypto/modular_1024.h"
 #include "../../crypto/sha256.h"
 
-namespace sunrise::middleware::gameplay::association::srp {
+namespace dawn::middleware::gameplay::association::srp {
 
 /** Every exchanged integer is 128 bytes, big-endian and left zero padded. */
 inline constexpr std::size_t kIntegerSize = crypto::modular::kByteSize;
@@ -38,4 +38,4 @@ struct Exchange {
  */
 [[nodiscard]] bool derive(Exchange& exchange) noexcept;
 
-} // namespace sunrise::middleware::gameplay::association::srp
+} // namespace dawn::middleware::gameplay::association::srp

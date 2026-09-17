@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::bap::account_translation {
+namespace dawn::middleware::bap::account_translation {
 
 /**
  * Encodes the svc-24 answer to one svc-23 identity request. A request that cannot be paired
@@ -20,4 +20,4 @@ namespace sunrise::middleware::bap::account_translation {
                                    std::span<std::byte> output,
                                    std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::bap::account_translation
+} // namespace dawn::middleware::bap::account_translation

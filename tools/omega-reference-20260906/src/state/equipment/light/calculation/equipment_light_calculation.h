@@ -4,7 +4,7 @@
 
 #include "../definition.h"
 
-namespace sunrise::state::equipment::light::calculation {
+namespace dawn::state::equipment::light::calculation {
 
 /**
  * Computes raw summary arrays and the selected character's merged weighted light values.
@@ -19,4 +19,4 @@ namespace sunrise::state::equipment::light::calculation {
                             std::span<const SlotScores> otherCharacterScores,
                             Evaluation& output) noexcept;
 
-} // namespace sunrise::state::equipment::light::calculation
+} // namespace dawn::state::equipment::light::calculation

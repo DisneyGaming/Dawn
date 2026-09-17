@@ -20,10 +20,10 @@ def build(project, configuration, variant='local', source=None, *, compile_only=
     directory = OUT / f'{name}-{variant}' / configuration
     directory.mkdir(parents=True, exist_ok=True)
     log = directory / 'build.log'
-    # The full item catalog can exhaust compiler memory when several Sunrise
+    # The full item catalog can exhaust compiler memory when several Dawn
     # translation units instantiate its large arrays concurrently. Keep the
     # compiler host explicitly 64-bit and serialize only the DLL's compile work.
-    compiler_jobs = 1 if name == 'Sunrise' else 4
+    compiler_jobs = 1 if name == 'Dawn' else 4
     args = [str(MSBUILD), str(project), '/nologo', '/m:2', '/v:minimal',
             f'/p:Configuration={configuration}', '/p:Platform=x64',
             '/p:PreferredToolArchitecture=x64', f'/p:CL_MPCount={compiler_jobs}',
@@ -38,7 +38,7 @@ def build(project, configuration, variant='local', source=None, *, compile_only=
     warnings = re.findall(r'^.*: warning .*$', log.read_text(errors='replace'), re.MULTILINE)
     if warnings:
         raise RuntimeError('\n'.join(warnings))
-    if name == 'Sunrise':
+    if name == 'Dawn':
         return {'project': name, 'configuration': configuration, 'variant': variant,
                 'dll': str(directory / 'steam_api64.dll'), 'sha256': digest(directory / 'steam_api64.dll'),
                 'pdbSha256': digest(directory / 'steam_api64.pdb')}

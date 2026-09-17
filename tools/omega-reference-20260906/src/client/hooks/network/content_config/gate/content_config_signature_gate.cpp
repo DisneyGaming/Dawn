@@ -2,7 +2,7 @@
 
 #include <atomic>
 
-namespace sunrise::client::hooks::network::content_config::gate {
+namespace dawn::client::hooks::network::content_config::gate {
 namespace {
 
 /** The signed-manifest check is skipped only while the gate byte is zero. */
@@ -81,4 +81,4 @@ bool is_disabled(const Ownership& ownership) noexcept {
     return ownership.address != nullptr && read(ownership.address) == kDisabledValue;
 }
 
-} // namespace sunrise::client::hooks::network::content_config::gate
+} // namespace dawn::client::hooks::network::content_config::gate

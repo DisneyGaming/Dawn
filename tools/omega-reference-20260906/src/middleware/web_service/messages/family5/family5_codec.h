@@ -3,7 +3,7 @@
 #include "../../../../state/investment/investment.h"
 #include "../../../encoding/bit_writer.h"
 
-namespace sunrise::middleware::web_service::messages::family5 {
+namespace dawn::middleware::web_service::messages::family5 {
 
 /**
  * Validates every bounded family-5 field before encoding.
@@ -20,4 +20,4 @@ namespace sunrise::middleware::web_service::messages::family5 {
 [[nodiscard]] bool write(encoding::bits::Writer& writer,
                          const state::Family5State& family) noexcept;
 
-} // namespace sunrise::middleware::web_service::messages::family5
+} // namespace dawn::middleware::web_service::messages::family5

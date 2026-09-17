@@ -5,7 +5,7 @@
 
 #include "../../../../state/build_data/runtime.h"
 
-namespace sunrise::client::content::items::packages {
+namespace dawn::client::content::items::packages {
 namespace {
 
 /** Sundial/native category families whose socket seed expands to every plug in that family. */
@@ -270,4 +270,4 @@ void SocketPlugBuild::release() noexcept {
     skipped_ = 0;
 }
 
-} // namespace sunrise::client::content::items::packages
+} // namespace dawn::client::content::items::packages

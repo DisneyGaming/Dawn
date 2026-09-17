@@ -1,8 +1,8 @@
-# Research handoff: reconstructing Destiny 2 strikes on Sunrise
+# Research handoff: reconstructing Destiny 2 strikes on Dawn
 
 Compiled 2026-09-07 for handoff to a planning agent. This document exists to brief an AI agent that has never
 seen this repository on everything relevant to attempting a **strike** (matchmade, 3-player, wave/boss PvE
-activity) on the Sunrise offline-revival project, so it can produce an implementation plan without re-deriving
+activity) on the Dawn offline-revival project, so it can produce an implementation plan without re-deriving
 context that already exists in this workspace's history.
 
 This is not a plan. It is the evidence base a plan should be built from. Every claim below is sourced to a file
@@ -17,7 +17,7 @@ here targets Bungie's live servers or other players.
 
 ## 1. What this project is
 
-**Sunrise** is a from-scratch offline server + client-hook (DLL detour) reimplementation of Destiny 2's
+**Dawn** is a from-scratch offline server + client-hook (DLL detour) reimplementation of Destiny 2's
 networking, activity, and mission-execution systems, built by black-box reverse engineering of the retail
 client binary (no leaked source). It lets the retail Destiny 2 client run missions against a private,
 locally-hosted server instead of Bungie's infrastructure.
@@ -28,7 +28,7 @@ Two missions have been the subject of deep, dated reconstruction work:
   Infinite Forest). This is the most complete reconstruction: a full opening → Forest → Lair → 3 Crown combat
   cycles → ending → Mercury handoff has been played end-to-end on a generic mission executor. See
   [OMEGA-MISSION-RECONSTRUCTION-COMPLETE-DOCUMENTATION-20260822.md](OMEGA-MISSION-RECONSTRUCTION-COMPLETE-DOCUMENTATION-20260822.md)
-  and [Sunrise/docs/COO-EXECUTOR.md](Sunrise/docs/COO-EXECUTOR.md).
+  and [Dawn/docs/COO-EXECUTOR.md](Dawn/docs/COO-EXECUTOR.md).
 - **`mission_towerfall`** ("Homecoming", a Tower/Guardian-Games-era-adjacent mission). This mission is
   architecturally important for strikes specifically because, unlike Omega (a private/solo-launchable mission),
   Towerfall's investigation accidentally reconstructed the **public matchmaking connect path** — the same
@@ -45,7 +45,7 @@ The two reconstructed missions are structurally the closest thing to strikes in 
 requirements neither mission fully exercises:
 
 1. **Matchmaking, not private launch.** Missions launch through a forced/authored destination-selection path
-   (`activity_forced_destination.cpp`) that never needed Sunrise's matchmaking service to work end-to-end.
+   (`activity_forced_destination.cpp`) that never needed Dawn's matchmaking service to work end-to-end.
    Strikes are matchmade PUBLIC(-ish) activities — the Homecoming investigation only reached the matchmaking
    path because its private-launch route was a dead end offline (`HOMECOMING-MATCHMAKING-HANDOFF.md §11`:
    "a private activity never establishes a peer session with the embedded host"). Strikes will need this same
@@ -72,7 +72,7 @@ same way.
 
 ## 3. The generic mission executor (CoO) — what's reusable as-is
 
-Full detail: [Sunrise/docs/COO-EXECUTOR.md](Sunrise/docs/COO-EXECUTOR.md). Key facts a planning agent needs:
+Full detail: [Dawn/docs/COO-EXECUTOR.md](Dawn/docs/COO-EXECUTOR.md). Key facts a planning agent needs:
 
 - `coo/executor.h` is a bounded, engine-agnostic C++20 DAG executor: named steps, typed commands, dependency
   masks, up to 32 steps / 8 commands per step / 128 queued observations. It is not Omega-specific.
@@ -119,17 +119,17 @@ for that person's actual source/method if it wants to build on it rather than as
 The user's proposed shortcut — "for combatant AI just gotta assign the combat directory to the squads" —
 has real grounding in what's already reverse-engineered, but the granularity matters:
 
-- **Spawner/source schema** (`Sunrise/src/state/activity/omega_combatant_authority.h`): the native type-1
+- **Spawner/source schema** (`Dawn/src/state/activity/omega_combatant_authority.h`): the native type-1
   spawner's authority body (schema `80807EC9`, 641 bits, or 673 bits with a second category) is fully decoded
   and has a validated bit-exact writer. A `Source` names: a registry, a generation, a "rule slot" (which
   authored template/category the spawner should pull from), a loose-request count (how many members to
   request from that category), and an optional `TacticalGroup` (a native type-3 tactical group + authored row
   — this is very likely the "squad" assignment mechanism the user is thinking of). **Important:** the header's
   own comment states "The native spawner still owns template selection, placement, request queuing, actor
-  creation and AI initialization" — Sunrise supplies *what to request and how many*, not squad AI logic
-  itself. The actual combatant AI (pathing, target selection, ability use) is 100% native/retail; Sunrise never
+  creation and AI initialization" — Dawn supplies *what to request and how many*, not squad AI logic
+  itself. The actual combatant AI (pathing, target selection, ability use) is 100% native/retail; Dawn never
   reimplements it, only triggers it correctly.
-- **Wave table** (`Sunrise/src/state/activity/omega_enemy_crown_waves.h`): a fully reconstructed, statically
+- **Wave table** (`Dawn/src/state/activity/omega_enemy_crown_waves.h`): a fully reconstructed, statically
   validated 55-entry wave table for Omega's Crown encounter, covering 3 cycles (Fallen, Hive, final-platform
   Vex) x up to 4 sub-waves each, with per-wave requested counts, "member vs. squad" flags, and a boss-departure
   wave explicitly marked `required=false` because the boss can leave before those enemies die. This is real,
@@ -144,7 +144,7 @@ has real grounding in what's already reverse-engineered, but the granularity mat
   mechanics/"mission plugins," not part of the generic layer.
 
 **Implication for planning:** "assign the combat directory to squads" is directionally correct as a mental
-model — Sunrise's job in combat is spawner-request orchestration (who to summon, when, from where, into which
+model — Dawn's job in combat is spawner-request orchestration (who to summon, when, from where, into which
 tactical slot), while retail native code does all AI — but each strike boss/encounter still needs its own
 wave-table extraction and, likely, its own boss-mechanics plugin, following the same manual RE process that
 took Panoptes weeks. There is no existing generic "read any encounter director and run it" implementation.
@@ -165,7 +165,7 @@ Full detail across two dated handoffs, read in order:
 1. Forcing a mission's slice-set to "public" (`region_public.cpp`, hooking reader RVA `0xC210F0` at the exact
    caller RVA `0xE2B3BD` only) routes the client onto the **public citizen-join / matchmaking path** instead of
    the dead-end private/fireteam path. This is described as a "keeper — it works."
-2. Sunrise's matchmaking service (BAP svc 42→43, `matchmaking_route.cpp` +
+2. Dawn's matchmaking service (BAP svc 42→43, `matchmaking_route.cpp` +
    `middleware/bap/matchmaking/response/`) can be made to answer a client's `sessionSearch` request with the
    locally-hosted region session instead of an empty result. The wire schema for the search-result response was
    fully reverse-engineered: `f3{ f1(repeated){ f1: descriptorMsg{ f1: 128B descriptor } } }` — critically, the
@@ -181,7 +181,7 @@ Full detail across two dated handoffs, read in order:
 ### 5.2 The blocker where this work stopped
 
 The QoS reply's **payload** (bytes after the 27-byte header) must be a structured "session blob" that the
-client's `session_tracker` decodes to judge the session suitable/unsuitable. Sunrise currently sends zeros
+client's `session_tracker` decodes to judge the session suitable/unsuitable. Dawn currently sends zeros
 there, and the client reports `Reason=qos-payload-failed-to-decode`, marking the session unsuitable and
 re-searching forever. The decoder lives in VMProtect-obscured code reached only through a dynamically-dispatched
 vtable callback (`CALL [RBX+0x10]`), which defeated static RE. The last documented state is a **runtime-bypass
@@ -189,8 +189,8 @@ plan in progress**: a pump-hook was retargeted to intercept the per-result recor
 `FUN_7ff619b0aea0` (RVA `0x1A9AEA0`) to capture the consumer object's vtable slot 0x10 at runtime and identify
 the actual handler function, so it can be hooked directly (force "suitable") rather than reverse-engineering
 the payload format blind. **This was the literal next step when the handoff was written; there is no evidence
-in this workspace that it was completed.** Search `Sunrise/src/client/hooks/homecoming/` (or wherever
-`qos_probe` currently lives) and `bin/x64/Sunrise/logs/sunrise.log` for `ev=qosprobe stage=consumer` to check
+in this workspace that it was completed.** Search `Dawn/src/client/hooks/homecoming/` (or wherever
+`qos_probe` currently lives) and `bin/x64/Dawn/logs/dawn.log` for `ev=qosprobe stage=consumer` to check
 whether this was ever resolved before starting new work.
 
 ### 5.3 What this means for a strike plan
@@ -293,50 +293,50 @@ line item in any strike plan.
 
 ## 8. Relevant source tree map
 
-Paths are relative to the repo root (`D:\Documents\VSCode stuff\evil-ass-repo-of-doom-and-despair`), Sunrise
-source lives under `Sunrise/src/`.
+Paths are relative to the repo root (`D:\Documents\VSCode stuff\evil-ass-repo-of-doom-and-despair`), Dawn
+source lives under `Dawn/src/`.
 
 **Generic mission executor (reusable):**
-- `Sunrise/src/state/activity/coo/` — mission_runtime, executor, native_services, receipt_queue,
+- `Dawn/src/state/activity/coo/` — mission_runtime, executor, native_services, receipt_queue,
   dialogue_service, population_service, scene_service, presentation_services/cues (exact filenames per
-  `Sunrise/docs/COO-EXECUTOR.md`).
-- `Sunrise/docs/COO-EXECUTOR.md`, `Sunrise/docs/TOWERFALL-BOOTSTRAP-AND-MISSION-TABLES.md`,
-  `Sunrise/docs/IKORA-ANIMATION-AND-ENDING.md`.
+  `Dawn/docs/COO-EXECUTOR.md`).
+- `Dawn/docs/COO-EXECUTOR.md`, `Dawn/docs/TOWERFALL-BOOTSTRAP-AND-MISSION-TABLES.md`,
+  `Dawn/docs/IKORA-ANIMATION-AND-ENDING.md`.
 
 **Omega/Crown combat (reference implementation for wave/spawner patterns):**
-- `Sunrise/src/state/activity/omega_combatant_authority.h` — spawner/tactical-group authority body writer.
-- `Sunrise/src/state/activity/omega_enemy_crown_waves.h`, `omega_enemy_crown_catalog.h` — Crown wave table.
-- `Sunrise/src/state/activity/omega_enemy_lair_wave.h` — Lair wave data.
-- `Sunrise/src/state/activity/omega_boss_combat_action.h`,
-  `Sunrise/src/client/hooks/bootflow/omega_boss_combat_runtime.inl`,
-  `Sunrise/src/client/hooks/bootflow/omega_boss_combat_start.h` — boss-specific mechanics/hooks.
-- `Sunrise/src/client/hooks/bootflow/opening_authority/` — Ghost/VM bridge, Type-53/68 capture evidence
+- `Dawn/src/state/activity/omega_combatant_authority.h` — spawner/tactical-group authority body writer.
+- `Dawn/src/state/activity/omega_enemy_crown_waves.h`, `omega_enemy_crown_catalog.h` — Crown wave table.
+- `Dawn/src/state/activity/omega_enemy_lair_wave.h` — Lair wave data.
+- `Dawn/src/state/activity/omega_boss_combat_action.h`,
+  `Dawn/src/client/hooks/bootflow/omega_boss_combat_runtime.inl`,
+  `Dawn/src/client/hooks/bootflow/omega_boss_combat_start.h` — boss-specific mechanics/hooks.
+- `Dawn/src/client/hooks/bootflow/opening_authority/` — Ghost/VM bridge, Type-53/68 capture evidence
   models (dialogue, objectives — directly reusable pattern for a strike's HUD/objective wiring).
 
 **Matchmaking / QoS / networking (prerequisite for any strike):**
-- `Sunrise/src/server/bap/encrypted/matchmaking/matchmaking_route.cpp`
-- `Sunrise/src/middleware/bap/matchmaking/` (definition.h, request/, response/)
-- `Sunrise/src/server/gameplay/gameplay_advertisement.cpp`
-- `Sunrise/src/server/gameplay/group/group_host_sessions.cpp`
-- `Sunrise/src/server/gameplay/endpoint/gameplay_endpoint.cpp` — QoS responder.
-- `Sunrise/src/server/gameplay/peer/peer_transport.cpp`, `group/group_host.cpp`, `dtls/dtls_host.cpp`,
+- `Dawn/src/server/bap/encrypted/matchmaking/matchmaking_route.cpp`
+- `Dawn/src/middleware/bap/matchmaking/` (definition.h, request/, response/)
+- `Dawn/src/server/gameplay/gameplay_advertisement.cpp`
+- `Dawn/src/server/gameplay/group/group_host_sessions.cpp`
+- `Dawn/src/server/gameplay/endpoint/gameplay_endpoint.cpp` — QoS responder.
+- `Dawn/src/server/gameplay/peer/peer_transport.cpp`, `group/group_host.cpp`, `dtls/dtls_host.cpp`,
   `association/association_host.cpp` — the peer/host transport that answers a join once QoS passes.
-- `Sunrise/src/state/matchmaking/` — matchmaking_state.cpp/h, transactions/matchmaking_commit.cpp,
+- `Dawn/src/state/matchmaking/` — matchmaking_state.cpp/h, transactions/matchmaking_commit.cpp,
   matchmaking_prepare.cpp.
-- `Sunrise/src/client/hooks/homecoming/` — `region_public.cpp` (working public-slice-set force), `activate.cpp`,
+- `Dawn/src/client/hooks/homecoming/` — `region_public.cpp` (working public-slice-set force), `activate.cpp`,
   `authored_probe.cpp` (largely superseded/dead-ends, kept for the documented lessons in
   `HOMECOMING-MATCHMAKING-HANDOFF.md §12`).
 
 **Bootstrap / activity launch:**
-- `Sunrise/src/state/activity/forced/definition.h`, `activity_forced_destination.cpp` — forced-destination
+- `Dawn/src/state/activity/forced/definition.h`, `activity_forced_destination.cpp` — forced-destination
   override mechanism used for both Omega and Towerfall private launches (not matchmaking).
-- `Sunrise/src/client/hooks/bootflow/towerfall_executor_bootstrap.cpp` — the launch-record correction
+- `Dawn/src/client/hooks/bootflow/towerfall_executor_bootstrap.cpp` — the launch-record correction
   technique (rewrite selected source/destination indices before native publication derives dependent fields).
-- `Sunrise/src/middleware/content/packages/tables/scenario_reader.h`, `Sunrise/src/state/build_data/scenarios/`
+- `Dawn/src/middleware/content/packages/tables/scenario_reader.h`, `Dawn/src/state/build_data/scenarios/`
   — scenario/bubble/registry extraction.
 
 **Exports / extracted data (inspect before assuming any strike data exists):**
-- `Sunrise/exports/omega_inventory.md`, `Sunrise/exports/towerfall_cue_edges.md` — note: no equivalent
+- `Dawn/exports/omega_inventory.md`, `Dawn/exports/towerfall_cue_edges.md` — note: no equivalent
   strike export exists yet; producing one (via the same package-walk tooling) is almost certainly step 1 of
   any strike plan.
 
@@ -372,15 +372,15 @@ source lives under `Sunrise/src/`.
 
 ## 10. Source index (files referenced above)
 
-- [Sunrise/docs/COO-EXECUTOR.md](Sunrise/docs/COO-EXECUTOR.md)
-- [Sunrise/docs/TOWERFALL-BOOTSTRAP-AND-MISSION-TABLES.md](Sunrise/docs/TOWERFALL-BOOTSTRAP-AND-MISSION-TABLES.md)
+- [Dawn/docs/COO-EXECUTOR.md](Dawn/docs/COO-EXECUTOR.md)
+- [Dawn/docs/TOWERFALL-BOOTSTRAP-AND-MISSION-TABLES.md](Dawn/docs/TOWERFALL-BOOTSTRAP-AND-MISSION-TABLES.md)
 - [OMEGA-MISSION-RECONSTRUCTION-COMPLETE-DOCUMENTATION-20260822.md](OMEGA-MISSION-RECONSTRUCTION-COMPLETE-DOCUMENTATION-20260822.md)
 - [GHOST-DIALOGUE-MISSION-GRAPHS-SCOT-TOWERFALL.md](GHOST-DIALOGUE-MISSION-GRAPHS-SCOT-TOWERFALL.md)
 - [HOMECOMING-MATCHMAKING-HANDOFF.md](HOMECOMING-MATCHMAKING-HANDOFF.md)
 - [HOMECOMING-QOS-HANDOFF.md](HOMECOMING-QOS-HANDOFF.md)
 - [MISSION-SCOT-PANOPTES-NATIVE-GRAPH-20260905.md](MISSION-SCOT-PANOPTES-NATIVE-GRAPH-20260905.md)
-- `Sunrise/src/state/activity/omega_combatant_authority.h`
-- `Sunrise/src/state/activity/omega_enemy_crown_waves.h`
+- `Dawn/src/state/activity/omega_combatant_authority.h`
+- `Dawn/src/state/activity/omega_enemy_crown_waves.h`
 
 Other files in the repo root (`HANDOFF-*.md`, `HOMECOMING-*.md`, `OMEGA_*.md`, `PANOPTES-*.md`,
 `MISSION-SCOT-*.md`) contain further dated, narrower investigations (VFX binding, Ikora animation, red-eye/arc

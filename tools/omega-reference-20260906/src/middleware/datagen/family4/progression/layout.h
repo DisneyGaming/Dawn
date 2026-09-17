@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::middleware::datagen::family4::progression::layout {
+namespace dawn::middleware::datagen::family4::progression::layout {
 
 /** A native progression row carries 3 signed value lanes before its definition index. */
 inline constexpr std::size_t kValueLaneCount = 3;
@@ -25,4 +25,4 @@ struct Entry {
 
 static_assert(sizeof(Entry) == sizeof(Values) + 2 * sizeof(std::uint16_t));
 
-} // namespace sunrise::middleware::datagen::family4::progression::layout
+} // namespace dawn::middleware::datagen::family4::progression::layout

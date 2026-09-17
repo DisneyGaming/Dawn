@@ -5,7 +5,7 @@
 
 #include "../destination/activity_destination_validation.h"
 
-namespace sunrise::state::activity::defaults {
+namespace dawn::state::activity::defaults {
 namespace {
 
 /**
@@ -20,7 +20,7 @@ namespace {
     return (std::uint64_t{1} << bubbleCount) - 1;
 }
 
-/** Package loaded by Sunrise's bundled local fallback when no destination was selected. */
+/** Package loaded by Dawn's bundled local fallback when no destination was selected. */
 constexpr std::string_view kBundledPackageName = "city_tower_social_d2";
 /** -1 records that the fallback did not come from a selection reason. */
 constexpr std::int8_t kBundledReason = -1;
@@ -62,7 +62,7 @@ bool valid(const ActivityDefaults& candidate) noexcept {
     return valid(candidate.defaultDestination);
 }
 
-/** Builds Sunrise's small local absent-selection policy. */
+/** Builds Dawn's small local absent-selection policy. */
 ActivityDefaults authored() noexcept {
     ActivityDefaults result{};
     destination::DestinationSelection& selection = result.defaultDestination.selection;
@@ -83,4 +83,4 @@ ActivityDefaults authored() noexcept {
     return result;
 }
 
-} // namespace sunrise::state::activity::defaults
+} // namespace dawn::state::activity::defaults

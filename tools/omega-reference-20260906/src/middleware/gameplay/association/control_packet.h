@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::gameplay::association {
+namespace dawn::middleware::gameplay::association {
 
 /** Identity fields are raw 64-bit values. */
 inline constexpr std::size_t kIdentitySize = 8;
@@ -72,4 +72,4 @@ struct ControlPacket {
                           std::span<std::byte> output,
                           std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::gameplay::association
+} // namespace dawn::middleware::gameplay::association

@@ -21,7 +21,7 @@
 #include "../../../../state/build_data/progressions/definition.h"
 #include "../../../../state/build_data/runtime.h"
 
-namespace sunrise::client::content::items::packages {
+namespace dawn::client::content::items::packages {
 
 namespace reader = middleware::content::packages::reader;
 namespace tables = middleware::content::packages::tables;
@@ -366,4 +366,4 @@ void report(std::size_t published, const char* reason) noexcept;
                                                std::span<const std::byte> root,
                                                std::uint64_t itemDefinitionCount) noexcept;
 
-} // namespace sunrise::client::content::items::packages
+} // namespace dawn::client::content::items::packages

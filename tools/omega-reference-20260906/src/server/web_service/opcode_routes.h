@@ -4,7 +4,7 @@
 
 #include "../../middleware/web_service/web_service_envelope.h"
 
-namespace sunrise::server::web_service {
+namespace dawn::server::web_service {
 
 /**
  * Finds reusable stateless layouts outside the special message codecs.
@@ -15,4 +15,4 @@ namespace sunrise::server::web_service {
 void resolve_response_shape(std::uint16_t opcode,
                             middleware::web_service::ResponseShape& shape) noexcept;
 
-} // namespace sunrise::server::web_service
+} // namespace dawn::server::web_service

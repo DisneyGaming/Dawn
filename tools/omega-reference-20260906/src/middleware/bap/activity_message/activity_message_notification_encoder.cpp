@@ -4,7 +4,7 @@
 
 #include "../../encoding/byte_order.h"
 
-namespace sunrise::middleware::bap::activity_message {
+namespace dawn::middleware::bap::activity_message {
 namespace {
 
 /** Fixed discriminator-1 fields that precede a service-9 activity payload. */
@@ -48,4 +48,4 @@ bool encode_notification(std::uint64_t sessionId,
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_message
+} // namespace dawn::middleware::bap::activity_message

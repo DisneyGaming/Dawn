@@ -9,7 +9,7 @@
 #include "../internal.h"
 #include "callback_registry.h"
 
-namespace sunrise::steam::runtime::callbacks {
+namespace dawn::steam::runtime::callbacks {
 namespace {
 
 /** Steam callback vtable slots for its two Run overloads. */
@@ -91,9 +91,9 @@ void dispatch_event(CallbackEvent& event) noexcept {
 }
 
 } // namespace
-} // namespace sunrise::steam::runtime::callbacks
+} // namespace dawn::steam::runtime::callbacks
 
-namespace sunrise::steam {
+namespace dawn::steam {
 
 /** Delivers one batch of queued callbacks on the caller thread. The batch has a size cap. */
 void run_callbacks() noexcept {
@@ -162,4 +162,4 @@ bool queue_callback(int callbackId,
     return true;
 }
 
-} // namespace sunrise::steam
+} // namespace dawn::steam

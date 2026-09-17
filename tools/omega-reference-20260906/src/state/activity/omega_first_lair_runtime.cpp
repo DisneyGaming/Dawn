@@ -9,7 +9,7 @@
 #include "runtime.h"
 #include "../../core/logging/log.h"
 
-namespace sunrise::state::activity::omega_first_lair {
+namespace dawn::state::activity::omega_first_lair {
 namespace {
 SRWLOCK g_lock=SRWLOCK_INIT;
 Encounter g_run{};
@@ -299,4 +299,4 @@ void reset() noexcept {
     g_rescueMarkerReadyMask=0;
     ReleaseSRWLockExclusive(&g_lock);
 }
-} // namespace sunrise::state::activity::omega_first_lair
+} // namespace dawn::state::activity::omega_first_lair

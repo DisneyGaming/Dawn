@@ -16,7 +16,7 @@
 #include "internal.h"
 #include "snapshot_storage.h"
 
-namespace sunrise::server::bap::encrypted::push::snapshot {
+namespace dawn::server::bap::encrypted::push::snapshot {
 
 namespace family4_datagen = middleware::datagen::family4;
 
@@ -634,4 +634,4 @@ bool prepare_item_dismantle(Scratch& scratch,
     }
     return true;
 }
-} // namespace sunrise::server::bap::encrypted::push::snapshot
+} // namespace dawn::server::bap::encrypted::push::snapshot

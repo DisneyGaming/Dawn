@@ -2,7 +2,7 @@
 
 #include "../runtime.h"
 
-namespace sunrise::state::activity::bubble_authority::transactions {
+namespace dawn::state::activity::bubble_authority::transactions {
 
 /** @return True when two grant entries carry the same typed values. */
 inline bool equal(const Grant& first, const Grant& second) noexcept {
@@ -14,4 +14,4 @@ inline bool equal(const AuthorityState& first, const AuthorityState& second) noe
     return first.grantTokens == second.grantTokens;
 }
 
-} // namespace sunrise::state::activity::bubble_authority::transactions
+} // namespace dawn::state::activity::bubble_authority::transactions

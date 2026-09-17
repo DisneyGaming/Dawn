@@ -49,7 +49,7 @@ That separation prevents the encounter from progressing on transmitted requests,
 
 ## 1. Restoring the authored platform devices
 
-The complete route catalog is in [`omega_transit_catalog.h`](Sunrise/src/state/activity/omega/omega_transit_catalog.h). It contains 40 authored sources across all three damage cycles:
+The complete route catalog is in [`omega_transit_catalog.h`](Dawn/src/state/activity/omega/omega_transit_catalog.h). It contains 40 authored sources across all three damage cycles:
 
 - ring cores and ring effects;
 - seven bridge/runway/stair/railing sources and their gates;
@@ -67,7 +67,7 @@ All seven bridge entities contain the original native platform device `80C22861`
 
 ### Platform state policy
 
-[`omega_transit_authority.h`](Sunrise/src/state/activity/omega/omega_transit_authority.h) derives platform state from the mission snapshot:
+[`omega_transit_authority.h`](Dawn/src/state/activity/omega/omega_transit_authority.h) derives platform state from the mission snapshot:
 
 - Before the rescue/route handoff, the current cycle's bridges are dormant.
 - When the route begins, `chargeEnabled=true` raises the current bridges.
@@ -92,7 +92,7 @@ The isolated platform fixture executes Destiny's original `DF1F70` channel routi
 
 Publishing the right activity packet was not enough. Earlier live captures showed decoded active authority on the sync objects while the actual platform sources still held inactive state. The missing step was native adoption.
 
-[`omega_cannon_delivery.h`](Sunrise/src/client/hooks/bootflow/omega_cannon_delivery.h) and [`omega_cannon_delivery.inl`](Sunrise/src/client/hooks/bootflow/omega_cannon_delivery.inl) extend the already-proven cannon delivery lane to the complete transit catalog:
+[`omega_cannon_delivery.h`](Dawn/src/client/hooks/bootflow/omega_cannon_delivery.h) and [`omega_cannon_delivery.inl`](Dawn/src/client/hooks/bootflow/omega_cannon_delivery.inl) extend the already-proven cannon delivery lane to the complete transit catalog:
 
 1. Discovery starts from Panoptes's bound mission member and scans at most 128 native datum rows per 100 ms poll.
 2. Each source is accepted only if its asset, runtime class, definition offset, metadata, salted member handle, and component offset all match.
@@ -105,7 +105,7 @@ No sync dirty flags are edited, adopted authority is not replayed, and native po
 
 ## 2. Detecting the real platform arrivals
 
-[`omega_reveal_native.cpp`](Sunrise/src/client/hooks/bootflow/omega_reveal_native.cpp) contains the authored arrival volumes. The route-specific volumes are:
+[`omega_reveal_native.cpp`](Dawn/src/client/hooks/bootflow/omega_reveal_native.cpp) contains the authored arrival volumes. The route-specific volumes are:
 
 - Cycle 1 charge platform: asset `80F47639`, registry `0040BF06`, slot `69`.
 - Cycle 2 charge platform: asset `80F47712`, registry `0040BF05`, slot `80`.
@@ -121,7 +121,7 @@ The arrival polygons do not activate a platform and platform activation does not
 
 ## 3. Recognizing the native Arc-charge pickup
 
-The implementation is in [`omega_mission_arc.inl`](Sunrise/src/client/hooks/bootflow/omega_mission_arc.inl).
+The implementation is in [`omega_mission_arc.inl`](Dawn/src/client/hooks/bootflow/omega_mission_arc.inl).
 
 ### Joining the charge and sink
 
@@ -197,7 +197,7 @@ The final code resolves the player record through the native player pool, valida
 
 ## 6. What an accepted dunk changes
 
-[`omega_mission_state.h`](Sunrise/src/state/activity/omega/omega_mission_state.h) accepts `State::dunk` only for the exact currently held receipt. It then:
+[`omega_mission_state.h`](Dawn/src/state/activity/omega/omega_mission_state.h) accepts `State::dunk` only for the exact currently held receipt. It then:
 
 - clears the held state;
 - disables the charge and sink route;
@@ -212,7 +212,7 @@ At the end of a damage/recovery cycle, `reset_cycle()` clears `chargeEnabled`, `
 
 ## Runtime evidence
 
-The live log in [`Sunrise/logs/sunrise.log`](Sunrise/logs/sunrise.log) contains the staged route working through pickup:
+The live log in [`Dawn/logs/dawn.log`](Dawn/logs/dawn.log) contains the staged route working through pickup:
 
 ```text
 stage=transit_delivery ... registry=0040BF06 ... slot=24 ... adopted=1
@@ -238,13 +238,13 @@ The final candidate records these focused regression results in both Debug and R
 
 The tests include original native instruction execution and captured runtime layouts:
 
-- [`omega_platform_native_fixture.inl`](Sunrise/unit/omega_platform_native_fixture.inl) runs the original platform channel routine and verifies all seven bridge gates.
-- [`omega_arc_unlock_native_fixture.inl`](Sunrise/unit/omega_arc_unlock_native_fixture.inl) runs the original interaction-override decoder and sink lock handler.
-- [`omega_arc_eligibility_native_fixture.inl`](Sunrise/unit/omega_arc_eligibility_native_fixture.inl) runs the original charge-property getter and sink readiness check.
-- [`omega_mission_rescue_tests.cpp`](Sunrise/unit/omega_mission_rescue_tests.cpp) exercises source joins, captured held inventory, drops during use, exact native consumption, player-record translation, all three cycles, platform lifecycles, wire encoding, and native authority adoption.
-- [`omega_mission_state_tests.cpp`](Sunrise/unit/omega_mission_state_tests.cpp) verifies that proximity, another player, a stale epoch, the wrong charge, and an unconsumed request cannot advance the shield phase.
+- [`omega_platform_native_fixture.inl`](Dawn/unit/omega_platform_native_fixture.inl) runs the original platform channel routine and verifies all seven bridge gates.
+- [`omega_arc_unlock_native_fixture.inl`](Dawn/unit/omega_arc_unlock_native_fixture.inl) runs the original interaction-override decoder and sink lock handler.
+- [`omega_arc_eligibility_native_fixture.inl`](Dawn/unit/omega_arc_eligibility_native_fixture.inl) runs the original charge-property getter and sink readiness check.
+- [`omega_mission_rescue_tests.cpp`](Dawn/unit/omega_mission_rescue_tests.cpp) exercises source joins, captured held inventory, drops during use, exact native consumption, player-record translation, all three cycles, platform lifecycles, wire encoding, and native authority adoption.
+- [`omega_mission_state_tests.cpp`](Dawn/unit/omega_mission_state_tests.cpp) verifies that proximity, another player, a stale epoch, the wrong charge, and an unconsumed request cannot advance the shield phase.
 
-Supporting captures and explanations are under [`Sunrise/unit/fixtures/omega_arc`](Sunrise/unit/fixtures/omega_arc) and [`Sunrise/unit/fixtures/omega_platform`](Sunrise/unit/fixtures/omega_platform).
+Supporting captures and explanations are under [`Dawn/unit/fixtures/omega_arc`](Dawn/unit/fixtures/omega_arc) and [`Dawn/unit/fixtures/omega_platform`](Dawn/unit/fixtures/omega_platform).
 
 ## Current acceptance boundary
 

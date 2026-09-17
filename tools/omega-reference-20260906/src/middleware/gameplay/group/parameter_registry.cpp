@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstring>
 
-namespace sunrise::middleware::gameplay::group {
+namespace dawn::middleware::gameplay::group {
 
 namespace {
 
@@ -81,4 +81,4 @@ const char* parameter_names(std::uint64_t mask, char* output, std::size_t capaci
     return output;
 }
 
-} // namespace sunrise::middleware::gameplay::group
+} // namespace dawn::middleware::gameplay::group

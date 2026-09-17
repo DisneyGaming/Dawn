@@ -4,7 +4,7 @@
 #include "../../encoding/bit_reader.h"
 #include "opcode903.h"
 
-namespace sunrise::middleware::web_service::messages::opcode903 {
+namespace dawn::middleware::web_service::messages::opcode903 {
 namespace {
 
 /** The reflected opcode-903 request occupies exactly 144 bits. */
@@ -78,4 +78,4 @@ bool parse_request(const Message& message, Request& request) noexcept {
     return true;
 }
 
-} // namespace sunrise::middleware::web_service::messages::opcode903
+} // namespace dawn::middleware::web_service::messages::opcode903

@@ -7,7 +7,7 @@
 #include "../../components/logo/ui_logo_component.h"
 #include "../../scaling/dpi/ui_dpi_scaling.h"
 
-namespace sunrise::core::ui::hud::overlays::logo {
+namespace dawn::core::ui::hud::overlays::logo {
 namespace {
 
 /** 44 authored pixels make the logo as tall as the two text rows beside it. */
@@ -17,11 +17,11 @@ constexpr float kTextRowCount = 2.0F;
 /** Half a difference centers the shorter column against the taller one. */
 constexpr float kHalfExtent = 2.0F;
 /** The card names the tool with the same wordmark the main surface carries. */
-constexpr char kTitle[] = "SUNRISE";
+constexpr char kTitle[] = "DAWN";
 
 } // namespace
 
-/** Draws the Sunrise card inside the overlay window the stack has already started. */
+/** Draws the Dawn card inside the overlay window the stack has already started. */
 void draw() noexcept {
     const float extent = scaling::dpi::pixels(kLogoExtent);
     if (components::logo::draw(extent)) {
@@ -34,8 +34,8 @@ void draw() noexcept {
     }
     ImGui::BeginGroup();
     ImGui::TextUnformatted(kTitle);
-    ImGui::TextDisabled("%s", SUNRISE_VER_STRING);
+    ImGui::TextDisabled("%s", DAWN_VER_STRING);
     ImGui::EndGroup();
 }
 
-} // namespace sunrise::core::ui::hud::overlays::logo
+} // namespace dawn::core::ui::hud::overlays::logo

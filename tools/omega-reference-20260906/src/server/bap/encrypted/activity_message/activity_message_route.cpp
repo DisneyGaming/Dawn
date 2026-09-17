@@ -31,7 +31,7 @@
 #include "middleware/bap/activity_message/activity_entity_slot_request_parser.h"
 #include "patch_epoch/activity_patch_epoch_route.h"
 
-namespace sunrise::server::bap::encrypted::activity_message {
+namespace dawn::server::bap::encrypted::activity_message {
 namespace {
 
 using omega_roster_readiness::exact_body;
@@ -91,7 +91,7 @@ constexpr std::array<AcceptedMessage, 13> kAcceptedMessages{{
     {50, "refresh_inspirations"},
 }};
 
-/** Sunrise's legacy FNV-like diagnostic hash over the complete packet. */
+/** Dawn's legacy FNV-like diagnostic hash over the complete packet. */
 [[nodiscard]] std::uint64_t payload_hash(std::span<const std::byte> payload) noexcept {
     std::uint64_t hash = 1469598103934665603ULL;
     for (const std::byte byte : payload) {
@@ -454,7 +454,7 @@ void report_sense_update(Session& session, const service::Request& request) noex
                      parsed ? core::log::Level::info : core::log::Level::warn,
                      {line.data(), static_cast<std::size_t>(written)});
     if (omegaSelected) {
-        ::sunrise::server::bap::encrypted::diagnostics::omega_trace::record_sense(
+        ::dawn::server::bap::encrypted::diagnostics::omega_trace::record_sense(
             session.activity.instance.sessionId,
             sequence,
             packetHash,
@@ -1014,4 +1014,4 @@ bool process(Session& session,
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted::activity_message
+} // namespace dawn::server::bap::encrypted::activity_message

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <span>
 
-namespace sunrise::middleware::gameplay::descriptor {
+namespace dawn::middleware::gameplay::descriptor {
 
 namespace {
 
@@ -107,4 +107,4 @@ bool build(const JoinEndpoint& endpoint, std::array<std::byte, kDescriptorSize>&
     return true;
 }
 
-} // namespace sunrise::middleware::gameplay::descriptor
+} // namespace dawn::middleware::gameplay::descriptor

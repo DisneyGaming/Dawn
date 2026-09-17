@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::content::packages::tables {
+namespace dawn::middleware::content::packages::tables {
 
 /** Tag class of a placed-object blob, which is where slot descriptors live. */
 inline constexpr std::uint32_t kPlacedObjectClass = 0x80809C36U;
@@ -87,4 +87,4 @@ using DescriptorVisitor = bool (*)(void* context, const SlotDescriptor& descript
                                        std::uint32_t classId,
                                        std::uint32_t& tag) noexcept;
 
-} // namespace sunrise::middleware::content::packages::tables
+} // namespace dawn::middleware::content::packages::tables

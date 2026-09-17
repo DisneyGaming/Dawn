@@ -7,7 +7,7 @@
 
 #include "definition_index_table.h"
 
-namespace sunrise::middleware::content::packages::tables {
+namespace dawn::middleware::content::packages::tables {
 
 /** Tag class of a spawn-point set. */
 inline constexpr std::uint32_t kSpawnSetClass = 0x80809162U;
@@ -60,4 +60,4 @@ struct SpawnPoint {
                                   std::size_t index,
                                   SpawnPoint& output) noexcept;
 
-} // namespace sunrise::middleware::content::packages::tables
+} // namespace dawn::middleware::content::packages::tables

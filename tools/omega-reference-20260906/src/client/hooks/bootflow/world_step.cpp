@@ -12,7 +12,7 @@
 #include "internal.h"
 #include "omega_activity_handoff.inl"
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 namespace {
 
 /**
@@ -178,4 +178,4 @@ void uninstall_world_step() noexcept {
     g_step.store(nullptr, std::memory_order_release);
 }
 
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

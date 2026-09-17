@@ -6,7 +6,7 @@
 #include "bit_reader.h"
 #include "bit_writer.h"
 
-namespace sunrise::middleware::encoding::bits {
+namespace dawn::middleware::encoding::bits {
 
 /**
  * Writes bytes in memory order.
@@ -50,4 +50,4 @@ namespace sunrise::middleware::encoding::bits {
  */
 [[nodiscard]] bool write_raw_u64(Writer& writer, std::uint64_t value) noexcept;
 
-} // namespace sunrise::middleware::encoding::bits
+} // namespace dawn::middleware::encoding::bits

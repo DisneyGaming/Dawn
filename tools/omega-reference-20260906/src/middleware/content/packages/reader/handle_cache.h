@@ -6,7 +6,7 @@
 
 #include "internal.h"
 
-namespace sunrise::middleware::content::packages::reader::handle_cache {
+namespace dawn::middleware::content::packages::reader::handle_cache {
 
 /**
  * Reads an exact byte range from one package file, keeping the file open.
@@ -39,4 +39,4 @@ void release() noexcept;
 /** @param scratch Reader whose own files are closed. */
 void close(Scratch& scratch) noexcept;
 
-} // namespace sunrise::middleware::content::packages::reader::handle_cache
+} // namespace dawn::middleware::content::packages::reader::handle_cache

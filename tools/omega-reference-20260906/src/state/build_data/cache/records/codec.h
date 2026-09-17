@@ -3,7 +3,7 @@
 #include "domains.h"
 #include "format.h"
 
-namespace sunrise::state::build_data::cache::records {
+namespace dawn::state::build_data::cache::records {
 
 /**
  * @param value Runtime row to pack.
@@ -319,4 +319,4 @@ namespace sunrise::state::build_data::cache::records {
 [[nodiscard]] bool decode(const VendorInstalledRowRecord& record,
                           vendors::InstalledRow& value) noexcept;
 
-} // namespace sunrise::state::build_data::cache::records
+} // namespace dawn::state::build_data::cache::records

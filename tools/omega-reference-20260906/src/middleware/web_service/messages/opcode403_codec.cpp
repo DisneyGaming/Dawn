@@ -4,7 +4,7 @@
 #include "../../encoding/byte_order.h"
 #include "opcode403.h"
 
-namespace sunrise::middleware::web_service::messages::opcode403 {
+namespace dawn::middleware::web_service::messages::opcode403 {
 namespace {
 
 /** The descriptor is one big-endian identity followed by a single alignment byte. */
@@ -29,4 +29,4 @@ bool parse_request(const Message& message, Request& request) noexcept {
     return true;
 }
 
-} // namespace sunrise::middleware::web_service::messages::opcode403
+} // namespace dawn::middleware::web_service::messages::opcode403

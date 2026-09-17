@@ -5,7 +5,7 @@
 #include "../../../../state/build_data/progressions/definition.h"
 #include "layout.h"
 
-namespace sunrise::middleware::datagen::family4::progression {
+namespace dawn::middleware::datagen::family4::progression {
 
 /**
  * Keys one object's progression bank and fills each keyed row from the authored lanes.
@@ -18,4 +18,4 @@ namespace sunrise::middleware::datagen::family4::progression {
 [[nodiscard]] bool key_bank(state::build_data::progressions::Scope scope,
                             std::span<layout::Entry> bank) noexcept;
 
-} // namespace sunrise::middleware::datagen::family4::progression
+} // namespace dawn::middleware::datagen::family4::progression

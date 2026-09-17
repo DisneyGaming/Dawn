@@ -5,7 +5,7 @@
 #include "redirect.h"
 #include "replacements.h"
 
-namespace sunrise::client::hooks::egress::resolver {
+namespace dawn::client::hooks::egress::resolver {
 namespace {
 
 /** @return Family answered for one requested address-info family. */
@@ -172,4 +172,4 @@ hostent* WSAAPI host_by_name(const char* name) noexcept {
     return &entry;
 }
 
-} // namespace sunrise::client::hooks::egress::resolver
+} // namespace dawn::client::hooks::egress::resolver

@@ -6,7 +6,7 @@
 
 // Pinned original v48 descriptors. Regenerate with capture_omega_remaining_roster.py.
 // Bookend belongs only to authored Lighthouse state 1; never admit it in state 0.
-namespace sunrise::state::activity::omega_lair_full_roster {
+namespace dawn::state::activity::omega_lair_full_roster {
 struct Slot final { std::uint8_t type,flags; std::uint16_t index; };
 struct Group final { std::uint32_t key,tag; std::uint16_t bubble,hint; std::span<const Slot> slots; };
 
@@ -294,4 +294,4 @@ inline constexpr std::array<Slot,29> kCabalSlots{{
 inline constexpr Group kCabal{0x0040BF04U,0x80F47807U,14,1074,kCabalSlots};
 
 inline constexpr std::array<Group,4> kCombatGroups{kHive,kVex,kRescue,kCabal};
-} // namespace sunrise::state::activity::omega_lair_full_roster
+} // namespace dawn::state::activity::omega_lair_full_roster

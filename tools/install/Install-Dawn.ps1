@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS
-    Builds Dawn from this checkout and installs it over an existing Sunrise release.
+    Builds Dawn from this checkout and installs it over an existing Dawn release.
 
 .DESCRIPTION
-    For testers who installed Sunrise with the official installer and have never built from source.
+    For testers who installed Dawn with the official installer and have never built from source.
     Finds the install, builds the DLL, backs up everything it is about to touch, deploys the DLL and
     mission scripts, makes sure the mission arrival overrides exist in settings.json, and then proves
     which DLL the game actually mapped.
@@ -25,7 +25,7 @@
 .EXAMPLE
     .\tools\install\Install-Dawn.ps1
 .EXAMPLE
-    .\tools\install\Install-Dawn.ps1 -GameRoot "D:\Sunrise"
+    .\tools\install\Install-Dawn.ps1 -GameRoot "D:\Dawn"
 .EXAMPLE
     .\tools\install\Install-Dawn.ps1 -Restore
 #>
@@ -33,6 +33,7 @@
 [CmdletBinding()]
 param(
     [string] $GameRoot,
+    [ValidateSet('Release', 'Debug')] [string] $Config = 'Release',
     [switch] $SkipBuild,
     [switch] $NoLaunch,
     [switch] $Restore
@@ -50,17 +51,18 @@ function Die   ($m) { Write-Host "XX  $m" -ForegroundColor Red; exit 1 }
 function Get-Relative ($absolute) { $absolute.Substring($root.Length).Trim([char]92) }
 
 $RepoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$Project  = Join-Path $RepoRoot 'Sunrise\Sunrise.vcxproj'
-$BuiltDll = Join-Path $RepoRoot 'build\x64\Release\steam_api64.dll'
-$Scripts  = Join-Path $RepoRoot 'Sunrise\scripts'
-$Defaults = Join-Path $RepoRoot 'Sunrise\resources\default_settings.json'
+$Project  = Join-Path $RepoRoot 'Dawn\Dawn.vcxproj'
+$BuiltDll = Join-Path $RepoRoot "build\x64\$Config\steam_api64.dll"
+. (Join-Path $PSScriptRoot 'RuntimeMigration.ps1')
+$Scripts  = Join-Path $RepoRoot 'Dawn\scripts'
+$Defaults = Join-Path $RepoRoot 'Dawn\resources\default_settings.json'
 
 # Runtime rules are read beside settings.json; event presets remain selectable files.
 $runtimeResources = @(
-    Get-ChildItem -LiteralPath (Join-Path $RepoRoot 'Sunrise\resources\vendor_rules') -File | ForEach-Object {
+    Get-ChildItem -LiteralPath (Join-Path $RepoRoot 'Dawn\resources\vendor_rules') -File | ForEach-Object {
         [pscustomobject]@{ Source = $_.FullName; Relative = $_.Name }
     }
-    Get-ChildItem -LiteralPath (Join-Path $RepoRoot 'Sunrise\resources\event_presets') -File | ForEach-Object {
+    Get-ChildItem -LiteralPath (Join-Path $RepoRoot 'Dawn\resources\event_presets') -File | ForEach-Object {
         [pscustomobject]@{ Source = $_.FullName; Relative = "event_presets\$($_.Name)" }
     }
 )
@@ -86,7 +88,7 @@ function Find-GameRoot {
     if ($running) { return Split-Path -Parent $running.Path }
 
     foreach ($drive in (Get-PSDrive -PSProvider FileSystem)) {
-        foreach ($guess in @('Sunrise', 'Destiny 2', 'SteamLibrary\steamapps\common\Destiny 2')) {
+        foreach ($guess in @('Dawn', 'Destiny 2', 'SteamLibrary\steamapps\common\Destiny 2')) {
             $candidate = Join-Path $drive.Root $guess
             if (Test-Path (Join-Path $candidate 'destiny2.exe')) { return $candidate }
         }
@@ -95,7 +97,7 @@ function Find-GameRoot {
 }
 
 # Both places a steam_api64.dll can live. The exe sits at the root, so a DLL beside it shadows
-# bin\x64 - which is where the Sunrise installer puts it. Only one is ever mapped, so write both
+# bin\x64 - which is where the Dawn installer puts it. Only one is ever mapped, so write both
 # and let the running process tell us which won.
 function Get-DllTargets ($root) {
     @(
@@ -105,8 +107,8 @@ function Get-DllTargets ($root) {
 }
 function Get-RuntimeTrees ($root) {
     @(
-        (Join-Path $root 'bin\x64\Sunrise'),
-        (Join-Path $root 'Sunrise')
+        (Join-Path $root 'bin\x64\Dawn'),
+        (Join-Path $root 'Dawn')
     )
 }
 
@@ -129,7 +131,7 @@ function Invoke-Restore ($root) {
         Copy-Item $_.FullName $target -Force
         Note "restored $relative"
     }
-    Good "Restored. The pristine Steam DLL is still at .sunrise\original\steam_api64.dll if you need it."
+    Good "Restored. The pristine Steam DLL is still at .dawn\original\steam_api64.dll if you need it."
     exit 0
 }
 
@@ -158,27 +160,26 @@ if ($pkgCount -lt 100) {
     Die @"
 No game data at $packages ($pkgCount files).
 Dawn replaces steam_api64.dll - it does not install Destiny 2. Point -GameRoot at a real
-build 86657 install, or install Sunrise first and confirm it boots.
+build 86657 install, or install Dawn first and confirm it boots.
 "@
 }
 Good "Game data: $pkgCount packages"
 
 # The pristine Steam DLL is the only route back to an unmodified game. Dawn's own backup only
 # returns you to whatever was installed before this run.
-$original = Join-Path $root '.sunrise\original\steam_api64.dll'
-$state    = Join-Path $root '.sunrise\install-state.json'
+$original = Join-Path $root '.dawn\original\steam_api64.dll'
+$state    = Join-Path $root '.dawn\install-state.json'
 if (Test-Path $state) {
     $s = Get-Content $state -Raw | ConvertFrom-Json
-    Good "Sunrise $($s.releaseTag) installed $($s.installedAtUtc)"
+    Good "Dawn $($s.releaseTag) installed $($s.installedAtUtc)"
 } elseif (Test-Path $original) {
-    Note 'No install-state.json, but the Sunrise installer left its original DLL - treating this as a Sunrise install.'
+    Note 'No install-state.json, but the Dawn installer left its original DLL - treating this as a Dawn install.'
 } else {
-    Warn 'No Sunrise installer record here. Dawn needs a Sunrise install that has already booted'
-    Warn 'once, so its caches and activity SDK pack exist. A first boot without them takes several'
-    Warn 'minutes longer than usual and can look like a hang.'
+    Note 'No Dawn installer record here. Existing runtime settings and accounts will be migrated.'
+    Note 'Missing caches are generated from the installed packages on first launch.'
 }
 if (-not (Test-Path $original)) {
-    Warn 'No .sunrise\original\steam_api64.dll - there is no pristine Steam DLL to roll back to.'
+    Warn 'No .dawn\original\steam_api64.dll - there is no pristine Steam DLL to roll back to.'
     Warn 'This run still backs up whatever is installed now, so -Restore returns you to that.'
 }
 
@@ -208,14 +209,14 @@ Never downgrade PlatformToolset in the project to work around this.
 "@
     }
 
-    Step 'Building Dawn (Release x64)'
+    Step "Building Dawn ($Config x64)"
     Note (Split-Path -Leaf $msbuild)
     # PreferredToolArchitecture=x64 picks the 64-bit cl.exe. The project sets
     # MultiProcessorCompilation, so with -m on a many-core machine the 32-bit compiler runs out of
     # address space on the heavier package translation units and fails with
     # "error C1060: compiler is out of heap space". That only happens on a from-scratch build,
     # which is why an incremental build never shows it and a tester's first build always does.
-    & $msbuild $Project -p:Configuration=Release -p:Platform=x64 -p:PreferredToolArchitecture=x64 -m -v:minimal -nologo
+    & $msbuild $Project "-p:Configuration=$Config" -p:Platform=x64 -p:PreferredToolArchitecture=x64 -m -v:minimal -nologo
     if ($LASTEXITCODE -ne 0) {
         Warn 'Build failed. Read the FIRST error above, not the last line.'
         Warn '  C1060 out of heap space  -> the 64-bit toolchain was not used. Check that'
@@ -269,6 +270,8 @@ foreach ($tree in Get-RuntimeTrees $root) {
 
 # ---------------------------------------------------------------- deploy
 
+foreach ($tree in Get-RuntimeTrees $root) { Copy-DawnRuntime -Destination $tree }
+
 Step 'Deploying DLL and mission scripts'
 
 foreach ($dll in Get-DllTargets $root) {
@@ -311,7 +314,7 @@ foreach ($tree in Get-RuntimeTrees $root) {
     # file is absent - but a tester who never gets them runs on those defaults instead of Dawn's
     # tuning. Seed them only when missing, so an existing tester's own settings survive.
     foreach ($name in @('hud.json', 'movement.json', 'player.json')) {
-        $src = Join-Path $RepoRoot "Sunrise\resources\default_$name"
+        $src = Join-Path $RepoRoot "Dawn\resources\default_$name"
         $dst = Join-Path $tree $name
         if ((Test-Path $src) -and -not (Test-Path $dst)) {
             Copy-Item $src $dst -Force
@@ -324,7 +327,7 @@ foreach ($tree in Get-RuntimeTrees $root) {
 
 # Settings parsing starts from the compiled defaults and overlays the file, so an ABSENT key keeps
 # Dawn's default. But arrival_overrides is an array: if the file has its own, it replaces Dawn's
-# entirely - so a stock Sunrise install takes the DLL and still has no way to reach the missions.
+# entirely - so a stock Dawn install takes the DLL and still has no way to reach the missions.
 # Add only the overrides Dawn ships that the file is missing. Never reorder or drop the user's own.
 
 Step 'Checking settings and mission arrival overrides'
@@ -497,7 +500,7 @@ if ($mappedHash -eq $builtHash) {
 # scripts to only one produces a mission whose C++ and Lua disagree, which reads as "my change did
 # nothing". Check the tree that actually won, not the one we hoped would.
 $liveRoot    = Split-Path -Parent $mapped
-$liveScripts = Join-Path $liveRoot 'Sunrise\scripts'
+$liveScripts = Join-Path $liveRoot 'Dawn\scripts'
 if (-not (Test-Path $liveScripts)) {
     $healthy = $false
     Warn "No scripts directory beside the mapped DLL: $liveScripts"
@@ -520,7 +523,7 @@ if (-not (Test-Path $liveScripts)) {
 
 # A settings.json over the loader's cap, or unreadable, fails before the log sinks exist - the
 # boot just goes quiet. Catch it here rather than letting the tester stare at a blank screen.
-$liveSettings = Join-Path $liveRoot 'Sunrise\settings.json'
+$liveSettings = Join-Path $liveRoot 'Dawn\settings.json'
 if (-not (Test-Path $liveSettings)) {
     Warn "No settings.json beside the mapped DLL: $liveSettings"
 } else {
@@ -533,8 +536,8 @@ if (-not (Test-Path $liveSettings)) {
     }
 }
 
-$log = Join-Path $liveRoot 'Sunrise\logs\sunrise.log'
-Note "Runtime tree: $(Join-Path $liveRoot 'Sunrise')"
+$log = Join-Path $liveRoot 'Dawn\logs\dawn.log'
+Note "Runtime tree: $(Join-Path $liveRoot 'Dawn')"
 Note "Log:          $log"
 
 # The log only appears once the host is actually running. Its absence after a successful map is
@@ -548,7 +551,7 @@ if (Test-Path $log) {
 } else {
     $healthy = $false
     Warn 'The DLL mapped but no log appeared. The host did not start.'
-    Warn 'Usual causes: a settings.json the loader rejected, or a missing Sunrise runtime tree.'
+    Warn 'Usual causes: a settings.json the loader rejected, or a missing Dawn runtime tree.'
 }
 
 Write-Host ''

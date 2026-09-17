@@ -6,7 +6,7 @@
 #include <cstring>
 #include <span>
 
-namespace sunrise::state::activity::omega_first_mancannon {
+namespace dawn::state::activity::omega_first_mancannon {
 
 inline constexpr std::uint32_t kRegistry = 0x95FB2E01U;
 inline constexpr std::uint8_t kSlotType = 4;
@@ -111,4 +111,4 @@ template<class Writer>
         && writer.write(0U, 2);                      // zero dynamic component states
 }
 
-} // namespace sunrise::state::activity::omega_first_mancannon
+} // namespace dawn::state::activity::omega_first_mancannon

@@ -4,7 +4,7 @@
 #include "../socket_entry_lists/socket_entry_list_catalog.h"
 #include "persistence/publication_transaction.h"
 
-namespace sunrise::state::build_data {
+namespace dawn::state::build_data {
 
 /** @return True when the whole inventory-bucket descriptor table is in State. */
 bool inventory_bucket_descriptors_ready() noexcept {
@@ -69,4 +69,4 @@ bool find_socket_entry_list(std::uint16_t definitionIndex,
     return socket_entry_lists_ready() && socket_entry_lists::find(definitionIndex, definition);
 }
 
-} // namespace sunrise::state::build_data
+} // namespace dawn::state::build_data

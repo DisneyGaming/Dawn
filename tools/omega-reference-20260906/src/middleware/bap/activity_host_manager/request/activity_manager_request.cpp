@@ -2,7 +2,7 @@
 
 #include "../../../encoding/byte_order.h"
 
-namespace sunrise::middleware::bap::activity_host_manager::request {
+namespace dawn::middleware::bap::activity_host_manager::request {
 namespace {
 
 /** Fixed fields that precede the service-6 protobuf payload. */
@@ -44,4 +44,4 @@ bool parse_request(std::span<const std::byte> input, Request& request) noexcept 
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_host_manager::request
+} // namespace dawn::middleware::bap::activity_host_manager::request

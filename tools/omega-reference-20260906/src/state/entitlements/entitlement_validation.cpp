@@ -2,7 +2,7 @@
 
 #include "validation.h"
 
-namespace sunrise::state::entitlements {
+namespace dawn::state::entitlements {
 namespace {
 
 /** Lowest printable ASCII byte accepted in an authored name. */
@@ -88,4 +88,4 @@ bool owned_identifier(const Table& table, std::size_t index, std::uint32_t& iden
     return entry.ownership == Ownership::application && application_id(name_of(entry), identifier);
 }
 
-} // namespace sunrise::state::entitlements
+} // namespace dawn::state::entitlements

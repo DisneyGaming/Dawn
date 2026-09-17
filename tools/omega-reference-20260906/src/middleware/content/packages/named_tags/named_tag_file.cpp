@@ -5,7 +5,7 @@
 #include "../../../../core/filesystem/path.h"
 #include "internal.h"
 
-namespace sunrise::middleware::content::packages::named_tags {
+namespace dawn::middleware::content::packages::named_tags {
 namespace {
 
 /** The Windows file walk accepts only the installed .pkg extension. */
@@ -134,4 +134,4 @@ bool extract_directory(std::wstring_view directory,
     return complete && enumerationError == ERROR_NO_MORE_FILES && closed;
 }
 
-} // namespace sunrise::middleware::content::packages::named_tags
+} // namespace dawn::middleware::content::packages::named_tags

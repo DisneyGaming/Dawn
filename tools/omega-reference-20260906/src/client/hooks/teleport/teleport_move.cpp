@@ -23,7 +23,7 @@
 #include "internal.h"
 #include "runtime.h"
 
-namespace sunrise::client::hooks::teleport {
+namespace dawn::client::hooks::teleport {
 namespace {
 
 /**
@@ -630,4 +630,4 @@ bool camera_forward(Vector& forward) noexcept {
     return true;
 }
 
-} // namespace sunrise::client::hooks::teleport
+} // namespace dawn::client::hooks::teleport

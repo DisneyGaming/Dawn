@@ -2,7 +2,7 @@
 
 #include "runtime.h"
 
-namespace sunrise::client::hooks::cursor {
+namespace dawn::client::hooks::cursor {
 namespace {
 
 SRWLOCK g_policyLock{SRWLOCK_INIT};
@@ -79,4 +79,4 @@ void apply_visibility(bool visible) noexcept {
     apply_policy(visible);
 }
 
-} // namespace sunrise::client::hooks::cursor
+} // namespace dawn::client::hooks::cursor

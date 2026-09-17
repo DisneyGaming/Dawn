@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace sunrise::client::hooks::polled_input {
+namespace dawn::client::hooks::polled_input {
 
 /**
  * Attaches the polled key guards. The game reads its action keys by scanning GetKeyState every
@@ -34,4 +34,4 @@ void hold_key(std::uint32_t virtualKey) noexcept;
 /** Stops reporting any key held on the game's behalf. */
 void release_key() noexcept;
 
-} // namespace sunrise::client::hooks::polled_input
+} // namespace dawn::client::hooks::polled_input

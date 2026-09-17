@@ -1,0 +1,57 @@
+{
+  "schema": "eater-scene-bindings-v1",
+  "scenes": [
+    {
+      "source": "0x80C421A1",
+      "registry": "0xE8D290A0",
+      "type": 43,
+      "slot": 2,
+      "name": "boss_manager.scene_boss_alpha_strike_facing_1",
+      "selector": "0x80F444FB",
+      "selectorClass": "0x80809C0F",
+      "graph": "0x80F444FA",
+      "graphOffset": 6632,
+      "cast": [
+        {
+          "kind": "object",
+          "registry": "0xE8D290A0",
+          "type": 48,
+          "slot": 473,
+          "name": null
+        },
+        {
+          "kind": "actor",
+          "registry": "0xE8D290A0",
+          "type": 1,
+          "slot": 3,
+          "name": "boss_manager.sq_boss"
+        }
+      ],
+      "nativeEvents": [
+        "0x5F38EAC3",
+        "0x8CC06D96"
+      ]
+    },
+    {
+      "source": "0x80C424FF",
+      "registry": "0xE8D290A0",
+      "type": 43,
+      "slot": 107,
+      "name": "boss_manager.scene_boss_intro_animation",
+      "selector": "0x80F44500",
+      "selectorClass": "0x80809C0F",
+      "graph": "0x80F444FF",
+      "graphOffset": 3800,
+      "cast": [
+        {
+          "kind": "actor",
+          "registry": "0xE8D290A0",
+          "type": 1,
+          "slot": 3,
+          "name": "boss_manager.sq_boss"
+        }
+      ],
+      "nativeEvents": []
+    }
+  ]
+}

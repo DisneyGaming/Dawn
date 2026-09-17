@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::state::activity::destination {
+namespace dawn::state::activity::destination {
 
 /** The activity-selection schema carries one fixed 40-byte package name. */
 inline constexpr std::size_t kPackageNameCapacity = 40;
@@ -112,4 +112,4 @@ struct DestinationSelection final {
                : fallback;
 }
 
-} // namespace sunrise::state::activity::destination
+} // namespace dawn::state::activity::destination

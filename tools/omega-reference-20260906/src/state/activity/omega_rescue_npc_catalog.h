@@ -8,7 +8,7 @@
 
 // Authored 80F47B1D Scene controllers and cast providers. Generated from the
 // package-verified omega_npc_evidence.json; selector-less/debug Scenes excluded.
-namespace sunrise::state::activity::omega_rescue_npc {
+namespace dawn::state::activity::omega_rescue_npc {
 
 inline constexpr std::uint32_t kRegistry=0x99BD2FEBU;
 inline constexpr std::uint32_t kRegistryTag=0x80F47B1DU;
@@ -207,4 +207,4 @@ inline constexpr std::array<Source,24> kSources{{
     return count;
 }
 
-} // namespace sunrise::state::activity::omega_rescue_npc
+} // namespace dawn::state::activity::omega_rescue_npc

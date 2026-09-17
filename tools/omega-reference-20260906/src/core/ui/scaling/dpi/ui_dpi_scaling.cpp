@@ -5,14 +5,14 @@
 #include <algorithm>
 #include <imgui.h>
 
-namespace sunrise::core::ui::scaling::dpi {
+namespace dawn::core::ui::scaling::dpi {
 namespace {
 
 /** Windows treats 96 DPI as unscaled. */
 constexpr UINT kAuthoredDpi = USER_DEFAULT_SCREEN_DPI;
-/** Sunrise geometry is authored for a 1920-pixel-wide game viewport. */
+/** Dawn geometry is authored for a 1920-pixel-wide game viewport. */
 constexpr UINT kAuthoredViewportWidth = 1920;
-/** Sunrise geometry is authored for a 1080-pixel-tall game viewport. */
+/** Dawn geometry is authored for a 1080-pixel-tall game viewport. */
 constexpr UINT kAuthoredViewportHeight = 1080;
 /** 72 DPI keeps geometry at 75 percent of authored size or more. */
 constexpr UINT kMinimumDpi = 72;
@@ -111,4 +111,4 @@ void reset() noexcept {
     g_current = {};
 }
 
-} // namespace sunrise::core::ui::scaling::dpi
+} // namespace dawn::core::ui::scaling::dpi

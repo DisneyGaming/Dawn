@@ -2,7 +2,7 @@
 
 #include "../../../middleware/content/packages/reader/reader.h"
 
-namespace sunrise::client::content::hash_names {
+namespace dawn::client::content::hash_names {
 
 /**
  * Finds the internal name of every destination bubble it can, once.
@@ -15,4 +15,4 @@ namespace sunrise::client::content::hash_names {
 [[nodiscard]] bool build(const middleware::content::packages::reader::Source& source,
                          middleware::content::packages::reader::Scratch& scratch) noexcept;
 
-} // namespace sunrise::client::content::hash_names
+} // namespace dawn::client::content::hash_names

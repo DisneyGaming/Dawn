@@ -4,7 +4,7 @@
 
 #include "key_bindings.h"
 
-namespace sunrise::state::account::settings {
+namespace dawn::state::account::settings {
 
 /** The account record's one-time audio migration treats version 8 as finished. */
 inline constexpr std::int8_t kCompletedAudioMigrationVersion = 8;
@@ -106,4 +106,4 @@ struct AccountSettings {
  */
 [[nodiscard]] bool valid(const AccountSettings& value) noexcept;
 
-} // namespace sunrise::state::account::settings
+} // namespace dawn::state::account::settings

@@ -2,7 +2,7 @@
 
 #include "validation.h"
 
-namespace sunrise::state::entitlements {
+namespace dawn::state::entitlements {
 namespace {
 
 /** @return Process-wide policy storage, seeded with the bundled policy on first use. */
@@ -32,4 +32,4 @@ void clear() noexcept {
     storage() = authored();
 }
 
-} // namespace sunrise::state::entitlements
+} // namespace dawn::state::entitlements

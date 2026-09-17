@@ -7,7 +7,7 @@
 #include "../../internal.h"
 #include "definition.h"
 
-namespace sunrise::server::bap::encrypted::activity_message {
+namespace dawn::server::bap::encrypted::activity_message {
 
 /**
  * Routes one svc8 activity message and prepares any supported push transaction.
@@ -23,4 +23,4 @@ namespace sunrise::server::bap::encrypted::activity_message {
                            ActivityPlan& plan,
                            bool& hasTransaction) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::activity_message
+} // namespace dawn::server::bap::encrypted::activity_message

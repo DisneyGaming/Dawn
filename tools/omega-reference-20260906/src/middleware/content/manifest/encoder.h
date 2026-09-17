@@ -7,7 +7,7 @@
 #include "../../../state/content_manifest/definition.h"
 #include "../../../state/entitlements/definition.h"
 
-namespace sunrise::middleware::content::manifest {
+namespace dawn::middleware::content::manifest {
 
 /**
  * Encodes one ContentConfig entitlement definition into caller storage.
@@ -38,4 +38,4 @@ namespace sunrise::middleware::content::manifest {
                           std::span<std::byte> output,
                           std::size_t& size) noexcept;
 
-} // namespace sunrise::middleware::content::manifest
+} // namespace dawn::middleware::content::manifest

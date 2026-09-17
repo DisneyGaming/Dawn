@@ -7,7 +7,7 @@
 Authorized personal reverse engineering on the user's own machine.
 
 Cross-refs (repo): `HOMECOMING-QOS-HANDOFF.md`, `HOMECOMING-MATCHMAKING-HANDOFF.md`, `HOMECOMING-FINDINGS.md`.
-Cross-refs (memory): `homecoming-matchmaking-pivot.md`, `homecoming-authored-fork.md`, `homecoming-predicate-exonerated.md`, `homecoming-collaborator-map.md`, `sunrise-project-state.md`.
+Cross-refs (memory): `homecoming-matchmaking-pivot.md`, `homecoming-authored-fork.md`, `homecoming-predicate-exonerated.md`, `homecoming-collaborator-map.md`, `dawn-project-state.md`.
 
 ---
 
@@ -180,7 +180,7 @@ The log shows **both** `result=allocated session=0x9EAA300100200002` **and** `re
 
 ## 5. Server code map (Phase 5 surface)
 
-All paths under `Sunrise/src/`.
+All paths under `Dawn/src/`.
 
 **Advertisement / host session (the hold):**
 - `server/gameplay/gameplay_advertisement.{h,cpp}` — `build_candidate`, `advertisement_state`, `build_advertisement`, `search_target`, `ambassador_slot` (now returns self), `region_machine_id`, `region_identity`.
@@ -283,12 +283,12 @@ Reaching #4 is new ground; #5–6 is Phase 5 complete.
 ## 10. Build / test loop
 
 ```bash
-powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\sunrise-dev.ps1" -Config Release
+powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\dawn-dev.ps1" -Config Release
 ```
 - Full deploy needs the game closed (`-BuildOnly` compiles while it runs). Warnings are errors (`/WX`).
-- Verify: `md5sum "/c/Destiny 2 Development/bin/x64/steam_api64.dll"` vs `.../Sunrise-src/build/x64/Release/steam_api64.dll`.
-- New `.cpp`/`.h` → add to `Sunrise/Sunrise.vcxproj` (ClCompile+ClInclude) AND (client hooks only) register in `client/runtime/client_hook_activation.cpp`.
-- Log: `bin\x64\Sunrise\logs\sunrise.log` (truncated per run; `.old` = previous). `ev=retail` = piped engine log; `server ...` = Sunrise server; `client ev=...` = hooks.
+- Verify: `md5sum "/c/Destiny 2 Development/bin/x64/steam_api64.dll"` vs `.../Dawn-src/build/x64/Release/steam_api64.dll`.
+- New `.cpp`/`.h` → add to `Dawn/Dawn.vcxproj` (ClCompile+ClInclude) AND (client hooks only) register in `client/runtime/client_hook_activation.cpp`.
+- Log: `bin\x64\Dawn\logs\dawn.log` (truncated per run; `.old` = previous). `ev=retail` = piped engine log; `server ...` = Dawn server; `client ev=...` = hooks.
 - **In-game:** boot to ORBIT → Insert → Activity override → `mission_towerfall` → bubble → slice auto-fills 48 → spawn `none` → load. (Enable override FROM ORBIT, not from a loaded activity.)
 
 ## 11. RE assets

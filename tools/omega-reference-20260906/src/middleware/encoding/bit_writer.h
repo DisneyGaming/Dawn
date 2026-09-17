@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::encoding::bits {
+namespace dawn::middleware::encoding::bits {
 
 /** Fixed-buffer MSB-first writer for bit-packed Middleware formats. */
 class Writer final {
@@ -45,4 +45,4 @@ private:
     bool measuring_{};
 };
 
-} // namespace sunrise::middleware::encoding::bits
+} // namespace dawn::middleware::encoding::bits

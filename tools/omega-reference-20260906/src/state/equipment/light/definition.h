@@ -7,7 +7,7 @@
 
 #include "../../build_data/items/details/definition.h"
 
-namespace sunrise::state::equipment::light {
+namespace dawn::state::equipment::light {
 
 /** One present item gives its definition identity and its runtime light score. */
 struct ItemScore {
@@ -51,4 +51,4 @@ struct ScalarValue {
     [[nodiscard]] bool operator==(const ScalarValue&) const noexcept = default;
 };
 
-} // namespace sunrise::state::equipment::light
+} // namespace dawn::state::equipment::light

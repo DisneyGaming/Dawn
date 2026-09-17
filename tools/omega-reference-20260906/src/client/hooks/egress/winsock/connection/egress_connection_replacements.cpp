@@ -10,7 +10,7 @@
 #include "../../policy/policy.h"
 #include "../../resolver/redirect.h"
 
-namespace sunrise::client::hooks::egress::winsock::connection {
+namespace dawn::client::hooks::egress::winsock::connection {
 namespace {
 
 /** WSAConnectByList could otherwise pick an endpoint off the redirect target. */
@@ -235,4 +235,4 @@ SOCKET WSAAPI join_leaf(SOCKET socket,
                 flags);
 }
 
-} // namespace sunrise::client::hooks::egress::winsock::connection
+} // namespace dawn::client::hooks::egress::winsock::connection

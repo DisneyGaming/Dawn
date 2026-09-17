@@ -12,7 +12,7 @@
 #include "state_account_transaction_helpers.h"
 #include "storage/internal.h"
 
-namespace sunrise::state {
+namespace dawn::state {
 
 using namespace runtime::detail;
 namespace authored_inventory = account::inventory;
@@ -579,4 +579,4 @@ bool commit_profile_item_acquisition(PendingProfileItemAcquisition& mutation) no
     return ready;
 }
 
-} // namespace sunrise::state
+} // namespace dawn::state

@@ -2,7 +2,7 @@
 
 #include "codec.h"
 
-namespace sunrise::state::build_data::cache::records {
+namespace dawn::state::build_data::cache::records {
 
 /** Encodes one resolved bubble name. */
 bool encode(const hash_names::Name& value, HashNameRecord& record) noexcept {
@@ -29,4 +29,4 @@ bool decode(const HashNameRecord& record, hash_names::Name& value) noexcept {
     return true;
 }
 
-} // namespace sunrise::state::build_data::cache::records
+} // namespace dawn::state::build_data::cache::records

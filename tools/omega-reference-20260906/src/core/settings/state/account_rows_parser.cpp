@@ -2,7 +2,7 @@
 
 #include "../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 namespace {
 
 /** Character levels are stored in one unsigned byte in authored State. */
@@ -286,4 +286,4 @@ bool Parser::character(state::CharacterState& output) noexcept {
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

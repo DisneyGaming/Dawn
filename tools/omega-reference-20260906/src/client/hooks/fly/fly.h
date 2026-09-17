@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::hooks::fly {
+namespace dawn::client::hooks::fly {
 
 /**
  * Fastest speed the game is shown while this hook drives the position itself. Contact with
@@ -36,4 +36,4 @@ void after_step(void* body, bool heldElsewhere) noexcept;
 /** Clears the key state. The switch is a stored setting and survives. */
 void reset() noexcept;
 
-} // namespace sunrise::client::hooks::fly
+} // namespace dawn::client::hooks::fly

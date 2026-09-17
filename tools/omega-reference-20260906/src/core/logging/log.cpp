@@ -11,7 +11,7 @@
 #include "../filesystem/path.h"
 #include "snapshot/internal.h"
 
-namespace sunrise::core::log {
+namespace dawn::core::log {
 namespace {
 
 /** Stable serialized channel names ordered by Channel. */
@@ -22,7 +22,7 @@ constexpr std::array<std::string_view, 4> kLevelNames{"error", "warn", "info", "
 /** Optional logs are isolated below the shared generated-artifact directory. */
 constexpr std::wstring_view kLogDirectorySuffix = L"\\logs";
 /** The active log keeps one stable filename across process starts. */
-constexpr std::wstring_view kLogFileSuffix = L"\\sunrise.log";
+constexpr std::wstring_view kLogFileSuffix = L"\\dawn.log";
 /** Rotation keeps exactly one prior startup log beside the active file. */
 constexpr std::wstring_view kPreviousLogSuffix = L".old";
 /** CRLF ends every emitted Windows log record. */
@@ -314,4 +314,4 @@ bool writers_active() noexcept {
     return g_writers.load(std::memory_order_acquire) != 0;
 }
 
-} // namespace sunrise::core::log
+} // namespace dawn::core::log

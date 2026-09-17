@@ -19,7 +19,7 @@
 #include "../../../state/activity/omega_rescue_marker_authority.h"
 #include "../../../state/activity/omega_presentation.h"
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 namespace {
 namespace native = omega_arc_charge_native;
 namespace catalog = state::activity::omega_arc_charge;
@@ -843,4 +843,4 @@ bool uninstall_omega_arc_charge_receipts() noexcept {
     g_promptSeen = {}; g_promptLines = 0;
     return true;
 }
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::hooks::config_getter {
+namespace dawn::client::hooks::config_getter {
 
 /**
  * Answers the Client's config URL and token questions.
@@ -14,4 +14,4 @@ namespace sunrise::client::hooks::config_getter {
 /** @return True while both thunks answer. */
 [[nodiscard]] bool is_installed() noexcept;
 
-} // namespace sunrise::client::hooks::config_getter
+} // namespace dawn::client::hooks::config_getter

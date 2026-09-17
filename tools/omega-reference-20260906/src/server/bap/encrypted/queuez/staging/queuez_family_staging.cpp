@@ -5,7 +5,7 @@
 
 #include "../queuez_state_validation.h"
 
-namespace sunrise::server::bap::encrypted::queuez {
+namespace dawn::server::bap::encrypted::queuez {
 
 /** @return True for a logical match between two resident rows. */
 bool staging::same_resident(const ResidentObject& left, const ResidentObject& right) noexcept {
@@ -194,4 +194,4 @@ void stage_unsubscription(const SessionState& before,
     }
 }
 
-} // namespace sunrise::server::bap::encrypted::queuez
+} // namespace dawn::server::bap::encrypted::queuez

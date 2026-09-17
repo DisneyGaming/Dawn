@@ -7,7 +7,7 @@
 
 #include "../../crypto/tiger192.h"
 
-namespace sunrise::middleware::gameplay::dtls {
+namespace dawn::middleware::gameplay::dtls {
 
 namespace {
 
@@ -73,4 +73,4 @@ bool derive(std::span<const std::byte> sharedSecret,
     return true;
 }
 
-} // namespace sunrise::middleware::gameplay::dtls
+} // namespace dawn::middleware::gameplay::dtls

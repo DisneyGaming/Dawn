@@ -2,7 +2,7 @@
 
 #include "../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 namespace {
 
 /** Required account-setting groups use one fixed presence slot each. */
@@ -81,4 +81,4 @@ bool Parser::account_settings(state::account::settings::AccountSettings& output)
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

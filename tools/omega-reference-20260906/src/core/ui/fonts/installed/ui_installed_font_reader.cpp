@@ -11,7 +11,7 @@
 
 #include "../../../filesystem/path.h"
 
-namespace sunrise::core::ui::fonts::installed {
+namespace dawn::core::ui::fonts::installed {
 namespace {
 
 /** One KiB, the unit the fixed font size policy uses. */
@@ -212,4 +212,4 @@ std::size_t byte_count() noexcept {
     return g_fontByteCount;
 }
 
-} // namespace sunrise::core::ui::fonts::installed
+} // namespace dawn::core::ui::fonts::installed

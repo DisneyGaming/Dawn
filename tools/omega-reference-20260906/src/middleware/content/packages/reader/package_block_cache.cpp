@@ -3,7 +3,7 @@
 
 #include "block_cache.h"
 
-namespace sunrise::middleware::content::packages::reader::block_cache {
+namespace dawn::middleware::content::packages::reader::block_cache {
 
 /**
  * Builds the cache key of one package block.
@@ -105,4 +105,4 @@ bool load_header(const Path& path,
     return true;
 }
 
-} // namespace sunrise::middleware::content::packages::reader::block_cache
+} // namespace dawn::middleware::content::packages::reader::block_cache

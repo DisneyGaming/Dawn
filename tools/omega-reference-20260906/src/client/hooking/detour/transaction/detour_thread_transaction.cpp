@@ -7,7 +7,7 @@
 
 #include "../../../process/freeze/client_process_freeze.h"
 
-namespace sunrise::client::hooking::detour::transaction {
+namespace dawn::client::hooking::detour::transaction {
 namespace {
 
 /** 4 protected functions per hook bound the fixed range storage, so no heap is used. */
@@ -237,4 +237,4 @@ InspectionResult inspect(const Threads& threads,
     return InspectionResult::clear;
 }
 
-} // namespace sunrise::client::hooking::detour::transaction
+} // namespace dawn::client::hooking::detour::transaction

@@ -7,7 +7,7 @@
 #include "../../../../state/account/inventory/inventory_state.h"
 #include "../instance/instance_encoder.h"
 
-namespace sunrise::middleware::datagen::family4::loadout {
+namespace dawn::middleware::datagen::family4::loadout {
 
 /** Equipped plus unequipped authored items one character may publish. */
 inline constexpr std::size_t kItemCapacity = state::account::inventory::kEquipmentSlotCount
@@ -46,4 +46,4 @@ struct ResolvedLoadout {
     std::uint32_t nextInventorySerial{};
 };
 
-} // namespace sunrise::middleware::datagen::family4::loadout
+} // namespace dawn::middleware::datagen::family4::loadout

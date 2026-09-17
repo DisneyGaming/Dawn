@@ -9,10 +9,10 @@
 #include "../push/activity/activity_message_push.h"
 #include "../push/activity/activity_roster_push.h"
 
-namespace sunrise::server::bap::encrypted::activity_transaction {
+namespace dawn::server::bap::encrypted::activity_transaction {
 namespace {
 
-#if defined(SUNRISE_REGION_PUBLICATION_TESTING)
+#if defined(DAWN_REGION_PUBLICATION_TESTING)
 RegionStageFailurePoint g_regionStageFailure = RegionStageFailurePoint::none;
 
 [[nodiscard]] bool injected_after(RegionStageFailurePoint point) noexcept {
@@ -57,7 +57,7 @@ void rollback_bundle(Session& session,
             scratch, snapshot.activity, key, nonce, response, written)) {
         return false;
     }
-#if defined(SUNRISE_REGION_PUBLICATION_TESTING)
+#if defined(DAWN_REGION_PUBLICATION_TESTING)
     if (requires_notification(snapshot.required, RegionNotification::globalState)
         && injected_after(RegionStageFailurePoint::afterGlobalState)) {
         return false;
@@ -68,7 +68,7 @@ void rollback_bundle(Session& session,
             scratch, snapshot, key, nonce, response, written)) {
         return false;
     }
-#if defined(SUNRISE_REGION_PUBLICATION_TESTING)
+#if defined(DAWN_REGION_PUBLICATION_TESTING)
     if (requires_notification(snapshot.required, RegionNotification::membership)
         && injected_after(RegionStageFailurePoint::afterMembership)) {
         return false;
@@ -79,7 +79,7 @@ void rollback_bundle(Session& session,
             session, scratch, snapshot, key, nonce, response, written)) {
         return false;
     }
-#if defined(SUNRISE_REGION_PUBLICATION_TESTING)
+#if defined(DAWN_REGION_PUBLICATION_TESTING)
     if (requires_notification(snapshot.required, RegionNotification::roster)
         && injected_after(RegionStageFailurePoint::afterRoster)) {
         return false;
@@ -90,7 +90,7 @@ void rollback_bundle(Session& session,
 
 } // namespace
 
-#if defined(SUNRISE_REGION_PUBLICATION_TESTING)
+#if defined(DAWN_REGION_PUBLICATION_TESTING)
 /** Selects one deterministic boundary failure in the real coordinator. */
 void set_region_stage_failure_for_testing(RegionStageFailurePoint point) noexcept {
     g_regionStageFailure = point;
@@ -236,4 +236,4 @@ void discard_notification_staging(Session& session, NotificationStaging& staging
     staging = {};
 }
 
-} // namespace sunrise::server::bap::encrypted::activity_transaction
+} // namespace dawn::server::bap::encrypted::activity_transaction

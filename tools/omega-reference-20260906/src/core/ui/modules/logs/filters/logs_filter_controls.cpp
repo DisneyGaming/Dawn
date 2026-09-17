@@ -9,7 +9,7 @@
 #include "../../../components/filter/ui_filter_component.h"
 #include "../../../scaling/dpi/ui_dpi_scaling.h"
 
-namespace sunrise::core::ui::modules::logs::internal::filters {
+namespace dawn::core::ui::modules::logs::internal::filters {
 namespace {
 
 /** One null byte lets Dear ImGui edit the full text-filter buffer. */
@@ -127,4 +127,4 @@ void reset() noexcept {
     g_selection = {};
 }
 
-} // namespace sunrise::core::ui::modules::logs::internal::filters
+} // namespace dawn::core::ui::modules::logs::internal::filters

@@ -7,7 +7,7 @@
 #include "../../../../middleware/datagen/family4/loadout/definition.h"
 #include "../../../../state/account/account_state.h"
 
-namespace sunrise::server::bap::encrypted::queuez {
+namespace dawn::server::bap::encrypted::queuez {
 
 /** Family zero carries the banner anchor and the record for the character it names. */
 inline constexpr std::uint32_t kBannerFamilyType = 0;
@@ -191,4 +191,4 @@ struct StagedPublication {
     std::uint64_t bannerRepushRoot{};
 };
 
-} // namespace sunrise::server::bap::encrypted::queuez
+} // namespace dawn::server::bap::encrypted::queuez

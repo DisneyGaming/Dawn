@@ -3,7 +3,7 @@
 #include "../../encoding/bit_reader.h"
 #include "opcode1820.h"
 
-namespace sunrise::middleware::web_service::messages::opcode1820 {
+namespace dawn::middleware::web_service::messages::opcode1820 {
 namespace {
 
 /** The reflected Collections pull request occupies exactly 24 bits. */
@@ -37,4 +37,4 @@ bool parse_request(const Message& message, Request& request) noexcept {
     return true;
 }
 
-} // namespace sunrise::middleware::web_service::messages::opcode1820
+} // namespace dawn::middleware::web_service::messages::opcode1820

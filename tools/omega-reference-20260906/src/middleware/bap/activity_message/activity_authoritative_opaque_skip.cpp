@@ -1,6 +1,6 @@
 #include "client_authoritative_data.h"
 
-namespace sunrise::middleware::bap::activity_message::client_authoritative_data {
+namespace dawn::middleware::bap::activity_message::client_authoritative_data {
 namespace {
 
 /** The B2 byte-list count uses 14 bits and allows at most 10,000 elements. */
@@ -159,4 +159,4 @@ bool read_transition_branch(encoding::bits::Reader& reader,
     return skip_optional(reader, 3);
 }
 
-} // namespace sunrise::middleware::bap::activity_message::client_authoritative_data
+} // namespace dawn::middleware::bap::activity_message::client_authoritative_data

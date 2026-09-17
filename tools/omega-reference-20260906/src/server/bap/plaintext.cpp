@@ -10,7 +10,7 @@
 #include "encrypted/internal.h"
 #include "internal.h"
 
-namespace sunrise::server::bap::plaintext {
+namespace dawn::server::bap::plaintext {
 namespace {
 
 /** Protobuf field tag for the length-delimited session token. */
@@ -278,4 +278,4 @@ bool consume(Session& session,
     return true;
 }
 
-} // namespace sunrise::server::bap::plaintext
+} // namespace dawn::server::bap::plaintext

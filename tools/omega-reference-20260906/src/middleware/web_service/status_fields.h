@@ -3,7 +3,7 @@
 #include "../encoding/bit_writer.h"
 #include "web_service_envelope.h"
 
-namespace sunrise::middleware::web_service::status {
+namespace dawn::middleware::web_service::status {
 
 /**
  * Writes one whole logical status shape, without envelope trailers.
@@ -16,4 +16,4 @@ namespace sunrise::middleware::web_service::status {
                                 ResponseShape shape,
                                 const StatusResponse& response) noexcept;
 
-} // namespace sunrise::middleware::web_service::status
+} // namespace dawn::middleware::web_service::status

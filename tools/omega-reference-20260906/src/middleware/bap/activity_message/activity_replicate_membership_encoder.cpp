@@ -1,6 +1,6 @@
 #include "replicate_membership.h"
 
-namespace sunrise::middleware::bap::activity_message::replicate_membership {
+namespace dawn::middleware::bap::activity_message::replicate_membership {
 namespace {
 
 /** The local member sits in slot zero of both top-level masks. */
@@ -43,4 +43,4 @@ bool encode_replicate_membership(const MembershipSnapshot& snapshot,
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_message::replicate_membership
+} // namespace dawn::middleware::bap::activity_message::replicate_membership

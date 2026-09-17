@@ -14,7 +14,7 @@
 #include "../../../../middleware/protobuf/codec.h"
 #include "../../../../state/activity/forced/activity_forced_destination.h"
 
-namespace sunrise::server::bap::encrypted::matchmaking {
+namespace dawn::server::bap::encrypted::matchmaking {
 namespace {
 
 namespace service = middleware::bap::matchmaking;
@@ -61,9 +61,9 @@ void capture_join_descriptor(const wchar_t* phase,
     if (capture > 32U) {
         return;
     }
-    const HMODULE sunrise = GetModuleHandleW(L"steam_api64.dll");
+    const HMODULE dawn = GetModuleHandleW(L"steam_api64.dll");
     core::path::Buffer path{};
-    if (sunrise == nullptr || !core::path::artifact_directory(sunrise, path)
+    if (dawn == nullptr || !core::path::artifact_directory(dawn, path)
         || !core::path::append(path, L"\\analysis")) {
         return;
     }
@@ -312,4 +312,4 @@ bool encode_response(state::matchmaking::ContextHandle context,
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted::matchmaking
+} // namespace dawn::server::bap::encrypted::matchmaking

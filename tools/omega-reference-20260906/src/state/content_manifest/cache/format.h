@@ -6,10 +6,10 @@
 
 #include "../definition.h"
 
-namespace sunrise::state::content_manifest::cache {
+namespace dawn::state::content_manifest::cache {
 
 /** 8 owned ASCII bytes mark generated content-manifest caches. */
-inline constexpr std::array<char, 8> kCacheMagic{'S', 'U', 'N', 'C', 'M', 'A', 'N', 'F'};
+inline constexpr std::array<char, 8> kCacheMagic{'D', 'A', 'W', 'N', 'M', 'A', 'N', 'F'};
 /**
  * Version 3 binds the public manifest id to package sizes and write times. Version 2 used only
  * public row fields, allowing the Client to reuse stale header bytes after a package changed.
@@ -44,4 +44,4 @@ static_assert(sizeof(Header)
 static_assert(sizeof(DiskRow)
               == kPackageNameCapacity + 2 * sizeof(std::uint16_t) + sizeof(std::uint64_t));
 
-} // namespace sunrise::state::content_manifest::cache
+} // namespace dawn::state::content_manifest::cache

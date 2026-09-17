@@ -5,7 +5,7 @@
 
 #include "../definition.h"
 
-namespace sunrise::state::activity::entity_slots {
+namespace dawn::state::activity::entity_slots {
 
 /** Mask and revision data for one deferred lease change. */
 struct PendingMutation final {
@@ -77,4 +77,4 @@ struct PendingMutation final {
  */
 [[nodiscard]] bool commit(PendingMutation& mutation) noexcept;
 
-} // namespace sunrise::state::activity::entity_slots
+} // namespace dawn::state::activity::entity_slots

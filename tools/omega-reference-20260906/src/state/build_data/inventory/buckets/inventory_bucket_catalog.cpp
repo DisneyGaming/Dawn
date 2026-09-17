@@ -7,7 +7,7 @@
 
 #include "../../table.h"
 
-namespace sunrise::state::build_data::inventory::buckets {
+namespace dawn::state::build_data::inventory::buckets {
 namespace {
 
 /** An all-one row marks a bucket id with no published descriptor. */
@@ -143,4 +143,4 @@ std::size_t count() noexcept {
     return g_descriptors.count();
 }
 
-} // namespace sunrise::state::build_data::inventory::buckets
+} // namespace dawn::state::build_data::inventory::buckets

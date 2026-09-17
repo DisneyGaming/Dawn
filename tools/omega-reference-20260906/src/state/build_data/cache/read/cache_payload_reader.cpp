@@ -6,7 +6,7 @@
 #include "../records/codec.h"
 #include "../records/validation.h"
 
-namespace sunrise::state::build_data::cache::read {
+namespace dawn::state::build_data::cache::read {
 namespace {
 
 /**
@@ -236,4 +236,4 @@ bool read_payload(HANDLE file,
     });
 }
 
-} // namespace sunrise::state::build_data::cache::read
+} // namespace dawn::state::build_data::cache::read

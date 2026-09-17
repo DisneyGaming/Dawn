@@ -2,7 +2,7 @@
 
 #include "internal.h"
 
-namespace sunrise::middleware::content::packages::tables {
+namespace dawn::middleware::content::packages::tables {
 namespace {
 
 /** A state records whether it is enabled in its first byte. */
@@ -254,4 +254,4 @@ bool object_placed_handle_at(std::span<const std::byte> blob,
            && read(blob, offset, handle);
 }
 
-} // namespace sunrise::middleware::content::packages::tables
+} // namespace dawn::middleware::content::packages::tables

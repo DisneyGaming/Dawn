@@ -11,7 +11,7 @@
 #include "../../patterns/image_scan.h"
 #include "internal.h"
 
-namespace sunrise::client::hooks::queuez {
+namespace dawn::client::hooks::queuez {
 namespace {
 
 using patterns::scan_main_image_unique;
@@ -137,4 +137,4 @@ bool null_payload_guard_installed() noexcept {
     return g_handle.attached;
 }
 
-} // namespace sunrise::client::hooks::queuez
+} // namespace dawn::client::hooks::queuez

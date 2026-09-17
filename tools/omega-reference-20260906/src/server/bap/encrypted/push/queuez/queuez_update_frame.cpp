@@ -8,7 +8,7 @@
 #include "../../../../../middleware/bap/frame.h"
 #include "../../../../../middleware/secure_channel/runtime.h"
 
-namespace sunrise::server::bap::encrypted::push::queuez_frame {
+namespace dawn::server::bap::encrypted::push::queuez_frame {
 namespace {
 
 /** Unsolicited notifications have no request sequence to echo. */
@@ -82,4 +82,4 @@ bool append(Scratch& scratch,
     return encoded;
 }
 
-} // namespace sunrise::server::bap::encrypted::push::queuez_frame
+} // namespace dawn::server::bap::encrypted::push::queuez_frame

@@ -6,7 +6,7 @@
 #include <optional>
 #include <string_view>
 
-namespace sunrise::state::account::inventory {
+namespace dawn::state::account::inventory {
 
 /** Authored equipment exposes the 16 named slots the first State supports. */
 enum class EquipmentSlot : std::uint8_t {
@@ -129,4 +129,4 @@ struct Equipment {
 /** Checks the used prefix and empty tail of one character's unequipped item array. */
 [[nodiscard]] bool valid(const CharacterItems& items) noexcept;
 
-} // namespace sunrise::state::account::inventory
+} // namespace dawn::state::account::inventory

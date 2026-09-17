@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::bap::activity_message {
+namespace dawn::middleware::bap::activity_message {
 
 /** Only discriminator 1 carries the supported join envelope; variant 2 is rejected. */
 inline constexpr std::byte kTransportDiscriminator{1};
@@ -36,4 +36,4 @@ struct JoinRequest final {
     std::uint64_t characterSoid{};
 };
 
-} // namespace sunrise::middleware::bap::activity_message
+} // namespace dawn::middleware::bap::activity_message

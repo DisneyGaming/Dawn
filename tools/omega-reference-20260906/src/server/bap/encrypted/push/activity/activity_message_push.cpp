@@ -10,7 +10,7 @@
 #include "activity_global_state_push.h"
 #include "activity_notification_frame.h"
 
-namespace sunrise::server::bap::encrypted::push::activity {
+namespace dawn::server::bap::encrypted::push::activity {
 namespace {
 
 namespace service = middleware::bap::activity_message;
@@ -144,4 +144,4 @@ bool append_entity_slot_notification(Scratch& scratch,
     return encoded;
 }
 
-} // namespace sunrise::server::bap::encrypted::push::activity
+} // namespace dawn::server::bap::encrypted::push::activity

@@ -8,7 +8,7 @@
 #include "../../../state/gameplay/definition.h"
 #include "control_packet.h"
 
-namespace sunrise::middleware::gameplay::association {
+namespace dawn::middleware::gameplay::association {
 
 /** The envelope keys AES-128, so the derived key contributes its first 16 bytes. */
 inline constexpr std::size_t kKeySize = state::gameplay::kChannelKeySize;
@@ -56,4 +56,4 @@ using ProtectedContext = state::gameplay::ProtectedContext;
                         std::size_t& payloadSize,
                         std::uint32_t& wordA) noexcept;
 
-} // namespace sunrise::middleware::gameplay::association
+} // namespace dawn::middleware::gameplay::association

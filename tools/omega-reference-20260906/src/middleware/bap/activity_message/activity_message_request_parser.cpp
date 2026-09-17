@@ -2,7 +2,7 @@
 
 #include "../../encoding/byte_order.h"
 
-namespace sunrise::middleware::bap::activity_message {
+namespace dawn::middleware::bap::activity_message {
 namespace {
 
 /** Fixed service-8 fields after the generic 6-byte BAP request header. */
@@ -51,4 +51,4 @@ bool parse_request(std::span<const std::byte> input, Request& request) noexcept 
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_message
+} // namespace dawn::middleware::bap::activity_message

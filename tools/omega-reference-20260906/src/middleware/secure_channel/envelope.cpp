@@ -6,7 +6,7 @@
 #include "../encoding/byte_order.h"
 #include "runtime.h"
 
-namespace sunrise::middleware::secure_channel {
+namespace dawn::middleware::secure_channel {
 namespace {
 
 /** Service-26 plaintext packs a 12-byte nonce and 16-byte key plus padding. */
@@ -173,4 +173,4 @@ bool encode_server_hello(const state::SignOnState& signOn,
     return true;
 }
 
-} // namespace sunrise::middleware::secure_channel
+} // namespace dawn::middleware::secure_channel

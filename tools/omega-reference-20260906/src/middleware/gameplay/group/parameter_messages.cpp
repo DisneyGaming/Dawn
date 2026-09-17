@@ -5,7 +5,7 @@
 
 #include "../../encoding/bit_raw.h"
 
-namespace sunrise::middleware::gameplay::group {
+namespace dawn::middleware::gameplay::group {
 
 namespace {
 
@@ -158,4 +158,4 @@ bool requests(std::uint64_t mask, std::uint8_t parameter) noexcept {
     return ((mask >> parameter) & 1U) != 0;
 }
 
-} // namespace sunrise::middleware::gameplay::group
+} // namespace dawn::middleware::gameplay::group

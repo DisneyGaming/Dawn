@@ -7,7 +7,7 @@
 
 #include "activity_patch_epoch_parser.h"
 
-namespace sunrise::middleware::bap::activity_message::sense_update {
+namespace dawn::middleware::bap::activity_message::sense_update {
 
 /** The client reports sensor sense changes. It is the client's answer to the roster update. */
 inline constexpr std::uint32_t kMessageType = 6;
@@ -50,7 +50,7 @@ struct SenseObject final {
     std::uint64_t bodyThird{};
     /** Remaining MSB-first chunks; the last partial chunk is right-aligned like the first three. */
     std::array<std::uint64_t, kCapturedBodyBitCapacity / 64 - 3> bodyTail{};
-    /** Sunrise's legacy FNV-like diagnostic hash over the meaningful width and body bits. */
+    /** Dawn's legacy FNV-like diagnostic hash over the meaningful width and body bits. */
     std::uint64_t bodyHash{};
     std::uint32_t bodyBits{};
     /** Raw native sensor revision, outside the reflected root delta. */
@@ -89,4 +89,4 @@ struct SenseUpdate final {
                                       SenseUpdate& update,
                                       std::size_t& consumedBits) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_message::sense_update
+} // namespace dawn::middleware::bap::activity_message::sense_update

@@ -20,7 +20,7 @@
 #include "../../../state/activity/omega_ending.h"
 #include "activity_override_lists.h"
 
-namespace sunrise::server::ui::activity_override {
+namespace dawn::server::ui::activity_override {
 namespace {
 
 namespace forced = state::activity::forced;
@@ -322,4 +322,4 @@ void draw() noexcept {
     ImGui::TextWrapped("Available at Omega's opening Lighthouse before entering the Forest. Plays the ending and tests the Mercury return without replaying the fight. This preview does not complete the quest.");
 }
 
-} // namespace sunrise::server::ui::activity_override
+} // namespace dawn::server::ui::activity_override

@@ -4,7 +4,7 @@
 #include "../../targets/game/assert_handler.h"
 #include "assert_handler_observer.h"
 
-namespace sunrise::client::hooks::assert_handler {
+namespace dawn::client::hooks::assert_handler {
 
 SRWLOCK g_lock{SRWLOCK_INIT};
 bool g_installed{};
@@ -69,7 +69,7 @@ bool uninstall() noexcept {
     return restored;
 }
 
-/** @return True while Sunrise's handler owns the slot. */
+/** @return True while Dawn's handler owns the slot. */
 bool is_installed() noexcept {
     AcquireSRWLockShared(&g_lock);
     const bool installed = g_installed;
@@ -77,4 +77,4 @@ bool is_installed() noexcept {
     return installed;
 }
 
-} // namespace sunrise::client::hooks::assert_handler
+} // namespace dawn::client::hooks::assert_handler

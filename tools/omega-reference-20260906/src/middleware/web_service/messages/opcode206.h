@@ -3,7 +3,7 @@
 #include "../../queuez/subscription.h"
 #include "../web_service_envelope.h"
 
-namespace sunrise::middleware::web_service::messages::opcode206 {
+namespace dawn::middleware::web_service::messages::opcode206 {
 
 /** Web Service opcode for one queuez family subscription. */
 inline constexpr std::uint16_t kOpcode = 206;
@@ -18,4 +18,4 @@ inline constexpr std::uint16_t kOpcode = 206;
 [[nodiscard]] bool parse_request(const Message& message,
                                  queuez::Subscription& subscription) noexcept;
 
-} // namespace sunrise::middleware::web_service::messages::opcode206
+} // namespace dawn::middleware::web_service::messages::opcode206

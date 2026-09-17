@@ -5,11 +5,11 @@ import sys
 
 root = Path(__file__).resolve().parents[2]
 configuration = sys.argv[1] if len(sys.argv) > 1 else 'Release'
-project = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else root / 'Sunrise/Sunrise.vcxproj'
+project = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else root / 'Dawn/Dawn.vcxproj'
 name = project.stem
 variant = sys.argv[3] if len(sys.argv) > 3 else 'local'
-folder = root / 'build/omega-src-port' / (name + '-' + variant if name != 'Sunrise' else '')
-log = Path(__file__).with_name('build-' + (name + '-' + variant + '-' if name != 'Sunrise' else '') + configuration.lower() + '.log')
+folder = root / 'build/omega-src-port' / (name + '-' + variant if name != 'Dawn' else '')
+log = Path(__file__).with_name('build-' + (name + '-' + variant + '-' if name != 'Dawn' else '') + configuration.lower() + '.log')
 args = [r'C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\MSBuild.exe',
         str(project), '/nologo', '/m:2', '/v:minimal',
         '/p:Configuration=' + configuration, '/p:Platform=x64', '/p:CL_MPCount=4',

@@ -10,7 +10,7 @@
 #include "../../../../state/build_data/runtime.h"
 #include "loadout_item_resolver.h"
 
-namespace sunrise::middleware::datagen::family4::loadout {
+namespace dawn::middleware::datagen::family4::loadout {
 namespace {
 
 namespace authored_inventory = state::account::inventory;
@@ -285,4 +285,4 @@ bool resolve(const state::AccountState& account,
     return true;
 }
 
-} // namespace sunrise::middleware::datagen::family4::loadout
+} // namespace dawn::middleware::datagen::family4::loadout

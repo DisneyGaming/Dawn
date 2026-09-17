@@ -3,7 +3,7 @@
 #include "../../../../../state/account/settings/settings_state.h"
 #include "layout.h"
 
-namespace sunrise::middleware::datagen::family4::account::preferences {
+namespace dawn::middleware::datagen::family4::account::preferences {
 
 /**
  * Maps semantic State preferences into the two native account records.
@@ -16,4 +16,4 @@ namespace sunrise::middleware::datagen::family4::account::preferences {
                           Record& record,
                           BindingsRecord& bindingsRecord) noexcept;
 
-} // namespace sunrise::middleware::datagen::family4::account::preferences
+} // namespace dawn::middleware::datagen::family4::account::preferences

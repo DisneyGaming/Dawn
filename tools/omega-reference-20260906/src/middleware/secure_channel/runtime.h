@@ -6,7 +6,7 @@
 
 #include "../../state/runtime/state.h"
 
-namespace sunrise::middleware::secure_channel {
+namespace dawn::middleware::secure_channel {
 
 /** Fixed byte size of the authenticated service-26 envelope. */
 inline constexpr std::size_t kServerHelloEnvelopeSize = 84;
@@ -37,4 +37,4 @@ inline constexpr std::size_t kFrameTagSize = 16;
 /** Advances the 12-byte little-endian frame nonce. */
 void advance_nonce(std::span<std::byte, state::kBapNonceSize> nonce) noexcept;
 
-} // namespace sunrise::middleware::secure_channel
+} // namespace dawn::middleware::secure_channel

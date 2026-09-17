@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::hooks::cursor {
+namespace dawn::client::hooks::cursor {
 
 /**
  * Attaches the cursor guards. The game recentres and confines the pointer every frame, which
@@ -22,4 +22,4 @@ void uninstall() noexcept;
  */
 void apply_visibility(bool visible) noexcept;
 
-} // namespace sunrise::client::hooks::cursor
+} // namespace dawn::client::hooks::cursor

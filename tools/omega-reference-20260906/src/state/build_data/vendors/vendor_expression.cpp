@@ -2,7 +2,7 @@
 
 #include <array>
 
-namespace sunrise::state::build_data::vendors {
+namespace dawn::state::build_data::vendors {
 namespace {
 
 /** What one stack slot holds. The two kinds never substitute for each other. */
@@ -116,4 +116,4 @@ bool evaluate(std::span<const Instruction> program, const Inputs& inputs, bool& 
     return true;
 }
 
-} // namespace sunrise::state::build_data::vendors
+} // namespace dawn::state::build_data::vendors

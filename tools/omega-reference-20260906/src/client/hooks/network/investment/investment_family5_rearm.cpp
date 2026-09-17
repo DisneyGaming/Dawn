@@ -14,7 +14,7 @@
 #include "../../../hooking/detour.h"
 #include "internal.h"
 
-namespace sunrise::client::hooks::network::investment {
+namespace dawn::client::hooks::network::investment {
 namespace {
 
 /**
@@ -109,4 +109,4 @@ bool family5_rearm_is_installed() noexcept {
     return g_handle.attached;
 }
 
-} // namespace sunrise::client::hooks::network::investment
+} // namespace dawn::client::hooks::network::investment

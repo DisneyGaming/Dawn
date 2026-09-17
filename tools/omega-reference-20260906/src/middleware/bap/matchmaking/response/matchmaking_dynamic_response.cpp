@@ -3,7 +3,7 @@
 #include "../../../protobuf/codec.h"
 #include "../definition.h"
 
-namespace sunrise::middleware::bap::matchmaking::response {
+namespace dawn::middleware::bap::matchmaking::response {
 namespace {
 
 using protobuf::Writer;
@@ -137,4 +137,4 @@ bool encode_locate_result(std::uint64_t advertisementId,
     return true;
 }
 
-} // namespace sunrise::middleware::bap::matchmaking::response
+} // namespace dawn::middleware::bap::matchmaking::response

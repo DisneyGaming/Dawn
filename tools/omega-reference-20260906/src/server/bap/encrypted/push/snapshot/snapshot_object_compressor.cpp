@@ -1,7 +1,7 @@
 #include "../../../../../middleware/compression/oodle/runtime.h"
 #include "internal.h"
 
-namespace sunrise::server::bap::encrypted::push::snapshot {
+namespace dawn::server::bap::encrypted::push::snapshot {
 
 /** Compresses one encoded family-four object into the next sealed scratch segment. */
 bool compress_object(Scratch& scratch,
@@ -32,4 +32,4 @@ bool compress_object(Scratch& scratch,
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted::push::snapshot
+} // namespace dawn::server::bap::encrypted::push::snapshot

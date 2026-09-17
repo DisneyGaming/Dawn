@@ -12,7 +12,7 @@
 #include "state_account_transaction_helpers.h"
 #include "storage/internal.h"
 
-namespace sunrise::state {
+namespace dawn::state {
 
 using namespace runtime::detail;
 namespace authored_inventory = account::inventory;
@@ -511,4 +511,4 @@ bool commit_item_state(PendingItemState& mutation) noexcept {
     return true;
 }
 
-} // namespace sunrise::state
+} // namespace dawn::state

@@ -6,7 +6,7 @@
 
 #include "internal.h"
 
-namespace sunrise::core::ui::modules::logs::internal {
+namespace dawn::core::ui::modules::logs::internal {
 namespace {
 
 /** CRLF gives copied lines the native Windows text-file separator. */
@@ -195,4 +195,4 @@ void cancel_pending_copy() noexcept {
     ReleaseSRWLockExclusive(&g_clipboard.lock);
 }
 
-} // namespace sunrise::core::ui::modules::logs::internal
+} // namespace dawn::core::ui::modules::logs::internal

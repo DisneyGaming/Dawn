@@ -7,7 +7,7 @@
 
 #include "../runtime.h"
 
-namespace sunrise::steam::runtime::callbacks {
+namespace dawn::steam::runtime::callbacks {
 
 /** Clears every callback, call-result and queued-event registration. */
 void clear() noexcept;
@@ -53,4 +53,4 @@ void set_registration(void* callback, bool registered) noexcept;
 
 /** @return The callback id stored in Steam-owned callback storage. */
 [[nodiscard]] int callback_id(void* callback) noexcept;
-} // namespace sunrise::steam::runtime::callbacks
+} // namespace dawn::steam::runtime::callbacks

@@ -26,4 +26,4 @@ The roster structure can come from installed content rather than one hardcoded m
 
 Do not infer that every sub-block/global-key discrepancy or every destination is fixed. The machinery is implemented; exhaustive all-destination correctness was not established. It is also unrelated to queuez family-2 social identities.
 
-Landmarks: Sunrise/src/client/content/scenarios/scenario_roster_build.cpp and scenario_roster_groups.cpp; Sunrise/src/middleware/content/packages/tables/roster_intersection.cpp; Sunrise/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp. This explanation uses the earlier inspected builder/runtime and their retained interfaces. No package regeneration or all-destination test was performed for this archive.
+Landmarks: Dawn/src/client/content/scenarios/scenario_roster_build.cpp and scenario_roster_groups.cpp; Dawn/src/middleware/content/packages/tables/roster_intersection.cpp; Dawn/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp. This explanation uses the earlier inspected builder/runtime and their retained interfaces. No package regeneration or all-destination test was performed for this archive.

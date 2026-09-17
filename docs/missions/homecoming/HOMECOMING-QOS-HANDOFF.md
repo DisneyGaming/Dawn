@@ -1,11 +1,11 @@
 # Destiny 2 Homecoming — Matchmaking Connect + QoS Handoff (2026-08-18)
 
-Continuation handoff for the **Homecoming** (`mission_towerfall`) offline-revival under **Sunrise**.
+Continuation handoff for the **Homecoming** (`mission_towerfall`) offline-revival under **Dawn**.
 Supersedes the *direction* of all prior handoffs. Read this first, then `HOMECOMING-MATCHMAKING-HANDOFF.md`
 (the pivot that got us here), then the older `HOMECOMING-AH-HANDSHAKE-HANDOFF.md` / `HOMECOMING-FINDINGS.md`
 for deep background. **Authorized personal reverse engineering on the user's own machine.**
 
-Cross-refs: memory files `homecoming-matchmaking-pivot.md` (most detailed blow-by-blow), `sunrise-project-state.md`,
+Cross-refs: memory files `homecoming-matchmaking-pivot.md` (most detailed blow-by-blow), `dawn-project-state.md`,
 `homecoming-authored-fork.md`, `homecoming-collaborator-map.md`.
 
 ---
@@ -17,10 +17,10 @@ from the peer join**. The working chain:
 
 ```
 region_force_public (mission treated PUBLIC)
-  → client SEARCHES the region  → Sunrise sessionSearch returns the local host  ✓
+  → client SEARCHES the region  → Dawn sessionSearch returns the local host  ✓
   → client parses the result (schema-correct)  → gets session id + host address  ✓
   → NAT traversal to embedded host 127.0.0.1:30976  ✓
-  → QoS reachability probe to 30976  → Sunrise answers a valid bdQoSReplyPacket  ✓ (reachable, accepted, 20ms)
+  → QoS reachability probe to 30976  → Dawn answers a valid bdQoSReplyPacket  ✓ (reachable, accepted, 20ms)
   → [CURRENT WALL] client decodes the QoS reply PAYLOAD as a structured session blob;
         ours is zeros → "qos-payload-failed-to-decode" → session marked unsuitable → loops
 ```
@@ -55,7 +55,7 @@ load"; the connect gets us to world-load, content is a later scripting layer.
 ## 2. THE JOURNEY (what was proven, in order — all measured)
 
 1. **Pivot to the matchmaking-SEARCH path** (from the peer/citizen path). Measured proof: with `ambassador=self`
-   the client's session search REACHES Sunrise (`server ev=bap svc=42 rsp=43`), whereas the citizen path
+   the client's session search REACHES Dawn (`server ev=bap svc=42 rsp=43`), whereas the citizen path
    (`ambassador≠self`) dies entirely client-side on `group_target=0` (nothing reaches the server). Search path
    is the tractable one.
 2. **sessionSearch returns the host** (was `encode_empty_message`). Server change in matchmaking (§4).
@@ -63,7 +63,7 @@ load"; the connect gets us to world-load, content is a later scripting layer.
    sits at `f3{ f1(repeated){ f1: descriptorMsg{ f1: 128B descriptor } } }` — the result's **field 1 is the
    descriptor message, NOT an id** (every earlier guess put an id there → policy-31 fatal decode → weasel).
    Correct encoding → client `Get search results total:[1] valid:[1]`.
-4. **NAT traversal** to 127.0.0.1:30976 already answered by Sunrise (`make_introduction_reply`, type 13→12).
+4. **NAT traversal** to 127.0.0.1:30976 already answered by Dawn (`make_introduction_reply`, type 13→12).
 5. **QoS handshake reversed field-by-field** (this was the long part — §3). Each fix cleared one client reason:
    type 0x29 (routing) → key at probe[9..12] (invalid id) → accept flag reply[13]=1 (qos-refused) → non-empty
    payload (qos-payload-empty) → **now** the payload must DECODE (qos-payload-failed-to-decode).
@@ -113,7 +113,7 @@ it blind — the chosen path is the runtime bypass.
 
 ---
 
-## 4. SERVER-SIDE MAP (Sunrise-src, branch `spawner`, paths under `Sunrise/src/`)
+## 4. SERVER-SIDE MAP (Dawn-src, branch `spawner`, paths under `Dawn/src/`)
 
 - **`middleware/bap/matchmaking/response/matchmaking_dynamic_response.cpp`** — `encode_search_result`:
   `f3{ f1{ f1: descriptorMsg{ f1: 128B desc } } }` (SCHEMA-CORRECT). `encode_locate_result` (field 7) is the
@@ -215,14 +215,14 @@ stage=connect`/`stage=join`/`stage=establish` on 30976 (peer_transport) → sess
 ## 8. BUILD / TEST LOOP
 
 ```bash
-powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\sunrise-dev.ps1" -Config Release
+powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\dawn-dev.ps1" -Config Release
 ```
 - Full deploy needs the game closed (`-BuildOnly` compiles while it runs). Warnings are errors (/WX).
 - Verify: `md5sum "/c/Destiny 2 Development/bin/x64/steam_api64.dll"` vs
-  `.../Sunrise-src/build/x64/Release/steam_api64.dll`.
-- NEW `.cpp`/`.h` must be added to `Sunrise/Sunrise.vcxproj` (ClCompile+ClInclude) AND registered in
+  `.../Dawn-src/build/x64/Release/steam_api64.dll`.
+- NEW `.cpp`/`.h` must be added to `Dawn/Dawn.vcxproj` (ClCompile+ClInclude) AND registered in
   `client/runtime/client_hook_activation.cpp` (the `qos_probe` module already is).
-- Log: `bin\x64\Sunrise\logs\sunrise.log` (truncated per run; `.old` = previous). Retail engine log is piped as
+- Log: `bin\x64\Dawn\logs\dawn.log` (truncated per run; `.old` = previous). Retail engine log is piped as
   `ev=retail`; server = `server ...`; client hooks = `client ev=...`.
 - **In-game:** boot to ORBIT → Insert → Activity override → `mission_towerfall` → bubble → slice auto-fills 48 →
   spawn `none` → load Homecoming. (Enable the override FROM ORBIT, not from a loaded activity.)

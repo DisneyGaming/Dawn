@@ -12,7 +12,7 @@
 #include "../../../../../state/activity/omega_ending_rules.h"
 #include "../../../../../state/build_data/scenarios/definition.h"
 
-namespace sunrise::server::bap::encrypted::push::activity::omega_lair {
+namespace dawn::server::bap::encrypted::push::activity::omega_lair {
 
 namespace layouts = state::build_data::scenarios;
 namespace wire = middleware::bap::activity_message::sensor_auth_update;
@@ -347,4 +347,4 @@ template<class Storage>
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted::push::activity::omega_lair
+} // namespace dawn::server::bap::encrypted::push::activity::omega_lair

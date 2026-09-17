@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace sunrise::state::build_data::cache::records {
+namespace dawn::state::build_data::cache::records {
 
 /**
  * Current build-data cache format. Every non-current valid prefix is rebuildable stale state;
@@ -10,4 +10,4 @@ namespace sunrise::state::build_data::cache::records {
  */
 inline constexpr std::uint32_t kCacheFormatVersion = 48;
 
-} // namespace sunrise::state::build_data::cache::records
+} // namespace dawn::state::build_data::cache::records

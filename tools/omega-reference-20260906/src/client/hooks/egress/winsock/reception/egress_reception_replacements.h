@@ -2,7 +2,7 @@
 
 #include "../../platform/sdk.h"
 
-namespace sunrise::client::hooks::egress::winsock::reception {
+namespace dawn::client::hooks::egress::winsock::reception {
 
 /** Observes and forwards one contiguous receive without creating egress. */
 int WSAAPI receive_bytes(SOCKET socket, char* buffer, int length, int flags) noexcept;
@@ -35,4 +35,4 @@ int WSAAPI receive_buffers_from(SOCKET socket,
                                 LPWSAOVERLAPPED overlapped,
                                 LPWSAOVERLAPPED_COMPLETION_ROUTINE completion) noexcept;
 
-} // namespace sunrise::client::hooks::egress::winsock::reception
+} // namespace dawn::client::hooks::egress::winsock::reception

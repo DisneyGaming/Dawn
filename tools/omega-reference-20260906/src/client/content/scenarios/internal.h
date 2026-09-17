@@ -11,7 +11,7 @@
 #include "../../../middleware/content/packages/tables/slot_descriptor_reader.h"
 #include "../../../state/build_data/scenarios/definition.h"
 
-namespace sunrise::client::content::scenarios {
+namespace dawn::client::content::scenarios {
 
 namespace layouts = state::build_data::scenarios;
 namespace reader = middleware::content::packages::reader;
@@ -306,4 +306,4 @@ void publish_groups(Walk& walk, RosterStorage& storage, layouts::Definition& row
                                  RosterStorage& storage,
                                  std::span<layouts::Definition> rows) noexcept;
 
-} // namespace sunrise::client::content::scenarios
+} // namespace dawn::client::content::scenarios

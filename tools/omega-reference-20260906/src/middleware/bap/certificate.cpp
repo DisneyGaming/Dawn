@@ -4,7 +4,7 @@
 
 #include "../protobuf/codec.h"
 
-namespace sunrise::middleware::bap::certificate {
+namespace dawn::middleware::bap::certificate {
 namespace {
 
 /** Svc304 and svc305 carry their certificate wrapper in field 3. */
@@ -107,4 +107,4 @@ bool encode_response(std::span<const std::byte> requestBody,
     return true;
 }
 
-} // namespace sunrise::middleware::bap::certificate
+} // namespace dawn::middleware::bap::certificate

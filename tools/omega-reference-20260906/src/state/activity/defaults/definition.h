@@ -5,7 +5,7 @@
 
 #include "../destination/definition.h"
 
-namespace sunrise::state::activity::defaults {
+namespace dawn::state::activity::defaults {
 
 /** Global activity state reserves 64 one-byte bubble-state entries. */
 inline constexpr std::size_t kBubbleCapacity = 64;
@@ -72,4 +72,4 @@ struct ActivityDefaults final {
     bool rosterKeyOnAllSlots{};
 };
 
-} // namespace sunrise::state::activity::defaults
+} // namespace dawn::state::activity::defaults

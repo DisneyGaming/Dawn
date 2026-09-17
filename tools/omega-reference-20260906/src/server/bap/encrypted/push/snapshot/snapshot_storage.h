@@ -2,7 +2,7 @@
 
 #include "snapshot.h"
 
-namespace sunrise::server::bap::encrypted::push::snapshot {
+namespace dawn::server::bap::encrypted::push::snapshot {
 
 /** Prior live payload prefixes that a new preparation may not overwrite. */
 struct Reservation {
@@ -35,4 +35,4 @@ void clear_after(Scratch& scratch, const Reservation& reservation) noexcept;
  */
 [[nodiscard]] bool commit(const Prepared& staged, Prepared& output) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::push::snapshot
+} // namespace dawn::server::bap::encrypted::push::snapshot

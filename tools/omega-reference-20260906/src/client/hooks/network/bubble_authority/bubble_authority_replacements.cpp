@@ -14,7 +14,7 @@
 #include "../platform.h"
 #include "scope/bubble_authority_scope.h"
 
-namespace sunrise::client::hooks::network::bubble_authority {
+namespace dawn::client::hooks::network::bubble_authority {
 namespace {
 
 /** Log the decoder and the forced arm once each. Both run on every roster message. */
@@ -72,7 +72,7 @@ using ActivityEpochAccessor = const std::byte*(__fastcall*)();
     return reinterpret_cast<ActivityEpochAccessor>(target);
 }
 
-/** @return True while a forced private authored mission uses Sunrise's authority roster. */
+/** @return True while a forced private authored mission uses Dawn's authority roster. */
 [[nodiscard]] bool opening_is_forced(std::string_view& package) noexcept {
     state::activity::forced::ForcedDestination forced{};
     state::activity::forced::snapshot(forced);
@@ -300,4 +300,4 @@ void* content_untracked_entry_point() noexcept {
     return reinterpret_cast<void*>(&content_untracked_body);
 }
 
-} // namespace sunrise::client::hooks::network::bubble_authority
+} // namespace dawn::client::hooks::network::bubble_authority

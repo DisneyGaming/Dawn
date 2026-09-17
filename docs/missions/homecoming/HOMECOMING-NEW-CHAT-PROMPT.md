@@ -3,14 +3,14 @@
 ---
 
 I'm reverse-engineering Destiny 2 (Season of Arrivals) to revive the **Homecoming** mission offline
-under **Sunrise** (a `steam_api64` proxy DLL mod). This is authorized personal RE on my own machine.
+under **Dawn** (a `steam_api64` proxy DLL mod). This is authorized personal RE on my own machine.
 A prior session mapped the whole problem end-to-end. **Read `C:\Destiny 2 Development\HOMECOMING-FINDINGS.md`
 in full before doing anything — it has every confirmed finding, address, and dead-end. Do not
 re-derive what it already establishes.**
 
 ## The goal for THIS chat
 
-Build a **server-side authored activity-selection injection** in Sunrise's embedded BAP server, so
+Build a **server-side authored activity-selection injection** in Dawn's embedded BAP server, so
 the game's activity manager for **identity 1** enters **authored "mode 1"** (not local mode 6)
 naturally — no forcing. The route is driven by the **message-1 global activity-state selection push**
 (NOT service 6 — see the findings, §6 dead-ends). Forcing the route byte / mode bit is a confirmed
@@ -45,11 +45,11 @@ or route around needing it. This is the fundamental risk — surface it early, d
 
 ## Environment & workflow (details in findings §2–3)
 
-- Repo `C:\Destiny 2 Development\Sunrise-src`, branch `spawner`. Build:
-  `powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\sunrise-dev.ps1" -Config Release`
+- Repo `C:\Destiny 2 Development\Dawn-src`, branch `spawner`. Build:
+  `powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\dawn-dev.ps1" -Config Release`
   (`-BuildOnly` to compile while the game runs; `-Restore` to roll back a bad DLL).
 - Always `md5sum` the deployed vs built DLL to confirm deploy landed (findings §2).
-- Log at `bin\x64\Sunrise\logs\sunrise.log`; probes emit `ev=…` lines.
+- Log at `bin\x64\Dawn\logs\dawn.log`; probes emit `ev=…` lines.
 - Dump: `destiny2_unpacked.bin`, base `0x7FF618070000`. Ghidra headless command + scripts dir in
   findings §3. Python RE helpers (`d2dis.py`, `callers.py`, `siggen.py`) in the scratchpad.
 - Existing probes and their log stages are in findings §10 — reuse `mgrprobe` (manager census:

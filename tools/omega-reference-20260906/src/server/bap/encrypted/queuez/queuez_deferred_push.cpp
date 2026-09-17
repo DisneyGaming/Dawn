@@ -11,7 +11,7 @@
 #include "../push/activity/activity_keepalive_push.h"
 #include "queuez_state_validation.h"
 
-namespace sunrise::server::bap::encrypted {
+namespace dawn::server::bap::encrypted {
 namespace {
 
 /** Widest re-push report, sized for the fields below. */
@@ -247,4 +247,4 @@ bool consume_deferred(Session& session,
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted
+} // namespace dawn::server::bap::encrypted

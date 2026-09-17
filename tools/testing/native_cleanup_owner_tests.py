@@ -16,7 +16,7 @@ sys.path.insert(0,str(Path(__file__).parent))
 from mercury_streaming_native import Native, BASE, DATA, STACK, END, IMAGE_SHA256
 
 ROOT=Path(__file__).resolve().parents[2]
-ASM=ROOT/'Sunrise/src/client/hooks/bootflow/native_cleanup_owner_guard.asm'
+ASM=ROOT/'Dawn/src/client/hooks/bootflow/native_cleanup_owner_guard.asm'
 IMAGE=ROOT/'build/baseline-02fc2c30/destiny2_unpacked.bin'
 ML=Path(r'C:/Program Files (x86)/Microsoft Visual Studio/18/BuildTools/VC/Tools/MSVC/14.51.36231/bin/Hostx64/x64/ml64.exe')
 GUARD=BASE+0x10000000
@@ -159,7 +159,7 @@ class CleanupTests(unittest.TestCase):
                     self.assertEqual(self.fixture(False,True,siblings,resource),self.fixture(False,False,siblings,resource))
 
     def test_native_entry_and_continuations_pinned(self):
-        source=(ROOT/'Sunrise/src/client/hooks/bootflow/native_cleanup_owner_guard.cpp').read_text()
+        source=(ROOT/'Dawn/src/client/hooks/bootflow/native_cleanup_owner_guard.cpp').read_text()
         import re
         for name,rva,size in (('prefix',0xF9C150,64),('tail',0xF9C27F,13)):
             body=source.split(f'> {name}'+'{',1)[1].split('};',1)[0]

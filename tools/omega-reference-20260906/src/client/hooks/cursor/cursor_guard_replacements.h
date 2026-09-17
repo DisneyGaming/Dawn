@@ -7,7 +7,7 @@
 
 #include "../../hooking/detour.h"
 
-namespace sunrise::client::hooks::cursor {
+namespace dawn::client::hooks::cursor {
 
 /** Windows cursor calls report success with a nonzero result. */
 inline constexpr BOOL kCallSucceeded = TRUE;
@@ -57,4 +57,4 @@ BOOL WINAPI clip_cursor(const RECT* bounds) noexcept;
  */
 void apply_policy(bool visible) noexcept;
 
-} // namespace sunrise::client::hooks::cursor
+} // namespace dawn::client::hooks::cursor

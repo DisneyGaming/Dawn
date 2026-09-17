@@ -6,7 +6,7 @@
 #include "../../encoding/bit_reader.h"
 #include "../../encoding/bit_writer.h"
 
-namespace sunrise::middleware::gameplay::peer {
+namespace dawn::middleware::gameplay::peer {
 
 /** Registry ids of the group-session join messages. */
 enum class JoinId : std::uint8_t {
@@ -82,4 +82,4 @@ admit(const JoinRequest& request, std::uint64_t hostSessionId, RefuseReason& rea
 /** @return True when the request may be answered at all. A protocol mismatch may not. */
 [[nodiscard]] bool answerable(const JoinRequest& request) noexcept;
 
-} // namespace sunrise::middleware::gameplay::peer
+} // namespace dawn::middleware::gameplay::peer

@@ -5,7 +5,7 @@
 #include "../../../../core/settings/settings.h"
 #include "egress_policy_logging.h"
 
-namespace sunrise::client::hooks::egress::policy {
+namespace dawn::client::hooks::egress::policy {
 namespace {
 
 /** Access denied marks every outbound socket call blocked by policy. */
@@ -100,4 +100,4 @@ int deny_socket_call() noexcept {
     return SOCKET_ERROR;
 }
 
-} // namespace sunrise::client::hooks::egress::policy
+} // namespace dawn::client::hooks::egress::policy

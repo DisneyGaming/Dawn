@@ -6,7 +6,7 @@
 
 #include "../../encoding/bit_reader.h"
 
-namespace sunrise::middleware::bap::activity_message::client_authoritative_data {
+namespace dawn::middleware::bap::activity_message::client_authoritative_data {
 
 /** The 3-bit state field decodes from wire zero to logical -1. */
 inline constexpr std::int8_t kMinimumState = -1;
@@ -102,4 +102,4 @@ inline constexpr std::size_t kMaximumEncodedSize = 10'833;
 [[nodiscard]] bool read_transition_branch(encoding::bits::Reader& reader,
                                           ClientAuthoritativeData& update) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_message::client_authoritative_data
+} // namespace dawn::middleware::bap::activity_message::client_authoritative_data

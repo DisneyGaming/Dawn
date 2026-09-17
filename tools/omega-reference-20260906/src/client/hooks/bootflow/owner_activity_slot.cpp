@@ -10,7 +10,7 @@
 #include "../../hooking/detour.h"
 #include "internal.h"
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 namespace {
 
 /**
@@ -130,4 +130,4 @@ void uninstall_owner_activity_slot() noexcept {
     g_reported.store(0, std::memory_order_release);
 }
 
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

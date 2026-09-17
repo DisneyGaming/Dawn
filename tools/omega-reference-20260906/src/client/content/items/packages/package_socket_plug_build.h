@@ -10,7 +10,7 @@
 #include "../../../../state/build_data/items/item_catalog.h"
 #include "../../../../state/build_data/items/socket_plugs/definition.h"
 
-namespace sunrise::client::content::items::packages {
+namespace dawn::client::content::items::packages {
 
 namespace tables = middleware::content::packages::tables;
 namespace socket_plugs = state::build_data::items::socket_plugs;
@@ -85,4 +85,4 @@ private:
  */
 [[nodiscard]] std::uint8_t special_plug_category(std::uint32_t categoryHash) noexcept;
 
-} // namespace sunrise::client::content::items::packages
+} // namespace dawn::client::content::items::packages

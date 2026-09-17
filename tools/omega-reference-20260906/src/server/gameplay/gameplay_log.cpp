@@ -4,7 +4,7 @@
 #include <cstdarg>
 #include <cstdio>
 
-namespace sunrise::server::gameplay {
+namespace dawn::server::gameplay {
 
 /** Writes one bounded key-value event on the server channel. */
 void report(core::log::Level level, const char* format, ...) noexcept {
@@ -26,4 +26,4 @@ void report(core::log::Level level, const char* format, ...) noexcept {
     core::log::write(core::log::Channel::server, level, {line.data(), length});
 }
 
-} // namespace sunrise::server::gameplay
+} // namespace dawn::server::gameplay

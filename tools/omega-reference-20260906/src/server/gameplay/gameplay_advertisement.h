@@ -6,7 +6,7 @@
 #include "../../state/activity/lifecycle_generation.h"
 #include "group/group_host_sessions.h"
 
-namespace sunrise::server::gameplay {
+namespace dawn::server::gameplay {
 
 /** Where an advertised region index came from. Reported so a stand-in cannot look like a report. */
 enum class RegionSource : std::uint8_t {
@@ -96,4 +96,4 @@ struct AdvertisementSnapshot final {
     state::activity::ActivityInstanceKey sourceActivity,
     std::int32_t regionIndex) noexcept;
 
-} // namespace sunrise::server::gameplay
+} // namespace dawn::server::gameplay

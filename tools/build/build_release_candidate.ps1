@@ -115,7 +115,7 @@ function Protect-FrozenFiles {
 
 function Get-ActualToolchainIdentity {
     param([string]$Msbuild, [string]$FrozenRoot)
-    $project = Join-Path $FrozenRoot 'Sunrise\Sunrise.vcxproj'
+    $project = Join-Path $FrozenRoot 'Dawn\Dawn.vcxproj'
     $result = Invoke-Captured -FilePath $Msbuild -WorkingDirectory $FrozenRoot -Arguments @(
         $project, '/nologo', "/p:Configuration=$Configuration", "/p:Platform=$Platform",
         '-getProperty:PlatformToolset,VCToolsVersion,VCToolsInstallDir,WindowsTargetPlatformVersion,WindowsSdkDir')
@@ -186,16 +186,16 @@ function Build-FrozenRoot {
         [IO.Directory]::CreateDirectory($outputRoot) | Out-Null
         if ($BuildSystem -eq 'MSBuild') {
             $binaryLogRelative = "evidence\build-MSBuild-$label.binlog"
-            $projectRelative = if (Test-Path -LiteralPath (Join-Path $Root 'source\Sunrise.sln')) {
-                'source\Sunrise.sln'
+            $projectRelative = if (Test-Path -LiteralPath (Join-Path $Root 'source\Dawn.sln')) {
+                'source\Dawn.sln'
             } else {
-                'source\Sunrise\Sunrise.vcxproj'
+                'source\Dawn\Dawn.vcxproj'
             }
             Invoke-Logged -FilePath $Msbuild -WorkingDirectory $Root -LogPath $logPath -Arguments @(
                 $projectRelative, '/m', '/nologo', '/v:minimal', '/t:Rebuild',
                 "/bl:$binaryLogRelative", "/p:Configuration=$Configuration", "/p:Platform=$Platform",
-                '/p:SunriseGeneratedIncludeDir=..\..\generated',
-                '/p:SunriseReproRoot=..\..',
+                '/p:DawnGeneratedIncludeDir=..\..\generated',
+                '/p:DawnReproRoot=..\..',
                 "/p:OutDir=..\..\$outputRelative\", "/p:IntDir=..\..\$buildRelative\")
             $dllPath = Join-Path $outputRoot 'steam_api64.dll'
         } else {
@@ -203,9 +203,9 @@ function Build-FrozenRoot {
             Invoke-Logged -FilePath $Cmake -WorkingDirectory $Root -LogPath $configureLog -Arguments @(
                 '-S', 'source', '-B', $buildRelative, '-A', 'x64',
                 '-T', "$($Toolchain.PlatformToolset),version=$($Toolchain.VCToolsVersion)",
-                '-DSUNRISE_GENERATED_INCLUDE_DIR=generated',
-                '-DSUNRISE_REPRO_ROOT=.',
-                "-DSUNRISE_OUTPUT_ROOT=$outputRelative", '-DBUILD_TESTING=OFF')
+                '-DDAWN_GENERATED_INCLUDE_DIR=generated',
+                '-DDAWN_REPRO_ROOT=.',
+                "-DDAWN_OUTPUT_ROOT=$outputRelative", '-DBUILD_TESTING=OFF')
             Invoke-Logged -FilePath $Cmake -WorkingDirectory $Root -LogPath $logPath -Arguments @(
                 '--build', $buildRelative, '--config', $Configuration,
                 '--target', 'steam_api64', '--clean-first')
@@ -260,10 +260,10 @@ Write-BytesIfChanged -Path (Join-Path $evidenceRoot 'source-manifest.txt') `
     -Bytes $frozenManifest.Bytes
 
 $cacheFormat = [uint32](Get-RequiredMatch `
-    -Path (Join-Path $frozenRoot 'Sunrise\src\state\build_data\cache\records\version.h') `
+    -Path (Join-Path $frozenRoot 'Dawn\src\state\build_data\cache\records\version.h') `
     -Pattern 'kCacheFormatVersion\s*=\s*(\d+)' -Name 'cache format')
 $settingsVersion = [uint32](Get-RequiredMatch `
-    -Path (Join-Path $frozenRoot 'Sunrise\src\core\settings\settings.h') `
+    -Path (Join-Path $frozenRoot 'Dawn\src\core\settings\settings.h') `
     -Pattern 'kSettingsVersion\s*=\s*(\d+)' -Name 'settings version')
 
 $visualStudio = Get-VisualStudioPath
@@ -279,7 +279,7 @@ $identity = New-BuildIdentityHeader -SourceSha256 $frozenManifest.SourceSha256 `
     -BuildConfiguration $Configuration -BuildPlatform $Platform -Compiler $toolchain.Compiler `
     -Toolset $toolchain.Toolset -Sdk $toolchain.WindowsSdk -Format $cacheFormat `
     -Settings $settingsVersion
-$generatedHeader = Join-Path $generatedRoot 'sunrise_build_identity.generated.h'
+$generatedHeader = Join-Path $generatedRoot 'dawn_build_identity.generated.h'
 Write-BytesIfChanged -Path $generatedHeader -Bytes $identity.Bytes
 Protect-FrozenFiles -Root $frozenRoot
 (Get-Item -LiteralPath $generatedHeader).IsReadOnly = $true
@@ -298,7 +298,7 @@ if ($null -ne $replica) {
         -Paths $frozenManifest.Paths
     [IO.Directory]::CreateDirectory((Join-Path $replica 'generated')) | Out-Null
     [IO.File]::Copy($generatedHeader,
-                    (Join-Path $replica 'generated\sunrise_build_identity.generated.h'),
+                    (Join-Path $replica 'generated\dawn_build_identity.generated.h'),
                     $false)
     [IO.Directory]::CreateDirectory((Join-Path $replica 'evidence')) | Out-Null
     Write-BytesIfChanged -Path (Join-Path $replica 'evidence\source-manifest.txt') `
@@ -306,7 +306,7 @@ if ($null -ne $replica) {
     Assert-FrozenSource -FrozenRoot (Join-Path $replica 'source') `
         -ExpectedManifest $frozenManifest.Bytes -Stage 'replica-copy'
     Protect-FrozenFiles -Root (Join-Path $replica 'source')
-    (Get-Item -LiteralPath (Join-Path $replica 'generated\sunrise_build_identity.generated.h')).IsReadOnly = $true
+    (Get-Item -LiteralPath (Join-Path $replica 'generated\dawn_build_identity.generated.h')).IsReadOnly = $true
     $replicaOutputs = @(Build-FrozenRoot -Root $replica -ExpectedManifest $frozenManifest.Bytes `
         -Count 1 -LabelPrefix 'root' -Toolchain $toolchain -Msbuild $msbuild -Cmake $cmake)
     if ($replicaOutputs[0].DllSha256 -cne $outputs[0].DllSha256) {
@@ -330,7 +330,7 @@ $candidateManifest = [Text.StringBuilder]::new()
 [void]$candidateManifest.Append("toolset=$($toolchain.Toolset)`n")
 [void]$candidateManifest.Append("windows_sdk=$($toolchain.WindowsSdk)`n")
 [void]$candidateManifest.Append("source_manifest=evidence/source-manifest.txt`n")
-[void]$candidateManifest.Append("generated_header=generated/sunrise_build_identity.generated.h`n")
+[void]$candidateManifest.Append("generated_header=generated/dawn_build_identity.generated.h`n")
 $generatedHash = (Get-FileHash -LiteralPath $generatedHeader -Algorithm SHA256).Hash.ToUpperInvariant()
 [void]$candidateManifest.Append("generated_header_sha256=$generatedHash`n")
 for ($index = 0; $index -lt $outputs.Count; ++$index) {

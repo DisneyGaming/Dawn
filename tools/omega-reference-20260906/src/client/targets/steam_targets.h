@@ -5,7 +5,7 @@
 
 #include "../patterns/registry.h"
 
-namespace sunrise::client::targets::steam {
+namespace dawn::client::targets::steam {
 
 /** Unowned entry points resolved in Steam networking. */
 struct Targets {
@@ -22,4 +22,4 @@ void clear() noexcept;
 /** Returns the process-local Steam target table. */
 [[nodiscard]] const Targets& get() noexcept;
 
-} // namespace sunrise::client::targets::steam
+} // namespace dawn::client::targets::steam

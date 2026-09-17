@@ -6,7 +6,7 @@
 
 #include "../../../state/gameplay/definition.h"
 
-namespace sunrise::server::gameplay::dtls {
+namespace dawn::server::gameplay::dtls {
 
 /**
  * Answers one association handshake datagram.
@@ -51,4 +51,4 @@ void prefer_security_id(const state::gameplay::Endpoint& endpoint,
 /** Drops every association and clears its key material. */
 void reset() noexcept;
 
-} // namespace sunrise::server::gameplay::dtls
+} // namespace dawn::server::gameplay::dtls

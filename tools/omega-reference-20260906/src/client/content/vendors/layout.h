@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::client::content::vendors {
+namespace dawn::client::content::vendors {
 
 /** Tag of the installed vendor index blob, which names every vendor definition. */
 inline constexpr std::uint32_t kIndexRootTag = 0x8131931DU;
@@ -44,4 +44,4 @@ inline constexpr std::size_t kSaleRaw172Offset = 172;
 /** Sale row secondary item-definition index. */
 inline constexpr std::size_t kSaleSecondaryItemOffset = 176;
 
-} // namespace sunrise::client::content::vendors
+} // namespace dawn::client::content::vendors

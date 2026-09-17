@@ -6,7 +6,7 @@
 
 #include "../../../state/gameplay/definition.h"
 
-namespace sunrise::server::gameplay::endpoint {
+namespace dawn::server::gameplay::endpoint {
 
 /**
  * Binds the gameplay UDP endpoint when the configured topology is embedded.
@@ -51,4 +51,4 @@ struct Identity {
 /** @return Identity generated when the endpoint bound, or zeroes when it did not. */
 [[nodiscard]] Identity identity() noexcept;
 
-} // namespace sunrise::server::gameplay::endpoint
+} // namespace dawn::server::gameplay::endpoint

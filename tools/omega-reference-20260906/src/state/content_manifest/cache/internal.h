@@ -5,7 +5,7 @@
 
 #include "../definition.h"
 
-namespace sunrise::state::content_manifest::cache {
+namespace dawn::state::content_manifest::cache {
 
 /** How one cache lookup compares with the current package directory. */
 enum class LoadStatus : std::uint8_t {
@@ -49,4 +49,4 @@ enum class LoadStatus : std::uint8_t {
                          std::span<const Row> rows,
                          std::span<Row> validationRows) noexcept;
 
-} // namespace sunrise::state::content_manifest::cache
+} // namespace dawn::state::content_manifest::cache

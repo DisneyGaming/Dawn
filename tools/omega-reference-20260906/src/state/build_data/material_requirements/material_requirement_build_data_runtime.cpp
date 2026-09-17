@@ -2,7 +2,7 @@
 #include "../runtime/persistence/publication_transaction.h"
 #include "material_requirement_catalog.h"
 
-namespace sunrise::state::build_data {
+namespace dawn::state::build_data {
 namespace {
 
 [[nodiscard]] bool valid_material_publication(
@@ -37,4 +37,4 @@ bool find_material_requirement_set(std::uint16_t requirementSetIndex,
            && definition.requirementSetIndex == requirementSetIndex;
 }
 
-} // namespace sunrise::state::build_data
+} // namespace dawn::state::build_data

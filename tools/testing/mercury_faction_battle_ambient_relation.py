@@ -17,7 +17,7 @@ from mercury_faction_battle_catalog import source_choices, u32
 def installed_components(reader):
     """Use the checked-in candidate catalog; verify identities and names in installed bytes."""
     root = Path(__file__).resolve().parents[2]
-    source = root / 'Sunrise/src/state/activity/coo/mercury_ambient_catalog.h'
+    source = root / 'Dawn/src/state/activity/coo/mercury_ambient_catalog.h'
     text = source.read_text()
     registries = re.findall(
         r'\{"mercury_freeroam",0x80F4696A,0x([0-9A-F]+),0x([0-9A-F]+),0xA83A9175,15,kSlots_([0-9A-F]+)\}', text)
@@ -97,7 +97,7 @@ def extract(reader, inventory):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--reader-dir', type=Path, default=Path('D:/Sunrise-work/scripts'))
+    parser.add_argument('--reader-dir', type=Path, default=Path('D:/Dawn-work/scripts'))
     parser.add_argument('--inventory', type=Path, help='Optional prior component inventory; default verifies the installed catalog candidates')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()

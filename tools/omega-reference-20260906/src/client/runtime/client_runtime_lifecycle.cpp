@@ -22,7 +22,7 @@
 #include "internal.h"
 #include "runtime.h"
 
-namespace sunrise::client {
+namespace dawn::client {
 
 /** Initializes Client-owned process state without installing hooks. */
 bool initialize(void* module) noexcept {
@@ -126,4 +126,4 @@ bool shutdown() noexcept {
     return true;
 }
 
-} // namespace sunrise::client
+} // namespace dawn::client

@@ -6,7 +6,7 @@
 #include "internal.h"
 #include "snapshot_storage.h"
 
-namespace sunrise::server::bap::encrypted::push::snapshot {
+namespace dawn::server::bap::encrypted::push::snapshot {
 namespace {
 
 /** Log line capacity. The line carries one family number and nothing else. */
@@ -91,4 +91,4 @@ bool prepare_family4_refresh(Scratch& scratch,
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted::push::snapshot
+} // namespace dawn::server::bap::encrypted::push::snapshot

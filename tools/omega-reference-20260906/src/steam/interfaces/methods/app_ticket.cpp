@@ -8,7 +8,7 @@
 #include "../../../core/logging/log.h"
 #include "../internal.h"
 
-namespace sunrise::steam::interfaces::methods {
+namespace dawn::steam::interfaces::methods {
 namespace {
 
 /** Steam callback id for a finished app ticket request. */
@@ -105,4 +105,4 @@ bool get_encrypted_app_ticket([[maybe_unused]] void* self,
     return true;
 }
 
-} // namespace sunrise::steam::interfaces::methods
+} // namespace dawn::steam::interfaces::methods

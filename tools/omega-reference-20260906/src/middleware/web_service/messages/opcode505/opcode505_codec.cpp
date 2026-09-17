@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <array>
 
-namespace sunrise::middleware::web_service::messages::opcode505 {
+namespace dawn::middleware::web_service::messages::opcode505 {
 
 /** Reports whether this request is the change-character transition. */
 bool parse_request(const Message& message) noexcept {
@@ -24,7 +24,7 @@ bool encode_response(const Message& message,
     StatusResponse status{};
     status.value = nextVersion;
     std::size_t stagedSize = 0;
-    if (!sunrise::middleware::web_service::encode_response(
+    if (!dawn::middleware::web_service::encode_response(
             message, ResponseShape::statusPair, status, staged, stagedSize)) {
         return false;
     }
@@ -34,4 +34,4 @@ bool encode_response(const Message& message,
     return true;
 }
 
-} // namespace sunrise::middleware::web_service::messages::opcode505
+} // namespace dawn::middleware::web_service::messages::opcode505

@@ -3,7 +3,7 @@
 #include "codec.h"
 #include "protobuf_wire.h"
 
-namespace sunrise::middleware::protobuf {
+namespace dawn::middleware::protobuf {
 
 Writer::Writer(std::span<std::byte> output) noexcept : output_(output) {}
 
@@ -57,4 +57,4 @@ std::size_t Writer::size() const noexcept {
     return size_;
 }
 
-} // namespace sunrise::middleware::protobuf
+} // namespace dawn::middleware::protobuf

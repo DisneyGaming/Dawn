@@ -2,9 +2,9 @@
 
 #include "../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 
-/** Parses controller and mouse settings under stable Sunrise-owned names. */
+/** Parses controller and mouse settings under stable Dawn-owned names. */
 bool Parser::controls_settings(state::account::settings::Controls& output) noexcept {
     enum class Field : std::size_t {
         buttonLayout,
@@ -123,4 +123,4 @@ bool Parser::controls_settings(state::account::settings::Controls& output) noexc
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

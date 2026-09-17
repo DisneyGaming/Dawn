@@ -6,7 +6,7 @@
 #include "hud.h"
 #include "internal.h"
 
-namespace sunrise::core::ui::modules::hud {
+namespace dawn::core::ui::modules::hud {
 namespace {
 
 /** Namespaced stable ID keeps this page distinct from feature modules. */
@@ -31,4 +31,4 @@ void shutdown() noexcept {
     ui::hud::shutdown();
 }
 
-} // namespace sunrise::core::ui::modules::hud
+} // namespace dawn::core::ui::modules::hud

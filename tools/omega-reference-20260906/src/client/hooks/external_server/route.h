@@ -4,7 +4,7 @@
 #include <span>
 #include <string_view>
 
-namespace sunrise::client::hooks::external_server {
+namespace dawn::client::hooks::external_server {
 
 /** @return True while the Client is pointed at a server outside this process. */
 [[nodiscard]] bool enabled() noexcept;
@@ -31,4 +31,4 @@ void uninstall() noexcept;
 /** @return True while the setopt guard is attached. */
 [[nodiscard]] bool is_installed() noexcept;
 
-} // namespace sunrise::client::hooks::external_server
+} // namespace dawn::client::hooks::external_server

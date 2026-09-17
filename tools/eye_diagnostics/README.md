@@ -4,7 +4,7 @@ This package adds six native observation hooks and a repeatable build/evidence p
 
 ## What has been implemented
 
-The native hooks live in `Sunrise/src/client/hooks/bootflow/omega_eye_execution_trace.inl`. They observe original calls and preserve their arguments, output parameters and return values. They make no health writes, emit no progression receipts and invoke no extra damage or script execution calls. Logging adds bounded work; offline tests do not establish its live timing cost.
+The native hooks live in `Dawn/src/client/hooks/bootflow/omega_eye_execution_trace.inl`. They observe original calls and preserve their arguments, output parameters and return values. They make no health writes, emit no progression receipts and invoke no extra damage or script execution calls. Logging adds bounded work; offline tests do not establish its live timing cost.
 
 - `58E260`: damage-ping/refill runtime execution entry and return.
 - `5873F0`: native action index and action-runner result.
@@ -64,7 +64,7 @@ When the mappings, new probes and full tests are complete, finalize with an accu
 ```powershell
 python tools/eye_diagnostics/collect.py `
   --candidate build/omega-full-20260905/candidate-YYYYMMDD-HHMMSS `
-  --log Sunrise/logs/sunrise.log `
+  --log Dawn/logs/dawn.log `
   --output build/omega-full-20260905/eye-capture-RUNNAME
 ```
 

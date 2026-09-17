@@ -8,9 +8,9 @@
 #include "../../../middleware/content/packages/reader/reader.h"
 #include "../../../middleware/content/packages/tables/scenario_walk.h"
 
-namespace sunrise::client::content::activity {
+namespace dawn::client::content::activity {
 
-namespace packages = sunrise::middleware::content::packages;
+namespace packages = dawn::middleware::content::packages;
 
 /** One buffer per read slot. */
 inline constexpr std::size_t kSlotCount =
@@ -24,7 +24,7 @@ struct ScenarioSource {
 };
 
 /**
- * Writes the installed Homecoming activity records to the Sunrise analysis directory.
+ * Writes the installed Homecoming activity records to the Dawn analysis directory.
  * This is temporary local research instrumentation and is not part of the public runtime.
  */
 [[nodiscard]] bool dump_homecoming(const packages::reader::Source& source,
@@ -38,4 +38,4 @@ struct ScenarioSource {
 [[nodiscard]] bool scan_omega_behavior_properties(const packages::reader::Source& source,
                                                   packages::reader::Scratch& scratch) noexcept;
 
-} // namespace sunrise::client::content::activity
+} // namespace dawn::client::content::activity

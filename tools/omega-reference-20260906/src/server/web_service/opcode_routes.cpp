@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <array>
 
-namespace sunrise::server::web_service {
+namespace dawn::server::web_service {
 namespace {
 
 /** Opcodes whose response descriptor holds only the 5-bit biased status. */
@@ -51,4 +51,4 @@ void resolve_response_shape(std::uint16_t opcode,
     shape = middleware::web_service::ResponseShape::generic;
 }
 
-} // namespace sunrise::server::web_service
+} // namespace dawn::server::web_service

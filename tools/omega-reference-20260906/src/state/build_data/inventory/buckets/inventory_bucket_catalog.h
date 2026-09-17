@@ -6,7 +6,7 @@
 
 #include "definition.h"
 
-namespace sunrise::state::build_data::inventory::buckets {
+namespace dawn::state::build_data::inventory::buckets {
 
 /** Clears every generated inventory-bucket routing descriptor. */
 void clear() noexcept;
@@ -44,4 +44,4 @@ void clear() noexcept;
 /** @return Number of inventory-bucket descriptors, read under the lock. */
 [[nodiscard]] std::size_t count() noexcept;
 
-} // namespace sunrise::state::build_data::inventory::buckets
+} // namespace dawn::state::build_data::inventory::buckets

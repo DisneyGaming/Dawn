@@ -9,7 +9,7 @@
 
 #include "../../patterns/registry.h"
 
-namespace sunrise::client::targets::game::relative {
+namespace dawn::client::targets::game::relative {
 
 /**
  * Tests whether one bounded address range belongs to a scanned executable range.
@@ -77,4 +77,4 @@ namespace sunrise::client::targets::game::relative {
     return true;
 }
 
-} // namespace sunrise::client::targets::game::relative
+} // namespace dawn::client::targets::game::relative

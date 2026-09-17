@@ -2,7 +2,7 @@
 
 #include <Windows.h>
 
-namespace sunrise::core::runtime {
+namespace dawn::core::runtime {
 
 /** @return True when the loaded ntdll exports Wine's own version entry point. */
 bool is_wine() noexcept {
@@ -15,4 +15,4 @@ bool is_wine() noexcept {
     return underWine;
 }
 
-} // namespace sunrise::core::runtime
+} // namespace dawn::core::runtime

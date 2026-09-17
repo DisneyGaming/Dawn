@@ -7,7 +7,7 @@
 #include "memory.h"
 #include "relative.h"
 
-namespace sunrise::client::content::items::details::socket_reader {
+namespace dawn::client::content::items::details::socket_reader {
 namespace {
 
 namespace build_details = state::build_data::items::details;
@@ -128,4 +128,4 @@ bool read_list_index(const investment::Source& source,
     return true;
 }
 
-} // namespace sunrise::client::content::items::details::socket_reader
+} // namespace dawn::client::content::items::details::socket_reader

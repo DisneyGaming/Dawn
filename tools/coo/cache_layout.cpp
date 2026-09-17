@@ -5,7 +5,7 @@
 #include "state/build_data/cache/records/format.h"
 #include <cstddef>
 #include <iostream>
-namespace r = sunrise::state::build_data::cache::records;
+namespace r = dawn::state::build_data::cache::records;
 #define FIELD(T, M) std::cout << "\"" #M "\":[" << offsetof(r::T, M) << ',' << sizeof(((r::T*)nullptr)->M) << ']'
 int main() {
     std::cout << "{\"version\":" << r::kCacheFormatVersion << ",\"records\":{";

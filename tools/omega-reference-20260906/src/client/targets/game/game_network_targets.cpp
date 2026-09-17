@@ -6,7 +6,7 @@
 #include "relative.h"
 #include "resolution/internal.h"
 
-namespace sunrise::client::targets::game::network {
+namespace dawn::client::targets::game::network {
 namespace {
 
 Targets g_targets;
@@ -104,4 +104,4 @@ const Targets& get() noexcept {
     return g_targets;
 }
 
-} // namespace sunrise::client::targets::game::network
+} // namespace dawn::client::targets::game::network

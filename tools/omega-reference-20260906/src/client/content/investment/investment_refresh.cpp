@@ -8,7 +8,7 @@
 #include "internal.h"
 #include "runtime.h"
 
-namespace sunrise::client::content::investment {
+namespace dawn::client::content::investment {
 namespace {
 
 SRWLOCK g_refreshLock{SRWLOCK_INIT};
@@ -78,4 +78,4 @@ bool refresh() noexcept {
     return complete;
 }
 
-} // namespace sunrise::client::content::investment
+} // namespace dawn::client::content::investment

@@ -5,7 +5,7 @@
 
 #include "../../patterns/image_scan.h"
 
-namespace sunrise::client::hooks::teleport {
+namespace dawn::client::hooks::teleport {
 
 using patterns::resolve_relative;
 using patterns::scan_main_image_unique;
@@ -52,4 +52,4 @@ inline constexpr std::size_t kBodyPositionX = 448;
 /** Rigid-body velocity. The sync copies this into the physics component every tick. */
 inline constexpr std::size_t kBodyVelocityX = 560;
 
-} // namespace sunrise::client::hooks::teleport
+} // namespace dawn::client::hooks::teleport

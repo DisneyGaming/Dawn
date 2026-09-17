@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('--check',action='store_true');a=p.parse_args()
 d=json.loads((ROOT/'build/coo/hijacked-research/native-bindings.json').read_text(encoding='utf-8'))
-r=ROOT/'Sunrise/src/state/activity/hijacked'
+r=ROOT/'Dawn/src/state/activity/hijacked'
 prefix={0x77852DB9:'mission',0x555AA58B:'landing',0x153E22CD:'mists',0x3C7C8AE9:'exit_route',0x2D20FD66:'mind_route',0xD8FA09CA:'cave_route',0x6E65B834:'return_route',0x3E9B74F3:'surface',0xF5737F85:'tangle',0x701F9CE5:'well_route',0xD997395E:'well',0xA12CA9FA:'puzzle_route',0x40A009B5:'final_route'}
 def asset(reg,kind,slot):
  for g in d['groups']:
@@ -15,7 +15,7 @@ def asset(reg,kind,slot):
   if (v['registry'],60,v['slot'])==(reg,kind,slot):return '{0x%08XU,0x%08XU,60,%d}'%(reg,v['tag'],slot)
  raise ValueError((reg,kind,slot))
 M=asset(0x77852DB9,53,2);mod='{kRoot,kScenario,0,0}';boss=asset(0x153E22CD,1,21)
-out=['// Generated native capability names. Story order belongs to hijacked.lua.','#pragma once','#include "native_catalog.h"','#include "ai_bindings.h"','#include "../coo/mission_script.h"','namespace sunrise::state::activity::hijacked {',f'inline constexpr coo::Asset kModule{mod},kDialogueAsset{M},kBoss{boss};','inline constexpr coo::script::Capability kCapabilities[]{']
+out=['// Generated native capability names. Story order belongs to hijacked.lua.','#pragma once','#include "native_catalog.h"','#include "ai_bindings.h"','#include "../coo/mission_script.h"','namespace dawn::state::activity::hijacked {',f'inline constexpr coo::Asset kModule{mod},kDialogueAsset{M},kBoss{boss};','inline constexpr coo::script::Capability kCapabilities[]{']
 def cap(n,op,x,arg,wait='requested',domain='*'):out.append('    {"%s","%s",{coo::Operation::%s,%s,%sU,coo::Wait::%s}},'%(n,domain,op,x,arg,wait))
 cap('mission.module','mechanic',mod,1,domain='composition');cap('mission.checked','observation','{}',0,'observed','composition');cap('mission.finish','complete',mod,6)
 # Authored local route observation; no fabricated native volume identifier.

@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace sunrise::middleware::datagen::family4::inventory::layout {
+namespace dawn::middleware::datagen::family4::inventory::layout {
 
 /** 6 reserved bytes align the instance SOID on byte 8 of a packed inventory row. */
 inline constexpr std::size_t kDefinitionPaddingSize = 6;
@@ -53,4 +53,4 @@ static_assert(offsetof(Entry, quantity) == kQuantityOffset);
 static_assert(offsetof(Entry, mutationSerial) == kMutationSerialOffset);
 static_assert(offsetof(Entry, flags) == kFlagsOffset);
 
-} // namespace sunrise::middleware::datagen::family4::inventory::layout
+} // namespace dawn::middleware::datagen::family4::inventory::layout

@@ -20,7 +20,7 @@
 #include "../gameplay_log.h"
 #include "../group/group_host.h"
 
-namespace sunrise::server::gameplay::peer {
+namespace dawn::server::gameplay::peer {
 
 namespace {
 
@@ -64,13 +64,13 @@ constexpr std::size_t kMessageReportCapacity = 8;
  * sequences ahead of its window, so this host must not send faster than the peer does.
  */
 constexpr std::uint64_t kResendInterval = 250;
-/** Peer-properties publication; Sunrise currently decodes only its header. */
+/** Peer-properties publication; Dawn currently decodes only its header. */
 constexpr std::uint8_t kPeerPropertiesId = 31;
-/** Player-add publication; Sunrise currently decodes only its identity prefix. */
+/** Player-add publication; Dawn currently decodes only its identity prefix. */
 constexpr std::uint8_t kPlayerAddId = 34;
 /** Player-remove publication. */
 constexpr std::uint8_t kPlayerRemoveId = 36;
-/** Player-properties publication; Sunrise does not yet have its codec. */
+/** Player-properties publication; Dawn does not yet have its codec. */
 constexpr std::uint8_t kPlayerPropertiesId = 37;
 /** Enough bytes to cover the complete 117-byte player-properties wire body. */
 constexpr std::size_t kSessionPublicationDumpCapacity = 128;
@@ -982,4 +982,4 @@ void reset() noexcept {
     ReleaseSRWLockExclusive(&g_lock);
 }
 
-} // namespace sunrise::server::gameplay::peer
+} // namespace dawn::server::gameplay::peer

@@ -11,7 +11,7 @@
 #include "internal.h"
 #include "runtime.h"
 
-namespace sunrise::client::runtime {
+namespace dawn::client::runtime {
 namespace {
 
 /**
@@ -37,9 +37,9 @@ namespace {
 }
 
 } // namespace
-} // namespace sunrise::client::runtime
+} // namespace dawn::client::runtime
 
-namespace sunrise::client {
+namespace dawn::client {
 
 /** Resolves targets in one loaded Steam networking image and installs its hook group once. */
 bool activate_platform_once(HMODULE networkingModule) noexcept {
@@ -96,4 +96,4 @@ bool activate_platform_once(HMODULE networkingModule) noexcept {
     return true;
 }
 
-} // namespace sunrise::client
+} // namespace dawn::client

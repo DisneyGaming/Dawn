@@ -6,7 +6,7 @@
 #include "../../../patterns/game/packages/package_key_signature_bytes.h"
 #include "../relative.h"
 
-namespace sunrise::client::targets::game::packages {
+namespace dawn::client::targets::game::packages {
 namespace {
 
 /** The table address is the signed displacement of the matched vector load. */
@@ -72,4 +72,4 @@ bool read(KeyTable& table) noexcept {
         nullptr, base, std::as_writable_bytes(std::span{&table, 1}));
 }
 
-} // namespace sunrise::client::targets::game::packages
+} // namespace dawn::client::targets::game::packages

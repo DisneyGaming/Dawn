@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace sunrise::client::content::handles::layout {
+namespace dawn::client::content::handles::layout {
 
 /** A loaded handle-table descriptor keeps 32 opaque middle bytes. */
 inline constexpr std::size_t kDescriptorMiddleByteCount = 32;
@@ -44,4 +44,4 @@ static_assert(sizeof(RecordPrefix) == kRecordPrefixSize);
 static_assert(std::is_trivially_copyable_v<TableDescriptor>);
 static_assert(std::is_trivially_copyable_v<RecordPrefix>);
 
-} // namespace sunrise::client::content::handles::layout
+} // namespace dawn::client::content::handles::layout

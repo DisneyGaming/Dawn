@@ -276,7 +276,7 @@ function New-BuildIdentityHeader {
         if ([string]::IsNullOrWhiteSpace($required)) { throw 'A mandatory identity field is empty' }
     }
     $tuple = @(
-        'sunrise-build-identity-v1'
+        'dawn-build-identity-v1'
         "schema=1"
         "git_head=$($Head.ToUpperInvariant())"
         "git_branch=$Branch"
@@ -294,19 +294,19 @@ function New-BuildIdentityHeader {
     $buildId = Get-Sha256Hex -Bytes $script:Utf8NoBom.GetBytes($tuple)
     $lines = @(
         '#pragma once'
-        '#define SUNRISE_PROVENANCE_SCHEMA 1'
-        "#define SUNRISE_BUILD_ID `"$buildId`""
-        "#define SUNRISE_GIT_HEAD `"$($Head.ToUpperInvariant())`""
-        "#define SUNRISE_GIT_BRANCH `"$(Escape-CDefine $Branch)`""
-        "#define SUNRISE_GIT_DIRTY $([int]$Dirty)"
-        "#define SUNRISE_SOURCE_SHA256 `"$SourceSha256`""
-        "#define SUNRISE_BUILD_CONFIGURATION `"$(Escape-CDefine $BuildConfiguration)`""
-        "#define SUNRISE_BUILD_PLATFORM `"$(Escape-CDefine $BuildPlatform)`""
-        "#define SUNRISE_COMPILER_ID `"$(Escape-CDefine $Compiler)`""
-        "#define SUNRISE_TOOLSET_ID `"$(Escape-CDefine $Toolset)`""
-        "#define SUNRISE_WINDOWS_SDK `"$(Escape-CDefine $Sdk)`""
-        "#define SUNRISE_CACHE_FORMAT $Format"
-        "#define SUNRISE_SETTINGS_VERSION $Settings"
+        '#define DAWN_PROVENANCE_SCHEMA 1'
+        "#define DAWN_BUILD_ID `"$buildId`""
+        "#define DAWN_GIT_HEAD `"$($Head.ToUpperInvariant())`""
+        "#define DAWN_GIT_BRANCH `"$(Escape-CDefine $Branch)`""
+        "#define DAWN_GIT_DIRTY $([int]$Dirty)"
+        "#define DAWN_SOURCE_SHA256 `"$SourceSha256`""
+        "#define DAWN_BUILD_CONFIGURATION `"$(Escape-CDefine $BuildConfiguration)`""
+        "#define DAWN_BUILD_PLATFORM `"$(Escape-CDefine $BuildPlatform)`""
+        "#define DAWN_COMPILER_ID `"$(Escape-CDefine $Compiler)`""
+        "#define DAWN_TOOLSET_ID `"$(Escape-CDefine $Toolset)`""
+        "#define DAWN_WINDOWS_SDK `"$(Escape-CDefine $Sdk)`""
+        "#define DAWN_CACHE_FORMAT $Format"
+        "#define DAWN_SETTINGS_VERSION $Settings"
         ''
     ) -join "`n"
     return [pscustomobject]@{

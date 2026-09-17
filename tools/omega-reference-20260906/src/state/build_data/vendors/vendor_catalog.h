@@ -6,7 +6,7 @@
 
 #include "definition.h"
 
-namespace sunrise::state::build_data::vendors {
+namespace dawn::state::build_data::vendors {
 
 /** Clears the index, every held definition, and both row banks. */
 void clear() noexcept;
@@ -128,4 +128,4 @@ sale_rows(const Definition& definition, std::span<SaleRow> output, std::size_t& 
 /** @return The flat installed bank row count, read under the lock. */
 [[nodiscard]] std::size_t installed_row_count() noexcept;
 
-} // namespace sunrise::state::build_data::vendors
+} // namespace dawn::state::build_data::vendors

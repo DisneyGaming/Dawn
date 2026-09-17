@@ -6,7 +6,7 @@
 
 #include "session_messages.h"
 
-namespace sunrise::middleware::gameplay::group {
+namespace dawn::middleware::gameplay::group {
 
 /** Bytes of group-session state the membership hash covers, and the whole struct's size. */
 inline constexpr std::size_t kSessionStateSize = 28768;
@@ -29,4 +29,4 @@ void build_session_state(const MembershipUpdate& body, SessionState& output) noe
  */
 [[nodiscard]] std::uint32_t session_state_hash(const MembershipUpdate& body) noexcept;
 
-} // namespace sunrise::middleware::gameplay::group
+} // namespace dawn::middleware::gameplay::group

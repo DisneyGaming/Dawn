@@ -3,7 +3,7 @@
 
 #include "validation.h"
 
-namespace sunrise::state::entitlements {
+namespace dawn::state::entitlements {
 namespace {
 
 /** One bundled definition in handle order. */
@@ -45,4 +45,4 @@ Table authored() noexcept {
     return table;
 }
 
-} // namespace sunrise::state::entitlements
+} // namespace dawn::state::entitlements

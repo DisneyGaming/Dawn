@@ -5,7 +5,7 @@
 #include <bcrypt.h>
 #include <limits>
 
-namespace sunrise::middleware::crypto::sha256 {
+namespace dawn::middleware::crypto::sha256 {
 
 namespace {
 
@@ -75,4 +75,4 @@ bool hash_pair(std::span<const std::byte> first,
     return digest(first, second, output);
 }
 
-} // namespace sunrise::middleware::crypto::sha256
+} // namespace dawn::middleware::crypto::sha256

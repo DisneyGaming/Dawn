@@ -24,19 +24,19 @@ def include(path,anchor,new):
     edit(path,f'#include "{anchor}"',f'#include "{anchor}"\n#include "{new}"')
 
 def main():
-    if "beyond_infinity::Frame" in (ROOT/"Sunrise/src/middleware/bap/activity_message/sensor_auth_update.h").read_text():
+    if "beyond_infinity::Frame" in (ROOT/"Dawn/src/middleware/bap/activity_message/sensor_auth_update.h").read_text():
         raise SystemExit("Beyond Infinity is already integrated; preserve the reviewed patch and inspect git diff.")
-    p='Sunrise/src/middleware/bap/activity_message/sensor_auth_update.h'
+    p='Dawn/src/middleware/bap/activity_message/sensor_auth_update.h'
     include(p,'../../../state/activity/gateway/frame.h','../../../state/activity/beyond_infinity/frame.h')
     edit(p,'state::activity::gateway::Frame gateway{};','state::activity::gateway::Frame gateway{};\n    state::activity::beyond_infinity::Frame beyond_infinity{};')
     # The primary codec already delegates non-Omega messages to this codec.
-    p='Sunrise/src/middleware/bap/activity_message/activity_sensor_auth_bodies_other_missions.cpp'
+    p='Dawn/src/middleware/bap/activity_message/activity_sensor_auth_bodies_other_missions.cpp'
     include(p,'../../../state/activity/gateway/authority.h','../../../state/activity/beyond_infinity/authority.h')
     anchor='    if(const auto count=state::activity::gateway::body_bits(snapshot.gateway,key,slotType,slotIndex)) { return count; }'
     edit(p,anchor,anchor+'\n    if(const auto count=state::activity::beyond_infinity::body_bits(snapshot.beyond_infinity,key,slotType,slotIndex)) { return count; }')
     anchor='    if(state::activity::gateway::body_bits(snapshot.gateway,key,slotType,slotIndex)) {'
     edit(p,anchor,'    if(state::activity::beyond_infinity::body_bits(snapshot.beyond_infinity,key,slotType,slotIndex)) {\n        return state::activity::beyond_infinity::write_body(writer,snapshot.beyond_infinity,key,slotType,slotIndex);\n    }\n'+anchor)
-    p='Sunrise/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp'
+    p='Dawn/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp'
     include(p,'deadly_trial_roster.h','beyond_infinity_roster.h')
     include(p,'beyond_infinity_roster.h','../../../../../state/activity/beyond_infinity/runtime.h')
     anchor='    const auto& omegaExperiments = core::settings::get().omegaExperiments;'
@@ -56,20 +56,20 @@ def main():
         if(snapshot.beyond_infinity.enabled) { snapshot.missionCompletion=snapshot.beyond_infinity.completion; }
     }
 '''+anchor)
-    p='Sunrise/src/server/bap/encrypted/push/activity/activity_keepalive_push.cpp'
+    p='Dawn/src/server/bap/encrypted/push/activity/activity_keepalive_push.cpp'
     include(p,'../../../../../state/activity/deadly_trial/runtime.h','../../../../../state/activity/beyond_infinity/runtime.h')
     edit(p,'state::activity::deadly_trial::publication_due(now)','state::activity::deadly_trial::publication_due(now) || state::activity::beyond_infinity::publication_due(now)')
-    p='Sunrise/src/client/player/player_position.cpp'
+    p='Dawn/src/client/player/player_position.cpp'
     include(p,'../../state/activity/deadly_trial/runtime.h','../../state/activity/beyond_infinity/runtime.h')
     anchor='    state::activity::deadly_trial::observe_position(position[0],position[1],position[2]);'
     edit(p,anchor,anchor+'\n    state::activity::beyond_infinity::observe_position(position[0],position[1],position[2]);')
-    p='Sunrise/src/state/activity/forced/prelaunch_profile.h'
+    p='Dawn/src/state/activity/forced/prelaunch_profile.h'
     anchor='[[nodiscard]] constexpr const Profile* find'
     edit(p,anchor,'inline constexpr Profile kBeyondInfinity{"adventure_vod",294,0x3E9433BDU,\n    0x03632571U,0x80F46000U,0x80F9FDD2U,"beyond_infinity_direct"};\n\n'+anchor)
     edit(p,'    return nullptr;','    if (package == kBeyondInfinity.package) { return &kBeyondInfinity; }\n    return nullptr;')
-    p='Sunrise/src/state/activity/forced/activity_forced_destination.cpp'
+    p='Dawn/src/state/activity/forced/activity_forced_destination.cpp'
     edit(p,'profile==&prelaunch::kGateway || profile==&prelaunch::kDeadlyTrial','profile==&prelaunch::kGateway || profile==&prelaunch::kDeadlyTrial || profile==&prelaunch::kBeyondInfinity')
-    p='Sunrise/src/state/activity/forced/definition.h'
+    p='Dawn/src/state/activity/forced/definition.h'
     edit(p,'} // namespace profiles','''// Recovered opening spawn; orientation and landing require live acceptance.
 constexpr ForcedDestination beyond_infinity_opening() noexcept {
     ForcedDestination v{};constexpr char name[]="adventure_vod";
@@ -80,10 +80,10 @@ constexpr ForcedDestination beyond_infinity_opening() noexcept {
 inline constexpr ForcedDestination kBeyondInfinityOpening=beyond_infinity_opening();
 static_assert(active(kBeyondInfinityOpening));
 } // namespace profiles''')
-    p='Sunrise/src/server/ui/activity_override/activity_override_panel.cpp'
+    p='Dawn/src/server/ui/activity_override/activity_override_panel.cpp'
     anchor='    if (ImGui::Button("Gateway opening")) {'
     edit(p,anchor,'    if (ImGui::Button("Beyond Infinity opening")) {\n        changed = apply_opening_profile(value, rows, forced::profiles::kBeyondInfinityOpening) || changed;\n    }\n'+anchor)
-    p='Sunrise/src/client/hooks/bootflow/omega_dialogue_dispatch_probe.cpp'
+    p='Dawn/src/client/hooks/bootflow/omega_dialogue_dispatch_probe.cpp'
     include(p,'../../../state/activity/gateway/runtime.h','../../../state/activity/beyond_infinity/runtime.h')
     anchor='        original(component, index);\n        if (component != nullptr && index >= 0 && index < 34) {'
     edit(p,anchor,'''        original(component, index);
@@ -100,7 +100,7 @@ static_assert(active(kBeyondInfinityOpening));
         if (component != nullptr && index >= 0 && index < 34) {''')
     edit(p,'if (bank != kDialogueBankHandle && bank != 0x80F1FC9EU && bank != 0x80F1F086U)','if (bank != kDialogueBankHandle && bank != 0x80F1FC9EU && bank != 0x80F1F086U && !beyondDispatch)')
     edit(p,'        } else if (component != nullptr) {\n            log_reject("dispatch_index"','        } else if (component != nullptr && !beyondDispatch) {\n            log_reject("dispatch_index"')
-    p='Sunrise/src/client/hooks/bootflow/omega_rescue_scene_receipts.cpp'
+    p='Dawn/src/client/hooks/bootflow/omega_rescue_scene_receipts.cpp'
     include(p,'gateway_vance_native_path.h','beyond_infinity_native_receipts.h')
     include(p,'beyond_infinity_native_receipts.h','../../../state/activity/beyond_infinity/runtime.h')
     anchor='__declspec(noinline) void __fastcall tick(void* raw) noexcept {'
@@ -116,15 +116,15 @@ static_assert(active(kBeyondInfinityOpening));
     if(gatewayOwned''')
     anchor='        hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&tick)},'
     edit(p,anchor,anchor+'\n        hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&read_beyond_scene)},\n        hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&finish_beyond_scene)},')
-    p='Sunrise/src/client/hooks/bootflow/omega_arc_charge_receipts.cpp'
+    p='Dawn/src/client/hooks/bootflow/omega_arc_charge_receipts.cpp'
     include(p,'gateway_module_native_path.h','beyond_infinity_native_receipts.h')
     include(p,'beyond_infinity_native_receipts.h','../../../state/activity/beyond_infinity/runtime.h')
     edit(p,'#include "gateway_module_receipts.inl"','#include "beyond_infinity_object_receipts.inl"\n#include "gateway_module_receipts.inl"')
     anchor='{reinterpret_cast<void*>(&gateway_sense_hook)}, {reinterpret_cast<void*>(&observe_gateway_module)},'
     edit(p,anchor,anchor+'\n        {reinterpret_cast<void*>(&observe_beyond_object)},')
-    p='Sunrise/src/client/hooks/bootflow/gateway_module_receipts.inl'
+    p='Dawn/src/client/hooks/bootflow/gateway_module_receipts.inl'
     edit(p,'    observe_gateway_object(raw);','    observe_beyond_object(raw);\n    observe_gateway_object(raw);')
-    p='Sunrise/Sunrise.vcxproj'
+    p='Dawn/Dawn.vcxproj'
     anchor='    <ClCompile Include="src\\state\\activity\\gateway\\controller.cpp" />'
     edit(p,anchor,anchor+'\n    <ClCompile Include="src\\state\\activity\\beyond_infinity\\runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>\n    <ClCompile Include="src\\state\\activity\\beyond_infinity\\controller.cpp" />')
     headers=['src/state/activity/beyond_infinity/'+n for n in ('catalog.h','native_catalog.h','bindings.h','frame.h','controller.h','runtime.h','authority.h')]
@@ -132,14 +132,14 @@ static_assert(active(kBeyondInfinityOpening));
     headers+=['src/client/hooks/bootflow/beyond_infinity_'+n for n in ('native_receipts.h','scene_receipts.inl','object_receipts.inl')]
     anchor='    <None Include="scripts\\gateway.lua" />'
     edit(p,anchor,anchor+'\n    <None Include="scripts\\beyond_infinity.lua" />\n'+'\n'.join('    <ClInclude Include="'+n.replace('/','\\')+'" />' for n in headers))
-    p='Sunrise/unit/player_position_tests.cpp'
+    p='Dawn/unit/player_position_tests.cpp'
     edit(p,'namespace deadly_trial { void observe_position','namespace beyond_infinity { void observe_position(float,float,float) noexcept {} }\nnamespace deadly_trial { void observe_position')
     p='tools/coo/verify_lua.py'
     edit(p,'    "coo_ending_runtime_tests",','    "coo_ending_runtime_tests", "beyond_infinity_catalog_tests", "beyond_infinity_tests",')
     p='tools/coo/package_lua.py'
     edit(p,"SCRIPTS = ('omega.lua', 'deadly_trial.lua', 'gateway.lua')","SCRIPTS = ('omega.lua', 'deadly_trial.lua', 'gateway.lua', 'beyond_infinity.lua')")
     p='tools/coo/install_candidate.ps1'
-    edit(p,"'Sunrise/scripts/gateway.lua')","'Sunrise/scripts/gateway.lua', 'Sunrise/scripts/beyond_infinity.lua')")
+    edit(p,"'Dawn/scripts/gateway.lua')","'Dawn/scripts/gateway.lua', 'Dawn/scripts/beyond_infinity.lua')")
     edit(p,'$manifest.buildsAndTests -ne 34','$manifest.buildsAndTests -ne 38')
     OUT.mkdir(parents=True,exist_ok=True)
     patch=''.join('diff --git a/'+p+' b/'+p+'\n'+''.join(difflib.unified_diff(originals[p].splitlines(True),s.splitlines(True),fromfile='a/'+p,tofile='b/'+p)) for p,s in changes.items())

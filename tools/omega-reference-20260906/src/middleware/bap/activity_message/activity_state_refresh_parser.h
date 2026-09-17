@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::bap::activity_message::state_refresh {
+namespace dawn::middleware::bap::activity_message::state_refresh {
 
 /** State-refresh requests use activity message type 18. */
 inline constexpr std::uint32_t kMessageType = 18;
@@ -26,4 +26,4 @@ struct StateRefresh final {
 [[nodiscard]] bool parse_state_refresh(std::span<const std::byte> input,
                                        StateRefresh& refresh) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_message::state_refresh
+} // namespace dawn::middleware::bap::activity_message::state_refresh

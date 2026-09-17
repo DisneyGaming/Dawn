@@ -16,7 +16,7 @@
 #include "activity_arrival.h"
 #include "activity_notification_frame.h"
 
-namespace sunrise::server::bap::encrypted::push::activity {
+namespace dawn::server::bap::encrypted::push::activity {
 namespace {
 
 namespace message = middleware::bap::activity_message::replicate_membership;
@@ -212,4 +212,4 @@ bool append_membership_notification(
     return encoded;
 }
 
-} // namespace sunrise::server::bap::encrypted::push::activity
+} // namespace dawn::server::bap::encrypted::push::activity

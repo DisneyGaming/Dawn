@@ -4,7 +4,7 @@
 #include "../../../state/activity/defaults/activity_defaults_validation.h"
 #include "../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 namespace {
 
 /** An unsigned hash field is one fixed 32-bit value. */
@@ -192,4 +192,4 @@ bool Parser::default_destination(state::activity::defaults::DefaultDestination& 
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

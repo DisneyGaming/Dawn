@@ -20,7 +20,7 @@ std::atomic_uint64_t g_crownRouteRejectMask{};
 std::atomic_uint64_t g_crownRouteNoPlayerRun{};
 }
 
-namespace sunrise::client::player::position {
+namespace dawn::client::player::position {
 namespace {
 
 namespace teleport = hooks::teleport;
@@ -202,4 +202,4 @@ Snapshot snapshot() noexcept {
     return value;
 }
 
-} // namespace sunrise::client::player::position
+} // namespace dawn::client::player::position

@@ -2,7 +2,7 @@
 #include "../../../../encoding/byte_order.h"
 #include "internal.h"
 
-namespace sunrise::middleware::bap::activity_host_manager::request::selection {
+namespace dawn::middleware::bap::activity_host_manager::request::selection {
 namespace {
 
 using encoding::bits::Reader;
@@ -61,4 +61,4 @@ bool parse_field_two(std::span<const std::byte> input,
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_host_manager::request::selection
+} // namespace dawn::middleware::bap::activity_host_manager::request::selection

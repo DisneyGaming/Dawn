@@ -9,7 +9,7 @@
 #include "../../../../../state/activity/destination/definition.h"
 #include "../../../internal.h"
 
-namespace sunrise::server::bap::encrypted::push::activity {
+namespace dawn::server::bap::encrypted::push::activity {
 
 /**
  * Builds the whole message body input for one session.
@@ -43,4 +43,4 @@ append_global_state_notification(Scratch& scratch,
                                  std::span<std::byte> response,
                                  std::size_t& written) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::push::activity
+} // namespace dawn::server::bap::encrypted::push::activity

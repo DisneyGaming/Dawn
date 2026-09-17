@@ -1,7 +1,7 @@
 #include "../../../../state/activity/entity_slots/definition.h"
 #include "definition.h"
 
-namespace sunrise::core::settings::server::gameplay {
+namespace dawn::core::settings::server::gameplay {
 
 namespace {
 
@@ -36,4 +36,4 @@ std::uint16_t effective_reserve(const Settings& settings) noexcept {
     return settings.topology == Topology::disabled ? 0 : settings.serverReserveCount;
 }
 
-} // namespace sunrise::core::settings::server::gameplay
+} // namespace dawn::core::settings::server::gameplay

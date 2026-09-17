@@ -6,7 +6,7 @@
 
 #include "../../patterns/image_scan.h"
 
-namespace sunrise::client::hooks::bitmap {
+namespace dawn::client::hooks::bitmap {
 
 using patterns::scan_main_image_unique;
 using patterns::signature;
@@ -73,4 +73,4 @@ inline constexpr unsigned kMaxSeenReports = 40;
 /** Detaches the bitmap-reference guard. */
 void uninstall_bitmap_ref_guard() noexcept;
 
-} // namespace sunrise::client::hooks::bitmap
+} // namespace dawn::client::hooks::bitmap

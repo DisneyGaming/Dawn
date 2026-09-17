@@ -5,7 +5,7 @@
 
 #include "../../table.h"
 
-namespace sunrise::state::build_data::items::socket_plugs {
+namespace dawn::state::build_data::items::socket_plugs {
 namespace {
 
 Lock g_lock;
@@ -139,4 +139,4 @@ std::size_t rule_count() noexcept {
     return g_rules.count();
 }
 
-} // namespace sunrise::state::build_data::items::socket_plugs
+} // namespace dawn::state::build_data::items::socket_plugs

@@ -4,7 +4,7 @@
 
 #include "internal.h"
 
-namespace sunrise::middleware::content::packages::tables {
+namespace dawn::middleware::content::packages::tables {
 namespace {
 
 /** Public bubbles carry this 3-letter name prefix. */
@@ -33,4 +33,4 @@ bool region_name(std::uint32_t regionIndex, bool publicBubble, RegionName& outpu
     return false;
 }
 
-} // namespace sunrise::middleware::content::packages::tables
+} // namespace dawn::middleware::content::packages::tables

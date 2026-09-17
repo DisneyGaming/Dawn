@@ -6,7 +6,7 @@
 
 #include "runtime.h"
 
-namespace sunrise::middleware::secure_channel {
+namespace dawn::middleware::secure_channel {
 namespace {
 
 /**
@@ -136,4 +136,4 @@ void advance_nonce(std::span<std::byte, state::kBapNonceSize> nonce) noexcept {
     }
 }
 
-} // namespace sunrise::middleware::secure_channel
+} // namespace dawn::middleware::secure_channel

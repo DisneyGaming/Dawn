@@ -4,7 +4,7 @@
 
 #include <intrin.h>
 
-namespace sunrise::middleware::crypto::modular {
+namespace dawn::middleware::crypto::modular {
 
 namespace {
 
@@ -282,4 +282,4 @@ void power(const Modulus& modulus,
     SecureZeroMemory(factor.data(), factor.size() * kLimbBytes);
 }
 
-} // namespace sunrise::middleware::crypto::modular
+} // namespace dawn::middleware::crypto::modular

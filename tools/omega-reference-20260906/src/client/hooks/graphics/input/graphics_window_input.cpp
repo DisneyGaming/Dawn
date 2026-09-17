@@ -3,13 +3,13 @@
 #include <atomic>
 #include <bit>
 
-#include "../../../../core/ui/layout/credits/sunrise_credits_badge.h"
+#include "../../../../core/ui/layout/credits/dawn_credits_badge.h"
 #include "../../../../core/ui/modules/logs/logs.h"
 #include "../../../../core/ui/runtime/ui_visibility_runtime.h"
 #include "../renderer/renderer.h"
 #include "input.h"
 
-namespace sunrise::client::hooks::graphics::input {
+namespace dawn::client::hooks::graphics::input {
 namespace {
 
 /** A nonzero result stops captured input from reaching the game. */
@@ -146,7 +146,7 @@ bool install(HWND window) noexcept {
     return true;
 }
 
-/** Restores the original procedure only when Sunrise still owns the chain head. */
+/** Restores the original procedure only when Dawn still owns the chain head. */
 bool uninstall() noexcept {
     AcquireSRWLockExclusive(&g_inputLock);
     if (!g_binding.installed) {
@@ -195,7 +195,7 @@ bool uninstall() noexcept {
     return idle;
 }
 
-/** Checks whether Sunrise is still installed, or still sits below a later subclass. */
+/** Checks whether Dawn is still installed, or still sits below a later subclass. */
 bool active(HWND window) noexcept {
     AcquireSRWLockShared(&g_inputLock);
     bool installed = g_binding.installed && g_binding.window == window && IsWindow(window) != FALSE
@@ -213,4 +213,4 @@ bool active(HWND window) noexcept {
     return installed;
 }
 
-} // namespace sunrise::client::hooks::graphics::input
+} // namespace dawn::client::hooks::graphics::input

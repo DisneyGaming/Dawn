@@ -28,4 +28,4 @@ This does not prove every art arrangement, perk, header field, or blank-banner s
 
 These are family-0 banner and family-3 character records, not social family-2 objects.
 
-Landmarks: Sunrise/src/middleware/datagen/character_record/character_record_encoder.cpp and its appearance helpers, especially character_appearance_render.cpp, character_appearance_sentinels.cpp, and the stats/banks/abilities encoders. The shared builder and render path were inspected for these docs. No visual comparison or live game test was performed.
+Landmarks: Dawn/src/middleware/datagen/character_record/character_record_encoder.cpp and its appearance helpers, especially character_appearance_render.cpp, character_appearance_sentinels.cpp, and the stats/banks/abilities encoders. The shared builder and render path were inspected for these docs. No visual comparison or live game test was performed.

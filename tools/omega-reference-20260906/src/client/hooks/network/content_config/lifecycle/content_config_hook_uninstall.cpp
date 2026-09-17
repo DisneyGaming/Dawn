@@ -2,7 +2,7 @@
 #include "../runtime.h"
 #include "content_config_hook_storage.h"
 
-namespace sunrise::client::hooks::network::content_config {
+namespace dawn::client::hooks::network::content_config {
 namespace {
 
 /** One second caps the shutdown wait, so we never spin on game-owned work. */
@@ -78,4 +78,4 @@ bool uninstall() noexcept {
     return removed;
 }
 
-} // namespace sunrise::client::hooks::network::content_config
+} // namespace dawn::client::hooks::network::content_config

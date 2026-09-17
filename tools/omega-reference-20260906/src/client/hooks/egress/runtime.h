@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::hooks::egress {
+namespace dawn::client::hooks::egress {
 
 /** @return True only after the owning module is pinned and every lifetime guard is attached. */
 [[nodiscard]] bool install() noexcept;
@@ -14,4 +14,4 @@ namespace sunrise::client::hooks::egress {
  */
 void report_installation() noexcept;
 
-} // namespace sunrise::client::hooks::egress
+} // namespace dawn::client::hooks::egress

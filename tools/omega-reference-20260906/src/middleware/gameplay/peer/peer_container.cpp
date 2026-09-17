@@ -1,6 +1,6 @@
 #include "peer_container.h"
 
-namespace sunrise::middleware::gameplay::peer {
+namespace dawn::middleware::gameplay::peer {
 
 namespace {
 
@@ -60,4 +60,4 @@ bool read_header(encoding::bits::Reader& reader, MessageHeader& header, bool& pr
     return true;
 }
 
-} // namespace sunrise::middleware::gameplay::peer
+} // namespace dawn::middleware::gameplay::peer

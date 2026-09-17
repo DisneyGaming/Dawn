@@ -2,7 +2,7 @@
 
 #include "../../encoding/bit_raw.h"
 
-namespace sunrise::middleware::gameplay::peer {
+namespace dawn::middleware::gameplay::peer {
 
 namespace {
 
@@ -83,4 +83,4 @@ bool read_closed(bits::Reader& reader, ConnectEnd& output) noexcept {
     return true;
 }
 
-} // namespace sunrise::middleware::gameplay::peer
+} // namespace dawn::middleware::gameplay::peer

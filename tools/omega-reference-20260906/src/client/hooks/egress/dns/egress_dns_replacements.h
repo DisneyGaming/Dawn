@@ -2,7 +2,7 @@
 
 #include "../platform/sdk.h"
 
-namespace sunrise::client::hooks::egress::dns {
+namespace dawn::client::hooks::egress::dns {
 
 /** Blocks an ANSI DNS query. */
 DNS_STATUS WINAPI query_a(PCSTR name,
@@ -36,4 +36,4 @@ DNS_STATUS WINAPI query_ex(PDNS_QUERY_REQUEST request,
 /** Blocks a raw DNS query without scheduling its callback. */
 DNS_STATUS WINAPI query_raw(DNS_QUERY_RAW_REQUEST* request, DNS_QUERY_RAW_CANCEL* cancel) noexcept;
 
-} // namespace sunrise::client::hooks::egress::dns
+} // namespace dawn::client::hooks::egress::dns

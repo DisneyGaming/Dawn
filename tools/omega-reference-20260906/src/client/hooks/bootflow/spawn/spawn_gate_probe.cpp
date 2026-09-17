@@ -4,7 +4,7 @@
 #include "probe.h"
 #include "spawn_gate_record_dump.h"
 
-namespace sunrise::client::hooks::bootflow::spawn {
+namespace dawn::client::hooks::bootflow::spawn {
 namespace {
 
 /** The absent player datum the gate rejects outright. */
@@ -159,4 +159,4 @@ std::size_t describe(const Reading& reading, std::span<char> output) noexcept {
     return written > 0 ? static_cast<std::size_t>(written) : 0;
 }
 
-} // namespace sunrise::client::hooks::bootflow::spawn
+} // namespace dawn::client::hooks::bootflow::spawn

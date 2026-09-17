@@ -7,7 +7,7 @@
 #include "../../registry.h"
 #include "../../signature_text.h"
 
-namespace sunrise::client::patterns::game::signon {
+namespace dawn::client::patterns::game::signon {
 
 /** Pre-SignOn native transport-readiness predicate signature. */
 inline constexpr std::string_view kReadinessFailureText =
@@ -28,4 +28,4 @@ extern constinit const std::array<patterns::PatternByte, kReadinessFailurePatter
 extern constinit const std::array<patterns::PatternByte, kReadinessReadyPatternSize>
     kReadinessReady;
 
-} // namespace sunrise::client::patterns::game::signon
+} // namespace dawn::client::patterns::game::signon

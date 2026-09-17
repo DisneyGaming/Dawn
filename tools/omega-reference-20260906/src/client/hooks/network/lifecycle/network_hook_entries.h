@@ -4,7 +4,7 @@
 
 #include "network_hook_group.h"
 
-namespace sunrise::client::hooks::network::lifecycle {
+namespace dawn::client::hooks::network::lifecycle {
 
 using GameSpecs = std::array<hooking::detour::Spec, kGameSlots.size()>;
 using PlatformSpecs = std::array<hooking::detour::Spec, kPlatformSlots.size()>;
@@ -24,4 +24,4 @@ using PlatformProtectedEntries =
 /** @return The platform replacement, ingress and egress bodies kept safe at detach. */
 [[nodiscard]] PlatformProtectedEntries platform_protected_entries() noexcept;
 
-} // namespace sunrise::client::hooks::network::lifecycle
+} // namespace dawn::client::hooks::network::lifecycle

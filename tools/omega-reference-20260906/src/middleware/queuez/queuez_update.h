@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::queuez {
+namespace dawn::middleware::queuez {
 
 /** Object payload codec stored in the family-update object header. */
 enum class Encoding : std::uint32_t {
@@ -45,4 +45,4 @@ inline constexpr std::uint8_t kFullSnapshotFlag = 1;
                                  std::span<std::byte> output,
                                  std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::queuez
+} // namespace dawn::middleware::queuez

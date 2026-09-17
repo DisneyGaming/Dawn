@@ -4,7 +4,7 @@
 
 #include "definition_index_table.h"
 
-namespace sunrise::middleware::content::packages::tables::abilities {
+namespace dawn::middleware::content::packages::tables::abilities {
 namespace {
 
 /** A socket-entry-list definition holds its entry array descriptor here. */
@@ -179,4 +179,4 @@ std::size_t read_pool_records(std::span<const std::byte> blob,
     return count;
 }
 
-} // namespace sunrise::middleware::content::packages::tables::abilities
+} // namespace dawn::middleware::content::packages::tables::abilities

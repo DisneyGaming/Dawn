@@ -4,11 +4,11 @@
 
 #include <cstring>
 
-namespace sunrise::core::path {
+namespace dawn::core::path {
 namespace {
 
 /** One owned folder prevents generated files from accumulating beside game binaries. */
-constexpr std::wstring_view kArtifactDirectorySuffix = L"Sunrise";
+constexpr std::wstring_view kArtifactDirectorySuffix = L"Dawn";
 
 } // namespace
 
@@ -74,4 +74,4 @@ bool append(Buffer& path, std::wstring_view suffix) noexcept {
     return true;
 }
 
-} // namespace sunrise::core::path
+} // namespace dawn::core::path

@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <span>
 
-namespace sunrise::client::executable {
+namespace dawn::client::executable {
 
 /** Maximum section count accepted by the PE/COFF format. */
 inline constexpr std::size_t kPeSectionLimit = 96;
@@ -21,4 +21,4 @@ struct ExecutableImage {
 /** Reads executable spans from the main process module. */
 [[nodiscard]] bool inspect_main_module(ExecutableImage& output) noexcept;
 
-} // namespace sunrise::client::executable
+} // namespace dawn::client::executable

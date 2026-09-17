@@ -5,7 +5,7 @@
 #include <span>
 #include <string_view>
 
-namespace sunrise::client::network {
+namespace dawn::client::network {
 
 /** 256 KiB caps the fixed storage. The Client's one-way BAP frames are large. */
 inline constexpr std::size_t kBapFrameCapacity = 256 * 1024;
@@ -70,4 +70,4 @@ void unregister_http_consumer(HttpConsumer consumer) noexcept;
 /** Removes the Server BAP consumer when it still matches. */
 void unregister_bap_consumer(BapConsumer consumer) noexcept;
 
-} // namespace sunrise::client::network
+} // namespace dawn::client::network

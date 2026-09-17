@@ -5,7 +5,7 @@
 #include "../../scaling/dpi/ui_dpi_scaling.h"
 #include "../label/ui_label_component.h"
 
-namespace sunrise::core::ui::components::section {
+namespace dawn::core::ui::components::section {
 namespace {
 
 /** 3 authored pixels keep the rail visible beside short and wrapped headers. */
@@ -54,4 +54,4 @@ void header(const char* title, const char* description) noexcept {
         scaling::dpi::pixels(kRailRounding));
 }
 
-} // namespace sunrise::core::ui::components::section
+} // namespace dawn::core::ui::components::section

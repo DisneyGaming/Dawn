@@ -4,7 +4,7 @@
 
 #include <dxgi.h>
 
-namespace sunrise::client::hooks::graphics::renderer {
+namespace dawn::client::hooks::graphics::renderer {
 
 /** Draws the UI frame, if any, for a checked swap chain. */
 void present(IDXGISwapChain* swapChain) noexcept;
@@ -38,4 +38,4 @@ void dispatch_pending_input_release(HWND window) noexcept;
 /** Runs any deferred capture release once the hook and renderer locks are gone. */
 void dispatch_pending_input_release() noexcept;
 
-} // namespace sunrise::client::hooks::graphics::renderer
+} // namespace dawn::client::hooks::graphics::renderer

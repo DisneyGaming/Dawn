@@ -1,6 +1,6 @@
 # Vendor Interactions: Technical Findings & Architecture
 
-A complete, detailed reference of all findings, reverse-engineering discoveries, and implementation mechanics regarding NPC vendor interactions in the Sunrise Destiny 2 server emulation project.
+A complete, detailed reference of all findings, reverse-engineering discoveries, and implementation mechanics regarding NPC vendor interactions in the Dawn Destiny 2 server emulation project.
 
 ---
 
@@ -71,7 +71,7 @@ When opening a vendor screen, the game client consults an internal **interaction
 - Consequently, accepting an introductory quest left the banner active. On every subsequent visit, the client re-offered the completed dialogue and refused to show the vendor's storefront or bounties.
 
 ### 4.2 Detour Implementation (`vendor_banner_retire`)
-Sunrise hooks the client's native retire test:
+Dawn hooks the client's native retire test:
 - **Signature**: `48 89 5C 24 10 48 89 6C 24 18 56 48 83 EC 20 44 8B 49 08 33 ED 0F B7 DA 48 8B F1`
 - **Native Picker Memory Layout**:
   - `+0x00`: `vendorIndex` (`std::uint16_t`)
@@ -122,7 +122,7 @@ Player actions at a vendor trigger two distinct web service messages:
 
 ## 6. The Vendor Rules Engine
 
-To allow rapid balancing and behavior authoring without recompiling or restarting the server, vendor behaviors are driven by plain-text rule files placed in `bin\x64\Sunrise\` beside `settings.json`. They are re-read on every request.
+To allow rapid balancing and behavior authoring without recompiling or restarting the server, vendor behaviors are driven by plain-text rule files placed in `bin\x64\Dawn\` beside `settings.json`. They are re-read on every request.
 
 ### 6.1 `vendor_catalog.txt` (Published Vendors)
 Names vendor definition hashes to publish in priority order. Ensures major social vendors (Drifter, Banshee, Zavala, Shaxx, Rahool, Holliday, Saint-14, planetary contacts) load before bank capacity is reached.
@@ -176,7 +176,7 @@ Faction rank-up engrams enforce a strict client-side gate: the character must be
 
 ### 8.1 Slotless Inventory Items
 Pursuits (quest steps, bounties, tokens) do not equip to character slots (Kinetic, Energy, Helmet, etc.).
-- **The Bug**: The original Sunrise loadout resolver required an equipment slot for every inventory item. As a result, newly granted pursuits were rejected and lost during loadout calculation.
+- **The Bug**: The original Dawn loadout resolver required an equipment slot for every inventory item. As a result, newly granted pursuits were rejected and lost during loadout calculation.
 - **The Fix**: The loadout resolver was updated to allow slotless items in general inventory, enforcing slots only for items actually equipped.
 
 ### 8.2 Classification (`holds_pursuit`)

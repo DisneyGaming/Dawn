@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::server::bap::encrypted::push::snapshot {
+namespace dawn::server::bap::encrypted::push::snapshot {
 namespace {
 
 /**
@@ -115,4 +115,4 @@ bool commit(const Prepared& staged, Prepared& output) noexcept {
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted::push::snapshot
+} // namespace dawn::server::bap::encrypted::push::snapshot

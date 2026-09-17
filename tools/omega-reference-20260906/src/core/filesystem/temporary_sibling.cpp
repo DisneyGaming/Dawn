@@ -7,7 +7,7 @@
 
 #include "path.h"
 
-namespace sunrise::core::path {
+namespace dawn::core::path {
 namespace {
 
 /** Writer-owned temporary names use this exact lowercase extension. */
@@ -226,4 +226,4 @@ void remove_stale_siblings(const wchar_t* finalPath) noexcept {
     (void)FindClose(search);
 }
 
-} // namespace sunrise::core::path
+} // namespace dawn::core::path

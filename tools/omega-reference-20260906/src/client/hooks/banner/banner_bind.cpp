@@ -18,7 +18,7 @@
 #include "../../../state/runtime/runtime.h"
 #include "../../hooking/detour.h"
 
-namespace sunrise::client::hooks::banner {
+namespace dawn::client::hooks::banner {
 namespace {
 
 using BannerTick = std::int64_t(__fastcall*)(void*, std::int64_t);
@@ -176,4 +176,4 @@ void uninstall_banner_bind() noexcept {
     g_reported.store(0, std::memory_order_release);
 }
 
-} // namespace sunrise::client::hooks::banner
+} // namespace dawn::client::hooks::banner

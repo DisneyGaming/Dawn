@@ -21,7 +21,7 @@
 #include "../../../../state/build_data/runtime.h"
 #include "../overlay.h"
 
-namespace sunrise::core::ui::hud::overlays::status {
+namespace dawn::core::ui::hud::overlays::status {
 namespace {
 
 namespace activity = state::activity;
@@ -302,4 +302,4 @@ void draw() noexcept {
     draw_line(StatusLine::position, status.position, valueColumn);
 }
 
-} // namespace sunrise::core::ui::hud::overlays::status
+} // namespace dawn::core::ui::hud::overlays::status

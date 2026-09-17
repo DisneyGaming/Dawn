@@ -7,7 +7,7 @@
 
 #include "../../definition.h"
 
-namespace sunrise::state::content_manifest::scanner::package {
+namespace dawn::state::content_manifest::scanner::package {
 
 /** Result of classifying one package-directory entry. */
 enum class NameStatus : std::uint8_t {
@@ -42,4 +42,4 @@ struct ParsedName final {
  */
 [[nodiscard]] bool parse_stem(std::string_view stem, ParsedName& output) noexcept;
 
-} // namespace sunrise::state::content_manifest::scanner::package
+} // namespace dawn::state::content_manifest::scanner::package

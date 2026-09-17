@@ -2,7 +2,7 @@
 
 #include <array>
 
-namespace sunrise::middleware::content::packages::tables {
+namespace dawn::middleware::content::packages::tables {
 namespace {
 
 /** The three registry descriptors, walked in this order to match the reference walk. */
@@ -174,4 +174,4 @@ bool walk_scenario(std::span<const std::byte> blob,
     return true;
 }
 
-} // namespace sunrise::middleware::content::packages::tables
+} // namespace dawn::middleware::content::packages::tables

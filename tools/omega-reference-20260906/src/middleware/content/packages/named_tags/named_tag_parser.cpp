@@ -4,7 +4,7 @@
 
 #include "internal.h"
 
-namespace sunrise::middleware::content::packages::named_tags {
+namespace dawn::middleware::content::packages::named_tags {
 namespace {
 
 /**
@@ -164,4 +164,4 @@ bool extract(const Reader& reader, Visitor visitor, void* context, Result& resul
     return true;
 }
 
-} // namespace sunrise::middleware::content::packages::named_tags
+} // namespace dawn::middleware::content::packages::named_tags

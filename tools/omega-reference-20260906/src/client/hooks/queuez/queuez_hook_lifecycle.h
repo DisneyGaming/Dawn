@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::hooks::queuez {
+namespace dawn::client::hooks::queuez {
 
 /**
  * Attaches the family-zero source-list seed. The sweep declares one record per source key, so a
@@ -16,4 +16,4 @@ void uninstall() noexcept;
 /** @return True while at least one fix is attached. */
 [[nodiscard]] bool is_installed() noexcept;
 
-} // namespace sunrise::client::hooks::queuez
+} // namespace dawn::client::hooks::queuez

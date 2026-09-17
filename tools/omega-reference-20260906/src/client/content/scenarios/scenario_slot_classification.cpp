@@ -12,7 +12,7 @@
 #include "../../hooks/retail_log/retail_log_enqueue_observer.h"
 #include "internal.h"
 
-namespace sunrise::client::content::scenarios {
+namespace dawn::client::content::scenarios {
 namespace {
 
 namespace tables = middleware::content::packages::tables;
@@ -117,4 +117,4 @@ bool fill_slots(RosterStorage& storage,
     return true;
 }
 
-} // namespace sunrise::client::content::scenarios
+} // namespace dawn::client::content::scenarios

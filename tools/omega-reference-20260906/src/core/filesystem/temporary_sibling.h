@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::core::path {
+namespace dawn::core::path {
 
 /**
  * Removes bounded, old writer-owned temporary siblings whose process has stopped.
@@ -9,4 +9,4 @@ namespace sunrise::core::path {
  */
 void remove_stale_siblings(const wchar_t* finalPath) noexcept;
 
-} // namespace sunrise::core::path
+} // namespace dawn::core::path

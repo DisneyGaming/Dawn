@@ -18,14 +18,14 @@ def main():
     if digest(ROOT / 'steam_api64.dll') != EXPECTED:
         raise SystemExit('Installed DLL differs from the accepted reference.')
     files = []
-    for folder in ('Sunrise/src', 'Sunrise/resources', 'Sunrise/vendor', 'Sunrise/unit',
-                   'Sunrise/cache', 'Sunrise/exports', 'Sunrise/docs',
+    for folder in ('Dawn/src', 'Dawn/resources', 'Dawn/vendor', 'Dawn/unit',
+                   'Dawn/cache', 'Dawn/exports', 'Dawn/docs',
                    'tools/omega-reference-20260906'):
         files += [p for p in (ROOT / folder).rglob('*') if p.is_file()
                   and p.suffix not in ('.obj', '.pdb', '.exe', '.zip', '.pyc')]
-    files += [ROOT / p for p in ('steam_api64.dll', 'Sunrise/Sunrise.vcxproj',
-        'Sunrise/settings.json', 'Sunrise/OMEGA-SRC-PORT.md', 'Sunrise/logs/sunrise.log',
-        'Sunrise/logs/sunrise.log.old', 'deploy-omega.ps1', 'launch-scot-reveal-debug.cmd')]
+    files += [ROOT / p for p in ('steam_api64.dll', 'Dawn/Dawn.vcxproj',
+        'Dawn/settings.json', 'Dawn/OMEGA-SRC-PORT.md', 'Dawn/logs/dawn.log',
+        'Dawn/logs/dawn.log.old', 'deploy-omega.ps1', 'launch-scot-reveal-debug.cmd')]
     files = sorted(set(files))
     manifest = {p.relative_to(ROOT).as_posix(): digest(p) for p in files}
     head = subprocess.check_output(['git', '-c', f'safe.directory={ROOT.as_posix()}',

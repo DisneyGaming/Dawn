@@ -1,6 +1,6 @@
 #include "introduction.h"
 
-namespace sunrise::middleware::gameplay::nat {
+namespace dawn::middleware::gameplay::nat {
 
 namespace {
 
@@ -22,4 +22,4 @@ bool make_introduction_reply(std::span<std::byte> datagram) noexcept {
     return true;
 }
 
-} // namespace sunrise::middleware::gameplay::nat
+} // namespace dawn::middleware::gameplay::nat

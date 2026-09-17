@@ -2,7 +2,7 @@
 
 #include <Windows.h>
 
-namespace sunrise::core::ui::modules::logs {
+namespace dawn::core::ui::modules::logs {
 
 /** @return True when the Core Logs page owns its registry slot. */
 [[nodiscard]] bool initialize() noexcept;
@@ -16,4 +16,4 @@ void shutdown() noexcept;
  */
 void dispatch_pending_copy(HWND owner) noexcept;
 
-} // namespace sunrise::core::ui::modules::logs
+} // namespace dawn::core::ui::modules::logs

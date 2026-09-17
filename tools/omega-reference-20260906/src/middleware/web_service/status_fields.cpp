@@ -2,7 +2,7 @@
 
 #include <limits>
 
-namespace sunrise::middleware::web_service::status {
+namespace dawn::middleware::web_service::status {
 namespace {
 
 /** 5-bit status fields store logical success 0 as 1. */
@@ -60,4 +60,4 @@ bool write_fields(encoding::bits::Writer& writer,
     return encoded;
 }
 
-} // namespace sunrise::middleware::web_service::status
+} // namespace dawn::middleware::web_service::status

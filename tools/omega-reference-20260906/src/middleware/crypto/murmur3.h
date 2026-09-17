@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <span>
 
-namespace sunrise::middleware::crypto::murmur3 {
+namespace dawn::middleware::crypto::murmur3 {
 
 /** The 128-bit variant produces 16 bytes. */
 inline constexpr std::size_t kDigestSize = 16;
@@ -23,4 +23,4 @@ void hash(std::span<const std::byte> first,
           std::span<const std::byte> second,
           Digest& output) noexcept;
 
-} // namespace sunrise::middleware::crypto::murmur3
+} // namespace dawn::middleware::crypto::murmur3

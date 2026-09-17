@@ -5,7 +5,7 @@
 
 #include "../activity_membership_query.h"
 
-namespace sunrise::state::activity::membership::transactions {
+namespace dawn::state::activity::membership::transactions {
 
 /** Each half of the packed refresh guard is 32 bits. */
 inline constexpr std::uint8_t kRefreshGuardHalfWidth = 32;
@@ -228,4 +228,4 @@ void publish_change(ActivityState& state, SessionRecord& record) noexcept;
                                         SessionRecord& record,
                                         const PendingMutation& prepared) noexcept;
 
-} // namespace sunrise::state::activity::membership::transactions
+} // namespace dawn::state::activity::membership::transactions

@@ -9,7 +9,7 @@
 #include "../../../state/content_manifest/content_manifest_state_runtime.h"
 #include "../network/content_config/protocol.h"
 
-namespace sunrise::client::hooks::config_getter {
+namespace dawn::client::hooks::config_getter {
 namespace {
 
 /** The Client copies the token as a fixed 37-byte field. */
@@ -70,7 +70,7 @@ char __fastcall url_body([[maybe_unused]] void* self, char* output) noexcept {
         core::settings::get().client.externalServer;
     const std::string_view url = external.enabled
                                      ? std::string_view(external.configUrl.data())
-                                     : ::sunrise::client::hooks::network::content_config::kLocalUrl;
+                                     : ::dawn::client::hooks::network::content_config::kLocalUrl;
     std::copy(url.begin(), url.end(), output);
     output[url.size()] = '\0';
     return kSupplied;
@@ -98,4 +98,4 @@ void* token_entry_point() noexcept {
     return reinterpret_cast<void*>(&token_body);
 }
 
-} // namespace sunrise::client::hooks::config_getter
+} // namespace dawn::client::hooks::config_getter

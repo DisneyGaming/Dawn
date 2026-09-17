@@ -1,6 +1,6 @@
-# Homecoming / Sunrise — Session Handoff (2026-08-17)
+# Homecoming / Dawn — Session Handoff (2026-08-17)
 
-Complete context for continuing the Destiny 2 **Homecoming** offline-revival work under **Sunrise**.
+Complete context for continuing the Destiny 2 **Homecoming** offline-revival work under **Dawn**.
 Read this first, then `HOMECOMING-FINDINGS.md` (the long-form findings doc — this file summarises and
 supersedes its older sections where they conflict).
 
@@ -27,7 +27,7 @@ session** is therefore the prerequisite, not a detour.
 1. What does a fireteam join need to *complete* rather than hang? The join is queued to a null peer
    (`{0}-DEC01151:DEC01151-0.0.0.0:0:0.0.0.0:0` when we supplied our own id). Find where the join
    target/peer address comes from and whether it can be pointed at ourselves (loopback / self-peer).
-2. Sunrise **is** the activity host (`ev=retail networking:activity_client:receive_message_from_host`
+2. Dawn **is** the activity host (`ev=retail networking:activity_client:receive_message_from_host`
    shows the client talking to it). Which BAP message completes the fireteam handshake?
 3. Once a session exists and completes, re-run `holdprobe` — if `context+0x18DD0` fills *naturally*,
    the pump should propagate and the route may go authored with no forcing at all.
@@ -54,7 +54,7 @@ progression. Do not oversell authored mode as "the mission working".
 ## 2. Build / test loop
 
 ```
-powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\sunrise-dev.ps1" -Config Release
+powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\dawn-dev.ps1" -Config Release
 ```
 - `-BuildOnly` compiles while the game runs; **deploy requires the game closed**.
 - `-Restore` rolls back to the previous DLL.
@@ -62,16 +62,16 @@ powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\sunrise-dev.p
   ```
   md5sum "/c/Destiny 2 Development/bin/x64/steam_api64.dll"
   ```
-  Compare against `Sunrise-src/build/x64/Release/steam_api64.dll`.
-- Repo `C:\Destiny 2 Development\Sunrise-src`, branch **`spawner`** @ `6aae441` (not a git repo at the
+  Compare against `Dawn-src/build/x64/Release/steam_api64.dll`.
+- Repo `C:\Destiny 2 Development\Dawn-src`, branch **`spawner`** @ `6aae441` (not a git repo at the
   top level — `git` commands from the repo root return the branch fine).
-- Log: `bin\x64\Sunrise\logs\sunrise.log` (truncated per run). Retail engine log is piped in as
+- Log: `bin\x64\Dawn\logs\dawn.log` (truncated per run). Retail engine log is piped in as
   `ev=retail` — **extremely valuable, it names things directly**.
 - **Current clean DLL: `8e050583deb8`** (all harmful modules disabled).
 
 ### In-game workflow
 The Homecoming redirect is **not** a saved setting — it is a runtime toggle:
-1. Press **Insert** → Sunrise overlay.
+1. Press **Insert** → Dawn overlay.
 2. **"Activity override"** section → Enabled on → Activity `mission_towerfall` → pick a Bubble
    (auto-fills slice set 48) → Spawn set `none`.
 3. **Load order matters**: the first activity after boot has no prior session. Load *something* first,
@@ -107,7 +107,7 @@ The Homecoming redirect is **not** a saved setting — it is a runtime toggle:
 for `p1=8`, which is correct. George's "the predicate rejects 282→266" was a **misdiagnosis**.
 
 ### 4b. The §5b "opaque authored data" wall is BROKEN
-The client **does** encode a complete authored descriptor offline. Captured via a hook on Sunrise's
+The client **does** encode a complete authored descriptor offline. Captured via a hook on Dawn's
 svc-6 parse (`ev=bap svc=6 stage=descbits`) and fully decoded (620/620 bits, zero leftover):
 
 | field | value |
@@ -119,14 +119,14 @@ svc-6 parse (`ev=bap svc=6 stage=descbits`) and fully decoded (620/620 bits, zer
 | tails | present, count 0 (but see below) |
 
 - Wire descriptor **field model is proven**: modelling `activity_manager_descriptor_parser.cpp`
-  field-by-field yields **372 bits exactly** for the minimal form (corroborated by Sunrise's own code
+  field-by-field yields **372 bits exactly** for the minimal form (corroborated by Dawn's own code
   comment "the common form is 372") and **620** for all-optionals.
 - **96-bit reference entries DO occur** (`edz_freeroam` carries count=1 → 716 bits). An earlier claim
   that they never appear was over-generalised from one sample — corrected.
 - The nonce is **re-minted every activity setup** (3/3 different) **and is minted AFTER the route has
   already committed** (route t=75125 → nonce t=75219, etc.). So load N's descriptor cannot be built in
   time for load N.
-- Sunrise can **synthesize** a byte-exact valid 620-bit authored descriptor — code exists and works
+- Dawn can **synthesize** a byte-exact valid 620-bit authored descriptor — code exists and works
   (see §6).
 
 ### 4c. The route's dependency chain (observed, not inferred)
@@ -187,7 +187,7 @@ Measured: **`mode=6` — the mode gate PASSES offline.** The cloned record's `+0
 - `FUN_7FF6197FDAB0(holder)` is just `*(byte*)(holder+0x140) & 1` — the populated flag, readable directly.
 - Game bit-stream library: `read_bits(stream,n)` `0x7FF6183C13B0`, `read_wide` `0x7FF6183C1070`,
   `read_bool` `0x7FF6183C0EF0`, `stream_status` `0x7FF6183BE9B0`. MSB-first, 64-bit accumulator at
-  `+0x28`, cursor `+0x24`. Matches Sunrise's `encoding::bits::Reader`.
+  `+0x28`, cursor `+0x24`. Matches Dawn's `encoding::bits::Reader`.
 - The descriptor codec is **schema/table-driven**, not hand-coded: across 435 `read_bits` call sites,
   width 12 appears only twice and the `4,12,12` opening appears nowhere. Only 4 sites read 96 bits.
 - `player_broadcast` entity-creation failures and `Abort matchmaking` are **baseline offline noise**,
@@ -223,7 +223,7 @@ trust the retail log's own words over structural inference.**
 
 ---
 
-## 6. Sunrise code written this session
+## 6. Dawn code written this session
 
 ### Server-side (still ENABLED — harmless, arguably useful)
 - `server/bap/encrypted/activity_host_manager/activity_host_manager_route.cpp`
@@ -279,7 +279,7 @@ possible, or order installs so the scanner runs before the detour.
 - `0x9ACCB518` activity-definition hash · `0x80B500BC` scenario · `0x80B500AC` activity ·
   `0x80FDB97F` launch descriptor
 - `0x811C9DC5` FNV-1a offset basis = the "names nothing" sentinel
-- `primary_soid` `0x9EAA300100100100` (from `bin/x64/Sunrise/settings.json`)
+- `primary_soid` `0x9EAA300100100100` (from `bin/x64/Dawn/settings.json`)
 - manager identity `+0x854` (0 = orbit, 1 = mission) · activity mode enum `ctx+0x1AEF8`
 - root holder `ctx+0x18DD0` (**fireteam/session**) · slot holder `ctx+0x19068` · record `holder+0x148`
   · populated flag `holder+0x140` bit 0

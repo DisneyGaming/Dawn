@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::state::build_data::collectibles {
+namespace dawn::state::build_data::collectibles {
 
 /** The Collections protocol carries a present bit followed by a 15-bit native row index. */
 inline constexpr std::size_t kDefinitionCapacity = 1U << 15U;
@@ -60,4 +60,4 @@ void clear() noexcept;
 /** @return Number of installed-build collectible mappings. */
 [[nodiscard]] std::size_t count() noexcept;
 
-} // namespace sunrise::state::build_data::collectibles
+} // namespace dawn::state::build_data::collectibles

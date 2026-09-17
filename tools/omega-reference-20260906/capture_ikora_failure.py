@@ -9,16 +9,16 @@ import struct
 root = Path(__file__).resolve().parents[2]
 out = root / 'build/omega-ikora-trigger-fix-20260906'
 out.mkdir(parents=True, exist_ok=True)
-for name in ['Sunrise/logs/sunrise.log', 'Sunrise/settings.json',
-             'Sunrise/src/state/build_data/runtime/build_data_catalog_runtime.cpp',
-             'Sunrise/src/state/build_data/runtime/build_data_roster_runtime.cpp',
+for name in ['Dawn/logs/dawn.log', 'Dawn/settings.json',
+             'Dawn/src/state/build_data/runtime/build_data_catalog_runtime.cpp',
+             'Dawn/src/state/build_data/runtime/build_data_roster_runtime.cpp',
              'tools/omega-reference-20260906/port_omega.py']:
     target = out / ('before-' + Path(name).name)
     if not target.exists():
         shutil.copy2(root / name, target)
 
-data = (root / 'Sunrise/cache/build_data.bin').read_bytes()
-inventory = json.loads((root / 'Sunrise/exports/omega_inventory.json').read_text())
+data = (root / 'Dawn/cache/build_data.bin').read_bytes()
+inventory = json.loads((root / 'Dawn/exports/omega_inventory.json').read_text())
 first = inventory['groups'][0]
 assert first['table_index'] == 0
 start = data.index(struct.pack('<IIH', int(first['registry_key'], 16),
@@ -34,7 +34,7 @@ for index in range(count):
         generators.append({'index': index, 'key': f'{key:08X}', 'tag': f'{tag:08X}', 'slots': slots})
 assert len(generators) == 1
 
-log = (out / 'before-sunrise.log').read_text(errors='replace')
+log = (out / 'before-dawn.log').read_text(errors='replace')
 packets = {}
 for line in log.splitlines():
     if 'stage=sensor_sense_update ' in line:

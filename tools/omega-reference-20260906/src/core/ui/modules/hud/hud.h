@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::core::ui::modules::hud {
+namespace dawn::core::ui::modules::hud {
 
 /**
  * Loads the saved overlay switches, then registers the page.
@@ -12,4 +12,4 @@ namespace sunrise::core::ui::modules::hud {
 /** Removes the Core HUD page and drops the switch file path. */
 void shutdown() noexcept;
 
-} // namespace sunrise::core::ui::modules::hud
+} // namespace dawn::core::ui::modules::hud

@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::state::build_data::constants {
+namespace dawn::state::build_data::constants {
 
 /** Character stat rows the installed investment constants blob names. */
 inline constexpr std::size_t kCharacterStatRowCount = 6;
@@ -21,4 +21,4 @@ struct InvestmentConstants {
     std::array<std::uint8_t, kCharacterStatRowCount> characterStatRows{};
 };
 
-} // namespace sunrise::state::build_data::constants
+} // namespace dawn::state::build_data::constants

@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::state::build_data::abilities {
+namespace dawn::state::build_data::abilities {
 
 /** A character record publishes 12 ability buckets with fixed meanings. */
 inline constexpr std::size_t kBucketCapacity = 12;
@@ -51,4 +51,4 @@ struct Definition {
     std::array<std::uint32_t, kOverflowCapacity> overflow{};
 };
 
-} // namespace sunrise::state::build_data::abilities
+} // namespace dawn::state::build_data::abilities

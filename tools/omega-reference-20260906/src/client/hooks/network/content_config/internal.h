@@ -8,7 +8,7 @@
 
 #include "../../../hooking/detour.h"
 
-namespace sunrise::client::hooks::network::content_config {
+namespace dawn::client::hooks::network::content_config {
 
 using ContentFetch = std::int64_t(__fastcall*)(const char*, const char*, char);
 using ContentTick = void(__fastcall*)(void*);
@@ -51,7 +51,7 @@ namespace tick {
 
 } // namespace tick
 
-#if defined(SUNRISE_BAP_HOOK_TEST)
+#if defined(DAWN_BAP_HOOK_TEST)
 namespace testing {
 
 /** Makes the next hook install fail, for the lifecycle test. */
@@ -60,4 +60,4 @@ void fail_next_install() noexcept;
 } // namespace testing
 #endif
 
-} // namespace sunrise::client::hooks::network::content_config
+} // namespace dawn::client::hooks::network::content_config

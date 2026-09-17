@@ -7,7 +7,7 @@
 
 #include "../named_tags.h"
 
-namespace sunrise::middleware::content::packages::named_tags {
+namespace dawn::middleware::content::packages::named_tags {
 
 /** One directory walk's visitor, wrapped so every entry carries its file's patch index. */
 struct PatchStamp {
@@ -111,4 +111,4 @@ inline constexpr std::size_t kRecordSize = 16;
 [[nodiscard]] bool
 extract(const Reader& reader, Visitor visitor, void* context, Result& result) noexcept;
 
-} // namespace sunrise::middleware::content::packages::named_tags
+} // namespace dawn::middleware::content::packages::named_tags

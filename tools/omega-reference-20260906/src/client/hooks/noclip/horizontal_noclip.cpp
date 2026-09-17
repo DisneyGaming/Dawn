@@ -25,7 +25,7 @@
 #include "../fly/fly.h"
 #include "runtime.h"
 
-namespace sunrise::client::hooks::noclip {
+namespace dawn::client::hooks::noclip {
 namespace {
 
 /** hkpSimulation::stepDeltaTime, which encloses Havok integration and collision resolution. */
@@ -393,4 +393,4 @@ void write_body_velocity(void* body, const Vector& velocity) noexcept {
     copy_lanes(velocity, stored);
 }
 
-} // namespace sunrise::client::hooks::noclip
+} // namespace dawn::client::hooks::noclip

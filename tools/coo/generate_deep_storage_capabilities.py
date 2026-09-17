@@ -8,7 +8,7 @@ parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--check',action='store_true')
 parser.add_argument('--evidence',type=Path,default=ROOT/'build/coo/deep-storage-research/native-bindings.json')
 args=parser.parse_args()
-r=ROOT/'Sunrise/src/state/activity/deep_storage'
+r=ROOT/'Dawn/src/state/activity/deep_storage'
 d=json.loads(args.evidence.read_text(encoding='utf-8'))
 assert d['scanDurations']==recover_scan_durations(), 'Scan duration metadata differs from installed source overrides.'
 def emit(path,text):
@@ -25,7 +25,7 @@ def asset(reg,t,slot):
   if v['registry']==reg and t==60 and v['slot']==slot:return '{0x%08XU,0x%08XU,60,%d}'%(reg,v['tag'],slot)
  raise ValueError((reg,t,slot))
 M=asset(0xE6E910D2,53,2);mod='{kRoot,kScenario,0,0}'
-out=['// Native capabilities. Story order and encounter activation belong to deep_storage.lua.','#pragma once','#include "native_catalog.h"','#include "ai_bindings.h"','#include "../coo/mission_script.h"','namespace sunrise::state::activity::deep_storage {',f'inline constexpr coo::Asset kModule{mod},kDialogueAsset{M};','inline constexpr coo::script::Capability kCapabilities[]{']
+out=['// Native capabilities. Story order and encounter activation belong to deep_storage.lua.','#pragma once','#include "native_catalog.h"','#include "ai_bindings.h"','#include "../coo/mission_script.h"','namespace dawn::state::activity::deep_storage {',f'inline constexpr coo::Asset kModule{mod},kDialogueAsset{M};','inline constexpr coo::script::Capability kCapabilities[]{']
 def cap(name,op,a,n,wait='requested',domain='*'):out.append('    {"%s","%s",{coo::Operation::%s,%s,%sU,coo::Wait::%s}},'%(name,domain,op,a,n,wait))
 cap('map.encounter.finish','mechanic',mod,12,domain='map_room')
 cap('mission.module','mechanic',mod,1,domain='composition');cap('mission.checked','observation','{}',0,'observed','composition');cap('mission.finish','complete',mod,6);cap('respawn.restrict','mechanic',mod,11);cap('respawn.allow','mechanic',mod,10)
@@ -56,7 +56,7 @@ emit(r/'mechanism_bindings.h','''#pragma once
 #include "native_catalog.h"
 #include "mechanism_catalog.h"
 #include "../coo/objective_service.h"
-namespace sunrise::state::activity::deep_storage {
+namespace dawn::state::activity::deep_storage {
 struct PlateBinding { coo::Asset source,volume;float chargeSeconds; };
 // VIDEO estimates; native 815B8B3B owns progress and the completion latch.
 inline constexpr PlateBinding kPlates[]{

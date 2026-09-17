@@ -4,7 +4,7 @@
 #include "probe.h"
 #include "spawn_gate_record_dump.h"
 
-namespace sunrise::client::hooks::bootflow::spawn {
+namespace dawn::client::hooks::bootflow::spawn {
 namespace {
 
 /** Opcode of the near call every site must hold. It proves the offset is still right. */
@@ -108,4 +108,4 @@ void forget() noexcept {
     g_calls = {};
 }
 
-} // namespace sunrise::client::hooks::bootflow::spawn
+} // namespace dawn::client::hooks::bootflow::spawn

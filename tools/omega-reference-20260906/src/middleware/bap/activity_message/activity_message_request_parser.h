@@ -5,7 +5,7 @@
 
 #include "definition.h"
 
-namespace sunrise::middleware::bap::activity_message {
+namespace dawn::middleware::bap::activity_message {
 
 /**
  * Checks one discriminator-1 service-8 body and borrows its exact declared payload. The payload
@@ -16,4 +16,4 @@ namespace sunrise::middleware::bap::activity_message {
  */
 [[nodiscard]] bool parse_request(std::span<const std::byte> input, Request& request) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_message
+} // namespace dawn::middleware::bap::activity_message

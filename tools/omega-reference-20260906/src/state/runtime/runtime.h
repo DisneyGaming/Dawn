@@ -7,7 +7,7 @@
 
 #include "state.h"
 
-namespace sunrise::state {
+namespace dawn::state {
 
 /**
  * Assigns runtime SOIDs only to installed profile mod/shader rows which are socket action sources.
@@ -191,8 +191,8 @@ struct PendingItemState {
 };
 
 /**
- * Loads cached build data and generates secrets with Sunrise's authored activity defaults.
- * @param module Loaded Sunrise module, or null to disable disk persistence.
+ * Loads cached build data and generates secrets with Dawn's authored activity defaults.
+ * @param module Loaded Dawn module, or null to disable disk persistence.
  * @param initialAccount Empty State, or a complete checked account from Core settings.
  * @return True when the cached data passes its checks and every secret is generated.
  */
@@ -201,7 +201,7 @@ struct PendingItemState {
 
 /**
  * Loads cached build data and publishes fixed activity defaults in one step.
- * @param module Loaded Sunrise module, or null to disable disk persistence.
+ * @param module Loaded Dawn module, or null to disable disk persistence.
  * @param initialAccount Empty State, or a complete checked account from Core settings.
  * @param activityDefaults Complete local fallback policy from immutable Core settings.
  * @return True when account, defaults, cached data, and generated secrets are valid.
@@ -428,4 +428,4 @@ commit_profile_item_acquisition(PendingProfileItemAcquisition& mutation) noexcep
 /** @return A copy of the evaluated content state, read under the lock. */
 [[nodiscard]] InvestmentState investment_snapshot() noexcept;
 
-} // namespace sunrise::state
+} // namespace dawn::state

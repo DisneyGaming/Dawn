@@ -2,7 +2,7 @@
 
 #include "../../../patterns/image_scan.h"
 
-namespace sunrise::client::hooks::network::investment {
+namespace dawn::client::hooks::network::investment {
 
 using patterns::resolve_relative;
 using patterns::scan_main_image_unique;
@@ -28,4 +28,4 @@ using patterns::signature_length;
  */
 void arm_derived_rebuild() noexcept;
 
-} // namespace sunrise::client::hooks::network::investment
+} // namespace dawn::client::hooks::network::investment

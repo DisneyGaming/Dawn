@@ -5,7 +5,7 @@
 #include <bcrypt.h>
 #include <limits>
 
-namespace sunrise::middleware::crypto::random {
+namespace dawn::middleware::crypto::random {
 
 /** Fills a buffer with Windows system randomness. */
 bool fill(std::span<std::byte> output) noexcept {
@@ -19,4 +19,4 @@ bool fill(std::span<std::byte> output) noexcept {
            >= 0;
 }
 
-} // namespace sunrise::middleware::crypto::random
+} // namespace dawn::middleware::crypto::random

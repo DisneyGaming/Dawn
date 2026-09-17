@@ -4,7 +4,7 @@ from pathlib import Path
 from generate_gateway_ai import assignment
 from package_read import read
 ROOT=Path(__file__).resolve().parents[2]
-FIXTURE=ROOT/'Sunrise/unit/fixtures/gateway_ending_wire.h'
+FIXTURE=ROOT/'Dawn/unit/fixtures/gateway_ending_wire.h'
 OUT=ROOT/'build/coo/gateway-ending-research'
 
 def generate():
@@ -14,7 +14,7 @@ def generate():
  authored=json.loads((ROOT/'build/coo/gateway-research/gateway-authored-bindings.json').read_text())
  groups={g['registry']:g for g in authored['groups']}
  sources={s['slot']:s for s in authored['sources'] if s['registry']==0x4B946B28 and 65<=s['slot']<=106}
- rows=re.findall(r'\{(\d+),kMainlandRegistry,0x([0-9A-F]+)U,0x([0-9A-F]+)U,(\d+),(\d+),(\d+),(\d+),(true|false)\}',(ROOT/'Sunrise/src/state/activity/gateway/traversal_catalog.h').read_text())
+ rows=re.findall(r'\{(\d+),kMainlandRegistry,0x([0-9A-F]+)U,0x([0-9A-F]+)U,(\d+),(\d+),(\d+),(\d+),(true|false)\}',(ROOT/'Dawn/src/state/activity/gateway/traversal_catalog.h').read_text())
  rows=[r for r in rows if 65<=int(r[0])<=106]
  assert len(rows)==len(sources)==40
  cohorts={}

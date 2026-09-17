@@ -10,7 +10,7 @@
 #include "temporary/temporary_cache_file.h"
 #include "validation/cache_file_comparison.h"
 
-namespace sunrise::state::build_data::cache {
+namespace dawn::state::build_data::cache {
 namespace {
 
 /** @return True when every row count fits the disk header. */
@@ -49,7 +49,7 @@ namespace {
  * Writes a sibling file first, then creates or replaces the whole cache in one step.
  * @param directory Null-terminated cache directory.
  * @param path Null-terminated final cache path.
- * @param build Current Destiny, configured-equipment, and Sunrise producer identity.
+ * @param build Current Destiny, configured-equipment, and Dawn producer identity.
  * @param domains Complete sorted mapping domains.
  * @param disposition Create only, or replace a stale cache.
  * @return True when the file is on disk under its requested final name.
@@ -102,4 +102,4 @@ bool write(const wchar_t* directory,
     return complete;
 }
 
-} // namespace sunrise::state::build_data::cache
+} // namespace dawn::state::build_data::cache

@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <imgui.h>
 
-namespace sunrise::core::ui::animation::transition {
+namespace dawn::core::ui::animation::transition {
 
 /** Independent animation lanes let one widget blend hover and selection at once. */
 enum class Lane : std::uint8_t {
@@ -35,4 +35,4 @@ update(ImGuiID id, Lane lane, bool enabled, Rates rates, float initialValue) noe
 /** Clears every transition after all active UI render calls have stopped. */
 void reset() noexcept;
 
-} // namespace sunrise::core::ui::animation::transition
+} // namespace dawn::core::ui::animation::transition

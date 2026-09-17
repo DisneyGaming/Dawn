@@ -187,7 +187,7 @@ class MercuryCatalogChecks(unittest.TestCase):
         sys.path.insert(0, str(root / 'tools/coo'))
         import spawn_count_policy as count_policy
 
-        runtime = (root / 'Sunrise/src/server/runtime/activity/mercury_freeroam_runtime.h').read_text()
+        runtime = (root / 'Dawn/src/server/runtime/activity/mercury_freeroam_runtime.h').read_text()
         ranges = {int(capability): (int(minimum), int(baseline), int(maximum))
                   for capability, minimum, baseline, maximum in re.findall(
                       r'\{(\d+),Faction::\w+,"[^"]+",(?:true|false),(\d+),(\d+),(\d+)\}', runtime)}

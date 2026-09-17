@@ -8,7 +8,7 @@
 #include "../transport/bap_listener.h"
 #include "../ui/runtime/server_ui_module_runtime.h"
 
-namespace sunrise::server {
+namespace dawn::server {
 
 /** Registers Server consumers with the Client networking boundary. */
 bool initialize() noexcept {
@@ -56,4 +56,4 @@ void shutdown() noexcept {
     bap::shutdown();
 }
 
-} // namespace sunrise::server
+} // namespace dawn::server

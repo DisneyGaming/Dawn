@@ -2,7 +2,7 @@
 
 #include "internal.h"
 
-namespace sunrise::middleware::content::packages::tables {
+namespace dawn::middleware::content::packages::tables {
 
 /** Locates the point array of one spawn set. */
 bool spawn_points(std::span<const std::byte> blob, Array& output) noexcept {
@@ -41,4 +41,4 @@ bool spawn_point_at(std::span<const std::byte> blob,
     return true;
 }
 
-} // namespace sunrise::middleware::content::packages::tables
+} // namespace dawn::middleware::content::packages::tables

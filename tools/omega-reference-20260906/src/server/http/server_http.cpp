@@ -9,7 +9,7 @@
 #include "../../state/entitlements/entitlement_runtime.h"
 #include "../../state/runtime/runtime.h"
 
-namespace sunrise::server::http {
+namespace dawn::server::http {
 namespace {
 
 /** URL marker owned by the in-process SignOn route. Any query string may follow it. */
@@ -49,4 +49,4 @@ bool consume(const client::network::HttpRequest& request,
     return true;
 }
 
-} // namespace sunrise::server::http
+} // namespace dawn::server::http

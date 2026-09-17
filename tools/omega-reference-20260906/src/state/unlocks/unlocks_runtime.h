@@ -2,7 +2,7 @@
 
 #include "definition.h"
 
-namespace sunrise::state::unlocks {
+namespace dawn::state::unlocks {
 
 /**
  * Publishes the immutable unlock policy for this process.
@@ -16,4 +16,4 @@ void publish(const Table& table) noexcept;
 /** Restores the empty unlock policy. */
 void clear() noexcept;
 
-} // namespace sunrise::state::unlocks
+} // namespace dawn::state::unlocks

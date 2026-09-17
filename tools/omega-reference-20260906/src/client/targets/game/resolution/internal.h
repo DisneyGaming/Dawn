@@ -11,7 +11,7 @@
 #include "../packages/game_package_targets.h"
 #include "../retail_log.h"
 
-namespace sunrise::client::targets::game::resolution {
+namespace dawn::client::targets::game::resolution {
 
 /** Network signatures occupy the leading registry slice through the content-id token load. */
 inline constexpr std::size_t kNetworkMatchCount =
@@ -34,9 +34,9 @@ inline constexpr std::size_t kRequiredMatchCount = kRetailLogFirstMatch;
 static_assert(kNetworkMatchCount == kContentFirstMatch);
 static_assert(kContentFirstMatch + kContentMatchCount == kRetailLogFirstMatch);
 
-} // namespace sunrise::client::targets::game::resolution
+} // namespace dawn::client::targets::game::resolution
 
-namespace sunrise::client::targets::game::network {
+namespace dawn::client::targets::game::network {
 
 /**
  * Derives a network target table without publishing it.
@@ -52,9 +52,9 @@ namespace sunrise::client::targets::game::network {
 /** @param targets Fully validated network table published without failure. */
 void publish(const Targets& targets) noexcept;
 
-} // namespace sunrise::client::targets::game::network
+} // namespace dawn::client::targets::game::network
 
-namespace sunrise::client::targets::game::content {
+namespace dawn::client::targets::game::content {
 
 /**
  * Derives a content target table without publishing it.
@@ -70,9 +70,9 @@ namespace sunrise::client::targets::game::content {
 /** @param targets Fully validated content table published without failure. */
 void publish(const Targets& targets) noexcept;
 
-} // namespace sunrise::client::targets::game::content
+} // namespace dawn::client::targets::game::content
 
-namespace sunrise::client::targets::game::retail_log {
+namespace dawn::client::targets::game::retail_log {
 
 /**
  * Derives the retail-log target table without publishing it.
@@ -85,4 +85,4 @@ namespace sunrise::client::targets::game::retail_log {
 /** @param targets Fully validated retail-log table published without failure. */
 void publish(const Targets& targets) noexcept;
 
-} // namespace sunrise::client::targets::game::retail_log
+} // namespace dawn::client::targets::game::retail_log

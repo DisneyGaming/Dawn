@@ -4,7 +4,7 @@
 
 #include "banner_bind.h"
 
-namespace sunrise::client::hooks::banner {
+namespace dawn::client::hooks::banner {
 namespace {
 
 std::atomic_bool g_installed{false};
@@ -29,4 +29,4 @@ bool is_installed() noexcept {
     return g_installed.load(std::memory_order_acquire);
 }
 
-} // namespace sunrise::client::hooks::banner
+} // namespace dawn::client::hooks::banner

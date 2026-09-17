@@ -4,7 +4,7 @@
 
 #include "../patterns/steam.h"
 
-namespace sunrise::client::targets::steam {
+namespace dawn::client::targets::steam {
 namespace {
 
 Targets g_targets;
@@ -45,4 +45,4 @@ const Targets& get() noexcept {
     return g_targets;
 }
 
-} // namespace sunrise::client::targets::steam
+} // namespace dawn::client::targets::steam

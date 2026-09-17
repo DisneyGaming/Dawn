@@ -11,8 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import generate_open_world_profiles as gen  # noqa: E402
 
 RESEARCH = Path(__file__).with_name("lost_sector_edz_moon_native_research.json")
-OUTPUT = ROOT / "Sunrise/src/server/runtime/activity/edz_moon_lost_sector_catalog.h"
-GROUP_OUTPUT = ROOT / "Sunrise/src/state/activity/coo/edz_moon_lost_sector_group_catalog.h"
+OUTPUT = ROOT / "Dawn/src/server/runtime/activity/edz_moon_lost_sector_catalog.h"
+GROUP_OUTPUT = ROOT / "Dawn/src/state/activity/coo/edz_moon_lost_sector_group_catalog.h"
 
 ROOTS = {
     "edz": ("edz_freeroam", 0x80B2F00A, 0x80BE1D6F, 0x52695108, 1, 19, 4, 6, 1, 3),
@@ -118,7 +118,7 @@ def generate() -> str:
     for namespace, data in resolved.items():
         root = ROOTS[namespace]
         _, scenario, _, _, source_slot, rule_slot, tactical_slot, tactical_rows, categories, request = root
-        lines.append(f"namespace sunrise::state::activity::coo::open_world::{namespace} {{")
+        lines.append(f"namespace dawn::state::activity::coo::open_world::{namespace} {{")
         emit_slots(lines, "kSlots0", data["bootstrap"])
         lines.extend([
             "inline constexpr std::array<registry::Definition,1> kRegistries{{",
@@ -132,10 +132,10 @@ def generate() -> str:
             "inline constexpr std::array<AdventureBinding,0> kAdventures{};",
             f"inline constexpr Destination kDestination{{\"{namespace.upper() if namespace == 'edz' else 'Moon'}\","
             f"\"{data['activity']}\",{cpp(scenario)},0,kRegistries,kPopulations,kPlacements,kAdventures}};",
-            f"}} // namespace sunrise::state::activity::coo::open_world::{namespace}", "",
+            f"}} // namespace dawn::state::activity::coo::open_world::{namespace}", "",
         ])
 
-        lines.append(f"namespace sunrise::server::runtime::activity::lost_sector::catalog::{namespace} {{")
+        lines.append(f"namespace dawn::server::runtime::activity::lost_sector::catalog::{namespace} {{")
         for i, group in enumerate(data["encounters"]):
             emit_slots(lines, f"kEncounterSlots{i}", group)
         for i, group in enumerate(data["rewards"]):
@@ -180,7 +180,7 @@ def generate() -> str:
             f"inline constexpr std::array<Sector,{len(sectors)}> kSectors{{{{", *sectors, "}};",
             "[[nodiscard]] constexpr Definition definition(std::uint16_t capabilityBase) noexcept {",
             "    return {kSectors,kStages,kPolicies,capabilityBase};", "}",
-            f"}} // namespace sunrise::server::runtime::activity::lost_sector::catalog::{namespace}", "",
+            f"}} // namespace dawn::server::runtime::activity::lost_sector::catalog::{namespace}", "",
         ])
     return "\n".join(lines)
 
@@ -208,7 +208,7 @@ def generate_group_catalog() -> str:
                     f"UINT64_C(0x{group['mask']:016X}),{sources}}},")
     return "\n".join([
         "#pragma once", "", "#include <array>", "#include <cstdint>", "",
-        "namespace sunrise::state::activity::coo::edz_moon_lost_sector_groups {",
+        "namespace dawn::state::activity::coo::edz_moon_lost_sector_groups {",
         f"// Generated from installed build 86657; research SHA-256 {digest}.",
         "struct RegistryGroup final { std::uint32_t scenario{},object{},key{}; std::uint64_t sliceMask{}; std::uint16_t sourceCount{}; };",
         f"inline constexpr std::array<RegistryGroup,{len(rows)}> kRegistryGroups{{{{", *rows, "}};",
@@ -217,7 +217,7 @@ def generate_group_catalog() -> str:
         "        && group.key==key && group.sliceMask==mask)return true;",
         "    return false;",
         "}",
-        "} // namespace sunrise::state::activity::coo::edz_moon_lost_sector_groups", "",
+        "} // namespace dawn::state::activity::coo::edz_moon_lost_sector_groups", "",
     ])
 
 

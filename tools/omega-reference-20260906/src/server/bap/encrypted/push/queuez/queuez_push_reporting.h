@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace sunrise::server::bap::encrypted::push::queuez_report {
+namespace dawn::server::bap::encrypted::push::queuez_report {
 
 /** Passed as the recorded flag when the stage has no record outcome to report. */
 inline constexpr int kNoRecordOutcome = -1;
@@ -29,4 +29,4 @@ void subscription_failure(const char* step) noexcept;
 /** Reports one subscription step that did not record. */
 void subscription_state(const char* step) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::push::queuez_report
+} // namespace dawn::server::bap::encrypted::push::queuez_report

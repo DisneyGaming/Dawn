@@ -6,7 +6,7 @@
 #include "../../../../../state/runtime/runtime.h"
 #include "internal.h"
 
-namespace sunrise::server::bap::encrypted::push::activity {
+namespace dawn::server::bap::encrypted::push::activity {
 namespace {
 
 /**
@@ -70,4 +70,4 @@ bool seed_transition_token(state::activity::ActivityInstanceKey activity) noexce
     return seeded;
 }
 
-} // namespace sunrise::server::bap::encrypted::push::activity
+} // namespace dawn::server::bap::encrypted::push::activity

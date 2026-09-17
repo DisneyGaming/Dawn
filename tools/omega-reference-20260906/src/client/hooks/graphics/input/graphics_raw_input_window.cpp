@@ -13,7 +13,7 @@
 #include "../../../../core/ui/runtime/ui_visibility_runtime.h"
 #include "input.h"
 
-namespace sunrise::client::hooks::graphics::input {
+namespace dawn::client::hooks::graphics::input {
 namespace {
 
 /** Class the game registers for its raw-mouse sink window. */
@@ -109,7 +109,7 @@ bool install_raw_input_window() noexcept {
     return true;
 }
 
-/** Restores the original procedure only when Sunrise still owns the chain head. */
+/** Restores the original procedure only when Dawn still owns the chain head. */
 bool uninstall_raw_input_window() noexcept {
     AcquireSRWLockExclusive(&g_rawLock);
     if (!g_rawBinding.installed) {
@@ -157,4 +157,4 @@ bool uninstall_raw_input_window() noexcept {
     return idle;
 }
 
-} // namespace sunrise::client::hooks::graphics::input
+} // namespace dawn::client::hooks::graphics::input

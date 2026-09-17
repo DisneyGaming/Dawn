@@ -17,7 +17,7 @@
 #include "state_account_transaction_helpers.h"
 #include "storage/internal.h"
 
-namespace sunrise::state {
+namespace dawn::state {
 namespace runtime::detail {
 
 namespace authored_inventory = account::inventory;
@@ -482,4 +482,4 @@ AccountState account_snapshot() noexcept {
     return snapshot;
 }
 
-} // namespace sunrise::state
+} // namespace dawn::state

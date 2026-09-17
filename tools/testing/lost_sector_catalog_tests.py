@@ -50,7 +50,7 @@ def expect_quota_rejected(document: dict, groups: dict, label: str) -> None:
 
 def main() -> None:
     header, evidence = catalog.emit()
-    actual_header = (ROOT / "Sunrise/src/server/runtime/activity/lost_sector_catalog.h").read_text()
+    actual_header = (ROOT / "Dawn/src/server/runtime/activity/lost_sector_catalog.h").read_text()
     actual_evidence = json.loads((ROOT / "tools/coo/lost_sector_mercury_mars_evidence.json").read_text())
     if actual_header.replace("\r\n", "\n") != header.replace("\r\n", "\n"):
         raise SystemExit("generated Lost Sector header drift")

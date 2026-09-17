@@ -66,7 +66,7 @@ def localized(container, language, wanted):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--reader-dir", type=Path, default=Path(r"D:\Sunrise-work\scripts"))
+    parser.add_argument("--reader-dir", type=Path, default=Path(r"D:\Dawn-work\scripts"))
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--scan-message-references", action="store_true")
     args = parser.parse_args()

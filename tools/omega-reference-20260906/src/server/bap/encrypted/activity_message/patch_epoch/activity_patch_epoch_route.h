@@ -3,7 +3,7 @@
 #include "../../../../../middleware/bap/activity_message/definition.h"
 #include "../definition.h"
 
-namespace sunrise::server::bap::encrypted::activity_message::patch_epoch {
+namespace dawn::server::bap::encrypted::activity_message::patch_epoch {
 
 /**
  * Parses type 52 and keeps its epoch for the next roster update.
@@ -16,4 +16,4 @@ namespace sunrise::server::bap::encrypted::activity_message::patch_epoch {
                            const middleware::bap::activity_message::Request& request,
                            ActivityPlan& plan) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::activity_message::patch_epoch
+} // namespace dawn::server::bap::encrypted::activity_message::patch_epoch

@@ -1,6 +1,6 @@
 #include "codec.h"
 
-namespace sunrise::state::build_data::cache::records {
+namespace dawn::state::build_data::cache::records {
 namespace {
 
 /** Cache padding fields are always written as zero. */
@@ -62,4 +62,4 @@ bool decode(const SocketEntryTableRecord& record, socket_entry_lists::EntryTable
     return true;
 }
 
-} // namespace sunrise::state::build_data::cache::records
+} // namespace dawn::state::build_data::cache::records

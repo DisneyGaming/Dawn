@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <string_view>
 
-namespace sunrise::core::settings::address {
+namespace dawn::core::settings::address {
 
 /** Octets in one IPv4 address. */
 inline constexpr std::size_t kOctets = 4;
@@ -19,4 +19,4 @@ inline constexpr std::size_t kOctets = 4;
 [[nodiscard]] bool parse_ipv4(std::string_view text,
                               std::array<unsigned char, kOctets>& output) noexcept;
 
-} // namespace sunrise::core::settings::address
+} // namespace dawn::core::settings::address

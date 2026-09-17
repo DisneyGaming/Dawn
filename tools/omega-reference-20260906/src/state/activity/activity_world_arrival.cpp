@@ -4,7 +4,7 @@
 
 #include "runtime.h"
 
-namespace sunrise::state::activity {
+namespace dawn::state::activity {
 namespace {
 
 /**
@@ -127,4 +127,4 @@ std::uint64_t world_transition_age() noexcept {
     return now > started ? now - started : 0;
 }
 
-} // namespace sunrise::state::activity
+} // namespace dawn::state::activity

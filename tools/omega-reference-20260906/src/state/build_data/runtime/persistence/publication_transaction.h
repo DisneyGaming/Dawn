@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::state::build_data::runtime::persistence {
+namespace dawn::state::build_data::runtime::persistence {
 
 struct Context;
 
@@ -38,4 +38,4 @@ private:
     bool active_{};
 };
 
-} // namespace sunrise::state::build_data::runtime::persistence
+} // namespace dawn::state::build_data::runtime::persistence

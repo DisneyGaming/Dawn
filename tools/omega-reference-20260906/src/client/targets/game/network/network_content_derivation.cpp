@@ -4,7 +4,7 @@
 
 #include "../relative.h"
 
-namespace sunrise::client::targets::game::network::content_derivation {
+namespace dawn::client::targets::game::network::content_derivation {
 namespace {
 
 /** Bounds the scan for the fetch wrapper's guarded GET call. */
@@ -102,4 +102,4 @@ bool derive(std::span<const patterns::ImageRange> image,
                                 resolved.contentManifestSignatureGate);
 }
 
-} // namespace sunrise::client::targets::game::network::content_derivation
+} // namespace dawn::client::targets::game::network::content_derivation

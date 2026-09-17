@@ -1,6 +1,6 @@
 #include "roster_intersection.h"
 
-namespace sunrise::middleware::content::packages::tables {
+namespace dawn::middleware::content::packages::tables {
 namespace {
 
 /** The widest slice-set index the region space allows. */
@@ -166,4 +166,4 @@ bool partial_roster_keys(const RosterIntersection& state,
     return true;
 }
 
-} // namespace sunrise::middleware::content::packages::tables
+} // namespace dawn::middleware::content::packages::tables

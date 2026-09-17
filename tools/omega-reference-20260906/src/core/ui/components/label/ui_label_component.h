@@ -4,7 +4,7 @@
 
 #include "../../scaling/dpi/ui_dpi_scaling.h"
 
-namespace sunrise::core::ui::components::label {
+namespace dawn::core::ui::components::label {
 
 /** 10 authored pixels inset a label from the left edge of its row. */
 constexpr float kInset = 10.0F;
@@ -22,4 +22,4 @@ inline void align() noexcept {
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + inset());
 }
 
-} // namespace sunrise::core::ui::components::label
+} // namespace dawn::core::ui::components::label

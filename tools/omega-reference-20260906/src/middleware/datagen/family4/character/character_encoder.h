@@ -6,7 +6,7 @@
 #include "../../../../state/equipment/light/definition.h"
 #include "../loadout/definition.h"
 
-namespace sunrise::middleware::datagen::family4::character {
+namespace dawn::middleware::datagen::family4::character {
 
 /**
  * Encodes one selected-character object from authored State and resolved installed mappings.
@@ -21,4 +21,4 @@ namespace sunrise::middleware::datagen::family4::character {
                           const state::equipment::light::Evaluation& lightEvaluation,
                           std::span<std::byte> output) noexcept;
 
-} // namespace sunrise::middleware::datagen::family4::character
+} // namespace dawn::middleware::datagen::family4::character

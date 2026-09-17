@@ -609,7 +609,7 @@ def emit() -> tuple[str, dict[str, str]]:
         "#include \"authored_registry.h\"",
         "#include <array>",
         "",
-        "namespace sunrise::state::activity::coo::open_world {",
+        "namespace dawn::state::activity::coo::open_world {",
         "enum class PopulationKind : std::uint8_t { patrol, npc };",
         "struct PopulationBinding final {",
         "    std::uint16_t registry{},source{},rule{},tactical{};",
@@ -771,18 +771,18 @@ def emit() -> tuple[str, dict[str, str]]:
         "        if(registry::required(definition,scenario,objectTag,key,explicitBubbleMask))return true;",
         "    return false;",
         "}",
-        "} // namespace sunrise::state::activity::coo::open_world",
+        "} // namespace dawn::state::activity::coo::open_world",
         "",
     ])
     return "\n".join(lines), scripts
 
 
 def main() -> None:
-    output = ROOT / "Sunrise/src/state/activity/coo/open_world_catalog.h"
+    output = ROOT / "Dawn/src/state/activity/coo/open_world_catalog.h"
     header, scripts = emit()
     output.write_text(header, encoding="utf-8", newline="\r\n")
     for name, contents in scripts.items():
-        policy_output = ROOT / "Sunrise/scripts" / name
+        policy_output = ROOT / "Dawn/scripts" / name
         # Avoid normalizing intentionally retained mixed line endings when the
         # generated policy text is otherwise byte-for-byte equivalent by line.
         if policy_output.read_text(encoding="utf-8") != contents:

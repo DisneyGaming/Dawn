@@ -2,7 +2,7 @@
 
 #include <Windows.h>
 
-namespace sunrise::client::graphics {
+namespace dawn::client::graphics {
 
 /** Opens and releases the screen device context, which is what makes Wine attach its display. */
 void initialize_wine_display() noexcept {
@@ -12,4 +12,4 @@ void initialize_wine_display() noexcept {
     }
 }
 
-} // namespace sunrise::client::graphics
+} // namespace dawn::client::graphics

@@ -5,7 +5,7 @@
 
 #include "../../web_service_envelope.h"
 
-namespace sunrise::middleware::web_service::messages::opcode901 {
+namespace dawn::middleware::web_service::messages::opcode901 {
 
 /** Web Service opcode for a vendor purchase. */
 inline constexpr std::uint16_t kOpcode = 901;
@@ -24,7 +24,7 @@ struct Request {
 
 /**
  * Verdict of the clock rule on one decoded request.
- * Every value is Sunrise policy, not a native rule.
+ * Every value is Dawn policy, not a native rule.
  */
 enum class ClockPolicy : std::uint8_t {
     /** Present, and inside both windows. */
@@ -67,4 +67,4 @@ inline constexpr std::uint64_t kClockBehindLimitSeconds = 300;
  */
 [[nodiscard]] const char* clock_policy_name(ClockPolicy policy) noexcept;
 
-} // namespace sunrise::middleware::web_service::messages::opcode901
+} // namespace dawn::middleware::web_service::messages::opcode901

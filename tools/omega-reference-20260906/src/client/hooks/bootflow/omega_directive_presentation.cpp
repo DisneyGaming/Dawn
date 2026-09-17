@@ -18,7 +18,7 @@
 #include "bootflow_hook_lifecycle.h"
 #include "internal.h"
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 namespace {
 
 /** m_directive_sensor's class-specific initialization callback in the pinned client. */
@@ -622,4 +622,4 @@ bool uninstall_omega_directive_presentation() noexcept {
     return true;
 }
 
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

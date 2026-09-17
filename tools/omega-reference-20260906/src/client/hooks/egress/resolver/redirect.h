@@ -7,7 +7,7 @@
 #include "../platform/sdk.h"
 #include "../policy/policy.h"
 
-namespace sunrise::client::hooks::egress::resolver {
+namespace dawn::client::hooks::egress::resolver {
 
 /** A non-recoverable failure stops callers retrying another server. */
 inline constexpr int kBlockedResolutionError = EAI_FAIL;
@@ -73,4 +73,4 @@ using WideNode = std::array<wchar_t, core::settings::client::external::kHostCapa
     return value;
 }
 
-} // namespace sunrise::client::hooks::egress::resolver
+} // namespace dawn::client::hooks::egress::resolver

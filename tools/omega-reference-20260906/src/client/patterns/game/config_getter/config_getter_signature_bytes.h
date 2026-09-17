@@ -7,7 +7,7 @@
 #include "../../registry.h"
 #include "../../signature_text.h"
 
-namespace sunrise::client::patterns::game::config_getter {
+namespace dawn::client::patterns::game::config_getter {
 
 /** Thunk the content state machine calls for its config URL. */
 inline constexpr std::string_view kUrlGetterText = "E9 ? ? ? ? 48 87 2C 24 50 C3 CC E9 ? ? ? ? E9";
@@ -24,4 +24,4 @@ inline constexpr std::size_t kTokenGetterPatternSize = signature_length(kTokenGe
 extern constinit const std::array<patterns::PatternByte, kUrlGetterPatternSize> kUrlGetter;
 extern constinit const std::array<patterns::PatternByte, kTokenGetterPatternSize> kTokenGetter;
 
-} // namespace sunrise::client::patterns::game::config_getter
+} // namespace dawn::client::patterns::game::config_getter

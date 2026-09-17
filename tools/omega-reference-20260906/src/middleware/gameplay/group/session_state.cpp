@@ -2,7 +2,7 @@
 
 #include "../../crypto/lookup3.h"
 
-namespace sunrise::middleware::gameplay::group {
+namespace dawn::middleware::gameplay::group {
 
 namespace {
 
@@ -205,4 +205,4 @@ std::uint32_t session_state_hash(const MembershipUpdate& body) noexcept {
     return crypto::lookup3::hash_bytes(state, kHashInitial);
 }
 
-} // namespace sunrise::middleware::gameplay::group
+} // namespace dawn::middleware::gameplay::group

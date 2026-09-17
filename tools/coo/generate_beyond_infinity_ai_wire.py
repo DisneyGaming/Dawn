@@ -21,5 +21,5 @@ for j in report['joins']:
  assert count==641+32*(n-1)
  lines.append('inline constexpr std::array<std::uint8_t,%d> source%d{%s};'%(len(packed),j['source'],','.join('0x%02X'%x for x in packed)))
 lines+=['}','']
-(ROOT/'Sunrise/unit/fixtures/beyond_infinity/ai_wire.h').write_text('\n'.join(lines))
+(ROOT/'Dawn/unit/fixtures/beyond_infinity/ai_wire.h').write_text('\n'.join(lines))
 print('PASS: nine source wire fixtures encoded from native reflection')

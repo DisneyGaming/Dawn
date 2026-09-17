@@ -4,7 +4,7 @@
 
 #include <cstring>
 
-namespace sunrise::client::memory {
+namespace dawn::client::memory {
 
 /** Copies one range out of this process using the Windows memory API. */
 bool read_current_process([[maybe_unused]] void* context,
@@ -23,4 +23,4 @@ bool read_current_process([[maybe_unused]] void* context,
            && copied == output.size();
 }
 
-} // namespace sunrise::client::memory
+} // namespace dawn::client::memory

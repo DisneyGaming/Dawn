@@ -2,7 +2,7 @@
 
 #include "../../../../logging/view/log_snapshot_view.h"
 
-namespace sunrise::core::ui::modules::logs::internal::filters {
+namespace dawn::core::ui::modules::logs::internal::filters {
 
 /** Draws the exact-channel selector and stores the selection. */
 void draw_channel() noexcept;
@@ -19,4 +19,4 @@ void draw_text() noexcept;
 /** Clears every selection at a UI lifecycle boundary. */
 void reset() noexcept;
 
-} // namespace sunrise::core::ui::modules::logs::internal::filters
+} // namespace dawn::core::ui::modules::logs::internal::filters

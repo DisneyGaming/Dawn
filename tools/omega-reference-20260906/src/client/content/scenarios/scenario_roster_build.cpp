@@ -6,7 +6,7 @@
 #include "../../../middleware/content/packages/tables/scenario_reader.h"
 #include "internal.h"
 
-namespace sunrise::client::content::scenarios {
+namespace dawn::client::content::scenarios {
 namespace {
 
 namespace tables = middleware::content::packages::tables;
@@ -351,4 +351,4 @@ bool build_rosters(const reader::Source& source,
     return storage.cursor >= rows.size();
 }
 
-} // namespace sunrise::client::content::scenarios
+} // namespace dawn::client::content::scenarios

@@ -6,7 +6,7 @@
 #include "internal.h"
 #include "locator_cache.h"
 
-namespace sunrise::middleware::content::packages::reader {
+namespace dawn::middleware::content::packages::reader {
 namespace {
 
 /**
@@ -174,4 +174,4 @@ bool read_at(Scratch& scratch,
     return handle_cache::read(scratch, path, offset, output);
 }
 
-} // namespace sunrise::middleware::content::packages::reader
+} // namespace dawn::middleware::content::packages::reader

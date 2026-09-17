@@ -17,7 +17,7 @@
 #include "../../patterns/image_scan.h"
 #include "../../player/player_settings_store.h"
 
-namespace sunrise::client::hooks::infinite_ammo {
+namespace dawn::client::hooks::infinite_ammo {
 namespace {
 
 /** Call sites. Each setter starts with an obfuscated jump whose bytes repeat, so it is not scanned
@@ -189,4 +189,4 @@ void uninstall() noexcept {
     g_handles = {};
 }
 
-} // namespace sunrise::client::hooks::infinite_ammo
+} // namespace dawn::client::hooks::infinite_ammo

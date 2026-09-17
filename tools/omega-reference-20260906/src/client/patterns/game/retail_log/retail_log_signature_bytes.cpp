@@ -1,6 +1,6 @@
 #include "retail_log_signature_bytes.h"
 
-namespace sunrise::client::patterns::game::retail_log {
+namespace dawn::client::patterns::game::retail_log {
 
 // Matches the site-id guard that opens the enqueue funnel.
 constinit const std::array<patterns::PatternByte, kEnqueuePatternSize> kEnqueue =
@@ -10,4 +10,4 @@ constinit const std::array<patterns::PatternByte, kEnqueuePatternSize> kEnqueue 
 constinit const std::array<patterns::PatternByte, kSetCategoryVerbosityPatternSize>
     kSetCategoryVerbosity = signature<kSetCategoryVerbosityPatternSize>(kSetCategoryVerbosityText);
 
-} // namespace sunrise::client::patterns::game::retail_log
+} // namespace dawn::client::patterns::game::retail_log

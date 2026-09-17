@@ -3,13 +3,13 @@
 #include <cstddef>
 #include <string_view>
 
-namespace sunrise::core::ui::notice {
+namespace dawn::core::ui::notice {
 
 /** Longest notice text kept. It does not include a null. */
 inline constexpr std::size_t kTextCapacity = 128;
 
 /**
- * Raises one user-visible notice about a Sunrise failure. Never blocks, so a fault handler can
+ * Raises one user-visible notice about a Dawn failure. Never blocks, so a fault handler can
  * call it. A notice is dropped, not waited on, when the storage is busy.
  * @param text Message. Longer text is cut.
  */
@@ -22,4 +22,4 @@ void raise(std::string_view text) noexcept;
  */
 [[nodiscard]] bool draw() noexcept;
 
-} // namespace sunrise::core::ui::notice
+} // namespace dawn::core::ui::notice

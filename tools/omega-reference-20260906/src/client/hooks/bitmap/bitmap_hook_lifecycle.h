@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::hooks::bitmap {
+namespace dawn::client::hooks::bitmap {
 
 /**
  * Attaches the bitmap crash guards. These are required fixes, so they carry no settings switch.
@@ -15,4 +15,4 @@ void uninstall() noexcept;
 /** @return True while at least one bitmap crash guard is attached. */
 [[nodiscard]] bool is_installed() noexcept;
 
-} // namespace sunrise::client::hooks::bitmap
+} // namespace dawn::client::hooks::bitmap

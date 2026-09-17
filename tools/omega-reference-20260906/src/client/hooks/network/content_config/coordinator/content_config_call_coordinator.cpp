@@ -2,12 +2,12 @@
 
 #include "../../network_call_quiescence.h"
 
-namespace sunrise::client::hooks::network::content_config::coordinator {
+namespace dawn::client::hooks::network::content_config::coordinator {
 namespace {
 
 thread_local unsigned g_callDepth{};
 
-#if defined(SUNRISE_BAP_HOOK_TEST)
+#if defined(DAWN_BAP_HOOK_TEST)
 quiescence::PauseGate g_pauseGate;
 #endif
 
@@ -17,7 +17,7 @@ quiescence::PauseGate g_pauseGate;
  * @param slot Replacement slot entered by this thread.
  */
 __declspec(noinline) void ingress_body(CallLease& lease, HookSlot slot) noexcept {
-#if defined(SUNRISE_BAP_HOOK_TEST)
+#if defined(DAWN_BAP_HOOK_TEST)
     // The spin stays here, not in a helper. Detour removal refuses while a thread sits inside
     // this body, and the paused call is what proves it.
     if (quiescence::consume_arm(g_pauseGate)) {
@@ -90,7 +90,7 @@ LONG active_calls() noexcept {
     return quiescence::active_calls(g_activeCalls);
 }
 
-#if defined(SUNRISE_BAP_HOOK_TEST)
+#if defined(DAWN_BAP_HOOK_TEST)
 namespace testing {
 
 /** Arms a short pause before the next ContentConfig call is counted in. */
@@ -111,4 +111,4 @@ void release_ingress_pause() noexcept {
 } // namespace testing
 #endif
 
-} // namespace sunrise::client::hooks::network::content_config::coordinator
+} // namespace dawn::client::hooks::network::content_config::coordinator

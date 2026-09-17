@@ -2,7 +2,7 @@
 
 #include "../platform/sdk.h"
 
-namespace sunrise::client::hooks::egress::resolver {
+namespace dawn::client::hooks::egress::resolver {
 
 /** Resolves supported ANSI forward names to the IPv4 redirect target. */
 INT WSAAPI address_info_a(PCSTR node,
@@ -64,4 +64,4 @@ INT WSAAPI name_info_w(const SOCKADDR* address,
                        DWORD serviceSize,
                        INT flags) noexcept;
 
-} // namespace sunrise::client::hooks::egress::resolver
+} // namespace dawn::client::hooks::egress::resolver

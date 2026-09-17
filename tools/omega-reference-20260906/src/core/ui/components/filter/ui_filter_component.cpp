@@ -8,7 +8,7 @@
 #include "../../scaling/dpi/ui_dpi_scaling.h"
 #include "../drawing/drawing.h"
 
-namespace sunrise::core::ui::components::filter {
+namespace dawn::core::ui::components::filter {
 namespace {
 
 /** The hidden input label is scoped by the caller's stable filter ID. */
@@ -134,4 +134,4 @@ bool input(const char* id,
     return changed;
 }
 
-} // namespace sunrise::core::ui::components::filter
+} // namespace dawn::core::ui::components::filter

@@ -7,7 +7,7 @@
 #include "../../../state/investment/investment.h"
 #include "../web_service_envelope.h"
 
-namespace sunrise::middleware::web_service::messages::opcode205 {
+namespace dawn::middleware::web_service::messages::opcode205 {
 
 /** Web Service opcode for the family-5 investment snapshot request. */
 inline constexpr std::uint16_t kOpcode = 205;
@@ -33,4 +33,4 @@ inline constexpr std::uint16_t kOpcode = 205;
                                    std::span<std::byte> output,
                                    std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::web_service::messages::opcode205
+} // namespace dawn::middleware::web_service::messages::opcode205

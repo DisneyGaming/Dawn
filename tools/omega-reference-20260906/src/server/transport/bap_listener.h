@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace sunrise::server::transport {
+namespace dawn::server::transport {
 
 /** Starts the nonblocking loopback BAP listener. @return True when the listener is bound. */
 [[nodiscard]] bool initialize() noexcept;
@@ -13,4 +13,4 @@ void service(std::uint64_t now) noexcept;
 /** Closes every socket owned by the listener. */
 void shutdown() noexcept;
 
-} // namespace sunrise::server::transport
+} // namespace dawn::server::transport

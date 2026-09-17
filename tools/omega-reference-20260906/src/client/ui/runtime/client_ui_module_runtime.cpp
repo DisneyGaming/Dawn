@@ -8,7 +8,7 @@
 #include "../movement/movement_panel.h"
 #include "../player/player_panel.h"
 
-namespace sunrise::client::ui::runtime {
+namespace dawn::client::ui::runtime {
 namespace {
 
 /** Namespaced stable IDs prevent Client modules from colliding with Server modules. */
@@ -47,4 +47,4 @@ void shutdown() noexcept {
     g_movementPage.release();
 }
 
-} // namespace sunrise::client::ui::runtime
+} // namespace dawn::client::ui::runtime

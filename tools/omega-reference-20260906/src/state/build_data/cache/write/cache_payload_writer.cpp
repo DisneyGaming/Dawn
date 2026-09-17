@@ -2,7 +2,7 @@
 
 #include "../records/codec.h"
 
-namespace sunrise::state::build_data::cache::writer {
+namespace dawn::state::build_data::cache::writer {
 namespace {
 
 /**
@@ -118,4 +118,4 @@ bool write_payload(HANDLE file, records::Domains domains) noexcept {
            && write_domain<records::VendorInstalledRowRecord>(file, domains.vendorInstalledRows);
 }
 
-} // namespace sunrise::state::build_data::cache::writer
+} // namespace dawn::state::build_data::cache::writer

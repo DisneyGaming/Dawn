@@ -4,7 +4,7 @@
 
 #include "../network.h"
 
-namespace sunrise::client::targets::game::network::content_derivation {
+namespace dawn::client::targets::game::network::content_derivation {
 
 /**
  * Derives the content-network targets without publishing them.
@@ -19,4 +19,4 @@ namespace sunrise::client::targets::game::network::content_derivation {
                           std::byte* gate,
                           Targets& resolved) noexcept;
 
-} // namespace sunrise::client::targets::game::network::content_derivation
+} // namespace dawn::client::targets::game::network::content_derivation

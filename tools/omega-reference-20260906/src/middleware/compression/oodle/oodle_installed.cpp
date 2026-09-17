@@ -2,10 +2,10 @@
 
 #include "runtime.h"
 
-namespace sunrise::middleware::compression::oodle {
+namespace dawn::middleware::compression::oodle {
 namespace {
 
-/** The game loads this Oodle runtime before Sunrise generates compressed queuez objects. */
+/** The game loads this Oodle runtime before Dawn generates compressed queuez objects. */
 constexpr wchar_t kInstalledModuleName[] = L"oo2core_3_win64.dll";
 /** Oodle only accepts a destination size that is a multiple of this step. */
 constexpr std::size_t kDecodeStep = 0x4000;
@@ -39,4 +39,4 @@ bool decompress_installed_block(std::span<const std::byte> input,
     return false;
 }
 
-} // namespace sunrise::middleware::compression::oodle
+} // namespace dawn::middleware::compression::oodle

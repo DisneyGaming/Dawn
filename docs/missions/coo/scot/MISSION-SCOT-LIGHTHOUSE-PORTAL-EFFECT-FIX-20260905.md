@@ -2,7 +2,7 @@
 
 **5 September 2026 · Mission Scot · User-confirmed working**
 
-The missing portal effect was blocked by player state. The wall's native controller was receiving activation, but its authored filter required hash `52B968BA` in the contacting player's participation record. Sunrise always encoded that list as empty. Seeding the required hash into the initial keyed player record allowed the native filter, activation queue, and effect controller to run.
+The missing portal effect was blocked by player state. The wall's native controller was receiving activation, but its authored filter required hash `52B968BA` in the contacting player's participation record. Dawn always encoded that list as empty. Seeding the required hash into the initial keyed player record allowed the native filter, activation queue, and effect controller to run.
 
 The user confirmed: **“OK IT WORKED.”** The successful log independently records the complete native activation chain in **two mission runs**. This is now the working effects baseline. Panoptes cinematic work was paused while this issue was addressed.
 
@@ -60,7 +60,7 @@ The controller has two non-inverted conditions joined by AND:
 
 Further probes showed that the actor record resolved and its list was present and readable, but **the list contained zero entries**. There was no activation-queue call after that rejection.
 
-[Failing run: record resolves, list empty, filter rejects](</C:/Destiny 2 Development/build/scot-portal-condition-20260905/sunrise-test-20260905-045734.log:11014>)
+[Failing run: record resolves, list empty, filter rejects](</C:/Destiny 2 Development/build/scot-portal-condition-20260905/dawn-test-20260905-045734.log:11014>)
 
 All native addresses below are RVAs in the pinned `destiny2_unpacked.bin`, whose image base is `0x7FF618070000`:
 
@@ -96,7 +96,7 @@ Type 13 participation authority: 80804F30
 
 The corresponding participation sense schema `80804F2F` contains the same member. The observed runtime list binding used schema `808094DD` and offset `0x238` (decimal 568). Runtime handles varied between runs and must not be hardcoded.
 
-In `write_participation`, Sunrise wrote the list count as literal zero. The host therefore never supplied `52B968BA` to this field. The working change encodes count **1**, followed by the exact required 32-bit hash.
+In `write_participation`, Dawn wrote the list count as literal zero. The host therefore never supplied `52B968BA` to this field. The working change encodes count **1**, followed by the exact required 32-bit hash.
 
 The count field already existed. Adding one hash increases the participation body by **32 bits**:
 
@@ -110,11 +110,11 @@ The following array, arrival hold, respawn-related fields, signed scalar, and su
 
 The repair changes five files:
 
-- [omega_portal_entry.h](</C:/Destiny 2 Development/Sunrise/src/state/activity/omega/omega_portal_entry.h:12>) — defines the required hash from the authored predicate.
-- [sensor_auth_update.h](</C:/Destiny 2 Development/Sunrise/src/middleware/bap/activity_message/sensor_auth_update.h:162>) — adds the independent initial-player-state flag.
-- [activity_roster_snapshot.cpp](</C:/Destiny 2 Development/Sunrise/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp:550>) — sets that flag for synthetic Mission Scot before native ownership.
-- [activity_sensor_auth_bodies.cpp](</C:/Destiny 2 Development/Sunrise/src/middleware/bap/activity_message/activity_sensor_auth_bodies.cpp:171>) — writes count plus hash and accounts for the additional body bits.
-- [omega_progression_tests.cpp](</C:/Destiny 2 Development/Sunrise/unit/omega_progression_tests.cpp:617>) — covers the new list and full-packet ownership behavior.
+- [omega_portal_entry.h](</C:/Destiny 2 Development/Dawn/src/state/activity/omega/omega_portal_entry.h:12>) — defines the required hash from the authored predicate.
+- [sensor_auth_update.h](</C:/Destiny 2 Development/Dawn/src/middleware/bap/activity_message/sensor_auth_update.h:162>) — adds the independent initial-player-state flag.
+- [activity_roster_snapshot.cpp](</C:/Destiny 2 Development/Dawn/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp:550>) — sets that flag for synthetic Mission Scot before native ownership.
+- [activity_sensor_auth_bodies.cpp](</C:/Destiny 2 Development/Dawn/src/middleware/bap/activity_message/activity_sensor_auth_bodies.cpp:171>) — writes count plus hash and accounts for the additional body bits.
+- [omega_progression_tests.cpp](</C:/Destiny 2 Development/Dawn/unit/omega_progression_tests.cpp:617>) — covers the new list and full-packet ownership behavior.
 
 The key logic is:
 
@@ -158,9 +158,9 @@ At **106046 ms in run 1**, the log records:
 
 At **192875 ms in run 2**, the same sequence succeeds again with different runtime handles. This demonstrates that the fix survives a new mission run rather than depending on a stale handle.
 
-[Run 1 successful activation](</C:/Destiny 2 Development/build/scot-portal-list-20260905/sunrise-success-20260905-050938.log:10343>)
+[Run 1 successful activation](</C:/Destiny 2 Development/build/scot-portal-list-20260905/dawn-success-20260905-050938.log:10343>)
 
-[Run 2 successful activation](</C:/Destiny 2 Development/build/scot-portal-list-20260905/sunrise-success-20260905-050938.log:12375>)
+[Run 2 successful activation](</C:/Destiny 2 Development/build/scot-portal-list-20260905/dawn-success-20260905-050938.log:12375>)
 
 The archived successful session contains **no** `ev=teleport stage=hop` or `omega_gate stage=hop` receipts. It does record native `normal_z_leg` transitions toward `PRV88.88` immediately after activation in both runs. That is a useful distinction from the earlier failed tests, where the forced-hop receipts were present. It does not independently prove every intermediate spawn position or the complete intended bubble-15-to-Forest route.
 

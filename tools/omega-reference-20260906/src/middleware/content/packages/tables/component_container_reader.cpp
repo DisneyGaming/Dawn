@@ -4,7 +4,7 @@
 
 #include "internal.h"
 
-namespace sunrise::middleware::content::packages::tables {
+namespace dawn::middleware::content::packages::tables {
 
 /** Reads the resource one component wraps. */
 bool component_resource(std::span<const std::byte> blob, std::uint32_t& tag) noexcept {
@@ -51,4 +51,4 @@ bool bubble_in_mask(std::span<const std::uint8_t> mask, std::size_t index) noexc
     return byte < mask.size() && (mask[byte] >> (index % 8) & 1U) != 0;
 }
 
-} // namespace sunrise::middleware::content::packages::tables
+} // namespace dawn::middleware::content::packages::tables

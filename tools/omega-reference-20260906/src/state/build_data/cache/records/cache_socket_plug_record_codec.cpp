@@ -1,6 +1,6 @@
 #include "codec.h"
 
-namespace sunrise::state::build_data::cache::records {
+namespace dawn::state::build_data::cache::records {
 
 /** Encodes one exact item/lane rule only when its canonical padding is zero. */
 bool encode(const items::socket_plugs::Rule& value, SocketPlugRuleRecord& record) noexcept {
@@ -50,4 +50,4 @@ bool decode(const SocketPlugMemberRecord& record, items::socket_plugs::Member& v
     return true;
 }
 
-} // namespace sunrise::state::build_data::cache::records
+} // namespace dawn::state::build_data::cache::records

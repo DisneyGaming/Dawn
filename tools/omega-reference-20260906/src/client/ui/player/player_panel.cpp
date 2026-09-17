@@ -7,7 +7,7 @@
 #include "../../../core/ui/components/toggle/ui_toggle_component.h"
 #include "../../player/player_settings_store.h"
 
-namespace sunrise::client::ui::player {
+namespace dawn::client::ui::player {
 
 /** Draws the player module inside the active Core UI frame. */
 void draw() noexcept {
@@ -25,4 +25,4 @@ void draw() noexcept {
     }
 }
 
-} // namespace sunrise::client::ui::player
+} // namespace dawn::client::ui::player

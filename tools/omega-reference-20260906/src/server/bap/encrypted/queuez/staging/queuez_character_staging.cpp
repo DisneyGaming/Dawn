@@ -7,7 +7,7 @@
 #include "../../../../../middleware/datagen/definitions.h"
 #include "../queuez_state_validation.h"
 
-namespace sunrise::server::bap::encrypted::queuez {
+namespace dawn::server::bap::encrypted::queuez {
 
 /** Stages the account-selection patch without changing the resident manifest. */
 bool stage_change_character(const SessionState& before, ChangeCharacter& change) noexcept {
@@ -571,4 +571,4 @@ bool stage_item_dismantle(const SessionState& before,
     return staged;
 }
 
-} // namespace sunrise::server::bap::encrypted::queuez
+} // namespace dawn::server::bap::encrypted::queuez

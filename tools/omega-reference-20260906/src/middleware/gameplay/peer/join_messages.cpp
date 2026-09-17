@@ -2,7 +2,7 @@
 
 #include "../../encoding/bit_raw.h"
 
-namespace sunrise::middleware::gameplay::peer {
+namespace dawn::middleware::gameplay::peer {
 
 namespace {
 
@@ -72,4 +72,4 @@ bool admit(const JoinRequest& request, std::uint64_t hostSessionId, RefuseReason
     return true;
 }
 
-} // namespace sunrise::middleware::gameplay::peer
+} // namespace dawn::middleware::gameplay::peer

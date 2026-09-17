@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 /** Observes successful native A0D510 creation and typed health death at C72390.
  * Admission/death delivery uses the encounter's guaranteed state lock; optional
  * diagnostic logging cannot suppress it. Native return values remain intact.
@@ -9,4 +9,4 @@ namespace sunrise::client::hooks::bootflow {
 [[nodiscard]] bool install_omega_enemy_lair_receipts() noexcept;
 void quiesce_omega_enemy_lair_receipts() noexcept;
 [[nodiscard]] bool uninstall_omega_enemy_lair_receipts() noexcept;
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

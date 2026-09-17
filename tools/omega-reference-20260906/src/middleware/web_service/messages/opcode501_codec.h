@@ -6,7 +6,7 @@
 
 #include "../web_service_envelope.h"
 
-namespace sunrise::middleware::web_service::messages::opcode501 {
+namespace dawn::middleware::web_service::messages::opcode501 {
 
 /** Web Service opcode for the create-character request. */
 inline constexpr std::uint16_t kOpcode = 501;
@@ -24,4 +24,4 @@ inline constexpr std::uint16_t kOpcode = 501;
                                    std::span<std::byte> output,
                                    std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::web_service::messages::opcode501
+} // namespace dawn::middleware::web_service::messages::opcode501

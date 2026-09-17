@@ -14,7 +14,7 @@
 #include "equipment_summary_builder.h"
 #include "layout.h"
 
-namespace sunrise::middleware::datagen::family4::character {
+namespace dawn::middleware::datagen::family4::character {
 namespace {
 
 /** Every bit set is the native empty biased 16-bit definition index. */
@@ -193,4 +193,4 @@ bool encode(const state::CharacterState& state,
     return true;
 }
 
-} // namespace sunrise::middleware::datagen::family4::character
+} // namespace dawn::middleware::datagen::family4::character

@@ -5,7 +5,7 @@
 
 #include "../definition.h"
 
-namespace sunrise::middleware::bap::matchmaking::request {
+namespace dawn::middleware::bap::matchmaking::request {
 
 /**
  * Parses one service-42 protobuf body. It keeps no reference to the storage.
@@ -14,4 +14,4 @@ namespace sunrise::middleware::bap::matchmaking::request {
  */
 [[nodiscard]] Request parse(std::span<const std::byte> input) noexcept;
 
-} // namespace sunrise::middleware::bap::matchmaking::request
+} // namespace dawn::middleware::bap::matchmaking::request

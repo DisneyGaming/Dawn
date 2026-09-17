@@ -8,7 +8,7 @@
 
 #include "definition.h"
 
-namespace sunrise::state::build_data::spawn_sets {
+namespace dawn::state::build_data::spawn_sets {
 
 /** Clears every extracted stem and name-hash row. */
 void clear() noexcept;
@@ -133,4 +133,4 @@ stem_hashes(const Stem& stem, std::span<NameHash> output, std::size_t& count) no
 /** @return The name-hash row count, read under the lock. */
 [[nodiscard]] std::size_t hash_count() noexcept;
 
-} // namespace sunrise::state::build_data::spawn_sets
+} // namespace dawn::state::build_data::spawn_sets

@@ -4,7 +4,7 @@
 #include "../../encoding/bit_reader.h"
 #include "opcode406.h"
 
-namespace sunrise::middleware::web_service::messages::opcode406 {
+namespace dawn::middleware::web_service::messages::opcode406 {
 namespace {
 
 /** The reflected item-state request occupies exactly 120 bits. */
@@ -59,4 +59,4 @@ bool parse_request(const Message& message, Request& request) noexcept {
     return true;
 }
 
-} // namespace sunrise::middleware::web_service::messages::opcode406
+} // namespace dawn::middleware::web_service::messages::opcode406

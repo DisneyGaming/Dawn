@@ -1,7 +1,7 @@
-# Homecoming / Sunrise — Handoff: The Public-Region Matchmaking Connect (2026-08-18)
+# Homecoming / Dawn — Handoff: The Public-Region Matchmaking Connect (2026-08-18)
 
 Continuation handoff for the Destiny 2 **Homecoming** (`mission_towerfall`) offline-revival work under
-**Sunrise**. This supersedes all prior handoffs' *direction*. Everything here was **measured this session**
+**Dawn**. This supersedes all prior handoffs' *direction*. Everything here was **measured this session**
 unless marked inferred. Read this first, then `HOMECOMING-AH-HANDSHAKE-HANDOFF.md` (facts only — its §0
 direction is dead), `HOMECOMING-FINDINGS.md`, and George's notes for deep background.
 
@@ -23,7 +23,7 @@ region_force_public  →  mission treated as PUBLIC (not a dead private/fireteam
         so the client searches forever ("PUBLIC but not yet connected") and never connects
 ```
 
-**THE ONE REMAINING BLOCKER:** Sunrise's embedded matchmaking (**BAP svc 42→43**) answers the client's
+**THE ONE REMAINING BLOCKER:** Dawn's embedded matchmaking (**BAP svc 42→43**) answers the client's
 region **session search** with an **empty result set**, so the solo client never finds the local region
 host session to connect to. Fix = make `sessionSearch` return the local region host session
 (`0x9EAA300100200002`) so the client connects → peer session establishes → entity slots flow → mission
@@ -40,7 +40,7 @@ layer is scriptable later; the user's goal is "get the mission to load, script c
 
 - **Deployed DLL:** `6ea7d6b86a30` (steam_api64.dll). Verify:
   `md5sum "/c/Destiny 2 Development/bin/x64/steam_api64.dll"` vs
-  `.../Sunrise-src/build/x64/Release/steam_api64.dll`.
+  `.../Dawn-src/build/x64/Release/steam_api64.dll`.
 - **Clean baseline (revert target):** `efbab4c7f6d4` (all client hooks observe-only).
 - **Current experiment config:**
   - Gate spoof (`activate.cpp kDoSpoof`) = **false**
@@ -211,7 +211,7 @@ Online session search ... returned NO RESULTS      ← every ~5s
 Region 'PUB48.48' is PUBLIC but not yet connected   ← then aborts ~t=111k
 ```
 
-**Server (Sunrise) is doing its job:** `ev=gameplay stage=activityhost result=allocated
+**Server (Dawn) is doing its job:** `ev=gameplay stage=activityhost result=allocated
 session=0x9EAA300100200002 held=1`, `stage=advertise result=ok region=48`. The host session exists and is
 advertised. The gap is only the **matchmaking search reply**.
 
@@ -235,15 +235,15 @@ Otherwise: instrument the exact `sessionSearch` request bytes (log the parsed re
 derive the format, then implement — expect several iterations.
 
 **Open question worth testing:** is `ambassador=self` (search path) the right lever, or should we revert to
-`ambassador != self` (citizen-join-as-peer path, "As PEER") and instead make Sunrise's embedded gameplay host
+`ambassador != self` (citizen-join-as-peer path, "As PEER") and instead make Dawn's embedded gameplay host
 ANSWER the citizen join (be a valid ambassador/host peer)? isinternet's "As PEER" phrasing hints the peer
 path may be theirs. Both currently dead-end offline; the matchmaking-search fix is more self-contained.
 
 ---
 
-## 6. THE SERVER-SIDE MAP (Sunrise-src, branch `spawner`)
+## 6. THE SERVER-SIDE MAP (Dawn-src, branch `spawner`)
 
-Repo: `C:\Destiny 2 Development\Sunrise-src`. Paths under `Sunrise/src/`.
+Repo: `C:\Destiny 2 Development\Dawn-src`. Paths under `Dawn/src/`.
 
 - **`server/gameplay/gameplay_advertisement.cpp`** — builds the CitizenAdvertisement. `build_candidate`:
   `machineId=region_machine_id(idx)`, `onlineSessionId=region_identity(...)`, `hostSession=
@@ -278,7 +278,7 @@ Repo: `C:\Destiny 2 Development\Sunrise-src`. Paths under `Sunrise/src/`.
 
 ---
 
-## 7. CLIENT HOOK MODULES (Sunrise-src/Sunrise/src/client/hooks/homecoming/)
+## 7. CLIENT HOOK MODULES (Dawn-src/Dawn/src/client/hooks/homecoming/)
 
 - **`activate.cpp`** — the experiment hub. Hooks arm tick `F94CF0`. Contains: direct-arm (`kDoActivate=false`),
   reset-suppression, **gate spoof** (`kDoSpoof=false`; flips `DAT_7FF61B24C431` + the 53DEB0 ready byte during
@@ -288,7 +288,7 @@ Repo: `C:\Destiny 2 Development\Sunrise-src`. Paths under `Sunrise/src/`.
 - **`authored_probe.cpp`** — hooks dispatcher `FUN_7FF6193C0170` + ctor `FUN_7FF6197C7C00` (`ev=authprobe`).
   **fork force** (`kForceAuthoredFork=false`; forces `param6=1` when towerfall override active). **payload
   fill** (`kFillPayload=false`; fills the 14-qword payload with local SOIDs — reverted, counterproductive).
-- **`region_public.cpp` / `.h`** — **NEW this session** (added to `Sunrise.vcxproj` ClCompile+ClInclude AND
+- **`region_public.cpp` / `.h`** — **NEW this session** (added to `Dawn.vcxproj` ClCompile+ClInclude AND
   registered in `client/runtime/client_hook_activation.cpp`). `ev=regionpub`. Hooks reader `0xC210F0` by RVA;
   returns 1 (public) only when `_ReturnAddress()==+E2B3BD` && towerfall override active && `sliceSet==the
   override's slice`. `kForcePublic=true`. **This is a keeper — it works.**
@@ -303,17 +303,17 @@ Repo: `C:\Destiny 2 Development\Sunrise-src`. Paths under `Sunrise/src/`.
 ## 8. BUILD / TEST LOOP
 
 ```bash
-powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\sunrise-dev.ps1" -Config Release
+powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\dawn-dev.ps1" -Config Release
 ```
 - `-BuildOnly` compiles while the game runs; **full deploy requires the game closed**.
 - Warnings are errors (MSVC `/WX`): cast bools in bit-ops, no unused locals, no arrays through the
   `safe_read` template (its `except` path does `value = {}`).
 - **Always verify the deploy landed:**
   `md5sum "/c/Destiny 2 Development/bin/x64/steam_api64.dll"` vs
-  `"/c/Destiny 2 Development/Sunrise-src/build/x64/Release/steam_api64.dll"`.
-- **NEW `.cpp`/`.h` must be added to `Sunrise/Sunrise.vcxproj`** (explicit 582-file `<ClCompile>`/`<ClInclude>`
+  `"/c/Destiny 2 Development/Dawn-src/build/x64/Release/steam_api64.dll"`.
+- **NEW `.cpp`/`.h` must be added to `Dawn/Dawn.vcxproj`** (explicit 582-file `<ClCompile>`/`<ClInclude>`
   list — CMake globs but MSBuild uses the vcxproj) AND registered in `client_hook_activation.cpp`.
-- Log: `bin\x64\Sunrise\logs\sunrise.log` (truncated per run; `.old` = previous). The retail engine log is
+- Log: `bin\x64\Dawn\logs\dawn.log` (truncated per run; `.old` = previous). The retail engine log is
   piped in as `ev=retail` and names things directly. Server logs are `server ...`, client hooks `client ...`.
 
 ### In-game workflow (Homecoming is a runtime toggle, not saved)
@@ -397,7 +397,7 @@ we'd first measured exactly what to force; every blind force crashed, reverted, 
 
 ## 13. IMMEDIATE NEXT STEP
 
-Make Sunrise's **matchmaking `sessionSearch` (svc 42→43)** return the local region host session
+Make Dawn's **matchmaking `sessionSearch` (svc 42→43)** return the local region host session
 (`0x9EAA300100200002`) so the solo client stops searching and connects → peer session establishes → entity
 slots → mission loads. Start in `server/bap/encrypted/matchmaking/matchmaking_route.cpp` +
 `middleware/bap/matchmaking/response/`. **Fastest = port isinternet's search-result/descriptor approach** (they
@@ -411,5 +411,5 @@ Clean baseline to revert to = `efbab4c7f6d4`. Keepers: `region_public` module (w
 ---
 
 *Cross-refs: memory `homecoming-authored-fork.md` (this session's blow-by-blow, most detailed),
-`homecoming-collaborator-map.md`, `homecoming-predicate-exonerated.md`, `sunrise-project-state.md`.
+`homecoming-collaborator-map.md`, `homecoming-predicate-exonerated.md`, `dawn-project-state.md`.
 George's `Wow.pdf` RVA table (verify base per function). isinternet has the public-region matchmaking connect.*

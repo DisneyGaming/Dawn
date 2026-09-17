@@ -2,7 +2,7 @@
 
 #include <span>
 
-namespace sunrise::client::hooking::detour {
+namespace dawn::client::hooking::detour {
 
 /** Describes one target-to-replacement attachment. */
 struct Spec {
@@ -68,4 +68,4 @@ uninstall(std::span<Handle> handles, std::span<const ProtectedCodeEntry> protect
                                         std::span<const ProtectedCodeEntry> protectedEntries,
                                         IdleCheck idleCheck) noexcept;
 
-} // namespace sunrise::client::hooking::detour
+} // namespace dawn::client::hooking::detour

@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace sunrise::core::ui::modules {
+namespace dawn::core::ui::modules {
 namespace {
 
 /** @return True for a defined owner. */
@@ -97,4 +97,4 @@ bool is_valid(const Descriptor& descriptor) noexcept {
            && descriptor.frameCallback_ != nullptr;
 }
 
-} // namespace sunrise::core::ui::modules
+} // namespace dawn::core::ui::modules

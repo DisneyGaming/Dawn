@@ -7,7 +7,7 @@
 #include "../../encoding/bit_writer.h"
 #include "parameter_registry.h"
 
-namespace sunrise::middleware::gameplay::group {
+namespace dawn::middleware::gameplay::group {
 
 /** Registry id of a parameter update, sent by the authority. */
 inline constexpr std::uint8_t kParameterUpdateId = 38;
@@ -98,4 +98,4 @@ struct ParameterUpdate {
 [[nodiscard]] bool write_parameter_update(encoding::bits::Writer& writer,
                                           const ParameterUpdate& body) noexcept;
 
-} // namespace sunrise::middleware::gameplay::group
+} // namespace dawn::middleware::gameplay::group

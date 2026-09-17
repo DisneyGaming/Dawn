@@ -2,7 +2,7 @@
 
 #include "entity_slots.h"
 
-namespace sunrise::middleware::bap::activity_message::entity_slots {
+namespace dawn::middleware::bap::activity_message::entity_slots {
 
 /** Encodes one selected entity-slot lease mask without changing its wire byte order. */
 bool encode_entity_slots(std::span<const std::byte, kEncodedSize> mask,
@@ -18,4 +18,4 @@ bool encode_entity_slots(std::span<const std::byte, kEncodedSize> mask,
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_message::entity_slots
+} // namespace dawn::middleware::bap::activity_message::entity_slots

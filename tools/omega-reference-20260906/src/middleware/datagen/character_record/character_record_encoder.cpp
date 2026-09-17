@@ -5,7 +5,7 @@
 
 #include "appearance/internal.h"
 
-namespace sunrise::middleware::datagen::character_record {
+namespace dawn::middleware::datagen::character_record {
 namespace {
 
 /** The reserved block only the family-three record carries, between identity and appearance. */
@@ -150,4 +150,4 @@ bool encode_family0_anchor(std::uint64_t accountSoid,
     return true;
 }
 
-} // namespace sunrise::middleware::datagen::character_record
+} // namespace dawn::middleware::datagen::character_record

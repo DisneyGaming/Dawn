@@ -4,7 +4,7 @@
 #include "../../../core/settings/settings.h"
 #include "../internal.h"
 
-namespace sunrise::steam::interfaces::methods {
+namespace dawn::steam::interfaces::methods {
 namespace {
 
 /** Steam callback id for receiving the current user stats. */
@@ -204,4 +204,4 @@ int connected_universe([[maybe_unused]] void* self) noexcept {
     return kConnectedUniverse;
 }
 
-} // namespace sunrise::steam::interfaces::methods
+} // namespace dawn::steam::interfaces::methods

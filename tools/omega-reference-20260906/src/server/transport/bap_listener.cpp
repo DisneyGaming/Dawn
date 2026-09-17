@@ -9,7 +9,7 @@
 #include "../../core/settings/settings.h"
 #include "internal.h"
 
-namespace sunrise::server::transport {
+namespace dawn::server::transport {
 
 Listener g_listener;
 
@@ -289,4 +289,4 @@ void shutdown() noexcept {
     ReleaseSRWLockExclusive(&g_listenerLock);
 }
 
-} // namespace sunrise::server::transport
+} // namespace dawn::server::transport

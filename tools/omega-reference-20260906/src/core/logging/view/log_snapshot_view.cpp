@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace sunrise::core::log::view {
+namespace dawn::core::log::view {
 namespace {
 
 /** @param value ASCII byte to fold. @return Lowercase ASCII byte or the unchanged value. */
@@ -94,4 +94,4 @@ Result select(const snapshot::Snapshot& source, const Filter& filter) noexcept {
     return result;
 }
 
-} // namespace sunrise::core::log::view
+} // namespace dawn::core::log::view

@@ -7,7 +7,7 @@
 
 #include "scenario_reader.h"
 
-namespace sunrise::middleware::content::packages::tables {
+namespace dawn::middleware::content::packages::tables {
 
 /**
  * Activity msg 1 carries one byte per bubble, and no installed scenario declares more than this.
@@ -70,4 +70,4 @@ struct BubbleStates {
 [[nodiscard]] bool bubble_states(std::span<const std::byte> scenario,
                                  BubbleStates& output) noexcept;
 
-} // namespace sunrise::middleware::content::packages::tables
+} // namespace dawn::middleware::content::packages::tables

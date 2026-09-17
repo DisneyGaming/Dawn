@@ -9,7 +9,7 @@
 #include "../../../../../state/account/account_state.h"
 #include "../../internal.h"
 
-namespace sunrise::server::bap::encrypted::push::snapshot {
+namespace dawn::server::bap::encrypted::push::snapshot {
 
 /** Account and selected-character identity take the first two family-four descriptors. */
 inline constexpr std::size_t kFamily4IdentityObjectCount = 2;
@@ -113,4 +113,4 @@ prepare_character_appearance_refresh(Scratch& scratch,
                                                      std::size_t characterIndex,
                                                      Prepared& prepared) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::push::snapshot
+} // namespace dawn::server::bap::encrypted::push::snapshot

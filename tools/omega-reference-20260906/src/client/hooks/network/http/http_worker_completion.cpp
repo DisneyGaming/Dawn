@@ -6,7 +6,7 @@
 
 #include "internal.h"
 
-namespace sunrise::client::hooks::network::http {
+namespace dawn::client::hooks::network::http {
 namespace {
 
 /** Request state 2 makes the worker report a finished HTTP result. */
@@ -102,4 +102,4 @@ void publish_completion(void* wrapperValue,
     (void)InterlockedExchange(&wrapper.requestState, kRequestComplete);
 }
 
-} // namespace sunrise::client::hooks::network::http
+} // namespace dawn::client::hooks::network::http

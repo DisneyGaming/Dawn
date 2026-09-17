@@ -4,11 +4,11 @@
 
 #include "definition.h"
 
-namespace sunrise::state::content_manifest {
+namespace dawn::state::content_manifest {
 
 /**
  * Loads a current cache or extracts one complete installed-package manifest.
- * @param module Loaded Sunrise module, or null to disable cache persistence.
+ * @param module Loaded Dawn module, or null to disable cache persistence.
  * @param packagesDirectory Caller-selected installed packages directory.
  * @return True when a checked nonempty catalog is ready in State.
  */
@@ -25,4 +25,4 @@ void shutdown() noexcept;
  */
 [[nodiscard]] bool visit_snapshot(SnapshotVisitor visitor, void* context) noexcept;
 
-} // namespace sunrise::state::content_manifest
+} // namespace dawn::state::content_manifest

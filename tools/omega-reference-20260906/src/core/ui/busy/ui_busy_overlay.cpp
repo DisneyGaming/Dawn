@@ -9,7 +9,7 @@
 #include "busy.h"
 #include "ui_busy_state.h"
 
-namespace sunrise::core::ui::busy {
+namespace dawn::core::ui::busy {
 namespace {
 
 /** A hidden overlay draws nothing. */
@@ -45,10 +45,10 @@ constexpr float kHorizontalPaddingCount = 2.0F;
 /** One heading per task, in Task order. Each names the owner, so the stall is not read as
  * the game hanging. */
 constexpr std::array<const char*, static_cast<std::size_t>(Task::count)> kHeadings{
-    "Sunrise Indexing",
-    "Sunrise Initializing",
-    "Sunrise Extracting",
-    "Sunrise Caching",
+    "Dawn Indexing",
+    "Dawn Initializing",
+    "Dawn Extracting",
+    "Dawn Caching",
 };
 /** The detail line is the same for every task: what the user should do, not what runs. */
 constexpr char kDetail[] = "Please be patient and do not close the game.";
@@ -123,7 +123,7 @@ bool draw() noexcept {
          kAutomaticWindowHeight});
     // One style alpha fades the overlay and everything drawn inside it together.
     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
-    if (ImGui::Begin("##sunrise_busy", nullptr, kOverlayFlags)) {
+    if (ImGui::Begin("##dawn_busy", nullptr, kOverlayFlags)) {
         ImGui::TextUnformatted(kHeadings[g_shownTask]);
         ImGui::TextDisabled("%s", kDetail);
         ImGui::ProgressBar(kIndeterminateRate * static_cast<float>(ImGui::GetTime()),
@@ -138,4 +138,4 @@ bool draw() noexcept {
     return true;
 }
 
-} // namespace sunrise::core::ui::busy
+} // namespace dawn::core::ui::busy

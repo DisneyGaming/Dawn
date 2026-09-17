@@ -5,8 +5,8 @@ import verify
 ROOT=verify.ROOT
 BASE=ROOT/'build/coo/validation-universal-services'
 OUT=ROOT/'build/coo/validation-component-aliases'
-CHANGED={'Sunrise/src/client/hooks/bootflow/coo_native_components.h','Sunrise/unit/coo_universal_services_tests.cpp','Sunrise/docs/UNIVERSAL-MISSION-SERVICES.md'}
-ADDED={'Sunrise/unit/fixtures/gateway_controller_components.bin','tools/coo/verify_component_aliases.py'}
+CHANGED={'Dawn/src/client/hooks/bootflow/coo_native_components.h','Dawn/unit/coo_universal_services_tests.cpp','Dawn/docs/UNIVERSAL-MISSION-SERVICES.md'}
+ADDED={'Dawn/unit/fixtures/gateway_controller_components.bin','tools/coo/verify_component_aliases.py'}
 
 def main():
  verify.OUT=OUT;OUT.mkdir(parents=True,exist_ok=True)
@@ -18,7 +18,7 @@ def main():
    assert verify.digest(ROOT/name)==sha,'Unrelated change: '+name
    protected+=1
  with zipfile.ZipFile(BASE/'candidate-source.zip') as archive:
-  name='Sunrise/src/client/hooks/bootflow/coo_native_components.h'
+  name='Dawn/src/client/hooks/bootflow/coo_native_components.h'
   expected=archive.read(name).decode().replace('\r\n','\n')
   expected=expected.replace('// must resolve back to itself and the expected entity. Ambiguous matches fail.','// must resolve back to itself and the expected entity. Reflected base/interface\n// rows may alias that same component; only distinct matching components conflict.')
   expected=expected.replace('|| !read.resolve(self,resolved) || resolved!=address || result)','|| !read.resolve(self,resolved) || resolved!=address || (result && result!=address))')
@@ -35,14 +35,14 @@ def main():
  frozen={name:verify.digest(ROOT/name) for name in sorted(paths)}
  print(f'Protected {protected} files; one native lookup condition changed. Captured aliases verified.',flush=True)
  def suite(name):
-  return [verify.build(ROOT/f'Sunrise/unit/{name}.vcxproj',config) for config in ('Debug','Release')]
+  return [verify.build(ROOT/f'Dawn/unit/{name}.vcxproj',config) for config in ('Debug','Release')]
  results=[]
  with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
   for rows in pool.map(suite,('coo_universal_services_tests','gateway_opening_tests','other_mission_protocol_tests','omega_archive_protocol_tests')): results.extend(rows)
  for result in results:
   if result['project']=='omega_archive_protocol_tests': assert 'digest=A5BE474333FF4DDF' in result['output']
  print('Captured-state replay and regressions passed; building Release DLL.',flush=True)
- results.append(verify.build(ROOT/'Sunrise/Sunrise.vcxproj','Release'))
+ results.append(verify.build(ROOT/'Dawn/Dawn.vcxproj','Release'))
  assert all(verify.digest(ROOT/name)==sha for name,sha in frozen.items()),'Source changed during build'
  (OUT/'candidate-source.json').write_text(json.dumps(frozen,indent=2)+'\n')
  with zipfile.ZipFile(OUT/'candidate-source.zip','w',zipfile.ZIP_DEFLATED) as archive:

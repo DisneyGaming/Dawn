@@ -63,7 +63,7 @@ bin\steam_api64.dll.pre-scene-resolver-trace-20260827-202036.bak
 ### Working
 
 - Chosen activity `282` supplies the real native prelaunch route.
-- Sunrise rewrites the selected activity to `266 / mission_towerfall` before publication.
+- Dawn rewrites the selected activity to `266 / mission_towerfall` before publication.
 - Service 6 and matchmaking receive the Towerfall destination contract.
 - Homecoming enters bubble `9`, slice set `72`, in the Underwatch/Tower Watch opening.
 - The reconstructed roster and all 98 captured Towerfall objects decode.
@@ -259,7 +259,7 @@ Use Omega's successful resolver rows to determine what Towerfall lacks before ty
    ```
 
 3. Start `C:\Destiny 2 Development\destiny2.exe`.
-4. Press `Insert` to open the Sunrise UI.
+4. Press `Insert` to open the Dawn UI.
 5. Open **Activity** and choose **Towerfall opening**.
 6. Confirm:
 
@@ -273,7 +273,7 @@ Use Omega's successful resolver rows to determine what Towerfall lacks before ty
 
 7. Do not force default spawn set `0x2EA8FB98`; the retained donor route owns arrival placement.
 8. In the Director, launch **Chosen**, activity `282`.
-9. Sunrise uses Chosen only as the prelaunch donor and rewrites the published activity to Towerfall
+9. Dawn uses Chosen only as the prelaunch donor and rewrites the published activity to Towerfall
    `266`.
 
 The override is not persisted across process restarts. Select **Towerfall opening** again after a
@@ -282,15 +282,15 @@ restart.
 ## Important source locations
 
 ```text
-Sunrise\src\middleware\bap\activity_message\tower_watch_cue_manifest.h
-Sunrise\src\middleware\bap\activity_message\activity_sensor_auth_bodies.cpp
-Sunrise\src\middleware\bap\activity_message\activity_sensor_auth_encoder.cpp
-Sunrise\src\middleware\bap\activity_message\sensor_auth_update.h
-Sunrise\src\server\bap\encrypted\push\activity\activity_roster_snapshot.cpp
-Sunrise\src\client\hooks\bootflow\activity_spawner_chain_probe.cpp
-Sunrise\src\client\hooks\bootflow\opening_authority\scene_authority_capture.*
-Sunrise\src\state\activity\forced\activity_forced_destination.cpp
-Sunrise\src\server\ui\activity_override\activity_override_panel.cpp
+Dawn\src\middleware\bap\activity_message\tower_watch_cue_manifest.h
+Dawn\src\middleware\bap\activity_message\activity_sensor_auth_bodies.cpp
+Dawn\src\middleware\bap\activity_message\activity_sensor_auth_encoder.cpp
+Dawn\src\middleware\bap\activity_message\sensor_auth_update.h
+Dawn\src\server\bap\encrypted\push\activity\activity_roster_snapshot.cpp
+Dawn\src\client\hooks\bootflow\activity_spawner_chain_probe.cpp
+Dawn\src\client\hooks\bootflow\opening_authority\scene_authority_capture.*
+Dawn\src\state\activity\forced\activity_forced_destination.cpp
+Dawn\src\server\ui\activity_override\activity_override_panel.cpp
 ```
 
 Key current lines:
@@ -308,7 +308,7 @@ From `C:\Destiny 2 Development` in PowerShell:
 
 ```powershell
 & 'C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\MSBuild.exe' `
-    'Sunrise\Sunrise.vcxproj' /m /p:Configuration=Release /p:Platform=x64 /verbosity:minimal
+    'Dawn\Dawn.vcxproj' /m /p:Configuration=Release /p:Platform=x64 /verbosity:minimal
 ```
 
 Output:
@@ -318,7 +318,7 @@ C:\Destiny 2 Development\build\x64\Release\steam_api64.dll
 ```
 
 The current Release build succeeds. An old generated focused-test project still contains absolute
-paths to the removed `D:\Sunrise-port` tree and must be regenerated before that test project can
+paths to the removed `D:\Dawn-port` tree and must be regenerated before that test project can
 run from this workspace.
 
 ## Packaged evidence and artifacts
@@ -329,7 +329,7 @@ The ZIP includes:
 - Current safe resolver-trace DLL.
 - Previous pre-active-Scene safe DLL.
 - Previous active-Scene crash-repro DLL, clearly labeled.
-- Current and prior Sunrise logs.
+- Current and prior Dawn logs.
 - Corrected and shifted Scene-packet comparison logs.
 - Current minidump and crash reports.
 - Towerfall extracted scenario, launch, and cue-reference records.

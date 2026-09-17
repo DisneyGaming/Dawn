@@ -5,7 +5,7 @@
 
 #include "../platform/sdk.h"
 
-namespace sunrise::client::hooks::egress::policy {
+namespace dawn::client::hooks::egress::policy {
 
 /** Socket operation categories emitted by the egress policy log. */
 enum class SocketOperation : unsigned char {
@@ -57,4 +57,4 @@ allow_socket_call(SocketOperation operation, bool targetsRedirect, bool original
 /** Sets the stable Winsock policy error and returns SOCKET_ERROR. */
 [[nodiscard]] int deny_socket_call() noexcept;
 
-} // namespace sunrise::client::hooks::egress::policy
+} // namespace dawn::client::hooks::egress::policy

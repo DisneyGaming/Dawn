@@ -35,7 +35,7 @@ def walk(tag):
 def groups(walked):
     layout = json.loads((ROOT / 'build/coo/gateway-research/cache-layout.json').read_text())['records']['RosterGroupRecord']
     section = json.loads((ROOT / 'build/coo/gateway-research/cache-sections.json').read_text())['RosterGroupRecord']
-    cache = (ROOT / 'Sunrise/cache/build_data.bin').read_bytes()
+    cache = (ROOT / 'Dawn/cache/build_data.bin').read_bytes()
     assert u32(cache, 8) == 52
     wanted = {o['tag'] for r in walked['regions'] for o in r['objects']}
     result = []

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace sunrise::middleware::bap::client_config {
+namespace dawn::middleware::bap::client_config {
 namespace {
 
 /** Svc 19 requires protobuf field 1. */
@@ -51,4 +51,4 @@ bool encode_minimal_response(std::span<std::byte> output, std::size_t& written) 
     return true;
 }
 
-} // namespace sunrise::middleware::bap::client_config
+} // namespace dawn::middleware::bap::client_config

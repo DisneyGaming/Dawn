@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::client::content::items::layout {
+namespace dawn::client::content::items::layout {
 
 /** A loaded item-table blob stores its row count after 8 header bytes. */
 inline constexpr std::size_t kTableRowCountOffset = 8;
@@ -47,4 +47,4 @@ static_assert(offsetof(ItemTable, rowCount) == kTableRowCountOffset);
 static_assert(offsetof(ItemTable, firstRow) == kTableFirstRowOffset);
 static_assert(offsetof(ItemDefinition, bucketId) == kDefinitionBucketOffset);
 
-} // namespace sunrise::client::content::items::layout
+} // namespace dawn::client::content::items::layout

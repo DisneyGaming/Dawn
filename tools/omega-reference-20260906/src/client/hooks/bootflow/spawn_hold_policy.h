@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace sunrise::client::hooks::bootflow::spawn_hold_policy {
+namespace dawn::client::hooks::bootflow::spawn_hold_policy {
 
 /** World-transition state needed by the spawn/fade decision. */
 enum class Phase : std::uint8_t {
@@ -46,4 +46,4 @@ struct Decision final {
     };
 }
 
-} // namespace sunrise::client::hooks::bootflow::spawn_hold_policy
+} // namespace dawn::client::hooks::bootflow::spawn_hold_policy

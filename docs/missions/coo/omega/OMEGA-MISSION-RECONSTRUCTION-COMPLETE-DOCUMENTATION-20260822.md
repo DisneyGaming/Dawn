@@ -1,7 +1,7 @@
 # Omega / mission_scot reconstruction: complete technical record
 
 Date: 2026-08-22  
-Project: Sunrise offline Destiny 2 activity reconstruction  
+Project: Dawn offline Destiny 2 activity reconstruction  
 Activity: mission_scot  
 Destination: Mercury, Lighthouse / Infinite Forest entrance  
 Status: opening mission flow substantially reconstructed; Scene 2 is retained and Scene 3 proceeds; the closed entrance wall is still absent; the purple beam/aura remains spatially detached from the visible Ikora.
@@ -1867,7 +1867,7 @@ Conclusion:
 As of this documentation:
 
 - Live proxy DLL: C:\Destiny 2 Development\bin\x64\steam_api64.dll
-- Release build DLL: C:\Destiny 2 Development\Sunrise-src\build\x64\Release\steam_api64.dll
+- Release build DLL: C:\Destiny 2 Development\Dawn-src\build\x64\Release\steam_api64.dll
 - Size: 13,379,584 bytes
 - Timestamp: 2026-08-22 14:56:42.445
 - SHA-256: AD55BD4B85F7B1779AC63F98B72413B231D8708615BA9DC72F48BC3876FF4D7F
@@ -1876,7 +1876,7 @@ The two DLLs match exactly.
 
 ### 20.2 Main probe source identity
 
-- File: Sunrise\src\client\hooks\bootflow\activity_spawner_chain_probe.cpp
+- File: Dawn\src\client\hooks\bootflow\activity_spawner_chain_probe.cpp
 - Size: 616,394 bytes
 - Timestamp: 2026-08-22 14:19:04.999
 - SHA-256: 7D4C845E46BEBEBD7DB67659721327DF557D443E46141B84F717D841B63A62F9
@@ -1937,11 +1937,11 @@ Disabled:
 
 Active:
 
-- C:\Destiny 2 Development\bin\x64\Sunrise\logs\sunrise.log
+- C:\Destiny 2 Development\bin\x64\Dawn\logs\dawn.log
 
 Previous rotated run containing the decisive wall and effect-composer evidence:
 
-- C:\Destiny 2 Development\bin\x64\Sunrise\logs\sunrise.log.old
+- C:\Destiny 2 Development\bin\x64\Dawn\logs\dawn.log.old
 
 The active log may be locked while the game is running. Copy/archive it after closing the game before a new diagnostic run.
 
@@ -1964,23 +1964,23 @@ Current status:
 Canonical command:
 
 ~~~powershell
-powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\sunrise-dev.ps1"
+powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\dawn-dev.ps1"
 ~~~
 
 The script:
 
 1. locates MSBuild through vswhere;
 2. builds Release|x64 by default;
-3. expects output at Sunrise-src\build\x64\Release\steam_api64.dll;
+3. expects output at Dawn-src\build\x64\Release\steam_api64.dll;
 4. requires destiny2.exe to be closed before deployment;
-5. backs up the current live DLL under .sunrise\backup;
+5. backs up the current live DLL under .dawn\backup;
 6. deploys to bin\x64\steam_api64.dll.
 
 Warnings:
 
-- the live Sunrise proxy is steam_api64.dll, not Sunrise.dll;
-- the real Steam API is stored separately under .sunrise\original and must not be overwritten;
-- rerunning the official Sunrise installer can replace this local build because its install-state hash still points to release 0.2.1;
+- the live Dawn proxy is steam_api64.dll, not Dawn.dll;
+- the real Steam API is stored separately under .dawn\original and must not be overwritten;
+- rerunning the official Dawn installer can replace this local build because its install-state hash still points to release 0.2.1;
 - settings.json can be rewritten on game exit.
 
 After every build:
@@ -1996,39 +1996,39 @@ After every build:
 
 ### 22.1 Destination and scenario discovery
 
-- Sunrise\src\client\content\activity\activity_tag_reader.cpp
-- Sunrise\src\client\content\scenarios\scenario_roster_build.cpp
-- Sunrise\src\client\content\scenarios\scenario_roster_groups.cpp
-- Sunrise\src\client\content\scenarios\scenario_roster_publish.cpp
-- Sunrise\src\client\content\scenarios\scenario_slot_classification.cpp
-- Sunrise\src\state\build_data\scenarios\scenario_catalog.cpp
-- Sunrise\src\state\build_data\scenarios\definition.h
+- Dawn\src\client\content\activity\activity_tag_reader.cpp
+- Dawn\src\client\content\scenarios\scenario_roster_build.cpp
+- Dawn\src\client\content\scenarios\scenario_roster_groups.cpp
+- Dawn\src\client\content\scenarios\scenario_roster_publish.cpp
+- Dawn\src\client\content\scenarios\scenario_slot_classification.cpp
+- Dawn\src\state\build_data\scenarios\scenario_catalog.cpp
+- Dawn\src\state\build_data\scenarios\definition.h
 
 ### 22.2 Roster and sensor/auth wire path
 
-- Sunrise\src\server\bap\encrypted\push\activity\activity_roster_snapshot.cpp
-- Sunrise\src\server\bap\encrypted\push\activity\activity_roster_push.cpp
-- Sunrise\src\server\bap\encrypted\push\activity\activity_roster_report.cpp
-- Sunrise\src\middleware\bap\activity_message\sensor_auth_update.h
-- Sunrise\src\middleware\bap\activity_message\activity_sensor_auth_encoder.cpp
-- Sunrise\src\middleware\bap\activity_message\activity_sensor_auth_blocks.cpp
-- Sunrise\src\middleware\bap\activity_message\activity_sensor_auth_bodies.cpp
-- Sunrise\src\middleware\bap\activity_message\activity_sense_update_parser.cpp
+- Dawn\src\server\bap\encrypted\push\activity\activity_roster_snapshot.cpp
+- Dawn\src\server\bap\encrypted\push\activity\activity_roster_push.cpp
+- Dawn\src\server\bap\encrypted\push\activity\activity_roster_report.cpp
+- Dawn\src\middleware\bap\activity_message\sensor_auth_update.h
+- Dawn\src\middleware\bap\activity_message\activity_sensor_auth_encoder.cpp
+- Dawn\src\middleware\bap\activity_message\activity_sensor_auth_blocks.cpp
+- Dawn\src\middleware\bap\activity_message\activity_sensor_auth_bodies.cpp
+- Dawn\src\middleware\bap\activity_message\activity_sense_update_parser.cpp
 
 ### 22.3 Mission host state and client input
 
-- Sunrise\src\state\activity\forced\activity_forced_destination.cpp
-- Sunrise\src\state\activity\forced\activity_forced_destination.h
-- Sunrise\src\server\bap\encrypted\activity_message\activity_message_route.cpp
-- Sunrise\src\server\bap\encrypted\push\activity\activity_keepalive_push.cpp
+- Dawn\src\state\activity\forced\activity_forced_destination.cpp
+- Dawn\src\state\activity\forced\activity_forced_destination.h
+- Dawn\src\server\bap\encrypted\activity_message\activity_message_route.cpp
+- Dawn\src\server\bap\encrypted\push\activity\activity_keepalive_push.cpp
 
 ### 22.4 Scene, actor, and VFX runtime probes
 
-- Sunrise\src\client\hooks\bootflow\activity_spawner_chain_probe.cpp
-- Sunrise\src\client\hooks\bootflow\activity_schema_decode_probe.cpp
-- Sunrise\src\client\hooks\bootflow\activity_script_event_probe.cpp
-- Sunrise\src\client\hooks\bootflow\activity_script_upstream_probe.cpp
-- Sunrise\src\client\hooks\bootflow\activity_behavior_condition_probe.cpp
+- Dawn\src\client\hooks\bootflow\activity_spawner_chain_probe.cpp
+- Dawn\src\client\hooks\bootflow\activity_schema_decode_probe.cpp
+- Dawn\src\client\hooks\bootflow\activity_script_event_probe.cpp
+- Dawn\src\client\hooks\bootflow\activity_script_upstream_probe.cpp
+- Dawn\src\client\hooks\bootflow\activity_behavior_condition_probe.cpp
 
 ### 22.5 Existing static-analysis outputs
 
@@ -2086,43 +2086,43 @@ Run from C:\Destiny 2 Development.
 ### 23.1 Opening stage and mission scalar
 
 ~~~powershell
-rg -n "omega_stage=|script_state=|omega_opening_transition|omega_scene_handoff|omega_scene_completed" "bin\x64\Sunrise\logs\sunrise.log"
+rg -n "omega_stage=|script_state=|omega_opening_transition|omega_scene_handoff|omega_scene_completed" "bin\x64\Dawn\logs\dawn.log"
 ~~~
 
 ### 23.2 Scene cast construction and retirement
 
 ~~~powershell
-rg -n "omega_ikora_followup|omega_scene_cast|omega_scene_two_persistence|scene_transition_retire|80EC0F0E|80EC0FA8|80EC0FA6" "bin\x64\Sunrise\logs\sunrise.log"
+rg -n "omega_ikora_followup|omega_scene_cast|omega_scene_two_persistence|scene_transition_retire|80EC0F0E|80EC0FA8|80EC0FA6" "bin\x64\Dawn\logs\dawn.log"
 ~~~
 
 ### 23.3 Scene 2 model suppression
 
 ~~~powershell
-rg -n "omega_scene_two_model|model_suppression|80EC0F17|80EC0F1D|80F2EC2F" "bin\x64\Sunrise\logs\sunrise.log"
+rg -n "omega_scene_two_model|model_suppression|80EC0F17|80EC0F1D|80F2EC2F" "bin\x64\Dawn\logs\dawn.log"
 ~~~
 
 ### 23.4 Purple authored event and provider
 
 ~~~powershell
-rg -n "omega_scene_vfx_binding|omega_scene_type23_trace|omega_scene_transform_source|omega_scene_transform_writer|omega_scene_pose|80B9FDBE|80C220EB" "bin\x64\Sunrise\logs\sunrise.log"
+rg -n "omega_scene_vfx_binding|omega_scene_type23_trace|omega_scene_transform_source|omega_scene_transform_writer|omega_scene_pose|80B9FDBE|80C220EB" "bin\x64\Dawn\logs\dawn.log"
 ~~~
 
 ### 23.5 Exact four-effect transform experiment
 
 ~~~powershell
-rg -n "omega_purple_effect_direct_offset|omega_effect_transform_compose|80C71D8E|80C71D8A|80F1FCCA|80C71D70" "bin\x64\Sunrise\logs\sunrise.log"
+rg -n "omega_purple_effect_direct_offset|omega_effect_transform_compose|80C71D8E|80C71D8A|80F1FCCA|80C71D70" "bin\x64\Dawn\logs\dawn.log"
 ~~~
 
 ### 23.6 Roster and wall runtime materialization
 
 ~~~powershell
-rg -n "roster_layout|4B946B28|omega_opening_visual_encode|activity_authority_publish|80F46F0E|80F44EED" "bin\x64\Sunrise\logs\sunrise.log"
+rg -n "roster_layout|4B946B28|omega_opening_visual_encode|activity_authority_publish|80F46F0E|80F44EED" "bin\x64\Dawn\logs\dawn.log"
 ~~~
 
 ### 23.7 Decoder framing
 
 ~~~powershell
-rg -n "sensor_auth|object_block|body_bits|remainder_bits|patch_epoch|phase=register|phase=seed" "bin\x64\Sunrise\logs\sunrise.log"
+rg -n "sensor_auth|object_block|body_bits|remainder_bits|patch_epoch|phase=register|phase=seed" "bin\x64\Dawn\logs\dawn.log"
 ~~~
 
 ## 24. Non-regression requirements

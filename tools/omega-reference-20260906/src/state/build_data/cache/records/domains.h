@@ -19,7 +19,7 @@
 #include "../../vendors/definition.h"
 #include "format.h"
 
-namespace sunrise::state::build_data::cache::records {
+namespace dawn::state::build_data::cache::records {
 
 /** Checked row counts for every generated cache domain. */
 struct DomainCounts {
@@ -105,4 +105,4 @@ struct Domains {
     std::span<const vendors::InstalledRow> vendorInstalledRows;
 };
 
-} // namespace sunrise::state::build_data::cache::records
+} // namespace dawn::state::build_data::cache::records

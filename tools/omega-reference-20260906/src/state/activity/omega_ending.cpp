@@ -7,7 +7,7 @@
 #include "runtime.h"
 #include "../../core/logging/log.h"
 
-namespace sunrise::state::activity::omega_ending {
+namespace dawn::state::activity::omega_ending {
 namespace {
 SRWLOCK g_lock=SRWLOCK_INIT;
 Ending g_ending{};
@@ -403,4 +403,4 @@ void reset() noexcept {
     g_rejectRun=0;g_rejectMask=0;
     ReleaseSRWLockExclusive(&g_rejectLock);
 }
-} // namespace sunrise::state::activity::omega_ending
+} // namespace dawn::state::activity::omega_ending

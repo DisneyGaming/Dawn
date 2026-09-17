@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace sunrise::middleware::datagen::character_record::layout {
+namespace dawn::middleware::datagen::character_record::layout {
 
 /** An empty item slot is this sentinel; a 0 would assert definition index 0, a real item. */
 inline constexpr std::uint16_t kEmptyDefinitionIndex = 0xFFFFU;
@@ -223,4 +223,4 @@ static_assert(offsetof(Appearance, weaponStats) == AppearanceOffsets::weaponStat
 static_assert(std::is_standard_layout_v<Appearance>);
 static_assert(std::is_trivially_copyable_v<Appearance>);
 
-} // namespace sunrise::middleware::datagen::character_record::layout
+} // namespace dawn::middleware::datagen::character_record::layout

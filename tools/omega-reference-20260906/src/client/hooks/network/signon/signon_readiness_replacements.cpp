@@ -7,7 +7,7 @@
 #include "../coordinator/network_call_coordinator.h"
 #include "../platform.h"
 
-namespace sunrise::client::hooks::network::signon {
+namespace dawn::client::hooks::network::signon {
 namespace {
 
 using ReadinessFailure = bool(__fastcall*)() noexcept;
@@ -20,7 +20,7 @@ constexpr std::size_t kReadinessEventCapacity = 96;
  * Logs one readiness check, so a silent boot names the stage it stopped at.
  * @param stage Stage token for the log line.
  * @param nativeResult Result returned by the native check.
- * @param forced Whether Sunrise replaced that result.
+ * @param forced Whether Dawn replaced that result.
  */
 void log_readiness(std::string_view stage, bool nativeResult, bool forced) noexcept {
     std::array<char, kReadinessEventCapacity> line{};
@@ -41,8 +41,8 @@ void log_readiness(std::string_view stage, bool nativeResult, bool forced) noexc
 }
 
 /**
- * Still runs the native readiness work while Sunrise owns the local SignOn path.
- * @return False while Sunrise owns local SignOn, otherwise the native result.
+ * Still runs the native readiness work while Dawn owns the local SignOn path.
+ * @return False while Dawn owns local SignOn, otherwise the native result.
  */
 __declspec(noinline) bool __fastcall readiness_body() noexcept {
     coordinator::CallLease lease{};
@@ -62,8 +62,8 @@ __declspec(noinline) bool __fastcall readiness_body() noexcept {
 }
 
 /**
- * Still runs the native readiness work while Sunrise supplies the local transport.
- * @return True while Sunrise supplies the transport, otherwise the native result.
+ * Still runs the native readiness work while Dawn supplies the local transport.
+ * @return True while Dawn supplies the transport, otherwise the native result.
  */
 __declspec(noinline) bool __fastcall ready_body() noexcept {
     coordinator::CallLease lease{};
@@ -94,4 +94,4 @@ void* ready_entry_point() noexcept {
     return reinterpret_cast<void*>(&ready_body);
 }
 
-} // namespace sunrise::client::hooks::network::signon
+} // namespace dawn::client::hooks::network::signon

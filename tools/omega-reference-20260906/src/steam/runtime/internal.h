@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::steam::runtime {
+namespace dawn::steam::runtime {
 
 /**
  * Activates the main-image Client group at the first Core-ready boundary.
@@ -20,4 +20,4 @@ void activate_graphics_once() noexcept;
  */
 void activate_platform_once(const void* callerAddress) noexcept;
 
-} // namespace sunrise::steam::runtime
+} // namespace dawn::steam::runtime

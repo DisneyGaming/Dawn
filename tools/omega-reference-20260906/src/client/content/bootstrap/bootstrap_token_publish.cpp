@@ -9,7 +9,7 @@
 #include "../../../state/runtime/runtime.h"
 #include "../../targets/game.h"
 
-namespace sunrise::client::content::bootstrap {
+namespace dawn::client::content::bootstrap {
 
 /** Copies the bootstrap content-id token out of the installed client into State. */
 bool publish_token() noexcept {
@@ -44,4 +44,4 @@ bool publish_token() noexcept {
     return true;
 }
 
-} // namespace sunrise::client::content::bootstrap
+} // namespace dawn::client::content::bootstrap

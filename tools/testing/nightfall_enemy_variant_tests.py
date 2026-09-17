@@ -78,8 +78,8 @@ class NightfallEnemyVariants(unittest.TestCase):
     def test_catalog_tables_equal_package_evidence(self):
         pattern = re.compile(r'\{0x([0-9A-F]{8})U,(\d+),0x([0-9A-F]{8})U,0x([0-9A-F]{8})U,0x([0-9A-F]{8})U\}')
         for strike, path in (
-            ('pact', ROOT/'Sunrise/src/state/activity/strike_pact/catalog_all.h'),
-            ('bond', ROOT/'Sunrise/src/state/activity/strike_bond/catalog.h')):
+            ('pact', ROOT/'Dawn/src/state/activity/strike_pact/catalog_all.h'),
+            ('bond', ROOT/'Dawn/src/state/activity/strike_bond/catalog.h')):
             text = path.read_text().split('kGrandmasterEnemySubstitutions{{',1)[1].split('}};',1)[0]
             actual = {tuple(int(x,16) if i != 1 else int(x) for i,x in enumerate(match))
                       for match in pattern.findall(text)}

@@ -7,7 +7,7 @@
 #include "../../../state/investment/investment.h"
 #include "../web_service_envelope.h"
 
-namespace sunrise::middleware::web_service::messages::opcode503 {
+namespace dawn::middleware::web_service::messages::opcode503 {
 
 /** Web Service opcode for the account investment bootstrap request. */
 inline constexpr std::uint16_t kOpcode = 503;
@@ -45,4 +45,4 @@ struct Request {
                                    std::span<std::byte> output,
                                    std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::web_service::messages::opcode503
+} // namespace dawn::middleware::web_service::messages::opcode503

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <limits>
 
-namespace sunrise::state::content_manifest::scanner::package {
+namespace dawn::state::content_manifest::scanner::package {
 namespace {
 
 /** Package patch indices take one unsigned header byte in this client build. */
@@ -228,4 +228,4 @@ bool parse_stem(std::string_view stem, ParsedName& output) noexcept {
     return looks_patchable(stem) && parse_canonical(stem, output);
 }
 
-} // namespace sunrise::state::content_manifest::scanner::package
+} // namespace dawn::state::content_manifest::scanner::package

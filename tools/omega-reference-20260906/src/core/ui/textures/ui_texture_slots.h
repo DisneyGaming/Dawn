@@ -3,11 +3,11 @@
 #include <cstdint>
 #include <imgui.h>
 
-namespace sunrise::core::ui::textures {
+namespace dawn::core::ui::textures {
 
 /** One slot per bundled image the interface can draw. */
 enum class Slot : std::uint8_t {
-    /** Grayscale sprite sheet of the animated Sunrise logo. */
+    /** Grayscale sprite sheet of the animated Dawn logo. */
     logoSheet,
     count,
 };
@@ -26,4 +26,4 @@ void publish(Slot slot, ImTextureID texture) noexcept;
 /** Empties every slot. The renderer owns the textures and frees them itself. */
 void clear() noexcept;
 
-} // namespace sunrise::core::ui::textures
+} // namespace dawn::core::ui::textures

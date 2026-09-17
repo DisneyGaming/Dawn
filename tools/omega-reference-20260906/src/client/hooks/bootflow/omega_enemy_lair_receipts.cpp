@@ -21,7 +21,7 @@
 #include "../../../state/activity/omega_first_lair_runtime.h"
 #include "../../../state/activity/omega_presentation.h"
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 namespace {
 namespace catalog=state::activity::omega_enemy_lair;
 namespace crownCatalog=state::activity::omega_enemy_crown;
@@ -520,4 +520,4 @@ bool uninstall_omega_enemy_lair_receipts() noexcept {
     g_image=0;g_run=UINT64_MAX;g_lines=0;g_seenCount=0;g_seen={};
     g_candidateRejected=0;g_parentRejected=0;g_rejects={};g_rejectCount=0;g_rejectOverflow=false;return true;
 }
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

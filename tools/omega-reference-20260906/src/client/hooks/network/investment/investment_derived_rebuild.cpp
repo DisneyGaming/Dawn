@@ -10,7 +10,7 @@
 #include "../../../hooking/detour.h"
 #include "internal.h"
 
-namespace sunrise::client::hooks::network::investment {
+namespace dawn::client::hooks::network::investment {
 namespace {
 
 /**
@@ -204,4 +204,4 @@ bool has_ownership() noexcept {
     return any_primary_attached() || family5_rearm_is_installed();
 }
 
-} // namespace sunrise::client::hooks::network::investment
+} // namespace dawn::client::hooks::network::investment

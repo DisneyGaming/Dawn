@@ -1,6 +1,6 @@
 #include "../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 
 /** Parses Client-owned configuration over deterministic defaults. */
 bool Parser::client_settings(client::Settings& output) noexcept {
@@ -92,4 +92,4 @@ bool Parser::client_settings(client::Settings& output) noexcept {
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

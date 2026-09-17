@@ -4,7 +4,7 @@
 #include <span>
 #include <string_view>
 
-namespace sunrise::core::settings::upgrade {
+namespace dawn::core::settings::upgrade {
 
 /**
  * @param document Borrowed settings file text.
@@ -26,4 +26,4 @@ namespace sunrise::core::settings::upgrade {
                          std::span<char> output,
                          std::size_t& written) noexcept;
 
-} // namespace sunrise::core::settings::upgrade
+} // namespace dawn::core::settings::upgrade

@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace sunrise::client::hooks::network::content_config::gate {
+namespace dawn::client::hooks::network::content_config::gate {
 
 /** Tracks a zero only when this lifecycle wrote it. */
 struct Ownership final {
@@ -37,4 +37,4 @@ struct Ownership final {
 /** @param ownership Gate ownership state. @return True when the gate is currently zero. */
 [[nodiscard]] bool is_disabled(const Ownership& ownership) noexcept;
 
-} // namespace sunrise::client::hooks::network::content_config::gate
+} // namespace dawn::client::hooks::network::content_config::gate

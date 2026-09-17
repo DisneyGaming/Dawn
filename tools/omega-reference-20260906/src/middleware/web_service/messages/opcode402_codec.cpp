@@ -4,7 +4,7 @@
 #include "../../encoding/bit_reader.h"
 #include "opcode402.h"
 
-namespace sunrise::middleware::web_service::messages::opcode402 {
+namespace dawn::middleware::web_service::messages::opcode402 {
 namespace {
 
 /** The reflected dismantle request occupies exactly 128 bits. */
@@ -68,4 +68,4 @@ bool parse_request(const Message& message, Request& request) noexcept {
            && requiredFlag == 1;
 }
 
-} // namespace sunrise::middleware::web_service::messages::opcode402
+} // namespace dawn::middleware::web_service::messages::opcode402

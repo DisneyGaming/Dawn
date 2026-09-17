@@ -6,7 +6,7 @@
 #include "../../../state/entitlements/validation.h"
 #include "../internal.h"
 
-namespace sunrise::middleware::signon::ownership {
+namespace dawn::middleware::signon::ownership {
 namespace {
 
 /** The ownership list repeats every owned id in sub-field 1. */
@@ -35,4 +35,4 @@ bool encode(const state::entitlements::Table& entitlements,
     return true;
 }
 
-} // namespace sunrise::middleware::signon::ownership
+} // namespace dawn::middleware::signon::ownership

@@ -15,7 +15,7 @@
 #include "../../../core/ui/components/toggle/ui_toggle_component.h"
 #include "../../movement/movement_settings_store.h"
 
-namespace sunrise::client::ui::movement {
+namespace dawn::client::ui::movement {
 namespace {
 
 namespace label = core::ui::components::label;
@@ -238,4 +238,4 @@ void draw() noexcept {
     }
 }
 
-} // namespace sunrise::client::ui::movement
+} // namespace dawn::client::ui::movement

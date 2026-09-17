@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <span>
 
-namespace sunrise::middleware::bap::certificate {
+namespace dawn::middleware::bap::certificate {
 
 /**
  * Rewraps a svc304 request certificate into the svc305 protobuf body.
@@ -16,4 +16,4 @@ namespace sunrise::middleware::bap::certificate {
                                    std::span<std::byte> output,
                                    std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::bap::certificate
+} // namespace dawn::middleware::bap::certificate

@@ -3,7 +3,7 @@
 #include "../../encoding/bit_reader.h"
 #include "opcode1901.h"
 
-namespace sunrise::middleware::web_service::messages::opcode1901 {
+namespace dawn::middleware::web_service::messages::opcode1901 {
 namespace {
 
 /** The native replacement array reserves twelve entries, so its count uses four bits. */
@@ -121,4 +121,4 @@ bool parse_request(const Message& message, Request& request) noexcept {
     return true;
 }
 
-} // namespace sunrise::middleware::web_service::messages::opcode1901
+} // namespace dawn::middleware::web_service::messages::opcode1901

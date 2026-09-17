@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::hooks::banner {
+namespace dawn::client::hooks::banner {
 
 /**
  * Attaches the orbit banner component bind.
@@ -14,4 +14,4 @@ void uninstall() noexcept;
 /** @return True while the banner bind is attached. */
 [[nodiscard]] bool is_installed() noexcept;
 
-} // namespace sunrise::client::hooks::banner
+} // namespace dawn::client::hooks::banner

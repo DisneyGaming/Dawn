@@ -6,7 +6,7 @@
 #include "abi.h"
 #include "layout.h"
 
-namespace sunrise::middleware::datagen::family4::instance {
+namespace dawn::middleware::datagen::family4::instance {
 namespace {
 
 /**
@@ -173,4 +173,4 @@ bool encode(const ResolvedInstance& input, std::span<std::byte> output) noexcept
     return true;
 }
 
-} // namespace sunrise::middleware::datagen::family4::instance
+} // namespace dawn::middleware::datagen::family4::instance

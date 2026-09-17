@@ -12,14 +12,14 @@ The latest work was to implement the supplied native Forest enemy handoff while 
 
 - Active workspace/game directory: `C:\Destiny 2 Development`.
 - Installed DLL: `C:\Destiny 2 Development\steam_api64.dll`.
-- Active settings: `C:\Destiny 2 Development\Sunrise\settings.json`.
-- Actual cache: `C:\Destiny 2 Development\Sunrise\cache`.
-- Game log: `C:\Destiny 2 Development\Sunrise\logs\sunrise.log`. Archive it before a later launch can replace it.
+- Active settings: `C:\Destiny 2 Development\Dawn\settings.json`.
+- Actual cache: `C:\Destiny 2 Development\Dawn\cache`.
+- Game log: `C:\Destiny 2 Development\Dawn\logs\dawn.log`. Archive it before a later launch can replace it.
 - Forest implementation archive: [build/scot-forest-enemies-20260905](</C:/Destiny 2 Development/build/scot-forest-enemies-20260905>).
 - Panoptes repair archive: [build/scot-boss-spawn-fix-20260905](</C:/Destiny 2 Development/build/scot-boss-spawn-fix-20260905>).
 - Supplied enemy document, preserved unchanged: [HANDOFF.md](</C:/Destiny 2 Development/build/scot-forest-enemies-20260905/HANDOFF.md>).
 
-This workspace has no Git repository metadata or `Sunrise.sln`. The supplied document's `D:\Sunrise-port`, `D:\Sunrise-work`, and `D:\Destiny3\bin\x64` paths are not available here. Treat their referenced research as external handoff evidence, not as files verified locally. Do not apply D: deployment commands to this C: installation.
+This workspace has no Git repository metadata or `Dawn.sln`. The supplied document's `D:\Dawn-port`, `D:\Dawn-work`, and `D:\Destiny3\bin\x64` paths are not available here. Treat their referenced research as external handoff evidence, not as files verified locally. Do not apply D: deployment commands to this C: installation.
 
 ## Installed build versus staged build
 
@@ -84,7 +84,7 @@ Column -1 removes an endpoint; closing its gate alone still allows a route to it
 
 The verified native owner-authority repair remains in place. Sensor self-authority and worker-owner authority are different checks. The earlier host generator authority body remains deliberately disabled (`kOmegaForestGeneratorBodyReady=false`) because its unproven encoding blocked native seeding; the enemy patch does not enable it.
 
-Sources: [omega_forest_recipe.h](</C:/Destiny 2 Development/Sunrise/src/client/hooks/bootflow/omega_forest_recipe.h>) and [omega_dialogue_dispatch_probe.cpp](</C:/Destiny 2 Development/Sunrise/src/client/hooks/bootflow/omega_dialogue_dispatch_probe.cpp>).
+Sources: [omega_forest_recipe.h](</C:/Destiny 2 Development/Dawn/src/client/hooks/bootflow/omega_forest_recipe.h>) and [omega_dialogue_dispatch_probe.cpp](</C:/Destiny 2 Development/Dawn/src/client/hooks/bootflow/omega_dialogue_dispatch_probe.cpp>).
 
 ## Forest enemy implementation
 
@@ -103,12 +103,12 @@ The supplied document reports 5,936 available actor rows across 26 Forest palett
 
 Changed production sources:
 
-- [omega_forest_encounters.h](</C:/Destiny 2 Development/Sunrise/src/state/activity/omega/omega_forest_encounters.h>): exact mission scope and switch constants.
-- [sensor_auth_update.h](</C:/Destiny 2 Development/Sunrise/src/middleware/bap/activity_message/sensor_auth_update.h>): snapshot flag.
-- [activity_roster_snapshot.cpp](</C:/Destiny 2 Development/Sunrise/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp>): stable mission-scoped selection.
-- [activity_sensor_auth_bodies.cpp](</C:/Destiny 2 Development/Sunrise/src/middleware/bap/activity_message/activity_sensor_auth_bodies.cpp>): typed entry and correct width.
-- [omega_enemy_forest_receipts.h](</C:/Destiny 2 Development/Sunrise/src/client/hooks/bootflow/omega_enemy_forest_receipts.h>): bounded population decoder and validation.
-- [omega_enemy_forest_receipts_runtime.h](</C:/Destiny 2 Development/Sunrise/src/client/hooks/bootflow/omega_enemy_forest_receipts_runtime.h>): read-only native observation adapter.
+- [omega_forest_encounters.h](</C:/Destiny 2 Development/Dawn/src/state/activity/omega/omega_forest_encounters.h>): exact mission scope and switch constants.
+- [sensor_auth_update.h](</C:/Destiny 2 Development/Dawn/src/middleware/bap/activity_message/sensor_auth_update.h>): snapshot flag.
+- [activity_roster_snapshot.cpp](</C:/Destiny 2 Development/Dawn/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp>): stable mission-scoped selection.
+- [activity_sensor_auth_bodies.cpp](</C:/Destiny 2 Development/Dawn/src/middleware/bap/activity_message/activity_sensor_auth_bodies.cpp>): typed entry and correct width.
+- [omega_enemy_forest_receipts.h](</C:/Destiny 2 Development/Dawn/src/client/hooks/bootflow/omega_enemy_forest_receipts.h>): bounded population decoder and validation.
+- [omega_enemy_forest_receipts_runtime.h](</C:/Destiny 2 Development/Dawn/src/client/hooks/bootflow/omega_enemy_forest_receipts_runtime.h>): read-only native observation adapter.
 - `omega_dialogue_dispatch_probe.cpp`: invokes that adapter after the exact Omega worker's native tick.
 
 The complete patch and original modified files are preserved under [changes.patch](</C:/Destiny 2 Development/build/scot-forest-enemies-20260905/changes.patch>) and the archive's `before/` directory.
@@ -151,7 +151,7 @@ An accepted/queued request is not proof of visible Panoptes. `boss_wait` disting
 
 The existing intro path waits for observed boss existence, then targets component `80F478D3`, cinematic hash `A74B2200`, catalog lookup `C4C1A0`, and native start `1069CC0`. `intro_wait`, `intro_request`, `intro_already_playing`, and `intro_stopped` provide separate evidence. Neither intro acceptance nor summon animation proves Lair enemy-wave activation.
 
-Sources: [omega_boss_spawn.h](</C:/Destiny 2 Development/Sunrise/src/client/hooks/bootflow/omega_boss_spawn.h>) and [omega_reveal_native.cpp](</C:/Destiny 2 Development/Sunrise/src/client/hooks/bootflow/omega_reveal_native.cpp>). Prior repair details and evidence: [Panoptes RUN.md](</C:/Destiny 2 Development/build/scot-boss-spawn-fix-20260905/RUN.md>).
+Sources: [omega_boss_spawn.h](</C:/Destiny 2 Development/Dawn/src/client/hooks/bootflow/omega_boss_spawn.h>) and [omega_reveal_native.cpp](</C:/Destiny 2 Development/Dawn/src/client/hooks/bootflow/omega_reveal_native.cpp>). Prior repair details and evidence: [Panoptes RUN.md](</C:/Destiny 2 Development/build/scot-boss-spawn-fix-20260905/RUN.md>).
 
 ## Tests and build provenance
 

@@ -4,7 +4,7 @@
 
 #include "byte_order.h"
 
-namespace sunrise::middleware::encoding::bits {
+namespace dawn::middleware::encoding::bits {
 namespace {
 
 /** Reader fields are bounded by the unsigned 64-bit destination type. */
@@ -71,4 +71,4 @@ std::size_t Reader::remaining_bits() const noexcept {
     return input_.size() * encoding::kBitsPerByte - bitPosition_;
 }
 
-} // namespace sunrise::middleware::encoding::bits
+} // namespace dawn::middleware::encoding::bits

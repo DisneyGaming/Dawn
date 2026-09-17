@@ -10,7 +10,7 @@
 
 #include "../definition.h"
 
-namespace sunrise::state::content_manifest::fingerprint {
+namespace dawn::state::content_manifest::fingerprint {
 
 /** Fixed CNG object storage is larger than the SHA-256 provider asks for. */
 inline constexpr std::size_t kHashObjectCapacity = 512;
@@ -82,4 +82,4 @@ private:
  */
 void guid(const Fingerprint& buildFingerprint, Guid& output) noexcept;
 
-} // namespace sunrise::state::content_manifest::fingerprint
+} // namespace dawn::state::content_manifest::fingerprint

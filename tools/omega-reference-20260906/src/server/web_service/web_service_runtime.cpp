@@ -27,7 +27,7 @@
 #include "opcode_routes.h"
 #include "web_service_actions.h"
 
-namespace sunrise::server::web_service {
+namespace dawn::server::web_service {
 
 /** One ordinary event line carries an opcode and its fixed prefix. */
 constexpr std::size_t kOpcodeLineCapacity = 64;
@@ -315,4 +315,4 @@ bool consume(std::span<const std::byte> request,
     return true;
 }
 
-} // namespace sunrise::server::web_service
+} // namespace dawn::server::web_service

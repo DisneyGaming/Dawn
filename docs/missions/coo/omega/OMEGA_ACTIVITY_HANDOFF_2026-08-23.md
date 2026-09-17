@@ -2,23 +2,23 @@
 
 ## Executive summary
 
-Omega (`mission_scot`) is no longer blocked at roster discovery or basic authored-object initialization. Sunrise can load the measured six-group Omega roster, the client creates Destiny's native mission/runtime objects, objective markers work, authored trigger volumes report sensor events to the server, and the opening scene/Ikora path can be driven through authoritative state.
+Omega (`mission_scot`) is no longer blocked at roster discovery or basic authored-object initialization. Dawn can load the measured six-group Omega roster, the client creates Destiny's native mission/runtime objects, objective markers work, authored trigger volumes report sensor events to the server, and the opening scene/Ikora path can be driven through authoritative state.
 
 The remaining concrete blocker is the transition through the Mercury portal into the Infinite Forest. The correct authored entrance sensor is detected and the server advances Omega to script state 4, but Destiny's native route controller never arms its active route bit. Consequently, the route callback and publication stages never run, no teleport/transition packet appears, and the destination bubble is not loaded.
 
 The latest deployed DLL adds an observation-only probe around the native lifecycle-controller accessor. It has not yet been exercised: the current log predates that DLL. The immediate next move is to run the latest build, reproduce the portal sequence, and use the new caller inventory to locate the native event or setter that should arm the route.
 
-This is not a finding that Omega must be rebuilt from scratch. The client still contains the authored scenes, dialogue, placements, sensors, mission components, and route machinery. Sunrise needs to reconstruct the missing authoritative host-side orchestration that tells those client components when to change state.
+This is not a finding that Omega must be rebuilt from scratch. The client still contains the authored scenes, dialogue, placements, sensors, mission components, and route machinery. Dawn needs to reconstruct the missing authoritative host-side orchestration that tells those client components when to change state.
 
 ## Current workspace and live build
 
 - Workspace: `C:\Destiny 2 Development`
-- Source tree: `C:\Destiny 2 Development\Sunrise-src\Sunrise`
+- Source tree: `C:\Destiny 2 Development\Dawn-src\Dawn`
 - Live DLL: `C:\Destiny 2 Development\bin\x64\steam_api64.dll`
 - Live DLL size: `12,154,880` bytes
 - Live DLL SHA-256: `5DE45C7022E7945172B2C5FFDDE9EF9689B8949E7080FE09B884CC87349C93BA`
 - Live DLL timestamp: `2026-08-23 20:12:34 -04:00`
-- Active log: `C:\Destiny 2 Development\bin\x64\Sunrise\logs\sunrise.log`
+- Active log: `C:\Destiny 2 Development\bin\x64\Dawn\logs\dawn.log`
 - Last inspected log timestamp: `2026-08-23 20:08:27 -04:00`
 
 The runtime settings are:
@@ -28,7 +28,7 @@ The runtime settings are:
 "seed_authored_sensors": false
 ```
 
-`roster_force_authored` enables the measured Omega compatibility roster. `seed_authored_sensors` remains disabled, so the relevant events come from the client detecting actual authored conditions rather than Sunrise fabricating them.
+`roster_force_authored` enables the measured Omega compatibility roster. `seed_authored_sensors` remains disabled, so the relevant events come from the client detecting actual authored conditions rather than Dawn fabricating them.
 
 Important: the live DLL is newer than the active log. No conclusions about the newest lifecycle-accessor probe can be drawn until another run is captured.
 
@@ -45,7 +45,7 @@ BA5F26EF
 F7A6CE7F
 ```
 
-Sunrise publishes the exact six-group roster measured from the run in which Ghost navigation and objective markers worked:
+Dawn publishes the exact six-group roster measured from the run in which Ghost navigation and objective markers worked:
 
 ```text
 4786C0E0  player/runtime group
@@ -60,15 +60,15 @@ The successful layout is six groups and 57 objects. If discovery does not find t
 
 Relevant files:
 
-- `Sunrise/src/client/content/scenarios/scenario_roster_groups.cpp`
-- `Sunrise/src/client/content/scenarios/scenario_roster_build.cpp`
-- `Sunrise/src/client/content/scenarios/scenario_roster_publish.cpp`
-- `Sunrise/src/core/settings/client/definition.h`
-- `Sunrise/src/core/settings/client/client_settings_parser.cpp`
+- `Dawn/src/client/content/scenarios/scenario_roster_groups.cpp`
+- `Dawn/src/client/content/scenarios/scenario_roster_build.cpp`
+- `Dawn/src/client/content/scenarios/scenario_roster_publish.cpp`
+- `Dawn/src/core/settings/client/definition.h`
+- `Dawn/src/core/settings/client/client_settings_parser.cpp`
 
 ### 2. Destiny's native mission/runtime layer is present
 
-The client constructs its native mission director, activity-script manager, scenes, sensors, and other authored runtime components after roster registration. The activity-script manager is Destiny client code; Sunrise did not recreate that manager. Sunrise's additions are hooks, probes, roster compatibility, server state handling, and authority publication around it.
+The client constructs its native mission director, activity-script manager, scenes, sensors, and other authored runtime components after roster registration. The activity-script manager is Destiny client code; Dawn did not recreate that manager. Dawn's additions are hooks, probes, roster compatibility, server state handling, and authority publication around it.
 
 This supports the main working model: much of the mission content survived in the packages, while the original authoritative Destiny host logic did not.
 
@@ -90,12 +90,12 @@ The opening transition can settle to state 2. The scene handoff waits for the na
 
 The exact code is primarily in:
 
-- `Sunrise/src/server/bap/encrypted/activity_message/activity_message_route.cpp`
-- `Sunrise/src/server/bap/encrypted/activity_roster/activity_roster_report.cpp`
+- `Dawn/src/server/bap/encrypted/activity_message/activity_message_route.cpp`
+- `Dawn/src/server/bap/encrypted/activity_roster/activity_roster_report.cpp`
 
 ### 5. The Ikora/scene path uses client-authored content
 
-Ikora, the gate, and the opening scene are authored client objects from the restored roster. Their cast and scene behavior came from Destiny's native scene machinery after Sunrise supplied the expected authority state. Sunrise did not rebuild the animations, cast, dialogue, VFX, or placements.
+Ikora, the gate, and the opening scene are authored client objects from the restored roster. Their cast and scene behavior came from Destiny's native scene machinery after Dawn supplied the expected authority state. Dawn did not rebuild the animations, cast, dialogue, VFX, or placements.
 
 The observed T-pose/anchor and VFX behavior is a separate presentation problem. In this mission, “scene 2” was identified as the VFX-related scene. That issue has intentionally been excluded from the portal-transition investigation.
 
@@ -110,7 +110,7 @@ Destiny client constructs authored runtime components
         ↓
 authored sensor condition becomes true
         ↓
-client sends type-6 sense update to Sunrise host
+client sends type-6 sense update to Dawn host
         ↓
 host validates the event and commits mission state
         ↓
@@ -121,9 +121,9 @@ Destiny client activates its native scene, gate, spawner, route, dialogue, etc.
 
 This explains why simply restoring the roster fixed markers but did not finish the mission. The roster supplies the authored pieces; it does not replace the missing authoritative progression logic.
 
-## What Sunrise is and is not manually doing
+## What Dawn is and is not manually doing
 
-Sunrise is currently mapping exact authored sensor events to exact authoritative mission states. That is server orchestration, not replacement of the client content.
+Dawn is currently mapping exact authored sensor events to exact authoritative mission states. That is server orchestration, not replacement of the client content.
 
 We are not planning to drive Omega by manually sending arbitrary type-5 “play this scene” messages. Scenes should activate through their authored client components after the server publishes the required state. Type 6 remains a client-to-host sensor report, not a request/reply teleport API.
 
@@ -142,7 +142,7 @@ That DSL would refer to package-authored object/component identities. It would n
 
 ### Retail expectation
 
-After Ikora opens the gateway, the player steps through the portal, enters a transition area, and then reaches the Infinite Forest. The authored entrance sensor is firing in Sunrise, and the host reaches Omega script state 4.
+After Ikora opens the gateway, the player steps through the portal, enters a transition area, and then reaches the Infinite Forest. The authored entrance sensor is firing in Dawn, and the host reaches Omega script state 4.
 
 ### Runtime result
 
@@ -233,9 +233,9 @@ activity_script_omega_route_lifecycle_accessor*
 
 Relevant probe implementation areas:
 
-- `Sunrise/src/client/activity/activity_script_upstream_probe.cpp`
-- `Sunrise/src/client/activity/activity_schema_decode_probe.cpp`
-- `Sunrise/src/client/activity/internal.h`
+- `Dawn/src/client/activity/activity_script_upstream_probe.cpp`
+- `Dawn/src/client/activity/activity_schema_decode_probe.cpp`
+- `Dawn/src/client/activity/internal.h`
 
 ## Experiments and assumptions that did not solve the transition
 
@@ -260,7 +260,7 @@ Those interventions might make one symptom move while corrupting route ownership
 
 ## What the findings mean for the full mission
 
-The packages give us the “what”: named objects, placements, sensors, component types, scenes, dialogue, gates, encounters, and route structures. They do not directly give Sunrise the removed first-party server program that says “when this exact condition occurs, advance these authoritative states.”
+The packages give us the “what”: named objects, placements, sensors, component types, scenes, dialogue, gates, encounters, and route structures. They do not directly give Dawn the removed first-party server program that says “when this exact condition occurs, advance these authoritative states.”
 
 Therefore, an IGN walkthrough or mission description is useful for establishing the human-visible order of events, but it is not enough by itself to identify every object/component/state value. The reliable workflow is:
 

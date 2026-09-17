@@ -2,7 +2,7 @@
 
 #include "entity_slots.h"
 
-namespace sunrise::middleware::bap::activity_message::entity_slots {
+namespace dawn::middleware::bap::activity_message::entity_slots {
 
 /** Decodes the fixed entity-slot prefix without changing its wire byte order. */
 bool decode_entity_slots(std::span<const std::byte> input, EntitySlotMask& mask) noexcept {
@@ -17,4 +17,4 @@ bool decode_entity_slots(std::span<const std::byte> input, EntitySlotMask& mask)
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_message::entity_slots
+} // namespace dawn::middleware::bap::activity_message::entity_slots

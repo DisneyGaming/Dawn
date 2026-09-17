@@ -4,7 +4,7 @@
 
 #include "../handles/handle_resolver.h"
 
-namespace sunrise::client::content::investment {
+namespace dawn::client::content::investment {
 
 /** Runtime inputs shared by the installed investment-table extractors. */
 struct Source {
@@ -14,4 +14,4 @@ struct Source {
     handles::Source handles{};
 };
 
-} // namespace sunrise::client::content::investment
+} // namespace dawn::client::content::investment

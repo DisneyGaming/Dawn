@@ -1,7 +1,7 @@
 #include "../../../../state/build_data/runtime.h"
 #include "internal.h"
 
-namespace sunrise::middleware::datagen::character_record::appearance {
+namespace dawn::middleware::datagen::character_record::appearance {
 namespace {
 
 namespace buckets = state::build_data::abilities;
@@ -52,4 +52,4 @@ bool apply_ability_buckets(const state::CharacterState& character,
     return true;
 }
 
-} // namespace sunrise::middleware::datagen::character_record::appearance
+} // namespace dawn::middleware::datagen::character_record::appearance

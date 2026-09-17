@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::core::ui::components::section {
+namespace dawn::core::ui::components::section {
 
 /**
  * Draws a compact section title with an optional muted description.
@@ -9,4 +9,4 @@ namespace sunrise::core::ui::components::section {
  */
 void header(const char* title, const char* description = nullptr) noexcept;
 
-} // namespace sunrise::core::ui::components::section
+} // namespace dawn::core::ui::components::section

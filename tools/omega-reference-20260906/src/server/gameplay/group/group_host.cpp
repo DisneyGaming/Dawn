@@ -24,7 +24,7 @@
 #include "../peer/peer_transport.h"
 #include "group_host_sessions.h"
 
-namespace sunrise::server::gameplay::group {
+namespace dawn::server::gameplay::group {
 
 namespace {
 
@@ -1391,4 +1391,4 @@ void reset() noexcept {
     ReleaseSRWLockExclusive(&g_admittedLock);
 }
 
-} // namespace sunrise::server::gameplay::group
+} // namespace dawn::server::gameplay::group

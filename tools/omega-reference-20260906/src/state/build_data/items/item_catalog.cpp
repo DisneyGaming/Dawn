@@ -6,7 +6,7 @@
 
 #include "../table.h"
 
-namespace sunrise::state::build_data::items {
+namespace dawn::state::build_data::items {
 namespace {
 
 /** A lookup table twice the row count keeps the load factor under 50 percent. */
@@ -210,4 +210,4 @@ std::size_t count() noexcept {
     return g_definitions.count();
 }
 
-} // namespace sunrise::state::build_data::items
+} // namespace dawn::state::build_data::items

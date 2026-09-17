@@ -235,9 +235,9 @@ class InstalledBindingChecks(unittest.TestCase):
 
     def test_generated_catalog_and_scripts_match_package_evidence(self):
         header, scripts = gen.emit()
-        self.assertEqual(header, (ROOT / "Sunrise/src/state/activity/coo/open_world_catalog.h").read_text())
+        self.assertEqual(header, (ROOT / "Dawn/src/state/activity/coo/open_world_catalog.h").read_text())
         for name, contents in scripts.items():
-            self.assertEqual(contents, (ROOT / "Sunrise/scripts" / name).read_text())
+            self.assertEqual(contents, (ROOT / "Dawn/scripts" / name).read_text())
         # Counts follow the user policy; native selection and width stay pinned.
         self.assertEqual(len(re.findall(r"PopulationKind::patrol,true,", header)), 722)
         reviewed = [identity for target in gen.TARGETS for identity in target.two_category_sources]

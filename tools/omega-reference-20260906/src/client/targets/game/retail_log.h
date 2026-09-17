@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace sunrise::client::targets::game::retail_log {
+namespace dawn::client::targets::game::retail_log {
 
 /** Unowned main-image entry points used only by retail-log capture. */
 struct Targets {
@@ -19,4 +19,4 @@ void clear() noexcept;
 /** @return True after both retail-log targets are published. */
 [[nodiscard]] bool is_resolved() noexcept;
 
-} // namespace sunrise::client::targets::game::retail_log
+} // namespace dawn::client::targets::game::retail_log

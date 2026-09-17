@@ -2,7 +2,7 @@
 
 #include "../table.h"
 
-namespace sunrise::state::build_data::scenarios {
+namespace dawn::state::build_data::scenarios {
 namespace {
 
 // One lock covers both tables: a reader must never see new layouts against old roster groups.
@@ -268,4 +268,4 @@ std::size_t count() noexcept {
     return g_definitions.count();
 }
 
-} // namespace sunrise::state::build_data::scenarios
+} // namespace dawn::state::build_data::scenarios

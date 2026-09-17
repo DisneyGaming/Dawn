@@ -6,7 +6,7 @@
 #include "../../../core/ui/modules/ui_module_descriptor.h"
 #include "../activity_override/activity_override_panel.h"
 
-namespace sunrise::server::ui::runtime {
+namespace dawn::server::ui::runtime {
 namespace {
 
 /** A namespaced stable ID keeps Server modules from clashing with Client modules. */
@@ -31,4 +31,4 @@ void shutdown() noexcept {
     g_overridePage.release();
 }
 
-} // namespace sunrise::server::ui::runtime
+} // namespace dawn::server::ui::runtime

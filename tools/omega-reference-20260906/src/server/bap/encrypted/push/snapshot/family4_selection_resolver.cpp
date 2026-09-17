@@ -3,7 +3,7 @@
 #include "../../../../../state/equipment/light/resolution/configured_equipment_light_resolver.h"
 #include "internal.h"
 
-namespace sunrise::server::bap::encrypted::push::snapshot {
+namespace dawn::server::bap::encrypted::push::snapshot {
 namespace {
 
 namespace family4_datagen = middleware::datagen::family4;
@@ -40,4 +40,4 @@ bool resolve(const state::AccountState& account,
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted::push::snapshot
+} // namespace dawn::server::bap::encrypted::push::snapshot

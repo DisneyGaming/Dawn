@@ -1,6 +1,6 @@
-# Homecoming / Sunrise — Handoff: The Activity-Host Handshake (2026-08-18)
+# Homecoming / Dawn — Handoff: The Activity-Host Handshake (2026-08-18)
 
-Continuation handoff for the Destiny 2 **Homecoming** offline-revival work under **Sunrise**.
+Continuation handoff for the Destiny 2 **Homecoming** offline-revival work under **Dawn**.
 This supersedes the prior handoff's *direction* (not its facts). Read this first, then
 `HOMECOMING-FINDINGS.md` and George's notes for background. Everything here is **measured this session**
 unless marked inferred.
@@ -11,7 +11,7 @@ unless marked inferred.
 
 > ## ⛔ CORRECTION (2026-08-18, later) — §0's DIRECTION IS REFUTED. DO NOT FOLLOW IT.
 >
-> Re-reading the live `sunrise.log` (farm vs Homecoming, side by side) plus the F94CF0 decompile
+> Re-reading the live `dawn.log` (farm vs Homecoming, side by side) plus the F94CF0 decompile
 > overturned §0. **Homecoming's AH handshake DOES complete:** `received startup response from AH
 > [id 9EAA3001:00200003]` → join `[result 0]` → **`ready for instantiation! AH->9eaa300100200003`** →
 > `As HOST ... moving forward` → `successfully changed world to: mission_towerfall`. The symptoms §0
@@ -39,13 +39,13 @@ unless marked inferred.
 
 ## 0. THE DIRECTION (what this chat should do)
 
-> **Find out why Homecoming's Activity-Host (AH) handshake never completes, then make Sunrise's
+> **Find out why Homecoming's Activity-Host (AH) handshake never completes, then make Dawn's
 > embedded AH complete it — like it already does for the farm.**
 
 This is the single, well-diagnosed, *safe* (server-side) lever. Everything downstream of it is present
 and reachable; the AH session simply never establishes for the authored mission.
 
-### The smoking gun (measured in `bin\x64\Sunrise\logs\sunrise.log`)
+### The smoking gun (measured in `bin\x64\Dawn\logs\dawn.log`)
 
 - **The farm (`cine_farm_376`, activity `0x0115`) COMPLETES the AH handshake:**
   `world_controller:activity_manager: '... CURRENT' activity client requesting activity host startup`
@@ -66,8 +66,8 @@ manager) was treating a symptom.
 
 1. **Why does `cine_farm_376` get a real `ah-sid` and "ready for instantiation", but `mission_towerfall`
    gets an empty `ah-sid` and sticks at roster `state=3`?** Diff the two in the log side by side, then
-   in Sunrise's server code.
-2. Trace Sunrise's **Activity-Host manager path** (svc 6/16 — see §4) that produces the startup
+   in Dawn's server code.
+2. Trace Dawn's **Activity-Host manager path** (svc 6/16 — see §4) that produces the startup
    response + join result. What does it emit for the farm vs. for Homecoming? The empty ah-sid means
    the AH never assigns/returns a session id for the authored mission.
 3. Cross-check George's new client-side stall (§2) — the client is suspended in a **fiber at
@@ -143,9 +143,9 @@ Key manager functions (singleton via `FUN_618F87C70()` → vtable `+0xE0`; insta
 
 ---
 
-## 4. Server-side map (Sunrise) — where the fix lives
+## 4. Server-side map (Dawn) — where the fix lives
 
-Repo `C:\Destiny 2 Development\Sunrise-src`, branch **`spawner`**. Key files:
+Repo `C:\Destiny 2 Development\Dawn-src`, branch **`spawner`**. Key files:
 - `server/bap/encrypted/activity_host_manager/activity_host_manager_route.cpp` — **svc 6/16 Activity
   Host Manager** (activity selection + host). *Start here — this is where the AH startup/join response
   is produced.*
@@ -168,7 +168,7 @@ messages, 42→43 matchmaking. Activity-host id in our runs: `9EAA3001:00200001`
 
 **The diagnostic:** compare, for the farm vs Homecoming, what the AH manager returns as the startup
 response + join result. The farm gets `AH->9eaa300100200001` and a real session; Homecoming gets an
-empty ah-sid. Find where Sunrise decides/emits the ah-sid and why it's empty for the authored mission.
+empty ah-sid. Find where Dawn decides/emits the ah-sid and why it's empty for the authored mission.
 
 ---
 
@@ -185,7 +185,7 @@ empty ah-sid. Find where Sunrise decides/emits the ah-sid and why it's empty for
    `mgr+0x08/+0x48/+0x148` = `0x9EAA300100200001`: activation is safe but **does NOT arm** (ctor never
    fires) because the whole flow is suspended upstream on the peer/state-5 AH handoff, and transition-32
    resets the lane. Confirms the root is the AH session, not the field values.
-6. **The 0x1F→0x20 message path** — Sunrise doesn't send 0x20, but bubble-authority grant already works
+6. **The 0x1F→0x20 message path** — Dawn doesn't send 0x20, but bubble-authority grant already works
    (grant=6) and is insufficient. Not the lever.
 7. **Provider `-1` for id 282** — authored content-table data, not missing server state.
 
@@ -197,16 +197,16 @@ every measurement moved us forward.**
 ## 6. Build / test loop
 
 ```
-powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\sunrise-dev.ps1" -Config Release
+powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\dawn-dev.ps1" -Config Release
 ```
 - `-BuildOnly` compiles while the game runs; **deploy requires the game closed**.
 - **Always verify the deploy landed:**
   ```
   md5sum "/c/Destiny 2 Development/bin/x64/steam_api64.dll"
   ```
-  compare vs `Sunrise-src/build/x64/Release/steam_api64.dll`.
+  compare vs `Dawn-src/build/x64/Release/steam_api64.dll`.
 - Warnings are errors (MSVC `/WX`): cast bools in bit-ops, no unused symbols.
-- Log: `bin\x64\Sunrise\logs\sunrise.log` (truncated per run; `.old` = previous). Retail engine log is
+- Log: `bin\x64\Dawn\logs\dawn.log` (truncated per run; `.old` = previous). Retail engine log is
   piped in as `ev=retail` and **names things directly** — the AH handshake lines above are `ev=retail`.
 
 ### In-game workflow (Homecoming is a runtime toggle, not saved)
@@ -241,7 +241,7 @@ powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\sunrise-dev.p
 
 ---
 
-## 8. Sunrise probe modules written this session (client hooks, all in `Sunrise-src/Sunrise/src/client/hooks/`)
+## 8. Dawn probe modules written this session (client hooks, all in `Dawn-src/Dawn/src/client/hooks/`)
 
 Observation modules (safe, keep): `ai/{mode,manager,pump}_probe`, `homecoming/{homecoming,predicate,
 ingest,holder,staged,armgate,pub}_probe`, `homecoming/authored_probe`.
@@ -252,7 +252,7 @@ ingest,holder,staged,armgate,pub}_probe`, `homecoming/authored_probe`.
   experiment — **turn off / revert for the AH-handshake work**). Also dumps a full manager snapshot
   (`stage=SNAP`) the instant any payload field is non-zero (never fired offline).
 
-Activation of modules: `Sunrise-src/Sunrise/src/client/runtime/client_hook_activation.cpp`.
+Activation of modules: `Dawn-src/Dawn/src/client/runtime/client_hook_activation.cpp`.
 DISABLED harmful modules: `homecoming/{authored_inject,root_publish,authored_force}`, `pub_probe`.
 
 ### DLL states (md5, most-recent last)

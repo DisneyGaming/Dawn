@@ -11,7 +11,7 @@
 #include "../../logging/log.h"
 #include "busy.h"
 
-namespace sunrise::core::ui::busy {
+namespace dawn::core::ui::busy {
 namespace {
 
 /** Two presents prove the first one reached the screen before the caller stalls the game. */
@@ -181,4 +181,4 @@ void record_drawn(bool complete) noexcept {
 }
 
 } // namespace internal
-} // namespace sunrise::core::ui::busy
+} // namespace dawn::core::ui::busy

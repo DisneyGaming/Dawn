@@ -1,6 +1,6 @@
 #include "sensor_auth_update.h"
 
-namespace sunrise::middleware::bap::activity_message::sensor_auth_update {
+namespace dawn::middleware::bap::activity_message::sensor_auth_update {
 namespace {
 
 namespace bits = encoding::bits;
@@ -169,4 +169,4 @@ bool write_object_block(bits::Writer& writer,
     return complete;
 }
 
-} // namespace sunrise::middleware::bap::activity_message::sensor_auth_update
+} // namespace dawn::middleware::bap::activity_message::sensor_auth_update

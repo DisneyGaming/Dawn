@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::client::content::items::details::layout {
+namespace dawn::client::content::items::details::layout {
 
 /** The optional equipment block is self-relative from definition byte 16. */
 inline constexpr std::size_t kEquipmentBlockRelativeOffset = 16;
@@ -109,4 +109,4 @@ static_assert(offsetof(OrdinarySocketEntry, initialPlugIndex) == kInitialPlugInd
 static_assert(sizeof(OrdinarySocketEntry) == kOrdinarySocketEntrySize);
 static_assert(sizeof(ArrayHeader) == kArrayFirstEntryOffset);
 
-} // namespace sunrise::client::content::items::details::layout
+} // namespace dawn::client::content::items::details::layout

@@ -8,7 +8,7 @@
 
 #include "../ui_module_descriptor.h"
 
-namespace sunrise::core::ui::modules::registry {
+namespace dawn::core::ui::modules::registry {
 
 /** 32 slots cover every UI domain and cap the static registry storage. */
 inline constexpr std::size_t kModuleCapacity = 32;
@@ -103,4 +103,4 @@ void clear() noexcept;
 /** Clears all storage and resets the revision. */
 void shutdown() noexcept;
 
-} // namespace sunrise::core::ui::modules::registry
+} // namespace dawn::core::ui::modules::registry

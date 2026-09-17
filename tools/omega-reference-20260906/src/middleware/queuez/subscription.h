@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace sunrise::middleware::queuez {
+namespace dawn::middleware::queuez {
 
 /** Client-picked replicated family id shared by subscription transports. */
 struct Subscription {
@@ -10,4 +10,4 @@ struct Subscription {
     std::uint64_t familyRootSoid{};
 };
 
-} // namespace sunrise::middleware::queuez
+} // namespace dawn::middleware::queuez

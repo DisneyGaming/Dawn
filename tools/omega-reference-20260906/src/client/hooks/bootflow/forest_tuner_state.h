@@ -4,7 +4,7 @@
 #include <atomic>
 #include <cstdint>
 
-namespace sunrise::client::hooks::bootflow::forest_tuner {
+namespace dawn::client::hooks::bootflow::forest_tuner {
 
 /**
  * Shared dial between the Forest menu page and the generator tick hook. The panel writes
@@ -50,4 +50,4 @@ struct State {
 /** @return True while a generator sensor instance exists to receive the dial. */
 [[nodiscard]] bool sensor_present() noexcept;
 
-} // namespace sunrise::client::hooks::bootflow::forest_tuner
+} // namespace dawn::client::hooks::bootflow::forest_tuner

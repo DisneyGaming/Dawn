@@ -9,7 +9,7 @@
 #include "../../external_server/route.h"
 #include "internal.h"
 
-namespace sunrise::client::hooks::network::http {
+namespace dawn::client::hooks::network::http {
 namespace {
 
 /** Exact ABI of the executor this replacement stands in for. */
@@ -184,13 +184,13 @@ std::int64_t route_descriptor(const coordinator::CallLease& lease,
     }
 
     const auto responseCapacity = static_cast<std::size_t>(descriptor.responseCapacity);
-    const sunrise::client::network::HttpRequest request{
+    const dawn::client::network::HttpRequest request{
         bounded_string(descriptor.url),
         bounded_string(descriptor.contentType),
         {static_cast<const std::byte*>(descriptor.requestBody), descriptor.requestSize},
         {static_cast<std::byte*>(descriptor.responseBody), responseCapacity},
     };
-    sunrise::client::network::HttpResponse response;
+    dawn::client::network::HttpResponse response;
     if (!lease.httpConsumer(request, response)) {
         return unmapped_route(wrapperValue);
     }
@@ -200,4 +200,4 @@ std::int64_t route_descriptor(const coordinator::CallLease& lease,
     return kSkipNativeOperation;
 }
 
-} // namespace sunrise::client::hooks::network::http
+} // namespace dawn::client::hooks::network::http

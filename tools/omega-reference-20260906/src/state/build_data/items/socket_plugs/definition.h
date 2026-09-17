@@ -5,7 +5,7 @@
 
 #include "../details/definition.h"
 
-namespace sunrise::state::build_data::items::socket_plugs {
+namespace dawn::state::build_data::items::socket_plugs {
 
 /** Ordinary item instances expose at most 12 socket lanes. */
 inline constexpr std::size_t kLaneCapacity = details::kInitialPlugCapacity;
@@ -36,4 +36,4 @@ struct Pool {
 /** Native item-definition index of one allowed plug. */
 using Member = std::uint16_t;
 
-} // namespace sunrise::state::build_data::items::socket_plugs
+} // namespace dawn::state::build_data::items::socket_plugs

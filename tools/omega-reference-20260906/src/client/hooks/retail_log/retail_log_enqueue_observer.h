@@ -9,7 +9,7 @@
 #include "../../hooking/call_gate.h"
 #include "../../hooking/detour.h"
 
-namespace sunrise::client::hooks::retail_log {
+namespace dawn::client::hooks::retail_log {
 
 using Enqueue = void(__fastcall*)(std::int32_t, const char*) noexcept;
 
@@ -31,7 +31,7 @@ void assert_verbosity() noexcept;
 void register_schema_marker(std::uint32_t marker) noexcept;
 
 /**
- * Retains the exact activity-host descriptor Sunrise is about to publish. The retail-log observer
+ * Retains the exact activity-host descriptor Dawn is about to publish. The retail-log observer
  * compares it with native memory at the membership-consumer and secure-channel boundaries.
  */
 void register_gameplay_join_descriptor(const std::byte* descriptor,
@@ -39,4 +39,4 @@ void register_gameplay_join_descriptor(const std::byte* descriptor,
                                        std::int32_t regionIndex,
                                        std::uint64_t hostSessionId) noexcept;
 
-} // namespace sunrise::client::hooks::retail_log
+} // namespace dawn::client::hooks::retail_log

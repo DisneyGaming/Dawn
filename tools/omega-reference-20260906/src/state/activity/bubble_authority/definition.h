@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::state::activity::bubble_authority {
+namespace dawn::state::activity::bubble_authority {
 
 /** 64 usable bubbles and one first-send fallback own grant tokens. */
 inline constexpr std::size_t kAuthoritySlotCount = 65;
@@ -30,4 +30,4 @@ struct AuthorityState final {
     std::array<std::uint16_t, kAuthoritySlotCount> grantTokens{};
 };
 
-} // namespace sunrise::state::activity::bubble_authority
+} // namespace dawn::state::activity::bubble_authority

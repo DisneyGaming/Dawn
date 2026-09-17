@@ -7,7 +7,7 @@
 #include "polled_input_replacements.h"
 #include "runtime.h"
 
-namespace sunrise::client::hooks::polled_input {
+namespace dawn::client::hooks::polled_input {
 namespace {
 
 /** Loading from System32 stops the guard taking exports from the game directory. */
@@ -110,4 +110,4 @@ bool is_installed() noexcept {
     return g_installed.load(std::memory_order_acquire);
 }
 
-} // namespace sunrise::client::hooks::polled_input
+} // namespace dawn::client::hooks::polled_input

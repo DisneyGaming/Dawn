@@ -3,7 +3,7 @@
 #include "omega_ending_transit_rules.h"
 #include "lifecycle_generation.h"
 
-namespace sunrise::state::activity::omega_ending {
+namespace dawn::state::activity::omega_ending {
 /** Encounter-owner final-death boundary, never inferred from position/time. */
 [[nodiscard]] bool request(Token token) noexcept;
 /** Explicit Insert-menu preview, allowed only in the opening Lighthouse before
@@ -46,4 +46,4 @@ struct TransitInput final {
 void note_membership_published(ActivityInstanceKey activity,std::uint64_t run,std::uint64_t now) noexcept;
 /** A reset also invalidates late native receipts and a previous ending token. */
 void reset() noexcept;
-} // namespace sunrise::state::activity::omega_ending
+} // namespace dawn::state::activity::omega_ending

@@ -8,7 +8,7 @@
 
 #include "../log.h"
 
-namespace sunrise::core::log::snapshot {
+namespace dawn::core::log::snapshot {
 
 /** The newest 128 events cover short diagnosis windows and cap static storage. */
 inline constexpr std::size_t kEntryCapacity = 128;
@@ -61,4 +61,4 @@ private:
 /** @return A value-owned chronological copy of all retained events. */
 [[nodiscard]] Snapshot take() noexcept;
 
-} // namespace sunrise::core::log::snapshot
+} // namespace dawn::core::log::snapshot

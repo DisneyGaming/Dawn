@@ -6,7 +6,7 @@
 #include "../definition.h"
 #include "records/domains.h"
 
-namespace sunrise::state::build_data::cache {
+namespace dawn::state::build_data::cache {
 
 /** Result of opening and checking the one build-data cache file. */
 enum class LoadStatus {
@@ -66,10 +66,10 @@ enum class WriteDisposition {
 };
 
 /**
- * Reads Destiny's PE identity and hashes the loaded Sunrise module's on-disk image.
+ * Reads Destiny's PE identity and hashes the loaded Dawn module's on-disk image.
  * @param configuredEquipmentHash Hash of the authored equipment and the score rules.
  * @param identity Receives the PE fields, configured-equipment hash, and producer digest.
- * @return True when Destiny is a valid PE image and the exact Sunrise image can be hashed.
+ * @return True when Destiny is a valid PE image and the exact Dawn image can be hashed.
  */
 [[nodiscard]] bool current_build_identity(std::uint64_t configuredEquipmentHash,
                                           BuildIdentity& identity) noexcept;
@@ -77,7 +77,7 @@ enum class WriteDisposition {
 /**
  * Loads one exact cache file into fixed caller storage.
  * @param path Null-terminated cache path.
- * @param expectedBuild Current Destiny, configuration, and Sunrise producer identity.
+ * @param expectedBuild Current Destiny, configuration, and Dawn producer identity.
  * @param output Fixed caller storage for all generated domains.
  * @param counts Receives every checked domain count.
  * @return Missing, loaded, stale, or invalid. Never leaves partial counts.
@@ -98,7 +98,7 @@ enum class WriteDisposition {
  * Creates a missing cache, or replaces one marked stale, in one step.
  * @param directory Null-terminated cache directory.
  * @param path Null-terminated final cache path.
- * @param build Current Destiny, configuration, and Sunrise producer identity.
+ * @param build Current Destiny, configuration, and Dawn producer identity.
  * @param domains Complete mapping domains.
  * @param disposition Create only, or replace a stale cache.
  * @return True when the file is on disk under its requested final name.
@@ -109,4 +109,4 @@ enum class WriteDisposition {
                          records::Domains domains,
                          WriteDisposition disposition) noexcept;
 
-} // namespace sunrise::state::build_data::cache
+} // namespace dawn::state::build_data::cache

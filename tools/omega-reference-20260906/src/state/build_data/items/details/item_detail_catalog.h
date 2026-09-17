@@ -6,7 +6,7 @@
 
 #include "definition.h"
 
-namespace sunrise::state::build_data::items::details {
+namespace dawn::state::build_data::items::details {
 
 /** Clears every generated configured item detail. */
 void clear() noexcept;
@@ -44,4 +44,4 @@ void clear() noexcept;
 /** @return Number of configured item details, read under the lock. */
 [[nodiscard]] std::size_t count() noexcept;
 
-} // namespace sunrise::state::build_data::items::details
+} // namespace dawn::state::build_data::items::details

@@ -2,7 +2,7 @@
 
 #include "../../platform/sdk.h"
 
-namespace sunrise::client::hooks::egress::winsock::transmission {
+namespace dawn::client::hooks::egress::winsock::transmission {
 
 /** Sends contiguous bytes only to a connected exact IPv4 redirect target. */
 int WSAAPI send_bytes(SOCKET socket, const char* buffer, int length, int flags) noexcept;
@@ -46,4 +46,4 @@ INT PASCAL send_message(SOCKET socket,
 /** Sends disconnect data only to a connected exact IPv4 redirect target. */
 int WSAAPI send_disconnect(SOCKET socket, LPWSABUF outboundData) noexcept;
 
-} // namespace sunrise::client::hooks::egress::winsock::transmission
+} // namespace dawn::client::hooks::egress::winsock::transmission

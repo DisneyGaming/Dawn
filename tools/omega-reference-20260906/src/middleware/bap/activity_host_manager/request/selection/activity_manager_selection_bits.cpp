@@ -1,6 +1,6 @@
 #include "internal.h"
 
-namespace sunrise::middleware::bap::activity_host_manager::request::selection {
+namespace dawn::middleware::bap::activity_host_manager::request::selection {
 namespace {
 
 /** Bits in one byte. Both the source and the output cursor step by this. */
@@ -37,4 +37,4 @@ bool copy_bits(std::span<const std::byte> source,
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_host_manager::request::selection
+} // namespace dawn::middleware::bap::activity_host_manager::request::selection

@@ -17,7 +17,7 @@
 #include "internal.h"
 #include "legacy_owner_sentinel.h"
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 namespace {
 
 /** Runtime-decrypted activity-script event callback in the pinned Season of Arrivals client. */
@@ -884,4 +884,4 @@ void uninstall_activity_script_event_probe() noexcept {
     ReleaseSRWLockExclusive(&g_omegaSceneAuthorityObservationLock);
 }
 
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

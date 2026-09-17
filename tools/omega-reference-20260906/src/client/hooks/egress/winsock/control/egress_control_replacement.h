@@ -2,7 +2,7 @@
 
 #include "../../platform/sdk.h"
 
-namespace sunrise::client::hooks::egress::winsock::control {
+namespace dawn::client::hooks::egress::winsock::control {
 
 /** Forwards one provider control. The endpoint it configures is already loopback-only. */
 int WSAAPI socket_control(SOCKET socket,
@@ -15,4 +15,4 @@ int WSAAPI socket_control(SOCKET socket,
                           LPWSAOVERLAPPED overlapped,
                           LPWSAOVERLAPPED_COMPLETION_ROUTINE completion) noexcept;
 
-} // namespace sunrise::client::hooks::egress::winsock::control
+} // namespace dawn::client::hooks::egress::winsock::control

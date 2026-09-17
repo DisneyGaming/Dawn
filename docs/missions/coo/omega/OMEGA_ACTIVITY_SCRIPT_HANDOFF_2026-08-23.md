@@ -14,25 +14,25 @@ The latest log also provides the clearest evidence so far for how mission progre
 5. The client consumes that authoritative state and activates scripts, scenes, spawners, dialogue,
    gates, and later mission phases.
 
-Steps 1–3 now happen. Step 4 does not. The current Sunrise server deliberately parses and logs the
+Steps 1–3 now happen. Step 4 does not. The current Dawn server deliberately parses and logs the
 type-6 sense update with `host_action=none`, then returns success without changing state. This is
 the current concrete boundary—not a generic “init is missing” problem.
 
 ## Current working build
 
 - Workspace: `C:\Destiny 2 Development`
-- Source: `C:\Destiny 2 Development\Sunrise-src`
+- Source: `C:\Destiny 2 Development\Dawn-src`
 - Live DLL: `C:\Destiny 2 Development\bin\x64\steam_api64.dll`
 - Live DLL size: `12,092,928` bytes
 - Live DLL SHA-256:
   `CA166AFEB7A8A2253AED91BBB13D55CD0D25AD175CDEA09EA9EEC5CA7F66BA02`
-- Active log: `C:\Destiny 2 Development\bin\x64\Sunrise\logs\sunrise.log`
+- Active log: `C:\Destiny 2 Development\bin\x64\Dawn\logs\dawn.log`
 - Marker-working comparison log:
-  `C:\Destiny 2 Development\tmp\omega_handoff_log\evidence\sunrise.latest.log`
+  `C:\Destiny 2 Development\tmp\omega_handoff_log\evidence\dawn.latest.log`
 - Current generated scenario cache:
-  `C:\Destiny 2 Development\bin\x64\Sunrise\cache\build_data.bin`
+  `C:\Destiny 2 Development\bin\x64\Dawn\cache\build_data.bin`
 - Current content manifest:
-  `C:\Destiny 2 Development\bin\x64\Sunrise\cache\content_manifest.bin`
+  `C:\Destiny 2 Development\bin\x64\Dawn\cache\content_manifest.bin`
 
 Runtime `settings.json` has:
 
@@ -75,24 +75,24 @@ subset and falls back to the dynamic roster. Other destinations remain dynamic.
 
 Implementation locations:
 
-- `Sunrise/src/client/content/scenarios/scenario_roster_groups.cpp`
+- `Dawn/src/client/content/scenarios/scenario_roster_groups.cpp`
   - exact four-key set near line 18
   - measured-key mask near line 178
-- `Sunrise/src/client/content/scenarios/scenario_roster_build.cpp`
+- `Dawn/src/client/content/scenarios/scenario_roster_build.cpp`
   - records the measured Omega key mask near line 77
-- `Sunrise/src/client/content/scenarios/scenario_roster_publish.cpp`
+- `Dawn/src/client/content/scenarios/scenario_roster_publish.cpp`
   - exact six-key output near line 13
   - replacement/fallback logic near line 27
-- `Sunrise/src/core/settings/client/definition.h`
+- `Dawn/src/core/settings/client/definition.h`
   - setting near line 49
-- `Sunrise/src/core/settings/client/client_settings_parser.cpp`
+- `Dawn/src/core/settings/client/client_settings_parser.cpp`
   - JSON parser near line 59
 
 ### Current host handling of client sensor reports
 
 The current server does **not** advance Omega from sensor reports.
 
-`Sunrise/src/server/bap/encrypted/activity_message/activity_message_route.cpp`:
+`Dawn/src/server/bap/encrypted/activity_message/activity_message_route.cpp`:
 
 - `report_sense_update` begins near line 83.
 - Its log explicitly says `host_action=none` near line 94.
@@ -245,7 +245,7 @@ not itself install/enable the authoritative activity definition or request the s
 3. The client constructs slot 35 and slot 18 with the exact roster.
 4. Slot 35 remains neutral/all zero.
 5. The client detects and reports the exact `D00142CF/type-30/index-20` opening event.
-6. The current Sunrise host intentionally performs no action for that event.
+6. The current Dawn host intentionally performs no action for that event.
 7. Spawner/script state remains unresolved and inactive.
 8. Calling a native lifecycle initializer by itself is not enough. The earlier experiment reached
    later internal stages but did not restore markers or populate the authoritative definition.
@@ -311,7 +311,7 @@ the current clean baseline.
 A previous source snapshot contains an experimental Omega transition path:
 
 ```text
-C:\Destiny 2 Development\deliverables\Sunrise-complete-source-and-Release-20260822\source\Sunrise-src\Sunrise\src
+C:\Destiny 2 Development\deliverables\Dawn-complete-source-and-Release-20260822\source\Dawn-src\Dawn\src
 ```
 
 Relevant archived files:
@@ -425,7 +425,7 @@ Recommended reverse-engineering path:
    `definition_pending`.
 3. Identify what message/component class supplies those writes.
 4. Follow the first transition from pending/disabled to selected/registered/active.
-5. Correlate that call with the exact outbound auth group/slot emitted by Sunrise.
+5. Correlate that call with the exact outbound auth group/slot emitted by Dawn.
 6. Separately follow the type-30 sensor component's producer to confirm that the inbound type-6
    packet is an event notification rather than the script executor itself.
 
@@ -457,7 +457,7 @@ mission progression. Those behavioral changes were rolled back.
 ### Old DLL backup incompatibility
 
 An older 13 MB DLL was incompatible with the current content and caused Steam's “Problem reading
-game content” error. Do not use arbitrary `.sunrise\backup` DLLs as a rollback strategy. Rebuild
+game content” error. Do not use arbitrary `.dawn\backup` DLLs as a rollback strategy. Rebuild
 from the current source and verify the live/build SHA-256 match.
 
 ### Cache behavior
@@ -466,7 +466,7 @@ Roster-builder changes do not affect an already generated `build_data.bin`. Afte
 discovery/publication, close Destiny 2 and use:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\sunrise-dev.ps1" -ClearCache
+powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\dawn-dev.ps1" -ClearCache
 ```
 
 The next launch will be slower while the content cache regenerates. Do not clear the cache for

@@ -10,7 +10,7 @@ Authored missions — scenes, dialogue, encounters, devices, objectives — driv
 against recovered native package data.
 
 <sub>
-<b>TESTERS AND DEVELOPERS ONLY.</b> This is not a mod release and there is no installer.<br>
+<b>TESTERS AND DEVELOPERS ONLY.</b> This is a development build; a source-build installer is included.<br>
 It assumes you can build a C++20 DLL, read a log, and recover from a broken install yourself.
 </sub>
 
@@ -18,15 +18,42 @@ It assumes you can build a C++20 DLL, read a log, and recover from a broken inst
 
 ---
 
-> ### The current install path is a bootstrap, not the product
->
-> Today Dawn is installed **on top of a working Sunrise build** — you stand Sunrise up first, then
-> replace its DLL and drop in the mission scripts. That is how it works *right now*, because Dawn
-> forks Sunrise and reuses its runtime tree, settings and generated caches.
->
-> **This is not the intended way to install Dawn and it will not stay this way.** Do not build
-> tooling, scripts, or documentation that assumes the Sunrise-first sequence is permanent. Treat
-> everything in [Setup](#setup) as the current bootstrap, and expect the steps below to be replaced.
+Dawn runs against an existing Destiny 2 build 86657 installation. The installer preserves the
+previous runtime and copies its account, settings, and caches into the new `Dawn` folder.
+The DLL can also migrate a unique sibling runtime on first launch. Existing generated caches
+are reused when compatible; missing or outdated data is rebuilt from installed packages.
+
+## Loadout studio
+
+Open **Loadout** in the in-game menu. The native editor adapts Sundial's catalog, perk selection,
+localization, and preview layouts to Dawn's account storage. Parhelion is not required.
+
+- Edit character identity, progression, equipment, subclasses, and character/account inventories.
+- All nine subclasses have prebuilt ability combinations, including every tree, jump, grenade,
+  and class ability choice. Saving preserves the other combinations for later edits.
+- Browse weapons by type, armor by slot and class, cosmetics, and the full discovered perk pool.
+  Search names, descriptions, or hashes; filter rarity and sort type/name/rarity. Weapon and armor
+  cards use their layered preview artwork from the installed game packages.
+- Give weapons and armor, equip owned items, change power and quantities, lock items, and edit
+  every ordinary socket. The perk picker offers Compatible, Socket + gear type, Socket type,
+  Gear type, and All scopes. Expanded scopes intentionally allow unconventional combinations.
+- Randomize selected equipment slots while preserving the previous items in inventory. Armor
+  stat targets select the closest available native stat plugs and display the actual result.
+
+Changes stay in a draft until **Save changes**. Saving creates an SQLite backup in
+`Dawn/editor-backups`, checks inventory limits, and rejects a stale draft if the account changed
+while editing. **Restart the game after saving** to load the edited account. Reload discards an
+unsaved draft only after confirmation. Inventory capacity and one exotic per gear category are
+preserved; no item is silently removed to make room.
+
+The **Credits** tab thanks both upstream projects and links their original repositories.
+Sundial attribution, source revision, and GPL license are in
+[Dawn/vendor/sundial/NOTICE.md](Dawn/vendor/sundial/NOTICE.md).
+
+For local validation, export installed fixtures with `tools/testing/editor_package_fixtures.py`,
+then build `Dawn/unit/editor_visual_tests.vcxproj` and run its executable with fixture, screenshot,
+and installed font paths as its three arguments. Fixtures and screenshots stay in
+ignored local folders; game artwork is not bundled in source control.
 
 ---
 
@@ -38,6 +65,9 @@ Lua owns story order and gating; C++ owns native identity, receipts and wire enc
 
 Lua is evaluated once at load and its VM closes before gameplay. There is no live reload and no
 scripting at runtime.
+
+Eater of Worlds is excluded from this build. Its implementation and reconstruction notes are
+preserved in [a separate archive](optional/eater-of-worlds/README.md).
 
 ```
 scripts/<mission>.lua        story order, dependencies, gates, objectives
@@ -52,7 +82,7 @@ src/middleware/, src/server/ wire encoding and publication
 | | |
 |---|---|
 | Game | Destiny 2 **86657** (`86657.20.08.23.1800.d2_rc`) |
-| Base | **A working Sunrise install** — *current bootstrap only, see the note above* |
+| Base | An existing build 86657 game installation |
 | Toolchain | **MSBuild 18 Build Tools**, platform toolset **v145**, C++20 |
 | Python | 3.11+, for `tools/coo/` validation and the binding generators |
 
@@ -65,26 +95,25 @@ Builds are `/W4 /WX`. Warnings are errors.
 
 ## Quick install
 
-If you installed Sunrise with the official installer and have never built from source, this does
-the whole thing — builds Dawn, backs up what it touches, deploys to every location that could win,
+For an existing build 86657 game installation, this — builds Dawn, backs up what it touches, deploys to every location that could win,
 ensures the mission arrival overrides exist, then launches and proves which DLL actually mapped:
 
 ```powershell
-git clone <repo> dawn
+git clone --branch codex/production https://github.com/isinternets/Dawn.git dawn
 cd dawn
 .\tools\install\Install-Dawn.ps1
 ```
 
 | flag | |
 |---|---|
-| `-GameRoot "D:\Sunrise"` | skip auto-detection |
+| `-GameRoot "D:\Dawn"` | skip auto-detection |
 | `-SkipBuild` | deploy the existing build output |
 | `-NoLaunch` | deploy without starting the game |
 | `-Restore` | roll back to the last backup it made |
 
 Backups land in `<GAME_ROOT>\.dawn\backup\<timestamp>\` and cover both DLL locations, local runtime
-settings, player databases, and every mission script. The pristine Steam DLL the Sunrise installer
-saved at `.sunrise\original\steam_api64.dll` is never touched.
+settings, player databases, and every mission script. The pristine Steam DLL the Dawn installer
+saved at `.dawn\original\steam_api64.dll` is never touched.
 
 Read [Setup](#setup) anyway — the script automates those steps but the reasoning behind them is
 what you will need when something goes wrong.
@@ -93,34 +122,29 @@ what you will need when something goes wrong.
 
 ## Setup
 
-Seven steps, start to finish. Steps 1 and 2 are the parts that will change.
+Use the installer above, or follow these steps for a manual deployment.
 
-### 1. Stand up a working Sunrise install *(bootstrap)*
+### 1. Locate the installed game
 
-Dawn ships a DLL and mission scripts — not a runtime. Before Dawn can load anything you need a
-Sunrise install that already:
-
-- launches the game and reaches the world,
-- has generated its caches (`build_data.bin`, `content_manifest.bin`),
-- has a valid `settings.json`.
-
-Confirm Sunrise boots on its own **before** you touch anything below. If Sunrise is broken, Dawn
-will be broken in ways that look like Dawn's fault.
+Use the existing build 86657 installation that contains `destiny2.exe` and the complete `packages`
+folder. The project builds the replacement DLL and mission scripts; it does not include the game.
+The installer copies a unique previous runtime into `Dawn` before writing defaults, preserving
+existing character saves. Keep the original runtime as a rollback copy.
 
 ### 2. Find where your install actually loads from *(bootstrap)*
 
 Dawn resolves its mission scripts **relative to the loaded DLL**, so this step decides everything
 that follows. Get it wrong and every later step silently does nothing.
 
-A Sunrise install looks like this:
+A Dawn install looks like this:
 
 ```
 <GAME_ROOT>/
   destiny2.exe                  <- the executable sits at the root
   bin/x64/
-    steam_api64.dll             <- where the Sunrise installer places the mod
-    Sunrise/                    <- runtime tree: scripts, settings, logs, cache
-  .sunrise/
+    steam_api64.dll             <- where the Dawn installer places the mod
+    Dawn/                    <- runtime tree: scripts, settings, logs, cache
+  .dawn/
     original/steam_api64.dll    <- the pristine Steam DLL, kept for rollback
     install-state.json
 ```
@@ -133,11 +157,11 @@ launch the game and ask it:
 Get-Process destiny2 | % { $_.Modules | ? { $_.ModuleName -like 'steam_api64*' } | select FileName }
 ```
 
-Whatever path that prints is the one that matters. The `Sunrise/` runtime tree must be a child of
+Whatever path that prints is the one that matters. The `Dawn/` runtime tree must be a child of
 that DLL's directory. Its `scripts/`, `settings.json`, `player-state.db`, and `logs/` entries live
 inside that tree.
 
-See [Player persistence](Sunrise/docs/PERSISTENCE.md) for first-run JSON migration, backups, and
+See [Player persistence](Dawn/docs/PERSISTENCE.md) for first-run JSON migration, backups, and
 the current mission-resume limits.
 
 If you are unsure, deploy to both locations in step 4 and let this command arbitrate.
@@ -145,10 +169,10 @@ If you are unsure, deploy to both locations in step 4 and let this command arbit
 ### 3. Clone and build
 
 ```bash
-git clone <repo> dawn && cd dawn
+git clone --branch codex/production https://github.com/isinternets/Dawn.git dawn && cd dawn
 
 "C:/Program Files (x86)/Microsoft Visual Studio/18/BuildTools/MSBuild/Current/Bin/MSBuild.exe" \
-  Sunrise/Sunrise.vcxproj -p:Configuration=Release -p:Platform=x64 \
+  Dawn/Dawn.vcxproj -p:Configuration=Release -p:Platform=x64 \
   -p:PreferredToolArchitecture=x64 -m -v:minimal -nologo
 ```
 
@@ -188,9 +212,9 @@ Copy-Item build/x64/Release/steam_api64.dll "$Root/steam_api64.dll"         -For
 
 # the runtime tree must sit beside the DLL that actually maps - deploy to both trees for the
 # same reason the DLL goes to both, and let step 7 arbitrate
-New-Item -ItemType Directory -Force -Path "$Root/bin/x64/Sunrise/scripts", "$Root/Sunrise/scripts" | Out-Null
-Copy-Item Sunrise/scripts/*.lua "$Root/bin/x64/Sunrise/scripts/" -Force
-Copy-Item Sunrise/scripts/*.lua "$Root/Sunrise/scripts/"         -Force
+New-Item -ItemType Directory -Force -Path "$Root/bin/x64/Dawn/scripts", "$Root/Dawn/scripts" | Out-Null
+Copy-Item Dawn/scripts/*.lua "$Root/bin/x64/Dawn/scripts/" -Force
+Copy-Item Dawn/scripts/*.lua "$Root/Dawn/scripts/"         -Force
 ```
 
 Keeping both copies identical costs nothing and removes a whole class of "my change did nothing".
@@ -199,9 +223,9 @@ Deploying the DLL to both locations but the scripts to only one is the worst of 
 DLL maps, reads the runtime tree beside *itself*, and finds the **old** scripts. That presents as a
 change that did nothing, or as a mission whose C++ and Lua disagree.
 
-**Rollback.** The Sunrise installer preserves the untouched Steam DLL at
-`<GAME_ROOT>/.sunrise/original/steam_api64.dll`. Copy it back over both locations to return to a
-clean game. Back up the Sunrise DLL you are replacing too, so you can get back to plain Sunrise
+**Rollback.** The Dawn installer preserves the untouched Steam DLL at
+`<GAME_ROOT>/.dawn/original/steam_api64.dll`. Copy it back over both locations to return to a
+clean game. Back up the Dawn DLL you are replacing too, so you can get back to plain Dawn
 without reinstalling.
 
 ### 5. Choose a mission
@@ -240,7 +264,7 @@ Boot to in-world takes roughly 60–110 seconds.
 Before judging anything in game, confirm the build and the script:
 
 ```bash
-grep "ev=coo_script" <runtime-tree>/logs/sunrise.log
+grep "ev=coo_script" <runtime-tree>/logs/dawn.log
 ```
 
 ```
@@ -266,13 +290,13 @@ just deployed, **you are testing an old build** — go back to step 2 and check 
 
 ## Reading a run
 
-Everything worth knowing is in the runtime tree's `logs/sunrise.log`. It rotates to `.old` on every
+Everything worth knowing is in the runtime tree's `logs/dawn.log`. It rotates to `.old` on every
 launch, so copy it before relaunching if a run is worth keeping.
 
 ```bash
-grep "ev=coo_script"    sunrise.log   # which graph loaded, and its fingerprint
-grep "ev=coo_executor"  sunrise.log   # phase + step bitmask
-grep "ev=coo_stall"     sunrise.log   # the stalled command and what it waits on
+grep "ev=coo_script"    dawn.log   # which graph loaded, and its fingerprint
+grep "ev=coo_executor"  dawn.log   # phase + step bitmask
+grep "ev=coo_stall"     dawn.log   # the stalled command and what it waits on
 ```
 
 `ev=coo_executor` prints `active=` and `complete=` as bitmasks — decode them against the graph's
@@ -300,10 +324,10 @@ Read these first, in order:
 
 | doc | what it settles |
 |---|---|
-| [`Sunrise/docs/MISSION-IMPLEMENTATION-TEMPLATE.md`](Sunrise/docs/MISSION-IMPLEMENTATION-TEMPLATE.md) | the implementation contract — beat records, binding records, acceptance checklists |
-| [`Sunrise/docs/LUA-MISSION-AUTHORING.md`](Sunrise/docs/LUA-MISSION-AUTHORING.md) | the authoring interface and the six per-beat contracts |
-| [`Sunrise/docs/NEW-MISSION-RECONSTRUCTION-GUIDE.md`](Sunrise/docs/NEW-MISSION-RECONSTRUCTION-GUIDE.md) | recovering a mission from its package |
-| [`Sunrise/docs/UNIVERSAL-MISSION-SERVICES.md`](Sunrise/docs/UNIVERSAL-MISSION-SERVICES.md) | what the shared services already do |
+| [`Dawn/docs/MISSION-IMPLEMENTATION-TEMPLATE.md`](Dawn/docs/MISSION-IMPLEMENTATION-TEMPLATE.md) | the implementation contract — beat records, binding records, acceptance checklists |
+| [`Dawn/docs/LUA-MISSION-AUTHORING.md`](Dawn/docs/LUA-MISSION-AUTHORING.md) | the authoring interface and the six per-beat contracts |
+| [`Dawn/docs/NEW-MISSION-RECONSTRUCTION-GUIDE.md`](Dawn/docs/NEW-MISSION-RECONSTRUCTION-GUIDE.md) | recovering a mission from its package |
+| [`Dawn/docs/UNIVERSAL-MISSION-SERVICES.md`](Dawn/docs/UNIVERSAL-MISSION-SERVICES.md) | what the shared services already do |
 
 The six contracts are separate, and collapsing them is the most common authoring mistake:
 **preload → arm → request → ready → advance → retire.**

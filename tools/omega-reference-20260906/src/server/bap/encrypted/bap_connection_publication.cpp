@@ -11,7 +11,7 @@
 #include "../../../state/activity/forced/activity_forced_destination.h"
 #include "push/activity/internal.h"
 
-namespace sunrise::server::bap::encrypted {
+namespace dawn::server::bap::encrypted {
 namespace {
 
 /** Measured delay before the second Family-4 snapshot. */
@@ -226,4 +226,4 @@ void arm_repushes(Session& session, const queuez::StagedPublication& queuezPubli
     }
 }
 
-} // namespace sunrise::server::bap::encrypted
+} // namespace dawn::server::bap::encrypted

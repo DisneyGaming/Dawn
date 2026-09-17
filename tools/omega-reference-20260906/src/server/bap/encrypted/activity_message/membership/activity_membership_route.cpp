@@ -12,7 +12,7 @@
 #include "../../../../../state/activity/membership/activity_membership_query.h"
 #include "../../../../../state/runtime/runtime.h"
 
-namespace sunrise::server::bap::encrypted::activity_message::membership {
+namespace dawn::server::bap::encrypted::activity_message::membership {
 namespace {
 
 namespace service = middleware::bap::activity_message;
@@ -241,4 +241,4 @@ bool prepare_acknowledgement(state::activity::ActivityInstanceKey key,
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted::activity_message::membership
+} // namespace dawn::server::bap::encrypted::activity_message::membership

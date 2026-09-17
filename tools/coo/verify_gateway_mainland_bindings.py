@@ -3,7 +3,7 @@ import argparse,hashlib,importlib.util,json,re,struct
 from generate_gateway_ai import assignment
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
-FIXTURE=ROOT/'Sunrise/unit/fixtures/gateway_mainland_wire.h'
+FIXTURE=ROOT/'Dawn/unit/fixtures/gateway_mainland_wire.h'
 
 def generate():
  image=(ROOT/'destiny2_unpacked.bin').read_bytes()
@@ -13,7 +13,7 @@ def generate():
  authored=json.loads((ROOT/'build/coo/gateway-research/gateway-authored-bindings.json').read_text())
  sources={s['slot']:s for s in authored['sources'] if s['registry']==0x4B946B28 and 45<=s['slot']<=64}
  group=next(g for g in authored['groups'] if g['registry']==0x4B946B28)
- text=(ROOT/'Sunrise/src/state/activity/gateway/traversal_catalog.h').read_text()
+ text=(ROOT/'Dawn/src/state/activity/gateway/traversal_catalog.h').read_text()
  rows=re.findall(r'\{(\d+),kMainlandRegistry,0x([0-9A-F]+)U,0x([0-9A-F]+)U,(\d+),(\d+),(\d+),(\d+),(true|false)\}',text)
  rows=[row for row in rows if 45<=int(row[0])<=64]
  assert len(rows)==len(sources)==19

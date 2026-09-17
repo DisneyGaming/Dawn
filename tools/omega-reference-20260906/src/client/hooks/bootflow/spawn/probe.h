@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::client::hooks::bootflow::spawn {
+namespace dawn::client::hooks::bootflow::spawn {
 
 /** Which gate condition refused, in the gate's own order. */
 enum class Refusal : std::uint8_t {
@@ -85,4 +85,4 @@ void forget() noexcept;
  */
 [[nodiscard]] std::size_t describe(const Reading& reading, std::span<char> output) noexcept;
 
-} // namespace sunrise::client::hooks::bootflow::spawn
+} // namespace dawn::client::hooks::bootflow::spawn

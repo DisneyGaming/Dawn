@@ -62,7 +62,7 @@ The void energy visual composite is driven by two native scene events (`0x80B9FD
 - Rewriting the callback context object late had no visual effect because the direct-bank path had already locked its transform source.
 
 ### 3.2. Model Duplicate Suppression & Scene 2 Retention
-- **Duplicate Suppression:** Instantiating Scene 2's actor originally generated duplicate static meshes for Ikora's body, head, and cloth. Sunrise intercepts model-construction callbacks matching Scene 2's factory actor handle, suppressing mesh creation while preserving particle event subscriptions.
+- **Duplicate Suppression:** Instantiating Scene 2's actor originally generated duplicate static meshes for Ikora's body, head, and cloth. Dawn intercepts model-construction callbacks matching Scene 2's factory actor handle, suppressing mesh creation while preserving particle event subscriptions.
 - **VFX Retention:** Bypasses Scene 2's terminal actor-retirement transition so particle systems do not vanish at scene end. A deferred host completion latch replaces the skipped allocator signal, allowing Scene 3 to execute while Scene 2's beam persists.
 
 ### 3.3. Closed Vex Wall Discovery

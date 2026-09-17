@@ -4,7 +4,7 @@
 
 #include "../definition.h"
 
-namespace sunrise::state::activity::bubble_authority {
+namespace dawn::state::activity::bubble_authority {
 
 /**
  * Picks the bubble to hand this session, if one is owed.
@@ -38,4 +38,4 @@ void record_grant(ActivityInstanceKey key, const Grant& grant) noexcept;
  */
 void clear_grants(ActivityInstanceKey key) noexcept;
 
-} // namespace sunrise::state::activity::bubble_authority
+} // namespace dawn::state::activity::bubble_authority

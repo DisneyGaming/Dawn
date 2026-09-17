@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace sunrise::state::activity::omega_presentation {
+namespace dawn::state::activity::omega_presentation {
 
 /** The boss reveal is a type-6 cinematic, separate from Osiris's later type-43 Scene. */
 inline constexpr std::uint32_t kIntroRegistry = 0xF4D0E0B2U;
@@ -88,4 +88,4 @@ private:
     std::uint64_t requestedAt_{}, offeredAt_{}, startedAt_{};
 };
 
-} // namespace sunrise::state::activity::omega_presentation
+} // namespace dawn::state::activity::omega_presentation

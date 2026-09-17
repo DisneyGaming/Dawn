@@ -1,0 +1,492 @@
+{
+  "moved_files": [
+    {
+      "path": "Dawn/scripts/eater_of_worlds.lua",
+      "sha256": "7b4a3b8f8c5de317b669f2fead2060179c5bd1d81929fb32ca482657e15b6dea"
+    },
+    {
+      "path": "Dawn/src/client/hooks/bootflow/region_private_policy.h",
+      "sha256": "617d214f36248632ed194cbdacc8a3a781eb734f3e1f1fcc978d645f412d5347"
+    },
+    {
+      "path": "Dawn/src/client/activity/eater_player_health_binding.h",
+      "sha256": "67a6134332bb8ed1590456209597c57ae0bf846183c9a50a64c276fca55e2ac0"
+    },
+    {
+      "path": "Dawn/src/client/activity/eater_player_health.cpp",
+      "sha256": "f33f4ec86f90ff1c882803aa45cd9248e40232bf0085547f809c4a7b9fe44347"
+    },
+    {
+      "path": "Dawn/src/client/activity/eater_player_health.h",
+      "sha256": "020c7f3548df9af0afea50240eda4b05ab51b027702985213e1195dccf4402b1"
+    },
+    {
+      "path": "Dawn/src/client/hooks/bootflow/eater_cranium_deferred.h",
+      "sha256": "f63d5343ab2803458ee7efd18a650d63d8a050746c6e3e1d576d7d36c87e2084"
+    },
+    {
+      "path": "Dawn/src/client/hooks/bootflow/eater_door_native.h",
+      "sha256": "a09d33a05ba98e1d325968aa3c95ffd0dbf7dbe9b215000e94869c865542bcf9"
+    },
+    {
+      "path": "Dawn/src/client/hooks/bootflow/eater_entity_id_startup_policy.h",
+      "sha256": "b1a6f3876542d0415de9024f820a5d31bc7340d57e5380b99336074ef21c5e1f"
+    },
+    {
+      "path": "Dawn/src/client/hooks/bootflow/eater_entity_id_startup.cpp",
+      "sha256": "21f6043a93415589cb8d5f197b80d1f848853eeed73ea6ce66a78e5277a04ec2"
+    },
+    {
+      "path": "Dawn/src/client/hooks/bootflow/eater_of_worlds_arrival_motion.inl",
+      "sha256": "dd8ab2bcfcf5944e4a3b145d1cc1ff37ff425ab5658ced0257547321b94fee98"
+    },
+    {
+      "path": "Dawn/src/client/hooks/bootflow/eater_of_worlds_carry_receipts.inl",
+      "sha256": "89cd1aca8a2e00df753c78d884a0a22c08dd78e5add1c4175aeb992af000b77c"
+    },
+    {
+      "path": "Dawn/src/client/hooks/bootflow/eater_of_worlds_object_receipts.inl",
+      "sha256": "879f9debfc87838a3add6754e4597abd4fd2457dc835a9ab226e0e6a94c5ca45"
+    },
+    {
+      "path": "Dawn/src/client/hooks/bootflow/eater_of_worlds_platform_contacts.inl",
+      "sha256": "308bbe6c0e22f446b5d532a8430ea0f343307455d327147c896c40dc66834f80"
+    },
+    {
+      "path": "Dawn/src/client/hooks/bootflow/eater_of_worlds_platform_receipts.inl",
+      "sha256": "c4ae519e868cb7c31d0cc8dedeed269054e81cbbec4c46281086d5525c94a4f3"
+    },
+    {
+      "path": "Dawn/src/client/hooks/bootflow/eater_of_worlds_station_receipts.inl",
+      "sha256": "75fbbe1d5d86ee1dc3293b304256c2995c817eed08fb55624e97ee91d81942aa"
+    },
+    {
+      "path": "Dawn/src/client/hooks/bootflow/eater_platform_binding_cache.h",
+      "sha256": "154ef5bb57203a04bc90f0be7d9f3112797f13ffc04e7eb727fda5a1e951ca08"
+    },
+    {
+      "path": "Dawn/src/client/hooks/bootflow/eater_platform_contact_native.h",
+      "sha256": "1a935027ce07158fbf7f3348cac5e5e5e0f350ed7cdfefa760a0674c9986d03e"
+    },
+    {
+      "path": "Dawn/src/client/hooks/bootflow/eater_reinforcement_selection.h",
+      "sha256": "029ef4d85a01ae788ad6707f0e0d0d734bede9a4b3a8ae905fc7a6d96e2b2597"
+    },
+    {
+      "path": "Dawn/src/client/hooks/bootflow/eater_reinforcements.cpp",
+      "sha256": "41f9f18fb68df57830ba59969a5feb0d17167a11d80b0c99490d08cc0769c8bf"
+    },
+    {
+      "path": "Dawn/src/client/hooks/bootflow/eater_reinforcements.h",
+      "sha256": "ae0e852a847734801a037920a21415f663b8869628e9efe840019dda5bedcae0"
+    },
+    {
+      "path": "Dawn/src/client/hooks/bootflow/eater_source_retirement.h",
+      "sha256": "63625efd697b2dc509ccc018dc6e41e6942dc19b8fe9fbbd1c91fb2249fc8048"
+    },
+    {
+      "path": "Dawn/src/client/hooks/bootflow/eater_source_retirement.inl",
+      "sha256": "fc657b5bfd5a7dd581c76e05d305d13ebc28cdcaea4a13b43c0b3a323d6fa8cf"
+    },
+    {
+      "path": "Dawn/src/server/bap/encrypted/push/activity/eater_of_worlds_roster.h",
+      "sha256": "4bf7ed27590642574dee2ea62c15dad40113ae7389ac628408815c663738f6f2"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/arrival.h",
+      "sha256": "fcfad952265cec3f01ea3a31ff660c5b5be29ff227411be9fa253a5672c3144e"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/authority.h",
+      "sha256": "0488c771742af31024b2cb16daef04aeb96378d8e8dcfece0d8425a74bcf224d"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/carry_bindings.h",
+      "sha256": "06a110e4418e14019e22de5ebe8bd0612e6fa5a0bda8216f65ffa51f537e7250"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/catalog.h",
+      "sha256": "931d83c48732138e6b65384e4223d6f0a88e6ab0e8a87a25aad241f5ef86f79c"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/contest.h",
+      "sha256": "14beff2dd075cc72473fdbd0d16d980ae7cb3e2c0233cdec1a87cfba66100b76"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/controller.cpp",
+      "sha256": "31f3af2040b141c0296c02e7e0fc7135a734489ac1e8797729d1cc4027431017"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/controller.h",
+      "sha256": "022120bf8eb39df1f8ac798aedec15cbe348eec78dac7622014bba88a1ef6b82"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/doors.h",
+      "sha256": "4ab9f2ca30b867543713222c74e3405023d486a7cfaf63ca9fa4422cad21e693"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/frame.h",
+      "sha256": "50766d287db02b7df18c82a22372dd8bcd339a5f81e66e1b485483d41bdc1c64"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/health_bindings.h",
+      "sha256": "e9a474ed313245006945d605d7ac56e0f862829f4af146f1b658023ec8b3f682"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/hoop_crossing.h",
+      "sha256": "26a29f60c565986934e653c153e7390acdf5f07612919c65a907ded01b015fe7"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/mechanisms.h",
+      "sha256": "ebb37d07e25eafceed2e6f13055d0400b5556ab86dd5dbcfdd0b8a4d7000cd96"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/profile.h",
+      "sha256": "5a40f0d0f5601b5f1f3ec82f536af5e4d24c0f7b7aeeef048cc7d1674be78d56"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/reactor_combat.h",
+      "sha256": "e072ce3a45369dc3f0e8a088830a216292e7d2815ce9cc244e76c7874f326ef7"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/reactor.h",
+      "sha256": "8c5064b9c14029f33b53abc9cd82236224087f1d2fba84b315fb7c4bf604b540"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/reinforcement_roster.h",
+      "sha256": "10dfe6a419424abe5f5303380a55c414ce4611ee35a912a44acef4b5762d9103"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/runtime.cpp",
+      "sha256": "97609fda9240e5494dfeeb233a5adbf56665a65d2cc0d34df9605d527e4869cf"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/runtime.h",
+      "sha256": "6c4660d478572518c3f1ccc0d5e78683e4eb1b15412c406470cfeb94345b3e0f"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/scenes.h",
+      "sha256": "ab69bc67c7eaa0847031c68085f676036c8aa25d20d67425e7cec968aef0fa4b"
+    },
+    {
+      "path": "Dawn/src/state/activity/eater_of_worlds/station_bindings.h",
+      "sha256": "db1104bd12be829ae4100931eaa33b25e4b45c6cca837a438583ac87c903fc98"
+    },
+    {
+      "path": "Dawn/unit/eater_arrival_tests.inl",
+      "sha256": "a70cdd0f98823c522f9c27e4bd10324b900965429ebd9c34a57df8964470706d"
+    },
+    {
+      "path": "Dawn/unit/eater_combat_tests.inl",
+      "sha256": "46f9ec5b78870e51e75808787d051dd5cb6e1feb0646af121c1a3714b263be1d"
+    },
+    {
+      "path": "Dawn/unit/eater_door_native_tests.inl",
+      "sha256": "30d512cdad425833f5ee098100d3eeb03d1c80ead00d0143b1a9d8bfa021e62a"
+    },
+    {
+      "path": "Dawn/unit/eater_entity_id_startup_tests.cpp",
+      "sha256": "509aa2236cc6bb91a3befd7fa79c0853676dae84fb458607d86d561d4d25dc14"
+    },
+    {
+      "path": "Dawn/unit/eater_entity_id_startup_tests.vcxproj",
+      "sha256": "fb669f989b7243a29372dd6fee5fb27597acd572bd8535236c32e98c01e9266a"
+    },
+    {
+      "path": "Dawn/unit/eater_of_worlds_roster_tests.cpp",
+      "sha256": "0fce382b9a202ee5599553c70d94056b8974559438a0415386c06e9def9a762c"
+    },
+    {
+      "path": "Dawn/unit/eater_of_worlds_roster_tests.vcxproj",
+      "sha256": "5c09cdf951f46f77f60210c2e069a62afbf2aefb0674497d244de94ad074b8af"
+    },
+    {
+      "path": "Dawn/unit/eater_of_worlds_tests.cpp",
+      "sha256": "8ac9e6b59f7f936a6fc7431eef8e70d551cda24cb270e9cf9bc829976a192417"
+    },
+    {
+      "path": "Dawn/unit/eater_of_worlds_tests.vcxproj",
+      "sha256": "a5ce361acd73f9b94c3761dd8edf9e685d920e32c629cbb854f2ca842d743507"
+    },
+    {
+      "path": "Dawn/unit/eater_platform_contact_native_tests.cpp",
+      "sha256": "ac80fc8659dbe5a247e77fb5d878b6ce6b1ed5b1bbd58dba30fd79b743359bf2"
+    },
+    {
+      "path": "Dawn/unit/eater_platform_contact_native_tests.vcxproj",
+      "sha256": "9d7e2b18c8f80b5fb2bfac0325894237ac3dadfee4c5acd7284a0efe4103cd88"
+    },
+    {
+      "path": "Dawn/unit/eater_source_retirement_tests.cpp",
+      "sha256": "71779d915ac7189e5320c1606b161fc2753e8bde2c63a202ef9550e70927bb82"
+    },
+    {
+      "path": "Dawn/unit/eater_source_retirement_tests.inl",
+      "sha256": "f39f337670a98f23bf7c3ef48fff4ec0a9d736db2b264bfb54061bc12638464b"
+    },
+    {
+      "path": "Dawn/unit/eater_source_retirement_tests.vcxproj",
+      "sha256": "83cacd49b32e49cb6a7fc66d484cb2f81bba0fe2a5da4e3fc44fbf44c5e251ad"
+    },
+    {
+      "path": "Dawn/unit/eater_traversal_tests.inl",
+      "sha256": "7e68ae317c920b6d6789f12e588ac66958d42eb360ecca1c2e881bac6fdc4973"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/ARRIVAL-DOORS-DENSITY-20260913.md",
+      "sha256": "de6813f48cd4aabef82ad0b8af181bf31e2442b5047184f7be405a897053cd36"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/AUTHORING-PLAN.md",
+      "sha256": "fb05217ce333aa3a5b11fe579ad4ee12efccec50e2edc7e06aa0192861ad6d39"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/BEHAVIOR-EVIDENCE.md",
+      "sha256": "3b407893969d9b5cf56fa744905b87c3318f7fc6b71b3a4e2f7ac53d050ee94e"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/CONTACT-ALIVE-POLICY-20260913.md",
+      "sha256": "9e394f2339844d13697409e9d1edabc8808facc2dd1c4f890df4308b30235bac"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/CONTEST-20260914.md",
+      "sha256": "e701e9b2a9f6f93fb043d8f883e0e2ad926147de4ed1f1eb37f65273e6e76149"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/ENCOUNTER-MECHANICS.md",
+      "sha256": "ebc316860770812914708fe7a604ec0df6adc78eeab7761f844396075112b3ab"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/ENTRANCE-BIRD-DIAGNOSIS.md",
+      "sha256": "964417118b24379b57cdaca1471324b222eb444ea91adde67ca83dd47ed07b03"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/ENTRANCE-ID-STARTUP-FIX.md",
+      "sha256": "edc184f6f7ea9e5a2043112702900745a94e7e5ff590962967564b31f3afdfea"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/ENTRANCE-RECOVERY.md",
+      "sha256": "57a9a020f69c3a97361299f76c9ce736bddb07dbaf75eaa3019e6f6803670a44"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/evidence/carry-bindings.json",
+      "sha256": "0de988cdb6ca12d59052d60827a8ab1721c21f1309fea7d801ee17923d9ae67e"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/evidence/channel-target-bindings.json",
+      "sha256": "a1a274123ad9ca2571a4de76448afca869025baa98fa26c92f60e404c7759d31"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/evidence/current-arrival-volume-check.json",
+      "sha256": "96e1a9a761a921438781ce9fa959a8e2bd007cd186ba0de3fd4fbbe16423f293"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/evidence/health-bindings.json",
+      "sha256": "c765b77df86f69fc83634b079277cfa25dc0a418e214584df961e03e95dc9617"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/evidence/hoop-crossing-native-proof.json",
+      "sha256": "ca004d73f177645be4c3cac96af2049fe938f6ec5fab5a9f2b4456c75d54be2c"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/evidence/native-inventory.json",
+      "sha256": "c35ec163bdd14aa67a2d74f60d08f0c5c1f0169fa67aa16c767664130acf0a75"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/evidence/platform-contact-native-proof.json",
+      "sha256": "92336c74e559b90b853d1d0754500fbdf49f3404ce9edada5435fabb465f894e"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/evidence/platform-volume-live-input.json",
+      "sha256": "06bfa46d925ea8b2d2b7848d193170dafff1d2d695141df0a411e4ba203d4250"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/evidence/platform-volume-native-proof.json",
+      "sha256": "0cca58262365bc65d6fedb99d15fbb8d15ddb8baed3312db16ba299421037452"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/evidence/reactor-checkpoint-bindings.json",
+      "sha256": "f6d4914b527d1cb74201f0dafaf4ae701a22750653354bc038e9d664984263b1"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/evidence/reactor-geometry-20260913.json",
+      "sha256": "9fc557d635a8fdfdcb95d6938a81d117293a7da84ba95340420dbcc8124c1c05"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/evidence/reactor-platform-bindings.json",
+      "sha256": "4881d77979fd230971856094b8f06825acaf6694a439f5ce00ab3b14df4eef10"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/evidence/runtime-bindings.json",
+      "sha256": "07002a2597eb9ff3d1aaedd539bd86e8d397d1683e940541741e4e2b3c79f76a"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/evidence/scene-bindings.json",
+      "sha256": "8e4c7e39ae65e73cdee6a74226f3027716c80ae1b72665be349c3befd411ff69"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/evidence/station-bindings.json",
+      "sha256": "ea308790b60680120228675a6f3e4e3483851ba9daf7863cd8554223c533aafe"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/FPS-LOAD-ZONE-20260913.md",
+      "sha256": "b6f83a51c93cbee151e89f285c9f6ae39b2c42fc274cc1f0abe7d4576a546af9"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/HOOP-CROSSING-20260913.md",
+      "sha256": "34057eedb32090b8a4bd091f3c8b1c4dff01b1f6a00785c6981ee097b72c32c2"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/IMPLEMENTATION.md",
+      "sha256": "af24e131eca9799995b2b0625b71644b5a715fbf844252e3cb9039963fca7b7b"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/LIVE-ARGOS-20260913.md",
+      "sha256": "5d3498d7b5660501d18f77879b0506d2f6ff6e91088550f36cd0cd6d322b20fd"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/LIVE-FIRST-PLATFORM-20260913.md",
+      "sha256": "16808c68e918efb87dde1b948d9567b03dd16b9d0052158205d92c683e430f97"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/LIVE-REACTOR-20260913.md",
+      "sha256": "395485c09dc3390efb161be74d8998147e1dbe4935458d061a7f1933075d010d"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/LOAD-CRASH-20260913.md",
+      "sha256": "44b6cdcd732607f70d9e8f61cc781a98a302182130aaa9ca985292c9e2d2b162"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/LOYALIST-ROSTER-20260914.md",
+      "sha256": "7386d873ede5afb59e10354791f4ff012c6a362f847cfa57e2a468d495e0ca2a"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/NATIVE-CONTROL-GAPS.md",
+      "sha256": "993d92b1453d1fc8015d7f83514b81f5239306e5b9d902fd7e97f15dcea9771c"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/NATIVE-PACKAGE-MAP.md",
+      "sha256": "bd1e3866c6964380e9ff0ac25a398bf3af7dbc19eea4ed1d4c64b1ba750d55fb"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/PLAN.md",
+      "sha256": "d28e74de87e044a291077d806771b945f02c4eeb3c5097dfc984b3fbb73506f9"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/PLATFORM-ACTIVATION-FAILURE-20260913.md",
+      "sha256": "7b24986aa6a824f8139577ebf790dff97f759123c8ea0755542a937c61403745"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/PLATFORM-PERFORMANCE-FIX-20260913.md",
+      "sha256": "8bac6553aa3e03d10323cf0c84f108891a9f5e3c28fab58a4119692d1ebdb863"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/REACTOR-COMBAT-20260913.md",
+      "sha256": "8a9225560b2ef960fbdcbfb8c4350d2224682e2da9b6dd3ac3ed2b0d3c03b727"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/README.md",
+      "sha256": "6000aab185126f2e854a8f1bc095f33fd06b99a238c90f6ce2417423485a3291"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/SOURCES.md",
+      "sha256": "0842c07908e456849084b5a15495b656440250a4455041e211bbc901ecf788b9"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/tools/extract_eater_channels.py",
+      "sha256": "592bbda43dbfc4b05c8e089a64211b2fd6c9f00090c640b43e028895fa28e333"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/tools/extract_eater_of_worlds.py",
+      "sha256": "b6082eb114436fb701a75f37997b15678755e737f1b842918dba544b8ae05780"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/tools/extract_outer_entrance.py",
+      "sha256": "1499ce4dece1b3b1ee4cdb6952ed1299e666a1c675d0c9806f2118549d0ac173"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/tools/README.md",
+      "sha256": "46dc48c3ebfbb7d118b0445534120a6238ed3f7f55dc202a410a30d0ae4b0324"
+    },
+    {
+      "path": "docs/raids/eater-of-worlds/TRAVERSAL-WIRING-20260913.md",
+      "sha256": "8ea9b213216719193bac0773e1fd3b85e1fe248eae8feefc2f9f7a5742413f51"
+    },
+    {
+      "path": "tools/coo/capture_eater_platform_live.py",
+      "sha256": "66863f4c5e55adb5eb0e14c6c2cd178b697e39ced735513eddedbb5b55094150"
+    },
+    {
+      "path": "tools/coo/extract_eater_bindings.py",
+      "sha256": "aae8647f71a5a646eeb253fc4f4ff731fca0dfb5176eb2fe60a520d0850cba04"
+    },
+    {
+      "path": "tools/coo/extract_eater_carry_bindings.py",
+      "sha256": "6e2b7f147c10cb6c101a1092cb464bc06bb77e47cc402f959566dacad04343b9"
+    },
+    {
+      "path": "tools/coo/extract_eater_health_bindings.py",
+      "sha256": "8f624ff2772cf82fbfd8b150acd75c5884d3e4f4f06844880c150b99f215d522"
+    },
+    {
+      "path": "tools/coo/extract_eater_scenes.py",
+      "sha256": "a89f5168f01412f1ab5eeecd720e151d46577ee34df839d50ff277bb43fbcbe8"
+    },
+    {
+      "path": "tools/coo/extract_eater_station_bindings.py",
+      "sha256": "202848217088c8917182c33fa8da66234aa2968aeec6415b4eee7c8e07c1e36a"
+    },
+    {
+      "path": "tools/coo/verify_eater_lifetime_native.py",
+      "sha256": "eb5a15558e9917f2dd09abff3941260cd40f3d364d4a7335f04ba85fdaa6f3a5"
+    },
+    {
+      "path": "tools/coo/verify_eater_platform_contact_native.py",
+      "sha256": "9ed112c23172371738d91cf04023e372a025ac310984c755bf66e09daf520d3e"
+    },
+    {
+      "path": "tools/coo/verify_eater_platform_volume_native.py",
+      "sha256": "a77db4bac4caab27cca9cdd934e51ef99affc849eace0af0991f9f299edf29f1"
+    },
+    {
+      "path": "tools/coo/verify_eater_reactor_platform_bindings.py",
+      "sha256": "7d460f186153c10cb0dad7b8f96009b7fe0efc0c760b6a970b50108c672cb11c"
+    }
+  ],
+  "shared_integrations": [
+    "Dawn/Dawn.vcxproj",
+    "Dawn/src/client/activity/campaign_openings.h",
+    "Dawn/src/client/activity/mission_launch.cpp",
+    "Dawn/src/client/activity/mission_launch.h",
+    "Dawn/src/client/hooks/bootflow/activity_spawner_chain_probe.cpp",
+    "Dawn/src/client/hooks/bootflow/bootflow_hook_lifecycle.cpp",
+    "Dawn/src/client/hooks/bootflow/gateway_module_receipts.inl",
+    "Dawn/src/client/hooks/bootflow/hijacked_placements.cpp",
+    "Dawn/src/client/hooks/bootflow/internal.h",
+    "Dawn/src/client/hooks/bootflow/mission_population_observer.cpp",
+    "Dawn/src/client/hooks/bootflow/omega_arc_charge_receipts.cpp",
+    "Dawn/src/client/hooks/bootflow/omega_dialogue_dispatch_probe.cpp",
+    "Dawn/src/client/hooks/bootflow/omega_enemy_lair_receipts.cpp",
+    "Dawn/src/client/hooks/bootflow/region_private.cpp",
+    "Dawn/src/client/player/player_position.cpp",
+    "Dawn/src/client/ui/mission_launch/mission_launch_panel.cpp",
+    "Dawn/src/middleware/bap/activity_message/activity_sensor_auth_bodies_other_missions.cpp",
+    "Dawn/src/middleware/bap/activity_message/sensor_auth_update.h",
+    "Dawn/src/server/bap/encrypted/activity_message/activity_message_route.cpp",
+    "Dawn/src/server/bap/encrypted/activity_message/membership/activity_membership_route.h",
+    "Dawn/src/server/bap/encrypted/push/activity/activity_keepalive_push.cpp",
+    "Dawn/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp",
+    "Dawn/src/server/bap/encrypted/queuez/queuez_deferred_push.cpp",
+    "Dawn/src/server/bap/internal.h",
+    "Dawn/src/state/activity/forced/definition.h",
+    "Dawn/src/state/activity/nightfall/native_power.h",
+    "Dawn/unit/coo_script_tests.cpp",
+    "Dawn/unit/mission_launch_arguments_tests.cpp",
+    "Dawn/unit/mission_launch_lifecycle_tests.cpp",
+    "Dawn/unit/mission_launch_visual_tests.cpp",
+    "Dawn/unit/native_mission_interaction_tests.cpp",
+    "Dawn/unit/native_nightfall_power_tests.cpp",
+    "Dawn/unit/other_mission_protocol_tests.cpp",
+    "Dawn/unit/player_position_tests.cpp"
+  ]
+}

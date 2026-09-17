@@ -1,6 +1,6 @@
 #include "codec.h"
 
-namespace sunrise::state::build_data::cache::records {
+namespace dawn::state::build_data::cache::records {
 namespace {
 
 /** Cache padding fields are always written as zero. */
@@ -78,4 +78,4 @@ bool decode(const ProgressionRecord& record, progressions::Definition& value) no
     return true;
 }
 
-} // namespace sunrise::state::build_data::cache::records
+} // namespace dawn::state::build_data::cache::records

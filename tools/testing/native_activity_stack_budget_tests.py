@@ -104,20 +104,20 @@ def main():
     assert dbg.SymInitialize(process, str(path.parent).encode(), False)
     base = dbg.SymLoadModuleEx(process, None, str(path).encode(), None, 0x180000000, pe.size, None, 0)
     assert base, c.get_last_error()
-    prefix = 'sunrise::server::bap::encrypted::'
+    prefix = 'dawn::server::bap::encrypted::'
     activity = prefix+'push::activity::'
     names = [
-        'sunrise::steam::run_callbacks',
-        'sunrise::server::transport::service',
-        "sunrise::server::transport::`anonymous namespace'::service_peer",
-        'sunrise::server::bap::consume', prefix+'consume_deferred',
+        'dawn::steam::run_callbacks',
+        'dawn::server::transport::service',
+        "dawn::server::transport::`anonymous namespace'::service_peer",
+        'dawn::server::bap::consume', prefix+'consume_deferred',
         activity+'consume_activity_keepalive',
         prefix+'activity_transaction::stage_periodic_notifications',
         activity+'build_periodic_region_snapshot',
         activity+"`anonymous namespace'::finalize_snapshot",
         activity+"`anonymous namespace'::finalize_roster",
         activity+'build_roster_snapshot',
-        'sunrise::server::runtime::activity::native_activity::update',
+        'dawn::server::runtime::activity::native_activity::update',
     ]
     rows = []
     try:

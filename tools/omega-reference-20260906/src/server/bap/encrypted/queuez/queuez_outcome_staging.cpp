@@ -6,7 +6,7 @@
 #include "../../../../middleware/secure_channel/runtime.h"
 #include "queuez_state_validation.h"
 
-namespace sunrise::server::bap::encrypted::queuez {
+namespace dawn::server::bap::encrypted::queuez {
 
 /** Stages queuez subscription, unsubscription, or character-move output for one peer. */
 bool stage_service_outcome(Scratch& scratch,
@@ -418,4 +418,4 @@ bool stage_service_outcome(Scratch& scratch,
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted::queuez
+} // namespace dawn::server::bap::encrypted::queuez

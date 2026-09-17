@@ -9,7 +9,7 @@
 
 #include "registry.h"
 
-namespace sunrise::client::patterns {
+namespace dawn::client::patterns {
 namespace signature_detail {
 
 /** One unknown byte is written as a single question mark. */
@@ -124,4 +124,4 @@ template <std::size_t Length>
     return bytes;
 }
 
-} // namespace sunrise::client::patterns
+} // namespace dawn::client::patterns

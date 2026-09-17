@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <imgui.h>
 
-namespace sunrise::core::ui::components::filter {
+namespace dawn::core::ui::components::filter {
 
 /**
  * Draws an animated text filter and a clear action without owning text storage.
@@ -20,4 +20,4 @@ namespace sunrise::core::ui::components::filter {
                          std::size_t capacity,
                          ImGuiInputTextFlags flags = ImGuiInputTextFlags_None) noexcept;
 
-} // namespace sunrise::core::ui::components::filter
+} // namespace dawn::core::ui::components::filter

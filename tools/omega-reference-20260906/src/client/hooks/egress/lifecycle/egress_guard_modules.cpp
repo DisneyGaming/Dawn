@@ -1,6 +1,6 @@
 #include "internal.h"
 
-namespace sunrise::client::hooks::egress::lifecycle {
+namespace dawn::client::hooks::egress::lifecycle {
 namespace {
 
 /** System32 names stop the guard finding exports in the game directory. */
@@ -43,4 +43,4 @@ HMODULE module_handle(ModuleSlot module) noexcept {
     return index < g_modules.size() ? g_modules[index] : nullptr;
 }
 
-} // namespace sunrise::client::hooks::egress::lifecycle
+} // namespace dawn::client::hooks::egress::lifecycle

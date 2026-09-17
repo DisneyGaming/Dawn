@@ -4,7 +4,7 @@
 
 #include "../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 namespace {
 
 namespace authored_inventory = state::account::inventory;
@@ -234,4 +234,4 @@ bool Parser::inventory_definition_hash(std::uint32_t& output) noexcept {
     return true;
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

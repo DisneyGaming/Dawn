@@ -13,7 +13,7 @@
 #include "../network/lifecycle/sensor_state_heap_diagnostic.h"
 #include "../../targets/game/assert_handler.h"
 
-namespace sunrise::client::hooks::assert_handler {
+namespace dawn::client::hooks::assert_handler {
 namespace {
 
 /** The game formats assert text into a buffer of this size, so it bounds ours too. */
@@ -221,4 +221,4 @@ void* handler_entry_point() noexcept {
     return reinterpret_cast<void*>(&handler_body);
 }
 
-} // namespace sunrise::client::hooks::assert_handler
+} // namespace dawn::client::hooks::assert_handler

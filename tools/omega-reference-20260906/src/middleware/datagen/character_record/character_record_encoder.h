@@ -7,7 +7,7 @@
 #include "../family4/loadout/definition.h"
 #include "layout.h"
 
-namespace sunrise::middleware::datagen::character_record {
+namespace dawn::middleware::datagen::character_record {
 
 /** The family-three character record carries an extra reserved block before the appearance. */
 inline constexpr std::size_t kFamily3RecordSize = 3'904;
@@ -54,4 +54,4 @@ inline constexpr std::size_t kFamily0AnchorSize = 96;
                                          std::uint64_t characterSoid,
                                          std::span<std::byte> output) noexcept;
 
-} // namespace sunrise::middleware::datagen::character_record
+} // namespace dawn::middleware::datagen::character_record

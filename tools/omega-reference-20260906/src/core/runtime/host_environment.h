@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::core::runtime {
+namespace dawn::core::runtime {
 
 /**
  * Reports whether the process runs under Wine instead of Windows.
@@ -8,4 +8,4 @@ namespace sunrise::core::runtime {
  */
 [[nodiscard]] bool is_wine() noexcept;
 
-} // namespace sunrise::core::runtime
+} // namespace dawn::core::runtime

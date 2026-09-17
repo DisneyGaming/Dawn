@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::gameplay::dtls {
+namespace dawn::middleware::gameplay::dtls {
 
 /** Every association packet opens with the same 8-byte header. */
 inline constexpr std::size_t kHeaderSize = 8;
@@ -131,4 +131,4 @@ void write_init_ack(const InitAck& initAck, std::array<std::byte, kInitAckSize>&
 void write_cookie_ack(const CookieAck& cookieAck,
                       std::array<std::byte, kCookieAckSize>& output) noexcept;
 
-} // namespace sunrise::middleware::gameplay::dtls
+} // namespace dawn::middleware::gameplay::dtls

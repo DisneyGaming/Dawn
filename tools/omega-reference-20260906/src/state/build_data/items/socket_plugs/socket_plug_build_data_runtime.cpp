@@ -5,7 +5,7 @@
 #include "../item_catalog.h"
 #include "socket_plug_catalog.h"
 
-namespace sunrise::state::build_data {
+namespace dawn::state::build_data {
 namespace {
 
 /** Profile bucket holding ornaments, which stay owned after they are applied. */
@@ -98,4 +98,4 @@ bool is_profile_action_source(std::uint16_t itemDefinitionIndex, std::uint8_t bu
            && items::socket_plugs::contains(itemDefinitionIndex);
 }
 
-} // namespace sunrise::state::build_data
+} // namespace dawn::state::build_data

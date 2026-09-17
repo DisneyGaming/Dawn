@@ -16,7 +16,7 @@
 #include "queuez/definition.h"
 #include "transactions/definition.h"
 
-namespace sunrise::server::bap::encrypted {
+namespace dawn::server::bap::encrypted {
 
 /** Response-body codecs picked by the authenticated request service. */
 enum class BodyCodec : std::uint8_t {
@@ -429,4 +429,4 @@ append_item_dismantle_notification(Scratch& scratch,
 
 } // namespace push
 
-} // namespace sunrise::server::bap::encrypted
+} // namespace dawn::server::bap::encrypted

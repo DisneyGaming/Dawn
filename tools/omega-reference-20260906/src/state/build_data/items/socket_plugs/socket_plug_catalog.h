@@ -6,7 +6,7 @@
 
 #include "definition.h"
 
-namespace sunrise::state::build_data::items::socket_plugs {
+namespace dawn::state::build_data::items::socket_plugs {
 
 /** Clears every exact ordinary-socket rule, pool, and member under one catalog lock. */
 void clear() noexcept;
@@ -52,4 +52,4 @@ void clear() noexcept;
 /** @return Published socket-rule row count. */
 [[nodiscard]] std::size_t rule_count() noexcept;
 
-} // namespace sunrise::state::build_data::items::socket_plugs
+} // namespace dawn::state::build_data::items::socket_plugs

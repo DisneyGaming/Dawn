@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace sunrise::client::hooks::queuez::family0 {
+namespace dawn::client::hooks::queuez::family0 {
 
 /** The client's own source-list getter, a thunk decoded from the sweep's call operand. */
 using SourceList = std::byte*(__fastcall*)();
@@ -22,4 +22,4 @@ void seed_source_list() noexcept;
 /** Clears the captured key, the published getter, and the one-shot report. */
 void reset() noexcept;
 
-} // namespace sunrise::client::hooks::queuez::family0
+} // namespace dawn::client::hooks::queuez::family0

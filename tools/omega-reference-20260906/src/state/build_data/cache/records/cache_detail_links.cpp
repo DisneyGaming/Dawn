@@ -4,7 +4,7 @@
 #include "../../items/socket_plugs/socket_plug_catalog.h"
 #include "validation.h"
 
-namespace sunrise::state::build_data::cache::records {
+namespace dawn::state::build_data::cache::records {
 
 /** Checks collectible ordinals and their optional links into the installed item table. */
 bool valid_collectible_links(std::span<const collectibles::Definition> collectibleDefinitions,
@@ -109,4 +109,4 @@ bool valid_socket_plug_links(std::span<const items::socket_plugs::Rule> rules,
     });
 }
 
-} // namespace sunrise::state::build_data::cache::records
+} // namespace dawn::state::build_data::cache::records

@@ -2,7 +2,7 @@
 
 #include <Windows.h>
 
-namespace sunrise::client {
+namespace dawn::client {
 
 /**
  * Initializes Client-owned process state without installing hooks.
@@ -26,4 +26,4 @@ namespace sunrise::client {
 /** Removes Client hooks and clears resolved process targets. */
 [[nodiscard]] bool shutdown() noexcept;
 
-} // namespace sunrise::client
+} // namespace dawn::client

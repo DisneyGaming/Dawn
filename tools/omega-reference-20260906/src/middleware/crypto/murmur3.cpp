@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace sunrise::middleware::crypto::murmur3 {
+namespace dawn::middleware::crypto::murmur3 {
 
 namespace {
 
@@ -136,4 +136,4 @@ void hash(std::span<const std::byte> first,
     }
 }
 
-} // namespace sunrise::middleware::crypto::murmur3
+} // namespace dawn::middleware::crypto::murmur3

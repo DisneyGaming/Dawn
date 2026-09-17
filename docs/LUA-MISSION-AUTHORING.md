@@ -62,7 +62,7 @@ Limits remain 1 MiB of Lua source, 8 MiB of VM allocation, 1,000,000 Lua instruc
 
 Only basic iteration, assertions, conversions, and builders are exposed. File/process access, pointers, hooks, packages, debug facilities, dynamic loaders, coroutines, metatables, and protected calls are absent. Text chunks only; sparse/mixed/cyclic tables and functions in returned data are rejected. Load failures include source context. Initialization and execution are protected, and retained values are copied before the VM closes.
 
-Lua 5.4.9 is embedded, with source provenance in `vendor/lua/README.sunrise.md` and the MIT license in `vendor/lua/LICENSE.txt`. No external Lua DLL is required. Third-party warning settings are isolated in `lua-items.props`; project code builds with `/W4 /WX`.
+Lua 5.4.9 is embedded, with source provenance in `vendor/lua/README.dawn.md` and the MIT license in `vendor/lua/LICENSE.txt`. No external Lua DLL is required. Third-party warning settings are isolated in `lua-items.props`; project code builds with `/W4 /WX`.
 
 ## Verification and reconstruction workflow
 

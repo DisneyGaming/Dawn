@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::datagen::family4::account::selection_patch {
+namespace dawn::middleware::datagen::family4::account::selection_patch {
 
 /** The selected-character-only tag-reflection body occupies 129 bits. */
 inline constexpr std::size_t kPayloadBitSize = 129;
@@ -21,4 +21,4 @@ inline constexpr std::size_t kPayloadSize = 17;
 [[nodiscard]] bool
 encode(std::uint64_t selectedSoid, std::span<std::byte> output, std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::datagen::family4::account::selection_patch
+} // namespace dawn::middleware::datagen::family4::account::selection_patch

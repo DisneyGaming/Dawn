@@ -6,7 +6,7 @@
 
 #include "../build_data/progressions/definition.h"
 
-namespace sunrise::state::unlocks {
+namespace dawn::state::unlocks {
 
 /** The account acquired-flag bank holds one byte per flag. */
 inline constexpr std::size_t kAccountFlagCapacity = 12'300;
@@ -52,4 +52,4 @@ struct Table {
     ProgressionBank characterProgressions{};
 };
 
-} // namespace sunrise::state::unlocks
+} // namespace dawn::state::unlocks

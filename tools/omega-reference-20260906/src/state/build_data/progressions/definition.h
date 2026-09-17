@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::state::build_data::progressions {
+namespace dawn::state::build_data::progressions {
 
 /** The shipped build declares 88 progressions. The domain leaves room above that. */
 inline constexpr std::size_t kDefinitionCapacity = 256;
@@ -28,4 +28,4 @@ struct Definition {
     Scope scope{Scope::unreplicated};
 };
 
-} // namespace sunrise::state::build_data::progressions
+} // namespace dawn::state::build_data::progressions

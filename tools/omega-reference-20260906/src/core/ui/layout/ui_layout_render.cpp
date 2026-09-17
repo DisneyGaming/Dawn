@@ -12,7 +12,7 @@
 #include "navigation/ui_layout_navigation.h"
 #include "ui_layout_lifecycle.h"
 
-namespace sunrise::core::ui::layout {
+namespace dawn::core::ui::layout {
 namespace {
 
 /** The authored width leaves room for a narrow menu and a wide settings panel. */
@@ -56,7 +56,7 @@ constexpr float kTitleTextRatio = 1.5F;
 /** Half a difference centers one item against a taller one. */
 constexpr float kHalfExtent = 2.0F;
 /** The surface names the tool with the same wordmark the HUD card carries. */
-constexpr char kTitle[] = "SUNRISE";
+constexpr char kTitle[] = "DAWN";
 
 /**
  * Copies one display name into null-terminated component storage.
@@ -131,12 +131,12 @@ void draw_title() noexcept {
     // again, centered on it because it stays at body size.
     ImGui::SetCursorPosY(
         titleY + ((std::max)(titleHeight - ImGui::GetTextLineHeight(), 0.0F) / kHalfExtent));
-    ImGui::TextDisabled(SUNRISE_VER_STRING);
+    ImGui::TextDisabled(DAWN_VER_STRING);
 }
 
 } // namespace
 
-/** Draws the centered Sunrise surface inside the caller's active Dear ImGui frame. */
+/** Draws the centered Dawn surface inside the caller's active Dear ImGui frame. */
 bool render(bool visible) noexcept {
     if (!internal::context_is_current()) {
         return false;
@@ -164,7 +164,7 @@ bool render(bool visible) noexcept {
     ImGui::SetNextWindowSize({size.x * scale, size.y * scale}, ImGuiCond_Always);
     // One style alpha fades the surface and everything drawn inside it together.
     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, progress);
-    const bool submitContents = ImGui::Begin("Sunrise", nullptr, kMainWindowFlags);
+    const bool submitContents = ImGui::Begin("Dawn", nullptr, kMainWindowFlags);
     if (submitContents) {
         draw_title();
         ImGui::Separator();
@@ -193,4 +193,4 @@ bool render(bool visible) noexcept {
     return true;
 }
 
-} // namespace sunrise::core::ui::layout
+} // namespace dawn::core::ui::layout

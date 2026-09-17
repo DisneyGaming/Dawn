@@ -1,6 +1,6 @@
 #include "internal.h"
 
-namespace sunrise::steam::interfaces::tables {
+namespace dawn::steam::interfaces::tables {
 namespace {
 
 INIT_ONCE g_interfaceInit{INIT_ONCE_STATIC_INIT};
@@ -22,4 +22,4 @@ bool initialize() noexcept {
     return InitOnceExecuteOnce(&g_interfaceInit, initialize_tables, nullptr, nullptr) != FALSE;
 }
 
-} // namespace sunrise::steam::interfaces::tables
+} // namespace dawn::steam::interfaces::tables

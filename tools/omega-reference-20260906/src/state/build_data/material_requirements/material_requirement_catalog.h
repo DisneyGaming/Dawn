@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::state::build_data::material_requirements {
+namespace dawn::state::build_data::material_requirements {
 
 /** Installed build currently carries 229 dense sets; keep bounded headroom. */
 inline constexpr std::size_t kDefinitionCapacity = 512;
@@ -42,4 +42,4 @@ void clear() noexcept;
 [[nodiscard]] bool snapshot(std::span<Definition> output, std::size_t& count) noexcept;
 [[nodiscard]] std::size_t count() noexcept;
 
-} // namespace sunrise::state::build_data::material_requirements
+} // namespace dawn::state::build_data::material_requirements

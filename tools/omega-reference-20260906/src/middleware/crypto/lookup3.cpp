@@ -1,6 +1,6 @@
 #include "lookup3.h"
 
-namespace sunrise::middleware::crypto::lookup3 {
+namespace dawn::middleware::crypto::lookup3 {
 
 namespace {
 
@@ -132,4 +132,4 @@ std::uint32_t hash_bytes(std::span<const std::byte> bytes, std::uint32_t initial
     return c;
 }
 
-} // namespace sunrise::middleware::crypto::lookup3
+} // namespace dawn::middleware::crypto::lookup3

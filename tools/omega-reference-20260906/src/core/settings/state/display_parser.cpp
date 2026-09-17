@@ -2,9 +2,9 @@
 
 #include "../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 
-/** Parses screen and renderer settings under stable Sunrise-owned names. */
+/** Parses screen and renderer settings under stable Dawn-owned names. */
 bool Parser::display_settings(state::account::settings::Display& output) noexcept {
     enum class Field : std::size_t {
         brightness,
@@ -68,4 +68,4 @@ bool Parser::display_settings(state::account::settings::Display& output) noexcep
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

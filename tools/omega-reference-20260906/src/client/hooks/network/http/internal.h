@@ -5,7 +5,7 @@
 
 #include "../coordinator/network_call_coordinator.h"
 
-namespace sunrise::client::hooks::network::http {
+namespace dawn::client::hooks::network::http {
 
 /** @return Per-thread storage that stands in for a null worker result pointer. */
 [[nodiscard]] void* discard_result() noexcept;
@@ -34,4 +34,4 @@ void publish_completion(void* wrapper,
                                             void* wrapper,
                                             std::byte* descriptor) noexcept;
 
-} // namespace sunrise::client::hooks::network::http
+} // namespace dawn::client::hooks::network::http

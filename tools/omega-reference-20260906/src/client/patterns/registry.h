@@ -4,7 +4,7 @@
 #include <span>
 #include <string_view>
 
-namespace sunrise::client::patterns {
+namespace dawn::client::patterns {
 
 /** One exact or wildcard byte in a compiled signature. */
 struct PatternByte {
@@ -58,4 +58,4 @@ struct ImageRange {
                                           const Pattern& pattern,
                                           std::span<std::byte*> output) noexcept;
 
-} // namespace sunrise::client::patterns
+} // namespace dawn::client::patterns

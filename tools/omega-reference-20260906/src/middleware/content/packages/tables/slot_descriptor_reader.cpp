@@ -3,7 +3,7 @@
 #include "definition_index_table.h"
 #include "internal.h"
 
-namespace sunrise::middleware::content::packages::tables {
+namespace dawn::middleware::content::packages::tables {
 namespace {
 
 /**
@@ -104,4 +104,4 @@ bool next_descriptor_tag(std::span<const std::byte> blob,
            && read(blob, handles.dataOffset, tag);
 }
 
-} // namespace sunrise::middleware::content::packages::tables
+} // namespace dawn::middleware::content::packages::tables

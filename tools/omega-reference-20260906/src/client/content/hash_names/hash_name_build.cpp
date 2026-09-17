@@ -14,7 +14,7 @@
 #include "../../../state/build_data/runtime.h"
 #include "hash_name_matcher.h"
 
-namespace sunrise::client::content::hash_names {
+namespace dawn::client::content::hash_names {
 namespace {
 
 namespace packages = middleware::content::packages;
@@ -213,4 +213,4 @@ bool build(const reader::Source& source, reader::Scratch&) noexcept {
     return published;
 }
 
-} // namespace sunrise::client::content::hash_names
+} // namespace dawn::client::content::hash_names

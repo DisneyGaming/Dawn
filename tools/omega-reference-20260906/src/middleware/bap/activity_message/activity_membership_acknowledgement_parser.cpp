@@ -2,7 +2,7 @@
 
 #include "../../encoding/byte_order.h"
 
-namespace sunrise::middleware::bap::activity_message::membership_acknowledgement {
+namespace dawn::middleware::bap::activity_message::membership_acknowledgement {
 
 /** Parses the fixed membership-acknowledgement prefix. */
 bool parse_membership_acknowledgement(std::span<const std::byte> input,
@@ -19,5 +19,5 @@ bool parse_membership_acknowledgement(std::span<const std::byte> input,
 }
 
 } // namespace
-  // sunrise::middleware::bap::activity_message::membership_acknowledgement
+  // dawn::middleware::bap::activity_message::membership_acknowledgement
   // namespace membership_acknowledgement

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::core {
+namespace dawn::core {
 
 /** Initializes configuration, logging, and all runtime layers. */
 [[nodiscard]] bool initialize(void* module) noexcept;
@@ -11,4 +11,4 @@ namespace sunrise::core {
 /** Reports whether Core finished initialization. */
 [[nodiscard]] bool is_initialized() noexcept;
 
-} // namespace sunrise::core
+} // namespace dawn::core

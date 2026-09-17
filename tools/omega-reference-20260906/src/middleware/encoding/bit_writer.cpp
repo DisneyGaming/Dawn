@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <climits>
 
-namespace sunrise::middleware::encoding::bits {
+namespace dawn::middleware::encoding::bits {
 namespace {
 
 /** Writer values are limited to the width of the unsigned 64-bit source type. */
@@ -67,4 +67,4 @@ std::size_t Writer::bit_count() const noexcept {
     return bitPosition_;
 }
 
-} // namespace sunrise::middleware::encoding::bits
+} // namespace dawn::middleware::encoding::bits

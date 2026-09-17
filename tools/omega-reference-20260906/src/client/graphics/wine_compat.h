@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::graphics {
+namespace dawn::client::graphics {
 
 /**
  * Opens and releases the screen device context once, which is what makes Wine attach its display.
@@ -9,4 +9,4 @@ namespace sunrise::client::graphics {
  */
 void initialize_wine_display() noexcept;
 
-} // namespace sunrise::client::graphics
+} // namespace dawn::client::graphics

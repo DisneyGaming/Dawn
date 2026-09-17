@@ -13,7 +13,7 @@
 #include "lifecycle_generation.h"
 #include "membership/definition.h"
 
-namespace sunrise::state::activity {
+namespace dawn::state::activity {
 
 /**
  * Records bound process-local session lookup with no heap storage. It must hold every live
@@ -123,4 +123,4 @@ struct ActivityState {
     bool allocatorExhausted{};
 };
 
-} // namespace sunrise::state::activity
+} // namespace dawn::state::activity

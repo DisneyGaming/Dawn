@@ -6,7 +6,7 @@
 #include "../../address_text.h"
 #include "../../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 namespace {
 
 namespace gameplay = server::gameplay;
@@ -114,4 +114,4 @@ bool Parser::gameplay_settings(gameplay::Settings& output) noexcept {
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

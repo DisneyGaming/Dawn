@@ -1,7 +1,7 @@
 #include "../../transactions/internal.h"
 #include "internal.h"
 
-namespace sunrise::state::activity::membership::transactions {
+namespace dawn::state::activity::membership::transactions {
 
 /** Captures one joined session and its shared transaction guards. */
 const SessionRecord* prepare_base(const ActivityState& state,
@@ -37,4 +37,4 @@ void publish_change(ActivityState& state, SessionRecord& record) noexcept {
     record.recordRevision = state.stateRevision;
 }
 
-} // namespace sunrise::state::activity::membership::transactions
+} // namespace dawn::state::activity::membership::transactions

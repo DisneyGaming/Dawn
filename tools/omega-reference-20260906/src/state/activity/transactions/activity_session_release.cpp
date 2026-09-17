@@ -2,7 +2,7 @@
 #include "../runtime.h"
 #include "internal.h"
 
-namespace sunrise::state::activity {
+namespace dawn::state::activity {
 namespace {
 
 /** Retires one already-resolved record; exhaustion may stop mutations, never cleanup. */
@@ -50,4 +50,4 @@ RetireResult retire_session_exact(ActivityInstanceKey key) noexcept {
     return result;
 }
 
-} // namespace sunrise::state::activity
+} // namespace dawn::state::activity

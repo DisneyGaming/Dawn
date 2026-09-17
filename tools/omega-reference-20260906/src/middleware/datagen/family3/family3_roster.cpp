@@ -7,7 +7,7 @@
 
 #include "../roster/queuez_roster.h"
 
-namespace sunrise::middleware::datagen::family3 {
+namespace dawn::middleware::datagen::family3 {
 namespace {
 
 /** The first trailing index bank holds 27 definition indices. */
@@ -63,4 +63,4 @@ bool encode_roster(const state::AccountState& account,
     return true;
 }
 
-} // namespace sunrise::middleware::datagen::family3
+} // namespace dawn::middleware::datagen::family3

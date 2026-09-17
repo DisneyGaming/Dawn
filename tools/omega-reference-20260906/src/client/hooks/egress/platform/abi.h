@@ -7,7 +7,7 @@
 #include "../resolver/replacements.h"
 #include "../winsock/replacements.h"
 
-namespace sunrise::client::hooks::egress::platform {
+namespace dawn::client::hooks::egress::platform {
 
 /** Every detour replacement must convert to its exact Windows SDK function type. */
 static_assert(
@@ -64,4 +64,4 @@ static_assert(std::is_convertible_v<decltype(&winsock::reception::receive_buffer
                                     decltype(&::WSARecvFrom)>);
 static_assert(std::is_convertible_v<decltype(&dns::query_raw), decltype(&::DnsQueryRaw)>);
 
-} // namespace sunrise::client::hooks::egress::platform
+} // namespace dawn::client::hooks::egress::platform

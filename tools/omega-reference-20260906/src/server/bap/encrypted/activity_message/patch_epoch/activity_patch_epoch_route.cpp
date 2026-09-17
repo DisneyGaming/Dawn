@@ -2,7 +2,7 @@
 
 #include "../../../../../middleware/bap/activity_message/activity_patch_epoch_parser.h"
 
-namespace sunrise::server::bap::encrypted::activity_message::patch_epoch {
+namespace dawn::server::bap::encrypted::activity_message::patch_epoch {
 
 namespace message = middleware::bap::activity_message::patch_epoch;
 
@@ -22,4 +22,4 @@ bool prepare(state::activity::ActivityInstanceKey activity,
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted::activity_message::patch_epoch
+} // namespace dawn::server::bap::encrypted::activity_message::patch_epoch

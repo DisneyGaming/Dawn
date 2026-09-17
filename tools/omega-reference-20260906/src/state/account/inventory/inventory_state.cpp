@@ -4,7 +4,7 @@
 #include <optional>
 #include <string_view>
 
-namespace sunrise::state::account::inventory {
+namespace dawn::state::account::inventory {
 namespace {
 
 /** One case-sensitive configuration name maps to one semantic equipment slot. */
@@ -104,4 +104,4 @@ bool valid(const CharacterItems& items) noexcept {
     return true;
 }
 
-} // namespace sunrise::state::account::inventory
+} // namespace dawn::state::account::inventory

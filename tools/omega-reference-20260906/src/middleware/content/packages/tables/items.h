@@ -5,7 +5,7 @@
 #include <optional>
 #include <span>
 
-namespace sunrise::middleware::content::packages::tables::items {
+namespace dawn::middleware::content::packages::tables::items {
 
 /** Ordinary socket lanes an item definition can declare. */
 inline constexpr std::size_t kSocketCapacity = 12;
@@ -110,4 +110,4 @@ using AllowedPlugVisitor = bool (*)(void* context, std::uint32_t itemDefinitionI
                                        AllowedPlugVisitor visitor,
                                        void* context) noexcept;
 
-} // namespace sunrise::middleware::content::packages::tables::items
+} // namespace dawn::middleware::content::packages::tables::items

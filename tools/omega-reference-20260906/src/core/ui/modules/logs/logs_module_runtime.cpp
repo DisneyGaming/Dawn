@@ -7,7 +7,7 @@
 #include "internal.h"
 #include "logs.h"
 
-namespace sunrise::core::ui::modules::logs {
+namespace dawn::core::ui::modules::logs {
 namespace {
 
 /** Namespaced stable ID keeps this page distinct from feature modules. */
@@ -35,4 +35,4 @@ void dispatch_pending_copy(HWND owner) noexcept {
     internal::dispatch_pending_copy(owner);
 }
 
-} // namespace sunrise::core::ui::modules::logs
+} // namespace dawn::core::ui::modules::logs

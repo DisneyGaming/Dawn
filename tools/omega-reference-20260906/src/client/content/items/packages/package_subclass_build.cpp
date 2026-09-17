@@ -5,7 +5,7 @@
 #include "../../../../state/runtime/runtime.h"
 #include "internal.h"
 
-namespace sunrise::client::content::items::packages {
+namespace dawn::client::content::items::packages {
 namespace {
 
 namespace domain = state::build_data::abilities;
@@ -141,4 +141,4 @@ bool build_character_abilities(const reader::Source& source,
     return true;
 }
 
-} // namespace sunrise::client::content::items::packages
+} // namespace dawn::client::content::items::packages

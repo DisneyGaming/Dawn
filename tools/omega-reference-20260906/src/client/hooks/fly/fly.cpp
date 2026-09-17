@@ -25,7 +25,7 @@
 #include "../noclip/runtime.h"
 #include "../teleport/runtime.h"
 
-namespace sunrise::client::hooks::fly {
+namespace dawn::client::hooks::fly {
 namespace {
 
 namespace bindings = state::account::settings::bindings;
@@ -327,4 +327,4 @@ void reset() noexcept {
     g_heightValid = false;
 }
 
-} // namespace sunrise::client::hooks::fly
+} // namespace dawn::client::hooks::fly

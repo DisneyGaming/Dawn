@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::bap::matchmaking::response {
+namespace dawn::middleware::bap::matchmaking::response {
 
 /**
  * Encodes kind 2 or 5 around one nested advertisement id.
@@ -32,4 +32,4 @@ namespace sunrise::middleware::bap::matchmaking::response {
                                         std::span<std::byte> output,
                                         std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::bap::matchmaking::response
+} // namespace dawn::middleware::bap::matchmaking::response

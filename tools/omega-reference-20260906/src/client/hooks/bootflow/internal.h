@@ -5,7 +5,7 @@
 
 #include "../../patterns/image_scan.h"
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 
 using patterns::resolve_relative;
 using patterns::scan_main_image_unique;
@@ -379,7 +379,7 @@ void observe_world_step() noexcept;
  */
 [[nodiscard]] bool install_spawn_hold() noexcept;
 
-/** Stops Sunrise-owned spawn work while retaining native forwarding. */
+/** Stops Dawn-owned spawn work while retaining native forwarding. */
 void quiesce_spawn_hold() noexcept;
 
 /** Detaches the spawn hold, retaining all owner state unless removal is confirmed. */
@@ -404,4 +404,4 @@ void release_world_fade() noexcept;
 /** Re-arms the one line the release logs, so the next load reports its own. */
 void rearm_fade_release() noexcept;
 
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

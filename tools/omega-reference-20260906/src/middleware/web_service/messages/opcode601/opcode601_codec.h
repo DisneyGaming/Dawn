@@ -6,7 +6,7 @@
 
 #include "../../web_service_envelope.h"
 
-namespace sunrise::middleware::web_service::messages::opcode601 {
+namespace dawn::middleware::web_service::messages::opcode601 {
 
 /** Web Service opcode for a loot pickup the Client cannot do on its own. */
 inline constexpr std::uint16_t kOpcode = 601;
@@ -31,4 +31,4 @@ inline constexpr std::size_t kResponseSize = 27;
 [[nodiscard]] bool
 encode_response(const Message& message, std::span<std::byte> output, std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::web_service::messages::opcode601
+} // namespace dawn::middleware::web_service::messages::opcode601

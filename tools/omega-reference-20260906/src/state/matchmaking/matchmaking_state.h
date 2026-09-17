@@ -6,7 +6,7 @@
 
 #include "definition.h"
 
-namespace sunrise::state::matchmaking {
+namespace dawn::state::matchmaking {
 
 /**
  * Acquires the first available generation-checked logical context.
@@ -73,4 +73,4 @@ namespace sunrise::state::matchmaking {
  */
 void erase_snapshot(LatestSnapshot& snapshot) noexcept;
 
-} // namespace sunrise::state::matchmaking
+} // namespace dawn::state::matchmaking

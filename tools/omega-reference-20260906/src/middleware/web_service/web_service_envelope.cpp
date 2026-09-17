@@ -4,7 +4,7 @@
 #include "../encoding/byte_order.h"
 #include "status_fields.h"
 
-namespace sunrise::middleware::web_service {
+namespace dawn::middleware::web_service {
 
 /** Parses the fixed big-endian Web Service header without interpreting its payload. */
 bool parse_request(std::span<const std::byte> input, Message& message) noexcept {
@@ -34,7 +34,7 @@ bool encode_response(const Message& request,
                            request.transactionId);
 
     encoding::bits::Writer writer(output.subspan(kEnvelopeHeaderSize));
-    bool encoded = sunrise::middleware::web_service::status::write_fields(writer, shape, status);
+    bool encoded = dawn::middleware::web_service::status::write_fields(writer, shape, status);
     encoded = encoded && writer.write(0, kAbsentTrailerWidth);
 
     std::size_t payloadSize = 0;
@@ -45,4 +45,4 @@ bool encode_response(const Message& request,
     return true;
 }
 
-} // namespace sunrise::middleware::web_service
+} // namespace dawn::middleware::web_service

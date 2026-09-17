@@ -19,7 +19,7 @@
 #include "state_account_transaction_helpers.h"
 #include "storage/internal.h"
 
-namespace sunrise::state {
+namespace dawn::state {
 namespace runtime::detail {
 
 namespace authored_inventory = account::inventory;
@@ -360,4 +360,4 @@ void report_socket_plug(std::string_view stage,
 }
 
 } // namespace runtime::detail
-} // namespace sunrise::state
+} // namespace dawn::state

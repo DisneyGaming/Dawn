@@ -9,7 +9,7 @@
 #include "../build_data/runtime.h"
 #include "runtime.h"
 
-namespace sunrise::state::runtime::detail {
+namespace dawn::state::runtime::detail {
 
 struct ResolvedPosition {
     std::uint16_t inventoryRow{};
@@ -197,4 +197,4 @@ find_unequipped_row(const middleware::datagen::family4::loadout::ResolvedLoadout
 loadout_contains(const middleware::datagen::family4::loadout::ResolvedLoadout& loadout,
                  std::uint64_t instanceSoid) noexcept;
 
-} // namespace sunrise::state::runtime::detail
+} // namespace dawn::state::runtime::detail

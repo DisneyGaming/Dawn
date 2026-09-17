@@ -13,7 +13,7 @@ Every original document is preserved in full with all RVA tables, IDA/Ghidra tra
   *Comprehensive initial reverse engineering findings, RVA tables, execution chain, and collaborator comparison.*
 - [`HOMECOMING-HANDOFF.md`](./HOMECOMING-HANDOFF.md)  
   *Checkpoints, manager modes, and operational status baseline.*
-- [`SUNRISE-HOMECOMING-BRIEFING-FOR-CODEX.md`](./SUNRISE-HOMECOMING-BRIEFING-FOR-CODEX.md)  
+- [`DAWN-HOMECOMING-BRIEFING-FOR-CODEX.md`](./DAWN-HOMECOMING-BRIEFING-FOR-CODEX.md)  
   *Architecture briefing detailing client expectations and server-authoritative requirements.*
 - [`HOMECOMING-NEW-CHAT-PROMPT.md`](./HOMECOMING-NEW-CHAT-PROMPT.md)  
   *Operational prompt context and baseline scope boundaries.*

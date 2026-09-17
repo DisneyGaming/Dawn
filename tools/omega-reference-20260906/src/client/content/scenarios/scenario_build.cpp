@@ -7,7 +7,7 @@
 #include "../../../state/build_data/runtime.h"
 #include "internal.h"
 
-namespace sunrise::client::content::scenarios {
+namespace dawn::client::content::scenarios {
 namespace {
 
 namespace packages = middleware::content::packages;
@@ -143,4 +143,4 @@ bool build(const packages::reader::Source& source, packages::reader::Scratch& sc
     return walk_rosters(source, scratch, storage);
 }
 
-} // namespace sunrise::client::content::scenarios
+} // namespace dawn::client::content::scenarios

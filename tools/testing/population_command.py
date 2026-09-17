@@ -26,7 +26,7 @@ def main():
     parser.add_argument("--registry", type=lambda x: int(x, 16), required=True)
     parser.add_argument("--slot", type=int, required=True)
     parser.add_argument("--target", type=int, required=True)
-    parser.add_argument("--root", type=Path, default=Path(r"D:\Destiny3\bin\x64\Sunrise"))
+    parser.add_argument("--root", type=Path, default=Path(r"D:\Destiny3\bin\x64\Dawn"))
     args = parser.parse_args()
     text = command_text(args.boot, args.owner, args.incarnation, args.revision, args.request,
                         args.registry, args.slot, args.target)

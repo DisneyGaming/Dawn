@@ -13,7 +13,7 @@
 #include "internal.h"
 #include "package_table_cache.h"
 
-namespace sunrise::middleware::content::packages::reader {
+namespace dawn::middleware::content::packages::reader {
 namespace {
 
 /** The second nonce byte is fixed for this package branch. */
@@ -196,4 +196,4 @@ bool read_tag(const Source& source,
     return read_tag(source, scratch, tag, output, classId);
 }
 
-} // namespace sunrise::middleware::content::packages::reader
+} // namespace dawn::middleware::content::packages::reader

@@ -7,8 +7,8 @@ import shutil
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / 'build/coo/native-r13-installed-fixtures'
-POLICY = ROOT / 'Sunrise/scripts/mercury_freeroam.json'
-CACHE = ROOT / 'Sunrise/cache/build_data.bin'
+POLICY = ROOT / 'Dawn/scripts/mercury_freeroam.json'
+CACHE = ROOT / 'Dawn/cache/build_data.bin'
 
 # These tests compare against outputs from the original executable or recorded live traffic.
 # Compiling them is useful, but an absent evidence set must never be reported as a pass.
@@ -67,8 +67,8 @@ def prepare():
             0x80F5B972, 0x80F5B975, 0x80F5B978, 0x80F5B97B, 0x80F5B97E,
             0x80F5B981, 0x80F5B984, 0x81550015, 0x8150A0A8, 0x8150A9FC}
     descriptor_sets = [
-        ('Sunrise/src/server/runtime/activity/haunted_forest_registries.h', 'haunted'),
-        ('Sunrise/src/state/activity/coo/mercury_public_event_registries.h', 'public-event'),
+        ('Dawn/src/server/runtime/activity/haunted_forest_registries.h', 'haunted'),
+        ('Dawn/src/state/activity/coo/mercury_public_event_registries.h', 'public-event'),
     ]
     descriptors = {}
     for source, folder in descriptor_sets:
@@ -94,7 +94,7 @@ def prepare():
             (directory / name).write_bytes(payload)
             manifest.append(dict(tag=f'{tag:08X}', cls=f'{cls:08X}', path=f'{folder}/{name}',
                                  size=len(payload), sha256=hashlib.sha256(payload).hexdigest()))
-    shutil.copyfile(ROOT / 'Sunrise/unit/fixtures/adventure_mercury_flags.json',
+    shutil.copyfile(ROOT / 'Dawn/unit/fixtures/adventure_mercury_flags.json',
                     FIXTURES / 'adventure_mercury_flags.json')
     marker.write_text(json.dumps(manifest, indent=2))
     return FIXTURES
@@ -156,7 +156,7 @@ def prepare_metadata():
             continue
         container = read(u32(banks, start + bank * 8 + 4))
         read(u32(container,24))
-    artwork = (ROOT / 'Sunrise/src/client/content/activity/activity_presentation_build.h').read_text()
+    artwork = (ROOT / 'Dawn/src/client/content/activity/activity_presentation_build.h').read_text()
     style_text = artwork.split('styles{',1)[1].split('};',1)[0]
     styles = [int(x,16) for x in re.findall(r'0x([0-9A-Fa-f]+)',style_text)]
     def texture(tag):
@@ -234,8 +234,8 @@ def prepare_scenario_cache():
     supplemental = []
     inputs = []
     definitions = [
-        (0x2749BAAE, 0x80F5B993, 'Sunrise/src/state/activity/coo/adventure_mercury.h', 'kSlots'),
-        (0xF25B938B, 0x80F5E5CD, 'Sunrise/src/state/activity/coo/mercury_registries.h', 'kTeleporters'),
+        (0x2749BAAE, 0x80F5B993, 'Dawn/src/state/activity/coo/adventure_mercury.h', 'kSlots'),
+        (0xF25B938B, 0x80F5E5CD, 'Dawn/src/state/activity/coo/mercury_registries.h', 'kTeleporters'),
     ]
     for key, object_tag, catalog_path, array_name in definitions:
         if key in present:

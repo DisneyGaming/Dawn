@@ -15,7 +15,7 @@
 #include "../../core/filesystem/path.h"
 #include "../../core/logging/log.h"
 
-namespace sunrise::client::player {
+namespace dawn::client::player {
 namespace {
 
 /** The module-owned configuration file, beside the generated settings and logs. */
@@ -177,4 +177,4 @@ bool publish(const Settings& settings) noexcept {
     return true;
 }
 
-} // namespace sunrise::client::player
+} // namespace dawn::client::player

@@ -9,7 +9,7 @@
 #include "../../encoding/byte_order.h"
 #include "sense_update.h"
 
-namespace sunrise::middleware::bap::activity_message::sense_update {
+namespace dawn::middleware::bap::activity_message::sense_update {
 namespace {
 
 namespace bits = encoding::bits;
@@ -41,7 +41,7 @@ constexpr std::uint8_t kSlotTypeVolume = 30;
 constexpr std::uint8_t kSlotTypeScene = 43;
 constexpr std::uint8_t kSlotTypeMonitor = 70;
 
-/** Preserves Sunrise's established diagnostic hash convention (not standard FNV-1a). */
+/** Preserves Dawn's established diagnostic hash convention (not standard FNV-1a). */
 constexpr std::uint64_t kProjectFnvBasis = 1469598103934665603ULL;
 constexpr std::uint64_t kProjectFnvPrime = 1099511628211ULL;
 
@@ -426,4 +426,4 @@ bool parse_sense_update(std::span<const std::byte> input,
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_message::sense_update
+} // namespace dawn::middleware::bap::activity_message::sense_update

@@ -4,7 +4,7 @@
 
 #include "../../encoding/bit_reader.h"
 
-namespace sunrise::middleware::gameplay::group {
+namespace dawn::middleware::gameplay::group {
 
 /** Registry id a member uses to publish its own peer properties. */
 inline constexpr std::uint8_t kPeerPropertiesId = 31;
@@ -75,4 +75,4 @@ struct PlayerRemoveRequest {
 [[nodiscard]] bool read_player_remove(encoding::bits::Reader& reader,
                                       PlayerRemoveRequest& output) noexcept;
 
-} // namespace sunrise::middleware::gameplay::group
+} // namespace dawn::middleware::gameplay::group

@@ -4,7 +4,7 @@
 
 #include "settings.h"
 
-namespace sunrise::core::ui::runtime {
+namespace dawn::core::ui::runtime {
 
 /** A copy of the UI visibility state, taken under the lock, for the drawing code. */
 struct VisibilitySnapshot {
@@ -35,4 +35,4 @@ void shutdown() noexcept;
  */
 [[nodiscard]] bool toggle_for_key(UINT virtualKey) noexcept;
 
-} // namespace sunrise::core::ui::runtime
+} // namespace dawn::core::ui::runtime

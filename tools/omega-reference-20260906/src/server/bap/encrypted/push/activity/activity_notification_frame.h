@@ -6,7 +6,7 @@
 
 #include "../../../internal.h"
 
-namespace sunrise::server::bap::encrypted::push::activity {
+namespace dawn::server::bap::encrypted::push::activity {
 
 /**
  * Appends one encrypted svc9 notification on the supplied local nonce.
@@ -29,4 +29,4 @@ namespace sunrise::server::bap::encrypted::push::activity {
                                              std::span<std::byte> response,
                                              std::size_t& written) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::push::activity
+} // namespace dawn::server::bap::encrypted::push::activity

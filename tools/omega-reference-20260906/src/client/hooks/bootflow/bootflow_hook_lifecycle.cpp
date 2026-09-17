@@ -17,7 +17,7 @@
 #include "omega_arc_charge_receipts.h"
 #include "omega_rescue_scene_receipts.h"
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 namespace {
 
 std::atomic_bool g_installed{false};
@@ -93,7 +93,7 @@ public:
     }
 
     void quiesce() noexcept {
-        ::sunrise::client::hooks::bootflow::quiesce();
+        ::dawn::client::hooks::bootflow::quiesce();
     }
 };
 
@@ -384,4 +384,4 @@ bool is_installed() noexcept {
     return g_installed.load(std::memory_order_acquire);
 }
 
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

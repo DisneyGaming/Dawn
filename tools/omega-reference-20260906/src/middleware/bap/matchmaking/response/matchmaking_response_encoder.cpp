@@ -5,7 +5,7 @@
 #include "../../../protobuf/codec.h"
 #include "matchmaking_dynamic_response.h"
 
-namespace sunrise::middleware::bap::matchmaking::response {
+namespace dawn::middleware::bap::matchmaking::response {
 namespace {
 
 using protobuf::Writer;
@@ -149,4 +149,4 @@ bool encode(const Response& response, std::span<std::byte> output, std::size_t& 
     return false;
 }
 
-} // namespace sunrise::middleware::bap::matchmaking::response
+} // namespace dawn::middleware::bap::matchmaking::response

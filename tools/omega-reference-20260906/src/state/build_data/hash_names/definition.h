@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::state::build_data::hash_names {
+namespace dawn::state::build_data::hash_names {
 
 /**
  * Hashes the table can hold: every distinct bubble name and every distinct spawn-set name.
@@ -33,4 +33,4 @@ struct Name {
     return (value >= 'a' && value <= 'z') || (value >= '0' && value <= '9') || value == '_';
 }
 
-} // namespace sunrise::state::build_data::hash_names
+} // namespace dawn::state::build_data::hash_names

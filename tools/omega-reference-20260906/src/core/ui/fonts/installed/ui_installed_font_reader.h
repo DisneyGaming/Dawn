@@ -4,9 +4,9 @@
 
 #include <cstddef>
 
-namespace sunrise::core::ui::fonts::installed {
+namespace dawn::core::ui::fonts::installed {
 
-/** Borrowed view over the fixed Sunrise-owned installed-font bytes. */
+/** Borrowed view over the fixed Dawn-owned installed-font bytes. */
 struct DataView {
     void* bytes{};
     int byteCount{};
@@ -26,4 +26,4 @@ void clear() noexcept;
 /** @return Number of installed-font bytes kept for the active atlas. */
 [[nodiscard]] std::size_t byte_count() noexcept;
 
-} // namespace sunrise::core::ui::fonts::installed
+} // namespace dawn::core::ui::fonts::installed

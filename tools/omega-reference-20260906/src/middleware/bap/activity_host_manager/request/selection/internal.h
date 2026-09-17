@@ -7,7 +7,7 @@
 #include "../../../../encoding/bit_reader.h"
 #include "definition.h"
 
-namespace sunrise::middleware::bap::activity_host_manager::request::selection {
+namespace dawn::middleware::bap::activity_host_manager::request::selection {
 
 /**
  * Decodes one field-one payload. Its transaction and wire bytes are not kept.
@@ -105,4 +105,4 @@ read_hash(encoding::bits::Reader& reader, bool& present, std::uint32_t& value) n
 [[nodiscard]] bool parse(encoding::bits::Reader& reader,
                          ActivityManagerSelection& selection) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_host_manager::request::selection
+} // namespace dawn::middleware::bap::activity_host_manager::request::selection

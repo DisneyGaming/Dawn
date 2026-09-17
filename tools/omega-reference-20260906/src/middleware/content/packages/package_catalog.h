@@ -4,7 +4,7 @@
 
 #include "named_tags.h"
 
-namespace sunrise::middleware::content::packages {
+namespace dawn::middleware::content::packages {
 
 /**
  * Rebuilds generated State mappings from every package in one installed directory.
@@ -15,4 +15,4 @@ namespace sunrise::middleware::content::packages {
 [[nodiscard]] bool load_catalog(std::wstring_view directory,
                                 named_tags::DirectoryResult& result) noexcept;
 
-} // namespace sunrise::middleware::content::packages
+} // namespace dawn::middleware::content::packages

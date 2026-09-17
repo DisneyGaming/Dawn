@@ -2,7 +2,7 @@
 
 #include "definition.h"
 
-namespace sunrise::state::activity::defaults {
+namespace dawn::state::activity::defaults {
 
 /**
  * Checks one coherent default destination and its small numeric fallback policy.
@@ -17,7 +17,7 @@ namespace sunrise::state::activity::defaults {
  */
 [[nodiscard]] bool valid(const ActivityDefaults& candidate) noexcept;
 
-/** @return Sunrise's whole local fallback, used when service 6 leaves out its selection. */
+/** @return Dawn's whole local fallback, used when service 6 leaves out its selection. */
 [[nodiscard]] ActivityDefaults authored() noexcept;
 
-} // namespace sunrise::state::activity::defaults
+} // namespace dawn::state::activity::defaults

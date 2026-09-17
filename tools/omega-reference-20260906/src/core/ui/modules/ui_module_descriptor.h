@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <string_view>
 
-namespace sunrise::core::ui::modules {
+namespace dawn::core::ui::modules {
 
 /** Ownership keeps Core, Client and Server pages in separate menu groups. */
 enum class Owner : std::uint8_t {
@@ -79,4 +79,4 @@ private:
 /** @return True when every field is complete. */
 [[nodiscard]] bool is_valid(const Descriptor& descriptor) noexcept;
 
-} // namespace sunrise::core::ui::modules
+} // namespace dawn::core::ui::modules

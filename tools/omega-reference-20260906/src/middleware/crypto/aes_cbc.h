@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <span>
 
-namespace sunrise::middleware::crypto::aes {
+namespace dawn::middleware::crypto::aes {
 
 /** AES works on 16-byte blocks, whatever its key width. */
 inline constexpr std::size_t kBlockSize = 16;
@@ -35,4 +35,4 @@ inline constexpr std::size_t kBlockSize = 16;
                            std::span<const std::byte> input,
                            std::span<std::byte> output) noexcept;
 
-} // namespace sunrise::middleware::crypto::aes
+} // namespace dawn::middleware::crypto::aes

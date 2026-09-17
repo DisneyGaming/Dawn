@@ -7,7 +7,7 @@
 #include "../../../../../state/activity/destination/definition.h"
 #include "../../../../../state/build_data/scenarios/definition.h"
 
-namespace sunrise::server::bap::encrypted::push::activity {
+namespace dawn::server::bap::encrypted::push::activity {
 
 /**
  * Finds the slice-set index a destination arrives in.
@@ -50,4 +50,4 @@ struct EffectiveRegion final {
     std::string_view name,
     const state::build_data::scenarios::Definition& layout) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::push::activity
+} // namespace dawn::server::bap::encrypted::push::activity

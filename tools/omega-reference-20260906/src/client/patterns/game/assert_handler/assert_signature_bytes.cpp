@@ -1,6 +1,6 @@
 #include "assert_signature_bytes.h"
 
-namespace sunrise::client::patterns::game::assert_handler {
+namespace dawn::client::patterns::game::assert_handler {
 
 // Stores the argument into the handler slot and returns; the displacement is the slot.
 constinit const std::array<patterns::PatternByte, kSetHandlerPatternSize> kSetHandler =
@@ -10,4 +10,4 @@ constinit const std::array<patterns::PatternByte, kSetHandlerPatternSize> kSetHa
 constinit const std::array<patterns::PatternByte, kFatalTailPatternSize> kFatalTail =
     signature<kFatalTailPatternSize>(kFatalTailText);
 
-} // namespace sunrise::client::patterns::game::assert_handler
+} // namespace dawn::client::patterns::game::assert_handler

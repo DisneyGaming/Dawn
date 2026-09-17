@@ -20,9 +20,9 @@ This handoff supersedes the older `MISSION-SCOT-HANDOFF-20260905.md` statements 
 - Frozen candidate: `C:\Destiny 2 Development\build\scot-forest-enemies-20260905\candidate-20260905-031913`.
 - That directory contains `source`, `out/steam_api64.dll`, matching PDB, `candidate-manifest.json`, `evidence/source-manifest.tsv` and `evidence/release-build.log`.
 - Deployment receipt: `C:\Destiny 2 Development\build\scot-forest-crash-20260905\installed.json`.
-- Active settings: `C:\Destiny 2 Development\Sunrise\settings.json`.
-- Actual cache: `C:\Destiny 2 Development\Sunrise\cache`.
-- Current log: `C:\Destiny 2 Development\Sunrise\logs\sunrise.log`.
+- Active settings: `C:\Destiny 2 Development\Dawn\settings.json`.
+- Actual cache: `C:\Destiny 2 Development\Dawn\cache`.
+- Current log: `C:\Destiny 2 Development\Dawn\logs\dawn.log`.
 
 The current DLL combines the Panoptes request repair, working Forest recipe, Vex selection, bounded Forest receipts, and startup crash repair. Release built with zero warnings/errors; ten Debug/Release regression runs passed. Settings were preserved and generated cache files were backed up/cleared at installation. The user subsequently launched and confirmed Forest enemies/progression.
 
@@ -30,7 +30,7 @@ The current DLL combines the Panoptes request repair, working Forest recipe, Vex
 
 A stable log snapshot was archived while that run was still open:
 
-`C:\Destiny 2 Development\build\scot-panoptes-handoff-20260905\sunrise.snapshot-20260905-032906.log`
+`C:\Destiny 2 Development\build\scot-panoptes-handoff-20260905\dawn.snapshot-20260905-032906.log`
 
 Machine-readable summary: `C:\Destiny 2 Development\build\scot-panoptes-handoff-20260905\evidence.json`.
 
@@ -59,12 +59,12 @@ Forest receipt logging reached its 1,024-line run budget. Later missing Forest r
 
 Primary files:
 
-- `Sunrise/src/client/hooks/bootflow/omega_reveal_native.cpp`: boss observer/request, cutscene trigger, and existing waypoint integration.
-- `Sunrise/src/client/hooks/bootflow/omega_boss_spawn.h`: exact source filter, reveal eligibility and request ABI.
-- `Sunrise/src/client/hooks/bootflow/omega_reveal_bindings.h`: 14 pinned native entry signatures.
-- `Sunrise/src/state/activity/omega/omega_progression.h` and `.cpp`: run-local route and loaded-area state.
-- `Sunrise/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp`: mission roster publication.
-- `Sunrise/unit/omega_progression_tests.cpp`: boss gateway and existing mission/wire regressions.
+- `Dawn/src/client/hooks/bootflow/omega_reveal_native.cpp`: boss observer/request, cutscene trigger, and existing waypoint integration.
+- `Dawn/src/client/hooks/bootflow/omega_boss_spawn.h`: exact source filter, reveal eligibility and request ABI.
+- `Dawn/src/client/hooks/bootflow/omega_reveal_bindings.h`: 14 pinned native entry signatures.
+- `Dawn/src/state/activity/omega/omega_progression.h` and `.cpp`: run-local route and loaded-area state.
+- `Dawn/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp`: mission roster publication.
+- `Dawn/unit/omega_progression_tests.cpp`: boss gateway and existing mission/wire regressions.
 
 All paths in this section are relative to the workspace above.
 
@@ -121,7 +121,7 @@ Evidence/archive:
 - `build/scot-boss-spawn-fix-20260905/RUN.md`
 - `build/scot-boss-spawn-fix-20260905/native-verification.json`
 - `build/scot-boss-spawn-fix-20260905/verify_native.py`
-- `build/scot-boss-spawn-fix-20260905/sunrise.no-boss.log`
+- `build/scot-boss-spawn-fix-20260905/dawn.no-boss.log`
 - `build/scot-reveal-20260905/reveal-groups.json`
 - `build/scot-reveal-20260905/80F4756A.bin`
 
@@ -188,17 +188,17 @@ Forest progression and Lair wave activation are separate systems. Lair template 
 
 ## Build, verify, deploy; user launches
 
-This workspace has no Git metadata or `Sunrise.sln`. Build `Sunrise/Sunrise.vcxproj` directly with the installed toolchain:
+This workspace has no Git metadata or `Dawn.sln`. Build `Dawn/Dawn.vcxproj` directly with the installed toolchain:
 
 ```powershell
 & 'C:/Program Files (x86)/Microsoft Visual Studio/18/BuildTools/MSBuild/Current/Bin/MSBuild.exe' `
-  'Sunrise/Sunrise.vcxproj' /p:Configuration=Release /p:Platform=x64 /m /v:minimal
+  'Dawn/Dawn.vcxproj' /p:Configuration=Release /p:Platform=x64 /m /v:minimal
 ```
 
-Affected unit projects support Debug and Release: `omega_progression_tests`, `omega_forest_recipe_tests`, `omega_forest_roster_tests`, `omega_experiment_settings_tests`, and `omega_hook_bundle_tests`, under `Sunrise/unit`. The hook test runs against `destiny2_unpacked.bin` in its own process and executes no game code. The other four tests take no arguments; progression optionally exports the lifetime body.
+Affected unit projects support Debug and Release: `omega_progression_tests`, `omega_forest_recipe_tests`, `omega_forest_roster_tests`, `omega_experiment_settings_tests`, and `omega_hook_bundle_tests`, under `Dawn/unit`. The hook test runs against `destiny2_unpacked.bin` in its own process and executes no game code. The other four tests take no arguments; progression optionally exports the lifetime body.
 
 For a final candidate, use a new frozen source/output directory and preserve manifests, build log, DLL/PDB and hashes. The local `build/scot-forest-enemies-20260905/freeze_candidate.ps1` reuses canonical manifest/identity helpers without Git; inspect/adapt its companion finalization scripts for the new change. Do not edit the existing read-only frozen source.
 
-Before deployment, verify Destiny is closed. Back up the installed DLL, active settings and final log. Clear only direct generated files in the verified actual `Sunrise/cache`, preserving backups/hashes. Deploy the new DLL to the workspace root and verify its hash against the candidate. Preserve settings; do not replay an installer with an obsolete expected DLL hash. The old candidate installer now records an installed candidate and is not a general future installer.
+Before deployment, verify Destiny is closed. Back up the installed DLL, active settings and final log. Clear only direct generated files in the verified actual `Dawn/cache`, preserving backups/hashes. Deploy the new DLL to the workspace root and verify its hash against the candidate. Preserve settings; do not replay an installer with an obsolete expected DLL hash. The old candidate installer now records an installed candidate and is not a general future installer.
 
 **Leave the game closed. Tell the user the build is ready and link `launch-scot-reveal-debug.cmd`. Never launch it on their behalf.** Re-query PID/module base for any later live inspection; addresses and PID 54844 in the archived snapshot belong to a closed run and must not be reused.

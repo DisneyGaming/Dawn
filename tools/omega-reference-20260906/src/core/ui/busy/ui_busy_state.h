@@ -2,7 +2,7 @@
 
 #include <Windows.h>
 
-namespace sunrise::core::ui::busy::internal {
+namespace dawn::core::ui::busy::internal {
 
 /** @return Mask of started tasks, one bit per Task. */
 [[nodiscard]] unsigned running() noexcept;
@@ -16,4 +16,4 @@ void set_present_thread(DWORD threadId) noexcept;
  */
 void record_drawn(bool complete) noexcept;
 
-} // namespace sunrise::core::ui::busy::internal
+} // namespace dawn::core::ui::busy::internal

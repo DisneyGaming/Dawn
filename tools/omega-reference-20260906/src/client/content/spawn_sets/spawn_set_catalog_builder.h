@@ -8,7 +8,7 @@
 #include "../../../middleware/content/packages/reader/reader.h"
 #include "../../../state/build_data/spawn_sets/definition.h"
 
-namespace sunrise::client::content::spawn_sets {
+namespace dawn::client::content::spawn_sets {
 
 namespace spawn_state = state::build_data::spawn_sets;
 namespace package_reader = middleware::content::packages::reader;
@@ -216,4 +216,4 @@ void reset(Storage& storage) noexcept;
                                     std::size_t budget,
                                     bool skipUnreadable) noexcept;
 
-} // namespace sunrise::client::content::spawn_sets
+} // namespace dawn::client::content::spawn_sets

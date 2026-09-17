@@ -26,4 +26,4 @@ Callbacks copy qualified observations for the owning update path. Launch-queue a
 
 These mechanisms close mapped cases, not the general actor-command-30 policy or every cinematic in MISSING.md. Historical accepted runs apply only to their documented candidates. No installed DLL or live playthrough was checked here.
 
-Landmarks: Sunrise/src/client/hooks/bootflow/omega_mission_motion.inl. Native lifecycle documentation: Sunrise/docs/OMEGA-ENDING-TEARDOWN-TO-CUTSCENE.md and historical acceptance records in COO-EXECUTOR.md. These references identify where the evidence lives; the original documents and their scripting content are not included in this archive.
+Landmarks: Dawn/src/client/hooks/bootflow/omega_mission_motion.inl. Native lifecycle documentation: Dawn/docs/OMEGA-ENDING-TEARDOWN-TO-CUTSCENE.md and historical acceptance records in COO-EXECUTOR.md. These references identify where the evidence lives; the original documents and their scripting content are not included in this archive.

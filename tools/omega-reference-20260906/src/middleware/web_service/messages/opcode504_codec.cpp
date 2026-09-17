@@ -1,7 +1,7 @@
 #include "../../encoding/bit_reader.h"
 #include "opcode504.h"
 
-namespace sunrise::middleware::web_service::messages::opcode504 {
+namespace dawn::middleware::web_service::messages::opcode504 {
 namespace {
 
 /** The whole request is one unaligned 64-bit id, with no selector before it. */
@@ -21,4 +21,4 @@ bool parse_request(const Message& message, Request& request) noexcept {
     return reader.read(kCharacterSoidWidth, request.characterSoid);
 }
 
-} // namespace sunrise::middleware::web_service::messages::opcode504
+} // namespace dawn::middleware::web_service::messages::opcode504

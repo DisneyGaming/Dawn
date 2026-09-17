@@ -6,7 +6,7 @@
 
 #include "scenario_reader.h"
 
-namespace sunrise::middleware::content::packages::tables {
+namespace dawn::middleware::content::packages::tables {
 
 /** Which nested blob a read is for. Each slot needs its own storage to stay live. */
 enum class ReadSlot : std::uint8_t {
@@ -78,4 +78,4 @@ using PlacementVisitor = bool (*)(void* context, const Placement& placement) noe
                                  void* visitorContext,
                                  WalkResult& output) noexcept;
 
-} // namespace sunrise::middleware::content::packages::tables
+} // namespace dawn::middleware::content::packages::tables

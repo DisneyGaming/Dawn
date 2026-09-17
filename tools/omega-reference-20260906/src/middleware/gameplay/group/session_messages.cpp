@@ -6,7 +6,7 @@
 #include "../../protobuf/codec.h"
 #include "session_state.h"
 
-namespace sunrise::middleware::gameplay::group {
+namespace dawn::middleware::gameplay::group {
 
 namespace {
 
@@ -457,4 +457,4 @@ bool write_membership_update(bits::Writer& writer, const MembershipUpdate& body)
     return writer.write(session_state_hash(body), kWordWidth);
 }
 
-} // namespace sunrise::middleware::gameplay::group
+} // namespace dawn::middleware::gameplay::group

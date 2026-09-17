@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace sunrise::middleware::datagen::family4::instance::layout {
+namespace dawn::middleware::datagen::family4::instance::layout {
 
 /** Every item instance carries 12 fixed ordinary socket lanes. */
 inline constexpr std::size_t kOrdinarySocketCapacity = 12;
@@ -164,4 +164,4 @@ static_assert(sizeof(CreationRequest) == kCreationRequestSize);
 static_assert(sizeof(Object) == kObjectSize);
 static_assert(std::is_trivially_copyable_v<Object>);
 
-} // namespace sunrise::middleware::datagen::family4::instance::layout
+} // namespace dawn::middleware::datagen::family4::instance::layout

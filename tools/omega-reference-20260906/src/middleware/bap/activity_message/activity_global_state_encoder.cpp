@@ -3,7 +3,7 @@
 #include "../../encoding/bit_reader.h"
 #include "../../encoding/bit_writer.h"
 
-namespace sunrise::middleware::bap::activity_message::global_activity_state {
+namespace dawn::middleware::bap::activity_message::global_activity_state {
 namespace {
 
 /** The widest bias-1 scalar a descriptor index field accepts. */
@@ -215,4 +215,4 @@ bool encode_global_activity_state(const GlobalActivityState& state,
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_message::global_activity_state
+} // namespace dawn::middleware::bap::activity_message::global_activity_state

@@ -10,7 +10,7 @@
 #include "../progression/layout.h"
 #include "preferences/layout.h"
 
-namespace sunrise::middleware::datagen::family4::account::layout {
+namespace dawn::middleware::datagen::family4::account::layout {
 
 /** The account profile inventory reserves 701 fixed native rows. */
 inline constexpr std::size_t kProfileItemCapacity = 701;
@@ -188,4 +188,4 @@ static_assert(sizeof(ProfileInventoryChangeList)
 static_assert(std::is_standard_layout_v<Object>);
 static_assert(std::is_trivially_copyable_v<Object>);
 
-} // namespace sunrise::middleware::datagen::family4::account::layout
+} // namespace dawn::middleware::datagen::family4::account::layout

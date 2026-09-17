@@ -21,10 +21,10 @@
 #include "../../vendors/definition.h"
 #include "version.h"
 
-namespace sunrise::state::build_data::cache::records {
+namespace dawn::state::build_data::cache::records {
 
-/** These 8 ASCII bytes mark a Sunrise build-data file. */
-inline constexpr std::array<char, 8> kCacheMagic{'S', 'U', 'N', 'R', 'I', 'S', 'E', 'B'};
+/** These 8 ASCII bytes mark a Dawn build-data file. */
+inline constexpr std::array<char, 8> kCacheMagic{'D', 'A', 'W', 'N', 'D', 'A', 'T', 'A'};
 /** Signed -1 on disk means there is no equipment slot. */
 inline constexpr std::int8_t kAbsentEquipmentSlot = -1;
 /** The standard 64-bit FNV-1a offset basis starts the payload checksum. */
@@ -517,4 +517,4 @@ template <typename Value>
     return checksum;
 }
 
-} // namespace sunrise::state::build_data::cache::records
+} // namespace dawn::state::build_data::cache::records

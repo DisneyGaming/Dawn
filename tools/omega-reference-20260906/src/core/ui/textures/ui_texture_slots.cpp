@@ -3,7 +3,7 @@
 #include <array>
 #include <cstddef>
 
-namespace sunrise::core::ui::textures {
+namespace dawn::core::ui::textures {
 namespace {
 
 /** Published identifiers. Only the presentation thread reads or writes them. */
@@ -33,4 +33,4 @@ void clear() noexcept {
     g_textures = {};
 }
 
-} // namespace sunrise::core::ui::textures
+} // namespace dawn::core::ui::textures

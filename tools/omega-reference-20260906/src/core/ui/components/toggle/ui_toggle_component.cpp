@@ -8,7 +8,7 @@
 #include "../drawing/drawing.h"
 #include "../label/ui_label_component.h"
 
-namespace sunrise::core::ui::components::toggle {
+namespace dawn::core::ui::components::toggle {
 namespace {
 
 /** 24 authored pixels give the switch a clear pointer target. */
@@ -124,4 +124,4 @@ bool control(const char* label, bool& value, float width) noexcept {
     return changed;
 }
 
-} // namespace sunrise::core::ui::components::toggle
+} // namespace dawn::core::ui::components::toggle

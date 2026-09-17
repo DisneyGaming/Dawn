@@ -6,7 +6,7 @@
 #include <bcrypt.h>
 #include <limits>
 
-namespace sunrise::middleware::crypto::aes_gcm {
+namespace dawn::middleware::crypto::aes_gcm {
 
 /** Authenticates and decrypts one buffer whose tag is stored apart from its ciphertext. */
 bool decrypt(std::span<const std::byte, kKeySize> key,
@@ -64,4 +64,4 @@ bool decrypt(std::span<const std::byte, kKeySize> key,
     return authenticated;
 }
 
-} // namespace sunrise::middleware::crypto::aes_gcm
+} // namespace dawn::middleware::crypto::aes_gcm

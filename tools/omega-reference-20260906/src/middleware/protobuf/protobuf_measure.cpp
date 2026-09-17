@@ -3,7 +3,7 @@
 #include "codec.h"
 #include "protobuf_wire.h"
 
-namespace sunrise::middleware::protobuf {
+namespace dawn::middleware::protobuf {
 
 /** Measures one complete unsigned-varint field after validating its field number. */
 bool measure_varint_field(std::uint32_t fieldNumber,
@@ -36,4 +36,4 @@ bool measure_length_delimited_field(std::uint32_t fieldNumber,
     return true;
 }
 
-} // namespace sunrise::middleware::protobuf
+} // namespace dawn::middleware::protobuf

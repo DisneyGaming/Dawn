@@ -5,7 +5,7 @@
 #include <bcrypt.h>
 #include <limits>
 
-namespace sunrise::middleware::crypto::aes_gcm {
+namespace dawn::middleware::crypto::aes_gcm {
 
 /** Encrypts one buffer and returns its tag apart from the ciphertext. */
 bool encrypt(std::span<const std::byte, kKeySize> key,
@@ -62,4 +62,4 @@ bool encrypt(std::span<const std::byte, kKeySize> key,
     return sealed;
 }
 
-} // namespace sunrise::middleware::crypto::aes_gcm
+} // namespace dawn::middleware::crypto::aes_gcm

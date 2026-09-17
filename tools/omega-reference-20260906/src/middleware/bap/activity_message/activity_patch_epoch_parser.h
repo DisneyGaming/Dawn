@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::bap::activity_message::patch_epoch {
+namespace dawn::middleware::bap::activity_message::patch_epoch {
 
 /** Patch-epoch updates use activity message type 52. */
 inline constexpr std::uint32_t kMessageType = 52;
@@ -25,4 +25,4 @@ struct PatchEpoch final {
  */
 [[nodiscard]] bool parse_patch_epoch(std::span<const std::byte> input, PatchEpoch& epoch) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_message::patch_epoch
+} // namespace dawn::middleware::bap::activity_message::patch_epoch

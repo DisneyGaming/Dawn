@@ -1,0 +1,1813 @@
+--- a/Dawn/Dawn.vcxproj
++++ b/Dawn/Dawn.vcxproj
+@@ -106,6 +106,7 @@
+   <ItemGroup>
+     <None Include="resources\default_settings.json" />
+     <None Include="scripts\omega.lua" />
++    <None Include="scripts\eater_of_worlds.lua" />
+     <None Include="scripts\README.md" />
+     <None Include="scripts\FORMAT.md" />
+     <None Include="resources\dawn_logo.png" />
+@@ -139,6 +140,8 @@
+     <ClCompile Include="src\state\activity\strike_pact\strike_pact_controller.cpp" />
+     <ClCompile Include="src\state\activity\strike_bond\controller.cpp"><ObjectFileName>$(IntDir)strike_bond_controller.obj</ObjectFileName></ClCompile>
+     <ClCompile Include="src\state\activity\strike_bond\runtime.cpp"><ObjectFileName>$(IntDir)strike_bond_runtime.obj</ObjectFileName><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
++    <ClCompile Include="src\state\activity\eater_of_worlds\controller.cpp"><ObjectFileName>$(IntDir)eater_of_worlds_controller.obj</ObjectFileName></ClCompile>
++    <ClCompile Include="src\state\activity\eater_of_worlds\runtime.cpp"><ObjectFileName>$(IntDir)eater_of_worlds_runtime.obj</ObjectFileName><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+     <ClCompile Include="src\state\activity\deadly_trial\deadly_trial_controller.cpp" />
+     <ClCompile Include="src\state\activity\deadly_trial\deadly_trial_runtime.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+     <ClCompile Include="src\state\activity\coo\mission_script.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile>
+@@ -279,6 +282,7 @@
+     <ClCompile Include="src\client\ui\mission_launch\mission_launch_panel.cpp" />
+     <ClCompile Include="src\client\ui\mission_launch\mission_launch_art.cpp" />
+     <ClCompile Include="src\client\activity\mission_launch.cpp" />
++    <ClCompile Include="src\client\activity\eater_player_health.cpp" />
+     <ClCompile Include="src\client\hooks\bootflow\native_replication_observer.cpp" />
+     <ClCompile Include="src\state\gameplay\replication_roles.cpp" />
+     <ClCompile Include="src\client\content\activity\activity_catalog_build.cpp" />
+@@ -315,6 +319,8 @@
+     <ClCompile Include="src\client\hooks\activity_lifecycle\native_activation_registry.cpp" />
+     <ClCompile Include="src\client\hooks\activity_lifecycle\native_activation_validation.cpp" />
+     <ClCompile Include="src\client\hooks\bootflow\bootflow_hook_lifecycle.cpp" />
++    <ClCompile Include="src\client\hooks\bootflow\eater_entity_id_startup.cpp" />
++    <ClCompile Include="src\client\hooks\bootflow\eater_reinforcements.cpp" />
+     <ClCompile Include="src\client\hooks\bootflow\character_select_hold.cpp" />
+     <ClCompile Include="src\client\hooks\bootflow\composition_check.cpp" />
+     <ClCompile Include="src\client\hooks\bootflow\orbit_handoff.cpp" />
+@@ -1224,6 +1230,10 @@
+     <ClInclude Include="src\middleware\bap\activity_message\definition.h" />
+     <ClInclude Include="src\middleware\bap\activity_message\activity_message_request_parser.h" />
+     <ClInclude Include="src\middleware\bap\activity_message\sensor_auth_update.h" />
++    <ClInclude Include="src\client\hooks\bootflow\eater_entity_id_startup_policy.h" />
++    <ClInclude Include="src\client\hooks\bootflow\eater_reinforcements.h" />
++    <ClInclude Include="src\client\hooks\bootflow\eater_reinforcement_selection.h" />
++    <ClInclude Include="src\client\hooks\bootflow\region_private_policy.h" />
+     <ClInclude Include="src\middleware\bap\activity_message\activity_global_state_encoder.h" />
+     <ClInclude Include="src\middleware\bap\activity_message\client_authoritative_data.h" />
+     <ClInclude Include="src\middleware\bap\activity_message\activity_client_keepalive_validator.h" />
+@@ -1609,6 +1619,23 @@
+     <ClInclude Include="src\state\activity\beyond_infinity\controller.h" />
+     <ClInclude Include="src\state\activity\beyond_infinity\runtime.h" />
+     <ClInclude Include="src\state\activity\beyond_infinity\authority.h" />
++    <ClInclude Include="src\state\activity\eater_of_worlds\catalog.h" />
++    <ClInclude Include="src\state\activity\eater_of_worlds\profile.h" />
++    <ClInclude Include="src\state\activity\eater_of_worlds\frame.h" />
++    <ClInclude Include="src\state\activity\eater_of_worlds\controller.h" />
++    <ClInclude Include="src\state\activity\eater_of_worlds\runtime.h" />
++    <ClInclude Include="src\state\activity\eater_of_worlds\authority.h" />
++    <ClInclude Include="src\state\activity\eater_of_worlds\scenes.h" />
++    <ClInclude Include="src\state\activity\eater_of_worlds\mechanisms.h" />
++    <ClInclude Include="src\state\activity\eater_of_worlds\doors.h" />
++    <ClInclude Include="src\state\activity\eater_of_worlds\health_bindings.h" />
++    <ClInclude Include="src\state\activity\eater_of_worlds\carry_bindings.h" />
++    <ClInclude Include="src\state\activity\eater_of_worlds\station_bindings.h" />
++    <ClInclude Include="src\server\bap\encrypted\push\activity\eater_of_worlds_roster.h" />
++    <ClInclude Include="src\client\hooks\bootflow\eater_of_worlds_object_receipts.inl" />
++    <ClInclude Include="src\client\hooks\bootflow\eater_of_worlds_carry_receipts.inl" />
++    <ClInclude Include="src\client\hooks\bootflow\eater_of_worlds_station_receipts.inl" />
++    <ClInclude Include="src\client\hooks\bootflow\eater_cranium_deferred.h" />
+     <ClInclude Include="src\state\activity\coo\native_scene_cast_authority.h" />
+     <ClInclude Include="src\server\bap\encrypted\push\activity\beyond_infinity_roster.h" />
+     <ClInclude Include="src\client\hooks\bootflow\beyond_infinity_native_receipts.h" />
+--- a/Dawn/src/client/activity/campaign_openings.h
++++ b/Dawn/src/client/activity/campaign_openings.h
+@@ -33,7 +33,7 @@
+     return value;
+ }();
+ 
+-inline constexpr std::array<Mission, 11> kMissions{{
++inline constexpr std::array<Mission, 12> kMissions{{
+     {"Homecoming", "THE LAST CITY", "Return to the Tower as the Red Legion attacks the Last City.", 0, 266, 0x62D85FB3U, forced::profiles::kTowerfallOpening},
+     {"Gateway", "MERCURY", "Follow Ikora to Mercury and begin the search for Osiris.", 1, 292, 0x5A2E3FF4U, forced::profiles::kGatewayOpening},
+     {"A Deadly Trial", "EUROPEAN DEAD ZONE", "Track a lead through the EDZ in search of a way into the Infinite Forest.", 1, 293, 0x87D9CA16U, forced::profiles::kDeadlyTrialOpening},
+@@ -45,6 +45,7 @@
+     {"Omega", "MERCURY", "Return to the Infinite Forest and confront Panoptes with Osiris.", 1, 299, 0x87AC2003U, kOmegaOpening},
+     {"Tree of Probabilities", "MERCURY", "Pursue Valus Thuun through the Infinite Forest.", 2, 230, 0x9FFC7326U, forced::profiles::kStrikePactOpening},
+     {"A Garden World", "MERCURY", "Climb the spire and defeat Dendron, Root Mind.", 2, 229, 0x99BDAB3DU, forced::profiles::kStrikeBondOpening},
++    {"Eater of Worlds \xE2\x80\x94 Solo", "LEVIATHAN", "Venture deep into the Leviathan and confront Argos, Planetary Core.", 4, forced::profiles::kEaterOfWorldsActivity, 0xB8218A8CU, forced::profiles::kEaterOfWorldsOpening},
+ }};
+ 
+ struct Route {
+--- a/Dawn/src/client/activity/mission_launch.cpp
++++ b/Dawn/src/client/activity/mission_launch.cpp
+@@ -18,6 +18,7 @@
+ #include "../../core/logging/log.h"
+ 
+ namespace dawn::client::activity::mission_launch {
++namespace contest = state::activity::eater_of_worlds::contest;
+ namespace {
+ SRWLOCK g_lock{SRWLOCK_INIT};
+ Snapshot g_state{};
+@@ -67,20 +68,22 @@
+     const auto state = g_state;
+     ReleaseSRWLockExclusive(&g_lock);
+     if (status != Status::queued && status != Status::arrived && status != Status::preparing && status != Status::cinematics) {
++        contest::leave();
+         if(intro::active()) intro::fail();
+         g_gatewayExit={};
+     }
+     std::array<char, 512> line{};
+     const int size = state.manual ? std::snprintf(line.data(), line.size(),
+-        "ev=mission_launch activity=%u manual=1 destination=%.*s bubble=%u slice=%u spawn=%08X current_destination=%.*s current_activity=%d in_mission=%u status=%u detail=%s",
++        "ev=mission_launch activity=%u manual=1 destination=%.*s bubble=%u slice=%u spawn=%08X current_destination=%.*s current_activity=%d in_mission=%u mode=%s status=%u detail=%s",
+         state.index, static_cast<int>(destination_name(state.destination).size()), state.destination.packageName.data(),
+         state.destination.bubble, state.destination.sliceSet,
+         state.destination.hasSpawnSetHash ? state.destination.spawnSetHash : forced::kAbsentSpawnSetHash,
+         static_cast<int>(state.currentPackageLength), state.currentPackage.data(),
+         static_cast<int>(state.currentIndex), static_cast<unsigned>(state.inMission),
++        state.raidMode == contest::Mode::contest ? "contest" : "standard",
+         static_cast<unsigned>(status), description(status))
+-        : std::snprintf(line.data(), line.size(), "ev=mission_launch activity=%u status=%u detail=%s", state.index,
+-            static_cast<unsigned>(status), description(status));
++        : std::snprintf(line.data(), line.size(), "ev=mission_launch activity=%u mode=%s status=%u detail=%s", state.index,
++            state.raidMode == contest::Mode::contest ? "contest" : "standard", static_cast<unsigned>(status), description(status));
+     if (size > 0 && static_cast<std::size_t>(size) < line.size()) {
+         core::log::write(core::log::Channel::client, core::log::Level::info,
+             {line.data(), static_cast<std::size_t>(size)});
+@@ -111,6 +114,19 @@
+ }
+ bool request_opening(std::size_t mission) noexcept {
+     return request_variant(mission, state::activity::strikes::Difficulty::standard);
++}
++bool request_raid(std::size_t mission, contest::Mode mode) noexcept {
++    if (mission >= openings::kMissions.size() || openings::kMissions[mission].activity != contest::kActivity
++        || (mode != contest::Mode::standard && mode != contest::Mode::contest)) return false;
++    const auto route = openings::resolve(mission, state::build_data::activities::entries());
++    if (!route.valid() || route.transport != contest::kActivity) return false;
++    AcquireSRWLockExclusive(&g_lock);
++    if (g_state.busy || g_state.inMission) { ReleaseSRWLockExclusive(&g_lock); return false; }
++    g_state = {Status::requested, route.transport, true, true, route.destination, true};
++    g_state.raidMode = mode;
++    g_requestedAt = now();
++    ReleaseSRWLockExclusive(&g_lock);
++    return true;
+ }
+ bool request_variant(std::size_t mission, state::activity::strikes::Difficulty difficulty) noexcept {
+     return request_variant(mission, difficulty, state::activity::nightfall::defaults(difficulty));
+@@ -163,10 +179,12 @@
+         const std::string_view actualPackage{reinterpret_cast<const char*>(actual.packageName.data()), actual.packageNameLength};
+         // A queued launch can briefly expose the previous world. Bind only after its new
+         // session and exact destination pass the arrival checks below.
++        if (!state.busy) contest::enter(sessionId, actualPackage == "raid_envy_v310" ? actual.activityIndex : -1);
+         nightfall_player::poll(sessionId, run);
+     } else if (!state.busy && currentStep==29) {
+         (void)campaign_dialogue::select(-1);
+         state::activity::nightfall::leave();
++        contest::leave();
+     }
+     if (!state.busy) { return; }
+     if (!step) { finish(Status::nativeUnavailable); return; }
+@@ -193,6 +211,7 @@
+                     && (!state.destination.hasBubble || (actual.hasSpawnSetOverride
+                         && actual.spawnSetOverride == (state.destination.hasSpawnSetHash
+                             ? state.destination.spawnSetHash : forced::kAbsentSpawnSetHash)))));
++            if (matches) contest::enter(sessionId, actual.activityIndex);
+             if(gateway && matches) intro::complete();
+             finish(matches ? Status::arrived : Status::unexpectedDestination); return;
+         }
+@@ -306,6 +325,7 @@
+     } else if (state.manual && !forced::publish(state.destination)) { finish(Status::manualRejected); return; }
+     clear();
+     state::activity::nightfall::arm(index, state.nightfallOptions);
++    contest::arm(index, state.opening ? state.raidMode : contest::Mode::standard);
+     select(0, selection.data());
+     commit(1);
+     if(departingBriefing) {
+--- a/Dawn/src/client/activity/mission_launch.h
++++ b/Dawn/src/client/activity/mission_launch.h
+@@ -4,6 +4,7 @@
+ #include "../../state/activity/forced/definition.h"
+ #include "../../state/activity/strike_variants.h"
+ #include "../../state/activity/nightfall/rules.h"
++#include "../../state/activity/eater_of_worlds/contest.h"
+ namespace dawn::client::activity::mission_launch {
+ enum class Status : std::uint8_t {
+     idle, requested, queued, arrived, catalogUnavailable, entryUnavailable,
+@@ -22,6 +23,7 @@
+     std::array<char, 40> currentPackage{};
+     std::uint8_t currentPackageLength{};
+     state::activity::nightfall::Options nightfallOptions{};
++    state::activity::eater_of_worlds::contest::Mode raidMode{};
+     [[nodiscard]] std::string_view current_name() const noexcept {
+         return {currentPackage.data(), currentPackageLength};
+     }
+@@ -30,6 +32,8 @@
+ [[nodiscard]] bool request(std::uint16_t index) noexcept;
+ /** Queues a curated opening; re-arms its run only after game-thread launch validation. */
+ [[nodiscard]] bool request_opening(std::size_t mission) noexcept;
++/** Eater-only difficulty selection, copied into the launch request. */
++[[nodiscard]] bool request_raid(std::size_t mission, state::activity::eater_of_worlds::contest::Mode mode) noexcept;
+ /** Queues an exact installed Nightfall identity with its existing authored strike opening. */
+ [[nodiscard]] bool request_variant(std::size_t mission, state::activity::strikes::Difficulty difficulty) noexcept;
+ [[nodiscard]] bool request_variant(std::size_t mission, state::activity::strikes::Difficulty difficulty,
+--- a/Dawn/src/client/hooks/bootflow/activity_spawner_chain_probe.cpp
++++ b/Dawn/src/client/hooks/bootflow/activity_spawner_chain_probe.cpp
+@@ -16,6 +16,7 @@
+ 
+ #include "../../content/handles/handle_resolver.h"
+ #include "../../../core/logging/log.h"
++#include "../../../state/activity/eater_of_worlds/runtime.h"
+ #include "../../../state/activity/forced/activity_forced_destination.h"
+ #include "../../hooking/detour.h"
+ #include "internal.h"
+--- a/Dawn/src/client/hooks/bootflow/bootflow_hook_lifecycle.cpp
++++ b/Dawn/src/client/hooks/bootflow/bootflow_hook_lifecycle.cpp
+@@ -26,6 +26,7 @@
+ #include "deadly_trial_revival.h"
+ #include "deadly_trial_lifetime.h"
+ #include "gateway_patrol.h"
++#include "eater_reinforcements.h"
+ 
+ namespace dawn::client::hooks::bootflow {
+ namespace {
+@@ -231,6 +232,7 @@
+     const bool cleanupOwnerGuard = install_native_cleanup_owner_guard();
+     const bool propertyListGuard = install_native_property_list_guard();
+     const bool localReconnect = install_local_reconnect();
++    const bool eaterEntityIdStartup = install_eater_entity_id_startup();
+     const bool activityBehaviorConditions = !kEnableLegacyUnsafeObserverBundle;
+     const bool activitySpawnerChainInstalled = kEnableActivitySpawnerChainProbe
+                                                && install_activity_spawner_chain_probe();
+@@ -271,6 +273,7 @@
+     const bool trialRevival = deadly_trial_revival::install();
+     const bool trialLifetime = deadly_trial_lifetime::install();
+     const bool gatewayPatrol = gateway_patrol::install();
++    const bool eaterReinforcements = eater_reinforcements::install();
+     const bool hijackedPlacements = hijacked_placements::install();
+     const bool forestCandyInstalled = omega.forestCandyDrops && forest_candy_drops::install();
+     const bool forestCandy = !omega.forestCandyDrops || forestCandyInstalled;
+@@ -283,13 +286,14 @@
+     const bool fade = install_fade_release();
+     const bool anyFix = hold || sliceSet || skip || composition || handoff || joinReady || ownerSlot
+                         || activityHostInstalled || activityProviderStaleMapping
++                        || eaterEntityIdStartup
+                         || activitySpawnerChainInstalled
+                         || omegaIkoraOriginInstalled
+                         || omegaDirectivePresentationInstalled
+                         || omegaSceneRetirementInstalled
+                         || type31CaptureInstalled || dialogueDispatchProbe || omegaNavigation || omegaLairCinematic
+                         || omegaLairReceipts || vanceContactInstalled || ambientNamedPoints || nativeCapture || replicationObserver || omegaCannonReceipt || omegaArcCharge || publicEventParticipant || omegaRescueScenes || trialRevival || trialLifetime || hijackedPlacements
+-                        || forestCandyInstalled || omegaLatticeProbe || gatewayPatrol
++                        || forestCandyInstalled || omegaLatticeProbe || gatewayPatrol || eaterReinforcements
+                         || featureFlagInstalled
+                         || prologueFiller || regionPrivate || cleanupOwnerGuard || propertyListGuard || localReconnect
+                         || worldStep || spawn || towerfallExecutor || fade;
+@@ -305,7 +309,7 @@
+                               && omegaNavigation && omegaLairCinematic
+                               && omegaLairReceipts && vanceContact && ambientNamedPoints && nativeCapture && omegaCannonReceipt && omegaArcCharge && publicEventParticipant && omegaRescueScenes && trialRevival && trialLifetime && hijackedPlacements
+                               && forestCandy && featureFlag && prologueFiller && regionPrivate
+-                              && worldStep && spawn && towerfallExecutor && fade && gatewayPatrol;
++                              && worldStep && spawn && towerfallExecutor && fade && gatewayPatrol && eaterReinforcements;
+     // Admission opens only for this fresh lifecycle and before its installed publication. The
+     // exclusive lock keeps retail callbacks from observing either half of that publication.
+     g_acceptLateInstalls.store(anyFix, std::memory_order_release);
+@@ -322,6 +326,7 @@
+     g_acceptLateInstalls.store(false, std::memory_order_release);
+     ReleaseSRWLockExclusive(&g_lateInstallLock);
+ 
++    quiesce_eater_entity_id_startup();
+     quiesce_native_cleanup_owner_guard();
+     quiesce_native_property_list_guard();
+     quiesce_local_reconnect();
+@@ -345,6 +350,7 @@
+     deadly_trial_revival::quiesce();
+     deadly_trial_lifetime::quiesce();
+     gateway_patrol::quiesce();
++    eater_reinforcements::quiesce();
+     omega_vex_lattice_probe::quiesce();
+ 
+     quiesce_type31_objective_capture();
+@@ -423,7 +429,14 @@
+     if (!deadly_trial_revival::uninstall()) { return false; }
+     if (!deadly_trial_lifetime::uninstall()) { return false; }
+     if (!gateway_patrol::uninstall()) { return false; }
++    if (!eater_reinforcements::uninstall()) { return false; }
+     if (!omega_vex_lattice_probe::uninstall()) { return false; }
++    if (!uninstall_eater_entity_id_startup()) {
++        core::log::write(core::log::Channel::client,
++                         core::log::Level::warn,
++                         "ev=bootflow stage=uninstall result=retained owner=eater_entity_ids");
++        return false;
++    }
+     uninstall_omega_dialogue_dispatch_probe();
+     uninstall_activity_spawner_chain_probe();
+     uninstall_activity_provider_stale_mapping_guard();
+--- a/Dawn/src/client/hooks/bootflow/gateway_module_receipts.inl
++++ b/Dawn/src/client/hooks/bootflow/gateway_module_receipts.inl
+@@ -38,6 +38,7 @@
+     observe_hijacked_object(raw);
+     state::activity::newlight::launchpad::observe_native_object(raw);
+     observe_strike_bond_object(raw);
++    observe_eater_of_worlds_object(raw);
+     observe_gateway_object(raw);
+     observe_trial_object(raw);
+     namespace gateway=state::activity::gateway;
+--- a/Dawn/src/client/hooks/bootflow/hijacked_placements.cpp
++++ b/Dawn/src/client/hooks/bootflow/hijacked_placements.cpp
+@@ -4,6 +4,7 @@
+ #include "native_hook_ownership.h"
+ #include "ambient_population_named_observer.h"
+ #include "gateway_native_read.h"
++#include "eater_source_retirement.h"
+ #include "../graphics/hijacked_frame_timing.h"
+ #include "../../hooking/call_gate.h"
+ #include "../../hooking/detour.h"
+@@ -12,6 +13,7 @@
+ #include "../../../state/activity/hijacked/retirement_identity.h"
+ #include "../../../state/activity/hijacked/backtracking_identity.h"
+ #include "../../../state/activity/hijacked/retirement_unload.h"
++#include "../../../state/activity/eater_of_worlds/runtime.h"
+ #include "../../../core/logging/log.h"
+ #include <atomic>
+ #include <cstdio>
+@@ -153,6 +155,7 @@
+ #include "hijacked_retirement_cleanup.inl"
+ #include "hijacked_backtracking.inl"
+ #include "hijacked_retirement_unload.inl"
++#include "eater_source_retirement.inl"
+ bool descriptor(const mission::Placement& p,std::uintptr_t& address) noexcept {
+     Read read{image};std::uintptr_t table{};std::uint32_t count{};std::int64_t relative{};
+     if(!read.resolve(p.table,table) || !read.value(table+8,count) || count>4096 || p.record>=count
+@@ -292,6 +295,7 @@
+             }
+         }
+         retire_strike_bond_boss(address,retirement_allocator_ready());
++        capture_eater_source_retirement(address);
+         // Every path forwards native retirement, including missing TLS and
+         // unrelated sources. Keep reentrant cleanup disabled across this call.
+         fn(address);return;
+@@ -368,6 +372,8 @@
+         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&retirement_capture)},
+         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&retirement_dispatch)},
+         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&retire_source)},
++        hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&capture_eater_source_retirement)},
++        hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&poll_eater_source_retirements)},
+         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&unload_region)},
+         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&find_component)},
+         hooking::detour::ProtectedCodeEntry{reinterpret_cast<void*>(&retain_enemy)},
+@@ -379,7 +385,7 @@
+     create.store(nullptr,std::memory_order_release);retireSource.store(nullptr,std::memory_order_release);
+     unloadRegion.store(nullptr,std::memory_order_release);findComponent.store(nullptr,std::memory_order_release);
+     hooks={};context=nullptr;authority=nullptr;find=nullptr;backtrackingNativeReady=false;backtrackingReturns={};backtrackingHasReturns=false;
+-    image=0;gameThread=0;owner={};nextPoll=0;lastStatus={};return true;
++    clear_eater_retirements();image=0;gameThread=0;owner={};nextPoll=0;lastStatus={};return true;
+ }
+ void retain_enemy(std::uint64_t run,std::uint16_t slot,std::uint32_t sourceHandle,std::uint32_t actor) noexcept {
+     const hooking::CallGate::Scope scope(gate);
+@@ -396,6 +402,6 @@
+ }
+ void poll() noexcept {
+     const hooking::CallGate::Scope scope(gate);if(!scope.accepts_side_effects()) {return;}
+-    gameThread.store(GetCurrentThreadId(),std::memory_order_release);update();
+-}
+-}
++    gameThread.store(GetCurrentThreadId(),std::memory_order_release);update();poll_eater_source_retirements();
++}
++}
+--- a/Dawn/src/client/hooks/bootflow/internal.h
++++ b/Dawn/src/client/hooks/bootflow/internal.h
+@@ -231,6 +231,17 @@
+ void quiesce_native_cleanup_owner_guard() noexcept;
+ [[nodiscard]] bool uninstall_native_cleanup_owner_guard() noexcept;
+ 
++/**
++ * Keeps a bounded native-owned entity-ID allowance through Eater's exact entrance startup burst.
++ */
++[[nodiscard]] bool install_eater_entity_id_startup() noexcept;
++
++/** Stops new Eater startup profile substitutions while retail maintenance keeps forwarding. */
++void quiesce_eater_entity_id_startup() noexcept;
++
++/** Protected detach; a live callback retains the hook and its native trampolines. */
++[[nodiscard]] bool uninstall_eater_entity_id_startup() noexcept;
++
+ /** Attaches read-only Omega mission-runner and behaviour-condition diagnostics. */
+ [[nodiscard]] bool install_activity_behavior_condition_probe() noexcept;
+ 
+--- a/Dawn/src/client/hooks/bootflow/mission_population_observer.cpp
++++ b/Dawn/src/client/hooks/bootflow/mission_population_observer.cpp
+@@ -7,6 +7,7 @@
+ #include "../../../state/activity/hijacked/runtime.h"
+ #include "../../../state/activity/strike_pact/runtime.h"
+ #include "../../../state/activity/strike_bond/runtime.h"
++#include "../../../state/activity/eater_of_worlds/runtime.h"
+ #include "../../../state/activity/deadly_trial/runtime.h"
+ 
+ namespace dawn::client::hooks::bootflow {
+@@ -63,6 +64,13 @@
+         missions::strike_pact::observe_capacity(pact.run,coo_native::capacity(read,image+0x1F9D7F0));
+     }
+     sample(image,missions::strike_bond::readiness_request(now),missions::strike_bond::observe_readiness);
++    const auto eater=missions::eater_of_worlds::readiness_request(now);
++    sample(image,eater,missions::eater_of_worlds::observe_readiness);
++    if(eater.run) {
++        gateway_native::Read read{image};
++        missions::eater_of_worlds::observe_capacity(
++            eater.run,coo_native::capacity(read,image+0x1F9D7F0));
++    }
+     sample(image,missions::deadly_trial::readiness_request(now),missions::deadly_trial::observe_readiness);
+     sample(image,missions::deep_storage::readiness_request(now),missions::deep_storage::observe_readiness);
+     sample(image,missions::hijacked::readiness_request(now),missions::hijacked::observe_readiness);
+--- a/Dawn/src/client/hooks/bootflow/omega_arc_charge_receipts.cpp
++++ b/Dawn/src/client/hooks/bootflow/omega_arc_charge_receipts.cpp
+@@ -18,6 +18,11 @@
+ #include "native_hook_ownership.h"
+ #include "native_capture_observer.h"
+ #include "public_event_deferred_placement_observer.h"
++#include "eater_cranium_deferred.h"
++#include "eater_platform_contact_native.h"
++#include "eater_platform_binding_cache.h"
++#include "eater_door_native.h"
++#include "../../player/player_position.h"
+ #include "omega_arc_charge_native.h"
+ #include "gateway_native_read.h"
+ #include "gateway_module_native_path.h"
+@@ -29,6 +34,9 @@
+ #include "../../../state/activity/hijacked/controller.h"
+ #include "../../../state/activity/hijacked/plate_presentation.h"
+ #include "../../../state/activity/strike_bond/runtime.h"
++#include "../../../state/activity/eater_of_worlds/runtime.h"
++#include "../../../state/activity/eater_of_worlds/carry_bindings.h"
++#include "../../../state/activity/eater_of_worlds/station_bindings.h"
+ #include "../../../state/activity/deep_storage/controller.h"
+ #include "../../../state/activity/deep_storage/plate_presentation.h"
+ #include "../../../state/activity/deep_storage/hologram_owner.h"
+@@ -713,6 +721,11 @@
+ #include "hijacked_object_receipts.inl"
+ #include "strike_bond_tethers.inl"
+ #include "strike_bond_object_receipts.inl"
++#include "eater_of_worlds_carry_receipts.inl"
++void reset_eater_platform_contacts() noexcept;
++void reset_eater_door_receipts() noexcept;
++#include "eater_of_worlds_station_receipts.inl"
++#include "eater_of_worlds_object_receipts.inl"
+ #include "lost_sector_object_receipts.inl"
+ #include "gateway_module_receipts.inl"
+ #include "gateway_module_damage_hooks.inl"
+@@ -726,6 +739,7 @@
+         && prefix(before.data(),at<std::uint32_t>(before.data()),0x80804221,0x598))
+         key=eventKeys::bridge::carrier(at<std::uint32_t>(before.data()),at<std::uint32_t>(before.data()+0x2C));
+     hooking::await_original(g_carry)(component, state, holder);
++    if(scope.accepts_side_effects()) observe_eater_cranium_carry(component,holder);
+     if (scope.accepts_side_effects() && nav.enabled) { observe_carry(component, nav.run); }
+     if(scope.accepts_side_effects() && key.epoch) {
+         std::array<std::byte,0x480> after{};
+@@ -806,11 +820,14 @@
+     const auto trialUse=scope.accepts_side_effects()?before_trial_use(component):TrialUse{};
+     const auto rally=scope.accepts_side_effects()?before_rally(component):PendingRally{};
+     const auto key=scope.accepts_side_effects()?before_event_key(component):PendingEventKey{};
++    const auto eaterStation=scope.accepts_side_effects()?before_eater_station_use(component):eater_station_native::Pending{};
+     const bool previous = g_dunkInFlight;
+     g_dunkInFlight = pending.proof.held.valid() || key.use.state.epoch!=0;
++    const auto eaterStationScope=begin_eater_cranium_station_use(eaterStation.valid());
+     hooking::await_original(g_dunk)(component);
+     g_dunkInFlight = previous;
+-    if (scope.accepts_side_effects()) { after_dunk(component, pending);after_trial_use(component,trialUse);after_rally(component,rally);after_event_key(component,key); }
++    if (scope.accepts_side_effects()) { after_dunk(component, pending);after_trial_use(component,trialUse);after_rally(component,rally);after_event_key(component,key);after_eater_station_use(component,eaterStation); }
++    finish_eater_cranium_station_use(eaterStationScope);
+ }
+ __declspec(noinline) bool __fastcall create_hook(void* component) noexcept {
+     const hooking::CallGate::Scope scope{g_gate};
+@@ -930,18 +947,22 @@
+     hooking::publish_original(g_moduleDamageGate, reinterpret_cast<ModuleDamageGate>(g_handles[6].original));
+     hooking::publish_original(g_moduleDamageSummary, reinterpret_cast<ModuleDamageSummary>(g_handles[7].original));
+     hooking::publish_original(g_plateTick,reinterpret_cast<PlateTick>(g_handles[8].original));
++    reset_eater_of_worlds_native_receipts();
++    state::activity::eater_of_worlds::set_reset_receipts(&reset_eater_of_worlds_native_receipts);
++    client::player::position::set_physics_observer(&observe_eater_platform_contacts);
+     g_gate.accept();
+     core::log::write(core::log::Channel::client, core::log::Level::info,
+                     "ev=omega_charge stage=install result=ok carry=D99620 dunk=F36640 create=9EFFC0 interaction=F32CD0 gateway_module_damage=B804E0 gate=CDCB60 summary=B7E3C0 mutation=native_source_interaction_authority_with_observed_receipts");
+     return true;
+ }
+ void quiesce_omega_arc_charge_receipts() noexcept {
++    client::player::position::set_physics_observer(nullptr);
+     g_gate.quiesce();
+ }
+ bool uninstall_omega_arc_charge_receipts() noexcept {
+     quiesce_omega_arc_charge_receipts();
+     if (!g_handles[0].attached) { return true; }
+-    const std::array<hooking::detour::ProtectedCodeEntry, 41> protectedCode{{
++    const std::array<hooking::detour::ProtectedCodeEntry, 57> protectedCode{{
+         {reinterpret_cast<void*>(&gateway_damage_hook)}, {reinterpret_cast<void*>(&gateway_damage_gate_hook)},
+         {reinterpret_cast<void*>(&gateway_damage_summary_hook)}, {reinterpret_cast<void*>(&gateway_damage_receipt)},
+         {reinterpret_cast<void*>(&gateway_damage_blocked)},
+@@ -953,6 +974,22 @@
+         {reinterpret_cast<void*>(&strike_pact_damage::after)},
+         {reinterpret_cast<void*>(&gateway_sense_hook)}, {reinterpret_cast<void*>(&observe_gateway_module)},
+         {reinterpret_cast<void*>(&observe_beyond_object)},
++        {reinterpret_cast<void*>(&observe_eater_of_worlds_object)},
++        {reinterpret_cast<void*>(&observe_eater_platform_pose)},
++        {reinterpret_cast<void*>(&observe_eater_platform_physics)},
++        {reinterpret_cast<void*>(&observe_eater_platform_contacts)},
++        {reinterpret_cast<void*>(&reset_eater_platform_contacts)},
++        {reinterpret_cast<void*>(&observe_eater_cranium_source)},
++        {reinterpret_cast<void*>(&observe_eater_cranium_carry)},
++        {reinterpret_cast<void*>(&reset_eater_cranium_receipts)},
++        {reinterpret_cast<void*>(&observe_eater_station_source)},
++        {reinterpret_cast<void*>(&before_eater_station_use)},
++        {reinterpret_cast<void*>(&after_eater_station_use)},
++        {reinterpret_cast<void*>(&reset_eater_station_receipts)},
++        {reinterpret_cast<void*>(&reset_eater_of_worlds_native_receipts)},
++        {reinterpret_cast<void*>(&current_eater_cranium_holder)},
++        {reinterpret_cast<void*>(&begin_eater_cranium_station_use)},
++        {reinterpret_cast<void*>(&finish_eater_cranium_station_use)},
+         {reinterpret_cast<void*>(&beyond_plate_tick_hook)}, {reinterpret_cast<void*>(&drive_plate)},
+         {reinterpret_cast<void*>(&plate_consumed)}, {reinterpret_cast<void*>(&plate_addresses)},
+         {reinterpret_cast<void*>(&same_plate_request)},
+@@ -971,6 +1008,8 @@
+         {reinterpret_cast<void*>(&hooking::call_gate_detail::leave)},
+     }};
+     if (hooking::detour::uninstall(g_handles, protectedCode, idle) != hooking::detour::UninstallResult::removed) { return false; }
++    state::activity::eater_of_worlds::set_reset_receipts(nullptr);
++    reset_eater_of_worlds_native_receipts();
+     g_carry.store(nullptr, std::memory_order_release); g_dunk.store(nullptr, std::memory_order_release);
+     g_create.store(nullptr, std::memory_order_release);
+     g_gatewaySense.store(nullptr, std::memory_order_release);g_gatewayModuleLines=0;
+--- a/Dawn/src/client/hooks/bootflow/omega_dialogue_dispatch_probe.cpp
++++ b/Dawn/src/client/hooks/bootflow/omega_dialogue_dispatch_probe.cpp
+@@ -7,6 +7,7 @@
+ #include "../../../state/activity/deadly_trial/runtime.h"
+ #include "../../../state/activity/strike_pact/runtime.h"
+ #include "../../../state/activity/strike_bond/runtime.h"
++#include "../../../state/activity/eater_of_worlds/runtime.h"
+ #include <Windows.h>
+ #include "deadly_trial_presentation.h"
+ #include "hijacked_presentation.h"
+@@ -1218,11 +1219,14 @@
+             state::activity::deadly_trial::observe_submission(gatewayDispatchRun,self,offset,bank,
+                 static_cast<std::uint8_t>(index),generation);
+             state::activity::strike_bond::observe_submission(gatewayDispatchRun,self,offset,bank,static_cast<std::uint8_t>(index),generation);
++            state::activity::eater_of_worlds::observe_submission(gatewayDispatchRun,self,offset,bank,
++                static_cast<std::uint8_t>(index),generation);
+             state::activity::strike_pact::observe_submission(gatewayDispatchRun,self,offset,bank,
+                 static_cast<std::uint8_t>(index),generation);
+             if (bank != kDialogueBankHandle && bank != 0x80F1FC9EU && bank != 0x80F1F086U
+                 && !beyondDispatch && state::activity::strike_bond::native_run()==0
+-                && state::activity::strike_pact::native_run()==0) {
++                && state::activity::strike_pact::native_run()==0
++                && state::activity::eater_of_worlds::native_run()==0) {
+                 // observe_submission() drops a foreign bank silently; say so once per row.
+                 log_reject("dispatch_bank", component, static_cast<std::uint32_t>(index),
+                            generation, bank);
+--- a/Dawn/src/client/hooks/bootflow/omega_enemy_lair_receipts.cpp
++++ b/Dawn/src/client/hooks/bootflow/omega_enemy_lair_receipts.cpp
+@@ -32,6 +32,7 @@
+ #include "native_population_streaming.h"
+ #include "vance_contact_observer.h"
+ #include "../../../state/activity/strike_bond/runtime.h"
++#include "../../../state/activity/eater_of_worlds/runtime.h"
+ #include "omega_enemy_native_reference.h"
+ #include "omega_enemy_native_admission.h"
+ #include "omega_enemy_native_health.h"
+@@ -69,11 +70,13 @@
+ namespace deep=state::activity::deep_storage;
+ namespace strike=state::activity::strike_pact;
+ namespace garden=state::activity::strike_bond;
++namespace eater=state::activity::eater_of_worlds;
+ namespace launchpad=state::activity::newlight::launchpad;
+-struct Context final { bool enabled;std::uint64_t run;bool gateway;bool trial{};bool deep{};bool strike{};bool hijacked{};bool garden{};bool launchpad{}; };
++struct Context final { bool enabled;std::uint64_t run;bool gateway;bool trial{};bool deep{};bool strike{};bool hijacked{};bool garden{};bool eater{};bool launchpad{}; };
+ Context selected_context() noexcept {
+     if(const auto run=launchpad::native_run()) return {.enabled=true,.run=run,.launchpad=true};
+-    const auto gardenRun=garden::native_run();if(gardenRun) return {true,gardenRun,false,false,false,false,false,true};
++    const auto eaterRun=eater::native_run();if(eaterRun) return {true,eaterRun,false,false,false,false,false,false,true};
++    const auto gardenRun=garden::native_run();if(gardenRun) return {true,gardenRun,false,false,false,false,false,true,false};
+     const auto hijackedRun=hijacked::native_run();if(hijackedRun) {return {true,hijackedRun,false,false,false,false,true};}
+     const auto deepRun=deep::native_run();if(deepRun) {return {true,deepRun,false,false,true};}
+     const auto strikeRun=strike::native_run();if(strikeRun) {return {true,strikeRun,false,false,false,true};}
+@@ -223,11 +226,11 @@
+     kSourceDefinitionRef=1,kSourceUnknownResource,kSourceResolve,kSourceRegistry,
+     kSourceType,kSourceSlot,kSourceGenerationRead
+ };
+-bool source(Read& read,std::uintptr_t instance,Source& source,bool gatewayContext,bool trialContext,bool deepContext,bool strikeContext,bool hijackedContext,bool gardenContext,bool launchpadContext) noexcept {
++bool source(Read& read,std::uintptr_t instance,Source& source,bool gatewayContext,bool trialContext,bool deepContext,bool strikeContext,bool hijackedContext,bool gardenContext,bool eaterContext,bool launchpadContext) noexcept {
+     source.reason=0;source.nativeRegistry=0;source.nativeType=0;source.nativeSlot=-1;
+     source.expectedRegistry=0;source.expectedSlot=0;
+     Ref definition{};
+-    if(!read.value(instance,definition) || definition.kind!=0x8080948FU || (!gatewayContext && !trialContext && !deepContext && !strikeContext && !hijackedContext && !gardenContext && !launchpadContext && definition.offset!=0x728)) {
++    if(!read.value(instance,definition) || definition.kind!=0x8080948FU || (!gatewayContext && !trialContext && !deepContext && !strikeContext && !hijackedContext && !gardenContext && !eaterContext && !launchpadContext && definition.offset!=0x728)) {
+         source.resource=definition.handle;source.kind=definition.kind;source.reason=kSourceDefinitionRef;return false;
+     }
+     source.resource=definition.handle;source.kind=definition.kind;
+@@ -245,6 +248,23 @@
+             }
+         }
+         if(!expectedRegistry) {source.reason=kSourceUnknownResource;return false;}
++    } else if(eaterContext) {
++        std::uintptr_t scopedDefinition{};std::array<std::byte,8> scoped{};
++        if(!read.resolve(definition,scopedDefinition) || scopedDefinition>UINTPTR_MAX-0x30
++            || !read.copy(scopedDefinition+0x30,scoped)) {source.reason=kSourceResolve;return false;}
++        const auto registry=at<std::uint32_t>(scoped.data());const auto type=at<std::uint8_t>(scoped.data()+4);
++        const auto slot=at<std::int16_t>(scoped.data()+6);
++        const auto index=type==1 && slot>=0
++            ?eater::spawn_index(registry,static_cast<std::uint16_t>(slot)):std::size(eater::kSpawns);
++        const auto assetIndex=index<std::size(eater::kSpawns)
++            ?eater::asset_index(eater::kSpawns[index].asset):std::size(eater::kAssets);
++        if(assetIndex==std::size(eater::kAssets)
++            || eater::kSpawns[index].asset.definition!=definition.handle
++            || eater::kAssets[assetIndex].offset!=definition.offset) {
++            source.nativeRegistry=registry;source.nativeType=type;source.nativeSlot=slot;
++            source.reason=kSourceUnknownResource;return false;
++        }
++        expectedRegistry=registry;expectedSlot=static_cast<std::uint16_t>(slot);
+     } else if(strikeContext) {
+         // The strike catalog pins sources by their native scoped identity (registry, type 1,
+         // slot) rather than by descriptor tag/offset, which the SDK export does not carry.
+@@ -284,7 +304,7 @@
+         if(expectedRegistry==0) { source.reason=kSourceUnknownResource;return false; }
+     }
+     for(const auto& row:catalog::kSpawners) {
+-        if(!gatewayContext && !trialContext && !deepContext && !strikeContext && !hijackedContext && !gardenContext && !launchpadContext && catalog::supported_by_encounter(row) && row.resource==definition.handle) {
++        if(!gatewayContext && !trialContext && !deepContext && !strikeContext && !hijackedContext && !gardenContext && !eaterContext && !launchpadContext && catalog::supported_by_encounter(row) && row.resource==definition.handle) {
+             expectedRegistry=catalog::kRegistry;expectedSlot=row.slot;break;
+         }
+     }
+@@ -374,7 +394,7 @@
+         handle,actorState.handle,actorState.parent)
+         || !read.resolve({actorState.parent,0,0},parentAgain) || parentAgain!=currentParent) {rejection=5;}
+     else if(!read.resolve(actorState.source,linked)) {rejection=6;}
+-    else if(!read.value(linked,definition) || !source(read,linked,sourceState,nav.gateway,nav.trial,nav.deep,nav.strike,nav.hijacked,nav.garden,nav.launchpad)) {rejection=7;}
++    else if(!read.value(linked,definition) || !source(read,linked,sourceState,nav.gateway,nav.trial,nav.deep,nav.strike,nav.hijacked,nav.garden,nav.eater,nav.launchpad)) {rejection=7;}
+     else if(sourceState.generation==0 || sourceState.generation!=sourceState.senseGeneration) {rejection=8;}
+ 
+     // Retain the authentic actor/AI-parent origin before progression can detach
+@@ -389,6 +409,8 @@
+     bool accepted=false;
+     if(rejection==0) {
+         accepted=nav.launchpad?launchpad::observe_admission(
++            {nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
++            :nav.eater?eater::observe_admission(
+             {nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
+             :nav.garden?garden::observe_admission(
+             {nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
+@@ -434,6 +456,11 @@
+         gateway_native::Read probe{g_image};
+         const strike::EnemyReceipt receipt{nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry};
+         strike::observe_readiness(receipt,coo_native::enemy(probe,g_image,receipt));
++    }
++    if(nav.eater && rejection==0) {
++        gateway_native::Read probe{g_image};
++        const eater::EnemyReceipt receipt{nav.run,handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry};
++        eater::observe_readiness(receipt,coo_native::enemy(probe,g_image,receipt));
+     }
+     if(!TryAcquireSRWLockExclusive(&g_lock)) {return;}
+     run(nav.run);
+@@ -517,7 +544,7 @@
+     else if(!read.resolve({at<std::uint32_t>(character.data()+0x24),0,0},characterAddress)) {rejection=4;}
+     else if(characterAddress!=address) {rejection=5;}
+     else if(!read.resolve(actorState.source,linked)) {rejection=6;}
+-    else if(!source(read,linked,sourceState,nav.gateway,nav.trial,nav.deep,nav.strike,nav.hijacked,nav.garden,nav.launchpad)) {rejection=7;}
++    else if(!source(read,linked,sourceState,nav.gateway,nav.trial,nav.deep,nav.strike,nav.hijacked,nav.garden,nav.eater,nav.launchpad)) {rejection=7;}
+     std::array<std::byte,0x3C> eventHeader{};std::array<std::byte,0x38> payload{};
+     std::uint32_t eventDefinition{};bool eventValid=false,healthValid=false,deathAccepted=false;
+     Ref healthRef{};std::uintptr_t healthAddress{},memberAddress{};
+@@ -545,6 +572,8 @@
+         if(qualified && call.accepts_side_effects()) {
+             deathAccepted=nav.launchpad?launchpad::observe_death(
+             {nav.run,actorState.handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
++            :nav.eater?eater::observe_death(
++                {nav.run,actorState.handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
+             :nav.garden?garden::observe_death(
+                 {nav.run,actorState.handle,actorState.source.handle,sourceState.generation,sourceState.slot,sourceState.registry})
+             :nav.hijacked?hijacked::observe_death(
+--- a/Dawn/src/client/hooks/bootflow/region_private.cpp
++++ b/Dawn/src/client/hooks/bootflow/region_private.cpp
+@@ -11,6 +11,7 @@
+ #include "../../../state/activity/forced/activity_forced_destination.h"
+ #include "../../hooking/detour.h"
+ #include "internal.h"
++#include "region_private_policy.h"
+ 
+ namespace dawn::client::hooks::bootflow {
+ namespace {
+@@ -113,6 +114,9 @@
+ /**
+  * Reports a bubble as private, for the region transition's own call only.
+  * A public region holds its slice-set switch until a public activity host connects.
++ * `client.region_private` off keeps the public answer for ordinary launches. The Raid-panel Eater
++ * run is the one scoped exception: its direct activity and package keep all eight raid slices on
++ * the one-player path.
+  * @return False on the starter's call, otherwise the reader's own answer.
+  */
+ __declspec(noinline) bool __fastcall reader(std::uint32_t sliceSet) noexcept {
+@@ -128,7 +132,13 @@
+     if (caller != g_returnSite.load(std::memory_order_acquire)) {
+         return true;
+     }
+-    const bool forced = core::settings::get().client.regionPrivate;
++    state::activity::forced::ForcedDestination destination{};
++    const auto directActivity = state::activity::forced::direct_snapshot(destination);
++    const bool forced = region_private_policy::force_private(
++        core::settings::get().client.regionPrivate,
++        directActivity,
++        destination,
++        sliceSet);
+     report(sliceSet, forced);
+     return !forced;
+ }
+--- a/Dawn/src/client/player/player_position.cpp
++++ b/Dawn/src/client/player/player_position.cpp
+@@ -5,12 +5,14 @@
+ #include "../../state/activity/hijacked/runtime.h"
+ #include "../../state/activity/Newlight/launchpad/runtime.h"
+ #include "../../state/activity/strike_bond/runtime.h"
++#include "../../state/activity/eater_of_worlds/runtime.h"
+ /**
+  * The local player's published world position.
+  * The game threads write it and the interface reads it, so a seqlock guards the vector.
+  */
+ 
+ #include "player_position.h"
++#include "../activity/eater_player_health.h"
+ #include "../../state/activity/omega_presentation.h"
+ #include "../../state/activity/omega_first_lair_runtime.h"
+ #include "../../state/activity/omega_crown_transit_geometry.h"
+@@ -157,6 +159,8 @@
+     state::activity::hijacked::observe_position(position[0],position[1],position[2]);
+     state::activity::newlight::launchpad::observe_position(position[0],position[1],position[2]);
+     state::activity::strike_bond::observe_position(position[0],position[1],position[2]);
++    state::activity::eater_of_worlds::observe_player(before);
++    state::activity::eater_of_worlds::observe_position(position[0],position[1],position[2]);
+     {
+         const std::lock_guard lock(g_physicsObserverMutex);
+         if(g_physicsObserver) g_physicsObserver(component,before,GetTickCount64());
+@@ -197,6 +201,7 @@
+ 
+ /** Refreshes the position for a player at rest, and drops a component that is no longer theirs. */
+ void poll() noexcept {
++    activity::eater_player_health::poll();
+     void* component = g_component.load(std::memory_order_relaxed);
+     if (component == nullptr) {
+         // The teleport hook keeps one too whenever its own feature is on.
+--- a/Dawn/src/client/ui/mission_launch/mission_launch_panel.cpp
++++ b/Dawn/src/client/ui/mission_launch/mission_launch_panel.cpp
+@@ -13,7 +13,9 @@
+ namespace openings = launch::openings;
+ namespace strikes = state::activity::strikes;
+ namespace nightfall = state::activity::nightfall;
++namespace contest = state::activity::eater_of_worlds::contest;
+ unsigned g_campaign{1};
++contest::Mode g_raidMode{};
+ bool g_nightfall{};
+ strikes::Difficulty g_difficulty{strikes::Difficulty::adept};
+ strikes::Difficulty g_refreshedDifficulty{strikes::Difficulty::standard};
+@@ -32,7 +34,7 @@
+ launch::ManualScratch g_validation{};
+ 
+ unsigned selected_group() noexcept {
+-    return g_campaign >= 2 ? 2U : g_campaign;
++    return g_campaign == 4 ? 4U : g_campaign >= 2 ? 2U : g_campaign;
+ }
+ 
+ strikes::Difficulty selected_difficulty() noexcept {
+@@ -64,9 +66,9 @@
+ }
+ 
+ void campaign_tabs() noexcept {
+-    constexpr std::array<const char*, 3> names{"Curse of Osiris", "Strikes", "Nightfalls"};
++    constexpr std::array<const char*, 4> names{"Curse of Osiris", "Strikes", "Nightfalls", "Raids"};
+     const float scale = card_scale();
+-    const unsigned columns = ImGui::GetContentRegionAvail().x < 700.0F * scale ? 2U : 3U;
++    const unsigned columns = ImGui::GetContentRegionAvail().x < 700.0F * scale ? 2U : 4U;
+     const float width = (std::max)(1.0F, (ImGui::GetContentRegionAvail().x
+         - ImGui::GetStyle().ItemSpacing.x * static_cast<float>(columns - 1)) / static_cast<float>(columns));
+     for (unsigned i = 0; i < names.size(); ++i) {
+@@ -89,6 +91,24 @@
+ void variant_controls() noexcept {
+     if (g_campaign < 2) { return; }
+     ImGui::Spacing();
++    if (g_campaign == 4) {
++        const auto status = launch::snapshot();
++        const auto displayedMode = status.inMission && status.currentIndex == contest::kActivity
++            ? (contest::enabled() ? contest::Mode::contest : contest::Mode::standard)
++            : status.busy && status.index == contest::kActivity ? status.raidMode : g_raidMode;
++        int mode = displayedMode == contest::Mode::contest ? 1 : 0;
++        ImGui::TextDisabled("DIFFICULTY");
++        ImGui::BeginDisabled(status.busy || status.inMission);
++        ImGui::SetNextItemWidth((std::min)(260.0F * card_scale(), ImGui::GetContentRegionAvail().x));
++        if (ImGui::Combo("##raid_difficulty", &mode, "Standard\0Contest\0")) {
++            g_raidMode = mode == 1 ? contest::Mode::contest : contest::Mode::standard;
++        }
++        ImGui::EndDisabled();
++        if (mode == 1) {
++            ImGui::TextWrapped("Your Power is capped 20 below enemies.");
++        }
++        return;
++    }
+     if (g_campaign == 2) {
+         int variant = g_nightfall ? 1 : 0;
+         ImGui::SetNextItemWidth((std::min)(260.0F * card_scale(), ImGui::GetContentRegionAvail().x));
+@@ -215,8 +235,10 @@
+         : status.busy && status.opening && matches_mission(index, static_cast<std::int16_t>(status.index))
+             ? static_cast<std::int16_t>(status.index) : -1);
+     if (actualVariant) { shownDifficulty = actualVariant->difficulty; }
++    const auto shownRaidMode = active ? (contest::enabled() ? contest::Mode::contest : contest::Mode::standard)
++        : status.busy && status.index == mission.activity ? status.raidMode : g_raidMode;
+     const char* difficultyName = mission.campaign == 2 ? strikes::name(shownDifficulty)
+-        : "";
++        : mission.campaign == 4 ? (shownRaidMode == contest::Mode::contest ? "Contest" : "Standard") : "";
+     (void)std::snprintf(subtitle.data(), subtitle.size(), "%s%s%s", mission.location,
+         difficultyName[0] ? " / " : "", difficultyName);
+     draw->AddText({a.x + inset, a.y + 30.0F * scale}, ImGui::GetColorU32(ImGuiCol_TextDisabled), subtitle.data());
+@@ -249,6 +271,7 @@
+     }
+     const auto icon = g_campaign == 0 ? state::build_data::activities::Icon::redWar
+                                      : g_campaign == 1 ? state::build_data::activities::Icon::osiris
++                                     : g_campaign == 4 ? state::build_data::activities::Icon::raid
+                                      : state::build_data::activities::Icon::strike;
+     const float extent = (table ? 84.0F : 42.0F) * scale;
+     (void)draw_icon(icon, ImGui::GetCursorScreenPos(), extent);
+@@ -256,15 +279,18 @@
+     if (!table) { ImGui::SameLine(); }
+     ImGui::BeginGroup();
+     ImGui::TextDisabled(g_campaign == 0 ? "CAMPAIGN 01" : g_campaign == 1 ? "CAMPAIGN 02"
+-                                                               : "VANGUARD");
++                                                               : g_campaign == 4 ? "RAIDS" : "VANGUARD");
+     ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * (table ? 1.9F : 1.5F));
+     ImGui::TextWrapped("%s", g_campaign == 0 ? "The Red War" : g_campaign == 1 ? "Curse of Osiris"
++        : g_campaign == 4 ? "Raids"
+         : selected_difficulty() == strikes::Difficulty::standard ? "Strikes" : "Nightfalls");
+     ImGui::PopFont();
+     ImGui::EndGroup();
+     ImGui::Spacing();
+     ImGui::TextWrapped("%s", g_campaign == 0 ? "Take back the Light. Revisit the fall of the Last City."
+                                             : g_campaign == 1 ? "Find Osiris. Step into the Infinite Forest."
++                                            : g_campaign == 4
++                                                ? "Descend into the Leviathan and face its Vex world-eater alone."
+                                             : selected_difficulty() == strikes::Difficulty::standard
+                                                 ? "Take on the threats within the Infinite Forest."
+                                                 : "Challenge Tree of Probabilities and A Garden World at your chosen difficulty.");
+@@ -277,7 +303,7 @@
+     }
+     const auto count = static_cast<unsigned>(std::count_if(openings::kMissions.begin(), openings::kMissions.end(),
+         [](const auto& mission) { return mission.campaign == selected_group(); }));
+-    const char* kind = g_campaign >= 2 ? "STRIKE" : "MISSION";
++    const char* kind = g_campaign == 4 ? "RAID" : g_campaign >= 2 ? "STRIKE" : "MISSION";
+     ImGui::TextDisabled("%u %s%s", count, kind, count == 1 ? "" : "S");
+     ImGui::Spacing();
+     const float height = (std::max)(60.0F * scale,
+@@ -290,7 +316,8 @@
+             if (openings::kMissions[i].campaign == 0
+                 || openings::kMissions[i].campaign != selected_group()) { continue; }
+             if (mission_row(i, ++ordinal, status)) {
+-                (void)launch::request_variant(i, selected_difficulty(), selected_modifiers());
++                if (openings::kMissions[i].campaign == 4) (void)launch::request_raid(i, g_raidMode);
++                else (void)launch::request_variant(i, selected_difficulty(), selected_modifiers());
+             }
+         }
+     }
+--- a/Dawn/src/middleware/bap/activity_message/activity_sensor_auth_bodies_other_missions.cpp
++++ b/Dawn/src/middleware/bap/activity_message/activity_sensor_auth_bodies_other_missions.cpp
+@@ -9,6 +9,7 @@
+ #include "../../../state/activity/deadly_trial/authority.h"
+ #include "../../../state/activity/strike_pact/authority.h"
+ #include "../../../state/activity/strike_bond/authority.h"
++#include "../../../state/activity/eater_of_worlds/authority.h"
+ 
+ #include "sensor_auth_update.h"
+ #include "../../../state/activity/coo/native_clock_authority.h"
+@@ -802,6 +803,7 @@
+     if(const auto count=state::activity::beyond_infinity::body_bits(snapshot.beyond_infinity,key,slotType,slotIndex)) { return count; }
+     if(const auto count=state::activity::deep_storage::body_bits(snapshot.deep_storage,key,slotType,slotIndex)) { return count; }
+     if(const auto count=state::activity::strike_bond::body_bits(snapshot.strike_bond,key,slotType,slotIndex)) { return count; }
++    if(const auto count=state::activity::eater_of_worlds::body_bits(snapshot.eater_of_worlds,key,slotType,slotIndex)) { return count; }
+     if(const auto count=state::activity::strike_pact::body_bits(snapshot.strike_pact,key,slotType,slotIndex)) { return count; }
+     if(const auto count=native::lost_sector_shield::body_bits(snapshot.lostSectorShields,key,slotType,slotIndex))return count;
+     if(const auto count=state::activity::vendors::presentation::body_bits(snapshot.vendorPresentation,key,slotType,slotIndex)) {return count;}
+@@ -996,6 +998,9 @@
+     }
+     if(state::activity::strike_bond::body_bits(snapshot.strike_bond,key,slotType,slotIndex)) {
+         return state::activity::strike_bond::write_body(writer,snapshot.strike_bond,key,slotType,slotIndex);
++    }
++    if(state::activity::eater_of_worlds::body_bits(snapshot.eater_of_worlds,key,slotType,slotIndex)) {
++        return state::activity::eater_of_worlds::write_body(writer,snapshot.eater_of_worlds,key,slotType,slotIndex);
+     }
+     if(state::activity::strike_pact::body_bits(snapshot.strike_pact,key,slotType,slotIndex)) {
+         return state::activity::strike_pact::write_body(writer,snapshot.strike_pact,key,slotType,slotIndex);
+@@ -1080,10 +1085,14 @@
+         encoded = write_participation(writer, snapshot);
+     } else if (slotType == kSlotTypeLifetime) {
+         const bool sharedLifetime=key==0x4786C0E0U && slotIndex==3;
++        const bool eaterLifetime=snapshot.eaterOfWorldsLifetime
++            && key==0x24C67333U && slotIndex==3;
++        if(eaterLifetime && (!snapshot.lifetimeScenarioOrdinal
++            || *snapshot.lifetimeScenarioOrdinal>=8)) { return false; }
+         encoded = write_lifetime(writer, snapshot,sharedLifetime
+             ?(snapshot.strike_bond.enabled && snapshot.strike_bond.restricted?17U:snapshot.hijacked.enabled && snapshot.hijacked.restricted?40U:snapshot.deep_storage.enabled && snapshot.deep_storage.restricted?19U:
+               snapshot.omegaMission.generation && snapshot.omegaMission.restriction?14U:0U):0U,
+-            sharedLifetime ? snapshot.lifetimeScenarioOrdinal : std::nullopt);
++            sharedLifetime || eaterLifetime ? snapshot.lifetimeScenarioOrdinal : std::nullopt);
+     } else if (slotType == kSlotTypeActivityScript && kInitializeActivityScript
+                && (snapshot.initializeMissionAuthorityRuntime
+                    || snapshot.publishOmegaOpeningTransition
+--- a/Dawn/src/middleware/bap/activity_message/sensor_auth_update.h
++++ b/Dawn/src/middleware/bap/activity_message/sensor_auth_update.h
+@@ -37,6 +37,7 @@
+ #include "native/adventure_dialogue_authority.h"
+ #include "native/adventure_player_predicates.h"
+ #include "../../../state/activity/strike_bond/frame.h"
++#include "../../../state/activity/eater_of_worlds/frame.h"
+ #include "../../../state/activity/omega/omega_mission_state.h"
+ #include "../../../state/activity/omega_crown_respawn_authority.h"
+ #include "../../../state/activity/omega_rescue_scene_authority.h"
+@@ -196,6 +197,9 @@
+     state::activity::deadly_trial::Frame deadly_trial{};
+     state::activity::strike_pact::Frame strike_pact{};
+     state::activity::strike_bond::Frame strike_bond{};
++    state::activity::eater_of_worlds::Frame eater_of_worlds{};
++    /** Exact Eater roster admission, available before its in-world Frame is enabled. */
++    bool eaterOfWorldsLifetime{};
+     state::activity::coo::CompletionPublication missionCompletion{};
+     /** Terminal native phase8, with no success result, after a qualified Nightfall failure. */
+     bool nightfallFailed{};
+@@ -220,7 +224,10 @@
+     std::uint32_t spawnSetHash{};
+     std::uint32_t spawnSliceSet{};
+     std::uint8_t lifetime{};
+-    /** Admitted lifetime authority+C scenario ordinal (0..63). */
++    /** Admitted lifetime authority+C scenario ordinal (0..63; selected Eater requires 0..7).
++     * Global4786C0E0/17/3 and selected Eater24C67333/17/3 consume this value.
++     * Absent preserves existing policy except for selected Eater, where it rejects publication.
++     * This is not a packed region or spawn override. */
+     std::optional<std::uint32_t> lifetimeScenarioOrdinal{};
+     /** Diagnostic slot-35 startup flags. Only the low two bits are encoded. */
+     std::uint8_t missionDirectorVariant{};
+--- a/Dawn/src/server/bap/encrypted/activity_message/activity_message_route.cpp
++++ b/Dawn/src/server/bap/encrypted/activity_message/activity_message_route.cpp
+@@ -38,6 +38,7 @@
+ #include "../../../../state/activity/runtime.h"
+ #include "../../../../state/activity/strike_pact/runtime.h"
+ #include "../../../../state/activity/strike_bond/runtime.h"
++#include "../../../../state/activity/eater_of_worlds/runtime.h"
+ #include "../../../../state/activity/coo/native_player_trigger.h"
+ #include "../../../../state/activity/omega/omega_progression.h"
+ #include "../../../../state/build_data/scenarios/cue_graph_manifest_exporter.h"
+@@ -632,6 +633,24 @@
+             state::activity::strike_bond::observe_costs(object.registryKey, object.slotIndex, costs);
+         }
+     }
++    if (parsed && handleBound && session.activityPatchEpochSeen
++        && same_epoch(update.epoch, session.activityPatchEpoch)
++        && state::activity::eater_of_worlds::native_run() != 0) {
++        for (std::size_t index = 0; index < update.objectCount; ++index) {
++            const auto& object = update.objects[index];
++            if (!object.hasSquadOutput) { continue; }
++            state::activity::coo::TaskCosts costs{};
++            costs.mask = object.squadOutput.costMask;
++            costs.revision = object.squadOutput.revision;
++            costs.hasRevision = object.squadOutput.hasRevision;
++            costs.initialized = object.squadOutput.initialized;
++            for (std::size_t group = 0; group < costs.cost.size(); ++group) {
++                costs.cost[group] = object.squadOutput.cost[group];
++            }
++            state::activity::eater_of_worlds::observe_costs(
++                object.registryKey, object.slotIndex, costs);
++        }
++    }
+     const bool omegaSelected = handleBound && omega_destination(session.activity.instance);
+     const bool towerfallSelected = handleBound
+                                    && towerfall_destination(session.activity.instance);
+@@ -701,6 +720,31 @@
+                 if(object.slotType==2 && object.hasCombatantOutput) {
+                     state::activity::strike_bond::observe_combatant(run,object.registryKey,
+                         object.slotIndex,object.combatantOutput);
++                }
++            }
++        }
++    }
++    if(handleBound && epochBound) {
++        const auto run=state::activity::eater_of_worlds::native_run();
++        if(run!=0) {
++            for(std::size_t index=0;index<update.objectCount;++index) {
++                const auto& object=update.objects[index];
++                if(object.slotType==43 && object.hasSceneOutput) {
++                    state::activity::eater_of_worlds::observe_scene(
++                        run,object.registryKey,object.slotIndex,object.sceneOutput);
++                }
++                if(object.slotType==1 && object.hasSquadOutput) {
++                    state::activity::eater_of_worlds::observe_squad(
++                        run,object.registryKey,object.slotIndex,object.squadOutput);
++                }
++                if(object.slotType==2 && object.hasCombatantOutput) {
++                    state::activity::eater_of_worlds::observe_combatant(
++                        run,object.registryKey,object.slotIndex,object.combatantOutput);
++                }
++                if(object.slotType==30 && object.hasMonitorOutput) {
++                    const auto& monitor=object.monitorOutput;
++                    state::activity::eater_of_worlds::observe_monitor(
++                        object.registryKey,object.slotIndex,monitor.any,monitor.count,monitor.value);
+                 }
+             }
+         }
+@@ -1220,6 +1264,16 @@
+         if(run!=0 && player_trigger::decode(std::span(parsed.payload).first(parsed.payloadLength),receipt)) {
+             state::activity::strike_pact::observe_player_trigger(run,receipt.registry,
+                 static_cast<std::uint16_t>(receipt.slot));
++        }
++    }
++    if(liveBinding && verdict==incident::Verdict::accepted && parsed.hasPayload
++        && parsed.primaryTarget==player_trigger::kIncident) {
++        const auto run=state::activity::eater_of_worlds::native_run();
++        player_trigger::Receipt receipt{};
++        if(run!=0 && player_trigger::decode(
++            std::span(parsed.payload).first(parsed.payloadLength),receipt)) {
++            state::activity::eater_of_worlds::observe_player_trigger(
++                run,receipt.registry,static_cast<std::uint16_t>(receipt.slot));
+         }
+     }
+     if(liveBinding && verdict==incident::Verdict::accepted && parsed.hasPayload
+--- a/Dawn/src/server/bap/encrypted/activity_message/membership/activity_membership_route.h
++++ b/Dawn/src/server/bap/encrypted/activity_message/membership/activity_membership_route.h
+@@ -14,7 +14,7 @@
+         || destination == "fleet_freeroam" || destination == "polaris_freeroam"
+         || destination == "planet_x_freeroam" || destination == "tangled_shore_freeroam"
+         || destination == "dreaming_city_freeroam"
+-        || destination == "adventure_rumba" || destination == "mission_launchpad";
++        || destination == "adventure_rumba" || destination == "raid_envy_v310" || destination == "mission_launchpad";
+ }
+ 
+ /** Maps parsed membership fields without changing legacy destination routing. */
+--- a/Dawn/src/server/bap/encrypted/push/activity/activity_keepalive_push.cpp
++++ b/Dawn/src/server/bap/encrypted/push/activity/activity_keepalive_push.cpp
+@@ -9,6 +9,7 @@
+ #include "../../../../../state/activity/beyond_infinity/transit.h"
+ #include "../../../../../state/activity/strike_pact/runtime.h"
+ #include "../../../../../state/activity/strike_bond/runtime.h"
++#include "../../../../../state/activity/eater_of_worlds/runtime.h"
+ #include "../../../../../state/activity/coo/omega_opening_projection.h"
+ #include "../../../../../state/activity/runtime.h"
+ #include "../../../../../state/activity/native_population_events.h"
+@@ -294,6 +295,7 @@
+                 || state::activity::beyond_infinity::publication_due(now)
+                 || state::activity::deep_storage::publication_due(now)
+                 || state::activity::strike_bond::publication_due(now)
++                || state::activity::eater_of_worlds::publication_due(now)
+                 || state::activity::strike_pact::publication_due(now)
+                 || state::activity::hijacked::publication_due(now)
+                 || (state::activity::newlight::launchpad::publication_due(now) || state::activity::newlight::launchpad::tower::active() || state::activity::gateway_intro::active())));
+--- a/Dawn/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp
++++ b/Dawn/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp
+@@ -70,6 +70,8 @@
+ #include "../../../../runtime/activity/adventure_opening_publication.h"
+ #include "strike_bond_roster.h"
+ #include "../../../../../state/activity/strike_bond/runtime.h"
++#include "../../../../../state/activity/eater_of_worlds/runtime.h"
++#include "eater_of_worlds_roster.h"
+ #include "../../../../../middleware/bap/activity_message/tower_watch_cue_manifest.h"
+ 
+ namespace dawn::server::bap::encrypted::push::activity {
+@@ -725,6 +727,11 @@
+     const bool hijackedDestination=name=="adventure_rumba" && !session.activity.joinedForeignSession;
+     const bool hijackedPrepared=!session.activity.joinedForeignSession && state::activity::hijacked::prepare(state::activity::mission_run_generation(),hijackedDestination);
+     if(hijackedDestination && !hijackedPrepared) { return RosterOutcome::noGroups; }
++    const bool eaterDestination=name=="raid_envy_v310" && selection.activityIndex==536
++        && !session.activity.joinedForeignSession;
++    const bool eaterPrepared=state::activity::eater_of_worlds::prepare(
++        state::activity::mission_run_generation(),eaterDestination);
++    if(eaterDestination && !eaterPrepared) { return RosterOutcome::noGroups; }
+     const auto& omegaExperiments = core::settings::get().omegaExperiments;
+     const bool syntheticOmega = omegaDestination;
+     // Forest-D's native encounter classifier requires the selected race global
+@@ -860,7 +867,7 @@
+     // hold zero groups; a zero-group row otherwise vetoes the whole periodic bundle and the
+     // client starves into the activity-host timeout. Publish the global participation group
+     // alone, which is part of every activity launch and safe in every slice set.
+-    if (layout.rosterGroupCount == 0) {
++    if (layout.rosterGroupCount == 0 && !eaterPrepared) {
+         const bool amended = state::build_data::amend_participation_fallback(layout);
+         static std::atomic<std::uint32_t> s_lastFallback{0xFFFFFFFFU};
+         const std::uint32_t observed = (layout.tag << 1) | (amended ? 1U : 0U);
+@@ -882,8 +889,39 @@
+         return RosterOutcome::noGroups;
+     }
+     if (inputs.regionIndex < 0
+-        || !fill_roster(layout, scratch, snapshot.roster, inputs.regionIndex)) {
++        || (!eaterPrepared && !fill_roster(layout, scratch, snapshot.roster, inputs.regionIndex))) {
+         return RosterOutcome::noGroups;
++    }
++    if(eaterPrepared) {
++        if(!eater_of_worlds_roster::admit(layout,scratch,snapshot.roster)) {
++            core::log::write(core::log::Channel::server,core::log::Level::error,
++                "ev=eater_of_worlds stage=roster result=failed");
++            return RosterOutcome::noGroups;
++        }
++        // Native lifetime apply resolves authority+C as (ordinal & 63) << 3. Publishing the
++        // generic zero here looks up region 0 instead of the loaded entrance region 16, then
++        // dereferences a null runtime handle. The current region is transition-qualified and must replace the
++        // original arrival as the raid moves through reactor and Argos bubbles.
++        const auto lifetimeScenario=eater_of_worlds_roster::lifetime_scenario(inputs.regionIndex);
++        if(!lifetimeScenario) { return RosterOutcome::noGroups; }
++        snapshot.eaterOfWorldsLifetime=true;
++        snapshot.lifetimeScenarioOrdinal=lifetimeScenario;
++        snapshot.eater_of_worlds=state::activity::eater_of_worlds::snapshot(
++            state::activity::mission_run_generation(),GetTickCount64(),
++            state::activity::mission_seed_armed(),
++            inputs.sourceMembership.currentRegion.index>=0
++                ?inputs.sourceMembership.currentRegion.index:inputs.regionIndex);
++        if(snapshot.eater_of_worlds.enabled) {
++            if (!state::activity::progress::observe(
++                    missionCharacterSoid, name, selection.activityIndex,
++                    snapshot.eater_of_worlds.checkpointSpawnSet,
++                    snapshot.eater_of_worlds.checkpointSliceSet,
++                    snapshot.eater_of_worlds.section, snapshot.eater_of_worlds.finished)) {
++                return RosterOutcome::noGroups;
++            }
++            snapshot.missionCompletion=snapshot.eater_of_worlds.completion;
++            snapshot.gameplayClockTicks=snapshot.eater_of_worlds.gameplayClockTicks;
++        }
+     }
+     namespace vendorWorld=state::activity::vendors::presentation;
+     const bool towerVendors=!vendorWorld::groups(layout.tag).empty();
+@@ -1601,6 +1639,12 @@
+         && snapshot.strike_pact.checkpointSpawnSet != message::kAbsentSpawnSetHash) {
+         snapshot.spawnSliceSet = snapshot.strike_pact.checkpointSliceSet;
+         snapshot.spawnSetHash = snapshot.strike_pact.checkpointSpawnSet;
++        snapshot.hasSpawnOverride = true;
++    }
++    if (snapshot.eater_of_worlds.enabled && snapshot.eater_of_worlds.checkpointSpawnSet != 0
++        && snapshot.eater_of_worlds.checkpointSliceSet >= 0) {
++        snapshot.spawnSliceSet = snapshot.eater_of_worlds.checkpointSliceSet;
++        snapshot.spawnSetHash = snapshot.eater_of_worlds.checkpointSpawnSet;
+         snapshot.hasSpawnOverride = true;
+     }
+     if(snapshot.launchpad.enabled
+--- a/Dawn/src/server/bap/encrypted/queuez/queuez_deferred_push.cpp
++++ b/Dawn/src/server/bap/encrypted/queuez/queuez_deferred_push.cpp
+@@ -17,6 +17,7 @@
+ #include "../push/activity/newlight_quest.h"
+ #include "../push/activity/quest_progress.h"
+ #include "../../../../state/activity/nightfall/rules.h"
++#include "../../../../state/activity/eater_of_worlds/contest.h"
+ #include "../../../../state/activity/nightfall/completion_reward.h"
+ #include "queuez_state_validation.h"
+ #include "../activity_message/lost_sector_rewards.h"
+@@ -141,10 +142,12 @@
+     const bool accountPending =
+         session.accountResyncArmed && session.accountResyncGeneration != 0;
+     const std::uint64_t powerRevision = state::activity::nightfall::power_revision();
+-    if ((powerRevision & 1U) != 0) {
+-        return false;
+-    }
+-    const bool powerPending = session.nightfallPowerRevision != powerRevision;
++    const std::uint64_t raidPowerRevision = state::activity::eater_of_worlds::contest::power_revision();
++    if (((powerRevision | raidPowerRevision) & 1U) != 0) {
++        return false;
++    }
++    const bool powerPending = session.nightfallPowerRevision != powerRevision
++        || session.raidPowerRevision != raidPowerRevision;
+     if (!accountPending && !powerPending) {
+         return false;
+     }
+@@ -205,7 +208,9 @@
+     // staged bundle if launch or orbit changed it at any point, so one peer never observes mixed
+     // capped and uncapped records from a single refresh.
+     const std::uint64_t finalPowerRevision = state::activity::nightfall::power_revision();
+-    if ((finalPowerRevision & 1U) != 0 || finalPowerRevision != powerRevision) {
++    const std::uint64_t finalRaidPowerRevision = state::activity::eater_of_worlds::contest::power_revision();
++    if (((finalPowerRevision | finalRaidPowerRevision) & 1U) != 0 || finalPowerRevision != powerRevision
++        || finalRaidPowerRevision != raidPowerRevision) {
+         core::log::write(core::log::Channel::server,
+                          core::log::Level::warn,
+                          "ev=queuez stage=power_resync result=retry reason=revision");
+@@ -227,6 +232,7 @@
+     }
+     // The matching even revision proves that every builder saw one complete cap publication.
+     session.nightfallPowerRevision = powerRevision;
++    session.raidPowerRevision = raidPowerRevision;
+     report_repush(accountPending ? "peer_resync" : "power_resync", framedSize);
+     return true;
+ }
+@@ -324,7 +330,8 @@
+         return false;
+     }
+     if (session.queuez.family4Active
+-        && (session.nightfallPowerRevision != state::activity::nightfall::power_revision())) {
++        && (session.nightfallPowerRevision != state::activity::nightfall::power_revision()
++            || session.raidPowerRevision != state::activity::eater_of_worlds::contest::power_revision())) {
+         // A failed power refresh retries before lower-priority account images. Activity
+         // keepalives are independent and must not be starved by a temporarily unavailable image.
+         return push::activity::consume_activity_keepalive(session, scratch, response, written, touchesScratch);
+--- a/Dawn/src/server/bap/internal.h
++++ b/Dawn/src/server/bap/internal.h
+@@ -247,6 +247,8 @@
+     std::uint64_t accountResyncGeneration{};
+     /** Latest native Nightfall power projection revision published to this peer. */
+     std::uint64_t nightfallPowerRevision{};
++    /** Latest Eater Contest power projection revision published to this peer. */
++    std::uint64_t raidPowerRevision{};
+     /** Set by encrypted processing only after one account mutation commits and is copied out. */
+     bool accountMutationPublished{};
+     /** True while another peer's account mutation still needs a full local refresh. */
+--- a/Dawn/src/state/activity/forced/definition.h
++++ b/Dawn/src/state/activity/forced/definition.h
+@@ -207,6 +207,19 @@
+ inline constexpr ForcedDestination kHijackedOpening=hijacked_opening();
+ static_assert(active(kHijackedOpening));
+ 
++// Eater of Worlds native entrance. This is a direct raid selection: activity 536 supplies its
++// own launch descriptor, while these fields select the recovered solo entrance arrival.
++inline constexpr std::int16_t kEaterOfWorldsActivity = 536;
++inline constexpr std::uint16_t kEaterOfWorldsOpeningSlice = 16;
++inline constexpr std::array<std::uint16_t, 8> kEaterOfWorldsSlices{0, 8, 16, 24, 32, 40, 48, 56};
++constexpr ForcedDestination eater_of_worlds_opening() noexcept {
++    ForcedDestination v{};constexpr char name[]="raid_envy_v310";
++    for(std::size_t i=0;i<sizeof(name)-1;++i) {v.packageName[i]=name[i];}
++    v.packageNameLength=sizeof(name)-1;v.bubble=2;v.sliceSet=kEaterOfWorldsOpeningSlice;v.spawnSetHash=0x8BA80878U;
++    v.hasBubble=v.hasSliceSet=v.hasSpawnSetHash=v.enabled=true;return v;
++}
++inline constexpr ForcedDestination kEaterOfWorldsOpening=eater_of_worlds_opening();
++static_assert(active(kEaterOfWorldsOpening));
+ } // namespace profiles
+ 
+ static_assert(active(profiles::kTowerfallOpening));
+--- a/Dawn/src/state/activity/nightfall/native_power.h
++++ b/Dawn/src/state/activity/nightfall/native_power.h
+@@ -8,6 +8,7 @@
+ #include "../../equipment/light/definition.h"
+ #include "../strike_variants.h"
+ #include "rules.h"
++#include "../eater_of_worlds/contest.h"
+ 
+ namespace dawn::state::activity::nightfall {
+ 
+@@ -28,7 +29,11 @@
+         const bool grandmaster = (activity == 813 || activity == 835)
+                && difficultySettings == kGrandmasterDifficultySettings
+                && authoredPower == kGrandmasterActivityPower && delta >= 30 && delta <= 50;
+-        return grandmaster && effectiveCap == authoredPower - static_cast<std::int32_t>(delta);
++        const bool eater = activity == eater_of_worlds::contest::kActivity
++               && difficultySettings == eater_of_worlds::contest::kDifficultySettings
++               && authoredPower == eater_of_worlds::contest::kActivityPower
++               && delta == eater_of_worlds::contest::kPowerDelta;
++        return (grandmaster || eater) && effectiveCap == authoredPower - static_cast<std::int32_t>(delta);
+     }
+ 
+     [[nodiscard]] bool operator==(const NativePowerProjection&) const noexcept = default;
+@@ -60,6 +65,11 @@
+ /** Resolves one coherent lock-free rules snapshot into its exact native projection. */
+ [[nodiscard]] inline NativePowerProjection current_native_power_projection() noexcept {
+     if (detail::publicationPower) return *detail::publicationPower;
++    if (eater_of_worlds::contest::enabled()) {
++        return {eater_of_worlds::contest::kActivity, eater_of_worlds::contest::kDifficultySettings,
++                eater_of_worlds::contest::kActivityPower, eater_of_worlds::contest::kPlayerPowerCap,
++                eater_of_worlds::contest::kPowerDelta};
++    }
+     const Selection selected = selection();
+     return native_power_projection(selected.activity, selected.options.powerDelta);
+ }
+--- a/Dawn/unit/coo_script_tests.cpp
++++ b/Dawn/unit/coo_script_tests.cpp
+@@ -3,6 +3,7 @@
+ #include "state/activity/coo/omega_forest.h"
+ #include "state/activity/coo/omega_definition.h"
+ #include "state/activity/coo/omega_ending_controller.h"
++#include "state/activity/eater_of_worlds/profile.h"
+ #include <cstdio>
+ #include <cstdlib>
+ #include <fstream>
+@@ -68,6 +69,12 @@
+     }
+     std::ifstream file("Dawn/scripts/omega.lua",std::ios::binary);CHECK(file.good());
+     std::string text((std::istreambuf_iterator<char>(file)),{});text.erase(std::remove(text.begin(),text.end(),'\r'),text.end());std::string error;
++    auto eater=sc::MissionDocument::read("Dawn/scripts/eater_of_worlds.lua",
++        dawn::state::activity::eater_of_worlds::kProfile,error);
++    if(!eater) { std::fprintf(stderr,"eater_of_worlds: %s\n",error.c_str()); }
++    CHECK(eater);CHECK(eater->views().valid);
++    CHECK(eater->views().missionId=="eater_of_worlds");
++    CHECK(eater->views().profileId==dawn::state::activity::eater_of_worlds::kProfile.id);
+     auto document=sc::Document::parse_lua(text,error);CHECK(document);CHECK(error.empty());
+     const auto& views=document->views();CHECK(views.valid);CHECK(views.graphs.size()==14);CHECK(sc::current()==nullptr);
+     for(const auto& graph:views.graphs) {
+--- a/Dawn/unit/mission_launch_arguments_tests.cpp
++++ b/Dawn/unit/mission_launch_arguments_tests.cpp
+@@ -6,6 +6,7 @@
+ #include "client/activity/campaign_openings.h"
+ #include "client/activity/campaign_dialogue.h"
+ #include "client/activity/mission_launch_options.h"
++#include "client/hooks/bootflow/region_private_policy.h"
+ #include "core/logging/log.h"
+ #include "middleware/content/packages/tables/activity_table.h"
+ 
+@@ -14,6 +15,7 @@
+ namespace forced = dawn::state::activity::forced;
+ namespace build = dawn::state::build_data;
+ namespace tables = dawn::middleware::content::packages::tables;
++namespace private_policy = dawn::client::hooks::bootflow::region_private_policy;
+ unsigned g_checks{}, g_publishes{}, g_clears{}, g_dialogueSelections{};
+ build::scenarios::Definition g_layout{};
+ void check(bool value, const char* message) {
+@@ -133,13 +135,13 @@
+         "ordinary request clears prior manual payload and retains exact variant identity");
+     launch::poll();
+     namespace openings = launch::openings;
+-    constexpr std::array<const char*, 11> packages{"mission_towerfall", "mission_abs", "adventure_ginger",
+-        "adventure_vod", "adventure_whisk", "mission_pact", "adventure_rumba", "mission_bond", "mission_scot", "strike_pact", "strike_bond"};
+-    constexpr std::array<unsigned, 11> bubblesExpected{9, 15, 51, 15, 4, 15, 13, 15, 15, 15, 15};
+-    constexpr std::array<unsigned, 11> slicesExpected{72, 120, 408, 120, 32, 120, 104, 120, 120, 120, 120};
+-    constexpr std::array<std::uint32_t, 11> spawnsExpected{0, 0x69F52B3E, 0x43954D08, 0x26B11B02,
+-        0x3AE5AC33, 0x0E1523FE, 0x1BD69720, 0xB09FB979, 0x4AB3287A, 0x0E1523FE, 0xB09FB979};
+-    constexpr std::array<unsigned,11> nativeIds{266,292,293,294,295,296,297,298,299,230,229};
++    constexpr std::array<const char*, 12> packages{"mission_towerfall", "mission_abs", "adventure_ginger",
++        "adventure_vod", "adventure_whisk", "mission_pact", "adventure_rumba", "mission_bond", "mission_scot", "strike_pact", "strike_bond", "raid_envy_v310"};
++    constexpr std::array<unsigned, 12> bubblesExpected{9, 15, 51, 15, 4, 15, 13, 15, 15, 15, 15, 2};
++    constexpr std::array<unsigned, 12> slicesExpected{72, 120, 408, 120, 32, 120, 104, 120, 120, 120, 120, 16};
++    constexpr std::array<std::uint32_t, 12> spawnsExpected{0, 0x69F52B3E, 0x43954D08, 0x26B11B02,
++        0x3AE5AC33, 0x0E1523FE, 0x1BD69720, 0xB09FB979, 0x4AB3287A, 0x0E1523FE, 0xB09FB979, 0x8BA80878};
++    constexpr std::array<unsigned,12> nativeIds{266,292,293,294,295,296,297,298,299,230,229,536};
+     for (std::size_t i = 0; i < packages.size(); ++i) {
+         check(launch::request_opening(i), "opening queues its own installed activity");
+         const auto opening = launch::snapshot();
+@@ -179,6 +181,32 @@
+     }
+     check(!launch::request_variant(5, strikes::Difficulty::grandmaster), "campaign cannot borrow strike Nightfall difficulty");
+     check(!launch::request_variant(9, static_cast<strikes::Difficulty>(255)), "invalid difficulty is rejected");
++    check(!dawn::state::activity::forced::prelaunch::configured(openings::kMissions[11].destination),
++        "Eater direct launch does not inherit the Chosen donor prelaunch contract");
++    check(openings::kMissions[11].investmentHash == 0xB8218A8CU
++        && openings::kMissions[11].campaign == 4, "Eater keeps exact raid identity and Raids grouping");
++    check(private_policy::force_private(false, forced::profiles::kEaterOfWorldsActivity,
++            forced::profiles::kEaterOfWorldsOpening,
++            forced::profiles::kEaterOfWorldsOpeningSlice),
++        "Eater direct entrance requests the private one-player region path");
++    check(private_policy::force_private(false, forced::profiles::kEaterOfWorldsActivity,
++            forced::profiles::kEaterOfWorldsOpening, 56)
++            && private_policy::force_private(false, forced::profiles::kEaterOfWorldsActivity,
++                forced::profiles::kEaterOfWorldsOpening, 48),
++        "Eater reactor and Argos transitions retain the one-player region path");
++    check(!private_policy::force_private(false, forced::profiles::kEaterOfWorldsActivity,
++                forced::profiles::kEaterOfWorldsOpening, 64)
++            && !private_policy::force_private(false, 537,
++                forced::profiles::kEaterOfWorldsOpening,
++                forced::profiles::kEaterOfWorldsOpeningSlice),
++        "solo region policy rejects slices outside Eater and other raid activities");
++    auto otherDestination = forced::profiles::kEaterOfWorldsOpening;
++    otherDestination.packageName[0] = 'x';
++    check(!private_policy::force_private(false, forced::profiles::kEaterOfWorldsActivity,
++            otherDestination, forced::profiles::kEaterOfWorldsOpeningSlice),
++        "stale aligned slice in another destination remains public");
++    check(private_policy::force_private(true, 537, {}, 48),
++        "operator private-region setting remains authoritative");
+     check(!openings::resolve(0, {}).valid(), "empty activity catalog fails closed");
+     auto donor = activities[266];
+     activities[282].package[0] = 'x';
+--- a/Dawn/unit/mission_launch_lifecycle_tests.cpp
++++ b/Dawn/unit/mission_launch_lifecycle_tests.cpp
+@@ -337,6 +337,44 @@
+     check(launch::snapshot().status == launch::Status::arrived, "Gateway replay commits a fresh opening");
+     orbit();
+     // A Director launch has no Dawn request but must still publish presence.
++    namespace contest = dawn::state::activity::eater_of_worlds::contest;
++    check(!launch::request_raid(1, contest::Mode::contest), "Contest cannot target a campaign mission");
++    check(!launch::request_raid(999, contest::Mode::contest), "Contest rejects missing mission");
++    check(launch::request_raid(11, contest::Mode::contest), "Contest Eater queues");
++    check(!contest::enabled(), "GUI selection alone does not enable Contest");
++    check(!launch::request_raid(11, contest::Mode::standard), "queued Contest mode cannot be replaced");
++    launch::poll();
++    check(contest::enabled() && launch::snapshot().index == 536, "validated launch arms Contest on Eater identity");
++    g_actual = descriptor(536, "raid_envy_v310"); g_step = 38;
++    launch::poll(); // Same pre-launch session must not consume the pending Contest lease.
++    check(contest::enabled() && launch::snapshot().status == launch::Status::queued,
++        "stale pre-launch Eater session does not bind the Contest lease");
++    arrive();
++    check(contest::enabled(), "confirmed Eater arrival retains Contest power");
++    check(!launch::request_raid(11, contest::Mode::standard), "in-mission mode immutable");
++    orbit();
++    check(!contest::enabled(), "orbit clears Contest");
++    check(launch::request_raid(11, contest::Mode::standard), "Standard Eater queues after Contest");
++    launch::poll(); arrive();
++    check(!contest::enabled(), "Standard Eater retains original power");
++    orbit();
++    g_descriptorValid = false;
++    check(launch::request_raid(11, contest::Mode::contest), "invalid Contest descriptor queues for validation");
++    launch::poll();
++    check(!contest::enabled() && launch::snapshot().status == launch::Status::descriptorRejected,
++        "rejected native descriptor never applies Contest");
++    g_descriptorValid = true;
++    check(launch::request_raid(11, contest::Mode::contest), "Contest timeout test queues");
++    launch::poll(); g_now += 120001; launch::poll();
++    check(!contest::enabled() && launch::snapshot().status == launch::Status::timedOut,
++        "missing arrival cancels Contest power lease");
++    orbit();
++    g_wrongDestination = true;
++    check(launch::request_raid(11, contest::Mode::contest), "Contest wrong-world test queues");
++    launch::poll(); arrive();
++    check(!contest::enabled() && launch::snapshot().status == launch::Status::unexpectedDestination,
++        "wrong destination clears Contest immediately");
++    orbit(); g_wrongDestination = false;
+     g_actual = descriptor(292, "mission_abs"); ++g_session; g_step = 38; launch::poll();
+     check(launch::snapshot().inMission && launch::snapshot().current_name() == "mission_abs"
+         && !launch::snapshot().busy, "Director launch tracks current mission");
+--- a/Dawn/unit/mission_launch_visual_tests.cpp
++++ b/Dawn/unit/mission_launch_visual_tests.cpp
+@@ -135,6 +135,11 @@
+ Snapshot snapshot() noexcept { return g_launchState; }
+ bool request_opening(std::size_t mission) noexcept {
+     return request_variant(mission, state::activity::strikes::Difficulty::standard);
++}
++bool request_raid(std::size_t mission, state::activity::eater_of_worlds::contest::Mode mode) noexcept {
++    if (!request_opening(mission)) return false;
++    g_launchState.raidMode = mode;
++    return true;
+ }
+ bool request_variant(std::size_t mission, state::activity::strikes::Difficulty difficulty) noexcept {
+     return request_variant(mission,difficulty,state::activity::nightfall::defaults(difficulty));
+@@ -303,6 +308,25 @@
+     check(g_launchState.nightfallOptions.startingRevives==2 && g_launchState.nightfallOptions.reviveMinutes==30
+         && g_launchState.nightfallOptions.powerDelta==35,"modifier window selection copied into exact GM launch");
+     g_launchState = {};
++    frame(1500,1000,content->GetID("Raids"));frame();frame();
++    check(panel::g_campaign==4 && panel::selected_difficulty()==panel::strikes::Difficulty::standard
++        && panel::selected_route(11).transport==536,"Raids tab selects exact Eater route despite saved Grandmaster settings");
++    screenshot(screens / "dawn-raids.ppm");
++    frame(760,720);frame(760,720);screenshot(screens / "dawn-raids-narrow.ppm");
++    frame();frame();
++    const auto raidRequests=g_requests;
++    frame(1500,1000,row_id(11));frame();
++    check(g_requests==raidRequests+1 && g_requestedMission==11 && g_launchState.index==536,
++        "Raids tab launches Eater through the production row with an isolated request");
++    check(g_launchState.raidMode == panel::contest::Mode::standard, "Eater defaults to Standard");
++    g_launchState = {}; panel::g_raidMode = panel::contest::Mode::contest;
++    frame(); frame(); screenshot(screens / "dawn-raids-contest.ppm");
++    frame(760,720); frame(760,720); screenshot(screens / "dawn-raids-contest-narrow.ppm");
++    frame(); frame(); frame(1500,1000,row_id(11)); frame();
++    check(g_requests==raidRequests+2 && g_launchState.index==536
++        && g_launchState.raidMode==panel::contest::Mode::contest,
++        "Contest row passes exact Eater mode without inheriting Nightfall modifiers");
++    check(g_launchState.nightfallOptions.powerDelta == 0, "Contest does not arm GM options");
+     g_launchState = {}; panel::g_nightfall = false;
+     panel::g_campaign=1;panel::g_resetScroll=true;frame();frame();
+     const auto before = g_requests;
+@@ -334,6 +358,6 @@
+     check(g_gpu->Release() == 0, "GPU resources released");
+     const auto stats = ui::memory::snapshot();
+     check(stats.outstandingAllocations == 0 && ui::memory::shutdown(), "fixed arena released");
+-    std::cout << "PASS: Dawn production layout, " << openings::kMissions.size() - 1 << " launch buttons, Homecoming hidden, preparing/in-mission/wrong-destination/busy/unavailable states, campaign/Strikes/Nightfalls tabs, DPI and close/reopen; zero ImGui errors; "
++    std::cout << "PASS: Dawn production layout, " << openings::kMissions.size() - 1 << " launch buttons, Homecoming hidden, preparing/in-mission/wrong-destination/busy/unavailable states, campaign/Strikes/Nightfalls/Raids tabs, isolated Eater launch, DPI and close/reopen; zero ImGui errors; "
+         << stats.highWaterBytes << "/" << stats.capacityBytes << " arena high water\n";
+ }
+--- a/Dawn/unit/native_mission_interaction_tests.cpp
++++ b/Dawn/unit/native_mission_interaction_tests.cpp
+@@ -6,6 +6,7 @@
+ #include "state/activity/omega/omega_transit_authority.h"
+ #include "state/activity/omega_arc_charge_authority.h"
+ #include "state/activity/deadly_trial/authority.h"
++#include "state/activity/eater_of_worlds/authority.h"
+ #include "client/hooks/bootflow/omega_arc_charge_native.h"
+ #include <array>
+ #include <cstdio>
+@@ -16,6 +17,7 @@
+ namespace omega=dawn::state::activity::omega;
+ namespace charge=dawn::state::activity::omega_arc_charge;
+ namespace trial=dawn::state::activity::deadly_trial;
++namespace eater=dawn::state::activity::eater_of_worlds;
+ namespace device=dawn::state::activity::coo::native_device;
+ namespace hook=dawn::client::hooks::bootflow::omega_arc_charge_native;
+ namespace {
+@@ -104,10 +106,34 @@
+     for(const auto generation:{0U,charge::kMaximumGeneration}) {ArcOverrideBits stream;const charge::Authority invalid{generation,1,true,false,true};check(!charge::write_authority(stream,{&charge::kCycles[0],charge::Object::sink},invalid) && stream.bits.empty(),"invalid generation refuses publication");}
+     ArcOverrideBits invalid;check(!device::object(invalid,1,true,nullptr,static_cast<device::interaction::Mode>(3)) && invalid.bits.empty(),"invalid interaction mode rejected without partial output");
+ }
++void eater_station_test() {
++    eater::Frame frame{};frame.enabled=true;frame.spawnGeneration=9;
++    for(const auto& binding:eater::kStationBindings) {
++        auto& state=frame.native[eater::asset_index(binding.source)];
++        state.managed=true;state.generation=9;
++        for(bool active:{false,true}) for(bool acknowledged:{false,true}) {
++            state.active=active;state.acknowledged=acknowledged;
++            MissionBits stream;
++            check(eater::write_body(stream,frame,binding.source.registry,4,binding.source.slot),"exact Eater station source encodes");
++            check(stream.bits.size()==eater::body_bits(frame,binding.source.registry,4,binding.source.slot),"Eater station reported width equals actual wire");
++            verify_source(stream,active,acknowledged,state.generation);
++        }
++        state.managed=false;
++        MissionBits missing;
++        check(!eater::write_body(missing,frame,binding.source.registry,4,binding.source.slot) && missing.bits.empty(),"unmanaged Eater station refuses authority");
++    }
++    for(const auto& binding:eater::kCraniumBindings) {
++        auto& state=frame.native[eater::asset_index(binding.source)];
++        state.managed=true;state.active=true;state.acknowledged=true;state.generation=11;
++        MissionBits stream;
++        check(eater::write_body(stream,frame,binding.source.registry,4,binding.source.slot),"Eater cranium source encodes");
++        verify_source(stream,true,false,state.generation);
++    }
++}
+ }
+ int main(int argc,char** argv) {
+     if(argc!=2) {std::fprintf(stderr,"usage: native_mission_interaction_tests native-image\n");return 2;}
+-    verify_image(argv[1]);image=allocate(0x6270000);arc_unlock_native_test(argv[1]);mission_test();
++    verify_image(argv[1]);image=allocate(0x6270000);arc_unlock_native_test(argv[1]);mission_test();eater_station_test();
+     std::printf("Native mission interaction: %u checks, 0 failures; original F32820/9FA4B0/9F9B30/F33930 instructions\n",checks);
+     for(auto* p:allocations) {VirtualFree(p,0,MEM_RELEASE);}return 0;
+ }
+--- a/Dawn/unit/native_nightfall_power_tests.cpp
++++ b/Dawn/unit/native_nightfall_power_tests.cpp
+@@ -16,6 +16,7 @@
+ #include <cstdlib>
+ 
+ namespace nightfall = dawn::state::activity::nightfall;
++namespace contest = dawn::state::activity::eater_of_worlds::contest;
+ namespace light = dawn::state::equipment::light;
+ namespace combatant = dawn::state::activity::coo::native_combatant;
+ namespace bits = dawn::middleware::encoding::bits;
+@@ -246,17 +247,17 @@
+     CHECK(standard.equipmentSummary.total == 1100);
+     CHECK(standard.equipmentSummary.light == 1100);
+ 
+-    nightfall::arm(813, nightfall::Options{.powerDelta=35});
++    contest::arm(536, contest::Mode::contest);
+     CHECK(character::encode(selected, loadout, raw, bytes));
+-    const auto& capped = *reinterpret_cast<const character::layout::Object*>(bytes.data());
+-    CHECK(capped.equipmentSummary.character[0].score == 1065);
+-    CHECK(capped.equipmentSummary.total == 1065 && capped.equipmentSummary.light == 1065);
+-    CHECK(capped.equipmentSummary.lightScalar == 1065.0F);
+-    const auto capturedPower = nightfall::current_native_power_projection();
+-    nightfall::leave();
+-    CHECK(character::encode(selected, loadout, raw, bytes, capturedPower));
+-    CHECK(reinterpret_cast<const character::layout::Object*>(bytes.data())->equipmentSummary.light == 1065);
+-    CHECK(nightfall::project_selected_item_level(110, true, capturedPower) == 106);
++    const auto& raid = *reinterpret_cast<const character::layout::Object*>(bytes.data());
++    CHECK(raid.equipmentSummary.character[0].score == 730);
++    CHECK(raid.equipmentSummary.total == 730 && raid.equipmentSummary.light == 730);
++    CHECK(raid.equipmentSummary.lightScalar == 730.0F);
++    const auto capturedContest = nightfall::current_native_power_projection();
++    contest::leave();
++    CHECK(character::encode(selected, loadout, raw, bytes, capturedContest));
++    CHECK(reinterpret_cast<const character::layout::Object*>(bytes.data())->equipmentSummary.light == 730);
++    CHECK(nightfall::project_selected_item_level(110, true, capturedContest) == 73);
+     CHECK(character::encode(selected, loadout, raw, bytes));
+     CHECK(reinterpret_cast<const character::layout::Object*>(bytes.data())->equipmentSummary.light == 1100);
+ }
+@@ -309,30 +310,71 @@
+         0x588E5FB9U, 3));
+ }
+ 
++void eater_contest_is_launch_scoped() {
++    nightfall::leave(); contest::leave();
++    const auto originalRevision = contest::power_revision();
++    CHECK((originalRevision & 1U) == 0);
++    contest::arm(536, contest::Mode::standard);
++    CHECK(!nightfall::current_native_power_projection());
++    CHECK(contest::power_revision() == originalRevision);
++    contest::arm(536, contest::Mode::contest);
++    const auto projection = nightfall::current_native_power_projection();
++    CHECK(projection && projection.activity == 536 && projection.authoredPower == 750);
++    CHECK(projection.delta == 20 && projection.effectiveCap == 730);
++    CHECK(contest::power_revision() == originalRevision + 2);
++    CHECK(nightfall::cap_player_power(1100, projection) == 730);
++    CHECK(nightfall::cap_player_power(720, projection) == 720);
++    CHECK(nightfall::project_selected_item_level(110, true, projection) == 73);
++    CHECK(nightfall::project_selected_item_level(110, false, projection) == 110);
++    auto effective = summary(1100);
++    CHECK(nightfall::cap_equipment_summary(effective, projection) == nightfall::NativePowerApplyResult::applied);
++    CHECK(effective.average == 730 && effective.total == 1460 && effective.character[0]->score == 730);
++    CHECK(effective.profile[0]->score == 1100);
++    CHECK(!nightfall::equipment_locked() && !nightfall::movement_blocked() && !nightfall::active());
++    contest::enter(91, 536);
++    CHECK(contest::enabled());
++    contest::enter(91, 536); // Same session death/retry keeps difficulty.
++    CHECK(contest::enabled());
++    CHECK(contest::power_revision() == originalRevision + 2);
++    contest::enter(92, 536); // Another launch cannot inherit the lease.
++    CHECK(!contest::enabled());
++    CHECK(!nightfall::current_native_power_projection());
++    CHECK(contest::power_revision() == originalRevision + 4);
++    for (const auto activity : {537, 538, 813, 835, -1}) {
++        contest::arm(static_cast<std::int16_t>(activity), contest::Mode::contest);
++        CHECK(!contest::enabled());
++    }
++    contest::arm(536, contest::Mode::contest);
++    contest::enter(93, 299);
++    CHECK(!contest::enabled());
++    contest::arm(536, contest::Mode::contest);
++    contest::leave();
++    CHECK(nightfall::cap_player_power(1100, nightfall::current_native_power_projection()) == 1100);
++}
+ 
+ void publication_retains_one_power_projection() {
+-    nightfall::arm(813, nightfall::Options{.powerDelta=35});
+-    const auto before = nightfall::power_revision();
++    contest::arm(536, contest::Mode::contest);
++    const auto before = contest::power_revision();
+     {
+         const nightfall::PowerPublication burst;
+-        CHECK(nightfall::current_native_power_projection().effectiveCap == 1065);
+-        nightfall::leave(); // Model an orbit edge between roster and its item/banner companions.
+-        CHECK(!nightfall::active() && nightfall::power_revision() != before);
+-        CHECK(nightfall::current_native_power_projection().effectiveCap == 1065);
++        CHECK(nightfall::current_native_power_projection().effectiveCap == 730);
++        contest::leave(); // Model an orbit edge between roster and its item/banner companions.
++        CHECK(!contest::enabled() && contest::power_revision() != before);
++        CHECK(nightfall::current_native_power_projection().effectiveCap == 730);
+         {
+             const nightfall::PowerPublication nested;
+-            CHECK(nightfall::current_native_power_projection().effectiveCap == 1065);
++            CHECK(nightfall::current_native_power_projection().effectiveCap == 730);
+         }
+-        CHECK(nightfall::current_native_power_projection().effectiveCap == 1065);
++        CHECK(nightfall::current_native_power_projection().effectiveCap == 730);
+     }
+     CHECK(!nightfall::current_native_power_projection());
+     {
+         const nightfall::PowerPublication standardBurst;
+-        nightfall::arm(813, nightfall::Options{.powerDelta=35});
++        contest::arm(536, contest::Mode::contest);
+         CHECK(!nightfall::current_native_power_projection());
+     }
+-    CHECK(nightfall::current_native_power_projection().effectiveCap == 1065);
+-    nightfall::leave();
++    CHECK(nightfall::current_native_power_projection().effectiveCap == 730);
++    contest::leave();
+ }
+ 
+ } // namespace
+@@ -348,6 +390,7 @@
+     production_character_encoder_caps_every_incremental_image();
+     native_source_variant_wire_is_biased_and_bounded();
+     grandmaster_variant_scope_is_package_allowlisted();
++    eater_contest_is_launch_scoped();
+     publication_retains_one_power_projection();
+     std::printf("native nightfall power: %u checks passed\n", checks);
+     return 0;
+--- a/Dawn/unit/other_mission_protocol_tests.cpp
++++ b/Dawn/unit/other_mission_protocol_tests.cpp
+@@ -10,6 +10,9 @@
+ #include "middleware/bap/activity_message/sensor_auth_update.h"
+ #include "middleware/encoding/bit_reader.h"
+ #include "state/activity/strike_bond/authority.h"
++#include "state/activity/eater_of_worlds/authority.h"
++#include "state/activity/eater_of_worlds/doors.h"
++#include "server/bap/encrypted/push/activity/eater_of_worlds_roster.h"
+ 
+ namespace wire = dawn::middleware::bap::activity_message::sensor_auth_update;
+ namespace bits = dawn::middleware::encoding::bits;
+@@ -80,11 +83,134 @@
+             "archive Omega ignores non-archive gameplay clock field");
+     }
+ }
++void check_eater_outer_wire() {
++    namespace eater=dawn::state::activity::eater_of_worlds;
++    namespace roster=dawn::server::bap::encrypted::push::activity::eater_of_worlds_roster;
++    namespace layouts=dawn::state::build_data::scenarios;
++    struct Storage {
++        std::array<wire::BubbleSubBlock,64> rosterSubBlocks{};
++        std::array<std::array<std::uint32_t,wire::kGroupCapacity>,64> rosterSubBlockKeys{};
++    } storage;
++    layouts::Definition layout{};constexpr std::string_view package="raid_envy_v310";
++    std::copy(package.begin(),package.end(),layout.name.begin());layout.nameLength=static_cast<std::uint8_t>(package.size());
++    layout.tag=eater::kScenario;layout.bubbleCount=8;
++    wire::Snapshot snapshot{};snapshot.lifetime=3;snapshot.hasRegion=true;snapshot.phaseOneOnly=false;
++    check(roster::admit(layout,storage,snapshot.roster) && snapshot.roster.groupCount==17,
++        "Eater supplemental roster admits all 17 client groups");
++    check(eater::kTraversalDoors.size()==2
++        && eater::traversal_door({0x5654D7FDU,0x80C43A65U,23,0})==&eater::kTraversalDoors[0]
++        && eater::traversal_door({0x5654D7FDU,0x80C43A68U,23,1})==&eater::kTraversalDoors[1]
++        && eater::traversal_door({0xA9E6185FU,0x80B49E83U,23,1})==nullptr,
++        "Eater traversal doors are exact and do not include the outer entrance door");
++    for(const auto& door:eater::kTraversalDoors) {
++        const auto* device=eater::find(door.device.registry,door.device.type,door.device.slot);
++        const auto* monitor=eater::find(door.monitor.registry,door.monitor.type,door.monitor.slot);
++        const auto volume=std::find_if(std::begin(eater::kVolumes),std::end(eater::kVolumes),
++            [&](const auto& candidate) {return candidate.asset==door.volume;});
++        check(device && device->asset.definition==door.device.definition
++            && monitor && monitor->asset.definition==door.monitor.definition,
++            "Eater traversal door and monitor identities match the recovered catalog");
++        check(volume!=std::end(eater::kVolumes),
++            "Eater traversal volume identity matches the recovered catalog");
++    }
++    std::array<std::byte,65536> packet{};std::size_t written{};
++    const auto lifetimeOrdinal=[&](std::uint32_t key,std::uint16_t slot) {
++        bits::Writer body(packet);
++        check(wire::write_auth_body(body,snapshot,key,17,slot,false)
++            && body.bit_count()==520,"lifetime body writes its exact native width");
++        bits::Reader fields(packet);std::uint64_t ordinal{};
++        check(fields.skip(72) && fields.read(32,ordinal),"lifetime authority+C ordinal decodes");
++        return static_cast<std::uint32_t>(ordinal-0x80000000ULL);
++    };
++    // Before exact Eater admission, the legacy generic lifetime fallback resolves region zero.
++    snapshot.lifetimeScenarioOrdinal=2;
++    check(lifetimeOrdinal(0x24C67333U,3)==0,
++        "unselected Eater-shaped lifetime does not consume scoped scenario state");
++    snapshot.hasSpawnOverride=true;snapshot.spawnSliceSet=16;snapshot.spawnSetHash=0x8BA80878U;
++    std::array<std::byte,65> genericBody{},eaterBody{};
++    {
++        bits::Writer before(genericBody);
++        check(wire::write_auth_body(before,snapshot,0x24C67333U,17,3,false),
++            "generic Eater-shaped lifetime fixture writes");
++    }
++    snapshot.eaterOfWorldsLifetime=true;
++    {
++        bits::Writer after(eaterBody);
++        check(wire::write_auth_body(after,snapshot,0x24C67333U,17,3,false),
++            "selected Eater lifetime fixture writes");
++        bits::Reader before(genericBody),afterReader(eaterBody);
++        for(std::size_t bit=0;bit<520;++bit) {
++            std::uint64_t oldBit{},newBit{};
++            check(before.read(1,oldBit) && afterReader.read(1,newBit),
++                "Eater lifetime fixture comparison covers all bits");
++            if(bit<72 || bit>=104) check(oldBit==newBit,
++                "Eater ordinal fix preserves lifecycle, switches and spawn fields");
++        }
++    }
++    for(std::int32_t region=0;region<=56;region+=8) {
++        const auto projected=roster::lifetime_scenario(region);
++        check(projected && *projected==static_cast<std::uint32_t>(region/8),
++            "every authored Eater packed region projects to its bubble ordinal");
++        snapshot.lifetimeScenarioOrdinal=projected;
++        check(lifetimeOrdinal(0x24C67333U,3)==static_cast<std::uint32_t>(region/8),
++            "selected Eater lifetime publishes the current bubble before or after arrival");
++    }
++    for(std::int32_t region=0;region<=63;++region) {
++        check(static_cast<bool>(roster::lifetime_scenario(region))==(region%8==0),
++            "Eater lifetime accepts only the eight aligned packed regions");
++    }
++    for(const auto invalid:{-1,std::numeric_limits<std::int32_t>::min(),
++            std::numeric_limits<std::int32_t>::max(),64,65})
++        check(!roster::lifetime_scenario(invalid),"Eater lifetime rejects out-of-range regions");
++    snapshot.lifetimeScenarioOrdinal.reset();
++    bits::Writer missing(packet);
++    check(!wire::write_auth_body(missing,snapshot,0x24C67333U,17,3,false),
++        "selected Eater lifetime rejects an absent scenario ordinal");
++    for(const std::uint32_t invalid:{8U,63U,64U}) {
++        snapshot.lifetimeScenarioOrdinal=invalid;
++        bits::Writer oversized(packet);
++        check(!wire::write_auth_body(oversized,snapshot,0x24C67333U,17,3,false),
++            "selected Eater lifetime rejects an out-of-range scenario ordinal");
++    }
++    snapshot.lifetimeScenarioOrdinal=7;
++    check(lifetimeOrdinal(0x24C67332U,3)==0 && lifetimeOrdinal(0x24C67333U,2)==0,
++        "Eater lifetime projection rejects foreign keys and slots");
++    check(lifetimeOrdinal(0x4786C0E0U,3)==7,
++        "existing admitted shared lifetime still consumes its scenario ordinal");
++    snapshot.lifetimeScenarioOrdinal=2;
++    snapshot.region=16;
++    check(wire::encode_sensor_auth_update(snapshot,packet,written) && written,
++        "pre-arrival Eater packet encodes with lifetime while its mission frame is disabled");
++    eater::Frame frame{};frame.enabled=frame.checked=true;frame.spawnGeneration=7;
++    for(auto& state:frame.native) {
++        state.generation=7;state.position=1.F;
++        state.managed=state.desired=state.prepared=state.active=state.acknowledged=true;
++    }
++    for(const int region:{16,56,48}) {
++        frame.region=region;snapshot.region=region;snapshot.eater_of_worlds=frame;
++        snapshot.lifetimeScenarioOrdinal=roster::lifetime_scenario(region);
++        check(wire::encode_sensor_auth_update(snapshot,packet,written) && written,
++            "enabled Eater packet encodes across entrance, reactor and Argos regions");
++        std::vector<std::byte> tooSmall(written-1,std::byte{0xA5});std::size_t rejected=99;
++        check(!wire::encode_sensor_auth_update(snapshot,tooSmall,rejected) && rejected==0
++            && tooSmall.front()==std::byte{0xA5},"Eater outer packet rejects short storage before writes");
++    }
++    for(const auto& asset:eater::kAssets) {
++        const auto width=wire::auth_body_bits(snapshot,asset.asset.registry,
++            static_cast<std::uint8_t>(asset.asset.type),asset.asset.slot,false);
++        if(!width) continue;
++        bits::Writer body(packet);
++        check(wire::write_auth_body(body,snapshot,asset.asset.registry,
++            static_cast<std::uint8_t>(asset.asset.type),asset.asset.slot,false)
++            && body.bit_count()==width,"Eater offered body width matches the shared outer writer");
++    }
++}
+ #endif
+ 
+ int main() {
+ #ifdef OMEGA_PORT_LOCAL
+     check_gameplay_clock_transport();
++    check_eater_outer_wire();
+ #endif
+     // A Tower Watch publication must retain its original single dialogue record
+     // and target-free directive even if unrelated Omega fields are populated.
+--- a/Dawn/unit/player_position_tests.cpp
++++ b/Dawn/unit/player_position_tests.cpp
+@@ -17,7 +17,7 @@
+ std::uint32_t controlled=0x08FAA000U;
+ void* fallback{};
+ unsigned identitySamples{},identityInvalidations{};bool identityPresent{};
+-unsigned publications{},trialPublications{},deepPublications{},hijackedPublications{},gardenPublications{};t::Vector trialPosition{},deepPosition{},hijackedPosition{},gardenPosition{};
++unsigned publications{},trialPublications{},deepPublications{},hijackedPublications{},gardenPublications{},eaterPublications{};t::Vector trialPosition{},deepPosition{},hijackedPosition{},gardenPosition{},eaterPosition{};
+ unsigned physicsPublications{};void* physicsComponent{};std::uint32_t physicsPlayer{UINT32_MAX};
+ void physics_observer(void* component,std::uint32_t player,std::uint64_t at) noexcept {
+     CHECK(component);CHECK(player==controlled);CHECK(at>0);
+@@ -41,6 +41,7 @@
+ namespace dawn::client::hooks::bootflow::public_event_participant_observer {
+ void poll_local_identity() noexcept { ++identitySamples;identityPresent=true; }
+ }
++namespace dawn::client::activity::eater_player_health { void poll() noexcept {} }
+ namespace dawn::server::runtime::activity::public_event::participant_bridge {
+ void invalidate_local_identity() noexcept { ++identityInvalidations;identityPresent=false; }
+ }
+@@ -50,6 +51,7 @@
+ namespace deep_storage { void observe_position(float x,float y,float z) noexcept {++deepPublications;deepPosition={x,y,z};} }
+ namespace hijacked { void observe_position(float x,float y,float z) noexcept {++hijackedPublications;hijackedPosition={x,y,z};} }
+ namespace strike_bond { void observe_position(float x,float y,float z) noexcept {++gardenPublications;gardenPosition={x,y,z};} }
++namespace eater_of_worlds { void observe_player(std::uint32_t) noexcept {} void observe_position(float x,float y,float z) noexcept {++eaterPublications;eaterPosition={x,y,z};} }
+ namespace beyond_infinity { void observe_position(float,float,float) noexcept {} }
+ namespace deadly_trial { void observe_position(float x,float y,float z) noexcept { ++trialPublications;trialPosition={x,y,z}; } }
+ namespace gateway { void observe_position(float x,float y,float z) noexcept { ++publications;if(mission) { mission->position(1,{x,y,z}); } } }
+@@ -95,6 +97,7 @@
+     CHECK(deepPublications==publications);CHECK(deepPosition==b.position);
+     CHECK(hijackedPublications==publications);CHECK(hijackedPosition==b.position);
+     CHECK(gardenPublications==publications);CHECK(gardenPosition==b.position);
++    CHECK(eaterPublications==publications);CHECK(eaterPosition==b.position);
+     CHECK(trialPublications==publications);CHECK(trialPosition==b.position);
+     CHECK(identitySamples==publications);
+     CHECK(physicsPublications==publications);CHECK(physicsComponent==&b);CHECK(physicsPlayer==controlled);

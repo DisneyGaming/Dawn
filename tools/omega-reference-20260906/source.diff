@@ -32,7 +32,7 @@
 @@ -13,7 +13,4 @@
 
  
- namespace sunrise::client::content::scenarios {
+ namespace dawn::client::content::scenarios {
 -
 -/** Scenario tag for mission_towerfall, used to keep extraction diagnostics narrowly scoped. */
 -inline constexpr std::uint32_t kTowerfallScenarioTag = 0x80B500BCU;
@@ -120,7 +120,7 @@
  #include "internal.h"
 -#include "towerfall_cue_source_probe.h"
  
- namespace sunrise::client::content::scenarios {
+ namespace dawn::client::content::scenarios {
 @@ -98,9 +97,4 @@
 
          rostered += row.rosterGroupCount != 0 ? 1U : 0U;
@@ -1648,7 +1648,7 @@
 +#include "omega_arc_charge_receipts.h"
 +#include "omega_rescue_scene_receipts.h"
  
- namespace sunrise::client::hooks::bootflow {
+ namespace dawn::client::hooks::bootflow {
 @@ -219,8 +222,8 @@
 
      const bool omegaIkoraOriginInstalled = ikoraProbe && install_omega_ikora_origin_probe();
@@ -1821,7 +1821,7 @@
  #pragma once
 -#include "omega_boss_eye_diagnostics.h"
 -
--namespace sunrise::client::hooks::bootflow::omega_boss_vfx_start {
+-namespace dawn::client::hooks::bootflow::omega_boss_vfx_start {
 -namespace graph=omega_boss_graph;
 -namespace eye=omega_boss_eye_diagnostics;
 -inline constexpr std::uint32_t kGlow=0xCE0BA42D;
@@ -1867,7 +1867,7 @@
 + * the red look; this code only enables the authored scalar through the original
 + * setter so the original dirty notification reaches every bound consumer.
 + *
-+ * Native evidence (D:\Sunrise-work\decomp, runtime image base 7FF68E9A0000):
++ * Native evidence (D:\Dawn-work\decomp, runtime image base 7FF68E9A0000):
 + *  - A0FE60(component, const uint32* name, float value): reads component+0 as
 + *    the definition handle and component+8 as the definition body offset,
 + *    binary-searches body+0x320 (count) / body+0x328 (self-relative array,
@@ -1892,7 +1892,7 @@
 + * Everything here is pure so the unit fixture can exercise it against the real
 + * asset bytes and the unchanged native A0FE60/A10180 instructions.
 + */
-+namespace sunrise::client::hooks::bootflow::omega_boss_vfx {
++namespace dawn::client::hooks::bootflow::omega_boss_vfx {
 +
 +inline constexpr std::uint32_t kSource=0x80F6690AU;
 +inline constexpr std::uint32_t kSourceBytes=0x44C0U;
@@ -2293,7 +2293,7 @@
 +};
 +static_assert(static_cast<unsigned>(Reject::uncertain)<32,"reject bitmask");
 +
-+} // namespace sunrise::client::hooks::bootflow::omega_boss_vfx
++} // namespace dawn::client::hooks::bootflow::omega_boss_vfx
 --- local/client\hooks\bootflow\omega_boss_vfx_start.inl
 
 +++ reference/client\hooks\bootflow\omega_boss_vfx_start.inl
@@ -5275,7 +5275,7 @@
      }
 -    std::array<wchar_t, 8> baselineEnvironment{};
 -    const DWORD baselineLength = GetEnvironmentVariableW(
--        L"SUNRISE_FOREST_BASELINE", baselineEnvironment.data(),
+-        L"DAWN_FOREST_BASELINE", baselineEnvironment.data(),
 -        static_cast<DWORD>(baselineEnvironment.size()));
 -    g_forestBaselineEnabled.store(baselineLength == 1U && baselineEnvironment[0] == L'1',
 -                                 std::memory_order_release);
@@ -5780,7 +5780,7 @@
  #include "internal.h"
 -#include "omega_directive_native.h"
  
- namespace sunrise::client::hooks::bootflow {
+ namespace dawn::client::hooks::bootflow {
 @@ -71,24 +69,8 @@
 
  /** Omega's first authored type-69 directive output. */
@@ -6390,10 +6390,10 @@
 +#include "omega_enemy_native_reference.h"
  #include "../../../core/logging/log.h"
  
--namespace sunrise::client::hooks::bootflow::forest_enemy {
+-namespace dawn::client::hooks::bootflow::forest_enemy {
 -namespace runtime_detail {
 -struct Worker {
-+namespace sunrise::client::hooks::bootflow::omega_enemy_forest {
++namespace dawn::client::hooks::bootflow::omega_enemy_forest {
 +namespace receipts_detail {
 +constexpr std::uint64_t kIntervalMs=500;
 +constexpr std::size_t kReadBudget=128*1024;
@@ -6997,8 +6997,8 @@
      }
      ReleaseSRWLockExclusive(&lock);
  }
--} // namespace sunrise::client::hooks::bootflow::forest_enemy
-+} // namespace sunrise::client::hooks::bootflow::omega_enemy_forest
+-} // namespace dawn::client::hooks::bootflow::forest_enemy
++} // namespace dawn::client::hooks::bootflow::omega_enemy_forest
 --- local/client\hooks\bootflow\omega_enemy_forest_receipts.h
 
 +++ reference/client\hooks\bootflow\omega_enemy_forest_receipts.h
@@ -7014,12 +7014,12 @@
 
  #include <span>
  
--namespace sunrise::client::hooks::bootflow::forest_enemy {
+-namespace dawn::client::hooks::bootflow::forest_enemy {
 -inline constexpr std::size_t kCopyBudget = 128 * 1024;
 -inline constexpr std::size_t kMaxEntries = 256;
 -inline constexpr unsigned kMaxLines = 1024, kMaxGetters = 4;
 -inline constexpr std::uint64_t kPollMs = 500;
-+namespace sunrise::client::hooks::bootflow::omega_enemy_forest {
++namespace dawn::client::hooks::bootflow::omega_enemy_forest {
 +inline constexpr std::size_t kWorkerBytes=0xDC4;
 +inline constexpr std::size_t kMaximumEntries=256,kMaximumPairs=128;
 +// Exact Forest-D palettes contain at most 504 authored rows; leave eight spare.
@@ -7149,8 +7149,8 @@
 -    output.status = 3;
 -    return true;
  }
--} // namespace sunrise::client::hooks::bootflow::forest_enemy
-+} // namespace sunrise::client::hooks::bootflow::omega_enemy_forest
+-} // namespace dawn::client::hooks::bootflow::forest_enemy
++} // namespace dawn::client::hooks::bootflow::omega_enemy_forest
 --- local/client\hooks\bootflow\omega_forest_recipe.h
 
 +++ reference/client\hooks\bootflow\omega_forest_recipe.h
@@ -7161,7 +7161,7 @@
  #include <span>
 +#include <string_view>
  
- namespace sunrise::client::hooks::bootflow::omega_forest {
+ namespace dawn::client::hooks::bootflow::omega_forest {
  
 -// worker+4 stores the definition reference's class, not resolved component kind 80805017.
 -inline constexpr std::uint32_t kDefinitionClass = 0x80804FECU;
@@ -7315,7 +7315,7 @@
 -};
 +}
  
- } // namespace sunrise::client::hooks::bootflow::omega_forest
+ } // namespace dawn::client::hooks::bootflow::omega_forest
 --- local/client\hooks\bootflow\omega_ikora_origin_probe.cpp
 
 +++ reference/client\hooks\bootflow\omega_ikora_origin_probe.cpp
@@ -7326,7 +7326,7 @@
  #include "internal.h"
 +#include "../../../state/activity/omega_presentation.h"
  
- namespace sunrise::client::hooks::bootflow {
+ namespace dawn::client::hooks::bootflow {
 @@ -34,4 +35,8 @@
 
  constexpr std::uintptr_t kComponentStartRva = 0xB31910U;
@@ -7700,7 +7700,7 @@
 -           && red_war_opening_is_forced();
 -}
 -
- /** Stops Sunrise-owned prologue work while retaining native forwarding. */
+ /** Stops Dawn-owned prologue work while retaining native forwarding. */
  void quiesce_prologue_filler_ready() noexcept {
 --- local/client\hooks\bootflow\spawn_hold_policy.h
 
@@ -7838,7 +7838,7 @@
  #include "internal.h"
 +#include "omega_activity_handoff.inl"
  
- namespace sunrise::client::hooks::bootflow {
+ namespace dawn::client::hooks::bootflow {
  namespace {
 +
 +/**
@@ -7933,7 +7933,7 @@
  #include "graphics_hook_lifecycle.h"
 -#include "omega_frame_timing.h"
  
- namespace sunrise::client::hooks::graphics::replacement {
+ namespace dawn::client::hooks::graphics::replacement {
 @@ -44,6 +43,4 @@
 
                                                              UINT syncInterval,
@@ -8017,7 +8017,7 @@
 
 @@ -7,6 +7,6 @@
 
- namespace sunrise::client::hooks::graphics::renderer {
+ namespace dawn::client::hooks::graphics::renderer {
  
 -/** Draws the UI frame, if any; returns whether this is the active selected chain. */
 -[[nodiscard]] bool present(IDXGISwapChain* swapChain) noexcept;
@@ -8050,7 +8050,7 @@
 -    return valid;
 -}
 -
- } // namespace sunrise::client::hooks::retail_log
+ } // namespace dawn::client::hooks::retail_log
 --- local/client\hooks\retail_log\retail_log_enqueue_observer.h
 
 +++ reference/client\hooks\retail_log\retail_log_enqueue_observer.h
@@ -8077,7 +8077,7 @@
 -    std::uint64_t& hostSessionId,
 -    std::uint32_t& generation) noexcept;
 -
- } // namespace sunrise::client::hooks::retail_log
+ } // namespace dawn::client::hooks::retail_log
 --- local/client\hooks\teleport\runtime.h
 
 +++ reference/client\hooks\teleport\runtime.h
@@ -8155,7 +8155,7 @@
 +std::atomic_uint64_t g_crownRouteNoPlayerRun{};
 +}
  
- namespace sunrise::client::player::position {
+ namespace dawn::client::player::position {
 @@ -27,4 +38,82 @@
 
  std::atomic<void*> g_component{nullptr};
@@ -8462,7 +8462,7 @@
  #include "sense_update.h"
 -#include "native_sense.h"
  
- namespace sunrise::middleware::bap::activity_message::sense_update {
+ namespace dawn::middleware::bap::activity_message::sense_update {
 @@ -34,18 +34,11 @@
 
  constexpr std::size_t kMaximumBubbleKeys = kBubbleMaskWords * 32;
@@ -8488,7 +8488,7 @@
 -constexpr std::size_t kForestRevisionBit = kForestGeneratorBodyBits - 32;
 +constexpr std::uint8_t kSlotTypeMonitor = 70;
  
- /** Preserves Sunrise's established diagnostic hash convention (not standard FNV-1a). */
+ /** Preserves Dawn's established diagnostic hash convention (not standard FNV-1a). */
 @@ -198,164 +191,120 @@
 
  }
@@ -8917,7 +8917,7 @@
 +#include "../../../state/activity/omega_arc_charge_authority.h"
 +#include "../../../state/activity/omega_crown_eye_status.h"
  
- namespace sunrise::middleware::bap::activity_message::sensor_auth_update {
+ namespace dawn::middleware::bap::activity_message::sensor_auth_update {
 @@ -18,13 +24,200 @@
 
  
@@ -9941,7 +9941,7 @@
 +#include "../../../state/activity/omega_lair_full_roster_catalog.h"
 +#include "../../../state/activity/omega_ending_rules.h"
  
- namespace sunrise::middleware::bap::activity_message::sensor_auth_update {
+ namespace dawn::middleware::bap::activity_message::sensor_auth_update {
 @@ -12,5 +13,11 @@
 
  
@@ -10835,7 +10835,7 @@
  #include "activity_patch_epoch_parser.h"
 -#include "scene_sense.h"
  
- namespace sunrise::middleware::bap::activity_message::sense_update {
+ namespace dawn::middleware::bap::activity_message::sense_update {
 @@ -13,12 +12,10 @@
 
  /** The client reports sensor sense changes. It is the client's answer to the roster update. */
@@ -10862,7 +10862,7 @@
 -    std::uint64_t bodyFourth{};
 +    /** Remaining MSB-first chunks; the last partial chunk is right-aligned like the first three. */
 +    std::array<std::uint64_t, kCapturedBodyBitCapacity / 64 - 3> bodyTail{};
-     /** Sunrise's legacy FNV-like diagnostic hash over the meaningful width and body bits. */
+     /** Dawn's legacy FNV-like diagnostic hash over the meaningful width and body bits. */
      std::uint64_t bodyHash{};
      std::uint32_t bodyBits{};
 +    /** Raw native sensor revision, outside the reflected root delta. */
@@ -10919,7 +10919,7 @@
 +#include "../../../state/activity/omega_rescue_scene_authority.h"
 +#include "../../../state/activity/omega_music_authority.h"
  
- namespace sunrise::middleware::bap::activity_message::sensor_auth_update {
+ namespace dawn::middleware::bap::activity_message::sensor_auth_update {
 +
 +/** The return-to-Lighthouse pool needs defaults only while the ending is offered. */
 +[[nodiscard]] constexpr bool ending_runtime_seed_required(bool bookendState, bool arrived,
@@ -11273,7 +11273,7 @@
  #include "../diagnostics/omega_trace.h"
 @@ -35,4 +34,7 @@
 
- namespace sunrise::server::bap::encrypted::activity_message {
+ namespace dawn::server::bap::encrypted::activity_message {
  namespace {
 +
 +using omega_roster_readiness::exact_body;
@@ -12594,7 +12594,7 @@
 -#include "omega_route_roster.h"
 +#include "omega_lair_roster.h"
  
- namespace sunrise::server::bap::encrypted::push::activity {
+ namespace dawn::server::bap::encrypted::push::activity {
 @@ -42,5 +32,4 @@
 
  namespace layouts = state::build_data::scenarios;
@@ -14188,7 +14188,7 @@
 -inline constexpr std::uint32_t kCacheFormatVersion = 51;
 +inline constexpr std::uint32_t kCacheFormatVersion = 48;
  
- } // namespace sunrise::state::build_data::cache::records
+ } // namespace dawn::state::build_data::cache::records
 --- local/state\build_data\runtime\build_data_catalog_runtime.cpp
 
 +++ reference/state\build_data\runtime\build_data_catalog_runtime.cpp
@@ -14294,7 +14294,7 @@
 -
 -#include "../../../core/logging/log.h"
 -
- namespace sunrise::state::build_data {
+ namespace dawn::state::build_data {
 -namespace {
 -
 -enum class ForestRosterResult : std::uint8_t { ready = 1, missing, full };
@@ -14361,7 +14361,7 @@
 -    trace_forest_roster(ForestRosterResult::ready, resolved, definition);
 -}
 -
- } // namespace sunrise::state::build_data
+ } // namespace dawn::state::build_data
 --- local/state\build_data\scenarios\definition.h
 
 +++ reference/state\build_data\scenarios\definition.h
@@ -14535,7 +14535,7 @@
 -#include "descriptor_catalog.h"
 -#include "cue_graph_manifest.h"
  
- namespace sunrise::state::build_data::scenarios {
+ namespace dawn::state::build_data::scenarios {
 @@ -42,17 +40,4 @@
 
  [[nodiscard]] bool group(std::size_t index, RosterGroup& group) noexcept;

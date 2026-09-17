@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::hooks::queuez {
+namespace dawn::client::hooks::queuez {
 
 /**
  * Attaches the family-zero source-list seed and the account-key capture it needs.
@@ -26,4 +26,4 @@ void uninstall_null_payload_guard() noexcept;
 /** @return True while the null-payload guard is attached. */
 [[nodiscard]] bool null_payload_guard_installed() noexcept;
 
-} // namespace sunrise::client::hooks::queuez
+} // namespace dawn::client::hooks::queuez

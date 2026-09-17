@@ -3,7 +3,7 @@
 #include <cstring>
 #include <limits>
 
-namespace sunrise::middleware::content::packages::tables {
+namespace dawn::middleware::content::packages::tables {
 namespace {
 
 /** The globals container names its children after its 8-byte prefix and first field. */
@@ -195,4 +195,4 @@ bool visit_index_rows(std::span<const std::byte> blob,
     return true;
 }
 
-} // namespace sunrise::middleware::content::packages::tables
+} // namespace dawn::middleware::content::packages::tables

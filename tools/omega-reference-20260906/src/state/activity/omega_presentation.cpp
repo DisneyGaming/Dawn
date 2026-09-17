@@ -11,7 +11,7 @@
 #include "runtime.h"
 #include "../../core/logging/log.h"
 
-namespace sunrise::state::activity::omega_presentation {
+namespace dawn::state::activity::omega_presentation {
 namespace {
 SRWLOCK g_lock = SRWLOCK_INIT;
 Run g_run{};
@@ -291,4 +291,4 @@ void reset() noexcept {
     ReleaseSRWLockExclusive(&g_lock);
 }
 
-} // namespace sunrise::state::activity::omega_presentation
+} // namespace dawn::state::activity::omega_presentation

@@ -13,7 +13,7 @@
 #include "cache/internal.h"
 #include "scanner/internal.h"
 
-namespace sunrise::state::content_manifest {
+namespace dawn::state::content_manifest {
 namespace {
 
 /** Generated package manifests share the owned cache artifact directory. */
@@ -54,7 +54,7 @@ void clear_scratch() noexcept {
 
 /**
  * Builds the two generated-cache paths under the module-relative artifact root.
- * @param module Loaded Sunrise module.
+ * @param module Loaded Dawn module.
  * @param directory Receives the null-terminated cache directory.
  * @param path Receives the null-terminated final cache file path.
  * @return True when both complete paths fit fixed storage.
@@ -176,4 +176,4 @@ bool visit_snapshot(SnapshotVisitor visitor, void* context) noexcept {
     return result;
 }
 
-} // namespace sunrise::state::content_manifest
+} // namespace dawn::state::content_manifest

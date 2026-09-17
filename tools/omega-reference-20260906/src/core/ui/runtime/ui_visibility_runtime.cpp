@@ -2,7 +2,7 @@
 
 #include <Windows.h>
 
-namespace sunrise::core::ui::runtime {
+namespace dawn::core::ui::runtime {
 namespace {
 
 /** Usable Windows virtual-key codes start at 1. */
@@ -63,4 +63,4 @@ bool toggle_for_key(UINT virtualKey) noexcept {
     return handled;
 }
 
-} // namespace sunrise::core::ui::runtime
+} // namespace dawn::core::ui::runtime

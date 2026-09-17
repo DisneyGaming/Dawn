@@ -5,7 +5,7 @@
 
 #include "scanner/package/content_manifest_package_name.h"
 
-namespace sunrise::state::content_manifest {
+namespace dawn::state::content_manifest {
 namespace {
 
 /** @param first Package row. @param second Package row. @return Lexical name ordering. */
@@ -50,4 +50,4 @@ bool valid(std::span<const Row> rows) noexcept {
     return true;
 }
 
-} // namespace sunrise::state::content_manifest
+} // namespace dawn::state::content_manifest

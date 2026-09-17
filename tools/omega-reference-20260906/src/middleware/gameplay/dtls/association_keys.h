@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <span>
 
-namespace sunrise::middleware::gameplay::dtls {
+namespace dawn::middleware::gameplay::dtls {
 
 /** The security key the derivation mixes in. It is the join key the descriptor advertises. */
 inline constexpr std::size_t kSecurityKeySize = 16;
@@ -34,4 +34,4 @@ struct Keys {
                           std::span<const std::byte> securityKey,
                           Keys& output) noexcept;
 
-} // namespace sunrise::middleware::gameplay::dtls
+} // namespace dawn::middleware::gameplay::dtls

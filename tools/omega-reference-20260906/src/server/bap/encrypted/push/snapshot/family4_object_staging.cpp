@@ -7,7 +7,7 @@
 #include "../../../../../state/build_data/runtime.h"
 #include "internal.h"
 
-namespace sunrise::server::bap::encrypted::push::snapshot {
+namespace dawn::server::bap::encrypted::push::snapshot {
 
 namespace family4_datagen = middleware::datagen::family4;
 
@@ -173,4 +173,4 @@ bool append_profile_items(Scratch& scratch,
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted::push::snapshot
+} // namespace dawn::server::bap::encrypted::push::snapshot

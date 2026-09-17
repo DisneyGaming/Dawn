@@ -12,7 +12,7 @@
 #include "gameplay_log.h"
 #include "group/group_host.h"
 
-namespace sunrise::server::gameplay {
+namespace dawn::server::gameplay {
 
 namespace {
 
@@ -328,4 +328,4 @@ AdvertisementState advertisement_state(state::activity::ActivityInstanceKey sour
     }
 }
 
-} // namespace sunrise::server::gameplay
+} // namespace dawn::server::gameplay

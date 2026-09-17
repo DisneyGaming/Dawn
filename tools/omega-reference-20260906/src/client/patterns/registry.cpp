@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-namespace sunrise::client::patterns {
+namespace dawn::client::patterns {
 namespace {
 
 /** Returned by next_candidate when a range holds no further anchor byte. */
@@ -167,4 +167,4 @@ std::size_t collect_matches(std::span<const ImageRange> image,
     return count;
 }
 
-} // namespace sunrise::client::patterns
+} // namespace dawn::client::patterns

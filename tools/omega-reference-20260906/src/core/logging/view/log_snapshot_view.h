@@ -9,7 +9,7 @@
 
 #include "../snapshot/snapshot.h"
 
-namespace sunrise::core::log::view {
+namespace dawn::core::log::view {
 
 /** 128 bytes cap the case-insensitive text query. */
 inline constexpr std::size_t kTextFilterCapacity = 128;
@@ -62,4 +62,4 @@ private:
  */
 [[nodiscard]] Result select(const snapshot::Snapshot& source, const Filter& filter) noexcept;
 
-} // namespace sunrise::core::log::view
+} // namespace dawn::core::log::view

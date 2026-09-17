@@ -11,7 +11,7 @@
 #include "../../../state/activity/omega_first_lair_runtime.h"
 #include "../../../state/activity/omega_presentation.h"
 
-namespace sunrise::client::hooks::bootflow::omega_boss_health {
+namespace dawn::client::hooks::bootflow::omega_boss_health {
 namespace {
 using Fraction = float(__fastcall*)(void*,std::int32_t) noexcept;
 namespace lair=state::activity::omega_first_lair;
@@ -288,4 +288,4 @@ void reset() noexcept {
     ReleaseSRWLockExclusive(&g_rejectLock);
 }
 
-} // namespace sunrise::client::hooks::bootflow::omega_boss_health
+} // namespace dawn::client::hooks::bootflow::omega_boss_health

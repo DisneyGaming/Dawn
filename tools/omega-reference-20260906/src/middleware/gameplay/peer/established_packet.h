@@ -9,7 +9,7 @@
 #include "../../encoding/bit_reader.h"
 #include "../../encoding/bit_writer.h"
 
-namespace sunrise::middleware::gameplay::peer {
+namespace dawn::middleware::gameplay::peer {
 
 /** The acknowledgement history covers the eight newest packets. */
 inline constexpr std::size_t kAckHistory = 8;
@@ -145,4 +145,4 @@ struct EstablishedPacket {
  */
 [[nodiscard]] bool write_absent_filler(encoding::bits::Writer& writer) noexcept;
 
-} // namespace sunrise::middleware::gameplay::peer
+} // namespace dawn::middleware::gameplay::peer

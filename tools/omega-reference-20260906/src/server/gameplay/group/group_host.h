@@ -8,7 +8,7 @@
 #include "../../../state/activity/lifecycle_generation.h"
 #include "../../../state/gameplay/definition.h"
 
-namespace sunrise::server::gameplay::group {
+namespace dawn::server::gameplay::group {
 
 /**
  * Consumes one group-session message.
@@ -134,4 +134,4 @@ void release_endpoint(const state::gameplay::Endpoint& endpoint) noexcept;
 /** Clears every group-session record. */
 void reset() noexcept;
 
-} // namespace sunrise::server::gameplay::group
+} // namespace dawn::server::gameplay::group

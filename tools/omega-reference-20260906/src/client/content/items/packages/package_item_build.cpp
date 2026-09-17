@@ -25,7 +25,7 @@
 #include "build.h"
 #include "internal.h"
 
-namespace sunrise::client::content::items::packages {
+namespace dawn::client::content::items::packages {
 namespace {
 
 /** @return True when every domain owned by the package pass is published. */
@@ -222,4 +222,4 @@ bool build() noexcept {
     return complete;
 }
 
-} // namespace sunrise::client::content::items::packages
+} // namespace dawn::client::content::items::packages

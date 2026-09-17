@@ -4,7 +4,7 @@
 
 #include "../platform.h"
 
-namespace sunrise::client::hooks::network::coordinator {
+namespace dawn::client::hooks::network::coordinator {
 
 /** Picks which consumer pointer is copied for one replacement call. */
 enum class ConsumerKind {
@@ -16,8 +16,8 @@ enum class ConsumerKind {
 /** State copied at ingress and kept until egress. */
 struct CallLease final {
     void* original{};
-    sunrise::client::network::HttpConsumer httpConsumer{};
-    sunrise::client::network::BapConsumer bapConsumer{};
+    dawn::client::network::HttpConsumer httpConsumer{};
+    dawn::client::network::BapConsumer bapConsumer{};
     bool accepting{};
 };
 
@@ -51,7 +51,7 @@ extern const CallEgress g_callEgress;
 /** @return True while the current thread owns a base-network call lease. */
 [[nodiscard]] bool current_thread_active() noexcept;
 
-#if defined(SUNRISE_BAP_HOOK_TEST)
+#if defined(DAWN_BAP_HOOK_TEST)
 namespace testing {
 
 /** Arms a short pause before the next base-network call is counted in. */
@@ -66,4 +66,4 @@ void release_ingress_pause() noexcept;
 } // namespace testing
 #endif
 
-} // namespace sunrise::client::hooks::network::coordinator
+} // namespace dawn::client::hooks::network::coordinator

@@ -8,7 +8,7 @@
 #include "../inventory/layout.h"
 #include "../progression/layout.h"
 
-namespace sunrise::middleware::datagen::family4::character::layout {
+namespace dawn::middleware::datagen::family4::character::layout {
 
 /** The character inventory reserves 350 fixed native rows. */
 inline constexpr std::size_t kInventoryCapacity = 350;
@@ -199,4 +199,4 @@ static_assert(offsetof(InventoryChangeList, records) == 2 * sizeof(std::uint16_t
 static_assert(sizeof(Object) == kObjectSize);
 static_assert(std::is_trivially_copyable_v<Object>);
 
-} // namespace sunrise::middleware::datagen::family4::character::layout
+} // namespace dawn::middleware::datagen::family4::character::layout

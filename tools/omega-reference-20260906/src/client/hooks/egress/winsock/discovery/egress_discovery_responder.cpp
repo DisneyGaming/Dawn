@@ -6,7 +6,7 @@
 
 #include "../../../../../core/settings/settings.h"
 
-namespace sunrise::client::hooks::egress::winsock::discovery {
+namespace dawn::client::hooks::egress::winsock::discovery {
 namespace {
 
 /** Demonware discovery uses these two fixed destination ports. */
@@ -229,4 +229,4 @@ Result handle(SOCKET socket,
     return Result{true, requestResult};
 }
 
-} // namespace sunrise::client::hooks::egress::winsock::discovery
+} // namespace dawn::client::hooks::egress::winsock::discovery

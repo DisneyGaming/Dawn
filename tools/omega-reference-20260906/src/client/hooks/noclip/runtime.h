@@ -2,7 +2,7 @@
 
 #include <array>
 
-namespace sunrise::client::hooks::noclip {
+namespace dawn::client::hooks::noclip {
 
 /** Three lanes of a Havok vector. A write leaves the stored fourth lane alone. */
 using Vector = std::array<float, 3>;
@@ -32,4 +32,4 @@ void read_body_velocity(void* body, Vector& velocity) noexcept;
 /** Writes a live rigid body's linear velocity. @see read_body_position */
 void write_body_velocity(void* body, const Vector& velocity) noexcept;
 
-} // namespace sunrise::client::hooks::noclip
+} // namespace dawn::client::hooks::noclip

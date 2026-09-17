@@ -4,7 +4,7 @@
 
 #include "../encoding/byte_order.h"
 
-namespace sunrise::middleware::queuez {
+namespace dawn::middleware::queuez {
 namespace {
 
 /** Policy cap keeps one notification below the Client's whole-message failure range. */
@@ -166,4 +166,4 @@ bool encode_update(std::span<const Family> families,
     return true;
 }
 
-} // namespace sunrise::middleware::queuez
+} // namespace dawn::middleware::queuez

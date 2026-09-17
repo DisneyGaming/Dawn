@@ -2,7 +2,7 @@
 
 #include "../../encoding/byte_order.h"
 
-namespace sunrise::middleware::bap::activity_message::entity_slot_request {
+namespace dawn::middleware::bap::activity_message::entity_slot_request {
 namespace {
 
 /** The wire value is biased by the midpoint of the unsigned 32-bit range. */
@@ -26,4 +26,4 @@ bool parse_entity_slot_request(std::span<const std::byte> input, std::int32_t& v
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_message::entity_slot_request
+} // namespace dawn::middleware::bap::activity_message::entity_slot_request

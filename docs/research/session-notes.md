@@ -1,15 +1,15 @@
-# Sunrise — session handoff
+# Dawn — session handoff
 
 Context for continuing work. Written 2026-08-16.
 
 ## Current state: WORKING
 
-- Repo: `C:\Destiny 2 Development\Sunrise-src`
+- Repo: `C:\Destiny 2 Development\Dawn-src`
 - Branch: **`spawner`**, tracking **`reglitched/master`** (head `6aae441 Entity Spawner`)
 - **Entity spawning works.** Overlay (**Insert**) → **Spawn** module → pick entity → origin
   player/crosshair → amount → spawn.
-- Deployed DLL is `bin\x64\steam_api64.dll` (Sunrise is a `steam_api64` proxy; the real Steam DLL
-  is preserved at `.sunrise\original\steam_api64.dll` and must never be overwritten).
+- Deployed DLL is `bin\x64\steam_api64.dll` (Dawn is a `steam_api64` proxy; the real Steam DLL
+  is preserved at `.dawn\original\steam_api64.dll` and must never be overwritten).
 
 ### Goal now
 Spawned entities appear but **have no AI — they don't shoot, move, or react.**
@@ -17,16 +17,16 @@ Spawned entities appear but **have no AI — they don't shoot, move, or react.**
 ## Dev loop
 
 ```
-powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\sunrise-dev.ps1" -Config Release
+powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\dawn-dev.ps1" -Config Release
 ```
 
-Flags: `-BuildOnly` (compiles while game runs), `-Restore` (roll back DLL from `.sunrise\backup\`),
+Flags: `-BuildOnly` (compiles while game runs), `-Restore` (roll back DLL from `.dawn\backup\`),
 `-ClearCache` (force content re-extraction), `-ResetSettings`.
 
 Toolchain: VS Build Tools 2026 (v145) + Windows SDK 10.0.26100. Builds clean, ~1 min.
 
-Logging: `bin\x64\Sunrise\settings.json` → `core.logging` is set to `debug` on all five channels
-with `file_sink: true`. Log lands at `bin\x64\Sunrise\logs\sunrise.log`. **The game's own retail
+Logging: `bin\x64\Dawn\settings.json` → `core.logging` is set to `debug` on all five channels
+with `file_sink: true`. Log lands at `bin\x64\Dawn\logs\dawn.log`. **The game's own retail
 log is piped into it** (`ev=retail`) — that is the single most useful diagnostic available.
 
 ## The AI problem — what is already known
@@ -64,7 +64,7 @@ This is the crux and it was mapped in detail. Do not re-derive:
   Visual Studio, base address = the `base=` value from that dump's log line (was
   `0x7FF618070000`).
 - **x64dbg does not work**: attaching terminates the game instantly (anti-debug). In-process
-  instrumentation from inside Sunrise is undetected and is the reliable channel.
+  instrumentation from inside Dawn is undetected and is the reliable channel.
 
 ### Verified structures (module-relative offsets, base 0x7FF618070000)
 | Thing | Offset |
@@ -102,7 +102,7 @@ This is the crux and it was mapped in detail. Do not re-derive:
    "References to address" complete and is the highest-leverage unblock.
 
 ## Caveats
-- Re-running the official Sunrise installer overwrites the custom build (`.sunrise\install-state.json`
+- Re-running the official Dawn installer overwrites the custom build (`.dawn\install-state.json`
   still records release 0.2.1).
 - Branch `research-instrumentation` holds this session's exploratory probes (spawn tracer, entity
   table dumps, incident injector). Superseded, kept only for reference.

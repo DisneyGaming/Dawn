@@ -16,7 +16,7 @@ Latest user missed the shot. Previous run proved three frame-zero effects reache
 
 # Osiris rescue and first damage phase — 5 September 2026
 
-User authorized fixing the visible Osiris rescue and first charge/damage phase, preserving the documented reconstruction. No new agents. The original retail mission controller remains unrecovered; the external D:/Sunrise-port source is unavailable.
+User authorized fixing the visible Osiris rescue and first charge/damage phase, preserving the documented reconstruction. No new agents. The original retail mission controller remains unrecovered; the external D:/Dawn-port source is unavailable.
 
 ## Live failure captured
 
@@ -41,7 +41,7 @@ Read-only PID 44932 capture: `build/omega-full-20260905/rescue-live-44932-178865
 
 Candidate: `build/omega-full-20260905/candidate-20260905-200551`, build **C8ACB7BE**. Consult its manifest for installation state, hashes, and full test results.
 
-- Captured NPC/Scene/ring bodies are preserved in `Sunrise/unit/fixtures/omega_rescue`.
+- Captured NPC/Scene/ring bodies are preserved in `Dawn/unit/fixtures/omega_rescue`.
 - Rescue/Arc tests: 3,345 checks each Debug/Release, including captured layout regressions, body mutation rejection, and publication-versus-delivery validation for all transit lifecycles.
 - Native graph tests: 5,652 checks each Debug/Release. New fixture executes original B41330 instructions against captured Scene storage, verifying one start and one retained release event. Selector creation/graph consumption remain modeled boundaries.
 - Broader candidate runner: `build/omega-full-20260905/build_rescue_phase.py`.
@@ -63,7 +63,7 @@ Follow-up implementation:
 - Per-link mission revision/cue delivery wakes promptly, bounded to one update per 100ms; unchanged state sends no additional traffic. Failed staging does not acknowledge a revision. Dialogue interval expiry can wake publication without a new gameplay event.
 - Fix the read-only dialogue diagnostic's missing table-directory indirection and log actual bank/selector on existing native dispatch. This is evidence of dispatch, not sound output, and never makes an additional audio call.
 
-New replay fixture combines the exact live root and 41 node prefixes with the compiled topology for uncaptured intermediate parent nodes. Its provenance is recorded in `Sunrise/unit/fixtures/omega_rescue/README.md`. Small fake fixtures alone had concealed the original class/layout mistake.
+New replay fixture combines the exact live root and 41 node prefixes with the compiled topology for uncaptured intermediate parent nodes. Its provenance is recorded in `Dawn/unit/fixtures/omega_rescue/README.md`. Small fake fixtures alone had concealed the original class/layout mistake.
 
 Candidate/build/test/install status: see `build/omega-full-20260905/candidate-20260905-202422/candidate-manifest.json`. The first live charge/dunk/damage acceptance and audible dialogue still need a fresh run; never label offline tests as live validation.
 
@@ -154,7 +154,7 @@ Package-reader verification: all7 Role::bridge source entities80F4AD97,80F4ADB5,
 
 Production edits: omega_transit_authority.h writes position1 when bridge active,0 dormant/retired; omega_cannon_delivery.h accepts exactly the same corrected authority. Native interpolation and phase graph execution remain unchanged. No pulse, direct native effect invocation, runtime memory modification, new hooks, or pickup/deposit changes. Platforms still activate at rescue route readiness before pickup and persist through dunk until next cycle.
 
-New fixtures in Sunrise/unit/fixtures/omega_platform and original-instruction test omega_platform_native_fixture.inl. Production wire tests cover all7 bridge gates at dormant, pre-pickup route, holding, dunk, and retired states. Delivery tests accept corrected1 active/0 retired and reject old0 active bodies.
+New fixtures in Dawn/unit/fixtures/omega_platform and original-instruction test omega_platform_native_fixture.inl. Production wire tests cover all7 bridge gates at dormant, pre-pickup route, holding, dunk, and retired states. Delivery tests accept corrected1 active/0 retired and reject old0 active bodies.
 
 Final source frozen1437files under candidate-20260905-211138, sourceSHAD6D7C72AD20FC9BC18C113CBD0D39981CBCFBDEC59800FB2ACB35F8F4F91FC8A. Full build/regression/install pending at this note. Visible/solid native platform and usable native dunk remain live-unverified; do not claim these from instruction tests.
 
@@ -219,7 +219,7 @@ Read-only investigation PID7320 identified predicate registry80804D75 evaluator1
 
 Native world positions were independently decoded read-only from original field/key routines. At the later capture the player was(-1417.477,-102.611,-39.197), sink(-1441.707,-119.976,-37.816), endpoint(-1441.707,-119.976,-37.853). This is a sample about30 units away, not proof the player was in interaction range when attempting dunk. Sink readiness and item property alone do not prove prompt range/selection/actor filtering. Need next live attempt after premature contact teleport is disabled. Successful native F36640 receipt and actual consumption still required; precise post-dunk scripted transport remains unproven.
 
-Added original C994A0 and F30540 isolated fixture with real package definitions and PID7320 sink capture; fixture limits documented in Sunrise/unit/fixtures/omega_arc/eligibility/README.md. Updated all-three-cycle wire/lifecycle checks to forbid contact portal activation after pickup or dunk while preserving geometry. Candidate frozen221831 build/test running. No claim that dunk prompt is fixed; no new hooks, fake input, use call, health change or teleport bypass.
+Added original C994A0 and F30540 isolated fixture with real package definitions and PID7320 sink capture; fixture limits documented in Dawn/unit/fixtures/omega_arc/eligibility/README.md. Updated all-three-cycle wire/lifecycle checks to forbid contact portal activation after pickup or dunk while preserving geometry. Candidate frozen221831 build/test running. No claim that dunk prompt is fixed; no new hooks, fake input, use call, health change or teleport bypass.
 
 BFCF71EE verified: all18 regression runs passed, including5909 original native checks and7691 ending/transit checks per configuration. Source9A762878C73B66FC442E4FA8AC7B7EB551A36AF8CFDF148658CFD8650E1A7939 matches frozen source. DLLF770E47A59FCD4D9A47949085A9A7A24CEBF14D2321ECEB3E1E61C0E9030B4E6. Installation awaits game close. Native property getter and unused-sink readiness passed original instructions. Prompt usability is unresolved pending live test, not reported fixed.
 

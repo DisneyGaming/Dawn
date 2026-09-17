@@ -5,7 +5,7 @@
 #include <span>
 #include <string_view>
 
-namespace sunrise::core::log {
+namespace dawn::core::log {
 
 /** 1 KiB caps each serialized event, with room for a trailing null byte. */
 inline constexpr std::size_t kLineCapacity = 1024;
@@ -96,4 +96,4 @@ bool append_hex(std::span<char> line,
  */
 void early(std::string_view event) noexcept;
 
-} // namespace sunrise::core::log
+} // namespace dawn::core::log

@@ -8,7 +8,7 @@
 
 #include "../../detour.h"
 
-namespace sunrise::client::hooking::detour::transaction {
+namespace dawn::client::hooking::detour::transaction {
 
 /** Fixed limit on the handles held while process threads are suspended. */
 constexpr std::size_t kThreadLimit = 1024;
@@ -40,4 +40,4 @@ enum class InspectionResult {
 [[nodiscard]] InspectionResult inspect(const Threads& threads,
                                        std::span<const ProtectedCodeEntry> entries) noexcept;
 
-} // namespace sunrise::client::hooking::detour::transaction
+} // namespace dawn::client::hooking::detour::transaction

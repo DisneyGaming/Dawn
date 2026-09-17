@@ -10,11 +10,11 @@ import verify
 ROOT = verify.ROOT
 OUT = ROOT / 'build/coo/validation-gateway-prelaunch'
 CHANGED = {
-    'Sunrise/src/client/hooks/bootflow/towerfall_executor_bootstrap.cpp',
-    'Sunrise/src/server/ui/activity_override/activity_override_panel.cpp',
-    'Sunrise/src/state/activity/forced/activity_forced_destination.cpp',
-    'Sunrise/src/state/activity/forced/activity_forced_destination.h',
-    'Sunrise/src/state/activity/forced/definition.h',
+    'Dawn/src/client/hooks/bootflow/towerfall_executor_bootstrap.cpp',
+    'Dawn/src/server/ui/activity_override/activity_override_panel.cpp',
+    'Dawn/src/state/activity/forced/activity_forced_destination.cpp',
+    'Dawn/src/state/activity/forced/activity_forced_destination.h',
+    'Dawn/src/state/activity/forced/definition.h',
 }
 
 def main():
@@ -26,13 +26,13 @@ def main():
     protected = 0
     with zipfile.ZipFile(accepted) as archive:
         for name in archive.namelist():
-            if (name.startswith('Sunrise/src/') or name.startswith('Sunrise/scripts/')) and name not in CHANGED:
+            if (name.startswith('Dawn/src/') or name.startswith('Dawn/scripts/')) and name not in CHANGED:
                 assert (ROOT / name).read_bytes() == archive.read(name), f'Accepted dependency changed: {name}'
                 protected += 1
     print(f'Protected accepted source/script files: {protected}', flush=True)
-    paths = sorted(p for folder in ('Sunrise/src','Sunrise/unit','Sunrise/resources','Sunrise/scripts','Sunrise/vendor')
+    paths = sorted(p for folder in ('Dawn/src','Dawn/unit','Dawn/resources','Dawn/scripts','Dawn/vendor')
         for p in (ROOT/folder).rglob('*') if p.is_file() and p.suffix not in ('.obj','.exe','.pdb','.zip','.pyc'))
-    paths += [ROOT/'Sunrise/Sunrise.vcxproj']
+    paths += [ROOT/'Dawn/Dawn.vcxproj']
     paths += [p for p in (ROOT/'tools/coo').glob('*') if p.suffix in ('.py','.cpp','.vcxproj','.ps1')]
     manifest = {p.relative_to(ROOT).as_posix(): verify.digest(p) for p in paths}
     results=[]
@@ -40,10 +40,10 @@ def main():
         for name in ('mission_prelaunch_tests','coo_mission_script_tests','coo_script_tests',
                      'coo_opening_tests','coo_ending_runtime_tests','other_mission_protocol_tests',
                      'omega_forest_roster_tests'):
-            project=ROOT/f'Sunrise/unit/{name}.vcxproj'
+            project=ROOT/f'Dawn/unit/{name}.vcxproj'
             if f'Include="{config}|x64"' in project.read_text():
                 results.append(verify.build(project,config))
-    results.append(verify.build(ROOT/'Sunrise/Sunrise.vcxproj','Release'))
+    results.append(verify.build(ROOT/'Dawn/Dawn.vcxproj','Release'))
     assert all(verify.digest(ROOT/name)==sha for name,sha in manifest.items()), 'Source changed during validation'
     (OUT/'candidate-source.json').write_text(json.dumps(manifest,indent=2)+'\n')
     with zipfile.ZipFile(OUT/'candidate-source.zip','w',zipfile.ZIP_DEFLATED) as archive:

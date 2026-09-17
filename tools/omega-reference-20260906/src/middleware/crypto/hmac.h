@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::crypto::hmac {
+namespace dawn::middleware::crypto::hmac {
 
 /** The widest digest any algorithm here produces. */
 inline constexpr std::size_t kMaximumDigestSize = 32;
@@ -39,4 +39,4 @@ enum class Algorithm : std::uint8_t {
                                 std::span<const std::byte> second,
                                 Digest& output) noexcept;
 
-} // namespace sunrise::middleware::crypto::hmac
+} // namespace dawn::middleware::crypto::hmac

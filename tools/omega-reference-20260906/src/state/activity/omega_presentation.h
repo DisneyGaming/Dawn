@@ -2,7 +2,7 @@
 
 #include "omega_presentation_rules.h"
 
-namespace sunrise::state::activity::omega_presentation {
+namespace dawn::state::activity::omega_presentation {
 
 /** Called only for the committed local Omega roster after its in-world seed latch. */
 [[nodiscard]] Presentation snapshot(std::uint64_t run, std::uint64_t now,
@@ -46,4 +46,4 @@ void note_encounter(std::uint64_t run, Encounter event, std::uint8_t cycle) noex
 /** Clears admission at orbit/teardown. */
 void reset() noexcept;
 
-} // namespace sunrise::state::activity::omega_presentation
+} // namespace dawn::state::activity::omega_presentation

@@ -4,7 +4,7 @@
 #include "../../state/activity/definition.h"
 #include "region_lineage.h"
 
-namespace sunrise::server::bap {
+namespace dawn::server::bap {
 
 /** One owner-validated, exact destination/region tuple for the diagnostic HUD. */
 struct HudRegionSnapshot final {
@@ -34,4 +34,4 @@ void retry_pending_activity_retirements() noexcept;
 /** Wipes every connection-owned nonce and transform buffer. */
 void shutdown() noexcept;
 
-} // namespace sunrise::server::bap
+} // namespace dawn::server::bap

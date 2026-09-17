@@ -2,7 +2,7 @@
 
 #include "../../../../../middleware/content/packages/tables/region_reader.h"
 
-namespace sunrise::server::bap::encrypted::push::activity {
+namespace dawn::server::bap::encrypted::push::activity {
 namespace {
 
 namespace tables = middleware::content::packages::tables;
@@ -131,4 +131,4 @@ std::uint16_t arrival_slice_set(const state::activity::defaults::DefaultDestinat
     return static_cast<std::uint16_t>(tables::region_index(static_cast<std::uint32_t>(bubble)));
 }
 
-} // namespace sunrise::server::bap::encrypted::push::activity
+} // namespace dawn::server::bap::encrypted::push::activity

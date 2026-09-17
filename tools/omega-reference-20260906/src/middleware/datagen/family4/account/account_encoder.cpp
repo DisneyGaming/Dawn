@@ -10,7 +10,7 @@
 #include "layout.h"
 #include "preferences/preferences_encoder.h"
 
-namespace sunrise::middleware::datagen::family4::account {
+namespace dawn::middleware::datagen::family4::account {
 namespace {
 
 /** Every bit set is the native empty biased 16-bit definition index. */
@@ -126,4 +126,4 @@ bool encode(const state::AccountState& state, std::span<std::byte> output) noexc
     return true;
 }
 
-} // namespace sunrise::middleware::datagen::family4::account
+} // namespace dawn::middleware::datagen::family4::account

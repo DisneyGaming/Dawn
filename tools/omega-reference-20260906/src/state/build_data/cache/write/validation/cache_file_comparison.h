@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::state::build_data::cache::validation {
+namespace dawn::state::build_data::cache::validation {
 
 /**
  * Compares two closed cache files without keeping their contents or allocating.
@@ -10,4 +10,4 @@ namespace sunrise::state::build_data::cache::validation {
  */
 [[nodiscard]] bool files_equal(const wchar_t* firstPath, const wchar_t* secondPath) noexcept;
 
-} // namespace sunrise::state::build_data::cache::validation
+} // namespace dawn::state::build_data::cache::validation

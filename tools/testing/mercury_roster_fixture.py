@@ -30,7 +30,7 @@ def main():
     start = offsets[native.ROSTER_DOMAIN]
     rows = [data[start + i * size:start + (i + 1) * size] for i in range(counts[native.ROSTER_DOMAIN])]
     present = {struct.unpack_from('<I', row)[0] for row in rows}
-    catalog = (ROOT / 'Sunrise/src/state/activity/coo/mercury_ambient_catalog.h').read_text()
+    catalog = (ROOT / 'Dawn/src/state/activity/coo/mercury_ambient_catalog.h').read_text()
     candidates = re.findall(r'\{"mercury_freeroam",0x80F4696A,0x([0-9A-F]+),0x([0-9A-F]+),', catalog)
     if len(candidates) != 37:
         raise ValueError('Expected 37 installed ambient groups')

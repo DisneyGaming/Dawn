@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace sunrise::core::ui::memory::fixed {
+namespace dawn::core::ui::memory::fixed {
 
 /** Internal counters read only while the public allocator lock is held. */
 struct ArenaStats {
@@ -31,4 +31,4 @@ void release(void* pointer) noexcept;
 /** @return Current counters and the largest merged free payload. */
 [[nodiscard]] ArenaStats snapshot() noexcept;
 
-} // namespace sunrise::core::ui::memory::fixed
+} // namespace dawn::core::ui::memory::fixed

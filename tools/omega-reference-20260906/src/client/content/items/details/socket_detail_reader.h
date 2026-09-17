@@ -5,7 +5,7 @@
 
 #include "configured_item_detail_extractor.h"
 
-namespace sunrise::client::content::items::details::socket_reader {
+namespace dawn::client::content::items::details::socket_reader {
 
 namespace build_details = state::build_data::items::details;
 
@@ -35,4 +35,4 @@ namespace build_details = state::build_data::items::details;
                                    std::size_t rowCount,
                                    build_details::Definition& output) noexcept;
 
-} // namespace sunrise::client::content::items::details::socket_reader
+} // namespace dawn::client::content::items::details::socket_reader

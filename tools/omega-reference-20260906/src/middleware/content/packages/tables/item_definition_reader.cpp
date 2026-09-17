@@ -4,7 +4,7 @@
 #include "definition_index_table.h"
 #include "items.h"
 
-namespace sunrise::middleware::content::packages::tables::items {
+namespace dawn::middleware::content::packages::tables::items {
 namespace {
 
 /** The signed stack limit comes before the bucket id. */
@@ -348,4 +348,4 @@ bool visit_allowed_plugs(std::span<const std::byte> definition,
                                     context);
 }
 
-} // namespace sunrise::middleware::content::packages::tables::items
+} // namespace dawn::middleware::content::packages::tables::items

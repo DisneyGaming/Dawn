@@ -3,7 +3,7 @@
 #include "../../../../state/build_data/runtime.h"
 #include "internal.h"
 
-namespace sunrise::middleware::datagen::character_record::appearance {
+namespace dawn::middleware::datagen::character_record::appearance {
 namespace {
 
 /**
@@ -182,4 +182,4 @@ void apply_perk_banks(const family4::loadout::ResolvedInstances& instances,
     }
 }
 
-} // namespace sunrise::middleware::datagen::character_record::appearance
+} // namespace dawn::middleware::datagen::character_record::appearance

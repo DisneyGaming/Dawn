@@ -4,7 +4,7 @@
 
 #include "../table.h"
 
-namespace sunrise::state::build_data::material_requirements {
+namespace dawn::state::build_data::material_requirements {
 namespace {
 
 Lock g_lock;
@@ -100,4 +100,4 @@ std::size_t count() noexcept {
     return g_definitions.count();
 }
 
-} // namespace sunrise::state::build_data::material_requirements
+} // namespace dawn::state::build_data::material_requirements

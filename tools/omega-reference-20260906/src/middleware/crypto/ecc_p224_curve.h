@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::crypto::ecc::curve {
+namespace dawn::middleware::crypto::ecc::curve {
 
 /** A 224-bit value is 7 words of 32 bits, least significant word first. */
 inline constexpr std::size_t kWords = 7;
@@ -59,4 +59,4 @@ void load(std::span<const std::byte> bytes, Field& output) noexcept;
  */
 void store(const Field& value, std::span<std::byte> bytes) noexcept;
 
-} // namespace sunrise::middleware::crypto::ecc::curve
+} // namespace dawn::middleware::crypto::ecc::curve

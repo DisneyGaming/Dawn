@@ -7,7 +7,7 @@
 #include <cstddef>
 #include <span>
 
-namespace sunrise::state::build_data {
+namespace dawn::state::build_data {
 
 /**
  * Reader/writer lock guarding one domain's published rows.
@@ -142,4 +142,4 @@ private:
     std::size_t count_{};
 };
 
-} // namespace sunrise::state::build_data
+} // namespace dawn::state::build_data

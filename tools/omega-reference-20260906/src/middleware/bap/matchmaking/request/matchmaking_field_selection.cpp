@@ -1,7 +1,7 @@
 #include "../../../protobuf/codec.h"
 #include "field_selection.h"
 
-namespace sunrise::middleware::bap::matchmaking::request {
+namespace dawn::middleware::bap::matchmaking::request {
 namespace {
 
 using protobuf::Field;
@@ -119,4 +119,4 @@ bool parse_root(std::span<const std::byte> input, Root& selected) noexcept {
     return true;
 }
 
-} // namespace sunrise::middleware::bap::matchmaking::request
+} // namespace dawn::middleware::bap::matchmaking::request

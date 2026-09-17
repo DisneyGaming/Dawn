@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace sunrise::client::targets::game::config_getter {
+namespace dawn::client::targets::game::config_getter {
 
 /** Resolved config getter thunks the content state machine calls at phase 1. */
 struct Targets {
@@ -21,4 +21,4 @@ void clear() noexcept;
 /** @return True after both thunks are published. */
 [[nodiscard]] bool is_resolved() noexcept;
 
-} // namespace sunrise::client::targets::game::config_getter
+} // namespace dawn::client::targets::game::config_getter

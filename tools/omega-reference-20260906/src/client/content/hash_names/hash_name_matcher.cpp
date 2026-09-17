@@ -4,7 +4,7 @@
 
 #include "../../../state/build_data/runtime.h"
 
-namespace sunrise::client::content::hash_names {
+namespace dawn::client::content::hash_names {
 namespace {
 
 namespace layouts = state::build_data::scenarios;
@@ -214,4 +214,4 @@ void finish(Storage& storage) noexcept {
     storage.resolvedCount = kept;
 }
 
-} // namespace sunrise::client::content::hash_names
+} // namespace dawn::client::content::hash_names

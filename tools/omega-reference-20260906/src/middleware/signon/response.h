@@ -7,7 +7,7 @@
 #include "../../state/entitlements/definition.h"
 #include "../../state/runtime/state.h"
 
-namespace sunrise::middleware::signon {
+namespace dawn::middleware::signon {
 
 /** Encodes the required SignOn success fields into the caller buffer. */
 [[nodiscard]] bool encode_success(const state::SignOnState& state,
@@ -17,4 +17,4 @@ namespace sunrise::middleware::signon {
                                   std::span<std::byte> output,
                                   std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::signon
+} // namespace dawn::middleware::signon

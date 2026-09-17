@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::hooks::assert_handler {
+namespace dawn::client::hooks::assert_handler {
 
 /**
  * Replaces the game's fatal assert handler so an assert reports instead of halting.
@@ -11,7 +11,7 @@ namespace sunrise::client::hooks::assert_handler {
 /** Restores the game's own handler. */
 [[nodiscard]] bool uninstall() noexcept;
 
-/** @return True while Sunrise's handler owns the slot. */
+/** @return True while Dawn's handler owns the slot. */
 [[nodiscard]] bool is_installed() noexcept;
 
-} // namespace sunrise::client::hooks::assert_handler
+} // namespace dawn::client::hooks::assert_handler

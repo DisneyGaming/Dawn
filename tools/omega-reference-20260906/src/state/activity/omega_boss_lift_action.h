@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::state::activity::omega_boss_lift {
+namespace dawn::state::activity::omega_boss_lift {
 
 enum class Arm : std::uint8_t { left, right };
 inline constexpr std::uint32_t kLeftProperty=0xA2AE120FU;  // panoptes_summon_left
@@ -218,4 +218,4 @@ private:
     float lastElapsed_{};
 };
 
-} // namespace sunrise::state::activity::omega_boss_lift
+} // namespace dawn::state::activity::omega_boss_lift

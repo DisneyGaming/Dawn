@@ -9,7 +9,7 @@
 #include "../../hooking/detour.h"
 #include "internal.h"
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 namespace {
 
 using core::log::kLineCapacity;
@@ -116,4 +116,4 @@ void uninstall_join_request_ready() noexcept {
     g_lastNative.store(false, std::memory_order_release);
 }
 
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

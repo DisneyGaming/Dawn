@@ -5,12 +5,12 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace sunrise::state::matchmaking {
+namespace dawn::state::matchmaking {
 
 /** 4 slots cover every local backend channel open at once, with no heap storage. */
 inline constexpr std::size_t kContextCapacity = 4;
 /**
- * Sunrise keeps 16 variants as headroom over the current valid ones.
+ * Dawn keeps 16 variants as headroom over the current valid ones.
  * This is not a protocol limit. It makes eviction fixed and heap-free.
  */
 inline constexpr std::size_t kVariantCapacity = 16;
@@ -113,4 +113,4 @@ struct MatchmakingState {
     bool allocatorExhausted{};
 };
 
-} // namespace sunrise::state::matchmaking
+} // namespace dawn::state::matchmaking

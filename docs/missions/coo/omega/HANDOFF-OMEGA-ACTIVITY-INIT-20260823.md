@@ -1,7 +1,7 @@
 # Omega activity initialization handoff
 
 Date: 2026-08-23  
-Target: Destiny 2 PC/Sunrise, forced destination `mission_scot` (Omega)  
+Target: Destiny 2 PC/Dawn, forced destination `mission_scot` (Omega)  
 PS4 reference: Destiny 2 v1.59 EBOOT, analyzed read-only and never executed
 
 ## User requirement and current constraint
@@ -107,7 +107,7 @@ that route generalizes to Omega.
 
 ## Current source changes
 
-The archive contains the complete current dirty `Sunrise-src` snapshot, including untracked source
+The archive contains the complete current dirty `Dawn-src` snapshot, including untracked source
 files. It intentionally excludes `.git`, `.vs`, generated `build` output, caches, and user settings.
 Do not reset or discard changes: this worktree contained substantial pre-existing user work.
 
@@ -143,7 +143,7 @@ These keys are listed here as validation evidence. The roster selector does not 
 
 ## Runtime evidence
 
-The latest log is packaged as `evidence/sunrise.latest.log`.
+The latest log is packaged as `evidence/dawn.latest.log`.
 
 Important observations:
 
@@ -164,7 +164,7 @@ authority initialization/preservation because storage creation is not proof of a
 Build/deploy command:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\sunrise-dev.ps1" -ClearCache
+powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\dawn-dev.ps1" -ClearCache
 ```
 
 Final Release x64 build passed with zero errors and was deployed to
@@ -179,15 +179,15 @@ This binary corrects generic registration and diagnostics. It is not an Omega ac
 
 ## Files to start with
 
-- `Sunrise-src/Sunrise/src/server/bap/encrypted/activity_message/activity_message_route.cpp`
-- `Sunrise-src/Sunrise/src/middleware/bap/activity_message/activity_sense_update_parser.cpp`
-- `Sunrise-src/Sunrise/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp`
-- `Sunrise-src/Sunrise/src/client/content/scenarios/scenario_roster_build.cpp`
-- `Sunrise-src/Sunrise/src/client/content/scenarios/scenario_roster_groups.cpp`
-- `Sunrise-src/Sunrise/src/client/content/scenarios/scenario_roster_publish.cpp`
-- `Sunrise-src/Sunrise/src/client/hooks/bootflow/activity_script_upstream_probe.cpp`
-- `Sunrise-src/Sunrise/src/client/hooks/bootflow/activity_schema_decode_probe.cpp`
-- `Sunrise-src/Sunrise/src/state/activity/activity_world_arrival.cpp`
+- `Dawn-src/Dawn/src/server/bap/encrypted/activity_message/activity_message_route.cpp`
+- `Dawn-src/Dawn/src/middleware/bap/activity_message/activity_sense_update_parser.cpp`
+- `Dawn-src/Dawn/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp`
+- `Dawn-src/Dawn/src/client/content/scenarios/scenario_roster_build.cpp`
+- `Dawn-src/Dawn/src/client/content/scenarios/scenario_roster_groups.cpp`
+- `Dawn-src/Dawn/src/client/content/scenarios/scenario_roster_publish.cpp`
+- `Dawn-src/Dawn/src/client/hooks/bootflow/activity_script_upstream_probe.cpp`
+- `Dawn-src/Dawn/src/client/hooks/bootflow/activity_schema_decode_probe.cpp`
+- `Dawn-src/Dawn/src/state/activity/activity_world_arrival.cpp`
 
 ## Do not repeat these false leads
 

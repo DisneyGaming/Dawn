@@ -5,7 +5,7 @@
 
 #include "../../../../state/matchmaking/matchmaking_state.h"
 
-namespace sunrise::server::bap::encrypted::matchmaking {
+namespace dawn::server::bap::encrypted::matchmaking {
 
 /**
  * Prepares and encodes one kind-specific svc-43 response transaction.
@@ -24,4 +24,4 @@ namespace sunrise::server::bap::encrypted::matchmaking {
                                    state::matchmaking::PendingMutation& mutation,
                                    bool& hasMutation) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::matchmaking
+} // namespace dawn::server::bap::encrypted::matchmaking

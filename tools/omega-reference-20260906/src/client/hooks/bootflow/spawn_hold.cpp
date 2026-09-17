@@ -16,7 +16,7 @@
 #include "internal.h"
 #include "spawn_hold_policy.h"
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 namespace {
 
 /**
@@ -513,7 +513,7 @@ bool install_spawn_hold() noexcept {
     return true;
 }
 
-/** Stops Sunrise-owned spawn work while retaining native forwarding. */
+/** Stops Dawn-owned spawn work while retaining native forwarding. */
 void quiesce_spawn_hold() noexcept {
     g_callGate.quiesce();
 }
@@ -561,4 +561,4 @@ bool uninstall_spawn_hold() noexcept {
     return true;
 }
 
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

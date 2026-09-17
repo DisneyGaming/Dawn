@@ -6,7 +6,7 @@
 #include <span>
 #include <string_view>
 
-namespace sunrise::state::content {
+namespace dawn::state::content {
 
 /** Extracted definition names longer than 127 bytes are rejected instead of truncated. */
 inline constexpr std::size_t kDefinitionNameCapacity = 128;
@@ -77,4 +77,4 @@ lookup_hash(std::uint32_t nameHash, std::span<Definition> output, std::size_t& c
 /** @return Number of distinct extracted name, tag, and class tuples. */
 [[nodiscard]] std::size_t count() noexcept;
 
-} // namespace sunrise::state::content
+} // namespace dawn::state::content

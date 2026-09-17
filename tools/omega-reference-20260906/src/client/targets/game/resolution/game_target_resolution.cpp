@@ -4,7 +4,7 @@
 
 #include "internal.h"
 
-namespace sunrise::client::targets::game::resolution {
+namespace dawn::client::targets::game::resolution {
 namespace {
 
 Failure g_lastFailure{Failure::none};
@@ -118,4 +118,4 @@ std::string_view last_failed_signature() noexcept {
     return g_lastFailedSignature;
 }
 
-} // namespace sunrise::client::targets::game::resolution
+} // namespace dawn::client::targets::game::resolution

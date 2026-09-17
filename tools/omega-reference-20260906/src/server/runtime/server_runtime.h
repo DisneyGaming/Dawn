@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace sunrise::server {
+namespace dawn::server {
 
 /** Starts the in-process server surface. */
 [[nodiscard]] bool initialize() noexcept;
@@ -13,4 +13,4 @@ void service(std::uint64_t now) noexcept;
 /** Stops the in-process server surface. */
 void shutdown() noexcept;
 
-} // namespace sunrise::server
+} // namespace dawn::server

@@ -4,7 +4,7 @@
 
 #include "../family4/loadout/loadout_resolver.h"
 
-namespace sunrise::middleware::datagen::roster {
+namespace dawn::middleware::datagen::roster {
 
 /** Builds one roster block from authored identities and each character's equipped items. */
 bool initialize(const state::AccountState& account, Block& block) noexcept {
@@ -47,4 +47,4 @@ bool initialize(const state::AccountState& account, Block& block) noexcept {
     return true;
 }
 
-} // namespace sunrise::middleware::datagen::roster
+} // namespace dawn::middleware::datagen::roster

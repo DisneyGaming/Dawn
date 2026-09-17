@@ -1,6 +1,6 @@
 #include "internal.h"
 
-namespace sunrise::middleware::bap::activity_host_manager::request::selection {
+namespace dawn::middleware::bap::activity_host_manager::request::selection {
 namespace {
 
 using encoding::bits::Reader;
@@ -25,7 +25,7 @@ constexpr std::size_t kUnknownByteWidth = 8;
 /** Fixed package-name elements are signed bytes encoded with bias 128. */
 constexpr std::uint8_t kPackageNameWidth = 8;
 constexpr std::int16_t kPackageNameBias = 128;
-/** Sunrise publishes only lowercase ASCII, digits and underscores in a package name. */
+/** Dawn publishes only lowercase ASCII, digits and underscores in a package name. */
 constexpr std::int8_t kLowercaseMinimum = 'a';
 constexpr std::int8_t kLowercaseMaximum = 'z';
 constexpr std::int8_t kDigitMinimum = '0';
@@ -217,4 +217,4 @@ bool parse(Reader& reader, ActivityManagerSelection& selection) noexcept {
 }
 
 } // namespace
-  // sunrise::middleware::bap::activity_host_manager::request::selection
+  // dawn::middleware::bap::activity_host_manager::request::selection

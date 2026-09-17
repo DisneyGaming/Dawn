@@ -5,7 +5,7 @@
 #include "../../encoding/bit_raw.h"
 #include "peer_container.h"
 
-namespace sunrise::middleware::gameplay::peer {
+namespace dawn::middleware::gameplay::peer {
 
 namespace {
 
@@ -541,4 +541,4 @@ bool write_absent_filler(bits::Writer& writer) noexcept {
     return writer.write(0, kFlagWidth) && writer.write(0, kFlagWidth);
 }
 
-} // namespace sunrise::middleware::gameplay::peer
+} // namespace dawn::middleware::gameplay::peer

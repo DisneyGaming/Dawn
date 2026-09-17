@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <optional>
 
-namespace sunrise::state::build_data::items::details {
+namespace dawn::state::build_data::items::details {
 
 /**
  * Installed item definitions used by Collections, character instances, profile stacks, and
@@ -123,4 +123,4 @@ struct Definition {
     std::array<RenderOverride, kRenderOverrideCapacity> renderOverrides{};
 };
 
-} // namespace sunrise::state::build_data::items::details
+} // namespace dawn::state::build_data::items::details

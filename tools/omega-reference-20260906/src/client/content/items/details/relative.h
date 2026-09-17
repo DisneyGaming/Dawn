@@ -5,7 +5,7 @@
 
 #include "memory.h"
 
-namespace sunrise::client::content::items::details::relative {
+namespace dawn::client::content::items::details::relative {
 
 /**
  * Finds one optional self-relative definition member.
@@ -36,4 +36,4 @@ namespace sunrise::client::content::items::details::relative {
     return memory::add_signed_fits(memberAddress, displacement, block);
 }
 
-} // namespace sunrise::client::content::items::details::relative
+} // namespace dawn::client::content::items::details::relative

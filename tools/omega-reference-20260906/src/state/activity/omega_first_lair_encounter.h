@@ -9,7 +9,7 @@
 #include "omega_enemy_crown_waves.h"
 #include "omega_rescue_scene_authority.h"
 
-namespace sunrise::state::activity::omega_first_lair {
+namespace dawn::state::activity::omega_first_lair {
 
 enum class Action : std::uint8_t {
     none, summonLeft, summonRight, depart, summonBoth,
@@ -700,4 +700,4 @@ private:
     bool restrictionReleased_{},pendingFinalArrival_{},carriedOnce_{},chargeDunked_{};
 };
 
-} // namespace sunrise::state::activity::omega_first_lair
+} // namespace dawn::state::activity::omega_first_lair

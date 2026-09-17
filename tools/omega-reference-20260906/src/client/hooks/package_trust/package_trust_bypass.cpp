@@ -14,7 +14,7 @@
 #include "../../hooking/detour.h"
 #include "../../patterns/image_scan.h"
 
-namespace sunrise::client::hooks::package_trust {
+namespace dawn::client::hooks::package_trust {
 namespace {
 
 using patterns::scan_main_image_unique;
@@ -217,4 +217,4 @@ bool is_installed() noexcept {
     return g_handle.attached && g_extendedHeaderResult != nullptr && g_cachedDataBranch != nullptr;
 }
 
-} // namespace sunrise::client::hooks::package_trust
+} // namespace dawn::client::hooks::package_trust

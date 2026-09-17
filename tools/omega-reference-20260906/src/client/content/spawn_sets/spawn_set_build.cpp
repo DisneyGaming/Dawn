@@ -14,7 +14,7 @@
 #include "../../../state/build_data/runtime.h"
 #include "spawn_set_catalog_builder.h"
 
-namespace sunrise::client::content::spawn_sets {
+namespace dawn::client::content::spawn_sets {
 namespace {
 
 namespace reader = middleware::content::packages::reader;
@@ -184,4 +184,4 @@ bool build(const reader::Source& source, reader::Scratch& scratch) noexcept {
     return published;
 }
 
-} // namespace sunrise::client::content::spawn_sets
+} // namespace dawn::client::content::spawn_sets

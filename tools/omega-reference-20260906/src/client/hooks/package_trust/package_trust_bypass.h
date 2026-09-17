@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::hooks::package_trust {
+namespace dawn::client::hooks::package_trust {
 
 /**
  * Accepts package RSA, extended-header hash and cached-data hash authentication. Native package
@@ -15,4 +15,4 @@ namespace sunrise::client::hooks::package_trust {
 /** @return True while the validator detour is attached. */
 [[nodiscard]] bool is_installed() noexcept;
 
-} // namespace sunrise::client::hooks::package_trust
+} // namespace dawn::client::hooks::package_trust

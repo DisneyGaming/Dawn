@@ -7,7 +7,7 @@
 
 #include "../runtime/runtime.h"
 
-namespace sunrise::steam::interfaces {
+namespace dawn::steam::interfaces {
 
 /** A quaternion has 4 components. */
 inline constexpr std::size_t kQuaternionComponents = 4;
@@ -142,4 +142,4 @@ ApiCall request_encrypted_app_ticket(void*, const void*, int) noexcept;
 bool get_encrypted_app_ticket(void*, void*, int, DWORD*) noexcept;
 
 } // namespace methods
-} // namespace sunrise::steam::interfaces
+} // namespace dawn::steam::interfaces

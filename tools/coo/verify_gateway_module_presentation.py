@@ -5,7 +5,7 @@ import verify
 from package_read import read
 ROOT=verify.ROOT
 OUT=ROOT/'build/coo/validation-gateway-module-presentation'
-CHANGED={'Sunrise/src/state/activity/gateway/authority.h','Sunrise/unit/gateway_opening_tests.cpp','Sunrise/docs/GATEWAY-RECONSTRUCTION.md'}
+CHANGED={'Dawn/src/state/activity/gateway/authority.h','Dawn/unit/gateway_opening_tests.cpp','Dawn/docs/GATEWAY-RECONSTRUCTION.md'}
 def main():
  verify.OUT=OUT;OUT.mkdir(parents=True,exist_ok=True)
  assert not (OUT/'installation.json').exists()
@@ -26,16 +26,16 @@ def main():
  assert positive[0]>0 and positive[0]<1<positive[1]
  assert active[0]<1<active[1] and active[0]>0
  (OUT/'presentation-native.json').write_text(json.dumps({'protectedFiles':protected,'graph':'80F48031','property':'device_position','inactiveRange':low,'positiveRange':positive,'activationRange':active,'visualValidation':'pending'},indent=2))
- paths=sorted(p for folder in ('Sunrise/src','Sunrise/unit','Sunrise/resources','Sunrise/scripts','Sunrise/vendor') for p in (ROOT/folder).rglob('*') if p.is_file() and p.suffix not in ('.obj','.exe','.pdb','.zip','.pyc'))
- paths += [ROOT/'Sunrise/Sunrise.vcxproj',ROOT/'Sunrise/docs/GATEWAY-RECONSTRUCTION.md',ROOT/'Sunrise/docs/gateway-reconstruction-map.json']
+ paths=sorted(p for folder in ('Dawn/src','Dawn/unit','Dawn/resources','Dawn/scripts','Dawn/vendor') for p in (ROOT/folder).rglob('*') if p.is_file() and p.suffix not in ('.obj','.exe','.pdb','.zip','.pyc'))
+ paths += [ROOT/'Dawn/Dawn.vcxproj',ROOT/'Dawn/docs/GATEWAY-RECONSTRUCTION.md',ROOT/'Dawn/docs/gateway-reconstruction-map.json']
  paths += [p for p in (ROOT/'tools/coo').glob('*') if p.suffix in ('.py','.cpp','.vcxproj','.ps1')]
  manifest={p.relative_to(ROOT).as_posix():verify.digest(p) for p in paths};results=[]
  print(f'Protected {protected} accepted files; native position ranges verified.',flush=True)
  for config in ('Debug','Release'):
   for name in ('gateway_opening_tests','other_mission_protocol_tests','omega_archive_protocol_tests'):
-   results.append(verify.build(ROOT/f'Sunrise/unit/{name}.vcxproj',config))
+   results.append(verify.build(ROOT/f'Dawn/unit/{name}.vcxproj',config))
  print('Tests passed; building Release DLL.',flush=True)
- results.append(verify.build(ROOT/'Sunrise/Sunrise.vcxproj','Release'))
+ results.append(verify.build(ROOT/'Dawn/Dawn.vcxproj','Release'))
  assert all(verify.digest(ROOT/name)==sha for name,sha in manifest.items()),'Source changed during validation'
  (OUT/'candidate-source.json').write_text(json.dumps(manifest,indent=2)+'\n')
  with zipfile.ZipFile(OUT/'candidate-source.zip','w',zipfile.ZIP_DEFLATED) as z:

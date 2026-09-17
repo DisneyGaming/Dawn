@@ -2,9 +2,9 @@
 
 Date: 2026-08-22
 
-Scope: only the incorrect Ikora purple aura/beam visuals in the opening of `mission_scot` / Omega. This is not a general Sunrise networking, matchmaking, authored-route, spawner, objective, gate-travel, or full-mission report.
+Scope: only the incorrect Ikora purple aura/beam visuals in the opening of `mission_scot` / Omega. This is not a general Dawn networking, matchmaking, authored-route, spawner, objective, gate-travel, or full-mission report.
 
-This document is intended to be attached to a new Codex chat together with the current source and latest `sunrise.log`. It deliberately separates confirmed runtime evidence from visual inference and untested hypotheses. Earlier statements in the chat that a particular change was “100%” the fix were not justified. The VFX root cause is narrowed substantially but is not solved yet.
+This document is intended to be attached to a new Codex chat together with the current source and latest `dawn.log`. It deliberately separates confirmed runtime evidence from visual inference and untested hypotheses. Earlier statements in the chat that a particular change was “100%” the fix were not justified. The VFX root cause is narrowed substantially but is not solved yet.
 
 ## Executive summary
 
@@ -31,7 +31,7 @@ The strongest remaining candidate is therefore upstream of the type-23 callback:
 The source tree and deployed DLL do not currently represent the same experiment.
 
 - Current source file:
-  `C:\Destiny 2 Development\Sunrise-src\Sunrise\src\client\hooks\bootflow\activity_spawner_chain_probe.cpp`
+  `C:\Destiny 2 Development\Dawn-src\Dawn\src\client\hooks\bootflow\activity_spawner_chain_probe.cpp`
 - Source timestamp: `2026-08-22 01:15:23`
 - Source SHA-256: `CF7452CDF6F2172C8DC9133488204E5049DE45F991CF635CB2E310A03E620F9A`
 - Git status: the entire file is untracked (`??`), so ordinary `git diff` will not show its history.
@@ -40,7 +40,7 @@ The source tree and deployed DLL do not currently represent the same experiment.
 
 Built and deployed DLL:
 
-- Build output: `C:\Destiny 2 Development\Sunrise-src\build\x64\Release\steam_api64.dll`
+- Build output: `C:\Destiny 2 Development\Dawn-src\build\x64\Release\steam_api64.dll`
 - Live DLL: `C:\Destiny 2 Development\bin\x64\steam_api64.dll`
 - DLL timestamp: `2026-08-22 01:06:15`
 - Both DLLs have SHA-256:
@@ -191,7 +191,7 @@ Object-table slots are also reused after release. Compare complete handles/gener
 
 Latest log:
 
-`C:\Destiny 2 Development\bin\x64\Sunrise\logs\sunrise.log`
+`C:\Destiny 2 Development\bin\x64\Dawn\logs\dawn.log`
 
 The line numbers below refer to the current copy of that file and will become stale if the log is replaced.
 
@@ -322,7 +322,7 @@ Therefore “the beam renderer is parented directly to Actor 1” is not proven.
 
 The main implementation is the large probe in:
 
-`C:\Destiny 2 Development\Sunrise-src\Sunrise\src\client\hooks\bootflow\activity_spawner_chain_probe.cpp`
+`C:\Destiny 2 Development\Dawn-src\Dawn\src\client\hooks\bootflow\activity_spawner_chain_probe.cpp`
 
 It currently contains or has contained the following classes of instrumentation/experiments.
 
@@ -556,7 +556,7 @@ Do not make another broad actor-lifetime, portal-state, or renderer-hiding chang
 
 ### Step 0: preserve evidence and reconcile the binary
 
-1. Copy or archive the current `sunrise.log`; it contains the successful late mutation and source-provenance evidence.
+1. Copy or archive the current `dawn.log`; it contains the successful late mutation and source-provenance evidence.
 2. Confirm the live DLL hash before testing.
 3. Review current source because it is untracked.
 4. Build/deploy only after deciding whether the next DLL is an observe-only baseline or the early source experiment.
@@ -679,27 +679,27 @@ The visual task is complete only when all of these are observed in one run:
 Run these from `C:\Destiny 2 Development`.
 
 ```powershell
-rg -n "ev=omega_scene_vfx_binding" "bin\x64\Sunrise\logs\sunrise.log"
+rg -n "ev=omega_scene_vfx_binding" "bin\x64\Dawn\logs\dawn.log"
 ```
 
 ```powershell
-rg -n "ev=omega_scene_type23_trace stage=(callback|attachment|owner_candidates)" "bin\x64\Sunrise\logs\sunrise.log"
+rg -n "ev=omega_scene_type23_trace stage=(callback|attachment|owner_candidates)" "bin\x64\Dawn\logs\dawn.log"
 ```
 
 ```powershell
-rg -n "ev=omega_scene_transform_source stage=selection|ev=omega_scene_transform_bank_map|ev=omega_scene_transform_provenance" "bin\x64\Sunrise\logs\sunrise.log"
+rg -n "ev=omega_scene_transform_source stage=selection|ev=omega_scene_transform_bank_map|ev=omega_scene_transform_provenance" "bin\x64\Dawn\logs\dawn.log"
 ```
 
 ```powershell
-rg -n "ev=omega_scene_transform_writer stage=(slot_update|source)" "bin\x64\Sunrise\logs\sunrise.log"
+rg -n "ev=omega_scene_transform_writer stage=(slot_update|source)" "bin\x64\Dawn\logs\dawn.log"
 ```
 
 ```powershell
-rg -n "ev=omega_scene_cast_slot|ev=omega_scene_activation_owner|ev=omega_ikora_followup stage=factory|ev=omega_ikora_ownership stage=(actor_state|object_release)" "bin\x64\Sunrise\logs\sunrise.log"
+rg -n "ev=omega_scene_cast_slot|ev=omega_scene_activation_owner|ev=omega_ikora_followup stage=factory|ev=omega_ikora_ownership stage=(actor_state|object_release)" "bin\x64\Dawn\logs\dawn.log"
 ```
 
 ```powershell
-rg -n "ev=omega_beam_final_transform|ev=omega_scene_vfx_trace" "bin\x64\Sunrise\logs\sunrise.log"
+rg -n "ev=omega_beam_final_transform|ev=omega_scene_vfx_trace" "bin\x64\Dawn\logs\dawn.log"
 ```
 
 ## Build and deployment
@@ -707,7 +707,7 @@ rg -n "ev=omega_beam_final_transform|ev=omega_scene_vfx_trace" "bin\x64\Sunrise\
 Build and deploy with:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\sunrise-dev.ps1"
+powershell -ExecutionPolicy Bypass -File "C:\Destiny 2 Development\dawn-dev.ps1"
 ```
 
 The game must be closed before deployment. After a build, verify the output and live DLL hashes match before launching.
@@ -716,8 +716,8 @@ The game must be closed before deployment. After a build, verify the output and 
 
 Primary source and log:
 
-- `C:\Destiny 2 Development\Sunrise-src\Sunrise\src\client\hooks\bootflow\activity_spawner_chain_probe.cpp`
-- `C:\Destiny 2 Development\bin\x64\Sunrise\logs\sunrise.log`
+- `C:\Destiny 2 Development\Dawn-src\Dawn\src\client\hooks\bootflow\activity_spawner_chain_probe.cpp`
+- `C:\Destiny 2 Development\bin\x64\Dawn\logs\dawn.log`
 
 Static analysis outputs:
 
@@ -749,7 +749,7 @@ Ghidra scripts created during this investigation:
 
 Use the following when starting the next task:
 
-> Read `C:\Destiny 2 Development\OMEGA-PURPLE-VFX-HANDOFF-20260822.md` completely, then inspect the current untracked `activity_spawner_chain_probe.cpp` and the latest `sunrise.log`. Do not modify or build anything until you reconcile the source/DLL mismatch documented in the handoff. Focus only on the Omega opening purple aura/beam alignment. The tested late `context_data+0x2C` Actor-1-to-Actor-2 swap is ruled out because `+58A150` used `route=direct_bank` and `object_argument_consumed=no`. First verify the source-kind-2 path from `+58EB40` into the deeper resolver currently called `+A1F360`, and determine whether factory-2 component `0x815B84E3 + 0x43C` is actually read as the source handle for bank entry 1. Only then implement the guarded temporary source-writer A/B described in the handoff. Label every claim as confirmed, inferred, or untested; do not promise a fix before the visual result.
+> Read `C:\Destiny 2 Development\OMEGA-PURPLE-VFX-HANDOFF-20260822.md` completely, then inspect the current untracked `activity_spawner_chain_probe.cpp` and the latest `dawn.log`. Do not modify or build anything until you reconcile the source/DLL mismatch documented in the handoff. Focus only on the Omega opening purple aura/beam alignment. The tested late `context_data+0x2C` Actor-1-to-Actor-2 swap is ruled out because `+58A150` used `route=direct_bank` and `object_argument_consumed=no`. First verify the source-kind-2 path from `+58EB40` into the deeper resolver currently called `+A1F360`, and determine whether factory-2 component `0x815B84E3 + 0x43C` is actually read as the source handle for bank entry 1. Only then implement the guarded temporary source-writer A/B described in the handoff. Label every claim as confirmed, inferred, or untested; do not promise a fix before the visual result.
 
 ## Bottom line
 

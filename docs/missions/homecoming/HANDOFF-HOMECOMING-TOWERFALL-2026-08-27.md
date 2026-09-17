@@ -62,7 +62,7 @@ Use the safe pre-active-Scene DLL described below. The current diagnostic DLL en
    ```
 
 3. Start `C:\Destiny 2 Development\destiny2.exe`.
-4. Press `Insert` to open the Sunrise UI.
+4. Press `Insert` to open the Dawn UI.
 5. Open **Activity** and find **Activity override**.
 6. Click **Towerfall opening**. This is preferred over manually selecting each row.
 7. Confirm the resulting profile:
@@ -77,8 +77,8 @@ Use the safe pre-active-Scene DLL described below. The current diagnostic DLL en
 
    Do not force the default `0x2EA8FB98` spawn set for this profile. The retained Chosen route owns the actual arrival point.
 
-8. Return to the Director and launch the **Chosen** activity, activity index `282`. Chosen is only the donor launch entry; Sunrise replaces its selected contract with Homecoming activity `266` before publication.
-9. Expected confirmation lines in `Sunrise\logs\sunrise.log` include:
+8. Return to the Director and launch the **Chosen** activity, activity index `282`. Chosen is only the donor launch entry; Dawn replaces its selected contract with Homecoming activity `266` before publication.
+9. Expected confirmation lines in `Dawn\logs\dawn.log` include:
 
    ```text
    profile=towerfall ... commit=awaiting_chosen_activity_282
@@ -154,7 +154,7 @@ r10 = 00010002
 r4C = 02000000
 ```
 
-The corresponding log line is near line 2320 of the packaged `evidence\logs\sunrise.scene-count-correct.log`.
+The corresponding log line is near line 2320 of the packaged `evidence\logs\dawn.scene-count-correct.log`.
 
 ## Crash evidence
 
@@ -186,8 +186,8 @@ The immediate return address on the captured stack is `destiny2.exe+0xA92B07`. T
 Packaged evidence:
 
 ```text
-evidence\logs\sunrise.scene-count-correct.log
-evidence\logs\sunrise.scene-count-shifted.log
+evidence\logs\dawn.scene-count-correct.log
+evidence\logs\dawn.scene-count-shifted.log
 evidence\crash-current\crash_info.txt
 evidence\crash-current\global_status_info.txt
 evidence\crash-current\minidump.dmp
@@ -199,7 +199,7 @@ evidence\crash-previous\crash_info.txt
 The `0x80809C25` table inside selector definition `0x80B82771` contains several package references. The invariant `0x57318E3B/2/1` row was recovered correctly from offset `0x128` of:
 
 ```text
-Sunrise\analysis\towerfall_cue_ref_80B82771_class_80809C0F.bin
+Dawn\analysis\towerfall_cue_ref_80B82771_class_80809C0F.bin
 ```
 
 However, that row is not one of the activity roster's registered group identities. The Scene consumer reaches native processing but constructs a local record whose expected backing pointer is the small value `0x314`. The strongest current conclusion is that the row is a child/action anchor and needs a package-owned Scene runtime object to be created or selected first.
@@ -224,17 +224,17 @@ Do not paper over `+0xA9309B` by skipping the faulting instruction. That would h
 ## Important source locations
 
 ```text
-Sunrise\src\middleware\bap\activity_message\activity_sensor_auth_bodies.cpp
-Sunrise\src\middleware\bap\activity_message\activity_sensor_auth_encoder.cpp
-Sunrise\src\middleware\bap\activity_message\sensor_auth_update.h
-Sunrise\src\middleware\bap\activity_message\tower_watch_cue_manifest.h
-Sunrise\src\server\bap\encrypted\push\activity\activity_roster_snapshot.cpp
-Sunrise\src\client\hooks\bootflow\activity_script_event_probe.cpp
-Sunrise\src\client\hooks\bootflow\activity_spawner_chain_probe.cpp
-Sunrise\src\client\hooks\bootflow\opening_authority\scene_authority_capture.*
-Sunrise\src\state\activity\forced\activity_forced_destination.cpp
-Sunrise\src\state\activity\forced\definition.h
-Sunrise\src\server\ui\activity_override\activity_override_panel.cpp
+Dawn\src\middleware\bap\activity_message\activity_sensor_auth_bodies.cpp
+Dawn\src\middleware\bap\activity_message\activity_sensor_auth_encoder.cpp
+Dawn\src\middleware\bap\activity_message\sensor_auth_update.h
+Dawn\src\middleware\bap\activity_message\tower_watch_cue_manifest.h
+Dawn\src\server\bap\encrypted\push\activity\activity_roster_snapshot.cpp
+Dawn\src\client\hooks\bootflow\activity_script_event_probe.cpp
+Dawn\src\client\hooks\bootflow\activity_spawner_chain_probe.cpp
+Dawn\src\client\hooks\bootflow\opening_authority\scene_authority_capture.*
+Dawn\src\state\activity\forced\activity_forced_destination.cpp
+Dawn\src\state\activity\forced\definition.h
+Dawn\src\server\ui\activity_override\activity_override_panel.cpp
 ```
 
 ## Building
@@ -245,7 +245,7 @@ From `C:\Destiny 2 Development` in PowerShell:
 $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 $vs = & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath
 $msbuild = Join-Path $vs 'MSBuild\Current\Bin\MSBuild.exe'
-& $msbuild Sunrise\Sunrise.vcxproj /m /p:Configuration=Release /p:Platform=x64 /verbosity:minimal
+& $msbuild Dawn\Dawn.vcxproj /m /p:Configuration=Release /p:Platform=x64 /verbosity:minimal
 ```
 
 Output:

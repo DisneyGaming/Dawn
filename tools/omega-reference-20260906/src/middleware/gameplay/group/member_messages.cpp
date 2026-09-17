@@ -2,7 +2,7 @@
 
 #include "../../encoding/bit_raw.h"
 
-namespace sunrise::middleware::gameplay::group {
+namespace dawn::middleware::gameplay::group {
 
 namespace {
 
@@ -78,4 +78,4 @@ bool read_player_remove(bits::Reader& reader, PlayerRemoveRequest& output) noexc
     return true;
 }
 
-} // namespace sunrise::middleware::gameplay::group
+} // namespace dawn::middleware::gameplay::group

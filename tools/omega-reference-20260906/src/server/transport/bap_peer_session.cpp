@@ -7,7 +7,7 @@
 #include "../bap/runtime.h"
 #include "internal.h"
 
-namespace sunrise::server::transport {
+namespace dawn::server::transport {
 namespace {
 
 /** @param prefix At least one buffered byte. @return Whole frame size, or zero when unknown. */
@@ -117,4 +117,4 @@ void close_peer(std::size_t slot) noexcept {
     peer.outputSize = 0;
 }
 
-} // namespace sunrise::server::transport
+} // namespace dawn::server::transport

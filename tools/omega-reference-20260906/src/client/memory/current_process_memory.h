@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::client::memory {
+namespace dawn::client::memory {
 
 /**
  * Copies one range out of this process using the Windows memory API.
@@ -16,4 +16,4 @@ namespace sunrise::client::memory {
 [[nodiscard]] bool
 read_current_process(void* context, std::uintptr_t address, std::span<std::byte> output) noexcept;
 
-} // namespace sunrise::client::memory
+} // namespace dawn::client::memory

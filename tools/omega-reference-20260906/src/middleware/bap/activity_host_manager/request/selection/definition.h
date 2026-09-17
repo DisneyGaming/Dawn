@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::middleware::bap::activity_host_manager::request::selection {
+namespace dawn::middleware::bap::activity_host_manager::request::selection {
 
 /** The descriptor schema holds 16 skull selection entries. */
 inline constexpr std::size_t kActivityManagerSkullCapacity = 16;
@@ -87,4 +87,4 @@ struct ActivityManagerSelectionResult final {
     ActivityManagerSelection secondary{};
 };
 
-} // namespace sunrise::middleware::bap::activity_host_manager::request::selection
+} // namespace dawn::middleware::bap::activity_host_manager::request::selection

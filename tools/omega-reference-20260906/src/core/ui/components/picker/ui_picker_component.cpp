@@ -7,7 +7,7 @@
 #include "../../scaling/dpi/ui_dpi_scaling.h"
 #include "../filter/ui_filter_component.h"
 
-namespace sunrise::core::ui::components::picker {
+namespace dawn::core::ui::components::picker {
 namespace {
 
 /** The hidden filter label is scoped by the caller's stable picker ID. */
@@ -121,4 +121,4 @@ bool control(const char* id,
     return picked;
 }
 
-} // namespace sunrise::core::ui::components::picker
+} // namespace dawn::core::ui::components::picker

@@ -1,7 +1,7 @@
 """Decode actual Haunted lifetime bodies using original offline client code, without game access."""
 from pathlib import Path
 import struct,sys,hashlib,json
-sys.path.insert(0,r'D:/Sunrise-work/vmprotect-kit-20260905')
+sys.path.insert(0,r'D:/Dawn-work/vmprotect-kit-20260905')
 from verify_member_lifecycle_offline import machine,execute,code,B,G,D,UC_X86_REG_RCX,UC_X86_REG_RDX
 from verify_tactical_source_native_exports import records_for
 base=Path(sys.argv[1]);records=records_for(0x8080991A);records.update(records_for(0x80800007));records.update(records_for(0x80800046));reports=[];decoded=[]

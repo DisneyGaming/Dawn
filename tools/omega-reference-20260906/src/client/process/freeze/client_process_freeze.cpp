@@ -7,7 +7,7 @@
 #include "../../../core/logging/log.h"
 #include "../../diagnostics/module_range.h"
 
-namespace sunrise::client::process::freeze {
+namespace dawn::client::process::freeze {
 namespace {
 
 /** Attempts before the hold gives up and the work runs with the game still moving. */
@@ -48,7 +48,7 @@ SRWLOCK g_exclusiveLock{SRWLOCK_INIT};
     return resolved;
 }
 
-/** @return Address range of the Sunrise image, or a cleared range. */
+/** @return Address range of the Dawn image, or a cleared range. */
 [[nodiscard]] diagnostics::ModuleRange own_range() noexcept {
     const DWORD flags =
         GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
@@ -125,10 +125,10 @@ void resume_threads(Held& held) noexcept {
 }
 
 /**
- * Suspends one thread and keeps it only when it stopped outside Sunrise code.
- * A thread stopped inside Sunrise may own a Sunrise lock the caller takes next.
+ * Suspends one thread and keeps it only when it stopped outside Dawn code.
+ * A thread stopped inside Dawn may own a Dawn lock the caller takes next.
  * @param held Receives the handle when the thread is kept.
- * @param range Sunrise image range.
+ * @param range Dawn image range.
  * @param threadId Process thread to suspend.
  * @return True when the thread is held, or had already exited.
  */
@@ -160,7 +160,7 @@ hold_thread(Held& held, const diagnostics::ModuleRange& range, DWORD threadId) n
 /**
  * Suspends every unseen thread in one process snapshot.
  * @param held Receives handles that stay suspended.
- * @param range Sunrise image range.
+ * @param range Dawn image range.
  * @param foundUnseen Receives true when this pass saw a new thread id.
  * @return True when the complete snapshot was held.
  */
@@ -200,7 +200,7 @@ hold_snapshot(Held& held, const diagnostics::ModuleRange& range, bool& foundUnse
 /**
  * Suspends new threads until a full snapshot finds none, then tests the log sinks.
  * @param held Receives every held handle.
- * @param range Sunrise image range.
+ * @param range Dawn image range.
  * @return True when every process thread is held at a safe stop.
  */
 [[nodiscard]] bool hold_once(Held& held, const diagnostics::ModuleRange& range) noexcept {
@@ -264,4 +264,4 @@ void leave_exclusive() noexcept {
     ReleaseSRWLockExclusive(&g_exclusiveLock);
 }
 
-} // namespace sunrise::client::process::freeze
+} // namespace dawn::client::process::freeze

@@ -13,7 +13,7 @@
 #include "layout.h"
 #include "vendor_build.h"
 
-namespace sunrise::client::content::vendors {
+namespace dawn::client::content::vendors {
 namespace {
 
 namespace reader = middleware::content::packages::reader;
@@ -328,4 +328,4 @@ bool build(const reader::Source& source,
     return published;
 }
 
-} // namespace sunrise::client::content::vendors
+} // namespace dawn::client::content::vendors

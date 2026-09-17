@@ -5,7 +5,7 @@
 #include "../../../account/account_state.h"
 #include "../definition.h"
 
-namespace sunrise::state::equipment::light::resolution {
+namespace dawn::state::equipment::light::resolution {
 
 /**
  * Finds authored equipment in the installed item and detail maps, then computes light from the
@@ -30,4 +30,4 @@ namespace sunrise::state::equipment::light::resolution {
                                    std::size_t characterIndex,
                                    std::int32_t& light) noexcept;
 
-} // namespace sunrise::state::equipment::light::resolution
+} // namespace dawn::state::equipment::light::resolution

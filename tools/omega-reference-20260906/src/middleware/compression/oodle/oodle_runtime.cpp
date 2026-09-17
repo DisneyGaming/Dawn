@@ -3,7 +3,7 @@
 
 #include "runtime.h"
 
-namespace sunrise::middleware::compression::oodle {
+namespace dawn::middleware::compression::oodle {
 namespace {
 
 /** Kraken is the queuez-compatible compressor. Oodle codec value 8. */
@@ -141,4 +141,4 @@ bool decompress(HMODULE module,
     return result == static_cast<std::int64_t>(output.size());
 }
 
-} // namespace sunrise::middleware::compression::oodle
+} // namespace dawn::middleware::compression::oodle

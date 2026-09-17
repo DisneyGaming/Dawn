@@ -9,7 +9,7 @@
 
 #include "../../../state/activity/omega_first_lair_encounter.h"
 
-namespace sunrise::client::hooks::bootflow::omega_boss_health {
+namespace dawn::client::hooks::bootflow::omega_boss_health {
 
 inline constexpr std::uint32_t kBodyRegion=0x6DFE676DU;
 inline constexpr std::uint32_t kEyeRegion=0x720A5B5BU;
@@ -158,4 +158,4 @@ private:
     bool crossed_{};
 };
 
-} // namespace sunrise::client::hooks::bootflow::omega_boss_health
+} // namespace dawn::client::hooks::bootflow::omega_boss_health

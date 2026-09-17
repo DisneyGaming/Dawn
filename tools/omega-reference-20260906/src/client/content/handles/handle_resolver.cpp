@@ -4,7 +4,7 @@
 
 #include "layout.h"
 
-namespace sunrise::client::content::handles {
+namespace dawn::client::content::handles {
 namespace {
 
 /** The 13 low handle bits pick one record within its table. */
@@ -145,4 +145,4 @@ bool resolve(const Source& source, std::uint32_t handle, std::uintptr_t& address
     return address != 0;
 }
 
-} // namespace sunrise::client::content::handles
+} // namespace dawn::client::content::handles

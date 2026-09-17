@@ -11,7 +11,7 @@
 #include "settings.h"
 #include "settings_upgrade.h"
 
-namespace sunrise::core::settings {
+namespace dawn::core::settings {
 namespace {
 
 /** The JSON settings file is the only file stored directly in the owned folder. */
@@ -268,4 +268,4 @@ const Settings& get() noexcept {
     return g_settings;
 }
 
-} // namespace sunrise::core::settings
+} // namespace dawn::core::settings

@@ -6,7 +6,7 @@
 
 #include "definition.h"
 
-namespace sunrise::state::build_data::socket_entry_lists {
+namespace dawn::state::build_data::socket_entry_lists {
 
 /** Clears every generated socket-entry-list mapping. */
 void clear() noexcept;
@@ -74,4 +74,4 @@ void clear() noexcept;
  */
 [[nodiscard]] bool snapshot_entry_tables(std::span<EntryTable> output, std::size_t& count) noexcept;
 
-} // namespace sunrise::state::build_data::socket_entry_lists
+} // namespace dawn::state::build_data::socket_entry_lists

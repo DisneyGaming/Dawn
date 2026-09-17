@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::input {
+namespace dawn::client::input {
 
 /**
  * The asynchronous key state reports a key held whichever application owns it. Every movement key
@@ -9,4 +9,4 @@ namespace sunrise::client::input {
  */
 [[nodiscard]] bool game_focused() noexcept;
 
-} // namespace sunrise::client::input
+} // namespace dawn::client::input

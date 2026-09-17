@@ -6,7 +6,7 @@
 #include <span>
 #include <string_view>
 
-namespace sunrise::state::content_manifest {
+namespace dawn::state::content_manifest {
 
 /** The client ContentConfig array accepts at most 4000 package rows. */
 inline constexpr std::size_t kRowCapacity = 4000;
@@ -47,4 +47,4 @@ struct View final {
  */
 using SnapshotVisitor = bool (*)(void* context, const View& view) noexcept;
 
-} // namespace sunrise::state::content_manifest
+} // namespace dawn::state::content_manifest

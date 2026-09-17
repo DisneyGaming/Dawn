@@ -1,6 +1,6 @@
 #include "parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 namespace {
 
 /** JSON code points below 0x20 are unescaped control characters. */
@@ -127,4 +127,4 @@ std::size_t Parser::channel_index(std::string_view name) noexcept {
     return static_cast<std::size_t>(log::Channel::count);
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

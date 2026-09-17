@@ -5,12 +5,12 @@
 #include "../../../core/ui/busy/busy.h"
 #include "graphics_hook_lifecycle.h"
 
-namespace sunrise::client::hooks::graphics::replacement {
+namespace dawn::client::hooks::graphics::replacement {
 namespace {
 
 /**
  * Publishes one replacement call before it can wait behind hook teardown.
- * @return True when this call may enter the Sunrise renderer.
+ * @return True when this call may enter the Dawn renderer.
  */
 __declspec(noinline) bool enter_hook_call() noexcept {
     if (g_hookCallDepth == 0) {
@@ -33,7 +33,7 @@ __declspec(noinline) void leave_hook_call() noexcept {
 }
 
 /**
- * Appends one optional Sunrise UI frame before the selected swap chain is presented.
+ * Appends one optional Dawn UI frame before the selected swap chain is presented.
  * @param swapChain SDK swap chain supplied by DXGI.
  * @param syncInterval Vertical-sync interval forwarded unchanged.
  * @param flags DXGI presentation flags forwarded unchanged.
@@ -140,4 +140,4 @@ HRESULT STDMETHODCALLTYPE present(IDXGISwapChain* swapChain,
     return present_body(swapChain, syncInterval, flags);
 }
 
-} // namespace sunrise::client::hooks::graphics::replacement
+} // namespace dawn::client::hooks::graphics::replacement

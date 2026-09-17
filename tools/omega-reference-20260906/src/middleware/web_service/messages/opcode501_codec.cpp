@@ -4,7 +4,7 @@
 #include "../../encoding/byte_order.h"
 #include "../status_fields.h"
 
-namespace sunrise::middleware::web_service::messages::opcode501 {
+namespace dawn::middleware::web_service::messages::opcode501 {
 namespace {
 
 /** The create-character response carries the new character's 64-bit object id. */
@@ -38,4 +38,4 @@ bool encode_response(const Message& message,
     return true;
 }
 
-} // namespace sunrise::middleware::web_service::messages::opcode501
+} // namespace dawn::middleware::web_service::messages::opcode501

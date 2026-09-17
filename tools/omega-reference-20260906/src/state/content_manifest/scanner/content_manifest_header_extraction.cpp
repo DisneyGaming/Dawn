@@ -6,7 +6,7 @@
 #include "internal.h"
 #include "package/content_manifest_package_header.h"
 
-namespace sunrise::state::content_manifest::scanner {
+namespace dawn::state::content_manifest::scanner {
 namespace {
 
 /** @param first Candidate. @param second Candidate. @return Package grouping order. */
@@ -102,4 +102,4 @@ bool extract(std::wstring_view directory,
     return true;
 }
 
-} // namespace sunrise::state::content_manifest::scanner
+} // namespace dawn::state::content_manifest::scanner

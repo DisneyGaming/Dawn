@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <span>
 
-namespace sunrise::middleware::crypto::ecc {
+namespace dawn::middleware::crypto::ecc {
 
 /** secp224r1 coordinates and shared secrets are 28 bytes. */
 inline constexpr std::size_t kFieldSize = 28;
@@ -28,4 +28,4 @@ struct Agreement {
  */
 [[nodiscard]] bool agree(std::span<const std::byte> peerPublicKey, Agreement& output) noexcept;
 
-} // namespace sunrise::middleware::crypto::ecc
+} // namespace dawn::middleware::crypto::ecc

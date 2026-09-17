@@ -8,7 +8,7 @@
 #include "../../../middleware/content/packages/tables/spawn_reader.h"
 #include "../../../state/build_data/spawn_sets/spawn_set_catalog.h"
 
-namespace sunrise::client::content::spawn_sets {
+namespace dawn::client::content::spawn_sets {
 namespace {
 
 namespace tables = middleware::content::packages::tables;
@@ -679,4 +679,4 @@ AdvanceResult advance(Storage& storage,
     return AdvanceResult::complete;
 }
 
-} // namespace sunrise::client::content::spawn_sets
+} // namespace dawn::client::content::spawn_sets

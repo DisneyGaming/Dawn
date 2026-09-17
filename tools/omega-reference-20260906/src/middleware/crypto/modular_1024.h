@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::crypto::modular {
+namespace dawn::middleware::crypto::modular {
 
 /** Direct-association integers are 1024 bits and travel as 128 big-endian bytes. */
 inline constexpr std::size_t kByteSize = 128;
@@ -93,4 +93,4 @@ void power(const Modulus& modulus,
            const Number& exponent,
            Number& output) noexcept;
 
-} // namespace sunrise::middleware::crypto::modular
+} // namespace dawn::middleware::crypto::modular

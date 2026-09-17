@@ -3,7 +3,7 @@
 #include "../gate/content_config_signature_gate.h"
 #include "../internal.h"
 
-namespace sunrise::client::hooks::network::content_config::lifecycle {
+namespace dawn::client::hooks::network::content_config::lifecycle {
 
 extern gate::Ownership g_gateOwnership;
 extern bool g_transitionActive;
@@ -28,4 +28,4 @@ void clear_runtime() noexcept;
  */
 [[nodiscard]] bool detach(HookSlot slot, void* replacement) noexcept;
 
-} // namespace sunrise::client::hooks::network::content_config::lifecycle
+} // namespace dawn::client::hooks::network::content_config::lifecycle

@@ -8,7 +8,7 @@
 #include "state_account_transaction_helpers.h"
 #include "storage/internal.h"
 
-namespace sunrise::state {
+namespace dawn::state {
 
 using namespace runtime::detail;
 
@@ -125,4 +125,4 @@ bool commit_item_dismantle(PendingItemDismantle& mutation) noexcept {
     return true;
 }
 
-} // namespace sunrise::state
+} // namespace dawn::state

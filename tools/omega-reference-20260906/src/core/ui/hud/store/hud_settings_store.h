@@ -2,7 +2,7 @@
 
 #include <span>
 
-namespace sunrise::core::ui::hud::store {
+namespace dawn::core::ui::hud::store {
 
 /** One overlay's file key and its switch state. */
 struct Switch {
@@ -32,4 +32,4 @@ void load(std::span<Switch> switches) noexcept;
  */
 bool save(std::span<const Switch> switches) noexcept;
 
-} // namespace sunrise::core::ui::hud::store
+} // namespace dawn::core::ui::hud::store

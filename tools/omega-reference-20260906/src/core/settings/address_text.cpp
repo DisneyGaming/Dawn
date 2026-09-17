@@ -1,6 +1,6 @@
 #include "address_text.h"
 
-namespace sunrise::core::settings::address {
+namespace dawn::core::settings::address {
 
 namespace {
 
@@ -62,4 +62,4 @@ bool parse_ipv4(std::string_view text, std::array<unsigned char, kOctets>& outpu
     return true;
 }
 
-} // namespace sunrise::core::settings::address
+} // namespace dawn::core::settings::address

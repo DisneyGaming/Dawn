@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::state::build_data::vendors {
+namespace dawn::state::build_data::vendors {
 
 /** Rows of the installed vendor index. The live table has 511. */
 inline constexpr std::size_t kIndexCapacity = 512;
@@ -125,4 +125,4 @@ struct InstalledRow {
     std::array<std::uint8_t, kInstalledRowStride> raw{};
 };
 
-} // namespace sunrise::state::build_data::vendors
+} // namespace dawn::state::build_data::vendors

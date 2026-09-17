@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::encoding::bits {
+namespace dawn::middleware::encoding::bits {
 
 /** Fixed-buffer MSB-first reader for bit-packed Middleware formats. */
 class Reader final {
@@ -40,4 +40,4 @@ private:
     bool failed_{};
 };
 
-} // namespace sunrise::middleware::encoding::bits
+} // namespace dawn::middleware::encoding::bits

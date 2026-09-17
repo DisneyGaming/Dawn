@@ -8,7 +8,7 @@
 #include "filters/logs_filter_controls.h"
 #include "internal.h"
 
-namespace sunrise::core::ui::modules::logs::internal {
+namespace dawn::core::ui::modules::logs::internal {
 namespace {
 
 /** 500 authored pixels keep all three filters on one toolbar row. */
@@ -162,4 +162,4 @@ void reset() noexcept {
     g_recordedCount = 0;
 }
 
-} // namespace sunrise::core::ui::modules::logs::internal
+} // namespace dawn::core::ui::modules::logs::internal

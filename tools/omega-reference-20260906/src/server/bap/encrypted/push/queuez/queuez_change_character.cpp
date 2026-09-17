@@ -4,7 +4,7 @@
 #include "../../queuez/queuez_state_validation.h"
 #include "queuez_update_frame.h"
 
-namespace sunrise::server::bap::encrypted::push {
+namespace dawn::server::bap::encrypted::push {
 
 namespace selection_patch = middleware::datagen::family4::account::selection_patch;
 
@@ -47,4 +47,4 @@ bool append_change_character_notification(Scratch& scratch,
     return queuez_frame::append(scratch, family, patchSize, 0, key, nonce, response, written);
 }
 
-} // namespace sunrise::server::bap::encrypted::push
+} // namespace dawn::server::bap::encrypted::push

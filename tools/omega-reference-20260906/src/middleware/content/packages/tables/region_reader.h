@@ -6,7 +6,7 @@
 
 #include "scenario_reader.h"
 
-namespace sunrise::middleware::content::packages::tables {
+namespace dawn::middleware::content::packages::tables {
 
 /** Activity msg 12 publishes this many region records. */
 inline constexpr std::size_t kRegionRecordCount = 64;
@@ -47,4 +47,4 @@ static_assert(region_index(13) == 104);
 static_assert(region_index(63) == 504);
 static_assert(region_index(64) == kRegionIndexBound);
 
-} // namespace sunrise::middleware::content::packages::tables
+} // namespace dawn::middleware::content::packages::tables

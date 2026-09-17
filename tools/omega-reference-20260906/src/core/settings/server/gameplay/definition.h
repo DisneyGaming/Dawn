@@ -4,15 +4,15 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::core::settings::server::gameplay {
+namespace dawn::core::settings::server::gameplay {
 
 /** Process that owns the gameplay UDP endpoint for this run. */
 enum class Topology : std::uint8_t {
     /** No endpoint is bound and no method-0 descriptor is advertised. */
     disabled,
-    /** Sunrise binds the endpoint and hosts the peer protocol itself. */
+    /** Dawn binds the endpoint and hosts the peer protocol itself. */
     embedded,
-    /** A configured process owns the endpoint. Sunrise binds nothing. */
+    /** A configured process owns the endpoint. Dawn binds nothing. */
     external,
 };
 
@@ -69,4 +69,4 @@ struct Settings {
  */
 [[nodiscard]] std::uint16_t effective_reserve(const Settings& settings) noexcept;
 
-} // namespace sunrise::core::settings::server::gameplay
+} // namespace dawn::core::settings::server::gameplay

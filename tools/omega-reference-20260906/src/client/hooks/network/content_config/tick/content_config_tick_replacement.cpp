@@ -3,7 +3,7 @@
 #include "../internal.h"
 #include "../lifecycle/content_config_hook_storage.h"
 
-namespace sunrise::client::hooks::network::content_config::tick {
+namespace dawn::client::hooks::network::content_config::tick {
 namespace {
 
 /**
@@ -39,4 +39,4 @@ void* entry_point() noexcept {
     return reinterpret_cast<void*>(&update_body);
 }
 
-} // namespace sunrise::client::hooks::network::content_config::tick
+} // namespace dawn::client::hooks::network::content_config::tick

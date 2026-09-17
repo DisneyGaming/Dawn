@@ -5,7 +5,7 @@
 
 #include "../../platform/sdk.h"
 
-namespace sunrise::client::hooks::egress::winsock::discovery {
+namespace dawn::client::hooks::egress::winsock::discovery {
 
 /** The original Winsock send entry, used to skip the installed detour. */
 using SendTo = decltype(&::sendto);
@@ -27,4 +27,4 @@ struct Result final {
                             int destinationLength,
                             SendTo sendTo) noexcept;
 
-} // namespace sunrise::client::hooks::egress::winsock::discovery
+} // namespace dawn::client::hooks::egress::winsock::discovery

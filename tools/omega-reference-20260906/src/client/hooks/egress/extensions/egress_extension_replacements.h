@@ -2,7 +2,7 @@
 
 #include "../platform/sdk.h"
 
-namespace sunrise::client::hooks::egress::extensions {
+namespace dawn::client::hooks::egress::extensions {
 
 /** Transmits file data only to a connected exact IPv4 redirect target. */
 BOOL PASCAL transmit_file(SOCKET socket,
@@ -13,4 +13,4 @@ BOOL PASCAL transmit_file(SOCKET socket,
                           LPTRANSMIT_FILE_BUFFERS buffers,
                           DWORD reserved) noexcept;
 
-} // namespace sunrise::client::hooks::egress::extensions
+} // namespace dawn::client::hooks::egress::extensions

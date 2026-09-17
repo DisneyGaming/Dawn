@@ -6,7 +6,7 @@
 #include "../../../../state/runtime/runtime.h"
 #include "internal.h"
 
-namespace sunrise::client::content::items::packages {
+namespace dawn::client::content::items::packages {
 namespace {
 
 namespace pool = middleware::content::packages::tables::abilities;
@@ -230,4 +230,4 @@ bool build_ability_buckets(const reader::Source& source,
     return true;
 }
 
-} // namespace sunrise::client::content::items::packages
+} // namespace dawn::client::content::items::packages

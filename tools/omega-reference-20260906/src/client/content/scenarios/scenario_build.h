@@ -2,7 +2,7 @@
 
 #include "../../../middleware/content/packages/reader/reader.h"
 
-namespace sunrise::client::content::scenarios {
+namespace dawn::client::content::scenarios {
 
 /**
  * Extracts every destination's bubble layout from the installed packages, once.
@@ -14,4 +14,4 @@ namespace sunrise::client::content::scenarios {
 [[nodiscard]] bool build(const middleware::content::packages::reader::Source& source,
                          middleware::content::packages::reader::Scratch& scratch) noexcept;
 
-} // namespace sunrise::client::content::scenarios
+} // namespace dawn::client::content::scenarios

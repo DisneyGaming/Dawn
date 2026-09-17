@@ -26,7 +26,7 @@
 #include "internal.h"
 #include "omega_lair_roster.h"
 
-namespace sunrise::server::bap::encrypted::push::activity {
+namespace dawn::server::bap::encrypted::push::activity {
 namespace {
 
 namespace layouts = state::build_data::scenarios;
@@ -1344,4 +1344,4 @@ RegionSnapshotBuildResult build_region_debt_snapshot(
     return result;
 }
 
-} // namespace sunrise::server::bap::encrypted::push::activity
+} // namespace dawn::server::bap::encrypted::push::activity

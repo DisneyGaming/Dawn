@@ -6,7 +6,7 @@
 
 #include "internal.h"
 
-namespace sunrise::core::log::snapshot {
+namespace dawn::core::log::snapshot {
 namespace {
 
 /** One trailing byte keeps a null for debugger-friendly storage. */
@@ -117,4 +117,4 @@ void record(Channel channel, Level level, std::string_view text) noexcept {
 }
 
 } // namespace internal
-} // namespace sunrise::core::log::snapshot
+} // namespace dawn::core::log::snapshot

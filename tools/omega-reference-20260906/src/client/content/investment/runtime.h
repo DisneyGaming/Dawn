@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::content::investment {
+namespace dawn::client::content::investment {
 
 /**
  * Publishes installed mappings and the process-only selected-character light scalar.
@@ -8,4 +8,4 @@ namespace sunrise::client::content::investment {
  */
 [[nodiscard]] bool refresh() noexcept;
 
-} // namespace sunrise::client::content::investment
+} // namespace dawn::client::content::investment

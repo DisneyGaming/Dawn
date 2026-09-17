@@ -4,7 +4,7 @@
 
 #include <imgui.h>
 
-namespace sunrise::core::ui::scaling::dpi {
+namespace dawn::core::ui::scaling::dpi {
 
 /** Display-scale result, held by value. */
 struct Value {
@@ -49,4 +49,4 @@ calculate(UINT reportedDpi, UINT viewportWidth, UINT viewportHeight, Value& outp
 /** Returns to the unscaled base after all UI render calls stop. */
 void reset() noexcept;
 
-} // namespace sunrise::core::ui::scaling::dpi
+} // namespace dawn::core::ui::scaling::dpi

@@ -9,7 +9,7 @@
 
 #include "settings.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 
 /** Fixed-storage JSON reader for the supported Core settings. */
 class Parser {
@@ -212,31 +212,31 @@ private:
      */
     [[nodiscard]] bool account_settings(state::account::settings::AccountSettings& output) noexcept;
     /**
-     * Parses controller and mouse settings under stable Sunrise-owned names.
+     * Parses controller and mouse settings under stable Dawn-owned names.
      * @param output Receives bounded native value types, with no record offsets.
      * @return True when the whole controls object is valid JSON.
      */
     [[nodiscard]] bool controls_settings(state::account::settings::Controls& output) noexcept;
     /**
-     * Parses voice, volume, and migration settings under stable Sunrise-owned names.
+     * Parses voice, volume, and migration settings under stable Dawn-owned names.
      * @param output Receives bounded native value types, with no record offsets.
      * @return True when the whole audio object is valid JSON.
      */
     [[nodiscard]] bool audio_settings(state::account::settings::Audio& output) noexcept;
     /**
-     * Parses screen and renderer settings under stable Sunrise-owned names.
+     * Parses screen and renderer settings under stable Dawn-owned names.
      * @param output Receives bounded native value types, with no record offsets.
      * @return True when the whole display object is valid JSON.
      */
     [[nodiscard]] bool display_settings(state::account::settings::Display& output) noexcept;
     /**
-     * Parses HUD and text settings under stable Sunrise-owned names.
+     * Parses HUD and text settings under stable Dawn-owned names.
      * @param output Receives bounded native value types, with no record offsets.
      * @return True when the whole interface object is valid JSON.
      */
     [[nodiscard]] bool interface_settings(state::account::settings::Interface& output) noexcept;
     /**
-     * Parses matchmaking and chat settings under stable Sunrise-owned names.
+     * Parses matchmaking and chat settings under stable Dawn-owned names.
      * @param output Receives bounded native value types, with no record offsets.
      * @return True when the whole social object is valid JSON.
      */
@@ -372,4 +372,4 @@ private:
     std::size_t position_{};
 };
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

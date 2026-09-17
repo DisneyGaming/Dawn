@@ -15,7 +15,7 @@
 #include "../../../../state/activity/runtime.h"
 #include "../../../../state/build_data/runtime.h"
 
-namespace sunrise::server::bap::encrypted::activity_host_manager {
+namespace dawn::server::bap::encrypted::activity_host_manager {
 namespace {
 
 namespace request_selection = middleware::bap::activity_host_manager::request::selection;
@@ -45,11 +45,11 @@ choose_copy(const request_selection::ActivityManagerSelectionResult& parsed) noe
     if (!parsed.hasSecondary) {
         return parsed.selection;
     }
-    ::sunrise::state::build_data::scenarios::Definition layout{};
+    ::dawn::state::build_data::scenarios::Definition layout{};
     const bool primaryKnown =
-        ::sunrise::state::build_data::find_scenario_layout(copy_name(parsed.selection), layout);
+        ::dawn::state::build_data::find_scenario_layout(copy_name(parsed.selection), layout);
     const bool secondaryKnown =
-        ::sunrise::state::build_data::find_scenario_layout(copy_name(parsed.secondary), layout);
+        ::dawn::state::build_data::find_scenario_layout(copy_name(parsed.secondary), layout);
     return !primaryKnown && secondaryKnown ? parsed.secondary : parsed.selection;
 }
 
@@ -259,4 +259,4 @@ bool encode_response(std::span<const std::byte> requestBody,
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted::activity_host_manager
+} // namespace dawn::server::bap::encrypted::activity_host_manager

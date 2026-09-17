@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <cstring>
 
-namespace sunrise::state::build_data::cache::validation {
+namespace dawn::state::build_data::cache::validation {
 namespace {
 
 /** Two 4 KiB buffers limit stack use while comparing whole cache files. */
@@ -64,4 +64,4 @@ bool files_equal(const wchar_t* firstPath, const wchar_t* secondPath) noexcept {
     return equal && secondClosed && firstClosed;
 }
 
-} // namespace sunrise::state::build_data::cache::validation
+} // namespace dawn::state::build_data::cache::validation

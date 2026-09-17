@@ -18,7 +18,7 @@
 #include "../../../state/activity/omega_presentation.h"
 #include "../../../state/activity/omega_rescue_scene_authority.h"
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 namespace {
 namespace npc=state::activity::omega_rescue_npc;
 namespace fight=state::activity::omega_first_lair;
@@ -402,4 +402,4 @@ bool uninstall_omega_rescue_scene_receipts() noexcept {
     if(hooking::detour::uninstall(g_handle,protectedEntries,&idle)!=hooking::detour::UninstallResult::removed) {return false;}
     g_original.store(nullptr,std::memory_order_release);g_image=0;return true;
 }
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

@@ -4,7 +4,7 @@
 
 #include "codec.h"
 
-namespace sunrise::middleware::protobuf {
+namespace dawn::middleware::protobuf {
 
 /** Native buffer sizes must fit the unsigned protobuf length range without narrowing. */
 static_assert((std::numeric_limits<std::size_t>::max)()
@@ -66,4 +66,4 @@ read_varint(std::span<const std::byte> input, std::size_t& cursor, std::uint64_t
  */
 std::size_t write_raw_varint(std::uint64_t value, std::span<std::byte> output) noexcept;
 
-} // namespace sunrise::middleware::protobuf
+} // namespace dawn::middleware::protobuf

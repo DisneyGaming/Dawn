@@ -2,9 +2,9 @@
 
 #include "../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 
-/** Parses voice, volume, and migration settings under stable Sunrise-owned names. */
+/** Parses voice, volume, and migration settings under stable Dawn-owned names. */
 bool Parser::audio_settings(state::account::settings::Audio& output) noexcept {
     enum class Field : std::size_t {
         voiceOutputMode,
@@ -88,4 +88,4 @@ bool Parser::audio_settings(state::account::settings::Audio& output) noexcept {
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

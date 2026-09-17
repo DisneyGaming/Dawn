@@ -5,7 +5,7 @@
 
 #include "../modules/ui_module_descriptor.h"
 
-namespace sunrise::core::ui::layout {
+namespace dawn::core::ui::layout {
 
 /** Copy of the selection state. No renderer storage is exposed. */
 struct StateSnapshot {
@@ -21,7 +21,7 @@ struct StateSnapshot {
 [[nodiscard]] bool initialize() noexcept;
 
 /**
- * Draws the centered Sunrise surface inside the caller's active Dear ImGui frame.
+ * Draws the centered Dawn surface inside the caller's active Dear ImGui frame.
  * The surface opens and closes over a short transition, so a hidden frame still draws until it
  * has finished closing.
  * @param visible Current Core visibility state, which is the transition target.
@@ -38,4 +38,4 @@ struct StateSnapshot {
 /** @return One copy of the init and module selection state, read under the lock. */
 [[nodiscard]] StateSnapshot snapshot() noexcept;
 
-} // namespace sunrise::core::ui::layout
+} // namespace dawn::core::ui::layout

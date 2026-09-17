@@ -4,7 +4,7 @@
 #include "../../internal.h"
 #include "../../policy/policy.h"
 
-namespace sunrise::client::hooks::egress::winsock::reception {
+namespace dawn::client::hooks::egress::winsock::reception {
 namespace {
 
 /** A missing original keeps receive calls fail-closed. */
@@ -77,4 +77,4 @@ int WSAAPI receive_buffers_from(SOCKET socket,
                                           : policy::deny_socket_call();
 }
 
-} // namespace sunrise::client::hooks::egress::winsock::reception
+} // namespace dawn::client::hooks::egress::winsock::reception

@@ -1,6 +1,6 @@
 #include "codec.h"
 
-namespace sunrise::state::build_data::cache::records {
+namespace dawn::state::build_data::cache::records {
 
 /** Encodes one vendor index row. */
 bool encode(const vendors::IndexEntry& value, VendorIndexRecord& record) noexcept {
@@ -132,4 +132,4 @@ bool decode(const VendorInstalledRowRecord& record, vendors::InstalledRow& value
     return true;
 }
 
-} // namespace sunrise::state::build_data::cache::records
+} // namespace dawn::state::build_data::cache::records

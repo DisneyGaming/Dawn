@@ -2,7 +2,7 @@
 
 #include "../../../middleware/content/packages/reader/reader.h"
 
-namespace sunrise::client::content::spawn_sets {
+namespace dawn::client::content::spawn_sets {
 
 /**
  * Extracts the spawn-set catalogue from the installed packages, once.
@@ -15,4 +15,4 @@ namespace sunrise::client::content::spawn_sets {
 [[nodiscard]] bool build(const middleware::content::packages::reader::Source& source,
                          middleware::content::packages::reader::Scratch& scratch) noexcept;
 
-} // namespace sunrise::client::content::spawn_sets
+} // namespace dawn::client::content::spawn_sets

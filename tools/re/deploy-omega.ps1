@@ -35,7 +35,7 @@ if (Test-Path -LiteralPath $targetPath -PathType Leaf) {
 }
 
 $deploymentId = '{0}-{1}' -f (Get-Date -Format 'yyyyMMdd-HHmmss'), ([guid]::NewGuid().ToString('N').Substring(0, 8))
-$backupDirectory = Join-Path $gameRoot ('.sunrise\backups\omega-' + $deploymentId)
+$backupDirectory = Join-Path $gameRoot ('.dawn\backups\omega-' + $deploymentId)
 $null = New-Item -ItemType Directory -Path $backupDirectory
 $backupPath = $null
 if ($previousHash) {

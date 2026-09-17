@@ -3,7 +3,7 @@
 
 #include "locator_cache.h"
 
-namespace sunrise::middleware::content::packages::reader::locator_cache {
+namespace dawn::middleware::content::packages::reader::locator_cache {
 namespace {
 
 /**
@@ -110,4 +110,4 @@ void mark_complete(std::uint64_t directoryHash) noexcept {
     ReleaseSRWLockExclusive(&g_lock);
 }
 
-} // namespace sunrise::middleware::content::packages::reader::locator_cache
+} // namespace dawn::middleware::content::packages::reader::locator_cache

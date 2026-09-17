@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::content::items::packages {
+namespace dawn::client::content::items::packages {
 
 /**
  * Publishes the dense item table from the installed packages, once.
@@ -16,4 +16,4 @@ namespace sunrise::client::content::items::packages {
  */
 [[nodiscard]] bool readable() noexcept;
 
-} // namespace sunrise::client::content::items::packages
+} // namespace dawn::client::content::items::packages

@@ -3,7 +3,7 @@
 #include "redirect.h"
 #include "replacements.h"
 
-namespace sunrise::client::hooks::egress::resolver {
+namespace dawn::client::hooks::egress::resolver {
 namespace {
 
 /**
@@ -99,4 +99,4 @@ INT WSAAPI name_info_w(const SOCKADDR* address,
                 flags);
 }
 
-} // namespace sunrise::client::hooks::egress::resolver
+} // namespace dawn::client::hooks::egress::resolver

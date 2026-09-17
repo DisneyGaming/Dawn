@@ -71,7 +71,7 @@ def recover():
                 'max': struct.unpack_from('<3f', data, base + 0xC0), 'vertices': vertices})
     result['provenance'] = {'method': 'Installed package and version-52 cache extraction; no live observations',
         'scenario': f'{SCENARIO:08X}', 'dialogueBank': f'{BANK:08X}',
-        'cacheSha256': hashlib.sha256((packages.ROOT / 'Sunrise/cache/build_data.bin').read_bytes()).hexdigest()}
+        'cacheSha256': hashlib.sha256((packages.ROOT / 'Dawn/cache/build_data.bin').read_bytes()).hexdigest()}
     validate(result)
     return result
 

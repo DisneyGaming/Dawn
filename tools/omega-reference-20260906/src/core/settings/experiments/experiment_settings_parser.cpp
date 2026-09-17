@@ -1,6 +1,6 @@
 #include "../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 
 /** Parses the top-level experimental feature group. */
 bool Parser::experiment_settings(experiments::Omega& output) noexcept {
@@ -110,4 +110,4 @@ bool Parser::omega_experiment_settings(experiments::Omega& output) noexcept {
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

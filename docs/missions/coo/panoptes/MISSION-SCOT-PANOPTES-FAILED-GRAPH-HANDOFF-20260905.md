@@ -8,7 +8,7 @@ The latest request is **“just give me a handoff.”** Investigation stopped at
 
 ## Confirmed failure from the latest log
 
-Preserved log: `C:/Destiny 2 Development/build/scot-panoptes-native-graph-20260905/sunrise.revision9-failed.log`.
+Preserved log: `C:/Destiny 2 Development/build/scot-panoptes-native-graph-20260905/dawn.revision9-failed.log`.
 
 Relevant receipts in the original log:
 
@@ -60,16 +60,16 @@ The user manually launches `C:/Destiny 2 Development/launch-scot-reveal-debug.cm
 
 Primary files, relative to the workspace:
 
-- `Sunrise/src/client/hooks/bootflow/omega_reveal_native.cpp`
-- `Sunrise/src/client/hooks/bootflow/omega_boss_graph_runtime.inl`
-- `Sunrise/src/client/hooks/bootflow/omega_boss_graph.h`
-- `Sunrise/src/client/hooks/bootflow/omega_boss_graph_observation.h`
-- `Sunrise/src/client/hooks/bootflow/omega_reveal_bindings.h`
-- `Sunrise/src/state/activity/omega/omega_boss_authority.h`
-- `Sunrise/src/state/activity/omega/omega_progression.h`
-- `Sunrise/src/middleware/bap/activity_message/activity_sensor_auth_bodies.cpp`
-- `Sunrise/src/middleware/bap/activity_message/sensor_auth_update.h`
-- `Sunrise/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp`
+- `Dawn/src/client/hooks/bootflow/omega_reveal_native.cpp`
+- `Dawn/src/client/hooks/bootflow/omega_boss_graph_runtime.inl`
+- `Dawn/src/client/hooks/bootflow/omega_boss_graph.h`
+- `Dawn/src/client/hooks/bootflow/omega_boss_graph_observation.h`
+- `Dawn/src/client/hooks/bootflow/omega_reveal_bindings.h`
+- `Dawn/src/state/activity/omega/omega_boss_authority.h`
+- `Dawn/src/state/activity/omega/omega_progression.h`
+- `Dawn/src/middleware/bap/activity_message/activity_sensor_auth_bodies.cpp`
+- `Dawn/src/middleware/bap/activity_message/sensor_auth_update.h`
+- `Dawn/src/server/bap/encrypted/push/activity/activity_roster_snapshot.cpp`
 
 Parent authority `95FB2E01/1/0` uses 641 bits, zero loose actors and authored spawn location `95FB2E01/66/57`. Member authority `95FB2E01/2/1` uses 42 bits and the matching generation. Activation follows the existing doorway latch.
 
@@ -125,7 +125,7 @@ Relevant disassembly:
 
 `A8CB20` stores actor at output `+4`, obtains generic parent from actor record `+50`, writes that parent at output `+0`, and appends a cached action-context reference at `+8`. Its output is not the character.
 
-`DCBF30` performs a native actor component lookup, resolves the returned datum plus relative component offset, and returns the component's `+24` value. The previous revision-8 animation callback did record prefix `80F66907/808036CF/1B48` and successfully resolved the intended bank and rows. Those earlier receipts are in `build/scot-panoptes-completion-20260905/sunrise.revision8-observed.log`.
+`DCBF30` performs a native actor component lookup, resolves the returned datum plus relative component offset, and returns the component's `+24` value. The previous revision-8 animation callback did record prefix `80F66907/808036CF/1B48` and successfully resolved the intended bank and rows. Those earlier receipts are in `build/scot-panoptes-completion-20260905/dawn.revision8-observed.log`.
 
 Important established distinctions:
 

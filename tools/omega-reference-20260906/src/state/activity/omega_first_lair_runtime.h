@@ -3,7 +3,7 @@
 #include "omega_first_lair_encounter.h"
 #include "omega_crown_respawn_authority.h"
 
-namespace sunrise::state::activity::omega_first_lair {
+namespace dawn::state::activity::omega_first_lair {
 struct Authority final {
     std::uint32_t generation{};
     std::array<std::uint8_t,21> loose{};
@@ -70,4 +70,4 @@ bool observe_transit_created(std::uint64_t run,std::uint8_t index,std::uint32_t 
 void invalidate(std::uint64_t run) noexcept;
 [[nodiscard]] bool publication_due(std::uint64_t now) noexcept;
 void reset() noexcept;
-} // namespace sunrise::state::activity::omega_first_lair
+} // namespace dawn::state::activity::omega_first_lair

@@ -5,7 +5,7 @@
 
 #include "../../../../encoding/bit_writer.h"
 
-namespace sunrise::middleware::datagen::family4::account::selection_patch {
+namespace dawn::middleware::datagen::family4::account::selection_patch {
 namespace {
 
 /** 4 optional fields come before the selected-character field. */
@@ -49,4 +49,4 @@ bool encode(std::uint64_t selectedSoid,
     return true;
 }
 
-} // namespace sunrise::middleware::datagen::family4::account::selection_patch
+} // namespace dawn::middleware::datagen::family4::account::selection_patch

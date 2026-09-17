@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace sunrise::client::hooks::network::bubble_authority::scope {
+namespace dawn::client::hooks::network::bubble_authority::scope {
 namespace {
 
 thread_local std::size_t g_depth{};
@@ -24,4 +24,4 @@ bool active() noexcept {
     return g_depth != 0;
 }
 
-} // namespace sunrise::client::hooks::network::bubble_authority::scope
+} // namespace dawn::client::hooks::network::bubble_authority::scope

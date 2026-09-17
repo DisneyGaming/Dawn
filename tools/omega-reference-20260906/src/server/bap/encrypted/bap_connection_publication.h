@@ -7,7 +7,7 @@
 #include "queuez/queuez_state_validation.h"
 #include "transactions/definition.h"
 
-namespace sunrise::server::bap::encrypted {
+namespace dawn::server::bap::encrypted {
 
 /** Connection fields one request may publish, captured before its transaction commits. */
 struct ConnectionFields {
@@ -61,4 +61,4 @@ struct ConnectionFields {
  */
 void arm_repushes(Session& session, const queuez::StagedPublication& queuezPublication) noexcept;
 
-} // namespace sunrise::server::bap::encrypted
+} // namespace dawn::server::bap::encrypted

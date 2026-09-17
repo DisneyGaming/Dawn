@@ -21,7 +21,7 @@
 #include "domain_markers.h"
 #include "persistence/publication_transaction.h"
 
-namespace sunrise::state::build_data {
+namespace dawn::state::build_data {
 namespace {
 
 /**
@@ -407,4 +407,4 @@ void clear_catalogs() noexcept {
 
 } // namespace runtime
 
-} // namespace sunrise::state::build_data
+} // namespace dawn::state::build_data

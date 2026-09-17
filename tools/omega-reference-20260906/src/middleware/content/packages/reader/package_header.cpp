@@ -2,7 +2,7 @@
 
 #include "internal.h"
 
-namespace sunrise::middleware::content::packages::reader {
+namespace dawn::middleware::content::packages::reader {
 namespace {
 
 /** @param bytes Header prefix. @param offset Field offset. @return The little-endian field. */
@@ -37,4 +37,4 @@ bool parse_header(std::span<const std::byte, layout::kHeaderSize> bytes, Header&
     return header.entryCount != 0 && header.blockCount != 0;
 }
 
-} // namespace sunrise::middleware::content::packages::reader
+} // namespace dawn::middleware::content::packages::reader

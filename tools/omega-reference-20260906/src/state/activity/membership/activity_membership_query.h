@@ -5,7 +5,7 @@
 
 #include "../definition.h"
 
-namespace sunrise::state::activity::membership {
+namespace dawn::state::activity::membership {
 
 /**
  * Value-owned semantic after-image for one authoritative region operation.
@@ -246,4 +246,4 @@ struct PendingMutation final {
  */
 [[nodiscard]] bool commit(PendingMutation& mutation) noexcept;
 
-} // namespace sunrise::state::activity::membership
+} // namespace dawn::state::activity::membership

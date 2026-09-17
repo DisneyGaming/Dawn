@@ -5,7 +5,7 @@
 
 #include "layout.h"
 
-namespace sunrise::middleware::datagen::family4::instance::abi {
+namespace dawn::middleware::datagen::family4::instance::abi {
 
 /** The item instance SOID begins at native byte 0. */
 inline constexpr std::size_t kInstanceSoidOffset = 0;
@@ -86,4 +86,4 @@ static_assert(offsetof(layout::Object, creation) + offsetof(layout::CreationRequ
 static_assert(offsetof(layout::Object, tailDefinitionIndex) == kTailDefinitionOffset);
 static_assert(offsetof(layout::Object, tailValues) == kTailValuesOffset);
 
-} // namespace sunrise::middleware::datagen::family4::instance::abi
+} // namespace dawn::middleware::datagen::family4::instance::abi

@@ -7,7 +7,7 @@
 #include "layout.h"
 #include "reader.h"
 
-namespace sunrise::middleware::content::packages::reader::block_cache {
+namespace dawn::middleware::content::packages::reader::block_cache {
 
 /**
  * Reports the cached copy of one block.
@@ -55,4 +55,4 @@ void store(Scratch& scratch,
                                Scratch& scratch,
                                Header& header) noexcept;
 
-} // namespace sunrise::middleware::content::packages::reader::block_cache
+} // namespace dawn::middleware::content::packages::reader::block_cache

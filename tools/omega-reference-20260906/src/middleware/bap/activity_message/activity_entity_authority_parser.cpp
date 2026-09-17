@@ -11,7 +11,7 @@
 #include "../../encoding/byte_order.h"
 #include "entity_authority.h"
 
-namespace sunrise::middleware::bap::activity_message::entity_authority {
+namespace dawn::middleware::bap::activity_message::entity_authority {
 namespace {
 
 /** The selector byte and the mask that follows it, shared by msgs 26 and 33. */
@@ -108,4 +108,4 @@ bool parse_query_answer(std::uint32_t messageType,
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_message::entity_authority
+} // namespace dawn::middleware::bap::activity_message::entity_authority

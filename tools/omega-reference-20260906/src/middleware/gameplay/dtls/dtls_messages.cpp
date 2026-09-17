@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace sunrise::middleware::gameplay::dtls {
+namespace dawn::middleware::gameplay::dtls {
 
 namespace {
 
@@ -189,4 +189,4 @@ void write_cookie_ack(const CookieAck& cookieAck,
               output.begin() + kCookieAckSecurityIdOffset);
 }
 
-} // namespace sunrise::middleware::gameplay::dtls
+} // namespace dawn::middleware::gameplay::dtls

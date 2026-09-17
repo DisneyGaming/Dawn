@@ -9,7 +9,7 @@
 #include "../matchmaking_state.h"
 #include "internal.h"
 
-namespace sunrise::state::matchmaking {
+namespace dawn::state::matchmaking {
 
 /** Prepares a variant update without changing stored State. */
 bool prepare_variant_update(ContextHandle context,
@@ -124,4 +124,4 @@ bool prepare_initial_latest(ContextHandle context,
     return true;
 }
 
-} // namespace sunrise::state::matchmaking
+} // namespace dawn::state::matchmaking

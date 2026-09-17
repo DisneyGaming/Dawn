@@ -2,7 +2,7 @@
 
 #include "../../platform/sdk.h"
 
-namespace sunrise::client::hooks::egress::winsock::connection {
+namespace dawn::client::hooks::egress::winsock::connection {
 
 /** Redirects an IPv4 socket connection to the exact redirect target. */
 int WSAAPI connect_socket(SOCKET socket, const sockaddr* name, int nameLength) noexcept;
@@ -58,4 +58,4 @@ SOCKET WSAAPI join_leaf(SOCKET socket,
                         LPQOS groupQos,
                         DWORD flags) noexcept;
 
-} // namespace sunrise::client::hooks::egress::winsock::connection
+} // namespace dawn::client::hooks::egress::winsock::connection

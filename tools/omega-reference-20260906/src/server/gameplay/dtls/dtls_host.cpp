@@ -17,7 +17,7 @@
 #include "../gameplay_log.h"
 #include "../peer/peer_transport.h"
 
-namespace sunrise::server::gameplay::dtls {
+namespace dawn::server::gameplay::dtls {
 
 namespace {
 
@@ -576,4 +576,4 @@ void reset() noexcept {
     g_openClock = 0;
 }
 
-} // namespace sunrise::server::gameplay::dtls
+} // namespace dawn::server::gameplay::dtls

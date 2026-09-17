@@ -5,7 +5,7 @@
 #include "../../ui/runtime/settings.h"
 #include "external/definition.h"
 
-namespace sunrise::core::settings::client {
+namespace dawn::core::settings::client {
 
 /** A load this long has stopped making progress, so the spawn stops waiting for it. */
 inline constexpr std::uint64_t kDefaultSpawnHoldMs = 30'000;
@@ -63,4 +63,4 @@ struct Settings {
     bool seedAuthoredSensors{false};
 };
 
-} // namespace sunrise::core::settings::client
+} // namespace dawn::core::settings::client

@@ -5,7 +5,7 @@
 
 #include "internal.h"
 
-namespace sunrise::steam::interfaces {
+namespace dawn::steam::interfaces {
 namespace {
 
 struct UserInterfaceEntry {
@@ -55,4 +55,4 @@ void* find_global(const char* version) noexcept {
     return std::strcmp(version, versions::kUtils) == 0 ? tables::utils() : nullptr;
 }
 
-} // namespace sunrise::steam::interfaces
+} // namespace dawn::steam::interfaces

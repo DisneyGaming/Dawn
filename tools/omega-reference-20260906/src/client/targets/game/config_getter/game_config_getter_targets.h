@@ -5,7 +5,7 @@
 #include "../../../patterns/registry.h"
 #include "../config_getter.h"
 
-namespace sunrise::client::targets::game::config_getter {
+namespace dawn::client::targets::game::config_getter {
 
 /**
  * Derives both config getter thunks.
@@ -18,4 +18,4 @@ namespace sunrise::client::targets::game::config_getter {
 /** @param targets Validated config getter table published without failure. */
 void publish(const Targets& targets) noexcept;
 
-} // namespace sunrise::client::targets::game::config_getter
+} // namespace dawn::client::targets::game::config_getter

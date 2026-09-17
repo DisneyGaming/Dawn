@@ -1,6 +1,6 @@
 #include "internal.h"
 
-namespace sunrise::middleware::datagen::character_record::appearance {
+namespace dawn::middleware::datagen::character_record::appearance {
 
 /** Fills every empty-valued field with the sentinel its reader tests for. */
 void apply_sentinels(layout::Appearance& appearance) noexcept {
@@ -40,4 +40,4 @@ void apply_sentinels(layout::Appearance& appearance) noexcept {
     }
 }
 
-} // namespace sunrise::middleware::datagen::character_record::appearance
+} // namespace dawn::middleware::datagen::character_record::appearance

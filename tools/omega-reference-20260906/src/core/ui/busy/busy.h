@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::core::ui::busy {
+namespace dawn::core::ui::busy {
 
 /** Work that stalls the game long enough to look like a hang without a visible sign. */
 enum class Task : unsigned {
@@ -49,4 +49,4 @@ void end(Task task) noexcept;
 /** Records one finished present. Call after the original Present returns. */
 void confirm_presented() noexcept;
 
-} // namespace sunrise::core::ui::busy
+} // namespace dawn::core::ui::busy

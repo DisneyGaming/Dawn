@@ -7,7 +7,7 @@
 #include "../../../state/build_data/scenarios/omega_schema_catalog.h"
 #include "internal.h"
 
-namespace sunrise::client::content::scenarios {
+namespace dawn::client::content::scenarios {
 namespace {
 
 namespace tables = middleware::content::packages::tables;
@@ -329,4 +329,4 @@ bool resolve_object(const reader::Source& source,
     return true;
 }
 
-} // namespace sunrise::client::content::scenarios
+} // namespace dawn::client::content::scenarios

@@ -5,29 +5,24 @@
 #include <algorithm>
 #include <limits>
 
-namespace sunrise::state::content_manifest::fingerprint {
+namespace dawn::state::content_manifest::fingerprint {
 namespace {
 
 /** A zero byte ends each fingerprint domain label, before its version. */
 constexpr std::byte kDomainTerminator{0};
 /** Row fingerprint domain version 1 owns the current canonical field order. */
 constexpr std::byte kRowDomainVersion{1};
-/** This domain separates row identities from other Sunrise SHA-256 uses. */
-constexpr std::array<std::byte, 20> kRowDomain{
-    std::byte{'S'}, std::byte{'u'}, std::byte{'n'}, std::byte{'r'},    std::byte{'i'},
-    std::byte{'s'}, std::byte{'e'}, std::byte{'C'}, std::byte{'o'},    std::byte{'n'},
-    std::byte{'t'}, std::byte{'e'}, std::byte{'n'}, std::byte{'t'},    std::byte{'R'},
-    std::byte{'o'}, std::byte{'w'}, std::byte{'s'}, kDomainTerminator, kRowDomainVersion,
+/** This domain separates row identities from other Dawn SHA-256 uses. */
+constexpr std::array<std::byte, 17> kRowDomain{
+    std::byte{'D'}, std::byte{'a'}, std::byte{'w'}, std::byte{'n'}, std::byte{'C'}, std::byte{'o'}, std::byte{'n'}, std::byte{'t'}, std::byte{'e'}, std::byte{'n'}, std::byte{'t'}, std::byte{'R'}, std::byte{'o'}, std::byte{'w'}, std::byte{'s'},
+    kDomainTerminator, kRowDomainVersion,
 };
 /** Catalog version 1 binds public rows to package sizes and write times. */
 constexpr std::byte kCatalogDomainVersion{1};
 /** This domain separates client cache identities from their component hashes. */
-constexpr std::array<std::byte, 23> kCatalogDomain{
-    std::byte{'S'}, std::byte{'u'},    std::byte{'n'},        std::byte{'r'}, std::byte{'i'},
-    std::byte{'s'}, std::byte{'e'},    std::byte{'C'},        std::byte{'o'}, std::byte{'n'},
-    std::byte{'t'}, std::byte{'e'},    std::byte{'n'},        std::byte{'t'}, std::byte{'C'},
-    std::byte{'a'}, std::byte{'t'},    std::byte{'a'},        std::byte{'l'}, std::byte{'o'},
-    std::byte{'g'}, kDomainTerminator, kCatalogDomainVersion,
+constexpr std::array<std::byte, 20> kCatalogDomain{
+    std::byte{'D'}, std::byte{'a'}, std::byte{'w'}, std::byte{'n'}, std::byte{'C'}, std::byte{'o'}, std::byte{'n'}, std::byte{'t'}, std::byte{'e'}, std::byte{'n'}, std::byte{'t'}, std::byte{'C'}, std::byte{'a'}, std::byte{'t'}, std::byte{'a'}, std::byte{'l'}, std::byte{'o'}, std::byte{'g'},
+    kDomainTerminator, kCatalogDomainVersion,
 };
 /** UUID version 8 reserves the payload bits for this deterministic public hash. */
 constexpr std::uint8_t kUuidVersionBits = 0x80;
@@ -214,4 +209,4 @@ void guid(const Fingerprint& buildFingerprint, Guid& output) noexcept {
     output[cursor] = '\0';
 }
 
-} // namespace sunrise::state::content_manifest::fingerprint
+} // namespace dawn::state::content_manifest::fingerprint

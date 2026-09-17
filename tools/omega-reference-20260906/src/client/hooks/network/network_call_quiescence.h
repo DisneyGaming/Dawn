@@ -2,7 +2,7 @@
 
 #include <Windows.h>
 
-namespace sunrise::client::hooks::network::quiescence {
+namespace dawn::client::hooks::network::quiescence {
 
 /**
  * Reads one outermost-call counter without tearing.
@@ -21,7 +21,7 @@ namespace sunrise::client::hooks::network::quiescence {
  */
 [[nodiscard]] bool wait_for_idle(volatile LONG& counter, DWORD timeoutMilliseconds) noexcept;
 
-#if defined(SUNRISE_BAP_HOOK_TEST)
+#if defined(DAWN_BAP_HOOK_TEST)
 /** One coordinator's ingress pause, armed by a test to hold a call inside the body. */
 struct PauseGate final {
     volatile LONG armed{};
@@ -58,4 +58,4 @@ inline constexpr unsigned kIngressPauseAttempts = 1'000'000'000;
 [[nodiscard]] bool held(const PauseGate& gate) noexcept;
 #endif
 
-} // namespace sunrise::client::hooks::network::quiescence
+} // namespace dawn::client::hooks::network::quiescence

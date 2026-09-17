@@ -5,7 +5,7 @@
 #include "../../../patterns/registry.h"
 #include "../packages.h"
 
-namespace sunrise::client::targets::game::packages {
+namespace dawn::client::targets::game::packages {
 
 /**
  * Derives the package key-table location.
@@ -18,4 +18,4 @@ namespace sunrise::client::targets::game::packages {
 /** @param targets Validated package table published without failure. */
 void publish(const Targets& targets) noexcept;
 
-} // namespace sunrise::client::targets::game::packages
+} // namespace dawn::client::targets::game::packages

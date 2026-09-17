@@ -7,7 +7,7 @@
 #include "../../../region_lineage.h"
 #include "../../activity_message/definition.h"
 
-namespace sunrise::server::bap::encrypted::push::activity {
+namespace dawn::server::bap::encrypted::push::activity {
 
 /**
  * Appends one `sensor_auth_update` svc9 notification carrying the destination's roster.
@@ -54,4 +54,4 @@ void commit_staged_roster(Session& session) noexcept;
  */
 void discard_staged_roster(Session& session) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::push::activity
+} // namespace dawn::server::bap::encrypted::push::activity

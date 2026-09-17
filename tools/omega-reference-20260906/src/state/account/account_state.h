@@ -7,7 +7,7 @@
 #include "inventory/inventory_state.h"
 #include "settings/settings_state.h"
 
-namespace sunrise::state {
+namespace dawn::state {
 
 /** One account can own at most the 3 playable character slots. */
 inline constexpr std::size_t kCharacterCapacity = 3;
@@ -140,4 +140,4 @@ namespace account {
 
 } // namespace account
 
-} // namespace sunrise::state
+} // namespace dawn::state

@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::client::content::investment::layout {
+namespace dawn::client::content::investment::layout {
 
 /** The globals blob stores its investment-root tag after 16 ABI bytes. */
 inline constexpr std::size_t kGlobalsRootTagOffset = 16;
@@ -44,4 +44,4 @@ static_assert(offsetof(InvestmentRoot, inventoryBucketTableTag) == kInventoryBuc
 static_assert(offsetof(InvestmentRoot, itemTableTag) == kItemTableTagOffset);
 static_assert(offsetof(InvestmentRoot, socketEntryListTableTag) == kSocketEntryListTableTagOffset);
 
-} // namespace sunrise::client::content::investment::layout
+} // namespace dawn::client::content::investment::layout

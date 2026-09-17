@@ -9,7 +9,7 @@
 #include "../../../core/settings/settings.h"
 #include "route.h"
 
-namespace sunrise::client::hooks::external_server {
+namespace dawn::client::hooks::external_server {
 namespace {
 
 /** Scheme separator that begins the authority of an absolute URL. */
@@ -46,4 +46,4 @@ std::size_t rewrite_host(std::string_view url, std::span<char> output) noexcept 
     return size;
 }
 
-} // namespace sunrise::client::hooks::external_server
+} // namespace dawn::client::hooks::external_server

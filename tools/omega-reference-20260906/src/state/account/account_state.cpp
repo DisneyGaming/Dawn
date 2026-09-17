@@ -4,7 +4,7 @@
 #include <array>
 #include <cmath>
 
-namespace sunrise::state::account {
+namespace dawn::state::account {
 namespace {
 
 /** Enough fixed storage for every account, character, profile-stack, and character-item key. */
@@ -180,4 +180,4 @@ std::uint64_t banner_character_soid(const AccountState& state) noexcept {
     return state.characterCount == 0 ? 0 : state.characters[0].soid;
 }
 
-} // namespace sunrise::state::account
+} // namespace dawn::state::account

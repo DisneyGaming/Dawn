@@ -10,7 +10,7 @@
 #include "../../../../state/account/account_state.h"
 #include "../../../../state/runtime/runtime.h"
 
-namespace sunrise::client::hooks::bootflow::spawn {
+namespace dawn::client::hooks::bootflow::spawn {
 namespace {
 
 /**
@@ -110,4 +110,4 @@ void dump_record(const std::uint8_t* record) noexcept {
     }
 }
 
-} // namespace sunrise::client::hooks::bootflow::spawn
+} // namespace dawn::client::hooks::bootflow::spawn

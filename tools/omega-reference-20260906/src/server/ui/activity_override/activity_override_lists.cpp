@@ -11,7 +11,7 @@
 #include "../../../state/activity/forced/definition.h"
 #include "../../../state/build_data/runtime.h"
 
-namespace sunrise::server::ui::activity_override {
+namespace dawn::server::ui::activity_override {
 namespace {
 
 namespace layouts = state::build_data::scenarios;
@@ -302,4 +302,4 @@ void refresh_bubble(Lists& rows, std::uint8_t bubble) noexcept {
     }
 }
 
-} // namespace sunrise::server::ui::activity_override
+} // namespace dawn::server::ui::activity_override

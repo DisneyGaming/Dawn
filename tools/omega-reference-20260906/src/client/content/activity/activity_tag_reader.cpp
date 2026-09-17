@@ -14,7 +14,7 @@
 #include "../../../core/logging/log.h"
 #include "../../../middleware/content/packages/tables/definition_index_table.h"
 
-namespace sunrise::client::content::activity {
+namespace dawn::client::content::activity {
 namespace {
 
 struct Target {
@@ -600,4 +600,4 @@ bool scan_omega_behavior_properties(const packages::reader::Source& source,
     return observedValidated && !properties.overflow && !components.overflow;
 }
 
-} // namespace sunrise::client::content::activity
+} // namespace dawn::client::content::activity

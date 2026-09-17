@@ -4,7 +4,7 @@
 
 #include "../table.h"
 
-namespace sunrise::state::build_data::collectibles {
+namespace dawn::state::build_data::collectibles {
 namespace {
 
 Lock g_lock;
@@ -116,4 +116,4 @@ std::size_t count() noexcept {
     return g_definitions.count();
 }
 
-} // namespace sunrise::state::build_data::collectibles
+} // namespace dawn::state::build_data::collectibles

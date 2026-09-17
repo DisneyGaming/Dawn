@@ -11,7 +11,7 @@
 #include "../../../../../middleware/bap/frame.h"
 #include "../../../../../middleware/secure_channel/runtime.h"
 
-namespace sunrise::server::bap::encrypted::push::activity {
+namespace dawn::server::bap::encrypted::push::activity {
 namespace {
 
 namespace service = middleware::bap::activity_message;
@@ -104,4 +104,4 @@ bool append_notification_frame(Scratch& scratch,
     return encoded;
 }
 
-} // namespace sunrise::server::bap::encrypted::push::activity
+} // namespace dawn::server::bap::encrypted::push::activity

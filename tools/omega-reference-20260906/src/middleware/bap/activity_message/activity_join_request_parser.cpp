@@ -3,7 +3,7 @@
 #include "../../encoding/bit_reader.h"
 #include "../../encoding/byte_order.h"
 
-namespace sunrise::middleware::bap::activity_message::join_request {
+namespace dawn::middleware::bap::activity_message::join_request {
 namespace {
 
 /** Fixed typed prefix required from the activity join-request payload. */
@@ -67,4 +67,4 @@ bool parse_join_request(std::span<const std::byte> input, JoinRequest& request) 
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_message::join_request
+} // namespace dawn::middleware::bap::activity_message::join_request

@@ -6,7 +6,7 @@
 
 #include "../../../patterns/registry.h"
 
-namespace sunrise::client::targets::game::resolution {
+namespace dawn::client::targets::game::resolution {
 
 /** Stage that rejected the last resolve, reported without a logging dependency. */
 enum class Failure : std::uint8_t {
@@ -32,4 +32,4 @@ enum class Failure : std::uint8_t {
 /** @return Name of the first signature that did not match once, or an empty view. */
 [[nodiscard]] std::string_view last_failed_signature() noexcept;
 
-} // namespace sunrise::client::targets::game::resolution
+} // namespace dawn::client::targets::game::resolution

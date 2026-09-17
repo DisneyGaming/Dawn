@@ -4,7 +4,7 @@
 #include "../../state/entitlements/validation.h"
 #include "parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 
 /** @param input Complete JSON text, borrowed and never changed. */
 Parser::Parser(std::string_view input) noexcept : input_(input) {}
@@ -180,9 +180,9 @@ bool Parser::levels(log::Settings& output) noexcept {
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser
 
-namespace sunrise::core::settings {
+namespace dawn::core::settings {
 
 /** @return Default Core settings, with the default logging levels. */
 Settings defaults() noexcept {
@@ -206,4 +206,4 @@ bool parse(std::string_view json, Settings& output) noexcept {
     return true;
 }
 
-} // namespace sunrise::core::settings
+} // namespace dawn::core::settings

@@ -6,7 +6,7 @@
 #include "../../../../middleware/queuez/subscription.h"
 #include "definition.h"
 
-namespace sunrise::server::bap::encrypted::queuez {
+namespace dawn::server::bap::encrypted::queuez {
 
 /** @return True when one peer queuez state is canonical for the implemented versions. */
 [[nodiscard]] bool valid(const SessionState& state) noexcept;
@@ -194,4 +194,4 @@ void stage_unsubscription(const SessionState& before,
                           std::uint64_t familyRootSoid,
                           SessionState& after) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::queuez
+} // namespace dawn::server::bap::encrypted::queuez

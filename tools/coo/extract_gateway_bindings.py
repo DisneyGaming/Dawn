@@ -59,7 +59,7 @@ def objectives():
 
 def groups():
  layout=json.loads((OUT/'cache-layout.json').read_text()); sections=json.loads((OUT/'cache-sections.json').read_text())
- cache=(ROOT/'Sunrise/cache/build_data.bin').read_bytes(); assert u32(cache,8)==52
+ cache=(ROOT/'Dawn/cache/build_data.bin').read_bytes(); assert u32(cache,8)==52
  record=layout['records']['RosterGroupRecord']; region=sections['RosterGroupRecord']
  walk=json.loads((OUT/'gateway-registry-walk.json').read_text())
  tags={int(o['tag'],16):o['array'] for r in walk['regions'] if r['bubble']==15 and r['state']==0 for o in r['objects']}

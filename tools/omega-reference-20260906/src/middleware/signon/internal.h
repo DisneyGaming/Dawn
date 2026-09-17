@@ -5,7 +5,7 @@
 #include <span>
 #include <string_view>
 
-namespace sunrise::middleware::signon {
+namespace dawn::middleware::signon {
 
 /** Protobuf wire type for unsigned varint fields. */
 inline constexpr unsigned kWireVarint = 0;
@@ -89,4 +89,4 @@ private:
     std::size_t size_{};
 };
 
-} // namespace sunrise::middleware::signon
+} // namespace dawn::middleware::signon

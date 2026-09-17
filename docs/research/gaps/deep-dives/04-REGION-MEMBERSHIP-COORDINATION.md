@@ -30,4 +30,4 @@ Test-only failure injection exists after global-state, membership, and roster ap
 
 This is local transactional construction. It does not make several packets atomically observable by the remote game and does not establish host migration or client effect acknowledgement.
 
-Landmarks: Sunrise/src/server/bap/region_lineage.h; Sunrise/src/server/bap/encrypted/activity_transaction/activity_transaction_notifications.cpp.
+Landmarks: Dawn/src/server/bap/region_lineage.h; Dawn/src/server/bap/encrypted/activity_transaction/activity_transaction_notifications.cpp.

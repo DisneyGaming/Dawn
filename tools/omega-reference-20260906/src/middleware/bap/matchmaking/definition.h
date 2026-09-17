@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::bap::matchmaking {
+namespace dawn::middleware::bap::matchmaking {
 
 /** A matchmaking join descriptor is exactly 128 opaque bytes. */
 inline constexpr std::size_t kJoinDescriptorSize = 128;
@@ -69,4 +69,4 @@ struct Response final {
     std::span<const std::byte> descriptor{};
 };
 
-} // namespace sunrise::middleware::bap::matchmaking
+} // namespace dawn::middleware::bap::matchmaking

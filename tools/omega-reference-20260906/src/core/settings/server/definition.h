@@ -3,7 +3,7 @@
 #include "../../../state/entitlements/definition.h"
 #include "gameplay/definition.h"
 
-namespace sunrise::core::settings::server {
+namespace dawn::core::settings::server {
 
 /** The loopback port the BAP listener binds, and the relay port SignOn hands the Client. */
 inline constexpr std::uint16_t kDefaultBapPort = 30974;
@@ -18,4 +18,4 @@ struct Settings {
     std::uint16_t bapPort{kDefaultBapPort};
 };
 
-} // namespace sunrise::core::settings::server
+} // namespace dawn::core::settings::server

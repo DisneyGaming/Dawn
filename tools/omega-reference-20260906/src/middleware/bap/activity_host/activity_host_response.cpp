@@ -2,7 +2,7 @@
 
 #include "../../encoding/byte_order.h"
 
-namespace sunrise::middleware::bap::activity_host {
+namespace dawn::middleware::bap::activity_host {
 namespace {
 
 /** Fixed offsets for the complete svc-16 host request. */
@@ -64,4 +64,4 @@ bool encode_response(std::span<const std::byte> requestBody,
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_host
+} // namespace dawn::middleware::bap::activity_host

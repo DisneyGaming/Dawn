@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::client::player {
+namespace dawn::client::player {
 
 /** Runtime player configuration. This module owns it; Core settings do not carry it. */
 struct Settings {
@@ -26,4 +26,4 @@ void shutdown() noexcept;
  */
 bool publish(const Settings& settings) noexcept;
 
-} // namespace sunrise::client::player
+} // namespace dawn::client::player

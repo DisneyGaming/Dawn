@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <string_view>
 
-namespace sunrise::middleware::content::packages::named_tags {
+namespace dawn::middleware::content::packages::named_tags {
 
 /** Extracted names use bounded UTF-8 storage and reject truncation. */
 inline constexpr std::size_t kNameCapacity = 128;
@@ -62,4 +62,4 @@ extract_file(const wchar_t* path, Visitor visitor, void* context, Result& result
                                      void* context,
                                      DirectoryResult& result) noexcept;
 
-} // namespace sunrise::middleware::content::packages::named_tags
+} // namespace dawn::middleware::content::packages::named_tags

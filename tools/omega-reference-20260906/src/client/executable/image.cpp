@@ -2,7 +2,7 @@
 
 #include <Windows.h>
 
-namespace sunrise::client::executable {
+namespace dawn::client::executable {
 namespace {
 
 /** @return True when adding both values stays within the supplied limit. */
@@ -83,4 +83,4 @@ bool inspect_main_module(ExecutableImage& output) noexcept {
     return inspect(reinterpret_cast<std::byte*>(GetModuleHandleW(nullptr)), output);
 }
 
-} // namespace sunrise::client::executable
+} // namespace dawn::client::executable

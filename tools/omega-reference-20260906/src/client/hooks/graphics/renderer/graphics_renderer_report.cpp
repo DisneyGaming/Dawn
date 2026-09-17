@@ -10,7 +10,7 @@
 
 #include "../../../../core/logging/log.h"
 
-namespace sunrise::client::hooks::graphics::renderer::report {
+namespace dawn::client::hooks::graphics::renderer::report {
 namespace {
 
 /** One name per Stage value, in Stage order. */
@@ -102,4 +102,4 @@ void note_active() noexcept {
         core::log::Channel::client, core::log::Level::info, "ev=renderer stage=init result=ok");
 }
 
-} // namespace sunrise::client::hooks::graphics::renderer::report
+} // namespace dawn::client::hooks::graphics::renderer::report

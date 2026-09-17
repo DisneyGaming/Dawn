@@ -5,7 +5,7 @@
 #include "../../../state/activity/omega_ending.h"
 #include "../../../state/activity/forced/activity_forced_destination.h"
 
-namespace sunrise::client::hooks::bootflow::omega_activity_handoff {
+namespace dawn::client::hooks::bootflow::omega_activity_handoff {
 namespace ending=state::activity::omega_ending;
 template<class T> bool read(std::uintptr_t address,T& value) noexcept {
     SIZE_T copied{};
@@ -326,4 +326,4 @@ inline void poll() noexcept {
     exit_state()={token.run,carriesNonce?nonce:0,now,now,session,false};
     report("queued",token,nonce); // Native svc6 and in-world arrival remain separate receipts.
 }
-} // namespace sunrise::client::hooks::bootflow::omega_activity_handoff
+} // namespace dawn::client::hooks::bootflow::omega_activity_handoff

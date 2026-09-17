@@ -15,7 +15,7 @@
 #include "internal.h"
 #include "runtime.h"
 
-namespace sunrise::client::hooks::teleport {
+namespace dawn::client::hooks::teleport {
 namespace {
 
 /** The polled keyboard scan. Anchored on its prologue and the input-disable byte it loads first. */
@@ -115,4 +115,4 @@ std::uint32_t action_key(std::uint16_t binding) noexcept {
     return mapped;
 }
 
-} // namespace sunrise::client::hooks::teleport
+} // namespace dawn::client::hooks::teleport

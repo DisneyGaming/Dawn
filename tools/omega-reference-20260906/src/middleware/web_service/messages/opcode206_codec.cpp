@@ -1,7 +1,7 @@
 #include "../../encoding/bit_reader.h"
 #include "opcode206.h"
 
-namespace sunrise::middleware::web_service::messages::opcode206 {
+namespace dawn::middleware::web_service::messages::opcode206 {
 namespace {
 
 /** Family type is 4 bits and stores logical values with a bias of 1. */
@@ -32,4 +32,4 @@ bool parse_request(const Message& message, queuez::Subscription& subscription) n
     return true;
 }
 
-} // namespace sunrise::middleware::web_service::messages::opcode206
+} // namespace dawn::middleware::web_service::messages::opcode206

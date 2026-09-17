@@ -14,7 +14,7 @@
 #include "../../../../core/logging/log.h"
 #include "../../../../core/ui/textures/ui_texture_slots.h"
 
-namespace sunrise::client::hooks::graphics::textures {
+namespace dawn::client::hooks::graphics::textures {
 namespace {
 
 /** A PNG holds one image, so the sheet is always the decoder's first frame. */
@@ -67,7 +67,7 @@ private:
     HRESULT result_{};
 };
 
-/** @return The module holding the Sunrise resources, resolved from this code's own address. */
+/** @return The module holding the Dawn resources, resolved from this code's own address. */
 [[nodiscard]] HMODULE owning_module() noexcept {
     HMODULE module = nullptr;
     (void)GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS
@@ -233,4 +233,4 @@ void release_logo_sheet(Uploaded& uploaded) noexcept {
     release_com(uploaded.texture);
 }
 
-} // namespace sunrise::client::hooks::graphics::textures
+} // namespace dawn::client::hooks::graphics::textures

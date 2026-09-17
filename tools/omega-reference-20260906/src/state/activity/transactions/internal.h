@@ -4,7 +4,7 @@
 
 #include "../definition.h"
 
-namespace sunrise::state::activity::transactions {
+namespace dawn::state::activity::transactions {
 
 /** @return Matching slot, or the fixed-table absent value when the session is not there. */
 inline std::size_t find_session(const ActivityState& state, std::uint64_t sessionId) noexcept {
@@ -154,4 +154,4 @@ inline void advance_allocator(ActivityState& state) noexcept {
     }
 }
 
-} // namespace sunrise::state::activity::transactions
+} // namespace dawn::state::activity::transactions

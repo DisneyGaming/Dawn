@@ -9,10 +9,10 @@
 #include "../fonts/runtime/ui_runtime_font_lifecycle.h"
 #include "../memory/allocator.h"
 #include "../scaling/dpi/ui_dpi_scaling.h"
-#include "../theme/sunrise_ui_theme.h"
-#include "credits/sunrise_credits_badge.h"
+#include "../theme/dawn_ui_theme.h"
+#include "credits/dawn_credits_badge.h"
 
-namespace sunrise::core::ui::layout {
+namespace dawn::core::ui::layout {
 namespace {
 
 ImGuiContext* g_context{};
@@ -44,7 +44,7 @@ bool initialize() noexcept {
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;
     io.LogFilename = nullptr;
-    // Sunrise draws its own cursor while visible and never changes the game's OS cursor state.
+    // Dawn draws its own cursor while visible and never changes the game's OS cursor state.
     io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
     io.MouseDrawCursor = false;
     theme::apply();
@@ -117,4 +117,4 @@ void select_module(std::string_view stableId) noexcept {
 }
 
 } // namespace internal
-} // namespace sunrise::core::ui::layout
+} // namespace dawn::core::ui::layout

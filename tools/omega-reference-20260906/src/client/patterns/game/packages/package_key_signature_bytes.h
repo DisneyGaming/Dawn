@@ -7,7 +7,7 @@
 #include "../../registry.h"
 #include "../../signature_text.h"
 
-namespace sunrise::client::patterns::game::packages {
+namespace dawn::client::patterns::game::packages {
 
 /** Loads the package key table into a vector register. Carries no key bytes. */
 inline constexpr std::string_view kKeyTableText =
@@ -18,4 +18,4 @@ inline constexpr std::size_t kKeyTablePatternSize = signature_length(kKeyTableTe
 
 extern constinit const std::array<patterns::PatternByte, kKeyTablePatternSize> kKeyTable;
 
-} // namespace sunrise::client::patterns::game::packages
+} // namespace dawn::client::patterns::game::packages

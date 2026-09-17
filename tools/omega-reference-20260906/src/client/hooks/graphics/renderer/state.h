@@ -8,7 +8,7 @@
 
 #include "../textures/graphics_texture_upload.h"
 
-namespace sunrise::client::hooks::graphics::renderer {
+namespace dawn::client::hooks::graphics::renderer {
 
 /** The SDK objects we own and the started presentation layers, for one swap chain. */
 struct Resources {
@@ -59,4 +59,4 @@ void release_resources(Resources& resources) noexcept;
 /** Runs one Dear ImGui frame. Draws only while the Core UI is visible. */
 void render_frame_locked() noexcept;
 
-} // namespace sunrise::client::hooks::graphics::renderer
+} // namespace dawn::client::hooks::graphics::renderer

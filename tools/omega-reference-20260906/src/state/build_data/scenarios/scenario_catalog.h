@@ -6,7 +6,7 @@
 
 #include "definition.h"
 
-namespace sunrise::state::build_data::scenarios {
+namespace dawn::state::build_data::scenarios {
 
 /** Clears every extracted destination layout and roster group. */
 void clear() noexcept;
@@ -69,4 +69,4 @@ void clear() noexcept;
 /** @return The number of extracted destination layouts, read under the lock. */
 [[nodiscard]] std::size_t count() noexcept;
 
-} // namespace sunrise::state::build_data::scenarios
+} // namespace dawn::state::build_data::scenarios

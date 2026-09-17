@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::crypto::lookup3 {
+namespace dawn::middleware::crypto::lookup3 {
 
 /**
  * Hashes a run of 32-bit words with Bob Jenkins' lookup3, word form.
@@ -25,4 +25,4 @@ namespace sunrise::middleware::crypto::lookup3 {
 [[nodiscard]] std::uint32_t hash_bytes(std::span<const std::byte> bytes,
                                        std::uint32_t initial) noexcept;
 
-} // namespace sunrise::middleware::crypto::lookup3
+} // namespace dawn::middleware::crypto::lookup3

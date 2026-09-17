@@ -1,6 +1,6 @@
 #include "internal.h"
 
-namespace sunrise::steam::interfaces::tables {
+namespace dawn::steam::interfaces::tables {
 namespace {
 
 /** STEAMAPPS_INTERFACE_VERSION008 has 30 vtable slots. */
@@ -176,4 +176,4 @@ void* user_stats() noexcept {
     return &g_userStats;
 }
 
-} // namespace sunrise::steam::interfaces::tables
+} // namespace dawn::steam::interfaces::tables

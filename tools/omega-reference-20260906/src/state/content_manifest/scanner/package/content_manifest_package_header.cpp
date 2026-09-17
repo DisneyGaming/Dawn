@@ -9,7 +9,7 @@
 
 #include "../../../../core/filesystem/path.h"
 
-namespace sunrise::state::content_manifest::scanner::package {
+namespace dawn::state::content_manifest::scanner::package {
 namespace {
 
 /** Installed packages for this supported build carry header version 38. */
@@ -121,4 +121,4 @@ bool read_header(std::wstring_view directory, Candidate& candidate) noexcept {
     return true;
 }
 
-} // namespace sunrise::state::content_manifest::scanner::package
+} // namespace dawn::state::content_manifest::scanner::package

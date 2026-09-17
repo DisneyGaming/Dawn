@@ -7,7 +7,7 @@
 
 #include "../../../state/build_data/scenarios/definition.h"
 
-namespace sunrise::server::ui::activity_override {
+namespace dawn::server::ui::activity_override {
 
 /** One row label and its null. The widest is a spawn row: a hash, a 48-byte name, 2 markers. */
 inline constexpr std::size_t kLabelCapacity = 96;
@@ -70,4 +70,4 @@ void refresh_destination(Lists& rows, std::string_view name) noexcept;
  */
 void refresh_bubble(Lists& rows, std::uint8_t bubble) noexcept;
 
-} // namespace sunrise::server::ui::activity_override
+} // namespace dawn::server::ui::activity_override

@@ -9,7 +9,7 @@
 #include "../spawn_sets/spawn_set_catalog_builder.h"
 #include "internal.h"
 
-namespace sunrise::client::content::scenarios {
+namespace dawn::client::content::scenarios {
 namespace {
 
 namespace packages = middleware::content::packages;
@@ -255,4 +255,4 @@ void compact_rows(Storage& storage) noexcept {
     storage.blob.shrink_to_fit();
 }
 
-} // namespace sunrise::client::content::scenarios
+} // namespace dawn::client::content::scenarios

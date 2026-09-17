@@ -6,7 +6,7 @@
 
 #include "definition.h"
 
-namespace sunrise::middleware::bap::activity_message {
+namespace dawn::middleware::bap::activity_message {
 
 /** The checked client notification router accepts message types 0 through 58. */
 inline constexpr std::uint32_t kMaximumMessageType = 58;
@@ -27,4 +27,4 @@ inline constexpr std::uint32_t kMaximumMessageType = 58;
                                        std::span<std::byte> output,
                                        std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_message
+} // namespace dawn::middleware::bap::activity_message

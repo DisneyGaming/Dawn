@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::state::build_data::socket_entry_lists {
+namespace dawn::state::build_data::socket_entry_lists {
 
 /** Signed native definition indices give 32,768 nonnegative socket-list rows. */
 inline constexpr std::size_t kDefinitionCapacity = 32768;
@@ -55,4 +55,4 @@ struct EntryTable {
 /** Lists that may carry a super lane. Only 9 subclasses ship, so this is plenty. */
 inline constexpr std::size_t kEntryTableCapacity = 32;
 
-} // namespace sunrise::state::build_data::socket_entry_lists
+} // namespace dawn::state::build_data::socket_entry_lists

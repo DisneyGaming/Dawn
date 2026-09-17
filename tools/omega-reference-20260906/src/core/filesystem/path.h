@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <string_view>
 
-namespace sunrise::core::path {
+namespace dawn::core::path {
 
 /** Characters reserved for Windows extended paths. */
 inline constexpr std::size_t kExtendedPathCapacity = 32768;
@@ -21,10 +21,10 @@ struct Buffer {
 /** Resolves the directory containing one loaded module. */
 [[nodiscard]] bool module_directory(void* module, Buffer& output) noexcept;
 
-/** Resolves and creates the one Sunrise-owned generated-artifact directory. */
+/** Resolves and creates the one Dawn-owned generated-artifact directory. */
 [[nodiscard]] bool artifact_directory(void* module, Buffer& output) noexcept;
 
 /** Appends one suffix without exceeding fixed path storage. */
 [[nodiscard]] bool append(Buffer& path, std::wstring_view suffix) noexcept;
 
-} // namespace sunrise::core::path
+} // namespace dawn::core::path

@@ -12,7 +12,7 @@
 #include "server/definition.h"
 #include "steam/definition.h"
 
-namespace sunrise::core::settings {
+namespace dawn::core::settings {
 
 /**
  * Layout version of the settings file this build writes and expects.
@@ -72,4 +72,4 @@ void shutdown() noexcept;
 /** @return Active read-only Core settings. */
 [[nodiscard]] const Settings& get() noexcept;
 
-} // namespace sunrise::core::settings
+} // namespace dawn::core::settings

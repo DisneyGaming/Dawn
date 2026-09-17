@@ -4,7 +4,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-BOOT = ROOT / "Sunrise/src/client/hooks/bootflow"
+BOOT = ROOT / "Dawn/src/client/hooks/bootflow"
 
 
 class MercuryNativeHookAuditTests(unittest.TestCase):

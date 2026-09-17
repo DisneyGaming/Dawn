@@ -2,7 +2,7 @@
 
 #include "../../encoding/bit_raw.h"
 
-namespace sunrise::middleware::gameplay::group {
+namespace dawn::middleware::gameplay::group {
 
 namespace {
 
@@ -100,4 +100,4 @@ bool compatible(const ViewEstablishment& left, const ViewEstablishment& right) n
     return true;
 }
 
-} // namespace sunrise::middleware::gameplay::group
+} // namespace dawn::middleware::gameplay::group

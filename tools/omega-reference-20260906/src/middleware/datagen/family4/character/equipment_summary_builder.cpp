@@ -6,7 +6,7 @@
 #include <optional>
 #include <span>
 
-namespace sunrise::middleware::datagen::family4::character {
+namespace dawn::middleware::datagen::family4::character {
 namespace {
 
 namespace light = state::equipment::light;
@@ -74,4 +74,4 @@ bool build_equipment_summary(const light::Evaluation& evaluation,
     return true;
 }
 
-} // namespace sunrise::middleware::datagen::family4::character
+} // namespace dawn::middleware::datagen::family4::character

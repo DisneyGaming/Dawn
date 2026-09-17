@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace sunrise::client::diagnostics {
+namespace dawn::client::diagnostics {
 
 /** Reads one loaded image's address range from its mapped PE headers. */
 bool module_range(HMODULE module, ModuleRange& output) noexcept {
@@ -29,4 +29,4 @@ bool contains(const ModuleRange& range, std::uintptr_t address) noexcept {
     return range.end != 0 && address >= range.base && address < range.end;
 }
 
-} // namespace sunrise::client::diagnostics
+} // namespace dawn::client::diagnostics

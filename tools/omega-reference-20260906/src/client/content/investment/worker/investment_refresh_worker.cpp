@@ -7,7 +7,7 @@
 #include "../runtime.h"
 #include "../worker.h"
 
-namespace sunrise::client::content::investment::worker {
+namespace dawn::client::content::investment::worker {
 namespace {
 
 /**
@@ -32,35 +32,35 @@ void activate() noexcept {
     g_complete = false;
     g_overlayPending = false;
     g_nextEligible = 0;
-    sunrise::core::ui::busy::end(sunrise::core::ui::busy::Task::contentExtraction);
+    dawn::core::ui::busy::end(dawn::core::ui::busy::Task::contentExtraction);
     ReleaseSRWLockExclusive(&g_lifecycleLock);
 }
 
 /** Runs one due bounded refresh slice on the caller-owned game thread. */
 void service(std::uint64_t nowMilliseconds) noexcept {
     AcquireSRWLockExclusive(&g_lifecycleLock);
-    if (!g_accepting || g_complete || !sunrise::client::targets::game::content::is_resolved()
+    if (!g_accepting || g_complete || !dawn::client::targets::game::content::is_resolved()
         || nowMilliseconds < g_nextEligible) {
         ReleaseSRWLockExclusive(&g_lifecycleLock);
         return;
     }
     g_nextEligible = nowMilliseconds + kRefreshIntervalMilliseconds;
 
-    if (sunrise::client::content::investment::requires_package_sweep()) {
+    if (dawn::client::content::investment::requires_package_sweep()) {
         g_overlayPending = true;
-        if (sunrise::core::ui::busy::raise_early(
-                sunrise::core::ui::busy::Task::contentExtraction)) {
+        if (dawn::core::ui::busy::raise_early(
+                dawn::core::ui::busy::Task::contentExtraction)) {
             ReleaseSRWLockExclusive(&g_lifecycleLock);
             return;
         }
     } else if (g_overlayPending) {
         // A stale preflight must not leave a task raised after another path publishes the rows.
-        sunrise::core::ui::busy::end(sunrise::core::ui::busy::Task::contentExtraction);
+        dawn::core::ui::busy::end(dawn::core::ui::busy::Task::contentExtraction);
         g_overlayPending = false;
     }
 
-    g_complete = sunrise::client::content::investment::refresh();
-    sunrise::client::content::diagnostics::report_readiness();
+    g_complete = dawn::client::content::investment::refresh();
+    dawn::client::content::diagnostics::report_readiness();
     g_overlayPending = false;
     ReleaseSRWLockExclusive(&g_lifecycleLock);
 }
@@ -72,8 +72,8 @@ void reset() noexcept {
     g_complete = false;
     g_overlayPending = false;
     g_nextEligible = 0;
-    sunrise::core::ui::busy::end(sunrise::core::ui::busy::Task::contentExtraction);
+    dawn::core::ui::busy::end(dawn::core::ui::busy::Task::contentExtraction);
     ReleaseSRWLockExclusive(&g_lifecycleLock);
 }
 
-} // namespace sunrise::client::content::investment::worker
+} // namespace dawn::client::content::investment::worker

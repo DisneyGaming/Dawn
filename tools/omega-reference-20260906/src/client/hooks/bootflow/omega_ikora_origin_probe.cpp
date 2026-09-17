@@ -22,7 +22,7 @@
 #include "internal.h"
 #include "../../../state/activity/omega_presentation.h"
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 namespace {
 
 // Pinned-client targets and prefixes shared with the retired, much broader
@@ -1006,4 +1006,4 @@ bool uninstall_omega_ikora_origin_probe() noexcept {
     return true;
 }
 
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

@@ -6,7 +6,7 @@
 
 #include "../../patterns/registry.h"
 
-namespace sunrise::client::targets::game::content {
+namespace dawn::client::targets::game::content {
 
 /** Unowned main-image entry points required only by runtime content extraction. */
 struct Targets {
@@ -29,4 +29,4 @@ void clear() noexcept;
 /** @return True after the complete late content group is published. */
 [[nodiscard]] bool is_resolved() noexcept;
 
-} // namespace sunrise::client::targets::game::content
+} // namespace dawn::client::targets::game::content

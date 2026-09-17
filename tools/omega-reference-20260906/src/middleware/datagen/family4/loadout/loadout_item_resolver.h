@@ -8,7 +8,7 @@
 #include "../../../../state/build_data/inventory/buckets/definition.h"
 #include "definition.h"
 
-namespace sunrise::middleware::datagen::family4::loadout {
+namespace dawn::middleware::datagen::family4::loadout {
 
 /** Resolved item plus its runtime bucket range, retained only until row placement. */
 struct Candidate {
@@ -31,4 +31,4 @@ struct Candidate {
                                 std::size_t socketEntryListCount,
                                 Candidate& output) noexcept;
 
-} // namespace sunrise::middleware::datagen::family4::loadout
+} // namespace dawn::middleware::datagen::family4::loadout

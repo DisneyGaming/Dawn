@@ -7,7 +7,7 @@
 
 #include "../internal.h"
 
-namespace sunrise::steam::interfaces::tables {
+namespace dawn::steam::interfaces::tables {
 
 /** A Steam interface object. It holds only its vtable pointer. */
 struct InterfaceObject {
@@ -35,4 +35,4 @@ void initialize_common() noexcept;
 /** Sets up the Matchmaking, Client, serialized-networking and HTTP tables. */
 void initialize_networking() noexcept;
 
-} // namespace sunrise::steam::interfaces::tables
+} // namespace dawn::steam::interfaces::tables

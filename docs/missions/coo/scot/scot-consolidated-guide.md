@@ -61,7 +61,7 @@ Walking into the Vex portal wall originally triggered an abrupt position hop wit
 - **Investigation:** Carrier controller `8156EEC5` executed its callback at wall contact, but its activation count remained zero.
 - **Condition Analysis:** The controller evaluates two non-inverted conditions joined by `AND`:
   - `80804D72` (payload `00001000`): Entity type mask check (passed).
-  - `80804D83` (payload `52B968BA`): Hash-membership check against the contacting player's participation record (failed because Sunrise encoded the list as empty).
+  - `80804D83` (payload `52B968BA`): Hash-membership check against the contacting player's participation record (failed because Dawn encoded the list as empty).
 - **Resolution:** Seeding hash `52B968BA` into the initial player participation record satisfied condition `80804D83`, allowing the controller to accept wall contact and execute the full vortex VFX and Wwise sound event `AC668354`. Confirmed working in live playthroughs.
 
 ### 3.2. Osiris Rescue & First Damage Phase Mechanics

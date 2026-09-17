@@ -8,7 +8,7 @@
 #include "../../../../../middleware/bap/activity_message/sensor_auth_update.h"
 #include "../../../internal.h"
 
-namespace sunrise::server::bap::encrypted::push::activity {
+namespace dawn::server::bap::encrypted::push::activity {
 
 namespace message = middleware::bap::activity_message::sensor_auth_update;
 
@@ -95,4 +95,4 @@ void report_roster_push(Session& session,
                         std::int32_t grant,
                         RosterOutcome outcome) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::push::activity
+} // namespace dawn::server::bap::encrypted::push::activity

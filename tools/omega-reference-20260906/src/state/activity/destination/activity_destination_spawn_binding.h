@@ -4,7 +4,7 @@
 
 #include "definition.h"
 
-namespace sunrise::state::activity::destination {
+namespace dawn::state::activity::destination {
 
 /**
  * Picks the spawn-set hash to send, dropping one the destination does not load.
@@ -17,4 +17,4 @@ namespace sunrise::state::activity::destination {
 [[nodiscard]] std::uint32_t attachable_spawn_set_hash(const DestinationSelection& selection,
                                                       std::uint32_t fallback) noexcept;
 
-} // namespace sunrise::state::activity::destination
+} // namespace dawn::state::activity::destination

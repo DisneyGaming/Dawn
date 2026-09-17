@@ -2,7 +2,7 @@
 
 #include <Windows.h>
 
-namespace sunrise::state::build_data::runtime {
+namespace dawn::state::build_data::runtime {
 namespace {
 
 /** Publish marker for one generated domain, guarded by its own State lock. */
@@ -123,4 +123,4 @@ bool ready() noexcept {
 
 } // namespace named
 
-} // namespace sunrise::state::build_data::runtime
+} // namespace dawn::state::build_data::runtime

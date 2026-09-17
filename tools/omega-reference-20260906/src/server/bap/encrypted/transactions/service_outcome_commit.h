@@ -2,7 +2,7 @@
 
 #include "definition.h"
 
-namespace sunrise::server::bap::encrypted {
+namespace dawn::server::bap::encrypted {
 
 struct ServiceOutcome;
 
@@ -27,4 +27,4 @@ namespace transactions {
 
 } // namespace transactions
 
-} // namespace sunrise::server::bap::encrypted
+} // namespace dawn::server::bap::encrypted

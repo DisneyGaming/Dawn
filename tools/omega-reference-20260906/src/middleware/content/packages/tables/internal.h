@@ -5,7 +5,7 @@
 #include <cstring>
 #include <span>
 
-namespace sunrise::middleware::content::packages::tables {
+namespace dawn::middleware::content::packages::tables {
 
 /**
  * Reads one little-endian field that must lie inside the blob.
@@ -46,4 +46,4 @@ read(std::span<const std::byte> blob, std::size_t offset, Value& value) noexcept
     return true;
 }
 
-} // namespace sunrise::middleware::content::packages::tables
+} // namespace dawn::middleware::content::packages::tables

@@ -7,7 +7,7 @@
 #include "../../registry.h"
 #include "../../signature_text.h"
 
-namespace sunrise::client::patterns::game::assert_handler {
+namespace dawn::client::patterns::game::assert_handler {
 
 /**
  * Whole body of the setter that writes the assert handler slot. Several copies are byte-identical
@@ -30,4 +30,4 @@ inline constexpr std::size_t kFatalTailPatternSize = signature_length(kFatalTail
 extern constinit const std::array<patterns::PatternByte, kSetHandlerPatternSize> kSetHandler;
 extern constinit const std::array<patterns::PatternByte, kFatalTailPatternSize> kFatalTail;
 
-} // namespace sunrise::client::patterns::game::assert_handler
+} // namespace dawn::client::patterns::game::assert_handler

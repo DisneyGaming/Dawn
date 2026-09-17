@@ -5,7 +5,7 @@
 #include "../../../core/ui/runtime/ui_visibility_runtime.h"
 #include "graphics_hook_replacements.h"
 
-namespace sunrise::client::hooks::graphics {
+namespace dawn::client::hooks::graphics {
 
 SRWLOCK g_hookLock{SRWLOCK_INIT};
 std::atomic_uint g_activeHookCalls{};
@@ -149,4 +149,4 @@ bool is_installed() noexcept {
     return installed;
 }
 
-} // namespace sunrise::client::hooks::graphics
+} // namespace dawn::client::hooks::graphics

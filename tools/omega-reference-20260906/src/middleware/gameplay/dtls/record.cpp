@@ -6,7 +6,7 @@
 #include "../../crypto/tiger192.h"
 #include "dtls_messages.h"
 
-namespace sunrise::middleware::gameplay::dtls {
+namespace dawn::middleware::gameplay::dtls {
 
 namespace {
 
@@ -247,4 +247,4 @@ bool identify_auth(const Keys& keys,
     return false;
 }
 
-} // namespace sunrise::middleware::gameplay::dtls
+} // namespace dawn::middleware::gameplay::dtls

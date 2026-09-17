@@ -2,7 +2,7 @@
 
 #include "../table.h"
 
-namespace sunrise::state::build_data::progressions {
+namespace dawn::state::build_data::progressions {
 namespace {
 
 Lock g_lock;
@@ -75,4 +75,4 @@ std::size_t count() noexcept {
     return g_definitions.count();
 }
 
-} // namespace sunrise::state::build_data::progressions
+} // namespace dawn::state::build_data::progressions

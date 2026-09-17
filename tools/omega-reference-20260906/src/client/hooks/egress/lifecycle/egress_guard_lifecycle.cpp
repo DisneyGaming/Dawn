@@ -8,7 +8,7 @@
 #include "../runtime.h"
 #include "internal.h"
 
-namespace sunrise::client::hooks::egress {
+namespace dawn::client::hooks::egress {
 
 SRWLOCK g_lock{SRWLOCK_INIT};
 std::array<hooking::detour::Handle, kHookCount> g_handles{};
@@ -140,4 +140,4 @@ bool is_installed() noexcept {
     return installed;
 }
 
-} // namespace sunrise::client::hooks::egress
+} // namespace dawn::client::hooks::egress

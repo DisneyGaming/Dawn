@@ -4,7 +4,7 @@
 #include "../../address_text.h"
 #include "../../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 namespace {
 
 namespace external = client::external;
@@ -117,4 +117,4 @@ bool Parser::client_external_settings(external::Settings& output) noexcept {
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

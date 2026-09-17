@@ -8,7 +8,7 @@
 #include "../fingerprint/content_manifest_fingerprint.h"
 #include "internal.h"
 
-namespace sunrise::state::content_manifest::scanner {
+namespace dawn::state::content_manifest::scanner {
 namespace {
 
 /** A zero byte ends the directory fingerprint domain label. */
@@ -16,32 +16,9 @@ constexpr char kDomainTerminator = '\0';
 /** Directory fingerprint version 1 hashes names, sizes and write times. */
 constexpr char kDirectoryDomainVersion = '\1';
 /** This domain separates directory identities from row and cache hashes. */
-constexpr std::array<char, 25> kDirectoryDomain{
-    'S',
-    'u',
-    'n',
-    'r',
-    'i',
-    's',
-    'e',
-    'C',
-    'o',
-    'n',
-    't',
-    'e',
-    'n',
-    't',
-    'D',
-    'i',
-    'r',
-    'e',
-    'c',
-    't',
-    'o',
-    'r',
-    'y',
-    kDomainTerminator,
-    kDirectoryDomainVersion,
+constexpr std::array<char, 22> kDirectoryDomain{
+    'D', 'a', 'w', 'n', 'C', 'o', 'n', 't', 'e', 'n', 't', 'D', 'i', 'r', 'e', 'c', 't', 'o', 'r', 'y',
+    kDomainTerminator, kDirectoryDomainVersion,
 };
 /** The Windows wildcard lists every package-directory leaf exactly once. */
 constexpr std::wstring_view kDirectoryWildcard = L"*";
@@ -167,4 +144,4 @@ bool inventory(std::wstring_view directory,
     return hash_inventory(occupied, fingerprintValue);
 }
 
-} // namespace sunrise::state::content_manifest::scanner
+} // namespace dawn::state::content_manifest::scanner

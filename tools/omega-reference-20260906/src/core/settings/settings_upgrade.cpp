@@ -12,7 +12,7 @@
 
 #include "settings.h"
 
-namespace sunrise::core::settings::upgrade {
+namespace dawn::core::settings::upgrade {
 namespace {
 
 /** The layout version member, quoted so a value string cannot match it. */
@@ -262,4 +262,4 @@ bool apply(std::string_view document,
     return true;
 }
 
-} // namespace sunrise::core::settings::upgrade
+} // namespace dawn::core::settings::upgrade

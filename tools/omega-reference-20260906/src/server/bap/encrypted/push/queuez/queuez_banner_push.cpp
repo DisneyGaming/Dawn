@@ -13,7 +13,7 @@
 #include "queuez_push_reporting.h"
 #include "queuez_update_frame.h"
 
-namespace sunrise::server::bap::encrypted::push {
+namespace dawn::server::bap::encrypted::push {
 namespace {
 
 /** One line carries the refusal key and nothing else. */
@@ -494,4 +494,4 @@ bool append_account_resync_roster_notification(Scratch& scratch,
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted::push
+} // namespace dawn::server::bap::encrypted::push

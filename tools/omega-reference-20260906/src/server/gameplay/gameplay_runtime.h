@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace sunrise::server::gameplay {
+namespace dawn::server::gameplay {
 
 /**
  * Binds the gameplay endpoint for the configured topology.
@@ -20,4 +20,4 @@ void service(std::uint64_t now) noexcept;
 /** Stops the endpoint and clears every association and peer. */
 void shutdown() noexcept;
 
-} // namespace sunrise::server::gameplay
+} // namespace dawn::server::gameplay

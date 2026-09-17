@@ -4,7 +4,7 @@
 
 #include "../../encoding/byte_order.h"
 
-namespace sunrise::middleware::bap::activity_message::state_refresh {
+namespace dawn::middleware::bap::activity_message::state_refresh {
 namespace {
 
 /** The bubble field uses the signed 32-bit midpoint as its wire bias. */
@@ -30,4 +30,4 @@ bool parse_state_refresh(std::span<const std::byte> input, StateRefresh& refresh
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_message::state_refresh
+} // namespace dawn::middleware::bap::activity_message::state_refresh

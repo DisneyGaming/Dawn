@@ -2,7 +2,7 @@
 
 #include <limits>
 
-namespace sunrise::state::equipment::light::calculation {
+namespace dawn::state::equipment::light::calculation {
 namespace {
 
 /**
@@ -115,4 +115,4 @@ bool evaluate(const SlotScores& selectedCharacter,
     return true;
 }
 
-} // namespace sunrise::state::equipment::light::calculation
+} // namespace dawn::state::equipment::light::calculation

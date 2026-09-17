@@ -13,8 +13,8 @@
 
 # Build output; tools/build contains project scripts and stays tracked.
 /build/
-/Sunrise/build/
-/Sunrise/unit/build/
+/Dawn/build/
+/Dawn/unit/build/
 *.exe
 *.dll
 *.obj
@@ -29,21 +29,21 @@
 *.nativecodeanalysis.xml
 
 # Runtime caches, logs, local tools, and editor state
-/.sunrise/
 /.dawn/
 /.codex-tools/
 /.codex/
-/Sunrise/cache/
-/Sunrise/logs/
-# Local runtime state. Tracked seed documents live under Sunrise/resources/.
-/Sunrise/player-state.db
-/Sunrise/player-state.db-wal
-/Sunrise/player-state.db-shm
-/Sunrise/player-state.db-journal
-/Sunrise/settings.json
-/Sunrise/hud.json
-/Sunrise/movement.json
-/Sunrise/player.json
+/Dawn/cache/
+/Dawn/logs/
+# Local runtime state. Tracked seed documents live under Dawn/resources/.
+/Dawn/editor-backups/
+/Dawn/player-state.db
+/Dawn/player-state.db-wal
+/Dawn/player-state.db-shm
+/Dawn/player-state.db-journal
+/Dawn/settings.json
+/Dawn/hud.json
+/Dawn/movement.json
+/Dawn/player.json
 __pycache__/
 *.py[cod]
 *.log

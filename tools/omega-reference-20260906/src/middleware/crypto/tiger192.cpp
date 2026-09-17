@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace sunrise::middleware::crypto::tiger {
+namespace dawn::middleware::crypto::tiger {
 
 namespace {
 
@@ -433,4 +433,4 @@ void hash(std::span<const std::byte> input, Digest& output) noexcept {
     }
 }
 
-} // namespace sunrise::middleware::crypto::tiger
+} // namespace dawn::middleware::crypto::tiger

@@ -8,7 +8,7 @@
 #include "../../policy/policy.h"
 #include "replacements.h"
 
-namespace sunrise::client::hooks::egress::winsock::transmission {
+namespace dawn::client::hooks::egress::winsock::transmission {
 namespace {
 
 /** Retail's historical port remains useful when diagnosing a stale descriptor. */
@@ -154,4 +154,4 @@ int WSAAPI send_disconnect(SOCKET socket, LPWSABUF outboundData) noexcept {
     return call(socket, outboundData);
 }
 
-} // namespace sunrise::client::hooks::egress::winsock::transmission
+} // namespace dawn::client::hooks::egress::winsock::transmission

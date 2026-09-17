@@ -9,7 +9,7 @@
 
 #include "murmur3.h"
 
-namespace sunrise::middleware::crypto::hmac {
+namespace dawn::middleware::crypto::hmac {
 
 namespace {
 
@@ -140,4 +140,4 @@ bool authenticate(Algorithm algorithm,
     return complete;
 }
 
-} // namespace sunrise::middleware::crypto::hmac
+} // namespace dawn::middleware::crypto::hmac

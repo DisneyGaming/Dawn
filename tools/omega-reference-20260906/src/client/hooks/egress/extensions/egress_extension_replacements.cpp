@@ -3,7 +3,7 @@
 #include "../internal.h"
 #include "../policy/policy.h"
 
-namespace sunrise::client::hooks::egress::extensions {
+namespace dawn::client::hooks::egress::extensions {
 /** Transmits file data to a connected exact IPv4 redirect-target peer. */
 BOOL PASCAL transmit_file(SOCKET socket,
                           HANDLE file,
@@ -22,4 +22,4 @@ BOOL PASCAL transmit_file(SOCKET socket,
     return call(socket, file, bytesToWrite, bytesPerSend, overlapped, buffers, reserved);
 }
 
-} // namespace sunrise::client::hooks::egress::extensions
+} // namespace dawn::client::hooks::egress::extensions

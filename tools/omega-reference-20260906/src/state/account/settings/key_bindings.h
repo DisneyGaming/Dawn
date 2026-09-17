@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <optional>
 
-namespace sunrise::state::account::settings::bindings {
+namespace dawn::state::account::settings::bindings {
 
 /** Authored actions whose primary and secondary inputs are replicated with account settings. */
 enum class Action : std::uint8_t {
@@ -88,4 +88,4 @@ struct KeyBindings {
     bool configured{};
 };
 
-} // namespace sunrise::state::account::settings::bindings
+} // namespace dawn::state::account::settings::bindings

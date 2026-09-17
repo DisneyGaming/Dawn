@@ -7,7 +7,7 @@
 
 #include "scenario_reader.h"
 
-namespace sunrise::middleware::content::packages::tables {
+namespace dawn::middleware::content::packages::tables {
 
 /**
  * A destination reaches at most this many slice sets.
@@ -111,4 +111,4 @@ inline constexpr std::array<std::uint16_t, 10> kRosterSlotTypes = {
                                        std::span<std::uint64_t> masks,
                                        std::size_t& count) noexcept;
 
-} // namespace sunrise::middleware::content::packages::tables
+} // namespace dawn::middleware::content::packages::tables

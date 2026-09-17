@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::state::build_data::items {
+namespace dawn::state::build_data::items {
 
 /** Signed native definition indices give 32,768 item rows. */
 inline constexpr std::size_t kDefinitionCapacity = 32768;
@@ -76,4 +76,4 @@ find(std::uint32_t definitionHash, std::uint8_t bucketId, Definition& definition
 /** @return Number of installed-build item mappings. */
 [[nodiscard]] std::size_t count() noexcept;
 
-} // namespace sunrise::state::build_data::items
+} // namespace dawn::state::build_data::items

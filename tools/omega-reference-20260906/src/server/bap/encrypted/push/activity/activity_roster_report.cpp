@@ -6,7 +6,7 @@
 #include "../../../../../core/logging/log.h"
 #include "internal.h"
 
-namespace sunrise::server::bap::encrypted::push::activity {
+namespace dawn::server::bap::encrypted::push::activity {
 namespace {
 
 /** Log names for each outcome, in the enum's own order. */
@@ -161,4 +161,4 @@ void report_roster_push(Session& session,
     }
 }
 
-} // namespace sunrise::server::bap::encrypted::push::activity
+} // namespace dawn::server::bap::encrypted::push::activity

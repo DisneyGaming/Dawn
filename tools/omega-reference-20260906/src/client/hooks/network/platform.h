@@ -11,7 +11,7 @@
 #include "../../hooking/detour.h"
 #include "../../network/consumer.h"
 
-namespace sunrise::client::hooks::network {
+namespace dawn::client::hooks::network {
 
 /** Stable slot order shared by target entries and Detours handles. */
 enum class HookSlot : std::size_t {
@@ -33,8 +33,8 @@ extern SRWLOCK g_lock;
 extern std::array<hooking::detour::Handle, kHandleCount> g_handles;
 extern std::array<void*, kHandleCount> g_targetEntries;
 extern std::array<bool, kHandleCount> g_accepting;
-extern std::atomic<sunrise::client::network::HttpConsumer> g_httpConsumer;
-extern std::atomic<sunrise::client::network::BapConsumer> g_bapConsumer;
+extern std::atomic<dawn::client::network::HttpConsumer> g_httpConsumer;
+extern std::atomic<dawn::client::network::BapConsumer> g_bapConsumer;
 extern volatile LONG g_activeCalls;
 
 /**
@@ -82,7 +82,7 @@ namespace signon {
 
 } // namespace signon
 
-#if defined(SUNRISE_BAP_HOOK_TEST)
+#if defined(DAWN_BAP_HOOK_TEST)
 namespace testing {
 
 /** Makes the next base-game rollback be skipped, for the lifecycle test. */
@@ -94,4 +94,4 @@ void fail_next_game_rollback() noexcept;
 } // namespace testing
 #endif
 
-} // namespace sunrise::client::hooks::network
+} // namespace dawn::client::hooks::network

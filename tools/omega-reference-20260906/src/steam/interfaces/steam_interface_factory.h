@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::steam::interfaces {
+namespace dawn::steam::interfaces {
 
 /**
  * Creates one supported Steam client interface.
@@ -20,4 +20,4 @@ namespace sunrise::steam::interfaces {
  */
 [[nodiscard]] void* find_global(const char* version) noexcept;
 
-} // namespace sunrise::steam::interfaces
+} // namespace dawn::steam::interfaces

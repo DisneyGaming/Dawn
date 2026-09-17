@@ -5,7 +5,7 @@
 #include "../../../state/entitlements/validation.h"
 #include "../internal.h"
 
-namespace sunrise::steam::interfaces::methods {
+namespace dawn::steam::interfaces::methods {
 namespace {
 
 /** @return The authored ownership policy. It also lists installed DLC. */
@@ -107,4 +107,4 @@ bool get_dlc_data([[maybe_unused]] void* self,
     return found;
 }
 
-} // namespace sunrise::steam::interfaces::methods
+} // namespace dawn::steam::interfaces::methods

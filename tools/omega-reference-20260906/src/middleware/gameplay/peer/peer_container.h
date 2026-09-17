@@ -7,7 +7,7 @@
 #include "../../encoding/bit_reader.h"
 #include "../../encoding/bit_writer.h"
 
-namespace sunrise::middleware::gameplay::peer {
+namespace dawn::middleware::gameplay::peer {
 
 /** The registry holds ids 0 through 44. */
 inline constexpr std::uint8_t kMaximumMessageId = 44;
@@ -62,4 +62,4 @@ struct MessageHeader {
 [[nodiscard]] bool
 read_header(encoding::bits::Reader& reader, MessageHeader& header, bool& present) noexcept;
 
-} // namespace sunrise::middleware::gameplay::peer
+} // namespace dawn::middleware::gameplay::peer

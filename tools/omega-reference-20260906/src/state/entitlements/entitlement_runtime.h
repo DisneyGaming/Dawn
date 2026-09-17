@@ -2,7 +2,7 @@
 
 #include "definition.h"
 
-namespace sunrise::state::entitlements {
+namespace dawn::state::entitlements {
 
 /**
  * Publishes the immutable ownership policy for this process.
@@ -17,4 +17,4 @@ namespace sunrise::state::entitlements {
 /** Restores the bundled ownership policy. */
 void clear() noexcept;
 
-} // namespace sunrise::state::entitlements
+} // namespace dawn::state::entitlements

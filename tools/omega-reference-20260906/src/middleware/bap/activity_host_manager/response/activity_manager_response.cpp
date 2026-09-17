@@ -5,7 +5,7 @@
 
 #include "../../../encoding/byte_order.h"
 
-namespace sunrise::middleware::bap::activity_host_manager::response {
+namespace dawn::middleware::bap::activity_host_manager::response {
 namespace {
 
 /** The fixed service-7 tail reserves 128 opaque activity-data bytes. */
@@ -53,4 +53,4 @@ bool encode_response(std::uint64_t sessionId,
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_host_manager::response
+} // namespace dawn::middleware::bap::activity_host_manager::response

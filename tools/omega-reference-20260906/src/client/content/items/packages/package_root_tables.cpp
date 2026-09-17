@@ -8,7 +8,7 @@
 #include "../../../../state/build_data/socket_entry_lists/definition.h"
 #include "internal.h"
 
-namespace sunrise::client::content::items::packages {
+namespace dawn::client::content::items::packages {
 namespace {
 
 namespace buckets = state::build_data::inventory::buckets;
@@ -289,4 +289,4 @@ bool build_socket_entry_lists(const reader::Source& source,
     return state::build_data::publish_socket_entry_lists(rows, entryTables);
 }
 
-} // namespace sunrise::client::content::items::packages
+} // namespace dawn::client::content::items::packages

@@ -2,7 +2,7 @@
 
 #include "../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 namespace {
 
 namespace defaults = state::activity::defaults;
@@ -103,4 +103,4 @@ bool Parser::arrival_overrides(defaults::ActivityDefaults& output) noexcept {
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

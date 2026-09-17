@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace sunrise::state::gameplay {
+namespace dawn::state::gameplay {
 
 /** The protected envelope keys AES-128. */
 inline constexpr std::size_t kChannelKeySize = 16;
@@ -229,4 +229,4 @@ struct GameplayState {
     Endpoint bound{};
 };
 
-} // namespace sunrise::state::gameplay
+} // namespace dawn::state::gameplay

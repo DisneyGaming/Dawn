@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::content::packages::tables::abilities {
+namespace dawn::middleware::content::packages::tables::abilities {
 
 /** No shipped socket entry list declares more entries than this. */
 inline constexpr std::size_t kEntryCapacity = 64;
@@ -65,4 +65,4 @@ struct PoolRecord {
                                             std::uint8_t subgroup,
                                             std::span<PoolRecord> output) noexcept;
 
-} // namespace sunrise::middleware::content::packages::tables::abilities
+} // namespace dawn::middleware::content::packages::tables::abilities

@@ -5,7 +5,7 @@
 #include "../../../../middleware/secure_channel/runtime.h"
 #include "../internal.h"
 
-namespace sunrise::server::bap::encrypted::reply {
+namespace dawn::server::bap::encrypted::reply {
 
 /**
  * Encodes, seals and frames one correlated status-200 reply.
@@ -52,4 +52,4 @@ bool encode(Scratch& scratch,
     return encoded;
 }
 
-} // namespace sunrise::server::bap::encrypted::reply
+} // namespace dawn::server::bap::encrypted::reply

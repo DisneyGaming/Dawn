@@ -10,7 +10,7 @@
 #include "build.h"
 #include "internal.h"
 
-namespace sunrise::client::content::items::packages {
+namespace dawn::client::content::items::packages {
 namespace {
 
 /** Installed packages sit beside the main executable. */
@@ -82,4 +82,4 @@ bool package_directory(core::path::Buffer& directory) noexcept {
     return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
 }
 
-} // namespace sunrise::client::content::items::packages
+} // namespace dawn::client::content::items::packages

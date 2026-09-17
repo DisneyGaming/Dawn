@@ -11,7 +11,7 @@
 #include "format.h"
 #include "internal.h"
 
-namespace sunrise::state::content_manifest::cache {
+namespace dawn::state::content_manifest::cache {
 namespace {
 
 /**
@@ -139,4 +139,4 @@ LoadStatus load(const wchar_t* path,
     return LoadStatus::loaded;
 }
 
-} // namespace sunrise::state::content_manifest::cache
+} // namespace dawn::state::content_manifest::cache

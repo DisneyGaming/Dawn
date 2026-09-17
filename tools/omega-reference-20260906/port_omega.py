@@ -7,7 +7,7 @@ import zipfile
 from omega_osiris_hold_patch import apply as align_second_osiris_hold
 
 BASE = Path(__file__).resolve().parent
-DEST = BASE.parent.parent / 'Sunrise'
+DEST = BASE.parent.parent / 'Dawn'
 REF = BASE / 'src'
 BACKUP = zipfile.ZipFile(BASE / 'before-port.zip')
 outputs = {}
@@ -151,9 +151,9 @@ tail = tail[:tail.rfind('} // namespace')]
 tail += '\n' + re.search(r'\[\[nodiscard\]\] bool encode_sensor_auth_update\([\s\S]*?noexcept;', text).group(0) + '\n'
 for name in functions:
     tail = re.sub(r'\b' + name + r'\b', 'legacy_' + name, tail)
-text = text.replace('} // namespace sunrise::middleware::bap::activity_message::sensor_auth_update',
+text = text.replace('} // namespace dawn::middleware::bap::activity_message::sensor_auth_update',
     '\n// Existing codecs remain isolated from Omega archive serialization.\n' + tail +
-    '\n} // namespace sunrise::middleware::bap::activity_message::sensor_auth_update')
+    '\n} // namespace dawn::middleware::bap::activity_message::sensor_auth_update')
 put(p, text)
 
 for function, arguments in [

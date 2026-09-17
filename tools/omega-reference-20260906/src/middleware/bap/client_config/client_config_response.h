@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <span>
 
-namespace sunrise::middleware::bap::client_config {
+namespace dawn::middleware::bap::client_config {
 
 /**
  * Encodes the minimal svc-19 response with its optional bytes omitted.
@@ -14,4 +14,4 @@ namespace sunrise::middleware::bap::client_config {
 [[nodiscard]] bool encode_minimal_response(std::span<std::byte> output,
                                            std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::bap::client_config
+} // namespace dawn::middleware::bap::client_config

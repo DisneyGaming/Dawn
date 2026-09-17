@@ -5,7 +5,7 @@
 #include "definition.h"
 #include "entity_slots/runtime.h"
 
-namespace sunrise::state::activity {
+namespace dawn::state::activity {
 
 /**
  * Prepares one allocation with State's fixed default destination, without changing State.
@@ -186,4 +186,4 @@ void reset_mission_authority_runtime_initialization() noexcept;
 /** @return Milliseconds since the running load started, or zero when none is running. */
 [[nodiscard]] std::uint64_t world_transition_age() noexcept;
 
-} // namespace sunrise::state::activity
+} // namespace dawn::state::activity

@@ -7,7 +7,7 @@
 
 #include "definition_index_table.h"
 
-namespace sunrise::middleware::content::packages::tables {
+namespace dawn::middleware::content::packages::tables {
 
 /** Tag class of a component, which wraps one resource so a container can hold it. */
 inline constexpr std::uint32_t kComponentClass = 0x808099D6U;
@@ -76,4 +76,4 @@ inline constexpr std::size_t kContainerMemberStride = 4;
  */
 [[nodiscard]] bool bubble_in_mask(std::span<const std::uint8_t> mask, std::size_t index) noexcept;
 
-} // namespace sunrise::middleware::content::packages::tables
+} // namespace dawn::middleware::content::packages::tables

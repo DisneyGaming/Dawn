@@ -13,7 +13,7 @@
 #include "../../../encoding/byte_order.h"
 #include "../../status_fields.h"
 
-namespace sunrise::middleware::web_service::messages::opcode601 {
+namespace dawn::middleware::web_service::messages::opcode601 {
 namespace {
 
 /** The three tail integers after the status pair are 32, 64 and 32 bits. */
@@ -65,4 +65,4 @@ bool encode_response(const Message& message,
     return true;
 }
 
-} // namespace sunrise::middleware::web_service::messages::opcode601
+} // namespace dawn::middleware::web_service::messages::opcode601

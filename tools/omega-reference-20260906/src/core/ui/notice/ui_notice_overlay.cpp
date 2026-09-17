@@ -10,7 +10,7 @@
 #include "../animation/transition/ui_transition_animation.h"
 #include "../scaling/dpi/ui_dpi_scaling.h"
 
-namespace sunrise::core::ui::notice {
+namespace dawn::core::ui::notice {
 namespace {
 
 /** 4 notices cover a burst without hiding the first one that mattered. */
@@ -32,7 +32,7 @@ constexpr float kViewportMargin = 24.0F;
 /** The overlay is centered on the horizontal axis and pinned to the top edge. */
 constexpr ImVec2 kTopCenterPivot{0.5F, 0.0F};
 /** The heading names the owner so the failure is not read as the game's. */
-constexpr char kHeading[] = "Sunrise reported a problem";
+constexpr char kHeading[] = "Dawn reported a problem";
 /** The overlay carries no decoration, takes no input, and is never saved. */
 constexpr ImGuiWindowFlags kOverlayFlags =
     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav
@@ -66,7 +66,7 @@ std::array<Entry, kNoticeCapacity> g_entries{};
 } // namespace
 
 /**
- * Raises one user-visible notice about a Sunrise failure.
+ * Raises one user-visible notice about a Dawn failure.
  * @param text Message. Longer text is cut.
  */
 void raise(std::string_view text) noexcept {
@@ -123,7 +123,7 @@ bool draw() noexcept {
     ImGui::SetNextWindowPos(position, ImGuiCond_Always, kTopCenterPivot);
     // One style alpha fades the overlay and everything drawn inside it together.
     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, progress);
-    if (ImGui::Begin("##sunrise_notice", nullptr, kOverlayFlags)) {
+    if (ImGui::Begin("##dawn_notice", nullptr, kOverlayFlags)) {
         ImGui::TextUnformatted(kHeading);
         for (std::size_t index = 0; index < pendingCount; ++index) {
             const Entry& entry = pending[index];
@@ -136,4 +136,4 @@ bool draw() noexcept {
     return true;
 }
 
-} // namespace sunrise::core::ui::notice
+} // namespace dawn::core::ui::notice

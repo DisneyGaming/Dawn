@@ -8,7 +8,7 @@
 #include "../definition.h"
 #include "package/content_manifest_package_name.h"
 
-namespace sunrise::state::content_manifest::scanner {
+namespace dawn::state::content_manifest::scanner {
 
 /** One recognized file, kept only while the inventory and header checks run. */
 struct Candidate final {
@@ -50,4 +50,4 @@ struct Candidate final {
                            Fingerprint& buildFingerprint,
                            Guid& guid) noexcept;
 
-} // namespace sunrise::state::content_manifest::scanner
+} // namespace dawn::state::content_manifest::scanner

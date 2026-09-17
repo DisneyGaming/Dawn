@@ -29,7 +29,7 @@ def main():
     parser.add_argument("--slot", type=int, default=2)
     parser.add_argument("--action", type=int, choices=(0, 1), required=True,
                         help="1: authored Vance probe; 0: explicitly stop that controller")
-    parser.add_argument("--root", type=Path, default=Path(r"D:\Destiny3\bin\x64\Sunrise"))
+    parser.add_argument("--root", type=Path, default=Path(r"D:\Destiny3\bin\x64\Dawn"))
     parser.add_argument("--print-only", action="store_true")
     args = parser.parse_args()
     text = command_text(args.boot, args.owner, args.incarnation, args.revision, args.request,

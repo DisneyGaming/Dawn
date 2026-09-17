@@ -8,7 +8,7 @@
 #include "../../../region_lineage.h"
 #include "../../activity_message/definition.h"
 
-namespace sunrise::server::bap::encrypted::push::activity {
+namespace dawn::server::bap::encrypted::push::activity {
 
 /**
  * Appends one current membership svc9 notification and advances its local nonce.
@@ -37,4 +37,4 @@ append_membership_notification(Scratch& scratch,
     std::span<std::byte> response,
     std::size_t& written) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::push::activity
+} // namespace dawn::server::bap::encrypted::push::activity

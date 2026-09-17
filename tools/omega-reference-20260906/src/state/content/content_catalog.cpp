@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-namespace sunrise::state::content {
+namespace dawn::state::content {
 namespace {
 
 /** Standard 64-bit FNV-1a offset basis starts each deterministic name hash. */
@@ -218,4 +218,4 @@ std::size_t count() noexcept {
     return result;
 }
 
-} // namespace sunrise::state::content
+} // namespace dawn::state::content

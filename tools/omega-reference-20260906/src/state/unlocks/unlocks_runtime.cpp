@@ -2,7 +2,7 @@
 
 #include <Windows.h>
 
-namespace sunrise::state::unlocks {
+namespace dawn::state::unlocks {
 namespace {
 
 Table g_table{};
@@ -29,4 +29,4 @@ void clear() noexcept {
     ReleaseSRWLockExclusive(&g_lock);
 }
 
-} // namespace sunrise::state::unlocks
+} // namespace dawn::state::unlocks

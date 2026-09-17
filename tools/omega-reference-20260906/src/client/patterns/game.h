@@ -5,7 +5,7 @@
 
 #include "registry.h"
 
-namespace sunrise::client::patterns::game {
+namespace dawn::client::patterns::game {
 
 /** Stable indices for game-executable signatures. */
 enum class Id : std::size_t {
@@ -31,4 +31,4 @@ enum class Id : std::size_t {
 /** Returns the read-only game-executable signature table. */
 [[nodiscard]] std::span<const patterns::Pattern> definitions() noexcept;
 
-} // namespace sunrise::client::patterns::game
+} // namespace dawn::client::patterns::game

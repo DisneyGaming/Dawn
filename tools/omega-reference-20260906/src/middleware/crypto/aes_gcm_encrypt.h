@@ -5,7 +5,7 @@
 
 #include "aes_gcm_decrypt.h"
 
-namespace sunrise::middleware::crypto::aes_gcm {
+namespace dawn::middleware::crypto::aes_gcm {
 
 /**
  * Encrypts one buffer and returns its tag apart from the ciphertext.
@@ -23,4 +23,4 @@ namespace sunrise::middleware::crypto::aes_gcm {
                            std::span<std::byte> output,
                            std::span<std::byte, kTagSize> tag) noexcept;
 
-} // namespace sunrise::middleware::crypto::aes_gcm
+} // namespace dawn::middleware::crypto::aes_gcm

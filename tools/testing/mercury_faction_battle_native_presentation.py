@@ -64,7 +64,7 @@ def extract(image):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--reader-dir', type=Path, default=Path('D:/Sunrise-work/scripts'))
+    parser.add_argument('--reader-dir', type=Path, default=Path('D:/Dawn-work/scripts'))
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     sys.path.insert(0, str(args.reader_dir.resolve()))

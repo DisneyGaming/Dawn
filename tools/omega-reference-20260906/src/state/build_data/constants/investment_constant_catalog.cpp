@@ -2,7 +2,7 @@
 
 #include "../table.h"
 
-namespace sunrise::state::build_data::constants {
+namespace dawn::state::build_data::constants {
 namespace {
 
 // One row, not a table, so it holds the value directly under the shared Lock.
@@ -41,4 +41,4 @@ InvestmentConstants snapshot() noexcept {
     return value;
 }
 
-} // namespace sunrise::state::build_data::constants
+} // namespace dawn::state::build_data::constants

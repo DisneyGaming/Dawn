@@ -2,9 +2,9 @@
 
 #include <string_view>
 
-namespace sunrise::client::hooks::network::content_config {
+namespace dawn::client::hooks::network::content_config {
 
 /** Process-local URL accepted by the ContentConfig GET replacement. */
-inline constexpr std::string_view kLocalUrl = "sunrise://local/config";
+inline constexpr std::string_view kLocalUrl = "dawn://local/config";
 
-} // namespace sunrise::client::hooks::network::content_config
+} // namespace dawn::client::hooks::network::content_config

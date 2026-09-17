@@ -28,7 +28,7 @@
 #include "spawn_sets/spawn_set_catalog.h"
 #include "vendors/vendor_catalog.h"
 
-namespace sunrise::state::build_data {
+namespace dawn::state::build_data {
 namespace {
 
 /** One cache directory holds the generated build data under the artifact root. */
@@ -165,4 +165,4 @@ void shutdown() noexcept {
     ReleaseSRWLockExclusive(&persistenceState.lock);
 }
 
-} // namespace sunrise::state::build_data
+} // namespace dawn::state::build_data

@@ -3,7 +3,7 @@
 
 #include "../queuez_state_validation.h"
 
-namespace sunrise::server::bap::encrypted::queuez {
+namespace dawn::server::bap::encrypted::queuez {
 
 /** Replaces an active Family-4 manifest at exactly the next peer-local version. */
 bool stage_family4_refresh(const SessionState& before,
@@ -45,4 +45,4 @@ bool stage_family4_refresh(const SessionState& before,
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted::queuez
+} // namespace dawn::server::bap::encrypted::queuez

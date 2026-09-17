@@ -6,7 +6,7 @@
 #include "../../../core/logging/log.h"
 #include "../internal.h"
 
-namespace sunrise::steam::interfaces::methods {
+namespace dawn::steam::interfaces::methods {
 namespace {
 
 /** Steam callback id for a finished lobby entry. */
@@ -550,4 +550,4 @@ bool set_lobby_owner([[maybe_unused]] void* self,
     return changed;
 }
 
-} // namespace sunrise::steam::interfaces::methods
+} // namespace dawn::steam::interfaces::methods

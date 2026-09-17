@@ -8,7 +8,7 @@
 #include "../internal.h"
 #include "../push/activity/activity_region_snapshot.h"
 
-namespace sunrise::server::bap::encrypted::activity_transaction {
+namespace dawn::server::bap::encrypted::activity_transaction {
 
 /** Three-way whole-bundle outcome; deferred is only exact advertisement provisioning. */
 enum class NotificationStageResult : std::uint8_t {
@@ -17,7 +17,7 @@ enum class NotificationStageResult : std::uint8_t {
     failed,
 };
 
-#if defined(SUNRISE_REGION_PUBLICATION_TESTING)
+#if defined(DAWN_REGION_PUBLICATION_TESTING)
 /** Deterministic production-coordinator boundary failures used only by the linked test binary. */
 enum class RegionStageFailurePoint : std::uint8_t {
     none,
@@ -77,4 +77,4 @@ struct NotificationStaging final {
 /** Releases the row pin and discards an uncommitted staged roster after any later failure. */
 void discard_notification_staging(Session& session, NotificationStaging& staging) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::activity_transaction
+} // namespace dawn::server::bap::encrypted::activity_transaction

@@ -26,4 +26,4 @@ Attempt A admits an actor at generation 5. After reset, attempt B reuses the run
 
 The high-water mark is retained in memory, not persisted across process restarts. This is not durable checkpoint storage, automatic reconnect, late-join restoration, or host migration.
 
-Landmarks: Sunrise/src/state/activity/coo/lifecycle_service.h; state/activity/lifecycle_generation.h; server/bap/internal.h. Generation and retirement regression sources exist but were not run for these docs.
+Landmarks: Dawn/src/state/activity/coo/lifecycle_service.h; state/activity/lifecycle_generation.h; server/bap/internal.h. Generation and retirement regression sources exist but were not run for these docs.

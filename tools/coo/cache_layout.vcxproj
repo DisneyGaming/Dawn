@@ -10,12 +10,12 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <PropertyGroup><OutDir>$(ProjectDir)..\..\build\coo\cache_layout\$(Configuration)\</OutDir><IntDir>$(OutDir)obj\</IntDir></PropertyGroup>
   <PropertyGroup>
-    <SourceRoot Condition="'$(SourceRoot)'==''">$(ProjectDir)..\..\Sunrise\src</SourceRoot>
+    <SourceRoot Condition="'$(SourceRoot)'==''">$(ProjectDir)..\..\Dawn\src</SourceRoot>
   </PropertyGroup>
   <ItemDefinitionGroup><ClCompile>
     <LanguageStandard>stdcpp20</LanguageStandard><WarningLevel>Level4</WarningLevel><TreatWarningAsError>true</TreatWarningAsError><ConformanceMode>true</ConformanceMode>
     <RuntimeLibrary Condition="'$(Configuration)'=='Release'">MultiThreaded</RuntimeLibrary><RuntimeLibrary Condition="'$(Configuration)'=='Debug'">MultiThreadedDebug</RuntimeLibrary><Optimization Condition="'$(Configuration)'=='Debug'">Disabled</Optimization><Optimization Condition="'$(Configuration)'=='Release'">MaxSpeed</Optimization>
-    <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions><AdditionalIncludeDirectories>$(SourceRoot);$(ProjectDir)..\..\Sunrise\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions><AdditionalIncludeDirectories>$(SourceRoot);$(ProjectDir)..\..\Dawn\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     <PreprocessorDefinitions>WIN32;_WINDOWS;NOMINMAX;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
   </ClCompile><Link><SubSystem>Console</SubSystem><AdditionalDependencies>user32.lib;%(AdditionalDependencies)</AdditionalDependencies></Link></ItemDefinitionGroup>
   <ItemGroup><ClCompile Include="cache_layout.cpp"><ExceptionHandling>Sync</ExceptionHandling></ClCompile></ItemGroup>

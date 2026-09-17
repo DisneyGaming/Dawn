@@ -5,7 +5,7 @@
 
 #include "../../../state/entitlements/definition.h"
 
-namespace sunrise::middleware::signon::ownership {
+namespace dawn::middleware::signon::ownership {
 
 /** Each owned id takes at most 1 key byte and 5 varint bytes. */
 inline constexpr std::size_t kEntryBytes = 6;
@@ -23,4 +23,4 @@ inline constexpr std::size_t kBufferSize = state::entitlements::kCapacity * kEnt
                           std::span<std::byte> output,
                           std::size_t& size) noexcept;
 
-} // namespace sunrise::middleware::signon::ownership
+} // namespace dawn::middleware::signon::ownership

@@ -8,7 +8,7 @@
 
 #include "../../../encoding/bit_reader.h"
 
-namespace sunrise::middleware::web_service::messages::opcode901 {
+namespace dawn::middleware::web_service::messages::opcode901 {
 namespace {
 
 /** Both index fields are 16-bit signed values. */
@@ -100,4 +100,4 @@ const char* clock_policy_name(ClockPolicy policy) noexcept {
     return "unknown";
 }
 
-} // namespace sunrise::middleware::web_service::messages::opcode901
+} // namespace dawn::middleware::web_service::messages::opcode901

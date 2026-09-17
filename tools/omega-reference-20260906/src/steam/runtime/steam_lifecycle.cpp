@@ -14,7 +14,7 @@
 #include "internal.h"
 #include "runtime.h"
 
-namespace sunrise::steam {
+namespace dawn::steam {
 namespace {
 
 /** The only delay-loaded module allowed to start the platform Client group. */
@@ -116,9 +116,9 @@ bool is_running() noexcept {
     return true;
 }
 
-} // namespace sunrise::steam
+} // namespace dawn::steam
 
-namespace sunrise::steam::runtime {
+namespace dawn::steam::runtime {
 
 /** Runs main-image activation once, from a caller that proves the game is loaded. */
 bool activate_main_once() noexcept {
@@ -167,4 +167,4 @@ void activate_platform_once(const void* callerAddress) noexcept {
     ReleaseSRWLockExclusive(&g_lifecycleLock);
 }
 
-} // namespace sunrise::steam::runtime
+} // namespace dawn::steam::runtime

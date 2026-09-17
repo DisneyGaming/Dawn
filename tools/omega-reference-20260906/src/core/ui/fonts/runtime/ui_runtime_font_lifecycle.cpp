@@ -8,7 +8,7 @@
 
 #include "../installed/ui_installed_font_reader.h"
 
-namespace sunrise::core::ui::fonts::runtime {
+namespace dawn::core::ui::fonts::runtime {
 namespace {
 
 /** 8 pixels refuses unreadable or near-zero authored sizes. */
@@ -184,4 +184,4 @@ Snapshot snapshot() noexcept {
     return result;
 }
 
-} // namespace sunrise::core::ui::fonts::runtime
+} // namespace dawn::core::ui::fonts::runtime

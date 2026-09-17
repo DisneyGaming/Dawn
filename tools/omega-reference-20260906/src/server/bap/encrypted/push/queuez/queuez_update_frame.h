@@ -6,7 +6,7 @@
 #include "../../../../../middleware/queuez/queuez_update.h"
 #include "../../internal.h"
 
-namespace sunrise::server::bap::encrypted::push::queuez_frame {
+namespace dawn::server::bap::encrypted::push::queuez_frame {
 
 /** Securely clears raw and compressed object-staging prefixes. */
 void clear_object_storage(Scratch& scratch,
@@ -34,4 +34,4 @@ void clear_object_storage(Scratch& scratch,
                           std::span<std::byte> response,
                           std::size_t& written) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::push::queuez_frame
+} // namespace dawn::server::bap::encrypted::push::queuez_frame

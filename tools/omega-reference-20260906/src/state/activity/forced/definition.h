@@ -6,7 +6,7 @@
 
 #include "../destination/definition.h"
 
-namespace sunrise::state::activity::forced {
+namespace dawn::state::activity::forced {
 
 /** The bubble number picks one of the 64 wire slots. */
 inline constexpr std::uint8_t kMaximumBubble = 63;
@@ -67,4 +67,4 @@ struct ForcedDestination {
            && (!value.hasSliceSet || value.sliceSet <= kMaximumSliceSet);
 }
 
-} // namespace sunrise::state::activity::forced
+} // namespace dawn::state::activity::forced

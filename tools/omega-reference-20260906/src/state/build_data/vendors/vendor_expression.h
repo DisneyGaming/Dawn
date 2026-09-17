@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::state::build_data::vendors {
+namespace dawn::state::build_data::vendors {
 
 /** Stack slots one expression may use. Known gates need two, so this leaves headroom. */
 inline constexpr std::size_t kExpressionStackCapacity = 16;
@@ -55,4 +55,4 @@ struct Inputs {
 [[nodiscard]] bool
 evaluate(std::span<const Instruction> program, const Inputs& inputs, bool& result) noexcept;
 
-} // namespace sunrise::state::build_data::vendors
+} // namespace dawn::state::build_data::vendors

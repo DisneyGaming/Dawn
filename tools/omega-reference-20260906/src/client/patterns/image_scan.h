@@ -6,7 +6,7 @@
 #include "registry.h"
 #include "signature_text.h"
 
-namespace sunrise::client::patterns {
+namespace dawn::client::patterns {
 
 /**
  * Scans the main image for one signature, independently of the shared registry.
@@ -27,4 +27,4 @@ namespace sunrise::client::patterns {
 [[nodiscard]] std::byte* resolve_relative(const std::byte* operand,
                                           const std::byte* nextInstruction) noexcept;
 
-} // namespace sunrise::client::patterns
+} // namespace dawn::client::patterns

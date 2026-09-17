@@ -3,7 +3,7 @@
 #include <array>
 #include <cwchar>
 
-namespace sunrise::middleware::content::packages::reader::table_cache {
+namespace dawn::middleware::content::packages::reader::table_cache {
 namespace {
 
 /** @param header Parsed package header. @return True when both tables fit a slot. */
@@ -101,4 +101,4 @@ bool block_record(Scratch& scratch,
         scratch, path, offset, std::as_writable_bytes(std::span{&record, std::size_t{1}}));
 }
 
-} // namespace sunrise::middleware::content::packages::reader::table_cache
+} // namespace dawn::middleware::content::packages::reader::table_cache

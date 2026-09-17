@@ -3,7 +3,7 @@
 #include "../../../state/entitlements/validation.h"
 #include "../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 
 /** Checks the standalone Server settings object. */
 bool Parser::server_settings(server::Settings& output) noexcept {
@@ -53,4 +53,4 @@ bool Parser::server_settings(server::Settings& output) noexcept {
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

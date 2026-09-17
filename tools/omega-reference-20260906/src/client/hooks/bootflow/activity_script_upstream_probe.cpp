@@ -17,7 +17,7 @@
 #include "legacy_owner_quarantine_lifecycle.h"
 #include "legacy_owner_sentinel.h"
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 namespace {
 
 constexpr std::uintptr_t kTransitionUpdateRva = 0x177AC40U;
@@ -1472,9 +1472,9 @@ void dump_runtime_code(const wchar_t* phase,
         return;
     }
 
-    const HMODULE sunrise = GetModuleHandleW(L"steam_api64.dll");
+    const HMODULE dawn = GetModuleHandleW(L"steam_api64.dll");
     core::path::Buffer path{};
-    if (sunrise == nullptr || !core::path::artifact_directory(sunrise, path)
+    if (dawn == nullptr || !core::path::artifact_directory(dawn, path)
         || !core::path::append(path, L"\\analysis")) {
         return;
     }
@@ -14495,4 +14495,4 @@ void uninstall_activity_script_upstream_probe() noexcept {
     g_activityEvent46RequestPredicateObserved.store(0U, std::memory_order_release);
 }
 
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <span>
 
-namespace sunrise::core::ui::components::picker {
+namespace dawn::core::ui::components::picker {
 
 /** Longest filter text the popup keeps, which is more than any row label needs. */
 inline constexpr std::size_t kFilterCapacity = 64;
@@ -28,4 +28,4 @@ struct Item {
                            std::span<const Item> items,
                            std::size_t& selected) noexcept;
 
-} // namespace sunrise::core::ui::components::picker
+} // namespace dawn::core::ui::components::picker

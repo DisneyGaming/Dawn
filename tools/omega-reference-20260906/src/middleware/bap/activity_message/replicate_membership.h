@@ -10,7 +10,7 @@
 #include "activity_client_identity_parser.h"
 #include "client_authoritative_data.h"
 
-namespace sunrise::middleware::bap::activity_message::replicate_membership {
+namespace dawn::middleware::bap::activity_message::replicate_membership {
 
 /** Membership snapshots use activity message type 12. */
 inline constexpr std::uint32_t kMessageType = 12;
@@ -173,4 +173,4 @@ region_block_start_bit(const MembershipSnapshot& snapshot) noexcept {
 [[nodiscard]] bool write_region_block(encoding::bits::Writer& writer,
                                       const MembershipSnapshot& snapshot) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_message::replicate_membership
+} // namespace dawn::middleware::bap::activity_message::replicate_membership

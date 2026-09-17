@@ -7,7 +7,7 @@
 
 #include "../../../../core/logging/log.h"
 
-namespace sunrise::client::hooks::egress::policy {
+namespace dawn::client::hooks::egress::policy {
 namespace {
 
 /** A missing original denies an otherwise local connect. */
@@ -154,4 +154,4 @@ void log_name_decision(NameOperation operation,
         operation, allowed, std::string_view(narrowed.data(), length), selector, status, caller);
 }
 
-} // namespace sunrise::client::hooks::egress::policy
+} // namespace dawn::client::hooks::egress::policy

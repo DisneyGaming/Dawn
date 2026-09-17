@@ -4,7 +4,7 @@
 
 #include "component_container_reader.h"
 
-namespace sunrise::middleware::content::packages::tables {
+namespace dawn::middleware::content::packages::tables {
 namespace {
 
 /**
@@ -71,4 +71,4 @@ bool bubble_states(std::span<const std::byte> scenario, BubbleStates& output) no
     return true;
 }
 
-} // namespace sunrise::middleware::content::packages::tables
+} // namespace dawn::middleware::content::packages::tables

@@ -7,7 +7,7 @@
 #include "../../../../state/runtime/runtime.h"
 #include "../internal.h"
 
-namespace sunrise::server::bap::encrypted::transactions {
+namespace dawn::server::bap::encrypted::transactions {
 
 /** Captures and validates any exact activity binding a successful commit will publish. */
 bool prepare_publication(const ServiceOutcome& outcome, Publication& publication) noexcept {
@@ -155,4 +155,4 @@ bool commit(ServiceOutcome& outcome, Publication& publication) noexcept {
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted::transactions
+} // namespace dawn::server::bap::encrypted::transactions

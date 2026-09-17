@@ -2,7 +2,7 @@
 
 #include <Windows.h>
 
-namespace sunrise::core::ui::modules::registry {
+namespace dawn::core::ui::modules::registry {
 namespace {
 
 /** One registry position, holding a copied descriptor when occupied. */
@@ -197,4 +197,4 @@ void PageRegistration::release(void (*finish)() noexcept) noexcept {
     ReleaseSRWLockExclusive(&g_slotLock);
 }
 
-} // namespace sunrise::core::ui::modules::registry
+} // namespace dawn::core::ui::modules::registry

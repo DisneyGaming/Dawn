@@ -4,7 +4,7 @@ from generate_gateway_ai import assignment
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 OUT=ROOT/'build/coo/gateway-research'
-FIXTURE=ROOT/'Sunrise/unit/fixtures/gateway_traversal_wire.h'
+FIXTURE=ROOT/'Dawn/unit/fixtures/gateway_traversal_wire.h'
 
 def generate():
  image=(ROOT/'destiny2_unpacked.bin').read_bytes()
@@ -24,7 +24,7 @@ def generate():
  assert image[0xABB27E:0xABB285]==bytes.fromhex('488D158BF5FFFF')
  native=json.loads((OUT/'gateway-authored-bindings.json').read_text())
  sources=sorted((s for s in native['sources'] if s['registry']==0x85742F3E),key=lambda s:s['slot'])
- text=(ROOT/'Sunrise/src/state/activity/gateway/traversal_catalog.h').read_text()
+ text=(ROOT/'Dawn/src/state/activity/gateway/traversal_catalog.h').read_text()
  rows=re.findall(r'\{(\d+),kTraversalRegistry,0x([0-9A-F]+)U,0x([0-9A-F]+)U,(\d+),(\d+),(\d+),(\d+),(true|false)\}',text)
  assert len(rows)==len(sources)==67
  for row,s in zip(rows,sources):

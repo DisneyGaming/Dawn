@@ -7,7 +7,7 @@
 
 #include "../../runtime/storage/internal.h"
 
-namespace sunrise::state::activity::defaults {
+namespace dawn::state::activity::defaults {
 namespace {
 
 /** @return The authored row's package name as text. */
@@ -51,4 +51,4 @@ void apply_arrival_override(const ActivityDefaults& defaults,
     }
 }
 
-} // namespace sunrise::state::activity::defaults
+} // namespace dawn::state::activity::defaults

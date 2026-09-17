@@ -7,7 +7,7 @@
 #include "../../registry.h"
 #include "../../signature_text.h"
 
-namespace sunrise::client::patterns::game::retail_log {
+namespace dawn::client::patterns::game::retail_log {
 
 /** Single funnel every retail log line passes through, already formatted. */
 inline constexpr std::string_view kEnqueueText = "83 F9 FF 74 ? 48 89 5C 24 ? 56";
@@ -27,4 +27,4 @@ extern constinit const std::array<patterns::PatternByte, kEnqueuePatternSize> kE
 extern constinit const std::array<patterns::PatternByte, kSetCategoryVerbosityPatternSize>
     kSetCategoryVerbosity;
 
-} // namespace sunrise::client::patterns::game::retail_log
+} // namespace dawn::client::patterns::game::retail_log

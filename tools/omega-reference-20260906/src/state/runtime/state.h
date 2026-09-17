@@ -9,7 +9,7 @@
 #include "../investment/investment.h"
 #include "../matchmaking/definition.h"
 
-namespace sunrise::state {
+namespace dawn::state {
 
 /** AES-128 protocol keys are 16 bytes. */
 inline constexpr std::size_t kAesKeySize = 16;
@@ -52,4 +52,4 @@ struct State {
     matchmaking::MatchmakingState matchmaking;
 };
 
-} // namespace sunrise::state
+} // namespace dawn::state

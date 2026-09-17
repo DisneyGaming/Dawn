@@ -2,7 +2,7 @@
 
 #include "field_selection.h"
 
-namespace sunrise::middleware::bap::matchmaking::request {
+namespace dawn::middleware::bap::matchmaking::request {
 
 /** Parses one service-42 protobuf body. It keeps no reference to the storage. */
 Request parse(std::span<const std::byte> input) noexcept {
@@ -24,4 +24,4 @@ Request parse(std::span<const std::byte> input) noexcept {
     return parsed;
 }
 
-} // namespace sunrise::middleware::bap::matchmaking::request
+} // namespace dawn::middleware::bap::matchmaking::request

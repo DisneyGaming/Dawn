@@ -8,7 +8,7 @@
 #include "../../../core/logging/log.h"
 #include "../internal.h"
 
-namespace sunrise::steam::interfaces::methods {
+namespace dawn::steam::interfaces::methods {
 namespace {
 
 /** Enough calls to cover initialization and three channel-security retries without flooding. */
@@ -152,4 +152,4 @@ void serialized_post_connection_state([[maybe_unused]] void* self,
     report("connection_state", 0, 0, 0, message, messageSize);
 }
 
-} // namespace sunrise::steam::interfaces::methods
+} // namespace dawn::steam::interfaces::methods

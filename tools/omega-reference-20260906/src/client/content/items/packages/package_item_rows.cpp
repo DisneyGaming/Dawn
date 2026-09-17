@@ -7,7 +7,7 @@
 #include "internal.h"
 #include "package_socket_plug_build.h"
 
-namespace sunrise::client::content::items::packages {
+namespace dawn::client::content::items::packages {
 namespace {
 
 namespace build_details = state::build_data::items::details;
@@ -191,4 +191,4 @@ bool build_item_rows(const reader::Source& source,
            && state::build_data::ability_buckets_ready();
 }
 
-} // namespace sunrise::client::content::items::packages
+} // namespace dawn::client::content::items::packages

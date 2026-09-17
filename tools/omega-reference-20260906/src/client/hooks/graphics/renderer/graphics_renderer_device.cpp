@@ -5,7 +5,7 @@
 #include "graphics_renderer_report.h"
 #include "state.h"
 
-namespace sunrise::client::hooks::graphics::renderer {
+namespace dawn::client::hooks::graphics::renderer {
 namespace {
 
 /** @param result SDK presentation result. @return True for a lost D3D11 device. */
@@ -65,4 +65,4 @@ void present_result(IDXGISwapChain* swapChain, HRESULT result) noexcept {
     ReleaseSRWLockExclusive(&g_rendererLock);
 }
 
-} // namespace sunrise::client::hooks::graphics::renderer
+} // namespace dawn::client::hooks::graphics::renderer

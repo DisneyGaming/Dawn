@@ -2,7 +2,7 @@
 
 #include "../../core/logging/log.h"
 
-namespace sunrise::server::gameplay {
+namespace dawn::server::gameplay {
 
 /**
  * Writes one bounded key-value event on the server channel.
@@ -11,4 +11,4 @@ namespace sunrise::server::gameplay {
  */
 void report(core::log::Level level, const char* format, ...) noexcept;
 
-} // namespace sunrise::server::gameplay
+} // namespace dawn::server::gameplay

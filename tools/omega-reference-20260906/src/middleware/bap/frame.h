@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::bap {
+namespace dawn::middleware::bap {
 
 /** Supported BAP outer-frame encodings. */
 enum class FrameType : std::uint8_t {
@@ -193,4 +193,4 @@ struct OuterFrame {
                                 std::span<std::byte> output,
                                 std::size_t& written) noexcept;
 
-} // namespace sunrise::middleware::bap
+} // namespace dawn::middleware::bap

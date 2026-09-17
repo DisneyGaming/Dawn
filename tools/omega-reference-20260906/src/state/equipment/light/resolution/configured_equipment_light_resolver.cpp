@@ -10,7 +10,7 @@
 #include "../../../build_data/runtime.h"
 #include "../calculation/equipment_light_calculation.h"
 
-namespace sunrise::state::equipment::light::resolution {
+namespace dawn::state::equipment::light::resolution {
 namespace {
 
 namespace authored = account::inventory;
@@ -178,4 +178,4 @@ bool character_light(const AccountState& account,
     return true;
 }
 
-} // namespace sunrise::state::equipment::light::resolution
+} // namespace dawn::state::equipment::light::resolution

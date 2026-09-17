@@ -9,7 +9,7 @@
 #include "../../encoding/bit_writer.h"
 #include "../descriptor/join_descriptor.h"
 
-namespace sunrise::middleware::gameplay::group {
+namespace dawn::middleware::gameplay::group {
 
 /** Registry ids of the group-session messages this host implements. */
 enum class SessionMessageId : std::uint8_t {
@@ -281,4 +281,4 @@ struct MembershipUpdate {
 [[nodiscard]] bool write_membership_update(encoding::bits::Writer& writer,
                                            const MembershipUpdate& body) noexcept;
 
-} // namespace sunrise::middleware::gameplay::group
+} // namespace dawn::middleware::gameplay::group

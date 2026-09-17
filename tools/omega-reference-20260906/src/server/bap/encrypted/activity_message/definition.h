@@ -6,7 +6,7 @@
 #include "../../../../state/activity/membership/activity_membership_query.h"
 #include "../../../../state/activity/runtime.h"
 
-namespace sunrise::server::bap::encrypted::activity_message {
+namespace dawn::server::bap::encrypted::activity_message {
 
 /** Outbound delivery staged for one activity State transaction. */
 enum class Delivery : std::uint8_t {
@@ -62,4 +62,4 @@ struct ActivityPlan final {
     MutationDomain mutationDomain{};
 };
 
-} // namespace sunrise::server::bap::encrypted::activity_message
+} // namespace dawn::server::bap::encrypted::activity_message

@@ -5,7 +5,7 @@
 
 #include "definition.h"
 
-namespace sunrise::middleware::bap::activity_host_manager::request::selection {
+namespace dawn::middleware::bap::activity_host_manager::request::selection {
 
 /**
  * Takes the optional safe field-one scalars, checking the whole protobuf structure. Other
@@ -17,4 +17,4 @@ namespace sunrise::middleware::bap::activity_host_manager::request::selection {
 [[nodiscard]] bool parse_selection(std::span<const std::byte> input,
                                    ActivityManagerSelectionResult& result) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_host_manager::request::selection
+} // namespace dawn::middleware::bap::activity_host_manager::request::selection

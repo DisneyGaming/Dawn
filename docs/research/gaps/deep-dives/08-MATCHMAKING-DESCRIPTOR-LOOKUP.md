@@ -26,4 +26,4 @@ The client can receive actual descriptor bytes retained for the logical context,
 
 It does not implement candidate discovery, ranking, multiplayer queues, population matching, QoS probing, NAT traversal, or host handoff. Other request kinds can still use static shapes. The comparison should mark descriptor lookup as partial progress, not full matchmaking completion.
 
-Landmarks: Sunrise/src/server/bap/encrypted/matchmaking/matchmaking_route.cpp; Sunrise/src/state/matchmaking/transactions/matchmaking_prepare.cpp, with supporting commit/state and codec files in those matchmaking directories. Route and preparation bodies were inspected; no live matchmaking test was run.
+Landmarks: Dawn/src/server/bap/encrypted/matchmaking/matchmaking_route.cpp; Dawn/src/state/matchmaking/transactions/matchmaking_prepare.cpp, with supporting commit/state and codec files in those matchmaking directories. Route and preparation bodies were inspected; no live matchmaking test was run.

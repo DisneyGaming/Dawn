@@ -6,7 +6,7 @@
 
 #include "../../patterns/image_scan.h"
 
-namespace sunrise::client::hooks::banner {
+namespace dawn::client::hooks::banner {
 
 using patterns::scan_main_image_unique;
 using patterns::signature;
@@ -72,4 +72,4 @@ inline constexpr std::size_t kReportCapacity = 224;
 /** Detaches the banner bind. */
 void uninstall_banner_bind() noexcept;
 
-} // namespace sunrise::client::hooks::banner
+} // namespace dawn::client::hooks::banner

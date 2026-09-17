@@ -3,7 +3,7 @@
 #include "../../../state/entitlements/validation.h"
 #include "../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 namespace {
 
 /** Settings name for a definition that is published but never declared owned. */
@@ -95,4 +95,4 @@ bool Parser::entitlement(state::entitlements::Entitlement& output) noexcept {
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser

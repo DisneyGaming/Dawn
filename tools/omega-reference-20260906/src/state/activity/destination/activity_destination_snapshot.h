@@ -5,7 +5,7 @@
 #include "../lifecycle_generation.h"
 #include "definition.h"
 
-namespace sunrise::state::activity::destination {
+namespace dawn::state::activity::destination {
 
 /**
  * Copies the destination committed with one activity session.
@@ -22,4 +22,4 @@ namespace sunrise::state::activity::destination {
  */
 [[nodiscard]] bool snapshot(ActivityInstanceKey key, DestinationSelection& output) noexcept;
 
-} // namespace sunrise::state::activity::destination
+} // namespace dawn::state::activity::destination

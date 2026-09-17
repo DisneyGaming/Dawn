@@ -9,7 +9,7 @@
 #include "../../hooking/detour.h"
 #include "internal.h"
 
-namespace sunrise::client::hooks::bootflow {
+namespace dawn::client::hooks::bootflow {
 namespace {
 
 /**
@@ -102,4 +102,4 @@ void uninstall_character_select_hold() noexcept {
     g_reported.store(false, std::memory_order_release);
 }
 
-} // namespace sunrise::client::hooks::bootflow
+} // namespace dawn::client::hooks::bootflow

@@ -1,6 +1,6 @@
 #include "client_authoritative_data.h"
 
-namespace sunrise::middleware::bap::activity_message::client_authoritative_data {
+namespace dawn::middleware::bap::activity_message::client_authoritative_data {
 namespace {
 
 /** All optional schema fields use 1-bit presence markers. */
@@ -114,5 +114,5 @@ bool parse_client_authoritative_data(std::span<const std::byte> input,
 }
 
 } // namespace
-  // sunrise::middleware::bap::activity_message::client_authoritative_data
+  // dawn::middleware::bap::activity_message::client_authoritative_data
   // client_authoritative_data

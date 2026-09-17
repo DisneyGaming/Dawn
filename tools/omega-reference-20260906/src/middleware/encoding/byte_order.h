@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::encoding {
+namespace dawn::middleware::encoding {
 
 /** Encoded 16-bit wire integer width. */
 inline constexpr std::size_t kU16Size = sizeof(std::uint16_t);
@@ -124,4 +124,4 @@ inline void write_u64_be(std::span<std::byte, kU64Size> output, std::uint64_t va
     }
 }
 
-} // namespace sunrise::middleware::encoding
+} // namespace dawn::middleware::encoding

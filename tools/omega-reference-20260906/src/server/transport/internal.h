@@ -8,7 +8,7 @@
 
 #include "../../client/network/consumer.h"
 
-namespace sunrise::server::transport {
+namespace dawn::server::transport {
 
 /** One outer frame is a magic byte, a type byte, and a big-endian payload length. */
 inline constexpr std::size_t kOuterHeaderSize = 6;
@@ -73,4 +73,4 @@ void close_peer(std::size_t slot) noexcept;
 /** @param port Host-order loopback port. Zero picks an ephemeral port. */
 [[nodiscard]] bool initialize_on_port(std::uint16_t port) noexcept;
 
-} // namespace sunrise::server::transport
+} // namespace dawn::server::transport

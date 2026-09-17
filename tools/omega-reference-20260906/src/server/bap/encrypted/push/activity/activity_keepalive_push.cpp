@@ -28,7 +28,7 @@
 #include "activity_roster_push.h"
 #include "internal.h"
 
-namespace sunrise::server::bap::encrypted::push::activity {
+namespace dawn::server::bap::encrypted::push::activity {
 namespace {
 
 namespace message = middleware::bap::activity_message::sensor_auth_update;
@@ -306,4 +306,4 @@ bool consume_activity_keepalive(Session& session,
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted::push::activity
+} // namespace dawn::server::bap::encrypted::push::activity

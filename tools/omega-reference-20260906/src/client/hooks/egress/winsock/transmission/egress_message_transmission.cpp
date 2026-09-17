@@ -2,7 +2,7 @@
 #include "../../policy/policy.h"
 #include "replacements.h"
 
-namespace sunrise::client::hooks::egress::winsock::transmission {
+namespace dawn::client::hooks::egress::winsock::transmission {
 namespace {
 
 /** Clears an optional send count before a policy denial. */
@@ -51,4 +51,4 @@ INT PASCAL send_message(SOCKET socket,
     return call(socket, &redirectedMessage, flags, bytesSent, overlapped, completion);
 }
 
-} // namespace sunrise::client::hooks::egress::winsock::transmission
+} // namespace dawn::client::hooks::egress::winsock::transmission

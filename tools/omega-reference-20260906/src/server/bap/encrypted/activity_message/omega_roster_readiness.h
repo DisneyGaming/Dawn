@@ -6,7 +6,7 @@
 #include "../../../../state/activity/omega_enemy_crown_catalog.h"
 #include "../../../../state/activity/omega_lair_full_roster_catalog.h"
 
-namespace sunrise::server::bap::encrypted::activity_message::omega_roster_readiness {
+namespace dawn::server::bap::encrypted::activity_message::omega_roster_readiness {
 namespace service = middleware::bap::activity_message;
 
 /** Exact measured Omega roster topology acknowledged by both recovered bootstrap forms. */
@@ -201,4 +201,4 @@ constexpr std::uint32_t kOmegaSecondSenseGroupFixedBits = 521;
     return true;
 }
 
-} // namespace sunrise::server::bap::encrypted::activity_message::omega_roster_readiness
+} // namespace dawn::server::bap::encrypted::activity_message::omega_roster_readiness

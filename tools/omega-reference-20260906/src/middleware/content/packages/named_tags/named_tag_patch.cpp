@@ -1,6 +1,6 @@
 #include "internal.h"
 
-namespace sunrise::middleware::content::packages::named_tags {
+namespace dawn::middleware::content::packages::named_tags {
 namespace {
 
 /** Every installed package file carries this extension. */
@@ -43,4 +43,4 @@ bool stamp_patch(void* context, const Entry& entry) noexcept {
     return stamp.inner(stamp.context, stamped);
 }
 
-} // namespace sunrise::middleware::content::packages::named_tags
+} // namespace dawn::middleware::content::packages::named_tags

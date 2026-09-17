@@ -3,7 +3,7 @@
 #include "codec.h"
 #include "protobuf_wire.h"
 
-namespace sunrise::middleware::protobuf {
+namespace dawn::middleware::protobuf {
 namespace {
 
 /** Fixed32 occupies 4 little-endian wire bytes. */
@@ -79,4 +79,4 @@ std::size_t Reader::remaining() const noexcept {
     return input_.size() - cursor_;
 }
 
-} // namespace sunrise::middleware::protobuf
+} // namespace dawn::middleware::protobuf

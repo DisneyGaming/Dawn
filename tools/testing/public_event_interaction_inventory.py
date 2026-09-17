@@ -14,7 +14,7 @@ import sys
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--re-root', type=Path, default=Path('D:/Sunrise-work'))
+    parser.add_argument('--re-root', type=Path, default=Path('D:/Dawn-work'))
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     sys.path.insert(0, str(args.re_root / 'scripts'))

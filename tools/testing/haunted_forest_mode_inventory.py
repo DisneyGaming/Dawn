@@ -15,7 +15,7 @@ import sys
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--re-root', type=Path, default=Path('D:/Sunrise-work'))
+    p.add_argument('--re-root', type=Path, default=Path('D:/Dawn-work'))
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--header', type=Path)
     a = p.parse_args()
@@ -59,7 +59,7 @@ def main():
     a.output.write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
     if a.header:
         lines = ['#pragma once','#include "registry_admission.h"','',
-            'namespace sunrise::server::runtime::activity::haunted_forest::mode {',
+            'namespace dawn::server::runtime::activity::haunted_forest::mode {',
             '// Generated from installed 81550015 / bubble 13, not the other-build Lua reference.',
             f'inline constexpr std::array<registry::Slot,{len(start["slots"])}> kStartSlots{{{{']
         for row in start['slots']:

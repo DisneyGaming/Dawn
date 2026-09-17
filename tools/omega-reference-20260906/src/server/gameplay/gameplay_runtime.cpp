@@ -6,7 +6,7 @@
 #include "group/group_host.h"
 #include "peer/peer_transport.h"
 
-namespace sunrise::server::gameplay {
+namespace dawn::server::gameplay {
 
 /** Binds the gameplay endpoint for the configured topology. */
 bool initialize() noexcept {
@@ -34,4 +34,4 @@ void shutdown() noexcept {
     association::reset();
 }
 
-} // namespace sunrise::server::gameplay
+} // namespace dawn::server::gameplay

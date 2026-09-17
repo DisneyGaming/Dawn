@@ -2,11 +2,11 @@
 
 #include <cstdint>
 
-namespace sunrise::core::ui::hud {
+namespace dawn::core::ui::hud {
 
 /** Every HUD overlay, in the order the menu lists them and the corner stacks them. */
 enum class Overlay : std::uint8_t {
-    /** The Sunrise name, version and animated logo. */
+    /** The Dawn name, version and animated logo. */
     logoCard,
     /** Where the player is: activity, bubble, slice set and closest spawn. */
     currentStatus,
@@ -66,4 +66,4 @@ void set_enabled(StatusLine line, bool on) noexcept;
  */
 [[nodiscard]] bool draw(bool interfaceEnabled) noexcept;
 
-} // namespace sunrise::core::ui::hud
+} // namespace dawn::core::ui::hud

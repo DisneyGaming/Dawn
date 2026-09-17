@@ -1,6 +1,6 @@
 #pragma once
 
-namespace sunrise::state::build_data::runtime {
+namespace dawn::state::build_data::runtime {
 
 /** Ability bucket domain publish marker. */
 namespace ability_buckets {
@@ -72,4 +72,4 @@ void publish() noexcept;
 
 } // namespace named
 
-} // namespace sunrise::state::build_data::runtime
+} // namespace dawn::state::build_data::runtime

@@ -18,7 +18,7 @@
 #include "../../targets/game.h"
 #include "../bootflow/internal.h"
 
-namespace sunrise::client::hooks::retail_log {
+namespace dawn::client::hooks::retail_log {
 namespace {
 
 using SetCategoryVerbosity = void(__fastcall*)(std::int32_t, std::uint32_t) noexcept;
@@ -220,9 +220,9 @@ void dump_schema_reference(std::uint32_t marker,
         || copied != bytes.size()) {
         return;
     }
-    const HMODULE sunrise = GetModuleHandleW(L"steam_api64.dll");
+    const HMODULE dawn = GetModuleHandleW(L"steam_api64.dll");
     core::path::Buffer path{};
-    if (sunrise == nullptr || !core::path::artifact_directory(sunrise, path)
+    if (dawn == nullptr || !core::path::artifact_directory(dawn, path)
         || !core::path::append(path, L"\\analysis")) {
         return;
     }
@@ -387,9 +387,9 @@ void dump_activity_function(const wchar_t* phase,
         || end - begin > kMaximumFunctionBytes) {
         return;
     }
-    const HMODULE sunrise = GetModuleHandleW(L"steam_api64.dll");
+    const HMODULE dawn = GetModuleHandleW(L"steam_api64.dll");
     core::path::Buffer path{};
-    if (sunrise == nullptr || !core::path::artifact_directory(sunrise, path)
+    if (dawn == nullptr || !core::path::artifact_directory(dawn, path)
         || !core::path::append(path, L"\\analysis")) {
         return;
     }
@@ -1257,4 +1257,4 @@ void assert_verbosity() noexcept {
     }
 }
 
-} // namespace sunrise::client::hooks::retail_log
+} // namespace dawn::client::hooks::retail_log

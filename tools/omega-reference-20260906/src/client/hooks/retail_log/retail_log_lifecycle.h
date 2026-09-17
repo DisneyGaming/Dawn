@@ -1,11 +1,11 @@
 #pragma once
 
-namespace sunrise::client::hooks::retail_log {
+namespace dawn::client::hooks::retail_log {
 
 /** Installs the game retail-log capture hook when its targets and settings allow it. */
 [[nodiscard]] bool install() noexcept;
 
-/** Stops new Sunrise-owned retail-log work while preserving native forwarding. */
+/** Stops new Dawn-owned retail-log work while preserving native forwarding. */
 void quiesce() noexcept;
 
 /** Removes the retail-log capture hook, retaining its owner state unless detach is confirmed. */
@@ -14,4 +14,4 @@ void quiesce() noexcept;
 /** @return True while the retail-log capture hook is attached. */
 [[nodiscard]] bool is_installed() noexcept;
 
-} // namespace sunrise::client::hooks::retail_log
+} // namespace dawn::client::hooks::retail_log

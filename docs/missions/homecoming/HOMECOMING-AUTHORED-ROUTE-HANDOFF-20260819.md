@@ -1,8 +1,8 @@
 # Homecoming authored-route and manager handoff
 
-Status: 2026-08-19, after the Homecoming run recorded in `bin/x64/Sunrise/logs/sunrise.log`.
+Status: 2026-08-19, after the Homecoming run recorded in `bin/x64/Dawn/logs/dawn.log`.
 
-This is the current evidence report and continuation handoff for the Destiny 2 Sunrise offline
+This is the current evidence report and continuation handoff for the Destiny 2 Dawn offline
 Homecoming project. It reconstructs the investigation from the imported working snapshot through the
 first fully observed authored client route and manager lifecycle. It distinguishes the client handoff
 that is now proven from the authored mission execution that is still missing.
@@ -24,7 +24,7 @@ inference from UI state or a collaborator's address map.
 
 The run also establishes the next boundary:
 
-- Sunrise queued a 136-byte kind-22 host-reestablish message.
+- Dawn queued a 136-byte kind-22 host-reestablish message.
 - The client decoded kind 22 and entered the verified manager activation function at `+0x177E940`.
 - The function returned success (`result=1`), but the manager's active identity field at `+0x1AF00`
   remained `0` before and after the call.
@@ -42,7 +42,7 @@ Therefore the precise current claim is:
 
 The report uses four evidence classes:
 
-- The newest single-run log: `C:/Destiny 2 Development/bin/x64/Sunrise/logs/sunrise.log`.
+- The newest single-run log: `C:/Destiny 2 Development/bin/x64/Dawn/logs/dawn.log`.
 - The current source tree and uncommitted implementation diff on branch `red-war-gameplay-host`.
 - The pinned unpacked client image: `destiny2_unpacked.bin`, base `0x7FF618070000`, where file offset
   equals RVA.
@@ -172,7 +172,7 @@ The shared nonce ties route selection, commit, and manager update to the same au
 
 ### 7. Kind 22 now reaches mgr_activate, but active remains zero
 
-Sunrise queued the recovered native 136-byte shape:
+Dawn queued the recovered native 136-byte shape:
 
 ```text
 log line 13173
@@ -236,7 +236,7 @@ some sense (`result=1`) but took a successful branch that did not execute the ac
 - The manager selected field at `+0x87C` becoming nonzero.
 - The identity definition enabled field at `definition+0x94C` becoming 1.
 - Authored activity scripts, objectives, encounter machines, enemies, dialogue, or cinematics running.
-- The 128-bit and 144-bit identity blocks in kind 22. Sunrise currently sends both blocks empty.
+- The 128-bit and 144-bit identity blocks in kind 22. Dawn currently sends both blocks empty.
 - Service-7's 128-byte activity metadata. The current response remains zero-filled, and current tracing
   did not identify it as the immediate authored-route gate.
 
@@ -315,7 +315,7 @@ That exposed successive networking seams:
 
 1. A phantom ambassador slot referred to a peer that does not exist offline.
 2. Selecting the local peer as ambassador moved the client into matchmaking search.
-3. Sunrise initially returned no region session.
+3. Dawn initially returned no region session.
 4. The search-result protobuf nesting was recovered: service 43 field 3 contains repeated entries whose
    field 1 is a wrapper containing the 128-byte descriptor. It is not a numeric id.
 5. NAT traversal to loopback and the QoS request/reply header were recovered.
@@ -325,9 +325,9 @@ That exposed successive networking seams:
 This work moved the project from "world cannot connect" to "world and session establish, but authored
 content does not execute."
 
-### Phase 5 - Fix Sunrise's service-43 configuration overwrite
+### Phase 5 - Fix Dawn's service-43 configuration overwrite
 
-The next root cause was subtler than a missing response. Sunrise sent the configuration field as present
+The next root cause was subtler than a missing response. Dawn sent the configuration field as present
 but zero-length. The native decoder therefore committed a configuration with zero provider entries and
 zero timing thresholds. That made the manager start advertising almost immediately, mutate the session
 generation, clear the in-flight search, and prevent the inner provider worker from consuming the state-2
@@ -379,7 +379,7 @@ identity block: 128 bits
 identity block: 144 bits
 ```
 
-Sunrise now serializes that exact decoded shape and delays it until membership, the activity-host
+Dawn now serializes that exact decoded shape and delays it until membership, the activity-host
 parameter, and the player snapshot have been published. For the current experiment the two trailing
 identity blocks are empty.
 
@@ -424,18 +424,18 @@ actual encounter simulation and authored authority normally live on an activity 
 
 ## Current code that matters
 
-- `Sunrise/src/middleware/bap/matchmaking/response/matchmaking_response_encoder.cpp`
+- `Dawn/src/middleware/bap/matchmaking/response/matchmaking_response_encoder.cpp`
   - `encode_configuration()` emits the nested field-4 lane and bubble policy.
-- `Sunrise/src/middleware/gameplay/group/session_messages.h/.cpp`
+- `Dawn/src/middleware/gameplay/group/session_messages.h/.cpp`
   - defines the 136-byte `HostReestablish` body and native NetAddr serialization.
-- `Sunrise/src/server/gameplay/group/group_host.cpp`
+- `Dawn/src/server/gameplay/group/group_host.cpp`
   - queues kind 22 after activity-host and player publication, scoped to the opening mission.
-- `Sunrise/src/client/hooks/bootflow/activity_script_upstream_probe.cpp`
+- `Dawn/src/client/hooks/bootflow/activity_script_upstream_probe.cpp`
   - records route lookup/commit/update, authored manager start, mode setter, table state, and direct
     `mgr_activate` before/after values.
-- `Sunrise/src/client/hooks/bootflow/activity_schema_decode_probe.cpp`
+- `Dawn/src/client/hooks/bootflow/activity_schema_decode_probe.cpp`
   - contains the bounded service-7 response/callback investigation.
-- `Sunrise/src/client/hooks/retail_log/retail_log_enqueue_observer.cpp`
+- `Dawn/src/client/hooks/retail_log/retail_log_enqueue_observer.cpp`
   - captures decoded retail log sites and stacks used to name the native matchmaking stages.
 - `ghidra_scripts/DecompManagerActiveWriters.java`
   - proves the sole `+0x1AF00 = 1` writer and the kind-22 caller.
@@ -466,7 +466,7 @@ difference between the experimental packet and a real host-reestablish packet.
 
 1. Follow the kind-22 reader's copies of both blocks into the activation function and identify comparisons
    or lookups that use them before the active write.
-2. Compare their shape with the membership identity already encoded by Sunrise: account SOID, character or
+2. Compare their shape with the membership identity already encoded by Dawn: account SOID, character or
    opaque SOID, machine/member key, join identity, and secondary opaque/FTID lanes.
 3. Fill only fields whose mapping is statically demonstrated. A/B the 128-bit and 144-bit blocks separately
    if their roles remain independent.
@@ -497,7 +497,7 @@ mode 5.
 
 If the manager becomes active but the mission still has no encounter execution, choose deliberately:
 
-- Faithful route: make Sunrise behave as the activity host and publish the authored authority, encounter,
+- Faithful route: make Dawn behave as the activity host and publish the authored authority, encounter,
   script, objective, roster, and cinematic state the online client consumes.
 - Client-executor route: port the entity spawner and related executor from the preserved `spawner` branch,
   then solve AI authority/pathing separately.
@@ -514,13 +514,13 @@ For each test:
 2. Start from a fresh game process and use only the Homecoming override.
 3. Keep force hooks disabled; run recorders observe-only.
 4. Correlate the route, manager, mode, activation, and downstream fields by manager pointer and session id.
-5. Archive the log before the next run because Sunrise rotates `sunrise.log` to `sunrise.log.old`.
+5. Archive the log before the next run because Dawn rotates `dawn.log` to `dawn.log.old`.
 6. Change one server field family or one recorder boundary per run.
 
 ## Reproduction and payoff grep
 
 1. Launch Destiny 2, sign in, and reach orbit.
-2. Open Sunrise with Insert.
+2. Open Dawn with Insert.
 3. Enable the activity override for `mission_towerfall`.
 4. Launch the Farm/Homecoming opening so the native 282 -> 266 correction occurs.
 5. Wait through map/banner load and at least 25 seconds of activity-host traffic.

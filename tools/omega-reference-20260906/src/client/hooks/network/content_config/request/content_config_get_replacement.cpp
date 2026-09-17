@@ -16,7 +16,7 @@
 #include "../internal.h"
 #include "../protocol.h"
 
-namespace sunrise::client::hooks::network::content_config::request {
+namespace dawn::client::hooks::network::content_config::request {
 namespace {
 
 /** The Client reads this request-status value as success. */
@@ -227,4 +227,4 @@ void* entry_point() noexcept {
     return reinterpret_cast<void*>(&enqueue_get_body);
 }
 
-} // namespace sunrise::client::hooks::network::content_config::request
+} // namespace dawn::client::hooks::network::content_config::request

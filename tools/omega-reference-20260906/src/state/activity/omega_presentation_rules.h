@@ -9,7 +9,7 @@
 #include "omega_intro_rules.h"
 #include "omega_first_lair_encounter.h"
 
-namespace sunrise::state::activity::omega_presentation {
+namespace dawn::state::activity::omega_presentation {
 
 inline constexpr std::uint32_t kDialogueBank = 0x80F1FD07U;
 inline constexpr std::size_t kDialogueRows = 34;
@@ -424,4 +424,4 @@ private:
     bool started_{}, defeated_{}, cinematic_{}, finalDialogueSubmitted_{};
 };
 
-} // namespace sunrise::state::activity::omega_presentation
+} // namespace dawn::state::activity::omega_presentation

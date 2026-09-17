@@ -1,13 +1,13 @@
 #include "platform.h"
 
-namespace sunrise::client::hooks::network {
+namespace dawn::client::hooks::network {
 
-std::atomic<sunrise::client::network::HttpConsumer> g_httpConsumer{};
-std::atomic<sunrise::client::network::BapConsumer> g_bapConsumer{};
+std::atomic<dawn::client::network::HttpConsumer> g_httpConsumer{};
+std::atomic<dawn::client::network::BapConsumer> g_bapConsumer{};
 
-} // namespace sunrise::client::hooks::network
+} // namespace dawn::client::hooks::network
 
-namespace sunrise::client::network {
+namespace dawn::client::network {
 
 /** Registers the single in-process HTTP consumer. */
 bool register_http_consumer(HttpConsumer consumer) noexcept {
@@ -43,4 +43,4 @@ void unregister_bap_consumer(BapConsumer consumer) noexcept {
         expected, nullptr, std::memory_order_release, std::memory_order_relaxed);
 }
 
-} // namespace sunrise::client::network
+} // namespace dawn::client::network

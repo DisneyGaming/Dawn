@@ -6,7 +6,7 @@
 #include "../../hooking/detour.h"
 #include "platform/sdk.h"
 
-namespace sunrise::client::hooks::egress {
+namespace dawn::client::hooks::egress {
 
 /** Stable slot order shared by exports, Detours handles, and tests. */
 enum class HookSlot : std::size_t {
@@ -60,4 +60,4 @@ template <typename Function> [[nodiscard]] Function original(HookSlot slot) noex
     return reinterpret_cast<Function>(g_handles[index].original);
 }
 
-} // namespace sunrise::client::hooks::egress
+} // namespace dawn::client::hooks::egress

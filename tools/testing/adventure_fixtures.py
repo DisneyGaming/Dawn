@@ -1,7 +1,7 @@
 """Read installed Mercury adventure bindings into an isolated fixture directory.
 
 No live process IO. Requires the local read-only research package reader.
-Usage: python adventure_fixtures.py OUTPUT --reader D:/Sunrise-work/scripts
+Usage: python adventure_fixtures.py OUTPUT --reader D:/Dawn-work/scripts
 """
 import argparse
 import hashlib
@@ -45,6 +45,6 @@ for tag in tags[4:7]:
         selector=f'{struct.unpack_from("<I", b, 0x628)[0]:08X}'))
 (a.output / 'manifest.json').write_text(json.dumps(manifest, indent=2))
 (a.output / 'bindings.json').write_text(json.dumps(bindings, indent=2))
-shutil.copyfile(Path(__file__).resolve().parents[2] / 'Sunrise/unit/fixtures/adventure_mercury_flags.json',
+shutil.copyfile(Path(__file__).resolve().parents[2] / 'Dawn/unit/fixtures/adventure_mercury_flags.json',
                 a.output / 'adventure_mercury_flags.json')
 print(f'Exported {len(manifest)} read-only installed tags to {a.output}')

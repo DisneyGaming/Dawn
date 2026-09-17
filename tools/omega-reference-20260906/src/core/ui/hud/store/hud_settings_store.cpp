@@ -15,7 +15,7 @@
 #include "../../../filesystem/path.h"
 #include "../../../logging/log.h"
 
-namespace sunrise::core::ui::hud::store {
+namespace dawn::core::ui::hud::store {
 namespace {
 
 /** The module-owned switch file, beside the generated settings and logs. */
@@ -195,4 +195,4 @@ bool save(std::span<const Switch> switches) noexcept {
     return complete;
 }
 
-} // namespace sunrise::core::ui::hud::store
+} // namespace dawn::core::ui::hud::store

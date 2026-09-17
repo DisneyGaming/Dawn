@@ -4,7 +4,7 @@
 
 #include "../web_service_envelope.h"
 
-namespace sunrise::middleware::web_service::messages::opcode406 {
+namespace dawn::middleware::web_service::messages::opcode406 {
 
 /** Web Service opcode used by item-state actions such as lock and finisher Favorite. */
 inline constexpr std::uint16_t kOpcode = 406;
@@ -32,4 +32,4 @@ struct Request {
  */
 [[nodiscard]] bool parse_request(const Message& message, Request& request) noexcept;
 
-} // namespace sunrise::middleware::web_service::messages::opcode406
+} // namespace dawn::middleware::web_service::messages::opcode406

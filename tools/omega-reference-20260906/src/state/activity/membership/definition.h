@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <limits>
 
-namespace sunrise::state::activity::membership {
+namespace dawn::state::activity::membership {
 
 /** Zero means no published or acknowledged membership revision. */
 inline constexpr std::uint32_t kAbsentRevision = 0;
@@ -134,4 +134,4 @@ enum class MutationKind : std::uint8_t {
     acknowledgement,
 };
 
-} // namespace sunrise::state::activity::membership
+} // namespace dawn::state::activity::membership

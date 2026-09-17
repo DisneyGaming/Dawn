@@ -2,7 +2,7 @@
 
 #include "native_key_binding_map.h"
 
-namespace sunrise::middleware::datagen::family4::account::preferences {
+namespace dawn::middleware::datagen::family4::account::preferences {
 namespace {
 
 /** Native keybinding halves use input code 0x74 as the unbound sentinel. */
@@ -131,4 +131,4 @@ bool encode(const state::account::settings::AccountSettings& settings,
     return true;
 }
 
-} // namespace sunrise::middleware::datagen::family4::account::preferences
+} // namespace dawn::middleware::datagen::family4::account::preferences

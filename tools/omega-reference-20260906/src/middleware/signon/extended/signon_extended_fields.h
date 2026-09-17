@@ -4,7 +4,7 @@
 
 #include "../internal.h"
 
-namespace sunrise::middleware::signon::extended {
+namespace dawn::middleware::signon::extended {
 
 /**
  * Appends the optional SignOn success fields: the extended blob and the three config URLs.
@@ -15,4 +15,4 @@ namespace sunrise::middleware::signon::extended {
  */
 [[nodiscard]] bool append(Writer& success, std::uint32_t relayAddress) noexcept;
 
-} // namespace sunrise::middleware::signon::extended
+} // namespace dawn::middleware::signon::extended

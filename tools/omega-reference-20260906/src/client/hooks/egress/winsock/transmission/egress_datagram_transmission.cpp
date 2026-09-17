@@ -9,13 +9,13 @@
 #include "../discovery/egress_discovery_responder.h"
 #include "replacements.h"
 
-namespace sunrise::client::hooks::egress::winsock::transmission {
+namespace dawn::client::hooks::egress::winsock::transmission {
 namespace {
 
 /** A null destination picks the connected peer only when the address length is 0. */
 constexpr int kConnectedDestinationLength = 0;
 
-/** Retail's local gameplay port and Sunrise's collision-free embedded-host port. */
+/** Retail's local gameplay port and Dawn's collision-free embedded-host port. */
 constexpr std::uint16_t kRetailGameplayPort = 30976;
 constexpr std::uint16_t kEmbeddedGameplayPort = 30978;
 /** Enough reports to cover traversal, DTLS and association without logging normal gameplay. */
@@ -283,4 +283,4 @@ int WSAAPI send_buffers_to(SOCKET socket,
     return result;
 }
 
-} // namespace sunrise::client::hooks::egress::winsock::transmission
+} // namespace dawn::client::hooks::egress::winsock::transmission

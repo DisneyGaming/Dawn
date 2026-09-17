@@ -9,7 +9,7 @@
 
 #include "layout.h"
 
-namespace sunrise::middleware::content::packages::reader {
+namespace dawn::middleware::content::packages::reader {
 
 /** Block key material borrowed for one read. It is never kept, cached or logged. */
 struct BlockKeys {
@@ -209,4 +209,4 @@ void close_files(Scratch& scratch) noexcept;
                             std::vector<std::byte>& output,
                             std::uint32_t& classId) noexcept;
 
-} // namespace sunrise::middleware::content::packages::reader
+} // namespace dawn::middleware::content::packages::reader

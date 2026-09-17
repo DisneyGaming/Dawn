@@ -5,7 +5,7 @@
 
 #include "../../../../state/activity/definition.h"
 
-namespace sunrise::server::bap::encrypted::activity_host_manager {
+namespace dawn::server::bap::encrypted::activity_host_manager {
 
 /**
  * Prepares one runtime activity session and encodes its svc-7 response body.
@@ -24,4 +24,4 @@ namespace sunrise::server::bap::encrypted::activity_host_manager {
                                    state::activity::PendingAllocation& allocation,
                                    bool& hasAllocation) noexcept;
 
-} // namespace sunrise::server::bap::encrypted::activity_host_manager
+} // namespace dawn::server::bap::encrypted::activity_host_manager

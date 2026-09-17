@@ -30,4 +30,4 @@ Linked-device mappings select immune/vulnerable/destroyed positions and can reti
 
 These are mapped native objects with trusted observation adapters, not a generic replication writer, physics engine, or automatic controller discovery. Live integration still needs its own validation.
 
-Landmarks: Sunrise/src/state/activity/coo/object_service.h and lifecycle_service.h; supporting explanation in Sunrise/docs/UNIVERSAL-MISSION-SERVICES.md. Bodies were inspected, but no new live test was performed.
+Landmarks: Dawn/src/state/activity/coo/object_service.h and lifecycle_service.h; supporting explanation in Dawn/docs/UNIVERSAL-MISSION-SERVICES.md. Bodies were inspected, but no new live test was performed.

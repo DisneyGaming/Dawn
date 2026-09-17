@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <span>
 
-namespace sunrise::middleware::bap::activity_message::incident {
+namespace dawn::middleware::bap::activity_message::incident {
 
 /** Activity message type 19 carries one incident. Both sides can send it. */
 inline constexpr std::uint32_t kMessageType = 19;
@@ -76,4 +76,4 @@ struct Incident {
  */
 [[nodiscard]] Verdict validate(std::span<const std::byte> payload, Incident& parsed) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_message::incident
+} // namespace dawn::middleware::bap::activity_message::incident

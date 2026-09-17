@@ -7,7 +7,7 @@
 #include "../records/domains.h"
 #include "../records/format.h"
 
-namespace sunrise::state::build_data::cache::read {
+namespace dawn::state::build_data::cache::read {
 
 /**
  * Reads one whole object at the current file position.
@@ -48,4 +48,4 @@ void clear(records::MutableDomains output) noexcept;
                                 records::MutableDomains output,
                                 std::uint64_t& checksum) noexcept;
 
-} // namespace sunrise::state::build_data::cache::read
+} // namespace dawn::state::build_data::cache::read

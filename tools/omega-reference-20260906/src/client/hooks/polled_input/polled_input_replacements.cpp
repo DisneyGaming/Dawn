@@ -15,7 +15,7 @@
 #include "../../diagnostics/module_range.h"
 #include "runtime.h"
 
-namespace sunrise::client::hooks::polled_input {
+namespace dawn::client::hooks::polled_input {
 namespace {
 
 std::atomic_bool g_interfaceOpen{};
@@ -25,7 +25,7 @@ std::atomic_uint32_t g_forcedKey{kNoForcedKey};
 
 /**
  * @param caller Return address of the call being answered.
- * @return True when the caller is game code rather than Sunrise or Dear ImGui.
+ * @return True when the caller is game code rather than Dawn or Dear ImGui.
  */
 [[nodiscard]] bool caller_is_game(const void* caller) noexcept {
     return diagnostics::contains(g_gameRange, reinterpret_cast<std::uintptr_t>(caller));
@@ -113,4 +113,4 @@ void apply_visibility(bool visible) noexcept {
     apply_policy(visible);
 }
 
-} // namespace sunrise::client::hooks::polled_input
+} // namespace dawn::client::hooks::polled_input

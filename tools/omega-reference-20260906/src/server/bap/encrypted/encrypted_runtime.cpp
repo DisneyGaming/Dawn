@@ -15,7 +15,7 @@
 #include "queuez/queuez_outcome_staging.h"
 #include "transactions/service_outcome_commit.h"
 
-namespace sunrise::server::bap::encrypted {
+namespace dawn::server::bap::encrypted {
 namespace {
 
 /**
@@ -468,4 +468,4 @@ bool consume(Session& session,
     return handled;
 }
 
-} // namespace sunrise::server::bap::encrypted
+} // namespace dawn::server::bap::encrypted

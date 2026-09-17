@@ -7,7 +7,7 @@
 
 #include "../table.h"
 
-namespace sunrise::state::build_data::spawn_sets {
+namespace dawn::state::build_data::spawn_sets {
 namespace {
 
 /** Widest world coordinate a point may carry. Maps are far smaller, so this rejects junk only. */
@@ -307,4 +307,4 @@ std::size_t hash_count() noexcept {
     return g_nameHashes.count();
 }
 
-} // namespace sunrise::state::build_data::spawn_sets
+} // namespace dawn::state::build_data::spawn_sets

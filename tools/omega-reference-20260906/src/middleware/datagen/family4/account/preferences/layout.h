@@ -7,7 +7,7 @@
 
 #include "../../../../../state/account/settings/key_bindings.h"
 
-namespace sunrise::middleware::datagen::family4::account::preferences {
+namespace dawn::middleware::datagen::family4::account::preferences {
 
 /** The byte-exact native preference record spans 77 bytes inside the account object. */
 inline constexpr std::size_t kRecordSize = 77;
@@ -120,4 +120,4 @@ static_assert(sizeof(BindingsRecord)
 static_assert(std::is_trivially_copyable_v<Record>);
 static_assert(std::is_trivially_copyable_v<BindingsRecord>);
 
-} // namespace sunrise::middleware::datagen::family4::account::preferences
+} // namespace dawn::middleware::datagen::family4::account::preferences

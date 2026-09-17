@@ -5,7 +5,7 @@
 
 #include "../definition.h"
 
-namespace sunrise::middleware::bap::activity_host_manager::request {
+namespace dawn::middleware::bap::activity_host_manager::request {
 
 /**
  * Checks one service-6 body and borrows only its declared protobuf bytes. The borrowed bytes
@@ -16,4 +16,4 @@ namespace sunrise::middleware::bap::activity_host_manager::request {
  */
 [[nodiscard]] bool parse_request(std::span<const std::byte> input, Request& request) noexcept;
 
-} // namespace sunrise::middleware::bap::activity_host_manager::request
+} // namespace dawn::middleware::bap::activity_host_manager::request

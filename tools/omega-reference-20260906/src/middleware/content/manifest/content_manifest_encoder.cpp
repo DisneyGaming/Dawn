@@ -8,7 +8,7 @@
 #include "../../protobuf/codec.h"
 #include "encoder.h"
 
-namespace sunrise::middleware::content::manifest {
+namespace dawn::middleware::content::manifest {
 namespace {
 
 /** ContentConfig repeats entitlement definition messages in top-level field 2. */
@@ -132,4 +132,4 @@ bool encode(const state::entitlements::Table& entitlements,
     return true;
 }
 
-} // namespace sunrise::middleware::content::manifest
+} // namespace dawn::middleware::content::manifest

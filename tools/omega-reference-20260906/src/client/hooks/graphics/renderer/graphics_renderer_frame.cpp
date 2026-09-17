@@ -12,7 +12,7 @@
 #include "../../../../core/ui/notice/ui_notice_overlay.h"
 #include "../../../../core/ui/runtime/ui_visibility_runtime.h"
 #include "../../../../core/ui/scaling/dpi/ui_dpi_scaling.h"
-#include "../../../../core/ui/theme/sunrise_ui_theme.h"
+#include "../../../../core/ui/theme/dawn_ui_theme.h"
 #include "../input/input.h"
 #include "graphics_renderer_report.h"
 #include "state.h"
@@ -22,7 +22,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND window,
                                                              WPARAM word,
                                                              LPARAM value);
 
-namespace sunrise::client::hooks::graphics::renderer {
+namespace dawn::client::hooks::graphics::renderer {
 namespace {
 
 /** The overlay uses one render target, set only while Dear ImGui draws. */
@@ -70,7 +70,7 @@ static_assert(WM_XBUTTONDBLCLK <= WM_MOUSELAST);
  */
 void transition_input_visibility_locked(bool visible) noexcept {
     ImGuiIO& io = ImGui::GetIO();
-    // The game renders a virtual cursor, so visible Sunrise frames need ImGui's software cursor.
+    // The game renders a virtual cursor, so visible Dawn frames need ImGui's software cursor.
     io.MouseDrawCursor = visible;
     if (visible) {
         g_resources.inputVisible = true;
@@ -215,4 +215,4 @@ void dispatch_pending_input_release() noexcept {
     dispatch_pending_input_release(window);
 }
 
-} // namespace sunrise::client::hooks::graphics::renderer
+} // namespace dawn::client::hooks::graphics::renderer

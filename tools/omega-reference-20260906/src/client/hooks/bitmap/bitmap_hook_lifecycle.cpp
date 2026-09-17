@@ -4,7 +4,7 @@
 
 #include "bitmap_ref_guard.h"
 
-namespace sunrise::client::hooks::bitmap {
+namespace dawn::client::hooks::bitmap {
 namespace {
 
 std::atomic_bool g_installed{false};
@@ -29,4 +29,4 @@ bool is_installed() noexcept {
     return g_installed.load(std::memory_order_acquire);
 }
 
-} // namespace sunrise::client::hooks::bitmap
+} // namespace dawn::client::hooks::bitmap

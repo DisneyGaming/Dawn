@@ -5,7 +5,7 @@
 #include "../destination/definition.h"
 #include "definition.h"
 
-namespace sunrise::state::activity::forced {
+namespace dawn::state::activity::forced {
 
 /**
  * Replaces the forced destination.
@@ -84,4 +84,4 @@ void clear() noexcept;
  */
 [[nodiscard]] bool apply(destination::DestinationSelection& selection) noexcept;
 
-} // namespace sunrise::state::activity::forced
+} // namespace dawn::state::activity::forced

@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - **No Information Loss**: Every technical fact, struct layout, packet field, RVA offset, IDA/Ghidra address, memory diagram, table, code excerpt, and unresolved bug description from source documents must be included in the unified documents.
-- **Root Whitelist**: Only `.git/`, `.gitignore`, `.hermes.md`, `.orchestrator/`, `.sunrise/`, `.superpowers/`, `.worktrees/`, `bin/`, `build/`, `docs/`, `Sunrise/`, `tools/`, `destiny2_unpacked.bin`, `packages`, `launch-destiny.cmd`, `launch-scot-reveal-debug.cmd`, and `sunrise-dev.ps1` are permitted to remain in the repository root.
+- **Root Whitelist**: Only `.git/`, `.gitignore`, `.hermes.md`, `.orchestrator/`, `.dawn/`, `.superpowers/`, `.worktrees/`, `bin/`, `build/`, `docs/`, `Dawn/`, `tools/`, `destiny2_unpacked.bin`, `packages`, `launch-destiny.cmd`, `launch-scot-reveal-debug.cmd`, and `dawn-dev.ps1` are permitted to remain in the repository root.
 - **Root Safety**: Delete only the 0-byte `activity` file. Do not delete or alter junctions (`packages`) or symlinks (`destiny2_unpacked.bin`).
 - **Traceability**: Every consolidated document must include a header listing the exact original filenames merged into it.
 
@@ -34,7 +34,7 @@
   - `tools/re/`
 - Move to `tools/re/`:
   - `scan_manager_active_writers.py`
-  - `sunrise_ai_probe.py`
+  - `dawn_ai_probe.py`
   - `deploy-omega.ps1`
 - Move to `docs/research/dumps/`:
   - All root `*_out.txt`, `*_decomp.txt`, `omega_*_schema.txt`, `omega_scene_schema_data_out.txt`, `managed_session_promotion_trace.txt`, etc. (~150 files)
@@ -64,7 +64,7 @@ New-Item -ItemType Directory -Force -Path `
 
 ```powershell
 git mv "scan_manager_active_writers.py" "tools/re/scan_manager_active_writers.py"
-git mv "sunrise_ai_probe.py" "tools/re/sunrise_ai_probe.py"
+git mv "dawn_ai_probe.py" "tools/re/dawn_ai_probe.py"
 git mv "deploy-omega.ps1" "tools/re/deploy-omega.ps1"
 ```
 
@@ -101,7 +101,7 @@ git commit -m "refactor(repo): move RE tools and dump files into dedicated folde
 - Move: `D2-Server-Infrastructure.pdf` -> `docs/research/D2-Server-Infrastructure.pdf`
 - Move: `edz_freeroam_objects.csv` -> `docs/research/edz_freeroam_objects.csv`
 - Move: `STRIKE-RECONSTRUCTION-RESEARCH.md` -> `docs/missions/coo/strikes/strike-reconstruction.md`
-- Move directory: `Sunrise-Implemented-Gaps-MDs-2026-09-09-035039` -> `docs/research/gaps/deep-dives/`
+- Move directory: `Dawn-Implemented-Gaps-MDs-2026-09-09-035039` -> `docs/research/gaps/deep-dives/`
 - Create consolidated: `docs/research/gaps/implemented-gaps-summary.md` (combines `IMPLEMENTED-GAPS.md` and `IMPLEMENTED-VS-MISSING.md`)
 - Remove from root: `IMPLEMENTED-GAPS.md`, `IMPLEMENTED-VS-MISSING.md`
 
@@ -120,7 +120,7 @@ git mv "SESSION-NOTES.md" "docs/research/session-notes.md"
 git mv "D2-Server-Infrastructure.pdf" "docs/research/D2-Server-Infrastructure.pdf"
 git mv "edz_freeroam_objects.csv" "docs/research/edz_freeroam_objects.csv"
 git mv "STRIKE-RECONSTRUCTION-RESEARCH.md" "docs/missions/coo/strikes/strike-reconstruction.md"
-git mv "Sunrise-Implemented-Gaps-MDs-2026-09-09-035039" "docs/research/gaps/deep-dives"
+git mv "Dawn-Implemented-Gaps-MDs-2026-09-09-035039" "docs/research/gaps/deep-dives"
 ```
 
 - [ ] **Step 3: Synthesize `implemented-gaps-summary.md`**
@@ -158,7 +158,7 @@ git commit -m "docs: relocate handbooks, general research, and gaps summary"
     - `HANDOFF-HOMECOMING-TOWERFALL-2026-08-27.md`
     - `HANDOFF-HOMECOMING-TOWERFALL-SAFE-TRACE-2026-08-27.md`
     - `SCENE-ENTRY-RESOLVER-CHAIN-2026-08-27.txt`
-    - `SUNRISE-HOMECOMING-BRIEFING-FOR-CODEX.md`
+    - `DAWN-HOMECOMING-BRIEFING-FOR-CODEX.md`
     - `HOMECOMING-NEW-CHAT-PROMPT.md`
 - Remove original root files via `git rm`.
 
@@ -194,7 +194,7 @@ git rm `
   "HANDOFF-HOMECOMING-TOWERFALL-2026-08-27.md" `
   "HANDOFF-HOMECOMING-TOWERFALL-SAFE-TRACE-2026-08-27.md" `
   "SCENE-ENTRY-RESOLVER-CHAIN-2026-08-27.txt" `
-  "SUNRISE-HOMECOMING-BRIEFING-FOR-CODEX.md" `
+  "DAWN-HOMECOMING-BRIEFING-FOR-CODEX.md" `
   "HOMECOMING-NEW-CHAT-PROMPT.md"
 ```
 
@@ -312,7 +312,7 @@ Ensure ONLY whitelisted root files remain:
 - `destiny2_unpacked.bin`
 - `launch-destiny.cmd`
 - `launch-scot-reveal-debug.cmd`
-- `sunrise-dev.ps1`
+- `dawn-dev.ps1`
 
 - [ ] **Step 2: Check git status to ensure all modified and untracked files are accounted for**
 
@@ -322,7 +322,7 @@ git status
 
 - [ ] **Step 3: Validate launcher integrity**
 
-Verify that `launch-destiny.cmd` and `sunrise-dev.ps1` work as expected without missing root dependencies.
+Verify that `launch-destiny.cmd` and `dawn-dev.ps1` work as expected without missing root dependencies.
 
 - [ ] **Step 4: Final commit and summary documentation**
 

@@ -4,7 +4,7 @@
 #include "../../../middleware/content/packages/tables/roster_intersection.h"
 #include "internal.h"
 
-namespace sunrise::client::content::scenarios {
+namespace dawn::client::content::scenarios {
 namespace {
 
 namespace tables = middleware::content::packages::tables;
@@ -244,4 +244,4 @@ void publish_groups(Walk& walk, RosterStorage& storage, layouts::Definition& row
     }
 }
 
-} // namespace sunrise::client::content::scenarios
+} // namespace dawn::client::content::scenarios

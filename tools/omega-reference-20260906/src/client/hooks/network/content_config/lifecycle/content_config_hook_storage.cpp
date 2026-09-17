@@ -5,7 +5,7 @@
 
 #include "../coordinator/content_config_call_coordinator.h"
 
-namespace sunrise::client::hooks::network::content_config {
+namespace dawn::client::hooks::network::content_config {
 
 SRWLOCK g_lifecycleLock{SRWLOCK_INIT};
 std::array<hooking::detour::Handle, kHookCount> g_handles{};
@@ -16,9 +16,9 @@ void* g_contentFetch{};
 bool g_trackCalls{};
 volatile LONG g_activeCalls{};
 
-} // namespace sunrise::client::hooks::network::content_config
+} // namespace dawn::client::hooks::network::content_config
 
-namespace sunrise::client::hooks::network::content_config::lifecycle {
+namespace dawn::client::hooks::network::content_config::lifecycle {
 
 gate::Ownership g_gateOwnership{};
 bool g_transitionActive{};
@@ -83,4 +83,4 @@ bool detach(HookSlot slot, void* replacement) noexcept {
     return true;
 }
 
-} // namespace sunrise::client::hooks::network::content_config::lifecycle
+} // namespace dawn::client::hooks::network::content_config::lifecycle

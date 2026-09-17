@@ -1,6 +1,6 @@
 #include "replicate_membership.h"
 
-namespace sunrise::middleware::bap::activity_message::replicate_membership {
+namespace dawn::middleware::bap::activity_message::replicate_membership {
 namespace {
 
 /** Region indices use the signed 32-bit midpoint as their wire bias. */
@@ -116,4 +116,4 @@ bool write_region_block(encoding::bits::Writer& writer,
            && writer.bit_count() == region_block_end_bit(snapshot);
 }
 
-} // namespace sunrise::middleware::bap::activity_message::replicate_membership
+} // namespace dawn::middleware::bap::activity_message::replicate_membership

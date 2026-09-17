@@ -6,7 +6,7 @@
 #include "../../../../state/build_data/runtime.h"
 #include "../../../../state/unlocks/unlocks_runtime.h"
 
-namespace sunrise::middleware::datagen::family4::progression {
+namespace dawn::middleware::datagen::family4::progression {
 namespace {
 
 /** Both replicated banks hold 127 rows. */
@@ -52,4 +52,4 @@ bool key_bank(state::build_data::progressions::Scope scope,
     return true;
 }
 
-} // namespace sunrise::middleware::datagen::family4::progression
+} // namespace dawn::middleware::datagen::family4::progression

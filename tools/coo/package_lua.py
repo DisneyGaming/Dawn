@@ -37,14 +37,14 @@ def main():
     require(not json.loads((out / 'failures.json').read_text()), 'Validation contains failures.')
     require(all(r.get('validation') != 'compiled-only' for r in results), 'Compile-only results cannot be packaged as validated tests.')
     mission_scopes = {
-        'hijacked': ('hijacked-release', ('hijacked_tests', 'hijacked_catalog_tests', 'Sunrise')),
-        'deep_storage': ('deep-storage-release', ('deep_storage_tests', 'Sunrise')),
-        'mercury_freeroam': ('mercury-reentry-release', ('retained_authority_scope_tests', 'Sunrise')),
+        'hijacked': ('hijacked-release', ('hijacked_tests', 'hijacked_catalog_tests', 'Dawn')),
+        'deep_storage': ('deep-storage-release', ('deep_storage_tests', 'Dawn')),
+        'mercury_freeroam': ('mercury-reentry-release', ('retained_authority_scope_tests', 'Dawn')),
         'eater_of_worlds': ('eater-reactor-release', ('eater_of_worlds_tests', 'eater_of_worlds_roster_tests',
-                                                   'player_position_tests', 'other_mission_protocol_tests', 'Sunrise')),
+                                                   'player_position_tests', 'other_mission_protocol_tests', 'Dawn')),
         'eater_contest': ('eater-contest-release', ('eater_of_worlds_tests', 'eater_of_worlds_roster_tests',
                          'player_position_tests', 'other_mission_protocol_tests', 'native_nightfall_power_tests',
-                         'nightfall_rules_tests', 'mission_launch_lifecycle_tests', 'mission_launch_visual_tests', 'Sunrise')),
+                         'nightfall_rules_tests', 'mission_launch_lifecycle_tests', 'mission_launch_visual_tests', 'Dawn')),
     }
     if args.mission:
         scope, projects = mission_scopes[args.mission]
@@ -60,17 +60,17 @@ def main():
     require(sources == verify_lua.source_manifest(), 'Source changed after validation; validate the current source.')
     for result in results:
         folder = out / (result['project'] + '-local') / result['configuration']
-        binary = folder / ('steam_api64.dll' if result['project'] == 'Sunrise' else result['project'] + '.exe')
+        binary = folder / ('steam_api64.dll' if result['project'] == 'Dawn' else result['project'] + '.exe')
         require(verify.digest(binary) == result.get('sha256', result.get('binarySha256')), f'Binary changed: {binary}')
-        if result['project'] == 'Sunrise':
+        if result['project'] == 'Dawn':
             require(verify.digest(folder / 'steam_api64.pdb') == result['pdbSha256'], 'PDB changed after validation.')
     inputs = {
-        'steam_api64.dll': out / 'Sunrise-local/Release/steam_api64.dll',
-        'steam_api64.pdb': out / 'Sunrise-local/Release/steam_api64.pdb',
-        'Lua_LICENSE.txt': ROOT / 'Sunrise/vendor/lua/LICENSE.txt',
+        'steam_api64.dll': out / 'Dawn-local/Release/steam_api64.dll',
+        'steam_api64.pdb': out / 'Dawn-local/Release/steam_api64.pdb',
+        'Lua_LICENSE.txt': ROOT / 'Dawn/vendor/lua/LICENSE.txt',
     }
-    inputs.update({'Sunrise/scripts/' + name: ROOT / 'Sunrise/scripts' / name for name in SCRIPTS})
-    release = next(r for r in results if r['project'] == 'Sunrise' and r['configuration'] == 'Release')
+    inputs.update({'Dawn/scripts/' + name: ROOT / 'Dawn/scripts' / name for name in SCRIPTS})
+    release = next(r for r in results if r['project'] == 'Dawn' and r['configuration'] == 'Release')
     expected_payload = {name: sources[source.relative_to(ROOT).as_posix()] for name, source in inputs.items() if not name.startswith('steam_api64.')}
     expected_payload.update({'steam_api64.dll': release['sha256'], 'steam_api64.pdb': release['pdbSha256']})
     payload = out / 'payload'

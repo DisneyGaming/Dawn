@@ -22,13 +22,13 @@
 #include "spawn_sets/definition.h"
 #include "vendors/definition.h"
 
-namespace sunrise::state::build_data {
+namespace dawn::state::build_data {
 
 /**
  * Loads the one build-data cache next to the module, when there is one.
  * Once a snapshot is on disk, later replacements are refused until State restarts. A failed first
  * commit withdraws that publication and restores nothing. Keep readers out until this returns.
- * @param module Loaded Sunrise DLL module, or null to turn off disk saving.
+ * @param module Loaded Dawn DLL module, or null to turn off disk saving.
  * @param configuredEquipmentHash Hash of the authored equipment. Not a secret.
  * @return True when the cache is missing, stale, or passes every check.
  */
@@ -491,4 +491,4 @@ publish_vendor_catalog(std::span<const vendors::IndexEntry> index,
 /** @return True only when every domain is ready and any needed cache write succeeds. */
 [[nodiscard]] bool persist() noexcept;
 
-} // namespace sunrise::state::build_data
+} // namespace dawn::state::build_data

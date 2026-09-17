@@ -9,7 +9,7 @@
 #include "../matchmaking_state.h"
 #include "internal.h"
 
-namespace sunrise::state::matchmaking {
+namespace dawn::state::matchmaking {
 
 /** Commits one prepared mutation only when all captured revisions still match. */
 bool commit(PendingMutation& mutation) noexcept {
@@ -96,4 +96,4 @@ bool commit(PendingMutation& mutation) noexcept {
     return true;
 }
 
-} // namespace sunrise::state::matchmaking
+} // namespace dawn::state::matchmaking

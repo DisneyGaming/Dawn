@@ -6,7 +6,7 @@
 #include "../../targets/game.h"
 #include "retail_log_enqueue_observer.h"
 
-namespace sunrise::client::hooks::retail_log {
+namespace dawn::client::hooks::retail_log {
 
 SRWLOCK g_lock{SRWLOCK_INIT};
 hooking::detour::Handle g_handle{};
@@ -53,7 +53,7 @@ bool install() noexcept {
     return installed;
 }
 
-/** Stops new Sunrise-owned retail-log work while preserving native forwarding. */
+/** Stops new Dawn-owned retail-log work while preserving native forwarding. */
 void quiesce() noexcept {
     AcquireSRWLockExclusive(&g_lock);
     g_callGate.quiesce();
@@ -103,4 +103,4 @@ bool is_installed() noexcept {
     return attached;
 }
 
-} // namespace sunrise::client::hooks::retail_log
+} // namespace dawn::client::hooks::retail_log

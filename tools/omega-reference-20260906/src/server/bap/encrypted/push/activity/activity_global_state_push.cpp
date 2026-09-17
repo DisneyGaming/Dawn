@@ -17,7 +17,7 @@
 #include "activity_arrival.h"
 #include "activity_notification_frame.h"
 
-namespace sunrise::server::bap::encrypted::push::activity {
+namespace dawn::server::bap::encrypted::push::activity {
 
 namespace message = middleware::bap::activity_message::global_activity_state;
 
@@ -74,8 +74,8 @@ resolve_state(state::activity::ActivityInstanceKey activity,
     // come from the same source: a count from one and states from another is how uniform values
     // reach the wire and look as though they worked.
     const std::string_view name(output.name.data(), output.nameLength);
-    ::sunrise::state::build_data::scenarios::Definition layout{};
-    if (::sunrise::state::build_data::find_scenario_layout(name, layout)) {
+    ::dawn::state::build_data::scenarios::Definition layout{};
+    if (::dawn::state::build_data::find_scenario_layout(name, layout)) {
         output.bubbleCount = layout.bubbleCount;
         std::copy(
             layout.bubbleStates.begin(), layout.bubbleStates.end(), output.bubbleStates.begin());
@@ -152,4 +152,4 @@ bool append_global_state_notification(Scratch& scratch,
     return encoded;
 }
 
-} // namespace sunrise::server::bap::encrypted::push::activity
+} // namespace dawn::server::bap::encrypted::push::activity

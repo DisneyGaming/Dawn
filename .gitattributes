@@ -1,0 +1,2 @@
+# PDF content streams and byte offsets must survive checkouts unchanged.
+*.pdf binary

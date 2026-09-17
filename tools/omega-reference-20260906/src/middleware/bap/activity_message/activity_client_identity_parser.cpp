@@ -4,7 +4,7 @@
 
 #include "../../encoding/bit_reader.h"
 
-namespace sunrise::middleware::bap::activity_message::client_identity {
+namespace dawn::middleware::bap::activity_message::client_identity {
 namespace {
 
 /** The first signed identity field carries 10 bits with a bias of 1. */
@@ -68,4 +68,4 @@ bool parse_client_identity(std::span<const std::byte> input, ClientIdentity& ide
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_message::client_identity
+} // namespace dawn::middleware::bap::activity_message::client_identity

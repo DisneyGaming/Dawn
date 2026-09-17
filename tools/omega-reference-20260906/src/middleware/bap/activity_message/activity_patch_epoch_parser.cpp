@@ -2,7 +2,7 @@
 
 #include "../../encoding/byte_order.h"
 
-namespace sunrise::middleware::bap::activity_message::patch_epoch {
+namespace dawn::middleware::bap::activity_message::patch_epoch {
 namespace {
 
 /** The second fixed epoch field follows one unsigned 64-bit value. */
@@ -25,4 +25,4 @@ bool parse_patch_epoch(std::span<const std::byte> input, PatchEpoch& epoch) noex
     return true;
 }
 
-} // namespace sunrise::middleware::bap::activity_message::patch_epoch
+} // namespace dawn::middleware::bap::activity_message::patch_epoch

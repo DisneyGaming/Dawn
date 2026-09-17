@@ -3,7 +3,7 @@
 #include "../../../../protobuf/codec.h"
 #include "internal.h"
 
-namespace sunrise::middleware::bap::activity_host_manager::request::selection {
+namespace dawn::middleware::bap::activity_host_manager::request::selection {
 namespace {
 
 using protobuf::Field;
@@ -79,4 +79,4 @@ bool parse_selection(std::span<const std::byte> input,
            || !(request.seen && !request.bytes.empty());
 }
 
-} // namespace sunrise::middleware::bap::activity_host_manager::request::selection
+} // namespace dawn::middleware::bap::activity_host_manager::request::selection

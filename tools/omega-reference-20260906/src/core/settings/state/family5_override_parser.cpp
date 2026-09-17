@@ -1,6 +1,6 @@
 #include "../parser.h"
 
-namespace sunrise::core::settings::parser {
+namespace dawn::core::settings::parser {
 namespace {
 
 /** The family-5 flag encoder rejects any override slot above 23499. */
@@ -112,4 +112,4 @@ bool Parser::unlock_value_overrides(state::Family5State& output) noexcept {
     }
 }
 
-} // namespace sunrise::core::settings::parser
+} // namespace dawn::core::settings::parser
