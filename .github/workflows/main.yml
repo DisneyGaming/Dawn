@@ -1,0 +1,18 @@
+name: Run PowerShell Script
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  run-script:
+    runs-on: windows-latest   # or ubuntu-latest, see note below
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Run PowerShell script
+        shell: pwsh
+        run: ./tools/install/New-DawnRelease.ps1
