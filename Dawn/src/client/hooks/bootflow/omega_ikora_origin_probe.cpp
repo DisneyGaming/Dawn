@@ -562,6 +562,7 @@ std::int32_t* entity_factory_body(
     const std::uint32_t definition = safe_read<std::uint32_t>(descriptor, kInvalidHandle);
     namespace launchpad = state::activity::newlight::launchpad;
     state::activity::coo::Generation shutterOwner{};
+    bool shutterAtDoor{};
     if (call.accepts_side_effects() && result != nullptr
         && definition == launchpad::shutter::kEntity) {
         // Selection exists before initial world streaming. native_run() would
@@ -571,21 +572,14 @@ std::int32_t* entity_factory_body(
         const float y = safe_read<float>(descriptor + 0x24U);
         const float z = safe_read<float>(descriptor + 0x28U);
         const bool matches = launchpad::shutter::matches(owner.valid(), definition, x, y, z);
-        const bool suppress = matches && launchpad::native_shutter_present(owner);
-        if (matches && !suppress) {shutterOwner=owner;}
+        shutterOwner=owner;shutterAtDoor=matches;
         static std::atomic_uint32_t attempts{};
         const auto attempt = attempts.fetch_add(1U, std::memory_order_relaxed) + 1U;
         if (attempt <= 16U || (attempt & (attempt - 1U)) == 0U) {
             report("ev=launchpad stage=breach_shutter_factory attempt=%u run=%llu "
                    "definition=%08X table=%08X record=%d pos=%.3f,%.3f,%.3f action=%s",
                    attempt, static_cast<unsigned long long>(owner.run), definition, table,
-                   record, x, y, z, suppress ? "suppress" : "native");
-        }
-        if (suppress) {
-            // Keep the existing authenticated animated grate; reject only the
-            // duplicate before constructing render or physics components.
-            *result = -1;
-            return result;
+                   record, x, y, z, "native");
         }
     }
     // Forest generator lane: log any construction of the six 808099D6 worker containers or
@@ -662,7 +656,7 @@ std::int32_t* entity_factory_body(
     }
     std::int32_t* const returned = original(result, descriptor, table, record);
     if(shutterOwner.valid()) {
-        launchpad::observe_native_shutter(shutterOwner,safe_read<std::uint32_t>(returned,kInvalidHandle));
+        launchpad::observe_native_shutter(shutterOwner,safe_read<std::uint32_t>(returned,kInvalidHandle),shutterAtDoor);
     }
     g_ikoraFactoryActive = previousFactoryActive;
     g_ikoraFactoryScene = previousFactoryScene;
