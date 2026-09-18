@@ -26,6 +26,12 @@ presets together. The game itself is not included.
 
 Players do not need Visual Studio, Python, Lua, or a source checkout.
 
+The installer source is in [`tools/install/release/`](tools/install/release/), including
+[`Install-Dawn.cmd`](tools/install/release/Install-Dawn.cmd). The packaging tool places these
+files at the top level of the player release ZIP, beside `release.json` and `payload/`.
+GitHub's **Code → Download ZIP** provides the source checkout; it does not include the built
+runtime payload needed to install Dawn.
+
 ## Install or update Dawn
 
 **Every installation starts a fresh save. This includes updating Dawn and reinstalling the same
