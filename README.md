@@ -8,6 +8,10 @@
 
 Install a packaged release over an existing game installation using the bundled Dawn installer.
 
+**[Download the installer ZIP — 0.1.0 Preview 1](https://github.com/isinternets/Dawn/releases/download/v0.1.0-preview.1/Dawn-0.1.0-preview.1.zip)**
+
+[Release notes and checksum](https://github.com/isinternets/Dawn/releases/tag/v0.1.0-preview.1)
+
 </div>
 
 ---
@@ -30,8 +34,13 @@ Players do not need Visual Studio, Python, Lua, or a source checkout.
 
 ### If you want to play
 
-Get the **complete packaged Dawn release ZIP** from the person distributing your build. Extract
-it into its own folder. Before running anything, check that the extracted folder contains:
+Download **[Dawn-0.1.0-preview.1.zip](https://github.com/isinternets/Dawn/releases/download/v0.1.0-preview.1/Dawn-0.1.0-preview.1.zip)**
+from the [GitHub release](https://github.com/isinternets/Dawn/releases/tag/v0.1.0-preview.1). Under
+**Assets**, choose that named installer ZIP. GitHub's automatically generated **Source code**
+archives contain the source checkout and do not include the installable payload.
+
+This is a preview release. Read its release notes before installing. Extract the entire installer
+ZIP into its own folder. Before running anything, check that the extracted folder contains:
 
 ```text
 Dawn-<release>/
