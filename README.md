@@ -304,14 +304,28 @@ checks using disposable game folders on Windows PowerShell 5.1 and current Power
 
 ## Credits
 
-The in-game **Credits** tab links the original projects. Thanks to the
-[Sunrise](https://github.com/stanuwu/Sunrise) and
-[Sundial](https://github.com/KyleThmpsn/sundial) contributors.
+Dawn is possible because of the research, tools, and contributions shared by these projects.
+The same acknowledgements appear in the in-game **Credits** tab.
 
-Sundial attribution, source revision, and the editor integration's GPL-3.0-only licensing are
-recorded in [NOTICE.md](Dawn/vendor/sundial/NOTICE.md) and its
-[license](Dawn/vendor/sundial/LICENSE). Game artwork and item names are read from the player's
-installed packages.
+### Sunrise
+
+Thank you to [stanuwu and the Sunrise contributors](https://github.com/stanuwu/Sunrise) for the
+foundation, game services, package research, and original runtime that Dawn builds on.
+
+### Sundial
+
+Thank you to [KyleThmpsn and the Sundial contributors](https://github.com/KyleThmpsn/sundial) for
+the character and inventory editor, full perk selection, item-artwork research, random loadouts,
+and armor-stat tools that informed Dawn's native loadout integration.
+
+Dawn adapts Sundial's localized investment string and icon readers, class-restriction hash lists,
+subclass ability displays and path selection, and five plug-selection scopes. Those adaptations
+are distributed under **GPL-3.0-only**. The pinned upstream revision, attribution, and license are
+included in [NOTICE.md](Dawn/vendor/sundial/NOTICE.md) and the
+[Sundial license](Dawn/vendor/sundial/LICENSE).
+
+Item names and artwork are read from the player's installed game packages. Dawn does not
+distribute Destiny artwork, textures, or a manifest database.
 
 ---
 
