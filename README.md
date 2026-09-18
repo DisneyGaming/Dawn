@@ -8,9 +8,9 @@
 
 Install a packaged release over an existing game installation using the bundled Dawn installer.
 
-**[Download the installer ZIP — 0.1.1](https://github.com/isinternets/Dawn/releases/download/v0.1.1/Dawn-0.1.1.zip)**
+**[Download the installer ZIP — 0.1.2](https://github.com/isinternets/Dawn/releases/download/v0.1.2/Dawn-0.1.2.zip)**
 
-[Release notes and checksum](https://github.com/isinternets/Dawn/releases/tag/v0.1.1)
+[Release notes and checksum](https://github.com/isinternets/Dawn/releases/tag/v0.1.2)
 
 </div>
 
@@ -34,12 +34,12 @@ Players do not need Visual Studio, Python, Lua, or a source checkout.
 
 ### If you want to play
 
-Download **[Dawn-0.1.1.zip](https://github.com/isinternets/Dawn/releases/download/v0.1.1/Dawn-0.1.1.zip)**
-from the [GitHub release](https://github.com/isinternets/Dawn/releases/tag/v0.1.1). Under
+Download **[Dawn-0.1.2.zip](https://github.com/isinternets/Dawn/releases/download/v0.1.2/Dawn-0.1.2.zip)**
+from the [GitHub release](https://github.com/isinternets/Dawn/releases/tag/v0.1.2). Under
 **Assets**, choose that named installer ZIP. GitHub's automatically generated **Source code**
 archives contain the source checkout and do not include the installable payload.
 
-Version 0.1.1 fixes the New Light rifle-room door in the Breach. Read the release notes before installing. Extract the entire installer
+Version 0.1.2 enables the New Light rifle-room door fix with the release's default settings. Read the release notes before installing. Extract the entire installer
 ZIP into its own folder. Before running anything, check that the extracted folder contains:
 
 ```text
