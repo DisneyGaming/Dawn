@@ -60,6 +60,13 @@ function New-Game([string] $Name) {
     foreach ($name in @('player-state.db', 'player-state.db-wal', 'player-state.db-shm', 'player-state.db-journal',
             'device_identity.key', 'roster_exclude_keys.txt', 'event_music.txt')) {
         [IO.File]::WriteAllText((Join-Path $root "Sunrise/$name"), "fixture bytes: $name")
+        [IO.File]::WriteAllText((Join-Path $root "Dawn/$name"), "old Dawn bytes: $name")
+        [IO.File]::WriteAllText((Join-Path $root "bin/x64/Dawn/$name"), "old bin Dawn bytes: $name")
+    }
+    Copy-Item -LiteralPath (Join-Path $root 'Sunrise/settings.json') -Destination (Join-Path $root 'Dawn/settings.json')
+    foreach ($legacy in @('Restoration', 'bin/x64/Sunrise')) {
+        [IO.Directory]::CreateDirectory((Join-Path $root $legacy)) | Out-Null
+        [IO.File]::WriteAllText((Join-Path $root "$legacy/settings.json"), 'old or damaged legacy settings')
     }
     return $root
 }
@@ -70,68 +77,125 @@ function Expect-Failure([scriptblock] $Action, [string] $Pattern) {
     Assert-True ($message -like $Pattern) "Wrong rejection: $message (expected $Pattern)"
 }
 
-$game = New-Game 'migration'
+# All per-user preference writes stay in this disposable fixture, even on failure.
+$originalAppData = $env:APPDATA
+$env:APPDATA = Join-Path $testRoot 'user-profile'
+try {
+$displayPath = Join-Path $env:APPDATA 'Bungie/DestinyPC/prefs/cvars.xml'
+[IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($displayPath)) | Out-Null
+$displayOriginal = '<?xml version="1.0"?><body><namespace name="graphics"><cvar name="window_mode" value="3" /><cvar name="fullscreen_resolution_width" value="2560" /><cvar name="fullscreen_resolution_height" value="1440" /><cvar name="render_resolution_percentage" value="90" /></namespace><namespace name="key bindings"><cvar name="jump" value="space!unused" /></namespace></body>'
+[IO.File]::WriteAllText($displayPath, $displayOriginal, $utf8)
+$displayBefore = (Get-FileHash -LiteralPath $displayPath).Hash
+$game = New-Game 'fresh-install'
 $before = Snapshot $game
-& $installer -GameRoot $game -SourceRuntime Sunrise -WhatIf
+& $installer -GameRoot $game -WhatIf
 Assert-True ((Snapshot $game) -ceq $before) 'WhatIf changed installation files'
 Assert-True (-not (Test-Path -LiteralPath (Join-Path $game '.dawn'))) 'WhatIf created state'
+Assert-True ((Get-FileHash -LiteralPath $displayPath).Hash -eq $displayBefore) 'WhatIf changed display preferences'
 Pass 'WhatIf validates without creating or replacing files'
 
-& $installer -GameRoot $game -SourceRuntime Sunrise
+& $installer -GameRoot $game
+[xml]$display = [IO.File]::ReadAllText($displayPath)
+Assert-True ($display.SelectSingleNode('/body/namespace[@name="graphics"]/cvar[@name="window_mode"]').value -eq '2') 'Windowed fullscreen was not selected'
+Assert-True ($display.SelectSingleNode('/body/namespace[@name="graphics"]/cvar[@name="fullscreen_resolution_width"]').value -eq '2560') 'Player resolution was overwritten'
+Assert-True ($display.SelectSingleNode('/body/namespace[@name="graphics"]/cvar[@name="render_resolution_percentage"]').value -eq '90') 'Render scale was overwritten'
+Assert-True ($display.SelectSingleNode('/body/namespace[@name="key bindings"]/cvar[@name="jump"]').value -eq 'space!unused') 'Key binding was overwritten'
+Pass 'Installer selects windowed fullscreen and preserves player resolution, render scale, and key bindings'
 Assert-True (-not (Test-Path -LiteralPath (Join-Path $game 'Dawn/scripts/stale.lua'))) 'Obsolete script survived'
 Assert-True (-not (Test-Path -LiteralPath (Join-Path $game 'bin/x64/Dawn/scripts/stale.lua'))) 'Obsolete bin script survived'
 foreach ($name in @('player-state.db', 'player-state.db-wal', 'player-state.db-shm', 'player-state.db-journal',
         'device_identity.key', 'roster_exclude_keys.txt', 'event_music.txt')) {
-    $expected = (Get-FileHash -LiteralPath (Join-Path $game "Sunrise/$name")).Hash
     foreach ($runtime in @('Dawn', 'bin/x64/Dawn')) {
-        Assert-True ((Get-FileHash -LiteralPath (Join-Path $game "$runtime/$name")).Hash -eq $expected) "Personal data changed: $runtime/$name"
+        Assert-True (-not (Test-Path -LiteralPath (Join-Path $game "$runtime/$name"))) "Old personal data was imported: $runtime/$name"
     }
 }
 $actual = Get-Content -LiteralPath (Join-Path $game 'Dawn/settings.json') -Raw | ConvertFrom-Json
 $default = Get-Content -LiteralPath (Join-Path $package 'payload/Dawn/settings.json') -Raw | ConvertFrom-Json
-Assert-True ($actual.steam.user.persona_name -eq 'Fixture Player') 'Player name was reset'
-Assert-True ($actual.client.fade_release -eq $false) 'Personal choice was reset'
+Assert-True ($actual.steam.user.persona_name -eq $default.steam.user.persona_name) 'Old player name survived'
+Assert-True ($actual.client.fade_release -eq $default.client.fade_release) 'Old preference survived'
 Assert-True ($actual.state.activity.arrival_overrides[0].bubble -eq $default.state.activity.arrival_overrides[0].bubble) 'Shipped arrival was not updated'
-Assert-True (@($actual.state.activity.arrival_overrides | Where-Object { $_.package_name -eq 'fixture_custom' }).Count -eq 1) 'Custom arrival was lost'
+Assert-True (@($actual.state.activity.arrival_overrides | Where-Object { $_.package_name -eq 'fixture_custom' }).Count -eq 0) 'Old custom arrival survived'
 $hud = Get-Content -LiteralPath (Join-Path $game 'Dawn/hud.json') -Raw | ConvertFrom-Json
-Assert-True ($hud.dawn_card -eq $true -and $null -ne $hud.PSObject.Properties['session']) 'HUD preference/default merge failed'
+Assert-True ($hud.dawn_card -eq $false) 'Old HUD choice survived'
 foreach ($entry in $manifest.files) {
-    if ($entry.path -match '^Dawn/(settings|hud|movement|player)\.json$') { continue }
     foreach ($prefix in @('', 'bin/x64/')) {
         Assert-True ((Get-FileHash -LiteralPath (Join-Path $game ($prefix + $entry.path))).Hash -eq $entry.sha256) "Payload mismatch: $prefix$($entry.path)"
     }
 }
-Pass 'Full migration replaces content, preserves database sidecars/preferences, and updates mission arrivals'
+Pass 'Default installation starts fresh despite multiple legacy runtimes; every release file matches its hash'
 
 $state = Get-Content -LiteralPath (Join-Path $game '.dawn/release.json') -Raw | ConvertFrom-Json
+Assert-True ((Get-FileHash -LiteralPath (Join-Path $state.backup 'previous/user-display/cvars.xml')).Hash -eq $displayBefore) 'Original display preferences were not backed up exactly'
 Assert-True (Test-Path -LiteralPath (Join-Path $state.backup 'previous/Dawn/unknown-personal.txt')) 'Unknown original file was not backed up'
+foreach ($name in @('player-state.db', 'player-state.db-wal', 'player-state.db-shm', 'player-state.db-journal', 'settings.json')) {
+    Assert-True (Test-Path -LiteralPath (Join-Path $state.backup "previous/Dawn/$name")) "Missing original data in backup: $name"
+}
 [IO.File]::WriteAllText((Join-Path $game 'Dawn/player-state.db'), 'progress since installation')
 & $installer -GameRoot $game -Restore
+Assert-True ((Get-FileHash -LiteralPath $displayPath).Hash -eq $displayBefore) 'Rollback did not restore exact original display preferences'
 Assert-True ((Snapshot $game) -ceq $before) 'Rollback did not restore exact original installation'
 $retained = @(Get-ChildItem -LiteralPath (Join-Path $state.backup 'after-restore') -Filter player-state.db -Recurse -File)
 Assert-True (@($retained | Where-Object { [IO.File]::ReadAllText($_.FullName) -eq 'progress since installation' }).Count -eq 1) 'Rollback lost post-install progress'
 Pass 'Rollback restores the original files and separately retains newer player progress'
 
+$game = New-Game 'new-user-display'
+$env:APPDATA = Join-Path $testRoot 'new-user-profile'
+$newDisplayPath = Join-Path $env:APPDATA 'Bungie/DestinyPC/prefs/cvars.xml'
+& $installer -GameRoot $game -WhatIf
+Assert-True (-not (Test-Path -LiteralPath $env:APPDATA)) 'WhatIf created a new preference directory'
+& $installer -GameRoot $game
+[xml]$display = [IO.File]::ReadAllText($newDisplayPath)
+Assert-True ($display.SelectSingleNode('/body/namespace[@name="graphics"]/cvar[@name="window_mode"]').value -eq '2') 'New user did not receive windowed fullscreen'
+Assert-True ($display.SelectNodes('//cvar').Count -eq 1) 'New user received hard-coded resolution or other preferences'
+# Recovery must not write the installing user's settings into a different account.
+$env:APPDATA = Join-Path $testRoot 'different-user-profile'
+Expect-Failure { & $installer -GameRoot $game -Restore } '*same Windows user profile*'
+Assert-True (-not (Test-Path -LiteralPath $env:APPDATA)) 'Recovery created another user profile'
+$env:APPDATA = Join-Path $testRoot 'new-user-profile'
+& $installer -GameRoot $game -Restore
+Assert-True (-not (Test-Path -LiteralPath $newDisplayPath)) 'Rollback retained newly created display preferences'
+Pass 'New users receive only the mode default; rollback restores absence and rejects a different Windows profile'
+
+$env:APPDATA = Join-Path $testRoot 'user-profile'
+$game = New-Game 'missing-window-mode'
+[IO.File]::WriteAllText($displayPath, '<body><namespace name="graphics"><cvar name="gamma_control" value="4" /></namespace></body>', $utf8)
+& $installer -GameRoot $game
+[xml]$display = [IO.File]::ReadAllText($displayPath)
+Assert-True ($display.SelectSingleNode('//cvar[@name="window_mode"]').value -eq '2') 'Missing mode was not added'
+Assert-True ($display.SelectSingleNode('//cvar[@name="gamma_control"]').value -eq '4') 'Existing graphics preference changed'
+& $installer -GameRoot $game -Restore
+Pass 'Existing graphics preferences without a window mode receive the default'
+
+$game = New-Game 'invalid-display'
+foreach ($invalidDisplay in @('<broken', '<body><namespace name="graphics"><cvar name="window_mode" value="0"/><cvar name="window_mode" value="3"/></namespace></body>', '<!DOCTYPE body [<!ENTITY test SYSTEM "file:///not-read">]><body>&test;</body>')) {
+    [IO.File]::WriteAllText($displayPath, $invalidDisplay, $utf8)
+    Expect-Failure { & $installer -GameRoot $game } '*'
+    Assert-True ([IO.File]::ReadAllText($displayPath) -ceq $invalidDisplay) 'Invalid display preferences were changed'
+    Assert-True (-not (Test-Path -LiteralPath (Join-Path $game '.dawn'))) 'Invalid display preferences changed the installation'
+}
+[IO.File]::WriteAllText($displayPath, $displayOriginal, $utf8)
+Pass 'Malformed, duplicate, and DTD-based preferences fail before any installation changes'
+
 $game = New-Game 'upgrade'
-& $installer -GameRoot $game -SourceRuntime Sunrise
+& $installer -GameRoot $game
 [IO.File]::WriteAllText((Join-Path $game 'Dawn/player-state.db'), 'current Dawn progress')
 [IO.File]::WriteAllText((Join-Path $game 'Dawn/scripts/removed-in-new-release.lua'), 'old release script')
 $before = Snapshot $game
 & $installer -GameRoot $game
-Assert-True ([IO.File]::ReadAllText((Join-Path $game 'Dawn/player-state.db')) -eq 'current Dawn progress') 'Upgrade selected an old Sunrise profile'
-Assert-True ([IO.File]::ReadAllText((Join-Path $game 'bin/x64/Dawn/player-state.db')) -eq 'current Dawn progress') 'The two runtime profiles disagree'
+Assert-True (-not (Test-Path -LiteralPath (Join-Path $game 'Dawn/player-state.db'))) 'Reinstall retained the existing Dawn save'
+Assert-True (-not (Test-Path -LiteralPath (Join-Path $game 'bin/x64/Dawn/player-state.db'))) 'Reinstall retained the bin Dawn save'
 Assert-True (-not (Test-Path -LiteralPath (Join-Path $game 'Dawn/scripts/removed-in-new-release.lua'))) 'Upgrade retained obsolete content'
 # A standalone copy can restore without needing any of the package's payload files.
 $recovery = Join-Path $testRoot 'Recover-Dawn.ps1'
 Copy-Item -LiteralPath $installer -Destination $recovery
 & $recovery -GameRoot $game -Restore
 Assert-True ((Snapshot $game) -ceq $before) 'Upgrade rollback did not restore previous Dawn state'
-Pass 'An existing Dawn upgrade selects current saves, removes stale content, and restores without a payload'
+Pass 'Reinstall resets an existing Dawn save, removes stale content, and restores without a payload'
 
 $game = New-Game 'failed-copy'
 $before = Snapshot $game
 $lockedFile = [IO.File]::Open((Join-Path $game 'bin/x64/steam_api64.dll'), 'Open', 'ReadWrite', 'None')
-try { Expect-Failure { & $installer -GameRoot $game -SourceRuntime Sunrise } '*previous files were restored*' }
+try { Expect-Failure { & $installer -GameRoot $game } '*previous files were restored*' }
 finally { $lockedFile.Dispose() }
 Assert-True ((Snapshot $game) -ceq $before) 'Failed replacement did not roll back'
 Pass 'A locked second DLL rolls back already-replaced DLL/runtime files'
@@ -142,7 +206,7 @@ $tampered = Join-Path $package 'payload/Dawn/scripts/omega.lua'
 $original = [IO.File]::ReadAllBytes($tampered)
 try {
     [IO.File]::AppendAllText($tampered, '-- changed')
-    Expect-Failure { & $installer -GameRoot $game -SourceRuntime Sunrise } '*missing or changed*'
+    Expect-Failure { & $installer -GameRoot $game } '*missing or changed*'
 } finally { [IO.File]::WriteAllBytes($tampered, $original) }
 Assert-True ((Snapshot $game) -ceq $before) 'Tampered package touched game'
 Assert-True (-not (Test-Path -LiteralPath (Join-Path $game '.dawn'))) 'Tampered package created state'
@@ -152,30 +216,23 @@ try {
     $bad = $manifestText | ConvertFrom-Json
     $bad.files[0].path = '../outside.dll'
     Write-TestJson $manifestPath $bad
-    Expect-Failure { & $installer -GameRoot $game -SourceRuntime Sunrise } '*Invalid or duplicate*'
+    Expect-Failure { & $installer -GameRoot $game } '*Invalid or duplicate*'
 } finally { [IO.File]::WriteAllText($manifestPath, $manifestText, $utf8) }
 Pass 'Manifest traversal is rejected'
 
-$game = New-Game 'ambiguous'
-Copy-Item -LiteralPath (Join-Path $game 'Sunrise/settings.json') -Destination (Join-Path $game 'Dawn/settings.json')
-$before = Snapshot $game
-Expect-Failure { & $installer -GameRoot $game } '*Several player runtimes*'
-Assert-True ((Snapshot $game) -ceq $before) 'Ambiguous source changed files'
-Pass 'Ambiguous player data requires an explicit source'
-
 $game = New-Game 'old-settings'
-$settingsPath = Join-Path $game 'Sunrise/settings.json'
-$oldSettings = Get-Content -LiteralPath $settingsPath -Raw | ConvertFrom-Json
-$oldSettings.version = 5
-Write-TestJson $settingsPath $oldSettings
+$settingsPath = Join-Path $game 'Dawn/settings.json'
+[IO.File]::WriteAllText($settingsPath, 'broken old settings')
 $before = Snapshot $game
-Expect-Failure { & $installer -GameRoot $game -SourceRuntime Sunrise } '*unsupported layout*'
-Assert-True ((Snapshot $game) -ceq $before) 'Unsupported settings changed files'
-Pass 'Unsupported settings layout cannot silently reset a profile'
+& $installer -GameRoot $game
+Assert-True ((Get-FileHash -LiteralPath $settingsPath).Hash -eq (Get-FileHash -LiteralPath (Join-Path $package 'payload/Dawn/settings.json')).Hash) 'Malformed settings were not replaced with release defaults'
+& $installer -GameRoot $game -Restore
+Assert-True ((Snapshot $game) -ceq $before) 'Rollback did not retain original malformed settings'
+Pass 'Old damaged settings are replaced without migration and remain recoverable'
 
 $game = New-Game 'interrupted'
 $before = Snapshot $game
-& $installer -GameRoot $game -SourceRuntime Sunrise
+& $installer -GameRoot $game
 $state = Get-Content -LiteralPath (Join-Path $game '.dawn/release.json') -Raw | ConvertFrom-Json
 $journalPath = Join-Path $state.backup 'journal.json'
 $journal = Get-Content -LiteralPath $journalPath -Raw | ConvertFrom-Json
@@ -191,7 +248,7 @@ $external = Join-Path $testRoot 'outside-runtime'
 [IO.Directory]::CreateDirectory($external) | Out-Null
 [IO.File]::WriteAllText((Join-Path $external 'keep.txt'), 'outside data')
 New-Item -ItemType Junction -Path (Join-Path $game 'Dawn/linked') -Target $external | Out-Null
-Expect-Failure { & $installer -GameRoot $game -SourceRuntime Sunrise } '*Linked entry*'
+Expect-Failure { & $installer -GameRoot $game } '*Linked entry*'
 Assert-True ([IO.File]::ReadAllText((Join-Path $external 'keep.txt')) -eq 'outside data') 'Junction target changed'
 Pass 'Nested junctions cannot redirect runtime replacement'
 
@@ -209,3 +266,4 @@ try {
 } finally { $zip.Dispose() }
 Pass 'Distributable ZIP excludes development tools, symbols, caches, and saves'
 Write-Host "$script:passed integration checks passed on PowerShell $($PSVersionTable.PSVersion). Fixtures: $testRoot"
+} finally { $env:APPDATA = $originalAppData }

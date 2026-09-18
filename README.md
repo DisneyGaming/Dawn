@@ -4,334 +4,211 @@
 
 # Dawn
 
-**A mission executor for Destiny 2 build 86657.**
+**Missions and a native loadout editor for Destiny 2 build 86657.**
 
-Authored missions — scenes, dialogue, encounters, devices, objectives — driven from Lua
-against recovered native package data.
-
-<sub>
-<b>TESTERS AND DEVELOPERS ONLY.</b> This is a development build; a source-build installer is included.<br>
-It assumes you can build a C++20 DLL, read a log, and recover from a broken install yourself.
-</sub>
+Install a packaged release over an existing game installation using the bundled Dawn installer.
 
 </div>
 
 ---
 
-Dawn runs against an existing Destiny 2 build 86657 installation. The installer preserves the
-previous runtime and copies its account, settings, and caches into the new `Dawn` folder.
-The DLL can also migrate a unique sibling runtime on first launch. Existing generated caches
-are reused when compatible; missing or outdated data is rebuilt from installed packages.
-
-## Loadout studio
-
-Open **Loadout** in the in-game menu. The native editor adapts Sundial's catalog, perk selection,
-localization, and preview layouts to Dawn's account storage. Parhelion is not required.
-
-- Edit character identity, progression, equipment, subclasses, and character/account inventories.
-- All nine subclasses have prebuilt ability combinations, including every tree, jump, grenade,
-  and class ability choice. Saving preserves the other combinations for later edits.
-- Browse weapons by type, armor by slot and class, cosmetics, and the full discovered perk pool.
-  Search names, descriptions, or hashes; filter rarity and sort type/name/rarity. Weapon and armor
-  cards use their layered preview artwork from the installed game packages.
-- Give weapons and armor, equip owned items, change power and quantities, lock items, and edit
-  every ordinary socket. The perk picker offers Compatible, Socket + gear type, Socket type,
-  Gear type, and All scopes. Expanded scopes intentionally allow unconventional combinations.
-- Randomize selected equipment slots while preserving the previous items in inventory. Armor
-  stat targets select the closest available native stat plugs and display the actual result.
-
-Changes stay in a draft until **Save changes**. Saving creates an SQLite backup in
-`Dawn/editor-backups`, checks inventory limits, and rejects a stale draft if the account changed
-while editing. **Restart the game after saving** to load the edited account. Reload discards an
-unsaved draft only after confirmation. Inventory capacity and one exotic per gear category are
-preserved; no item is silently removed to make room.
-
-The **Credits** tab thanks both upstream projects and links their original repositories.
-Sundial attribution, source revision, and GPL license are in
-[Dawn/vendor/sundial/NOTICE.md](Dawn/vendor/sundial/NOTICE.md).
-
-For local validation, export installed fixtures with `tools/testing/editor_package_fixtures.py`,
-then build `Dawn/unit/editor_visual_tests.vcxproj` and run its executable with fixture, screenshot,
-and installed font paths as its three arguments. Fixtures and screenshots stay in
-ignored local folders; game artwork is not bundled in source control.
-
----
-
-## What this is
-
-Dawn adds a **bounded mission executor**. A mission is authored as a Lua graph and executed against
-native services — population, scenes, objects, destructibles, dialogue, objectives and lifecycle.
-Lua owns story order and gating; C++ owns native identity, receipts and wire encoding.
-
-Lua is evaluated once at load and its VM closes before gameplay. There is no live reload and no
-scripting at runtime.
-
-Eater of Worlds is excluded from this build.
-
-```
-scripts/<mission>.lua        story order, dependencies, gates, objectives
-src/state/activity/<m>/      recovered identities, bindings, authority bodies, controller
-src/state/activity/coo/      the shared executor and services
-src/client/hooks/            authenticated native observations
-src/middleware/, src/server/ wire encoding and publication
-```
+Dawn adds authored Lua missions, native gameplay systems, and an in-game loadout studio.
+The player release includes the DLL, mission scripts, default settings, vendor rules, and event
+presets together. The game itself is not included.
 
 ## Requirements
 
-| | |
-|---|---|
-| Game | Destiny 2 **86657** (`86657.20.08.23.1800.d2_rc`) |
-| Base | An existing build 86657 game installation |
-| Toolchain | **MSBuild 18 Build Tools**, platform toolset **v145**, C++20 |
-| Python | 3.11+, for `tools/coo/` validation and the binding generators |
+- Windows with **Windows PowerShell 5.1 or newer**.
+- An existing Destiny 2 installation with executable version **`86657.20.08.23.1800.d2_rc`**
+  and its complete `packages` folder.
+- A packaged Dawn release ZIP containing `Install-Dawn.cmd`, `Install-Dawn.ps1`,
+  `READ-ME.txt`, `release.json`, and the `payload` folder.
 
-VS2022 Community carries only v143 and will fail the build. The fix is to install Build Tools 18 —
-**never** to downgrade `PlatformToolset` in the project.
+Players do not need Visual Studio, Python, Lua, or a source checkout.
 
-Builds are `/W4 /WX`. Warnings are errors.
+## Install or update Dawn
 
----
+**Every installation starts a fresh save. This includes updating Dawn and reinstalling the same
+release. Existing progress and Dawn settings are backed up, but are not imported into the new
+installation.**
 
-## Setup
+1. Extract the entire release ZIP into a new folder, such as a folder under Downloads.
+2. Close Destiny 2.
+3. Double-click **`Install-Dawn.cmd`** in the extracted folder.
+4. Enter your existing game folder when prompted: the folder containing **`destiny2.exe`**.
+5. Wait for the installer to confirm success and show the backup location.
+6. Launch `destiny2.exe` normally. The installer does not launch the game for you.
 
-Follow these steps for a manual deployment.
+The installer checks the game version and release file hashes before replacing files. It installs
+matching DLLs and runtime content at both locations the game can load from:
 
-### 1. Locate the installed game
-
-Use the existing build 86657 installation that contains `destiny2.exe` and the complete `packages`
-folder. The project builds the replacement DLL and mission scripts; it does not include the game.
-The installer copies a unique previous runtime into `Dawn` before writing defaults, preserving
-existing character saves. Keep the original runtime as a rollback copy.
-
-### 2. Find where your install actually loads from *(bootstrap)*
-
-Dawn resolves its mission scripts **relative to the loaded DLL**, so this step decides everything
-that follows. Get it wrong and every later step silently does nothing.
-
-A Dawn install looks like this:
-
-```
-<GAME_ROOT>/
-  destiny2.exe                  <- the executable sits at the root
+```text
+<game folder>/
+  destiny2.exe
+  steam_api64.dll
+  Dawn/
   bin/x64/
-    steam_api64.dll             <- where the Dawn installer places the mod
-    Dawn/                    <- runtime tree: scripts, settings, logs, cache
-  .dawn/
-    original/steam_api64.dll    <- the pristine Steam DLL, kept for rollback
-    install-state.json
+    steam_api64.dll
+    Dawn/
+  .dawn/release-backups/
 ```
 
-**The exe sits at the root, so a `steam_api64.dll` placed next to it can shadow the one in
-`bin/x64/`.** Installs differ, and only one copy is ever mapped into the process. Do not guess —
-launch the game and ask it:
+The first launch creates a new player database from the release defaults and rebuilds caches,
+so it can take longer than later launches. Use the complete release bundle when updating: its DLL,
+scripts, settings, and content are intended to be installed together.
+
+### Saves and settings
+
+The new installation uses the packaged settings, mission scripts, vendor rules, and event presets.
+Old progress, identity, Dawn preferences, event selections, and custom scripts are not carried over.
+Previous `Dawn` folders and DLLs are kept in the installation backup. Existing `Sunrise` and
+`Restoration` folders remain intact and are not imported.
+
+The installer sets **Windowed Fullscreen** while preserving your existing resolution, render scale,
+graphics quality, and key bindings. You can choose another mode later in the game's Video settings.
+This changes the installing Windows user's shared Destiny display preferences, so other Destiny 2
+installations under that same Windows user also see the mode change. Replacing only a DLL does not
+apply this display setting.
+
+### Preview an installation
+
+From PowerShell in the extracted release folder, replace `D:\Dawn` with your game folder:
 
 ```powershell
-Get-Process destiny2 | % { $_.Modules | ? { $_.ModuleName -like 'steam_api64*' } | select FileName }
+.\Install-Dawn.cmd -GameRoot "D:\Dawn" -WhatIf
 ```
 
-Whatever path that prints is the one that matters. The `Dawn/` runtime tree must be a child of
-that DLL's directory. Its `scripts/`, `settings.json`, `player-state.db`, and `logs/` entries live
-inside that tree.
+This validates the package and installation and shows the intended changes without changing your
+game files or display preferences. Omit `-WhatIf` to install.
 
-See [Player persistence](Dawn/docs/PERSISTENCE.md) for first-run JSON migration, backups, and
-the current mission-resume limits.
+## Backups and rollback
 
-If you are unsure, deploy to both locations in step 4 and let this command arbitrate.
+Each installation keeps its backup under:
 
-### 3. Clone and build
-
-```bash
-git clone --branch codex/production https://github.com/isinternets/Dawn.git dawn && cd dawn
-
-"C:/Program Files (x86)/Microsoft Visual Studio/18/BuildTools/MSBuild/Current/Bin/MSBuild.exe" \
-  Dawn/Dawn.vcxproj -p:Configuration=Release -p:Platform=x64 \
-  -p:PreferredToolArchitecture=x64 -m -v:minimal -nologo
+```text
+<game folder>/.dawn/release-backups/<backup-folder>/
 ```
 
-Output: `build/x64/Release/steam_api64.dll`.
-
-There is no `.sln` — build the `.vcxproj` directly.
-
-**`-p:PreferredToolArchitecture=x64` is not optional on a first build.** The project sets
-`MultiProcessorCompilation`, so `-m` on a many-core machine runs many compilers at once. Without
-that flag they are the 32-bit `cl.exe`, and the heavier package translation units exhaust its
-address space:
-
-```
-error C1060: compiler is out of heap space
-  (compiling package_ability_build.cpp / package_subclass_build.cpp / package_build_report.cpp)
-```
-
-This only happens on a **from-scratch** build. Incremental builds recompile a handful of files and
-never hit it, which is why it is invisible to anyone who already has a build tree and reliably
-breaks a tester's first one. If the flag alone is not enough on a smaller machine, reduce the job
-count as well: `-m:4` instead of `-m`.
-
-### 4. Deploy
-
-The DLL and the scripts must go together. A new DLL with old scripts, or the reverse, produces
-behaviour that matches neither.
+To restore the most recent installation, close Destiny 2 and run this from the extracted release
+folder using the **same Windows user account** that installed it:
 
 ```powershell
-$Root = "<GAME_ROOT>"     # from step 2
-
-# the DLL is locked while the game runs
-Stop-Process -Name destiny2 -Force -ErrorAction SilentlyContinue
-
-# deploy to both candidate locations; step 2 decides which one wins
-Copy-Item build/x64/Release/steam_api64.dll "$Root/bin/x64/steam_api64.dll" -Force
-Copy-Item build/x64/Release/steam_api64.dll "$Root/steam_api64.dll"         -Force
-
-# the runtime tree must sit beside the DLL that actually maps - deploy to both trees for the
-# same reason the DLL goes to both, and let step 7 arbitrate
-New-Item -ItemType Directory -Force -Path "$Root/bin/x64/Dawn/scripts", "$Root/Dawn/scripts" | Out-Null
-Copy-Item Dawn/scripts/*.lua "$Root/bin/x64/Dawn/scripts/" -Force
-Copy-Item Dawn/scripts/*.lua "$Root/Dawn/scripts/"         -Force
+.\Install-Dawn.cmd -GameRoot "D:\Dawn" -Restore
 ```
 
-Keeping both copies identical costs nothing and removes a whole class of "my change did nothing".
-
-Deploying the DLL to both locations but the scripts to only one is the worst of both worlds: the new
-DLL maps, reads the runtime tree beside *itself*, and finds the **old** scripts. That presents as a
-change that did nothing, or as a mission whose C++ and Lua disagree.
-
-**Rollback.** The Dawn installer preserves the untouched Steam DLL at
-`<GAME_ROOT>/.dawn/original/steam_api64.dll`. Copy it back over both locations to return to a
-clean game. Back up the Dawn DLL you are replacing too, so you can get back to plain Dawn
-without reinstalling.
-
-### 5. Choose a mission
-
-Missions are reached through arrival overrides in the runtime tree's `settings.json`, keyed by
-package name:
-
-```json
-"state": { "activity": { "arrival_overrides": [
-  { "package_name": "strike_pact", "bubble": 15, "slice_set": 120, "spawn_set_hash": "0x0E1523FE" }
-] } }
-```
-
-`bubble` and `slice_set` choose where you land; `spawn_set_hash` chooses the spawn point within it.
-
-`settings.json` is capped at **1 MiB** — `kConfigCapacity` in
-`core/settings/settings_runtime.cpp`, which rejects anything larger with `fail("too_large")`. A
-file over the cap fails during load, before the log sinks exist, so it presents as a silent boot
-failure rather than an error.
-
-Patch the field you need rather than regenerating the file. Not because of the cap — there is
-plenty of room — but because a pretty-printed rewrite balloons it: a 44 KB document re-rendered
-with indentation reached 578 KB, and the shipped defaults are 72 KB on disk against 45 KB
-compressed. Write compact if you write it at all.
-
-### 6. Launch
+To select an older backup, add `-BackupPath` with the full path to that backup folder:
 
 ```powershell
-Start-Process -FilePath "<GAME_ROOT>/destiny2.exe" -WorkingDirectory "<GAME_ROOT>"
+.\Install-Dawn.cmd -GameRoot "D:\Dawn" -Restore -BackupPath "D:\Dawn\.dawn\release-backups\<backup-folder>"
 ```
 
-Boot to in-world takes roughly 60–110 seconds.
+Rollback restores the previous DLLs, Dawn folders, and display preferences. It also keeps the files
+it displaces, including progress made after installation, inside the backup's `after-restore`
+folder. Keep the backup and those retained files if you need that progress.
 
-### 7. Verify you are running what you think you are
+If installation fails after replacement begins, the installer attempts to restore the previous
+files automatically. If it reports an interrupted installation or incomplete rollback, use the
+reported backup path with `-Restore` before trying another installation.
 
-Before judging anything in game, confirm the build and the script:
+## Loadout studio
 
-```bash
-grep "ev=coo_script" <runtime-tree>/logs/dawn.log
-```
+Open **Loadout** in the in-game menu to edit your character and equipment. The native editor adapts
+Sundial's catalog, perk selection, localization, and preview layouts to Dawn's account storage.
+Parhelion is not required.
 
-```
-ev=coo_script mission=strike_pact result=loaded format=lua fnv1a64=341BE9305F2A1C9F
-```
+- Edit character identity, progression, equipment, subclasses, and character/account inventories.
+- Choose ability combinations for all nine subclasses, including trees, jumps, grenades, and
+  class abilities.
+- Browse weapons, armor, cosmetics, and perks with names and preview artwork from your installed
+  game packages. Search, filter by rarity or type, and sort the collection.
+- Give and equip items, adjust power and quantities, lock items, edit sockets, and randomize
+  selected equipment slots. Expanded perk scopes allow unconventional combinations.
 
-`result=loaded` means the DLL found and parsed the script. If `fnv1a64` does not match the file you
-just deployed, **you are testing an old build** — go back to step 2 and check the mapped module.
-
----
+Changes remain in a draft until **Save changes**. Saving creates a backup in `Dawn/editor-backups`
+and checks inventory limits and whether the account changed while you were editing.
+**Restart the game after saving** to load the edited account. Reload asks before discarding an
+unsaved draft. Inventory capacity and one exotic per gear category are preserved.
 
 ## Missions
 
-| script | mission |
-|---|---|
-| `omega.lua` | Omega |
-| `beyond_infinity.lua` | Beyond Infinity |
-| `gateway.lua` | The Gateway |
-| `deadly_trial.lua` | A Deadly Trial |
-| `deep_storage.lua` | Deep Storage |
-| `strike_pact.lua` | Tree of Probabilities |
-| `hijacked.lua` | Hijacked |
+Bundled mission scripts include:
 
-## Reading a run
+- Omega — `omega.lua`
+- Beyond Infinity — `beyond_infinity.lua`
+- The Gateway — `gateway.lua`
+- A Deadly Trial — `deadly_trial.lua`
+- Deep Storage — `deep_storage.lua`
+- Tree of Probabilities — `strike_pact.lua`
+- Hijacked — `hijacked.lua`
+- New Light — `launchpad.lua`
 
-Everything worth knowing is in the runtime tree's `logs/dawn.log`. It rotates to `.old` on every
-launch, so copy it before relaunching if a run is worth keeping.
+Eater of Worlds is excluded from this build. Mission scripts load when the game starts; restart
+the game after changing them.
 
-```bash
-grep "ev=coo_script"    dawn.log   # which graph loaded, and its fingerprint
-grep "ev=coo_executor"  dawn.log   # phase + step bitmask
-grep "ev=coo_stall"     dawn.log   # the stalled command and what it waits on
-```
+## Installation troubleshooting
 
-`ev=coo_executor` prints `active=` and `complete=` as bitmasks — decode them against the graph's
-step order to see exactly where a mission is sitting.
+- **The game is still running:** close Destiny 2 and run the installer again. The installer does
+  not stop the game automatically.
+- **Unsupported game version:** select the folder containing build `86657.20.08.23.1800.d2_rc`.
+  The installer checks the executable version before proceeding.
+- **A release file is missing or changed:** extract the complete release ZIP into a new folder.
+  Keep `release.json` and the entire `payload` folder together with the installer.
+- **An interrupted installation needs recovery:** close the game and restore the reported backup
+  using the rollback command above, then retry the installation.
 
-**Score on what renders in game, with the window focused.** A log line saying a thing was published
-is not evidence the player saw or heard it.
+## Building and packaging from source
 
-## Validation and packaging
+<details>
+<summary>Developer and release publisher instructions</summary>
+
+Source builds require **MSBuild 18 Build Tools**, the **v145** C++ toolset, and the Windows SDK
+selected by `Dawn/Dawn.vcxproj`. Python 3.11+ is used by the development validation and binding
+tools. These requirements do not apply to players installing a release ZIP.
+
+From PowerShell:
 
 ```powershell
-python tools/coo/verify_lua.py --out build/coo/<mission>-<candidate>
-python tools/coo/package_lua.py --validation build/coo/<mission>-<candidate>
-./tools/coo/install_candidate.ps1 -ValidationDirectory build/coo/<mission>-<candidate> -ValidateOnly
+git clone --branch codex/production https://github.com/isinternets/Dawn.git dawn
+cd dawn
+& "C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\amd64\MSBuild.exe" `
+  Dawn/Dawn.vcxproj /p:Configuration=Release /p:Platform=x64 `
+  /p:PreferredToolArchitecture=x64 /p:CL_MPCount=2 /m:2 /v:minimal /nologo
 ```
 
-`verify_lua.py` runs the suites in Debug and Release and builds both DLL configurations. It does not
-install or launch the game. Packaging rejects changed source or binaries; use a fresh candidate
-directory per change. Documentation is part of the source manifest, so finish doc edits before
-freezing a candidate.
+Build the project directly; there is no solution file. Keep the x64 compiler host and v145 toolset.
+The output is `build/x64/Release/steam_api64.dll`. Builds treat warnings as errors.
 
-## Authoring a mission
+After validating the DLL and current runtime content together, create a player bundle with a
+unique release name. For example:
 
-Read these first, in order:
+```powershell
+.\tools\install\New-DawnRelease.ps1 -Release '0.1.0-example'
+```
 
-| doc | what it settles |
-|---|---|
-| [`Dawn/docs/MISSION-IMPLEMENTATION-TEMPLATE.md`](Dawn/docs/MISSION-IMPLEMENTATION-TEMPLATE.md) | the implementation contract — beat records, binding records, acceptance checklists |
-| [`Dawn/docs/LUA-MISSION-AUTHORING.md`](Dawn/docs/LUA-MISSION-AUTHORING.md) | the authoring interface and the six per-beat contracts |
-| [`Dawn/docs/NEW-MISSION-RECONSTRUCTION-GUIDE.md`](Dawn/docs/NEW-MISSION-RECONSTRUCTION-GUIDE.md) | recovering a mission from its package |
-| [`Dawn/docs/UNIVERSAL-MISSION-SERVICES.md`](Dawn/docs/UNIVERSAL-MISSION-SERVICES.md) | what the shared services already do |
+This creates `build/releases/Dawn-0.1.0-example.zip` and the matching extracted folder. Packaging
+uses an existing Release DLL; it does not build or playtest it. Existing output folders and ZIPs
+are never overwritten. `-DllPath` and `-OutputDirectory` can override the defaults.
 
-The six contracts are separate, and collapsing them is the most common authoring mistake:
-**preload → arm → request → ready → advance → retire.**
+The bundle contains the installer, runtime payload, licenses, and a file-hash manifest. It excludes
+source code, development tools, symbols, local saves, logs, and caches. Distribute the complete ZIP.
+Manifest hashes check file integrity; they do not authenticate the publisher.
 
-Executor limits: 8 phases, 32 steps per graph, 8 commands per step, 64 conditions, 1 MiB of Lua.
+See the [installer documentation](tools/install/release/README.md) for its replacement and rollback
+contract, and [installer regression tests](tools/install/tests/release_installer.tests.ps1) for
+checks using disposable game folders on Windows PowerShell 5.1 and current PowerShell.
 
-A command's completion policy comes from its registered capability. Lua cannot invent a `.request`
-alias or change a `Wait` policy by renaming something — that needs bindings and a rebuild.
+</details>
 
-## Troubleshooting
+## Credits
 
-<table>
-<tr><th align="left">Symptom</th><th align="left">Cause</th></tr>
-<tr><td>Script edits do nothing</td><td>Lua is read once per process. Restart the game. If it still differs, check the <code>fnv1a64</code> in <code>ev=coo_script</code> against the file on disk.</td></tr>
-<tr><td>C++ changes do nothing</td><td>You deployed to a DLL the process does not map. Re-check step 2.</td></tr>
-<tr><td>Build fails on the toolset</td><td>Wrong MSBuild. Use Build Tools 18; do not edit <code>PlatformToolset</code>.</td></tr>
-<tr><td>A new extractor produces nothing</td><td>A warm cache skips the package pass. Bump <code>kCacheFormatVersion</code> in <code>src/state/build_data/cache/records/format.h</code>.</td></tr>
-<tr><td>Mission loads but nothing happens</td><td>Read <code>ev=coo_stall</code>. It names the command and what it is missing.</td></tr>
-<tr><td>A phase never completes</td><td>A graph completes only when <b>every</b> step joins. One forgotten branch freezes the mission silently.</td></tr>
-<tr><td>Game boots vanilla</td><td>The DLL was rejected or replaced. Verify the mapped module and that the game was closed when you copied.</td></tr>
-<tr><td>Mission never loads at all</td><td>No <code>ev=coo_script</code> line means the activity host never started — you have not entered the activity, or the arrival override did not match.</td></tr>
-</table>
+The in-game **Credits** tab links the original projects. Thanks to the
+[Sunrise](https://github.com/stanuwu/Sunrise) and
+[Sundial](https://github.com/KyleThmpsn/sundial) contributors.
 
-## House rules
-
-- **Never commit recovered key material.** Keys and tokens stay out of the tree; vendored copies
-  carry redaction placeholders and must be re-applied on any sync.
-- **Measure predicates, do not guess them.** If a rule has been wrong once, log the fields and
-  derive it.
-- **Log every call and its inputs**, not only the branch you expect to take. A probe that logs only
-  on success cannot tell "never ran" from "ran and declined".
-- **Do not delete a diagnostic** because the question looks closed.
+Sundial attribution, source revision, and the editor integration's GPL-3.0-only licensing are
+recorded in [NOTICE.md](Dawn/vendor/sundial/NOTICE.md) and its
+[license](Dawn/vendor/sundial/LICENSE). Game artwork and item names are read from the player's
+installed packages.
 
 ---
 
