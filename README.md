@@ -26,11 +26,70 @@ presets together. The game itself is not included.
 
 Players do not need Visual Studio, Python, Lua, or a source checkout.
 
-The installer source is in [`tools/install/release/`](tools/install/release/), including
-[`Install-Dawn.cmd`](tools/install/release/Install-Dawn.cmd). The packaging tool places these
-files at the top level of the player release ZIP, beside `release.json` and `payload/`.
-GitHub's **Code → Download ZIP** provides the source checkout; it does not include the built
-runtime payload needed to install Dawn.
+## Getting the installer
+
+### If you want to play
+
+Get the **complete packaged Dawn release ZIP** from the person distributing your build. Extract
+it into its own folder. Before running anything, check that the extracted folder contains:
+
+```text
+Dawn-<release>/
+  Install-Dawn.cmd
+  Install-Dawn.ps1
+  READ-ME.txt
+  release.json
+  payload/
+    steam_api64.dll
+    Dawn/
+      settings.json
+      hud.json
+      movement.json
+      player.json
+      scripts/
+      event_presets/
+      licenses/
+      vendor_*.txt
+```
+
+- **`Install-Dawn.cmd`** is the file you double-click. It starts the PowerShell installer and
+  keeps the window open so you can read its result.
+- **`Install-Dawn.ps1`** performs the version checks, installation, backup, and rollback.
+- **`release.json`** identifies the release and lists the expected payload files, sizes, and
+  hashes. The installer uses it to check that the bundle is complete and unchanged.
+- **`payload/`** contains the built DLL and the matching runtime content that will be installed.
+
+Keep these files together. Downloading the `.cmd` or `.ps1` file by itself is not enough to
+install Dawn. Extract the ZIP before running the installer; do not run it from inside the archive.
+
+### If you downloaded or cloned this repository
+
+GitHub's **Code → Download ZIP** and `git clone` provide the **source code**. In that checkout,
+the installer source lives in [`tools/install/release/`](tools/install/release/):
+
+```text
+tools/install/
+  New-DawnRelease.ps1
+  release/
+    Install-Dawn.cmd
+    Install-Dawn.ps1
+    READ-ME.txt
+    README.md
+```
+
+This source folder does not contain `release.json` or `payload/`. Running its
+[`Install-Dawn.cmd`](tools/install/release/Install-Dawn.cmd) directly will therefore fail with a
+missing `release.json` error. The launcher does not build the DLL or download the missing files.
+
+To turn the source into an installable release, first build the Release DLL, then run
+[`tools/install/New-DawnRelease.ps1`](tools/install/New-DawnRelease.ps1) from the repository root.
+That packaging script collects the DLL and runtime content, generates `release.json`, and creates
+the complete player ZIP. Follow [Building and packaging from source](#building-and-packaging-from-source)
+below for the commands and required build tools. Players receiving that finished ZIP do not need
+those tools.
+
+The separate `tools/install/Install-Dawn.ps1` is the development installer. The player-release
+instructions on this page refer to the installer in `tools/install/release/` after packaging.
 
 ## Install or update Dawn
 
@@ -40,10 +99,14 @@ installation.**
 
 1. Extract the entire release ZIP into a new folder, such as a folder under Downloads.
 2. Close Destiny 2.
-3. Double-click **`Install-Dawn.cmd`** in the extracted folder.
+3. Confirm that `release.json` and `payload/` are beside **`Install-Dawn.cmd`**, then double-click it.
 4. Enter your existing game folder when prompted: the folder containing **`destiny2.exe`**.
 5. Wait for the installer to confirm success and show the backup location.
 6. Launch `destiny2.exe` normally. The installer does not launch the game for you.
+
+For example, if the executable is `D:\Games\Destiny 2\destiny2.exe`, enter
+`D:\Games\Destiny 2`. Select the game folder itself, rather than its `bin/x64` or `Dawn`
+subfolder, the source checkout, or the extracted installer folder.
 
 The installer checks the game version and release file hashes before replacing files. It installs
 matching DLLs and runtime content at both locations the game can load from:
@@ -153,6 +216,14 @@ the game after changing them.
 
 ## Installation troubleshooting
 
+- **`Cannot find path ...\tools\install\release\release.json`:** you ran the installer source
+  from the repository. Use a complete player release ZIP, or build and package the source using
+  the instructions below. `release.json` is generated during packaging and is not committed in
+  the installer source folder. Creating an empty JSON file will not fix this: the installer also
+  needs the exact payload files and their matching manifest.
+- **You cannot find `Install-Dawn.cmd`:** in this repository it is under
+  [`tools/install/release/`](tools/install/release/). In a packaged player ZIP it is at the top
+  level of the extracted folder, alongside `release.json` and `payload/`.
 - **The game is still running:** close Destiny 2 and run the installer again. The installer does
   not stop the game automatically.
 - **Unsupported game version:** select the folder containing build `86657.20.08.23.1800.d2_rc`.
@@ -171,6 +242,8 @@ Source builds require **MSBuild 18 Build Tools**, the **v145** C++ toolset, and 
 selected by `Dawn/Dawn.vcxproj`. Python 3.11+ is used by the development validation and binding
 tools. These requirements do not apply to players installing a release ZIP.
 
+### 1. Build the Release DLL
+
 From PowerShell:
 
 ```powershell
@@ -184,20 +257,35 @@ cd dawn
 Build the project directly; there is no solution file. Keep the x64 compiler host and v145 toolset.
 The output is `build/x64/Release/steam_api64.dll`. Builds treat warnings as errors.
 
-After validating the DLL and current runtime content together, create a player bundle with a
+### 2. Generate the installer bundle
+
+Run the packaging command from the repository root, where this README lives. After validating
+the DLL and current runtime content together, create a player bundle with a
 unique release name. For example:
 
 ```powershell
 .\tools\install\New-DawnRelease.ps1 -Release '0.1.0-example'
 ```
 
-This creates `build/releases/Dawn-0.1.0-example.zip` and the matching extracted folder. Packaging
+This creates `build/releases/Dawn-0.1.0-example.zip` and the matching extracted folder,
+`build/releases/Dawn-0.1.0-example/`. The generated `release.json`, `payload/`, and installer
+launchers all live inside that output folder, not under `tools/install/release/`. Packaging
 uses an existing Release DLL; it does not build or playtest it. Existing output folders and ZIPs
 are never overwritten. `-DllPath` and `-OutputDirectory` can override the defaults.
+
+For a local installation, use `Install-Dawn.cmd` inside that generated output folder and follow
+the installation steps above. Every installation, including a local test, starts a fresh save;
+use a separate game installation for release testing.
+
+### 3. Distribute the complete ZIP
 
 The bundle contains the installer, runtime payload, licenses, and a file-hash manifest. It excludes
 source code, development tools, symbols, local saves, logs, and caches. Distribute the complete ZIP.
 Manifest hashes check file integrity; they do not authenticate the publisher.
+
+Creating this ZIP is a local operation. The packaging script does not upload it to GitHub or
+create a GitHub Release. Give players the generated ZIP or attach it as a release asset; sending
+them the repository's source ZIP or the installer launcher alone will not provide the payload.
 
 See the [installer documentation](tools/install/release/README.md) for its replacement and rollback
 contract, and [installer regression tests](tools/install/tests/release_installer.tests.ps1) for
