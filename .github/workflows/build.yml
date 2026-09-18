@@ -1,0 +1,66 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-windows:
+    name: Windows (${{ matrix.config }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [Release, Debug]
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Build Dawn
+      shell: powershell
+      run: .\dawn-dev.ps1 -BuildOnly -Config ${{ matrix.config }}
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dawn-windows-${{ matrix.config }}
+        path: |
+          build\x64\${{ matrix.config }}\steam_api64.dll
+          build\x64\${{ matrix.config }}\steam_api64.pdb
+
+  build-linux:
+    name: Linux (${{ matrix.config }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [Release, Debug]
+        
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11' 
+
+    - name: Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build clang llvm lld
+
+    - name: Build Dawn
+      run: ./dawn-dev.sh --build-only --config ${{ matrix.config }} --accept-license
+      env:
+        XWIN_ACCEPT_LICENSE: "1"
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dawn-linux-${{ matrix.config }}
+        path: build/linux-x64/${{ matrix.config }}/artifacts/*/steam_api64.dll
+
