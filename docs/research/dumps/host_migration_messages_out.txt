@@ -1,4 +1,0 @@
-STRING 7ff619d16c90 value="host_handoff"
-  REF 7ff61a0b9530 DATA owner=<none>
-STRING 7ff619d16cc0 value="host_establishment_complete"
-  REF 7ff61a0b9548 DATA owner=<none>

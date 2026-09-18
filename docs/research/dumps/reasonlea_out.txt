@@ -1,3 +1,0 @@
-
-==== 0 LEA hits; decompiling containing functions ====
-

@@ -66,8 +66,7 @@ Lua owns story order and gating; C++ owns native identity, receipts and wire enc
 Lua is evaluated once at load and its VM closes before gameplay. There is no live reload and no
 scripting at runtime.
 
-Eater of Worlds is excluded from this build. Its implementation and reconstruction notes are
-preserved in [a separate archive](optional/eater-of-worlds/README.md).
+Eater of Worlds is excluded from this build.
 
 ```
 scripts/<mission>.lua        story order, dependencies, gates, objectives
